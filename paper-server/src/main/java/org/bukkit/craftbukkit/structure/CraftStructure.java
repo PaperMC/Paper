@@ -90,14 +90,14 @@ public class CraftStructure implements Structure {
                 .setRandom(randomSource);
         definedstructureinfo.palette = palette;
 
-        BlockPos blockPosition = CraftBlockVector.toBlockPosition(location);
+        BlockPos pos = CraftBlockVector.toBlockPosition(location);
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();
 
         TransformerGeneratorAccess access = new TransformerGeneratorAccess();
-        access.setHandle(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(blockPosition), blockTransformers, entityTransformers));
+        access.setDelegate(handle);
+        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
+        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2);
         access.getStructureTransformer().discard();
     }
 

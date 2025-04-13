@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.pattern.BlockPattern;
@@ -75,10 +76,10 @@ public class CraftDragonBattle implements DragonBattle {
     @Override
     public boolean initiateRespawn(Collection<EnderCrystal> list) {
         if (this.hasBeenPreviouslyKilled() && this.getRespawnPhase() == RespawnPhase.NONE) {
-            // Copy from EnderDragonBattle#tryRespawn for generate exit portal if not exists
+            // Copy from EndDragonFight#tryRespawn for generate exit portal if not exists
             if (this.handle.portalLocation == null) {
-                BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.handle.findExitPortal();
-                if (shapedetector_shapedetectorcollection == null) {
+                BlockPattern.BlockPatternMatch patternMatch = this.handle.findExitPortal();
+                if (patternMatch == null) {
                     this.handle.spawnExitPortal(true);
                 }
             }
@@ -137,7 +138,7 @@ public class CraftDragonBattle implements DragonBattle {
     private DragonRespawnAnimation toNMSRespawnPhase(RespawnPhase phase) {
         return (phase != RespawnPhase.NONE) ? DragonRespawnAnimation.values()[phase.ordinal()] : null;
     }
-    // Paper start - More DragonBattle API
+
     @Override
     public int getGatewayCount() {
         return EndDragonFight.GATEWAY_COUNT - this.handle.gateways.size();
@@ -154,29 +155,28 @@ public class CraftDragonBattle implements DragonBattle {
     }
 
     @Override
-    public java.util.List<org.bukkit.entity.EnderCrystal> getRespawnCrystals() {
+    public List<org.bukkit.entity.EnderCrystal> getRespawnCrystals() {
         if (this.handle.respawnCrystals == null) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
 
-        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
+        final List<EnderCrystal> enderCrystals = new ArrayList<>();
         for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.respawnCrystals) {
             if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
-                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
+                enderCrystals.add(((EnderCrystal) endCrystal.getBukkitEntity()));
             }
         }
-        return java.util.Collections.unmodifiableList(enderCrystals);
+        return Collections.unmodifiableList(enderCrystals);
     }
 
     @Override
-    public java.util.List<org.bukkit.entity.EnderCrystal> getHealingCrystals() {
-        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
+    public List<EnderCrystal> getHealingCrystals() {
+        final List<EnderCrystal> enderCrystals = new ArrayList<>();
         for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.getSpikeCrystals()) {
             if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
-                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
+                enderCrystals.add(((EnderCrystal) endCrystal.getBukkitEntity()));
             }
         }
-        return java.util.Collections.unmodifiableList(enderCrystals);
+        return Collections.unmodifiableList(enderCrystals);
     }
-    // Paper end - More DragonBattle API
 }

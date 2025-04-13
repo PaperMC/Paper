@@ -10,8 +10,8 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class CraftEndGateway extends CraftBlockEntityState<TheEndGatewayBlockEntity> implements EndGateway {
 
-    public CraftEndGateway(World world, TheEndGatewayBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftEndGateway(World world, TheEndGatewayBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftEndGateway(CraftEndGateway state, Location location) {
@@ -56,11 +56,11 @@ public class CraftEndGateway extends CraftBlockEntityState<TheEndGatewayBlockEnt
     }
 
     @Override
-    public void applyTo(TheEndGatewayBlockEntity endGateway) {
-        super.applyTo(endGateway);
+    public void applyTo(TheEndGatewayBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
 
         if (this.getSnapshot().exitPortal == null) {
-            endGateway.exitPortal = null;
+            blockEntity.exitPortal = null;
         }
     }
 

@@ -9,8 +9,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hopper {
 
-    public CraftHopper(World world, HopperBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftHopper(World world, HopperBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftHopper(CraftHopper state, Location location) {
@@ -28,7 +28,7 @@ public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hop
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventory(this.getTileEntity());
+        return new CraftInventory(this.getBlockEntity());
     }
 
     @Override

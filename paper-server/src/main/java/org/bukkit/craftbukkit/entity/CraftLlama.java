@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLlama;
 import org.bukkit.entity.Horse;
@@ -33,7 +34,10 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
 
     @Override
     public LlamaInventory getInventory() {
-        return new CraftInventoryLlama(this.getHandle().inventory, this.getHandle().getBodyArmorAccess());
+        return new CraftInventoryLlama(this.getHandle().inventory,
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
+        );
     }
 
     @Override
@@ -59,7 +63,6 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
         return "CraftLlama";
     }
 
-    // Paper start
     @Override
     public boolean inCaravan() {
         return this.getHandle().inCaravan();
@@ -89,5 +92,4 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public Llama getCaravanTail() {
         return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
     }
-    // Paper end
 }

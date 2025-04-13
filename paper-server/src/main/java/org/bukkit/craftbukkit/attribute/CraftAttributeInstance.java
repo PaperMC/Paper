@@ -8,7 +8,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftAttributeInstance implements AttributeInstance {
 
@@ -45,7 +44,6 @@ public class CraftAttributeInstance implements AttributeInstance {
         return result;
     }
 
-    // Paper start
     @Override
     public AttributeModifier getModifier(final net.kyori.adventure.key.Key key) {
         Preconditions.checkArgument(key != null, "Key cannot be null");
@@ -70,7 +68,6 @@ public class CraftAttributeInstance implements AttributeInstance {
         Preconditions.checkArgument(uuid != null, "UUID cannot be null");
         this.removeModifier(AttributeMappings.uuidToKey(uuid));
     }
-    // Paper end
 
     @Override
     public void addModifier(AttributeModifier modifier) {
@@ -78,13 +75,11 @@ public class CraftAttributeInstance implements AttributeInstance {
         this.handle.addPermanentModifier(CraftAttributeInstance.convert(modifier));
     }
 
-    // Paper start - Transient modifier API
     @Override
     public void addTransientModifier(AttributeModifier modifier) {
         Preconditions.checkArgument(modifier != null, "modifier");
         this.handle.addTransientModifier(CraftAttributeInstance.convert(modifier));
     }
-    // Paper end
 
     @Override
     public void removeModifier(AttributeModifier modifier) {
@@ -111,6 +106,6 @@ public class CraftAttributeInstance implements AttributeInstance {
     }
 
     public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms, net.minecraft.world.entity.EquipmentSlotGroup slot) { // Paper
-        return new AttributeModifier(CraftNamespacedKey.fromMinecraft(nms.id()), nms.amount(), AttributeModifier.Operation.values()[nms.operation().ordinal()], org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(slot)); // Paper
+        return new AttributeModifier(CraftNamespacedKey.fromMinecraft(nms.id()), nms.amount(), AttributeModifier.Operation.values()[nms.operation().ordinal()], org.bukkit.craftbukkit.CraftEquipmentSlot.getSlotGroup(slot)); // Paper
     }
 }

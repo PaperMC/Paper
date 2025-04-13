@@ -9,12 +9,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.TileState;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
@@ -22,25 +22,25 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState { // Paper - revert upstream's revert of the block state changes
 
-    private final T tileEntity;
+    private final T blockEntity;
     private final T snapshot;
     public boolean snapshotDisabled; // Paper
     public static boolean DISABLE_SNAPSHOT = false; // Paper
 
-    public CraftBlockEntityState(World world, T tileEntity) {
-        super(world, tileEntity.getBlockPos(), tileEntity.getBlockState());
+    public CraftBlockEntityState(World world, T blockEntity) {
+        super(world, blockEntity.getBlockPos(), blockEntity.getBlockState());
 
-        this.tileEntity = tileEntity;
+        this.blockEntity = blockEntity;
 
         try { // Paper - Show blockstate location if we failed to read it
         // Paper start
         this.snapshotDisabled = DISABLE_SNAPSHOT;
         if (DISABLE_SNAPSHOT) {
-            this.snapshot = this.tileEntity;
+            this.snapshot = this.blockEntity;
         } else {
-            this.snapshot = this.createSnapshot(tileEntity);
+            this.snapshot = this.createSnapshot(blockEntity);
         }
-        // copy tile entity data:
+        // copy block entity data:
         if (this.snapshot != null) {
             this.load(this.snapshot);
         }
@@ -62,29 +62,27 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     protected CraftBlockEntityState(CraftBlockEntityState<T> state, Location location) {
         super(state, location);
-        this.tileEntity = this.createSnapshot(state.snapshot);
-        this.snapshot = this.tileEntity;
+        this.blockEntity = this.createSnapshot(state.snapshot);
+        this.snapshot = this.blockEntity;
         this.loadData(state.getSnapshotNBT());
     }
 
     public void refreshSnapshot() {
-        this.load(this.tileEntity);
+        this.load(this.blockEntity);
     }
 
     private RegistryAccess getRegistryAccess() {
         LevelAccessor worldHandle = this.getWorldHandle();
-        return (worldHandle != null) ? worldHandle.registryAccess() : MinecraftServer.getDefaultRegistryAccess();
+        return (worldHandle != null) ? worldHandle.registryAccess() : CraftRegistry.getMinecraftRegistry();
     }
 
-    private T createSnapshot(T tileEntity) {
-        if (tileEntity == null) {
+    private T createSnapshot(T from) {
+        if (from == null) {
             return null;
         }
 
-        CompoundTag nbtTagCompound = tileEntity.saveWithFullMetadata(this.getRegistryAccess());
-        T snapshot = (T) BlockEntity.loadStatic(this.getPosition(), this.getHandle(), nbtTagCompound, this.getRegistryAccess());
-
-        return snapshot;
+        CompoundTag tag = from.saveWithFullMetadata(this.getRegistryAccess());
+        return (T) BlockEntity.loadStatic(this.getPosition(), this.getHandle(), tag, this.getRegistryAccess());
     }
 
     public Set<DataComponentType<?>> applyComponents(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
@@ -97,36 +95,36 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         return this.snapshot.collectComponents();
     }
 
-    // Loads the specified data into the snapshot TileEntity.
-    public void loadData(CompoundTag nbtTagCompound) {
-        this.snapshot.loadWithComponents(nbtTagCompound, this.getRegistryAccess());
+    // Loads the specified data into the snapshot BlockEntity.
+    public void loadData(CompoundTag tag) {
+        this.snapshot.loadWithComponents(tag, this.getRegistryAccess());
         this.load(this.snapshot);
     }
 
-    // copies the TileEntity-specific data, retains the position
+    // copies the BlockEntity-specific data, retains the position
     private void copyData(T from, T to) {
-        CompoundTag nbtTagCompound = from.saveWithFullMetadata(this.getRegistryAccess());
-        to.loadWithComponents(nbtTagCompound, this.getRegistryAccess());
+        CompoundTag tag = from.saveWithFullMetadata(this.getRegistryAccess());
+        to.loadWithComponents(tag, this.getRegistryAccess());
     }
 
-    // gets the wrapped TileEntity
-    public T getTileEntity() {
-        return this.tileEntity;
+    // gets the wrapped BlockEntity
+    public T getBlockEntity() {
+        return this.blockEntity;
     }
 
-    // gets the cloned TileEntity which is used to store the captured data
+    // gets the cloned BlockEntity which is used to store the captured data
     protected T getSnapshot() {
         return this.snapshot;
     }
 
-    // gets the current TileEntity from the world at this position
-    protected BlockEntity getTileEntityFromWorld() {
+    // gets the current BlockEntity from the world at this position
+    protected BlockEntity getBlockEntityFromWorld() {
         this.requirePlaced();
 
         return this.getWorldHandle().getBlockEntity(this.getPosition());
     }
 
-    // gets the NBT data of the TileEntity represented by this block state
+    // gets the NBT data of the BlockEntity represented by this block state
     public CompoundTag getSnapshotNBT() {
         // update snapshot
         this.applyTo(this.snapshot);
@@ -134,21 +132,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         return this.snapshot.saveWithFullMetadata(this.getRegistryAccess());
     }
 
-    public CompoundTag getItemNBT() {
-        // update snapshot
-        this.applyTo(this.snapshot);
-
-        // See TileEntity#saveToItem
-        CompoundTag nbt = this.snapshot.saveCustomOnly(this.getRegistryAccess());
-        this.snapshot.removeComponentsFromTag(nbt);
-        return nbt;
-    }
-
-    public void addEntityType(CompoundTag nbt) {
-        BlockEntity.addEntityType(nbt, this.snapshot.getType());
-    }
-
-    // gets the packet data of the TileEntity represented by this block state
+    // gets the packet data of the BlockEntity represented by this block state
     public CompoundTag getUpdateNBT() {
         // update snapshot
         this.applyTo(this.snapshot);
@@ -169,22 +153,18 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     }
     // Paper end
 
-    // copies the data of the given tile entity to this block state
-    protected void load(T tileEntity) {
-        if (tileEntity != null && tileEntity != this.snapshot) {
-            this.copyData(tileEntity, this.snapshot);
+    // copies the data of the given block entity to this block state
+    protected void load(T blockEntity) {
+        if (blockEntity != null && blockEntity != this.snapshot) {
+            this.copyData(blockEntity, this.snapshot);
         }
     }
 
-    // applies the TileEntity data of this block state to the given TileEntity
-    protected void applyTo(T tileEntity) {
-        if (tileEntity != null && tileEntity != this.snapshot) {
-            this.copyData(this.snapshot, tileEntity);
+    // applies the BlockEntity data of this block state to the given BlockEntity
+    protected void applyTo(T blockEntity) {
+        if (blockEntity != null && blockEntity != this.snapshot) {
+            this.copyData(this.snapshot, blockEntity);
         }
-    }
-
-    protected boolean isApplicable(BlockEntity tileEntity) {
-        return tileEntity != null && this.tileEntity.getClass() == tileEntity.getClass();
     }
 
     @Override
@@ -192,15 +172,26 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         boolean result = super.update(force, applyPhysics);
 
         if (result && this.isPlaced()) {
-            BlockEntity tile = this.getTileEntityFromWorld();
-
-            if (this.isApplicable(tile)) {
-                this.applyTo((T) tile);
-                tile.setChanged();
-            }
+            this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
+                this.applyTo((T) blockEntity);
+                blockEntity.setChanged();
+            });
         }
 
         return result;
+    }
+
+    @Override
+    public boolean place(int flags) {
+        if (super.place(flags)) {
+            this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
+                this.applyTo((T) blockEntity);
+                blockEntity.setChanged();
+            });
+            return true;
+        }
+
+        return false;
     }
 
     @Override

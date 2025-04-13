@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/SculkSensorBlock.java
 +++ b/net/minecraft/world/level/block/SculkSensorBlock.java
-@@ -108,6 +_,18 @@
+@@ -102,6 +_,18 @@
              && level.getBlockEntity(pos) instanceof SculkSensorBlockEntity sculkSensorBlockEntity
              && level instanceof ServerLevel serverLevel
              && sculkSensorBlockEntity.getVibrationUser().canReceiveVibration(serverLevel, pos, GameEvent.STEP, GameEvent.Context.of(state))) {
@@ -9,7 +9,7 @@
 +            if (entity instanceof net.minecraft.world.entity.player.Player player) {
 +                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(player, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
 +            } else {
-+                cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
 +                level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
 +            }
 +            if (cancellable.isCancelled()) {
@@ -19,7 +19,7 @@
              sculkSensorBlockEntity.getListener().forceScheduleVibration(serverLevel, GameEvent.STEP, GameEvent.Context.of(entity), entity.position());
          }
  
-@@ -200,10 +_,19 @@
+@@ -191,10 +_,19 @@
      }
  
      public static boolean canActivate(BlockState state) {
@@ -37,10 +37,10 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, Integer.valueOf(0)), 3);
+         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, 0), 3);
          level.scheduleTick(pos, state.getBlock(), 10);
          updateNeighbours(level, pos, state);
-@@ -215,6 +_,15 @@
+@@ -206,6 +_,15 @@
      }
  
      public void activate(@Nullable Entity entity, Level level, BlockPos pos, BlockState state, int power, int frequency) {
@@ -53,10 +53,10 @@
 +        }
 +        power = eventRedstone.getNewCurrent();
 +        // CraftBukkit end
-         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, Integer.valueOf(power)), 3);
+         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, power), 3);
          level.scheduleTick(pos, state.getBlock(), this.getActiveTicks());
          updateNeighbours(level, pos, state);
-@@ -292,8 +_,16 @@
+@@ -283,8 +_,16 @@
      @Override
      protected void spawnAfterBreak(BlockState state, ServerLevel level, BlockPos pos, ItemStack stack, boolean dropExperience) {
          super.spawnAfterBreak(state, level, pos, stack, dropExperience);
@@ -69,9 +69,8 @@
 -            this.tryDropExperience(level, pos, stack, ConstantInt.of(5));
 +            return this.tryDropExperience(level, pos, stack, ConstantInt.of(5));
          }
--    }
 +
 +        return 0;
 +        // CraftBukkit end
-+     }
+     }
  }

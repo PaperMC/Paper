@@ -1,20 +1,6 @@
 --- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
 +++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
-@@ -70,6 +_,13 @@
- import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
- import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
- import net.minecraft.world.phys.Vec3;
-+// CraftBukkit start
-+import java.util.stream.Collectors;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.entity.PiglinBarterEvent;
-+// CraftBukkit end
- 
- public class PiglinAi {
-     public static final int REPELLENT_DETECTION_RANGE_HORIZONTAL = 8;
-@@ -328,23 +_,32 @@
+@@ -330,23 +_,32 @@
      protected static void pickUpItem(ServerLevel level, Piglin piglin, ItemEntity itemEntity) {
          stopWalking(piglin);
          ItemStack item;
@@ -29,7 +15,7 @@
              item = itemEntity.getItem();
 -            itemEntity.discard();
 -        } else {
-+            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
 +        } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().getCount() - 1, false).isCancelled()) {
 +            piglin.onItemPickup(itemEntity); // Paper - EntityPickupItemEvent fixes; moved from Piglin#pickUpItem - call prior to item entity modification
              piglin.take(itemEntity, 1);
@@ -52,7 +38,7 @@
              if (!flag) {
                  putInInventory(piglin, item);
              }
-@@ -353,7 +_,9 @@
+@@ -355,7 +_,9 @@
  
      private static void holdInOffhand(ServerLevel level, Piglin piglin, ItemStack stack) {
          if (isHoldingItemInOffHand(piglin)) {
@@ -62,16 +48,16 @@
          }
  
          piglin.holdInOffHand(stack);
-@@ -363,7 +_,7 @@
+@@ -365,7 +_,7 @@
          ItemStack item = itemEntity.getItem();
          ItemStack itemStack = item.split(1);
          if (item.isEmpty()) {
 -            itemEntity.discard();
-+            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
          } else {
              itemEntity.setItem(item);
          }
-@@ -375,9 +_,14 @@
+@@ -377,9 +_,14 @@
          ItemStack itemInHand = piglin.getItemInHand(InteractionHand.OFF_HAND);
          piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
          if (piglin.isAdult()) {
@@ -80,15 +66,15 @@
              if (barter && isBarterCurrency) {
 -                throwItems(piglin, getBarterResponseItems(piglin));
 +                // CraftBukkit start
-+                PiglinBarterEvent event = CraftEventFactory.callPiglinBarterEvent(piglin, getBarterResponseItems(piglin), itemInHand);
++                org.bukkit.event.entity.PiglinBarterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPiglinBarterEvent(piglin, getBarterResponseItems(piglin), itemInHand);
 +                if (!event.isCancelled()) {
-+                    throwItems(piglin, event.getOutcome().stream().map(CraftItemStack::asNMSCopy).collect(Collectors.toList()));
++                    throwItems(piglin, event.getOutcome().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(java.util.stream.Collectors.toList()));
 +                }
 +                // CraftBukkit end
              } else if (!isBarterCurrency) {
                  boolean flag = !piglin.equipItemIfPossible(level, itemInHand).isEmpty();
                  if (!flag) {
-@@ -388,7 +_,7 @@
+@@ -390,7 +_,7 @@
              boolean isBarterCurrency = !piglin.equipItemIfPossible(level, itemInHand).isEmpty();
              if (!isBarterCurrency) {
                  ItemStack mainHandItem = piglin.getMainHandItem();
@@ -97,7 +83,7 @@
                      putInInventory(piglin, mainHandItem);
                  } else {
                      throwItems(piglin, Collections.singletonList(mainHandItem));
-@@ -401,7 +_,9 @@
+@@ -403,7 +_,9 @@
  
      protected static void cancelAdmiring(ServerLevel level, Piglin piglin) {
          if (isAdmiringItem(piglin) && !piglin.getOffhandItem().isEmpty()) {
@@ -107,7 +93,7 @@
              piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
          }
      }
-@@ -457,7 +_,7 @@
+@@ -459,7 +_,7 @@
              return false;
          } else if (isAdmiringDisabled(piglin) && piglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
              return false;
@@ -116,7 +102,7 @@
              return isNotHoldingLovedItemInOffHand(piglin);
          } else {
              boolean canAddToInventory = piglin.canAddToInventory(stack);
-@@ -466,11 +_,16 @@
+@@ -468,11 +_,16 @@
              } else if (isFood(stack)) {
                  return !hasEatenRecently(piglin) && canAddToInventory;
              } else {
@@ -134,7 +120,7 @@
      protected static boolean isLovedItem(ItemStack item) {
          return item.is(ItemTags.PIGLIN_LOVED);
      }
-@@ -522,6 +_,7 @@
+@@ -524,6 +_,7 @@
      }
  
      public static void angerNearbyPiglins(ServerLevel level, Player player, boolean requireLineOfSight) {
@@ -142,7 +128,7 @@
          List<Piglin> entitiesOfClass = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0));
          entitiesOfClass.stream().filter(PiglinAi::isIdle).filter(piglin -> !requireLineOfSight || BehaviorUtils.canSee(piglin, player)).forEach(piglin -> {
              if (level.getGameRules().getBoolean(GameRules.RULE_UNIVERSAL_ANGER)) {
-@@ -546,7 +_,7 @@
+@@ -548,7 +_,7 @@
      }
  
      protected static boolean canAdmire(Piglin piglin, ItemStack stack) {
@@ -151,7 +137,7 @@
      }
  
      protected static void wasHurtBy(ServerLevel level, Piglin piglin, LivingEntity entity) {
-@@ -794,6 +_,11 @@
+@@ -796,6 +_,11 @@
          return piglin.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
      }
  
@@ -163,7 +149,7 @@
      private static boolean isBarterCurrency(ItemStack stack) {
          return stack.is(BARTERING_ITEM);
      }
-@@ -831,7 +_,7 @@
+@@ -833,7 +_,7 @@
      }
  
      private static boolean isNotHoldingLovedItemInOffHand(Piglin piglin) {

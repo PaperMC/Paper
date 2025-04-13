@@ -1,0 +1,19 @@
+--- a/net/minecraft/world/entity/animal/AbstractCow.java
++++ b/net/minecraft/world/entity/animal/AbstractCow.java
+@@ -84,8 +_,15 @@
+     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+         ItemStack itemInHand = player.getItemInHand(hand);
+         if (itemInHand.is(Items.BUCKET) && !this.isBaby()) {
++            // CraftBukkit start - Got milk?
++            org.bukkit.event.player.PlayerBucketFillEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent(player.level(), player, this.blockPosition(), this.blockPosition(), null, itemInHand, Items.MILK_BUCKET, hand);
++            if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
++                return InteractionResult.PASS;
++            }
++            // CraftBukkit end
+             player.playSound(SoundEvents.COW_MILK, 1.0F, 1.0F);
+-            ItemStack itemStack = ItemUtils.createFilledResult(itemInHand, player, Items.MILK_BUCKET.getDefaultInstance());
++            ItemStack itemStack = ItemUtils.createFilledResult(itemInHand, player, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
+             player.setItemInHand(hand, itemStack);
+             return InteractionResult.SUCCESS;
+         } else {

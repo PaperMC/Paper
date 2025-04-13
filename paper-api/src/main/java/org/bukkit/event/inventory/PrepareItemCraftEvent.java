@@ -4,17 +4,21 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PrepareItemCraftEvent extends InventoryEvent {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean repair;
-    private CraftingInventory matrix;
 
-    public PrepareItemCraftEvent(@NotNull CraftingInventory what, @NotNull InventoryView view, boolean isRepair) {
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final boolean repair;
+    private final CraftingInventory matrix;
+
+    @ApiStatus.Internal
+    public PrepareItemCraftEvent(@NotNull CraftingInventory matrix, @NotNull InventoryView view, boolean isRepair) {
         super(view);
-        this.matrix = what;
+        this.matrix = matrix;
         this.repair = isRepair;
     }
 
@@ -27,7 +31,7 @@ public class PrepareItemCraftEvent extends InventoryEvent {
      */
     @Nullable
     public Recipe getRecipe() {
-        return matrix.getRecipe();
+        return this.matrix.getRecipe();
     }
 
     /**
@@ -36,27 +40,27 @@ public class PrepareItemCraftEvent extends InventoryEvent {
     @NotNull
     @Override
     public CraftingInventory getInventory() {
-        return matrix;
+        return this.matrix;
     }
 
     /**
      * Check if this event was triggered by a tool repair operation rather
      * than a crafting recipe.
      *
-     * @return True if this is a repair.
+     * @return {@code true} if this is a repair.
      */
     public boolean isRepair() {
-        return repair;
+        return this.repair;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

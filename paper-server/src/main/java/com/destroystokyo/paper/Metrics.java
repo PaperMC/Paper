@@ -15,6 +15,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -29,7 +30,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * bStats collects some data for plugin authors.
  *
- * Check out https://bStats.org/ to learn more about bStats!
+ * Check out https://bstats.org/ to learn more about bStats!
  */
 public class Metrics {
 
@@ -41,7 +42,7 @@ public class Metrics {
     public static final int B_STATS_VERSION = 1;
 
     // The url to which the data is sent
-    private static final String URL = "https://bStats.org/submitData/server-implementation";
+    private static final String URL = "https://bstats.org/submitData/server-implementation";
 
     // Should failed requests be logged?
     private static boolean logFailedRequests = false;
@@ -223,7 +224,7 @@ public class Metrics {
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
-        gzip.write(str.getBytes("UTF-8"));
+        gzip.write(str.getBytes(StandardCharsets.UTF_8));
         gzip.close();
         return outputStream.toByteArray();
     }

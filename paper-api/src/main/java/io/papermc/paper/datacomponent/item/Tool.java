@@ -71,6 +71,14 @@ public interface Tool {
     @Contract(pure = true)
     @Unmodifiable List<Tool.Rule> rules();
 
+    /**
+     * Whether this tool can destroy blocks in creative mode.
+     *
+     * @return whether this tool can destroy blocks in creative mode
+     */
+    @Contract(pure = true)
+    boolean canDestroyBlocksInCreative();
+
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Rule {
@@ -135,6 +143,16 @@ public interface Tool {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addRule(Rule rule);
+
+        /**
+         * Controls whether this tool can destroy blocks in creative mode.
+         *
+         * @param canDestroyBlocksInCreative whether this tool can destroy blocks in creative mode
+         * @return the builder for chaining
+         * @see #canDestroyBlocksInCreative()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder canDestroyBlocksInCreative(boolean canDestroyBlocksInCreative);
 
         /**
          * Adds rules to the tool that control the breaking speed / damage per block if matched.

@@ -1,0 +1,39 @@
+--- a/net/minecraft/util/parsing/packrat/Scope.java
++++ b/net/minecraft/util/parsing/packrat/Scope.java
+@@ -281,4 +_,36 @@
+ 
+         return true;
+     }
++
++    // Paper start - track depth
++    private int depth;
++    @SuppressWarnings({"unchecked","rawtypes"})
++    public static <S> Term<S> increaseDepth() {
++        class IncreasingDepthTerm<W> implements Term<W> {
++            public static final IncreasingDepthTerm INSTANCE = new IncreasingDepthTerm();
++            @Override
++            public boolean parse(final ParseState<W> parseState, final Scope scope, final Control control) {
++                if (++scope.depth > 512) {
++                    parseState.errorCollector().store(parseState.mark(), new IllegalStateException("Too deep"));
++                    return false;
++                }
++                return true;
++            }
++        }
++        return (Term<S>) IncreasingDepthTerm.INSTANCE;
++    }
++
++    @SuppressWarnings({"unchecked","rawtypes"})
++    public static <S> Term<S> decreaseDepth() {
++        class DecreasingDepthTerm<W> implements Term<W> {
++            public static final DecreasingDepthTerm INSTANCE = new DecreasingDepthTerm();
++            @Override
++            public boolean parse(final ParseState<W> parseState, final Scope scope, final Control control) {
++                scope.depth--;
++                return true;
++            }
++        }
++        return (Term<S>) DecreasingDepthTerm.INSTANCE;
++    }
++    // Paper end - track depth
+ }

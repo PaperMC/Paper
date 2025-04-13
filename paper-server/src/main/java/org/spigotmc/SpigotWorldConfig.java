@@ -83,7 +83,7 @@ public class SpigotWorldConfig {
     public int beetrootModifier;
     public int carrotModifier;
     public int potatoModifier;
-    public int torchFlowerModifier; // Paper
+    public int torchFlowerModifier;
     public int wheatModifier;
     public int wartModifier;
     public int vineModifier;
@@ -94,8 +94,8 @@ public class SpigotWorldConfig {
     public int twistingVinesModifier;
     public int weepingVinesModifier;
     public int caveVinesModifier;
-    public int glowBerryModifier; // Paper
-    public int pitcherPlantModifier; // Paper
+    public int glowBerryModifier;
+    public int pitcherPlantModifier;
 
     private int getAndValidateGrowth(String crop) {
         int modifier = this.getInt("growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100);
@@ -118,7 +118,7 @@ public class SpigotWorldConfig {
         this.beetrootModifier = this.getAndValidateGrowth("Beetroot");
         this.carrotModifier = this.getAndValidateGrowth("Carrot");
         this.potatoModifier = this.getAndValidateGrowth("Potato");
-        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower"); // Paper
+        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower");
         this.wheatModifier = this.getAndValidateGrowth("Wheat");
         this.wartModifier = this.getAndValidateGrowth("NetherWart");
         this.vineModifier = this.getAndValidateGrowth("Vine");
@@ -129,8 +129,8 @@ public class SpigotWorldConfig {
         this.twistingVinesModifier = this.getAndValidateGrowth("TwistingVines");
         this.weepingVinesModifier = this.getAndValidateGrowth("WeepingVines");
         this.caveVinesModifier = this.getAndValidateGrowth("CaveVines");
-        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
-        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
+        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry");
+        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant");
     }
 
     public double itemMerge;
@@ -188,7 +188,6 @@ public class SpigotWorldConfig {
     public int monsterActivationRange = 32;
     public int raiderActivationRange = 64;
     public int miscActivationRange = 16;
-    // Paper start
     public int flyingMonsterActivationRange = 32;
     public int waterActivationRange = 16;
     public int villagerActivationRange = 32;
@@ -207,7 +206,6 @@ public class SpigotWorldConfig {
     public int villagersWorkImmunityAfter = 5 * 20;
     public int villagersWorkImmunityFor = 20;
     public boolean villagersActiveForPanic = true;
-    // Paper end
     public boolean tickInactiveVillagers = true;
     public boolean ignoreSpectatorActivation = false;
 
@@ -217,7 +215,6 @@ public class SpigotWorldConfig {
         this.monsterActivationRange = this.getInt("entity-activation-range.monsters", this.monsterActivationRange);
         this.raiderActivationRange = this.getInt("entity-activation-range.raiders", this.raiderActivationRange);
         this.miscActivationRange = this.getInt("entity-activation-range.misc", this.miscActivationRange);
-        // Paper start
         this.waterActivationRange = this.getInt("entity-activation-range.water", this.waterActivationRange);
         this.villagerActivationRange = this.getInt("entity-activation-range.villagers", hasAnimalsConfig ? this.animalActivationRange : this.villagerActivationRange);
         this.flyingMonsterActivationRange = this.getInt("entity-activation-range.flying-monsters", this.flyingMonsterActivationRange);
@@ -241,7 +238,6 @@ public class SpigotWorldConfig {
         this.villagersWorkImmunityAfter = this.getInt("entity-activation-range.villagers-work-immunity-after", this.villagersWorkImmunityAfter);
         this.villagersWorkImmunityFor = this.getInt("entity-activation-range.villagers-work-immunity-for", this.villagersWorkImmunityFor);
         this.villagersActiveForPanic = this.getBoolean("entity-activation-range.villagers-active-for-panic", this.villagersActiveForPanic);
-        // Paper end
         this.tickInactiveVillagers = this.getBoolean("entity-activation-range.tick-inactive-villagers", this.tickInactiveVillagers);
         this.ignoreSpectatorActivation = this.getBoolean("entity-activation-range.ignore-spectators", this.ignoreSpectatorActivation);
         this.log("Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation);
@@ -335,7 +331,6 @@ public class SpigotWorldConfig {
     public int mansionSeed;
     public int fossilSeed;
     public int portalSeed;
-    // Paper start - add missing structure set configs
     public int ancientCitySeed;
     public int trailRuinsSeed;
     public int trialChambersSeed;
@@ -348,7 +343,6 @@ public class SpigotWorldConfig {
         return org.apache.commons.lang3.math.NumberUtils.isParsable(value) ? toNumberFunc.apply(value) : null;
     }
 
-    // Paper end
     private void initWorldGenSeeds() {
         this.villageSeed = this.getInt("seed-village", 10387312);
         this.desertSeed = this.getInt("seed-desert", 14357617);
@@ -365,14 +359,12 @@ public class SpigotWorldConfig {
         this.mansionSeed = this.getInt("seed-mansion", 10387319);
         this.fossilSeed = this.getInt("seed-fossil", 14357921);
         this.portalSeed = this.getInt("seed-portal", 34222645);
-        // Paper start - add missing structure set configs
         this.ancientCitySeed = this.getInt("seed-ancientcity", 20083232);
         this.trailRuinsSeed = this.getInt("seed-trailruins", 83469867);
         this.trialChambersSeed = this.getInt("seed-trialchambers", 94251327);
         this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // StructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
         this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
         this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
-        // Paper end
         this.log("Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
             + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed);
     }

@@ -220,6 +220,14 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * Whether ender pearls will vanish on player death.
      */
     public static final GameRule<Boolean> ENDER_PEARLS_VANISH_ON_DEATH = new GameRule<>("enderPearlsVanishOnDeath", Boolean.class);
+    /**
+     * Whether fire will still propagate far away from players (8 chunks).
+     */
+    public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = new GameRule<>("allowFireTicksAwayFromPlayer", Boolean.class);
+    /**
+     * Whether primed tnt explodes.
+     */
+    public static final GameRule<Boolean> TNT_EXPLODES = new GameRule<>("tntExplodes", Boolean.class);
 
     // Numerical rules
     /**

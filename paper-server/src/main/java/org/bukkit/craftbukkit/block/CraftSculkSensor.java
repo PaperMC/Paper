@@ -8,8 +8,8 @@ import org.bukkit.block.SculkSensor;
 
 public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlockEntityState<T> implements SculkSensor {
 
-    public CraftSculkSensor(World world, T tileEntity) {
-        super(world, tileEntity);
+    public CraftSculkSensor(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSculkSensor(CraftSculkSensor<T> state, Location location) {
