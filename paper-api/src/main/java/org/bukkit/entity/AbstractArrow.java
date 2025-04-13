@@ -165,7 +165,7 @@ public interface AbstractArrow extends Projectile {
      * Sets the ItemStack which will be picked up from this arrow.
      *
      * @param item ItemStack set to be picked up
-     * @deprecated use {@link #getItemStack()}
+     * @deprecated use {@link #setItemStack(ItemStack)}
      */
     @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
