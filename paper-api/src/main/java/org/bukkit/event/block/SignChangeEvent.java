@@ -59,7 +59,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         this.player = thePlayer;
         this.adventure$lines = new ArrayList<>(4);
         for (String theLine : theLines) {
-            this.adventure$lines.add(theLine == null ? null : LegacyComponentSerializer.legacySection().deserialize(theLine));
+            this.adventure$lines.add(LegacyComponentSerializer.legacySection().deserializeOrNull(theLine));
         }
         this.side = side;
     }
@@ -128,7 +128,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      */
     @Deprecated
     public @Nullable String[] getLines() {
-        return this.adventure$lines.stream().map(line -> line == null ? null : LegacyComponentSerializer.legacySection().serialize(line)).toArray(String[]::new);
+        return this.adventure$lines.stream().map(LegacyComponentSerializer.legacySection()::serializeOrNull).toArray(String[]::new);
     }
 
     /**
@@ -144,8 +144,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     @Nullable
     @Deprecated
     public String getLine(int index) throws IndexOutOfBoundsException {
-        Component line = line(index);
-        return line == null ? null : LegacyComponentSerializer.legacySection().serialize(line);
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.adventure$lines.get(index));
     }
 
     /**
@@ -159,7 +158,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      */
     @Deprecated
     public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
-        this.adventure$lines.set(index, line != null ? LegacyComponentSerializer.legacySection().deserialize(line) : null);
+        this.adventure$lines.set(index, LegacyComponentSerializer.legacySection().deserializeOrNull(line));
     }
 
     /**
