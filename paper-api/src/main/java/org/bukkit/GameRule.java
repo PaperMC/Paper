@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
+import io.papermc.paper.InternalAPIBridge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -337,6 +338,15 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
         return type;
     }
 
+    /**
+     * Get if this GameRule is currently enabled
+     *
+     * @return if this GameRule is currently enabled
+     */
+    public boolean isEnabled() {
+        return InternalAPIBridge.get().isGameRuleEnabled(this.name);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -377,10 +387,9 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
         return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
     }
 
-    // Paper start
     @Override
     public @NotNull String translationKey() {
         return "gamerule." + this.name;
     }
-    // Paper end
+
 }

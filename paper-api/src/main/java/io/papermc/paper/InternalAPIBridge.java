@@ -45,5 +45,13 @@ public interface InternalAPIBridge {
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
+
+    /**
+     * Gets if the given game rule is currently enabled
+     *
+     * @param gameRule the name of the game rule
+     * @return if the given game rule is currently enabled
+     */
+    boolean isGameRuleEnabled(String gameRule);
 }
 
