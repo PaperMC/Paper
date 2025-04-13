@@ -66,6 +66,11 @@ public class CraftBlockData implements BlockData {
         return this.state.getBukkitMaterial(); // Paper - optimise getType calls
     }
 
+    @Override
+    public BlockType getBlockType() {
+        return this.state.getBukkitBlockType();
+    }
+
     public net.minecraft.world.level.block.state.BlockState getState() {
         return this.state;
     }

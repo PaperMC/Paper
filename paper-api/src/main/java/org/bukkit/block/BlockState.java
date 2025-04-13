@@ -78,6 +78,14 @@ public interface BlockState extends Metadatable {
     Material getType();
 
     /**
+     * Gets the type of this block state.
+     *
+     * @return block type
+     */
+    @NotNull
+    BlockType getBlockType();
+
+    /**
      * Gets the current light level of the block represented by this block state.
      *
      * @return the light level between 0-15
@@ -171,6 +179,13 @@ public interface BlockState extends Metadatable {
      * @param type Material to change this block state to
      */
     void setType(@NotNull Material type);
+
+    /**
+     * Sets the type of this block state.
+     *
+     * @param type BlockType to change this block state to
+     */
+    void setType(@NotNull BlockType type);
 
     /**
      * Attempts to update the block represented by this state, setting it to

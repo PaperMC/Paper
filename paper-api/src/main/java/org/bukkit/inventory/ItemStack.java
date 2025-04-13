@@ -194,6 +194,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Gets the type of this item
+     *
+     * @return Type of the items in this stack
+     */
+    @NotNull
+    public ItemType getItemType() {
+        return this.craftDelegate.getItemType();
+    }
+
+    /**
      * Sets the type of this item
      * <p>
      * Note that in doing so you will reset the MaterialData for this stack.
@@ -229,6 +239,18 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
     public ItemStack withType(@NotNull Material type) {
         return this.craftDelegate.withType(type); // Paper - delegate
+    }
+
+    /**
+     * Creates a new ItemStack with the specified ItemType, where the item count and item meta is preserved.
+     *
+     * @param type The ItemType of the new ItemStack.
+     * @return A new ItemStack instance with the specified ItemType.
+     */
+    @NotNull
+    @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
+    public ItemStack withType(@NotNull ItemType type) {
+        return this.craftDelegate.withType(type);
     }
     // Paper end
 

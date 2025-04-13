@@ -13,6 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -176,8 +177,22 @@ public class CraftBlockState implements BlockState {
     }
 
     @Override
+    public void setType(final BlockType type) {
+        Preconditions.checkArgument(type != null, "BlockType cannot be null");
+
+        if (this.getBlockType().equals(type)) {
+            this.data = CraftBlockType.bukkitToMinecraftNew(type).defaultBlockState();
+        }
+    }
+
+    @Override
     public Material getType() {
         return this.data.getBukkitMaterial(); // Paper - optimise getType calls
+    }
+
+    @Override
+    public BlockType getBlockType() {
+        return this.data.getBukkitBlockType();
     }
 
     public void setFlags(int flags) {

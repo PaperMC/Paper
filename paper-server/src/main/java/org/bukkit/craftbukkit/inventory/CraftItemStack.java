@@ -32,6 +32,7 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -192,6 +193,11 @@ public final class CraftItemStack extends ItemStack {
     @Override
     public Material getType() {
         return this.handle != null ? CraftItemType.minecraftToBukkit(this.handle.getItem()) : Material.AIR;
+    }
+
+    @Override
+    public ItemType getItemType() {
+        return this.handle != null ? CraftItemType.minecraftToBukkitNew(this.handle.getItem()) : ItemType.AIR;
     }
 
     @Override
@@ -483,6 +489,25 @@ public final class CraftItemStack extends ItemStack {
         return mirrored;
     }
     // Paper end
+
+    @Override
+    public ItemStack withType(final ItemType type) {
+        if (type == ItemType.AIR) {
+            return CraftItemStack.asCraftMirror(null);
+        }
+
+        final net.minecraft.world.item.ItemStack copy = new net.minecraft.world.item.ItemStack(
+            CraftItemType.bukkitToMinecraftNew(type), this.getAmount()
+        );
+
+        if (this.handle != null) {
+            copy.applyComponents(this.handle.getComponentsPatch());
+        }
+
+        final CraftItemStack mirrored = CraftItemStack.asCraftMirror(copy);
+        mirrored.setItemMeta(mirrored.getItemMeta());
+        return mirrored;
+    }
 
     public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
     private net.minecraft.nbt.CompoundTag getPdcTag() {

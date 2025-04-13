@@ -37,6 +37,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFluidCollisionMode;
@@ -181,6 +182,17 @@ public class CraftBlock implements Block {
     }
 
     @Override
+    public void setType(final BlockType type) {
+        this.setType(type, true);
+    }
+
+    @Override
+    public void setType(BlockType type, boolean applyPhysics) {
+        Preconditions.checkArgument(type != null, "BlockType cannot be null");
+        this.setBlockData(type.createBlockData(), applyPhysics);
+    }
+
+    @Override
     public void setBlockData(BlockData data) {
         this.setBlockData(data, true);
     }
@@ -228,6 +240,11 @@ public class CraftBlock implements Block {
     @Override
     public Material getType() {
         return this.world.getBlockState(this.position).getBukkitMaterial(); // Paper - optimise getType calls
+    }
+
+    @Override
+    public BlockType getBlockType() {
+        return this.world.getBlockState(this.position).getBukkitBlockType();
     }
 
     @Override
