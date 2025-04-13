@@ -9,10 +9,16 @@ package io.papermc.paper.configuration;
 public interface ServerConfiguration {
 
     /**
-     * Gets whether the server is in {@link org.bukkit.Server#getOnlineMode() online mode}
-     * or behind a proxy that uses online mode.
+     * Gets whether the server is in online mode.
+     * <p>
+     * This method returns true if:
+     * <ul>
+     * <li>The server is in {@link org.bukkit.Server#getOnlineMode online mode},</li>
+     * <li>Velocity is enabled and configured to be in {@link #isVelocityOnlineMode() online mode}, or</li>
+     * <li>BungeeCord is enabled and configured to be in {@link #isBungeeCordOnlineMode() online mode}.</li>
+     * </ul>
      *
-     * @return true if the server is in proxied online mode, false otherwise
+     * @return whether the server is in online mode or behind a proxy configured for online mode
      */
     boolean isProxyOnlineMode();
 
@@ -31,16 +37,16 @@ public interface ServerConfiguration {
     boolean isBungeeCordEnabled();
 
     /**
-     * Gets whether the server is configured for Velocity online mode.
+     * Gets whether the server is configured to operate in Velocity online mode.
      *
-     * @return true if the server is in Velocity online mode, false otherwise
+     * @return true if the server is in Velocity online mode and Velocity is enabled, false otherwise
      */
     boolean isVelocityOnlineMode();
 
     /**
-     * Gets whether the server is configured for BungeeCord online mode.
+     * Gets whether the server is configured to operate in BungeeCord online mode.
      *
-     * @return true if the server is in BungeeCord online mode, false otherwise
+     * @return true if the server is in BungeeCord online mode and BungeeCord is enabled, false otherwise
      */
     boolean isBungeeCordOnlineMode();
 }
