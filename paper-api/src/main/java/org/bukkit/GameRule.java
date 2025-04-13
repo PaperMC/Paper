@@ -1,9 +1,9 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.HashMap;
 import java.util.Map;
-import io.papermc.paper.InternalAPIBridge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> type of rule (Boolean or Integer)
  */
-public final class GameRule<T> implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+public final class GameRule<T> implements net.kyori.adventure.translation.Translatable, FeatureDependant {
 
     private static Map<String, GameRule<?>> gameRules = new HashMap<>();
     // Boolean rules
@@ -336,15 +336,6 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
     @NotNull
     public Class<T> getType() {
         return type;
-    }
-
-    /**
-     * Get if this GameRule is currently enabled
-     *
-     * @return if this GameRule is currently enabled
-     */
-    public boolean isEnabled() {
-        return InternalAPIBridge.get().isGameRuleEnabled(this.name);
     }
 
     @Override
