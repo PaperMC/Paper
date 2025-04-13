@@ -264,19 +264,18 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * <br>
      * You <b>MUST</b> remove the item from the .getDrops() collection too or it will duplicate!
      * <pre>{@code
-     *    {@literal @EventHandler(ignoreCancelled = true)}
-     *     public void onPlayerDeath(PlayerDeathEvent event) {
-     *         for (Iterator<ItemStack> iterator = event.getDrops().iterator(); iterator.hasNext(); ) {
-     *             ItemStack drop = iterator.next();
-     *             List<String> lore = drop.getLore();
-     *             if (lore != null && !lore.isEmpty()) {
-     *                 if (lore.get(0).contains("(SOULBOUND)")) {
-     *                     iterator.remove();
-     *                     event.getItemsToKeep().add(drop);
-     *                 }
-     *             }
+     * private static final NamespacedKey soulboundKey = new NamespacedKey("testplugin", "soulbound");
+     *
+     * @EventHandler(ignoreCancelled = true)
+     * public void onPlayerDeath(PlayerDeathEvent event) {
+     *     for (Iterator<ItemStack> iterator = event.getDrops().iterator(); iterator.hasNext(); ) {
+     *         ItemStack drop = iterator.next();
+     *         if (drop.getPersistentDataContainer().getOrDefault(soulboundKey, PersistentDataType.BOOLEAN, false)) {
+     *             iterator.remove();
+     *             event.getItemsToKeep().add(drop);
      *         }
      *     }
+     * }
      * }</pre>
      * <p>
      * Adding an item to this list that the player did not previously have will give them the item on death.
