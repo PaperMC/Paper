@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Controls the behavior of the item as a tool.
- * @see io.papermc.paper.datacomponent.DataComponentTypes#TOOL
+ * @see DataComponentTypes#TOOL
  */
 @NullMarked
 @ApiStatus.Experimental
@@ -92,8 +93,6 @@ public interface Tool {
 
         /**
          * Overrides the mining speed if present and matched.
-         * <p>
-         * {@code true} will cause the block to mine at its most efficient speed, and drop items if the targeted block requires that.
          *
          * @return speed override
          */
@@ -101,6 +100,8 @@ public interface Tool {
 
         /**
          * Overrides whether this tool is considered 'correct' if present and matched.
+         * <p>
+         * {@code true} will cause the block to mine at its most efficient speed, and drop items if the targeted block requires that.
          *
          * @return a tri-state
          */
