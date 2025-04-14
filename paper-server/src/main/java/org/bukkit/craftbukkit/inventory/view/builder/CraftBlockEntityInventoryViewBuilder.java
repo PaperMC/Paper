@@ -93,6 +93,6 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     }
 
     public interface CraftBlockInventoryBuilder {
-        MenuProvider build(BlockPos blockPosition, BlockState blockData);
+        MenuProvider build(BlockPos pos, BlockState state);
     }
 }

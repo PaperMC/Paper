@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -10,48 +11,51 @@ public final class CraftLocation {
     private CraftLocation() {
     }
 
-    public static Location toBukkit(Vec3 vec3D) {
-        return CraftLocation.toBukkit(vec3D, null);
+    public static Location toBukkit(Vec3 vec3) {
+        return CraftLocation.toBukkit(vec3, null);
     }
 
-    public static Location toBukkit(Vec3 vec3D, World world) {
-        return CraftLocation.toBukkit(vec3D, world, 0.0F, 0.0F);
+    public static Location toBukkit(Vec3 vec3, World world) {
+        return CraftLocation.toBukkit(vec3, world, 0.0F, 0.0F);
     }
 
-    public static Location toBukkit(Vec3 vec3D, World world, float yaw, float pitch) {
-        return new Location(world, vec3D.x(), vec3D.y(), vec3D.z(), yaw, pitch);
+    public static Location toBukkit(Vec3 vec3, World world, float yaw, float pitch) {
+        return new Location(world, vec3.x(), vec3.y(), vec3.z(), yaw, pitch);
     }
 
-    public static Location toBukkit(BlockPos blockPosition) {
-        return CraftLocation.toBukkit(blockPosition, (World) null);
-    }
-    public static Location toBukkit(BlockPos blockPosition, net.minecraft.world.level.Level world) {
-        return CraftLocation.toBukkit(blockPosition, world.getWorld(), 0.0F, 0.0F);
-    }
-    public static Location toBukkit(BlockPos blockPosition, World world) {
-        return CraftLocation.toBukkit(blockPosition, world, 0.0F, 0.0F);
+    public static Location toBukkit(BlockPos pos) {
+        return CraftLocation.toBukkit(pos, (World) null);
     }
 
-    public static Location toBukkit(BlockPos blockPosition, World world, float yaw, float pitch) {
-        return new Location(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), yaw, pitch);
+    public static Location toBukkit(BlockPos pos, net.minecraft.world.level.Level world) {
+        return CraftLocation.toBukkit(pos, world.getWorld(), 0.0F, 0.0F);
     }
 
-    public static BlockPos toBlockPosition(Location location) {
-        return new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    public static Location toBukkit(BlockPos pos, World world) {
+        return CraftLocation.toBukkit(pos, world, 0.0F, 0.0F);
     }
 
-    // Paper start
-    public static net.minecraft.core.GlobalPos toGlobalPos(Location location) {
-        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle().dimension(), toBlockPosition(location));
+    public static Location toBukkit(BlockPos pos, World world, float yaw, float pitch) {
+        return new Location(world, pos.getX(), pos.getY(), pos.getZ(), yaw, pitch);
+    }
+
+    public static Location toBukkit(Node point, net.minecraft.world.level.Level world) {
+        return new Location(world.getWorld(), point.x, point.y, point.z);
+    }
+
+    public static BlockPos toBlockPosition(Location loc) {
+        return new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    public static net.minecraft.core.GlobalPos toGlobalPos(Location loc) {
+        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle().dimension(), toBlockPosition(loc));
     }
 
     public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
-        BlockPos pos = globalPos.pos();
-        return new org.bukkit.Location(net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()).getWorld(), pos.getX(), pos.getY(), pos.getZ());
+        return CraftLocation.toBukkit(globalPos.pos(), net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()));
     }
-    // Paper end
 
-    public static Vec3 toVec3D(Location location) {
-        return new Vec3(location.getX(), location.getY(), location.getZ());
+    public static Vec3 toVec3(Location loc) {
+        return new Vec3(loc.getX(), loc.getY(), loc.getZ());
     }
 }

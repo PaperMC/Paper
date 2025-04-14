@@ -1,18 +1,14 @@
 package org.bukkit.craftbukkit.legacy;
 
 import java.util.function.BiFunction;
-import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
-import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.fieldrename.FieldRenameData;
 import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
-import org.bukkit.craftbukkit.legacy.reroute.RequireCompatibility;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodName;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
 import org.bukkit.craftbukkit.util.ApiVersion;
@@ -61,7 +57,6 @@ public class FieldRename {
     //}
     // Paper end
 
-    // Paper start - DisplaySlot
     @DoNotReroute
     public static String convertDisplaySlot(final String from) {
         if (from.startsWith("SIDEBAR_") && !from.startsWith("SIDEBAR_TEAM_")) {
@@ -69,7 +64,6 @@ public class FieldRename {
         }
         return from;
     }
-    // Paper end - DisplaySlot
 
     // PatternType
     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
@@ -175,7 +169,7 @@ public class FieldRename {
             .change("DROPPED_ITEM", "ITEM")
             .change("LEASH_HITCH", "LEASH_KNOT")
             .change("ENDER_SIGNAL", "EYE_OF_ENDER")
-            .change("SPLASH_POTION", "POTION")
+            .change("POTION", "SPLASH_POTION")
             .change("THROWN_EXP_BOTTLE", "EXPERIENCE_BOTTLE")
             .change("PRIMED_TNT", "TNT")
             .change("FIREWORK", "FIREWORK_ROCKET")
@@ -453,6 +447,7 @@ public class FieldRename {
     private static final FieldRenameData ITEM_FLAG_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
             .change("HIDE_POTION_EFFECTS", "HIDE_ADDITIONAL_TOOLTIP")
+            .change("HIDE_ITEM_SPECIFICS", "HIDE_ADDITIONAL_TOOLTIP")
             .build();
 
     @DoNotReroute

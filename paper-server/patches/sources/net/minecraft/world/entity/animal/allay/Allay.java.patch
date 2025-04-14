@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/allay/Allay.java
 +++ b/net/minecraft/world/entity/animal/allay/Allay.java
-@@ -118,6 +_,7 @@
+@@ -116,6 +_,7 @@
      private float dancingAnimationTicks;
      private float spinningAnimationTicks;
      private float spinningAnimationTicks0;
@@ -8,7 +8,7 @@
  
      public Allay(EntityType<? extends Allay> entityType, Level level) {
          super(entityType, level);
-@@ -131,6 +_,12 @@
+@@ -129,6 +_,12 @@
          );
      }
  
@@ -21,7 +21,7 @@
      @Override
      protected Brain.Provider<Allay> brainProvider() {
          return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
-@@ -252,7 +_,7 @@
+@@ -248,7 +_,7 @@
      public void aiStep() {
          super.aiStep();
          if (!this.level().isClientSide && this.isAlive() && this.tickCount % 10 == 0) {
@@ -30,7 +30,7 @@
          }
  
          if (this.isDancing() && this.shouldStopDancing() && this.tickCount % 20 == 0) {
-@@ -320,7 +_,12 @@
+@@ -316,7 +_,12 @@
          ItemStack itemInHand = player.getItemInHand(hand);
          ItemStack itemInHand1 = this.getItemInHand(InteractionHand.MAIN_HAND);
          if (this.isDancing() && itemInHand.is(ItemTags.DUPLICATES_ALLAYS) && this.canDuplicate()) {
@@ -44,7 +44,7 @@
              this.level().broadcastEntityEvent(this, (byte)18);
              this.level().playSound(player, this, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 2.0F, 1.0F);
              this.removeInteractionItem(player, itemInHand);
-@@ -425,6 +_,7 @@
+@@ -421,6 +_,7 @@
      }
  
      private boolean shouldStopDancing() {
@@ -52,24 +52,24 @@
          return this.jukeboxPos == null
              || !this.jukeboxPos.closerToCenterThan(this.position(), GameEvent.JUKEBOX_PLAY.value().notificationRadius())
              || !this.level().getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
-@@ -489,7 +_,7 @@
-                 .ifPresent(data -> this.vibrationData = data);
-         }
- 
--        this.duplicationCooldown = compound.getInt("DuplicationCooldown");
-+        this.duplicationCooldown = compound.getLong("DuplicationCooldown"); // Paper - Load as long
-         this.entityData.set(DATA_CAN_DUPLICATE, compound.getBoolean("CanDuplicate"));
+@@ -475,7 +_,7 @@
+         this.readInventoryFromTag(compound, this.registryAccess());
+         RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+         this.vibrationData = compound.read("listener", VibrationSystem.Data.CODEC, registryOps).orElseGet(VibrationSystem.Data::new);
+-        this.setDuplicationCooldown(compound.getIntOr("DuplicationCooldown", 0));
++        this.setDuplicationCooldown(compound.getLongOr("DuplicationCooldown", 0)); // Paper - Load as long
      }
  
-@@ -508,15 +_,17 @@
-         }
+     @Override
+@@ -494,15 +_,17 @@
+         this.entityData.set(DATA_CAN_DUPLICATE, duplicationCooldown == 0L);
      }
  
 -    public void duplicateAllay() {
 +    @Nullable public Allay duplicateAllay() { // CraftBukkit - return allay
          Allay allay = EntityType.ALLAY.create(this.level(), EntitySpawnReason.BREEDING);
          if (allay != null) {
-             allay.moveTo(this.position());
+             allay.snapTo(this.position());
              allay.setPersistenceRequired();
              allay.resetDuplicationCooldown();
              this.resetDuplicationCooldown();

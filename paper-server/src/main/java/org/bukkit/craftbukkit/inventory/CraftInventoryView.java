@@ -73,12 +73,10 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
         return CraftItemStack.asCraftMirror(this.container.getSlot(slot).getItem());
     }
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component title() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.container.getTitle());
     }
-    // Paper end
 
     @Override
     public String getTitle() {
@@ -110,10 +108,10 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
         Preconditions.checkArgument(view.getPlayer() instanceof Player, "NPCs are not currently supported for this function");
         Preconditions.checkArgument(view.getTopInventory().getType().isCreatable(), "Only creatable inventories can have their title changed");
 
-        final ServerPlayer entityPlayer = (ServerPlayer) ((CraftHumanEntity) view.getPlayer()).getHandle();
-        final int containerId = entityPlayer.containerMenu.containerId;
+        final ServerPlayer player = (ServerPlayer) ((CraftHumanEntity) view.getPlayer()).getHandle();
+        final int containerId = player.containerMenu.containerId;
         final MenuType<?> windowType = CraftContainer.getNotchInventoryType(view.getTopInventory());
-        entityPlayer.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, CraftChatMessage.fromString(title)[0]));
-        ((Player) view.getPlayer()).updateInventory();
+        player.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, CraftChatMessage.fromString(title)[0]));
+        player.containerMenu.sendAllDataToRemote();
     }
 }

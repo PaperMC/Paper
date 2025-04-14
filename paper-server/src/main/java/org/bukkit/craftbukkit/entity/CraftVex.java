@@ -18,7 +18,6 @@ public class CraftVex extends CraftMonster implements Vex {
         return (net.minecraft.world.entity.monster.Vex) super.getHandle();
     }
 
-    // Paper start
     @Override
     public org.bukkit.entity.Mob getSummoner() {
         net.minecraft.world.entity.Mob owner = getHandle().getOwner();
@@ -49,7 +48,6 @@ public class CraftVex extends CraftMonster implements Vex {
     public void setLimitedLifetimeTicks(int ticks) {
         this.getHandle().limitedLifeTicks = ticks;
     }
-    // Paper end
 
     @Override
     public String toString() {
@@ -68,8 +66,8 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public Location getBound() {
-        BlockPos blockPosition = this.getHandle().getBoundOrigin();
-        return (blockPosition == null) ? null : CraftLocation.toBukkit(blockPosition, this.getWorld());
+        BlockPos pos = this.getHandle().getBoundOrigin();
+        return (pos == null) ? null : CraftLocation.toBukkit(pos, this.getWorld());
     }
 
     @Override

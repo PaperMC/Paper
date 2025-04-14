@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Turtle;
 
 public class CraftTurtle extends CraftAnimals implements Turtle {
@@ -31,17 +32,17 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
 
     @Override
     public org.bukkit.Location getHome() {
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getHomePos());
+        return CraftLocation.toBukkit(this.getHandle().homePos, this.getHandle().level());
     }
 
     @Override
     public void setHome(org.bukkit.Location location) {
-        this.getHandle().setHomePos(io.papermc.paper.util.MCUtil.toBlockPosition(location));
+        this.getHandle().homePos = CraftLocation.toBlockPosition(location);
     }
 
     @Override
     public boolean isGoingHome() {
-        return this.getHandle().isGoingHome();
+        return this.getHandle().goingHome;
     }
 
     @Override

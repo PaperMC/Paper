@@ -299,16 +299,16 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Force-closes the currently open inventory view for this player, if any.
      */
-    public void closeInventory();
+    default void closeInventory() {
+        this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
+    }
 
-    // Paper start
     /**
      * Force-closes the currently open inventory view for this player, if any.
      *
      * @param reason why the inventory is closing
      */
-    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
-    // Paper end
+    void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
 
     /**
      * Returns the ItemStack currently in your hand, can be empty.
@@ -382,7 +382,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     public void setCooldown(Material material, int ticks);
 
-    // Paper start
     /**
      * Sets player hurt direction
      *
@@ -390,16 +389,13 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Override
     void setHurtDirection(float hurtDirection);
-    // Paper end
 
-    // Paper start
     /**
      * If the player has slept enough to count towards passing the night.
      *
      * @return true if the player has slept enough
      */
     public boolean isDeeplySleeping();
-    // Paper end
 
     /**
      * Check whether a cooldown is active on the specified item.
@@ -440,7 +436,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getSleepTicks();
 
 
-    // Paper start - Potential bed api
     /**
      * Gets the Location of the player's bed, null if they have not slept
      * in one. This method will not attempt to validate if the current bed
@@ -466,14 +461,12 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Nullable
     Location getPotentialRespawnLocation();
-    // Paper end
-    // Paper start
+
     /**
      * @return the player's fishing hook if they are fishing
      */
     @Nullable
     FishHook getFishHook();
-    // Paper end
 
     /**
      * Attempts to make the entity sleep at the given location.

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/RandomizableContainer.java
 +++ b/net/minecraft/world/RandomizableContainer.java
-@@ -28,7 +_,7 @@
+@@ -26,7 +_,7 @@
  
      void setLootTable(@Nullable ResourceKey<LootTable> lootTable);
  
@@ -9,30 +9,21 @@
          this.setLootTable(lootTable);
          this.setLootTableSeed(seed);
      }
-@@ -50,15 +_,17 @@
- 
+@@ -49,8 +_,9 @@
      default boolean tryLoadLootTable(CompoundTag tag) {
-         if (tag.contains("LootTable", 8)) {
--            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(tag.getString("LootTable"))));
-+            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(tag.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
-+            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
-             if (tag.contains("LootTableSeed", 4)) {
-                 this.setLootTableSeed(tag.getLong("LootTableSeed"));
-             } else {
-                 this.setLootTableSeed(0L);
-             }
- 
--            return true;
-+            return this.lootableData() == null; // Paper - only track the loot table if there is chance for replenish
-         } else {
-+            setLootTable(null); // Paper - Fix removing loottable from nbt not updating block entity, MC-279196
-             return false;
-         }
+         ResourceKey<LootTable> resourceKey = tag.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+         this.setLootTable(resourceKey);
++        if (this.lootableData() != null && resourceKey != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
+         this.setLootTableSeed(tag.getLongOr("LootTableSeed", 0L));
+-        return resourceKey != null;
++        return resourceKey != null && this.lootableData() == null; // Paper - only track the loot table if there is chance for replenish
      }
-@@ -69,26 +_,42 @@
+ 
+     default boolean trySaveLootTable(CompoundTag tag) {
+@@ -59,26 +_,42 @@
              return false;
          } else {
-             tag.putString("LootTable", lootTable.location().toString());
+             tag.store("LootTable", LootTable.KEY_CODEC, lootTable);
 +            if (this.lootableData() != null) this.lootableData().saveNbt(tag); // Paper - LootTable API
              long lootTableSeed = this.getLootTableSeed();
              if (lootTableSeed != 0L) {
@@ -74,7 +65,7 @@
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -97,4 +_,17 @@
+@@ -87,4 +_,17 @@
              lootTable1.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }

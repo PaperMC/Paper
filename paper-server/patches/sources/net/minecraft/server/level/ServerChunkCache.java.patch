@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -73,6 +_,13 @@
+@@ -77,6 +_,13 @@
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -14,7 +14,7 @@
  
      public ServerChunkCache(
          ServerLevel level,
-@@ -121,6 +_,64 @@
+@@ -127,6 +_,64 @@
          this.clearCache();
      }
  
@@ -46,12 +46,12 @@
 +        return holder.getLatestChunk();
 +    }
 +
-+    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
++    public void addTicketAtLevel(TicketType ticketType, ChunkPos chunkPos, int ticketLevel) {
++        this.ticketStorage.addTicket(new Ticket(ticketType, ticketLevel), chunkPos);
 +    }
 +
-+    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
++    public void removeTicketAtLevel(TicketType ticketType, ChunkPos chunkPos, int ticketLevel) {
++        this.ticketStorage.removeTicket(new Ticket(ticketType, ticketLevel), chunkPos);
 +    }
 +
 +    // "real" get chunk if loaded
@@ -79,7 +79,7 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -160,7 +_,7 @@
+@@ -166,7 +_,7 @@
              for (int i = 0; i < 4; i++) {
                  if (packedChunkPos == this.lastChunkPos[i] && chunkStatus == this.lastChunkStatus[i]) {
                      ChunkAccess chunkAccess = this.lastChunk[i];
@@ -88,7 +88,7 @@
                          return chunkAccess;
                      }
                  }
-@@ -169,6 +_,7 @@
+@@ -175,6 +_,7 @@
              profilerFiller.incrementCounter("getChunkCacheMiss");
              CompletableFuture<ChunkResult<ChunkAccess>> chunkFutureMainThread = this.getChunkFutureMainThread(x, z, chunkStatus, requireChunk);
              this.mainThreadProcessor.managedBlock(chunkFutureMainThread::isDone);
@@ -96,7 +96,7 @@
              ChunkResult<ChunkAccess> chunkResult = chunkFutureMainThread.join();
              ChunkAccess chunkAccess1 = chunkResult.orElse(null);
              if (chunkAccess1 == null && requireChunk) {
-@@ -240,7 +_,15 @@
+@@ -246,7 +_,15 @@
          long packedChunkPos = chunkPos.toLong();
          int i = ChunkLevel.byStatus(chunkStatus);
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(packedChunkPos);
@@ -109,11 +109,11 @@
 +            currentlyUnloading = (oldChunkState.isOrAfter(FullChunkStatus.FULL) && !currentChunkState.isOrAfter(FullChunkStatus.FULL));
 +        }
 +        if (requireChunk && !currentlyUnloading) {
-+        // CraftBukkit end
-             this.distanceManager.addTicket(TicketType.UNKNOWN, chunkPos, i, chunkPos);
++            // CraftBukkit end
+             this.addTicket(new Ticket(TicketType.UNKNOWN, i), chunkPos);
              if (this.chunkAbsent(visibleChunkIfPresent, i)) {
                  ProfilerFiller profilerFiller = Profiler.get();
-@@ -260,7 +_,7 @@
+@@ -266,7 +_,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder chunkHolder, int status) {
@@ -122,16 +122,7 @@
      }
  
      @Override
-@@ -287,7 +_,7 @@
-         return this.mainThreadProcessor.pollTask();
-     }
- 
--    boolean runDistanceManagerUpdates() {
-+    public boolean runDistanceManagerUpdates() { // Paper - public
-         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
-         boolean flag1 = this.chunkMap.promoteChunkMap();
-         this.chunkMap.runGenerationTasks();
-@@ -315,17 +_,39 @@
+@@ -321,17 +_,39 @@
  
      @Override
      public void close() throws IOException {
@@ -155,7 +146,7 @@
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
 +
 +        gameprofilerfiller.push("purge");
-+        this.distanceManager.purgeStaleTickets();
++        this.ticketStorage.purgeStaleTickets();
 +        this.runDistanceManagerUpdates();
 +        gameprofilerfiller.popPush("unload");
 +        this.chunkMap.tick(() -> true);
@@ -170,10 +161,10 @@
          profilerFiller.push("purge");
 -        if (this.level.tickRateManager().runsNormally() || !tickChunks) {
 +        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
-             this.distanceManager.purgeStaleTickets();
+             this.ticketStorage.purgeStaleTickets();
          }
  
-@@ -400,12 +_,20 @@
+@@ -388,12 +_,20 @@
          );
          this.lastSpawnState = spawnState;
          profiler.popPush("spawnAndTick");
@@ -197,16 +188,7 @@
          } else {
              filteredSpawningCategories = List.of();
          }
-@@ -413,7 +_,7 @@
-         for (LevelChunk levelChunk : chunks) {
-             ChunkPos pos = levelChunk.getPos();
-             levelChunk.incrementInhabitedTime(timeInhabited);
--            if (!filteredSpawningCategories.isEmpty() && this.level.getWorldBorder().isWithinBounds(pos)) {
-+            if (!filteredSpawningCategories.isEmpty() && this.level.getWorldBorder().isWithinBounds(pos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(pos, true)) { // Spigot
-                 NaturalSpawner.spawnForChunk(this.level, levelChunk, spawnState, filteredSpawningCategories);
-             }
- 
-@@ -526,8 +_,13 @@
+@@ -544,8 +_,13 @@
  
      @Override
      public void setSpawnSettings(boolean spawnSettings) {
@@ -221,7 +203,7 @@
      }
  
      public String getChunkDebugData(ChunkPos chunkPos) {
-@@ -603,12 +_,18 @@
+@@ -618,12 +_,18 @@
  
          @Override
          public boolean pollTask() {

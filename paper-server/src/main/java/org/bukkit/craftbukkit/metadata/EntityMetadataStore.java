@@ -5,7 +5,7 @@ import org.bukkit.metadata.MetadataStore;
 import org.bukkit.metadata.MetadataStoreBase;
 
 /**
- * An EntityMetadataStore stores metadata values for all {@link Entity} classes an their descendants.
+ * An EntityMetadataStore stores metadata values for all {@link Entity} classes and their descendants.
  */
 public class EntityMetadataStore extends MetadataStoreBase<Entity> implements MetadataStore<Entity> {
     /**

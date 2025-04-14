@@ -4,17 +4,18 @@ import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Waterlogged;
 
 public interface DecoratedPot extends Directional, Waterlogged {
-    // Paper start - add missing block data api
-    /**
-     * @return whether the pot is cracked
-     */
-    public boolean isCracked();
 
     /**
-     * Set whether the pot is cracked.
+     * Gets the value of the 'cracked' property.
      *
-     * @param cracked whether the pot is cracked
+     * @return the 'cracked' value
      */
-    public void setCracked(boolean cracked);
-    // Paper end - add missing block data api
+    boolean isCracked();
+
+    /**
+     * Sets the value of the 'cracked' property.
+     *
+     * @param cracked the new 'cracked' value
+     */
+    void setCracked(boolean cracked);
 }

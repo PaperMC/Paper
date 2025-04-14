@@ -1,22 +1,22 @@
 --- a/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
 +++ b/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
-@@ -237,7 +_,14 @@
-                                 nextSpawnData.getEquipment().ifPresent(mob::equip);
-                             }
+@@ -238,7 +_,14 @@
+                             nextSpawnData.getEquipment().ifPresent(mob::equip);
+                         }
  
--                            if (!level.tryAddFreshEntityWithPassengers(entity)) {
-+                            entity.spawnedViaMobSpawner = true; // Paper
-+                            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER; // Paper - Entity#getEntitySpawnReason
-+                            // CraftBukkit start
-+                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
-+                                return Optional.empty();
-+                            }
-+                            if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
-+                                // CraftBukkit end
-                                 return Optional.empty();
-                             } else {
-                                 TrialSpawner.FlameParticle flameParticle = this.isOminous
-@@ -260,6 +_,19 @@
+-                        if (!level.tryAddFreshEntityWithPassengers(entity)) {
++                        // Paper start - TrialSpawnerSpawnEvent + SpawnReason
++                        entity.spawnedViaMobSpawner = true; // Mark entity as spawned via spawner
++                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER; // Paper - Entity#getEntitySpawnReason
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
++                            return Optional.empty();
++                        }
++                        if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
++                        // Paper end - TrialSpawnerSpawnEvent + SpawnReason
+                             return Optional.empty();
+                         } else {
+                             TrialSpawner.FlameParticle flameParticle = this.isOminous ? TrialSpawner.FlameParticle.OMINOUS : TrialSpawner.FlameParticle.NORMAL;
+@@ -258,6 +_,19 @@
          LootParams lootParams = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
          ObjectArrayList<ItemStack> randomItems = lootTable1.getRandomItems(lootParams);
          if (!randomItems.isEmpty()) {

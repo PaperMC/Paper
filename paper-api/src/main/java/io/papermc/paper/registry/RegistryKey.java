@@ -19,8 +19,11 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.memory.MemoryKey;
@@ -79,20 +82,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<BlockType> BLOCK = create("block");
     /**
      * @apiNote use preferably only in the context of registry entries.
+     * @see io.papermc.paper.registry.data
      * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
     @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
-    /**
-     * Built-in registry for cat variants.
-     * @see io.papermc.paper.registry.keys.CatVariantKeys
-     */
-    RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
-    /**
-     * Built-in registry for frog variants.
-     * @see io.papermc.paper.registry.keys.FrogVariantKeys
-     */
-    RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
     /**
      * Built-in registry for villager professions.
      * @see io.papermc.paper.registry.keys.VillagerProfessionKeys
@@ -130,7 +124,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<Sound> SOUND_EVENT = create("sound_event");
     /**
      * Built-in registry for data component types.
-     * <!-- @see io.papermc.paper.registry.keys.DataComponentTypeKeys -->
+     * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
 
@@ -170,6 +164,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
     /**
+     * Data-driven registry for wolf sound variants.
+     * @see io.papermc.paper.registry.keys.WolfSoundVariantKeys
+     */
+    RegistryKey<Wolf.SoundVariant> WOLF_SOUND_VARIANT = create("wolf_sound_variant");
+    /**
      * Data-driven registry for enchantments.
      * @see io.papermc.paper.registry.keys.EnchantmentKeys
      */
@@ -194,6 +193,32 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.InstrumentKeys
      */
     RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
+    /**
+     * Data-driven registry for cat variants.
+     * @see io.papermc.paper.registry.keys.CatVariantKeys
+     */
+    RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
+    /**
+     * Data-driven registry for frog variants.
+     * @see io.papermc.paper.registry.keys.FrogVariantKeys
+     */
+    RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
+    /**
+     * Data-driven registry for chicken variants.
+     * @see io.papermc.paper.registry.keys.ChickenVariantKeys
+     */
+    RegistryKey<Chicken.Variant> CHICKEN_VARIANT = create("chicken_variant");
+    /**
+     * Data-driven registry for cow variants.
+     * @see io.papermc.paper.registry.keys.CowVariantKeys
+     */
+    RegistryKey<Cow.Variant> COW_VARIANT = create("cow_variant");
+    /**
+     * Data-driven registry for pig variants.
+     * @see io.papermc.paper.registry.keys.PigVariantKeys
+     */
+    RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
+
 
 
     /* ******************* *
