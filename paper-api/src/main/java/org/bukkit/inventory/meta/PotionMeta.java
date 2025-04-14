@@ -82,7 +82,7 @@ public interface PotionMeta extends ItemMeta {
      * @return an unmodifiable list of all effects.
      */
     @NotNull
-    List<PotionEffect> getEffects();
+    List<PotionEffect> getAllEffects();
 
     /**
      * Adds a custom potion effect to this potion.
