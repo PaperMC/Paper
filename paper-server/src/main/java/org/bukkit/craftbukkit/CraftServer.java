@@ -1345,7 +1345,7 @@ public final class CraftServer implements Server {
             registryAccess = levelDataAndDimensions.dimensions().dimensionsRegistryAccess();
         } else {
             LevelSettings levelSettings;
-            WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
+            WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), creator.bonusChest());
             WorldDimensions worldDimensions;
 
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
