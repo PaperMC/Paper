@@ -100,10 +100,11 @@ public class PlayerRespawnEvent extends PlayerEvent {
     /**
      * Gets whether the player is missing a valid respawn block.
      * <p>
-     * This can occur if the player has no home bed, no charged respawn anchor,
-     * or if the respawn block is obstructed.
+     * This will occur if the players respawn block is obstructed,
+     * or it is the first death after it was either destroyed or
+     * in case of a respawn anchor, ran out of charges.
      *
-     * @return {@code true} if the player is missing a valid respawn block, otherwise {@code false}.
+     * @return whether the player is missing a valid respawn block
      */
     public boolean isMissingRespawnBlock() {
         return this.missingRespawnBlock;
