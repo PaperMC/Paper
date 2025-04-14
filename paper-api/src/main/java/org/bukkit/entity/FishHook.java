@@ -371,7 +371,6 @@ public interface FishHook extends Projectile {
 
     /**
      * Retrieve this fishhook back to the casting player.
-     * <p>This will act the same as if the player manually reels in their fishhook.</p>
      *
      * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
      * @return The amount of damage which would be applied to the itemstack
