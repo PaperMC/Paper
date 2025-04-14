@@ -41,6 +41,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
@@ -920,6 +921,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         FireworkRocketEntity fireworks = new FireworkRocketEntity(this.getHandle().level(), CraftItemStack.asNMSCopy(fireworkItemStack), this.getHandle());
         boolean success = this.getHandle().level().addFreshEntity(fireworks, SpawnReason.CUSTOM);
         return success ? (Firework) fireworks.getBukkitEntity() : null;
+    }
+
+    @Override
+    public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
+        net.minecraft.world.entity.EquipmentSlot equipmentSlot = CraftEquipmentSlot.getNMS(slot);
+        return equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR || equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HAND;
     }
 
     @Override
