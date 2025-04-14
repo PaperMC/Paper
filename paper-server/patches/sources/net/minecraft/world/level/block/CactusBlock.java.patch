@@ -1,33 +1,49 @@
 --- a/net/minecraft/world/level/block/CactusBlock.java
 +++ b/net/minecraft/world/level/block/CactusBlock.java
-@@ -56,14 +_,16 @@
-                 i++;
-             }
+@@ -58,25 +_,29 @@
+             int ageValue = state.getValue(AGE);
  
--            if (i < 3) {
-+            if (i < level.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable cactus/bamboo/reed growth height
-                 int ageValue = state.getValue(AGE);
--                if (ageValue == 15) {
--                    level.setBlockAndUpdate(blockPos, this.defaultBlockState());
-+
-+                int modifier = level.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
-+                if (ageValue >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, blockPos, this.defaultBlockState()); // CraftBukkit
-                     BlockState blockState = state.setValue(AGE, Integer.valueOf(0));
-                     level.setBlock(pos, blockState, 4);
-                     level.neighborChanged(blockState, blockPos, this, null, false);
--                } else {
-+                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
-                     level.setBlock(pos, state.setValue(AGE, Integer.valueOf(ageValue + 1)), 4);
+             while (level.getBlockState(pos.below(i)).is(this)) {
+-                if (++i == 3 && ageValue == 15) {
++                if (++i == level.paperConfig().maxGrowthHeight.cactus && ageValue == 15) { // Paper - Configurable cactus/bamboo/reed growth height
+                     return;
                  }
              }
-@@ -113,7 +_,8 @@
+ 
+             if (ageValue == 8 && this.canSurvive(this.defaultBlockState(), level, pos.above())) {
+-                double d = i >= 3 ? 0.25 : 0.1;
++                double d = i >= level.paperConfig().maxGrowthHeight.cactus ? 0.25 : 0.1; // Paper - Configurable cactus/bamboo/reed growth height
+                 if (random.nextDouble() <= d) {
+-                    level.setBlockAndUpdate(blockPos, Blocks.CACTUS_FLOWER.defaultBlockState());
+-                }
+-            } else if (ageValue == 15 && i < 3) {
+-                level.setBlockAndUpdate(blockPos, this.defaultBlockState());
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, blockPos, Blocks.CACTUS_FLOWER.defaultBlockState(), 3);
++                }
++            } else if (ageValue == 15 && i < level.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable cactus/bamboo/reed growth height
++                // Paper start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, blockPos, this.defaultBlockState(), 3)) {
++                    return;
++                }
++                // Paper end
+                 BlockState blockState = state.setValue(AGE, 0);
+                 level.setBlock(pos, blockState, 260);
+                 level.neighborChanged(blockState, blockPos, this, null, false);
+             }
+ 
+             if (ageValue < 15) {
+-                level.setBlock(pos, state.setValue(AGE, ageValue + 1), 260);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(AGE, ageValue + 1), 260); // Paper
+             }
+         }
+     }
+@@ -124,7 +_,8 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 -        entity.hurt(level.damageSources().cactus(), 1.0F);
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-+        entity.hurt(level.damageSources().cactus().directBlock(level, pos), 1.0F); // CraftBukkit
++        entity.hurt(level.damageSources().cactus().eventBlockDamager(level, pos), 1.0F); // CraftBukkit
      }
  
      @Override

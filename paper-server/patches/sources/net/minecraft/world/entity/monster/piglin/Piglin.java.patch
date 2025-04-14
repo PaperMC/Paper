@@ -1,69 +1,41 @@
 --- a/net/minecraft/world/entity/monster/piglin/Piglin.java
 +++ b/net/minecraft/world/entity/monster/piglin/Piglin.java
-@@ -59,6 +_,25 @@
- import net.minecraft.world.level.ServerLevelAccessor;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
-+// CraftBukkit start
-+import java.util.stream.Collectors;
-+import java.util.HashSet;
-+import java.util.Set;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.core.registries.BuiltInRegistries;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.ListTag;
-+import net.minecraft.nbt.StringTag;
-+import net.minecraft.nbt.Tag;
-+import net.minecraft.network.syncher.EntityDataAccessor;
-+import net.minecraft.network.syncher.EntityDataSerializers;
-+import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.sounds.SoundEvent;
-+import net.minecraft.sounds.SoundEvents;
-+import net.minecraft.world.item.Item;
-+// CraftBukkit end
- 
- public class Piglin extends AbstractPiglin implements CrossbowAttackMob, InventoryCarrier {
-     private static final EntityDataAccessor<Boolean> DATA_BABY_ID = SynchedEntityData.defineId(Piglin.class, EntityDataSerializers.BOOLEAN);
-@@ -122,6 +_,10 @@
+@@ -124,6 +_,12 @@
          MemoryModuleType.ATE_RECENTLY,
          MemoryModuleType.NEAREST_REPELLENT
      );
 +    // CraftBukkit start - Custom bartering and interest list
-+    public Set<Item> allowedBarterItems = new HashSet<>();
-+    public Set<Item> interestItems = new HashSet<>();
++    public java.util.Set<Item> allowedBarterItems = new java.util.HashSet<>();
++    public java.util.Set<Item> interestItems = new java.util.HashSet<>();
++    private static final com.mojang.serialization.Codec<java.util.Set<net.minecraft.world.item.Item>> ITEM_SET_CODEC = net.minecraft.core.registries.BuiltInRegistries.ITEM
++        .byNameCodec().listOf().xmap(java.util.HashSet::new, List::copyOf);
 +    // CraftBukkit end
  
      public Piglin(EntityType<? extends AbstractPiglin> entityType, Level level) {
          super(entityType, level);
-@@ -140,6 +_,14 @@
-         }
- 
+@@ -136,6 +_,10 @@
+         compound.putBoolean("IsBaby", this.isBaby());
+         compound.putBoolean("CannotHunt", this.cannotHunt);
          this.writeInventoryToTag(compound, this.registryAccess());
 +        // CraftBukkit start
-+        ListTag barterList = new ListTag();
-+        this.allowedBarterItems.stream().map(BuiltInRegistries.ITEM::getKey).map(ResourceLocation::toString).map(StringTag::valueOf).forEach(barterList::add);
-+        compound.put("Bukkit.BarterList", barterList);
-+        ListTag interestList = new ListTag();
-+        this.interestItems.stream().map(BuiltInRegistries.ITEM::getKey).map(ResourceLocation::toString).map(StringTag::valueOf).forEach(interestList::add);
-+        compound.put("Bukkit.InterestList", interestList);
++        compound.store("Bukkit.BarterList", ITEM_SET_CODEC, this.allowedBarterItems);
++        compound.store("Bukkit.InterestList", ITEM_SET_CODEC, this.interestItems);
 +        // CraftBukkit end
      }
  
      @Override
-@@ -148,6 +_,10 @@
-         this.setBaby(compound.getBoolean("IsBaby"));
-         this.setCannotHunt(compound.getBoolean("CannotHunt"));
+@@ -144,6 +_,10 @@
+         this.setBaby(compound.getBooleanOr("IsBaby", false));
+         this.setCannotHunt(compound.getBooleanOr("CannotHunt", false));
          this.readInventoryFromTag(compound, this.registryAccess());
 +        // CraftBukkit start
-+        this.allowedBarterItems = compound.getList("Bukkit.BarterList", 8).stream().map(Tag::getAsString).map(ResourceLocation::tryParse).map(BuiltInRegistries.ITEM::getValue).collect(Collectors.toCollection(HashSet::new));
-+        this.interestItems = compound.getList("Bukkit.InterestList", 8).stream().map(Tag::getAsString).map(ResourceLocation::tryParse).map(BuiltInRegistries.ITEM::getValue).collect(Collectors.toCollection(HashSet::new));
++        this.allowedBarterItems = compound.read("Bukkit.BarterList", ITEM_SET_CODEC).orElseGet(java.util.HashSet::new);
++        this.interestItems = compound.read("Bukkit.InterestList", ITEM_SET_CODEC).orElseGet(java.util.HashSet::new);
 +        // CraftBukkit end
      }
  
      @VisibleForDebug
-@@ -325,7 +_,9 @@
+@@ -321,7 +_,9 @@
      @Override
      protected void finishConversion(ServerLevel serverLevel) {
          PiglinAi.cancelAdmiring(serverLevel, this);
@@ -73,7 +45,7 @@
          super.finishConversion(serverLevel);
      }
  
-@@ -400,7 +_,7 @@
+@@ -397,7 +_,7 @@
      }
  
      protected void holdInOffHand(ItemStack stack) {
@@ -82,7 +54,7 @@
              this.setItemSlot(EquipmentSlot.OFFHAND, stack);
              this.setGuaranteedDrop(EquipmentSlot.OFFHAND);
          } else {
-@@ -425,15 +_,15 @@
+@@ -422,15 +_,15 @@
              return false;
          } else {
              TagKey<Item> preferredWeaponType = this.getPreferredWeaponType();

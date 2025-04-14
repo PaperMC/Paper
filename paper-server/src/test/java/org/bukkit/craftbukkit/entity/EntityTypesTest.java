@@ -11,6 +11,7 @@ import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.AbstractCow;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
@@ -56,6 +57,7 @@ import org.bukkit.entity.SplashPotion;
 import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrowableProjectile;
+import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
@@ -74,6 +76,7 @@ public class EntityTypesTest {
     // Entity classes, which do not have any entity type / entity type data
     private static final List<Class<? extends Entity>> EXCLUDE = Arrays.asList(
             AbstractArrow.class,
+            AbstractCow.class,
             AbstractHorse.class,
             AbstractSkeleton.class,
             AbstractVillager.class,
@@ -102,7 +105,6 @@ public class EntityTypesTest {
             Hanging.class,
             HumanEntity.class,
             Illager.class,
-            LingeringPotion.class,
             LivingEntity.class,
             Minecart.class,
             Mob.class,
@@ -114,10 +116,10 @@ public class EntityTypesTest {
             Sittable.class,
             SizedFireball.class,
             Spellcaster.class,
-            SplashPotion.class,
             Steerable.class,
             Tameable.class,
             ThrowableProjectile.class,
+            ThrownPotion.class,
             TippedArrow.class,
             Vehicle.class,
             WaterMob.class

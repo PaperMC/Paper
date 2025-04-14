@@ -5,7 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,15 +16,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public class EntityPotionEffectEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final PotionEffect oldEffect;
     private final PotionEffect newEffect;
     private final Cause cause;
     private final Action action;
     private boolean override;
 
-    @Contract("_, null, null, _, _, _ -> fail")
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public EntityPotionEffectEvent(@NotNull LivingEntity livingEntity, @Nullable PotionEffect oldEffect, @Nullable PotionEffect newEffect, @NotNull Cause cause, @NotNull Action action, boolean override) {
         super(livingEntity);
         this.oldEffect = oldEffect;
@@ -37,23 +39,23 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     /**
      * Gets the old potion effect of the changed type, which will be removed.
      *
-     * @return The old potion effect or null if the entity did not have the
+     * @return The old potion effect or {@code null} if the entity did not have the
      * changed effect type.
      */
     @Nullable
     public PotionEffect getOldEffect() {
-        return oldEffect;
+        return this.oldEffect;
     }
 
     /**
      * Gets new potion effect of the changed type to be applied.
      *
-     * @return The new potion effect or null if the effect of the changed type
+     * @return The new potion effect or {@code null} if the effect of the changed type
      * will be removed.
      */
     @Nullable
     public PotionEffect getNewEffect() {
-        return newEffect;
+        return this.newEffect;
     }
 
     /**
@@ -63,7 +65,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      */
     @NotNull
     public Cause getCause() {
-        return cause;
+        return this.cause;
     }
 
     /**
@@ -73,7 +75,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      */
     @NotNull
     public Action getAction() {
-        return action;
+        return this.action;
     }
 
     /**
@@ -83,7 +85,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      */
     @NotNull
     public PotionEffectType getModifiedType() {
-        return (oldEffect == null) ? ((newEffect == null) ? null : newEffect.getType()) : oldEffect.getType();
+        return (this.oldEffect == null) ? ((this.newEffect == null) ? null : this.newEffect.getType()) : this.oldEffect.getType(); // todo not null?
     }
 
     /**
@@ -93,7 +95,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return If the new effect will override the old one.
      */
     public boolean isOverride() {
-        return override;
+        return this.override;
     }
 
     /**
@@ -108,23 +110,23 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -221,7 +223,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          *
          * @deprecated no longer used, player now gets an ominous bottle instead
          */
-        @Deprecated(since = "1.21") // Paper
+        @Deprecated(since = "1.21", forRemoval = true)
         PATROL_CAPTAIN,
         /**
          * When a potion effect is modified through the plugin methods.

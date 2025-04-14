@@ -30,7 +30,6 @@ public interface Warden extends Monster {
      */
     int getAnger(@NotNull Entity entity);
 
-    // Paper start
     /**
      * Gets the highest anger level of this warden.
      * <p>
@@ -40,7 +39,6 @@ public interface Warden extends Monster {
      * @return highest anger level
      */
     int getHighestAnger();
-    // Paper end
 
     /**
      * Increases the anger level of this warden.

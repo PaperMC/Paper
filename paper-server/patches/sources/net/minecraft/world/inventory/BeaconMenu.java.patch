@@ -21,17 +21,17 @@
      private final ContainerLevelAccess access;
      private final ContainerData beaconData;
 +    // CraftBukkit start
-+    private org.bukkit.craftbukkit.inventory.view.CraftBeaconView bukkitEntity = null;
-+    private net.minecraft.world.entity.player.Inventory player;
++    private @Nullable org.bukkit.craftbukkit.inventory.view.CraftBeaconView view = null;
++    private final net.minecraft.world.entity.player.Inventory inventory;
 +    // CraftBukkit end
  
      public BeaconMenu(int containerId, Container container) {
          this(containerId, container, new SimpleContainerData(3), ContainerLevelAccess.NULL);
-@@ -43,6 +_,27 @@
+@@ -43,6 +_,25 @@
  
      public BeaconMenu(int containerId, Container container, ContainerData beaconData, ContainerLevelAccess access) {
          super(MenuType.BEACON, containerId);
-+        this.player = (net.minecraft.world.entity.player.Inventory) container; // CraftBukkit - TODO: check this
++        this.inventory = (net.minecraft.world.entity.player.Inventory) container; // CraftBukkit - TODO: check this
 +        // Paper - Add missing InventoryHolders
 +        this.beacon = new SimpleContainer(this.createBlockHolder(access), 1) {
 +            @Override
@@ -44,12 +44,10 @@
 +                return 1;
 +            }
 +
-+            // Paper start - Fix inventories returning null Locations
 +            @Override
 +            public org.bukkit.Location getLocation() {
 +                return access.getLocation();
 +            }
-+            // Paper end - Fix inventories returning null Locations
 +        };
 +        // Paper end
          checkContainerDataCount(beaconData, 3);
@@ -83,7 +81,7 @@
 -            this.beaconData.set(1, encodeEffect(primaryEffect.orElse(null)));
 -            this.beaconData.set(2, encodeEffect(secondaryEffect.orElse(null)));
 +            // Paper start - Add PlayerChangeBeaconEffectEvent
-+            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primaryEffect), convert(secondaryEffect), this.access.getLocation().getBlock());
++            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.inventory.player.getBukkitEntity(), convert(primaryEffect), convert(secondaryEffect), this.access.getLocation().getBlock());
 +            if (event.callEvent()) {
 +                // Paper end - Add PlayerChangeBeaconEffectEvent
 +                this.beaconData.set(1, BeaconMenu.encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getPrimary())));// CraftBukkit - decompile error
@@ -104,13 +102,13 @@
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.craftbukkit.inventory.view.CraftBeaconView getBukkitView() {
-+        if (this.bukkitEntity != null) {
-+            return this.bukkitEntity;
++        if (this.view != null) {
++            return this.view;
 +        }
 +
 +        org.bukkit.craftbukkit.inventory.CraftInventoryBeacon inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon(this.beacon);
-+        this.bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftBeaconView(this.player.player.getBukkitEntity(), inventory, this);
-+        return this.bukkitEntity;
++        this.view = new org.bukkit.craftbukkit.inventory.view.CraftBeaconView(this.inventory.player.getBukkitEntity(), inventory, this);
++        return this.view;
 +    }
 +    // CraftBukkit end
  }

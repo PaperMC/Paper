@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -182,7 +_,7 @@
+@@ -178,7 +_,7 @@
      final List<ServerPlayer> players = Lists.newArrayList();
      public final ServerChunkCache chunkSource;
      private final MinecraftServer server;
@@ -9,17 +9,18 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -209,11 +_,132 @@
+@@ -205,11 +_,131 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
 +    // CraftBukkit start
 +    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
-+    public final UUID uuid;
++    public final java.util.UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
-+    public LevelChunk getChunkIfLoaded(int x, int z) {
++    @Override
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
 +
@@ -91,14 +92,12 @@
 +        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
 +        int[] loadedChunks = new int[1];
 +
-+        Long holderIdentifier = Long.valueOf(chunkProvider.chunkFutureAwaitCounter++);
-+
 +        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
 +            if (chunk != null) {
 +                int ticketLevel = Math.max(33, chunkProvider.chunkMap.getUpdatingChunkIfPresent(chunk.getPos().toLong()).getTicketLevel());
 +                ret.add(chunk);
 +                ticketLevels.add(ticketLevel);
-+                chunkProvider.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunk.getPos(), ticketLevel, holderIdentifier);
++                chunkProvider.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunk.getPos(), ticketLevel);
 +            }
 +            if (++loadedChunks[0] == requiredChunks) {
 +                try {
@@ -108,8 +107,8 @@
 +                        ChunkPos chunkPos = ret.get(i).getPos();
 +                        int ticketLevel = ticketLevels.getInt(i);
 +
-+                        chunkProvider.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
-+                        chunkProvider.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, holderIdentifier);
++                        chunkProvider.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel);
++                        chunkProvider.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel);
 +                    }
 +                }
 +            }
@@ -128,7 +127,7 @@
 +    // Paper start - optimise getPlayerByUUID
 +    @Nullable
 +    @Override
-+    public Player getPlayerByUUID(UUID uuid) {
++    public Player getPlayerByUUID(java.util.UUID uuid) {
 +        final Player player = this.getServer().getPlayerList().getPlayer(uuid);
 +        return player != null && player.level() == this ? player : null;
 +    }
@@ -143,7 +142,7 @@
          ResourceKey<Level> dimension,
          LevelStem levelStem,
          ChunkProgressListener progressListener,
-@@ -221,14 +_,38 @@
+@@ -217,14 +_,38 @@
          long biomeZoomSeed,
          List<CustomSpawner> customSpawners,
          boolean tickTime,
@@ -158,7 +157,7 @@
 +        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
 +        this.pvpMode = server.isPvpAllowed();
 +        this.levelStorageAccess = levelStorageAccess;
-+        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
++        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        // CraftBukkit end
          this.tickTime = tickTime;
          this.server = server;
@@ -184,7 +183,7 @@
          boolean flag = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityPersistentStorage = new EntityStorage(
-@@ -250,8 +_,8 @@
+@@ -246,8 +_,8 @@
              server.getStructureManager(),
              dispatcher,
              chunkGenerator,
@@ -195,7 +194,7 @@
              flag,
              progressListener,
              this.entityManager::updateChunkStatus,
-@@ -272,7 +_,7 @@
+@@ -268,7 +_,7 @@
              this.chunkSource.chunkScanner(),
              this.registryAccess(),
              server.getStructureManager(),
@@ -204,7 +203,7 @@
              chunkGenerator,
              this.chunkSource.randomState(),
              this,
-@@ -280,9 +_,9 @@
+@@ -276,9 +_,9 @@
              seed,
              fixerUpper
          );
@@ -217,10 +216,10 @@
          } else {
              this.dragonFight = null;
          }
-@@ -292,7 +_,15 @@
-         this.randomSequences = Objects.requireNonNullElseGet(
-             randomSequences, () -> this.getDataStorage().computeIfAbsent(RandomSequences.factory(seed), "random_sequences")
-         );
+@@ -286,7 +_,15 @@
+         this.sleepStatus = new SleepStatus();
+         this.gameEventDispatcher = new GameEventDispatcher(this);
+         this.randomSequences = Objects.requireNonNullElseGet(randomSequences, () -> this.getDataStorage().computeIfAbsent(RandomSequences.TYPE));
 -    }
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
 +    }
@@ -234,7 +233,7 @@
  
      @Deprecated
      @VisibleForTesting
-@@ -304,8 +_,8 @@
+@@ -298,8 +_,8 @@
          this.serverLevelData.setClearWeatherTime(clearTime);
          this.serverLevelData.setRainTime(weatherTime);
          this.serverLevelData.setThunderTime(weatherTime);
@@ -245,7 +244,7 @@
      }
  
      @Override
-@@ -332,12 +_,25 @@
+@@ -326,12 +_,25 @@
  
          int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(_int) && this.sleepStatus.areEnoughDeepSleeping(_int, this.players)) {
@@ -274,7 +273,7 @@
              if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
-@@ -352,9 +_,9 @@
+@@ -346,9 +_,9 @@
          if (!this.isDebug() && runsNormally) {
              long l = this.getGameTime();
              profilerFiller.push("blockTicks");
@@ -286,16 +285,30 @@
              profilerFiller.pop();
          }
  
-@@ -372,7 +_,7 @@
+@@ -366,7 +_,7 @@
  
          this.handlingTick = false;
          profilerFiller.pop();
--        boolean flag = !this.players.isEmpty() || !this.getForcedChunks().isEmpty();
-+        boolean flag = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || !this.getForcedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this
+-        boolean flag = !this.players.isEmpty() || !this.getForceLoadedChunks().isEmpty();
++        boolean flag = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || !this.getForceLoadedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this
          if (flag) {
              this.resetEmptyTime();
          }
-@@ -461,12 +_,12 @@
+@@ -455,11 +_,13 @@
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("iceandsnow");
+ 
++        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
+         for (int i = 0; i < randomTickSpeed; i++) {
+             if (this.random.nextInt(48) == 0) {
+                 this.tickPrecipitation(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
+             }
+         }
++        } // Paper - Option to disable ice and snow
+ 
+         profilerFiller.popPush("tickBlocks");
+         if (randomTickSpeed > 0) {
+@@ -502,12 +_,12 @@
          int minBlockZ = pos.getMinBlockZ();
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("thunder");
@@ -310,7 +323,7 @@
                      && !this.getBlockState(blockPos.below()).is(Blocks.LIGHTNING_ROD);
                  if (flag) {
                      SkeletonHorse skeletonHorse = EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
-@@ -474,7 +_,7 @@
+@@ -515,7 +_,7 @@
                          skeletonHorse.setTrap(true);
                          skeletonHorse.setAge(0);
                          skeletonHorse.setPos(blockPos.getX(), blockPos.getY(), blockPos.getZ());
@@ -319,63 +332,51 @@
                      }
                  }
  
-@@ -482,18 +_,20 @@
+@@ -523,7 +_,7 @@
                  if (lightningBolt != null) {
-                     lightningBolt.moveTo(Vec3.atBottomCenterOf(blockPos));
+                     lightningBolt.snapTo(Vec3.atBottomCenterOf(blockPos));
                      lightningBolt.setVisualOnly(flag);
 -                    this.addFreshEntity(lightningBolt);
 +                    this.strikeLightning(lightningBolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.WEATHER); // CraftBukkit
                  }
              }
          }
- 
-         profilerFiller.popPush("iceandsnow");
- 
-+        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
-         for (int i = 0; i < randomTickSpeed; i++) {
-             if (this.random.nextInt(48) == 0) {
-                 this.tickPrecipitation(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
-             }
-         }
-+        } // Paper - Option to disable ice and snow
- 
-         profilerFiller.popPush("tickBlocks");
-         if (randomTickSpeed > 0) {
-@@ -535,7 +_,7 @@
+@@ -537,7 +_,7 @@
          BlockPos blockPos1 = heightmapPos.below();
          Biome biome = this.getBiome(heightmapPos).value();
          if (biome.shouldFreeze(this, blockPos1)) {
 -            this.setBlockAndUpdate(blockPos1, Blocks.ICE.defaultBlockState());
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos1, Blocks.ICE.defaultBlockState(), 3, null); // CraftBukkit
          }
  
          if (this.isRaining()) {
-@@ -547,10 +_,10 @@
+@@ -549,10 +_,10 @@
                      if (layersValue < Math.min(_int, 8)) {
-                         BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, Integer.valueOf(layersValue + 1));
+                         BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, layersValue + 1);
                          Block.pushEntitiesUp(blockState, blockState1, this, heightmapPos);
 -                        this.setBlockAndUpdate(heightmapPos, blockState1);
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, blockState1, null); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, blockState1, 3, null); // CraftBukkit
                      }
                  } else {
 -                    this.setBlockAndUpdate(heightmapPos, Blocks.SNOW.defaultBlockState());
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, Blocks.SNOW.defaultBlockState(), 3, null); // CraftBukkit
                  }
              }
  
-@@ -575,6 +_,11 @@
+@@ -577,6 +_,12 @@
      }
  
      protected BlockPos findLightningTargetAround(BlockPos pos) {
 +        // Paper start - Add methods to find targets for lightning strikes
 +        return this.findLightningTargetAround(pos, false);
 +    }
++
 +    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
 +        // Paper end - Add methods to find targets for lightning strikes
          BlockPos heightmapPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
          Optional<BlockPos> optional = this.findLightningRod(heightmapPos);
          if (optional.isPresent()) {
-@@ -582,11 +_,12 @@
+@@ -584,11 +_,12 @@
          } else {
              AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
              List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
@@ -389,7 +390,7 @@
                  if (heightmapPos.getY() == this.getMinY() - 1) {
                      heightmapPos = heightmapPos.above(2);
                  }
-@@ -673,8 +_,8 @@
+@@ -675,8 +_,8 @@
                  this.serverLevelData.setThunderTime(thunderTime);
                  this.serverLevelData.setRainTime(rainTime);
                  this.serverLevelData.setClearWeatherTime(clearWeatherTime);
@@ -400,7 +401,7 @@
              }
  
              this.oThunderLevel = this.thunderLevel;
-@@ -695,6 +_,7 @@
+@@ -697,6 +_,7 @@
              this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
          }
  
@@ -408,7 +409,7 @@
          if (this.oRainLevel != this.rainLevel) {
              this.server
                  .getPlayerList()
-@@ -717,14 +_,47 @@
+@@ -719,14 +_,47 @@
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
          }
@@ -460,7 +461,7 @@
      }
  
      public void resetEmptyTime() {
-@@ -746,18 +_,45 @@
+@@ -748,18 +_,46 @@
          }
      }
  
@@ -487,6 +488,7 @@
          entity.setOldPosAndRot();
          ProfilerFiller profilerFiller = Profiler.get();
          entity.tickCount++;
++        entity.totalEntityAge++; // Paper - age-like counter for all entities
          profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
          profilerFiller.incrementCounter("tickNonPassenger");
          entity.tick();
@@ -506,7 +508,12 @@
      }
  
      private void tickPassenger(Entity ridingEntity, Entity passengerEntity) {
-@@ -770,6 +_,7 @@
+@@ -768,10 +_,12 @@
+         } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
+             passengerEntity.setOldPosAndRot();
+             passengerEntity.tickCount++;
++            passengerEntity.totalEntityAge++; // Paper - age-like counter for all entities
+             ProfilerFiller profilerFiller = Profiler.get();
              profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
              profilerFiller.incrementCounter("tickPassenger");
              passengerEntity.rideTick();
@@ -514,7 +521,7 @@
              profilerFiller.pop();
  
              for (Entity entity : passengerEntity.getPassengers()) {
-@@ -786,6 +_,7 @@
+@@ -788,6 +_,7 @@
      public void save(@Nullable ProgressListener progress, boolean flush, boolean skipSave) {
          ServerChunkCache chunkSource = this.getChunkSource();
          if (!skipSave) {
@@ -522,15 +529,15 @@
              if (progress != null) {
                  progress.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -802,11 +_,19 @@
+@@ -804,11 +_,19 @@
                  this.entityManager.autoSave();
              }
          }
 +
-+        // CraftBukkit start - moved from MinecraftServer.saveChunks
-+        ServerLevel worldserver1 = this;
++        // CraftBukkit start - moved from MinecraftServer#saveAllChunks
++        ServerLevel serverLevel1 = this;
 +
-+        this.serverLevelData.setWorldBorder(worldserver1.getWorldBorder().createSettings());
++        this.serverLevelData.setWorldBorder(serverLevel1.getWorldBorder().createSettings());
 +        this.serverLevelData.setCustomBossEvents(this.server.getCustomBossEvents().save(this.registryAccess()));
 +        this.levelStorageAccess.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
 +        // CraftBukkit end
@@ -543,7 +550,7 @@
          }
  
          DimensionDataStorage dataStorage = this.getChunkSource().getDataStorage();
-@@ -871,18 +_,40 @@
+@@ -873,18 +_,40 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
@@ -553,7 +560,7 @@
 +    }
 +
 +    @Override
-+    public boolean addFreshEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addFreshEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -564,7 +571,7 @@
 +        return this.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
-+    public boolean addWithUUID(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addWithUUID(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -577,7 +584,7 @@
 +        this.addDuringTeleport(entity, null);
 +    }
 +
-+    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public void addDuringTeleport(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        // CraftBukkit end
          if (entity instanceof ServerPlayer serverPlayer) {
              this.addPlayer(serverPlayer);
@@ -587,13 +594,13 @@
          }
      }
  
-@@ -905,40 +_,119 @@
+@@ -907,40 +_,119 @@
          this.entityManager.addNewEntity(player);
      }
  
 -    private boolean addEntity(Entity entity) {
 +    // CraftBukkit start
-+    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    private boolean addEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
 +        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
 +        // Paper start - extra debug info
@@ -712,16 +719,16 @@
                  if (d * d + d1 * d1 + d2 * d2 < 1024.0) {
                      serverPlayer.connection.send(new ClientboundBlockDestructionPacket(breakerId, pos, progress));
                  }
-@@ -1000,7 +_,7 @@
-     public void levelEvent(@Nullable Player player, int type, BlockPos pos, int data) {
-         this.server
-             .getPlayerList()
--            .broadcast(player, pos.getX(), pos.getY(), pos.getZ(), 64.0, this.dimension(), new ClientboundLevelEventPacket(type, pos, data, false));
-+            .broadcast(player, pos.getX(), pos.getY(), pos.getZ(), 64.0, this.dimension(), new ClientboundLevelEventPacket(type, pos, data, false)); // Paper - diff on change (the 64.0 distance is used as defaults for sound ranges in spigot config for ender dragon, end portal and wither)
-     }
- 
-     public int getLogicalHeight() {
-@@ -1009,6 +_,11 @@
+@@ -1015,7 +_,7 @@
+                 pos.getX(),
+                 pos.getY(),
+                 pos.getZ(),
+-                64.0,
++                64.0, // Paper - diff on change (the 64.0 distance is used as defaults for sound ranges in spigot config for ender dragon, end portal and wither)
+                 this.dimension(),
+                 new ClientboundLevelEventPacket(type, pos, data, false)
+             );
+@@ -1027,6 +_,11 @@
  
      @Override
      public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
@@ -733,7 +740,7 @@
          this.gameEventDispatcher.post(gameEvent, pos, context);
      }
  
-@@ -1021,17 +_,28 @@
+@@ -1039,17 +_,28 @@
  
          this.getChunkSource().blockChanged(pos);
          this.pathTypesByPosCache.invalidate(pos);
@@ -762,7 +769,7 @@
  
              try {
                  this.isUpdatingNavigations = true;
-@@ -1043,15 +_,18 @@
+@@ -1061,15 +_,23 @@
                  this.isUpdatingNavigations = false;
              }
          }
@@ -771,6 +778,11 @@
  
      @Override
      public void updateNeighborsAt(BlockPos pos, Block block) {
++        // CraftBukkit start
++        if (this.populating) {
++            return;
++        }
++        // CraftBukkit end
 +        if (captureBlockStates) { return; } // Paper - Cancel all physics during placement
          this.updateNeighborsAt(pos, block, ExperimentalRedstoneUtils.initialOrientation(this, null, null));
      }
@@ -781,7 +793,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation);
      }
  
-@@ -1100,6 +_,42 @@
+@@ -1118,6 +_,42 @@
          ParticleOptions largeExplosionParticles,
          Holder<SoundEvent> explosionSound
      ) {
@@ -824,7 +836,7 @@
          Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
              case NONE -> Explosion.BlockInteraction.KEEP;
              case BLOCK -> this.getDestroyType(GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
-@@ -1108,10 +_,17 @@
+@@ -1126,10 +_,17 @@
                  : Explosion.BlockInteraction.KEEP;
              case TNT -> this.getDestroyType(GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
              case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
@@ -842,7 +854,7 @@
          ParticleOptions particleOptions = serverExplosion.isSmall() ? smallExplosionParticles : largeExplosionParticles;
  
          for (ServerPlayer serverPlayer : this.players) {
-@@ -1120,6 +_,8 @@
+@@ -1138,6 +_,8 @@
                  serverPlayer.connection.send(new ClientboundExplodePacket(vec3, optional, particleOptions, explosionSound));
              }
          }
@@ -851,7 +863,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayGameRule) {
-@@ -1190,7 +_,7 @@
+@@ -1208,7 +_,7 @@
      public <T extends ParticleOptions> int sendParticles(
          T type, double posX, double posY, double posZ, int particleCount, double xOffset, double yOffset, double zOffset, double speed
      ) {
@@ -860,15 +872,15 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(
-@@ -1206,13 +_,49 @@
+@@ -1224,13 +_,49 @@
          double zOffset,
          double speed
      ) {
-+    // CraftBukkit start - visibility api support
++    // Paper start - visibility api support
 +        return this.sendParticlesSource(null, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
-+        @javax.annotation.Nullable ServerPlayer sender,
++        @Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -885,7 +897,7 @@
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
 +        List<ServerPlayer> receivers,
-+        @javax.annotation.Nullable ServerPlayer sender,
++        @Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -898,7 +910,7 @@
 +        double zOffset,
 +        double speed
 +    ) {
-+    // CraftBukkit end - visibility api support
++    // Paper end - visibility api support
          ClientboundLevelParticlesPacket clientboundLevelParticlesPacket = new ClientboundLevelParticlesPacket(
              type, overrideLimiter, alwaysShow, posX, posY, posZ, (float)xOffset, (float)yOffset, (float)zOffset, (float)speed, particleCount
          );
@@ -912,7 +924,7 @@
              if (this.sendParticles(serverPlayer, overrideLimiter, posX, posY, posZ, clientboundLevelParticlesPacket)) {
                  i++;
              }
-@@ -1280,7 +_,7 @@
+@@ -1293,7 +_,7 @@
  
      @Nullable
      public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipExistingChunks) {
@@ -921,17 +933,17 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1327,11 +_,38 @@
+@@ -1340,10 +_,36 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId mapId) {
--        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), mapId.key());
+-        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.type(mapId));
 +        // Paper start - Call missing map initialize event and set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
 +
 +        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(mapId.key());
 +        if (cacheEntry == null) { // Cache did not contain, try to load and may init
-+            final MapItemSavedData mapData = storage.get(MapItemSavedData.factory(), mapId.key()); // get populates the cache
++            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(mapId)); // get populates the cache
 +            if (mapData != null) { // map was read, init it and return
 +                mapData.id = mapId;
 +                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
@@ -940,7 +952,6 @@
 +
 +            return null; // Map does not exist, reading failed.
 +        }
-+
 +        // Cache entry exists, update it with the id ref and return.
 +        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
 +            mapItemSavedData.id = mapId;
@@ -951,17 +962,16 @@
 +        // Paper end - Call missing map initialize event and set id
      }
  
-     @Override
-     public void setMapData(MapId mapId, MapItemSavedData mapData) {
+     public void setMapData(MapId mapId, MapItemSavedData data) {
 +        // CraftBukkit start
-+        mapData.id = mapId;
-+        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(mapData.mapView);
++        data.id = mapId;
++        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(data.mapView);
 +        event.callEvent();
 +        // CraftBukkit end
-         this.getServer().overworld().getDataStorage().set(mapId.key(), mapData);
+         this.getServer().overworld().getDataStorage().set(MapItemSavedData.type(mapId), data);
      }
  
-@@ -1344,17 +_,27 @@
+@@ -1355,17 +_,27 @@
          BlockPos spawnPos = this.levelData.getSpawnPos();
          float spawnAngle = this.levelData.getSpawnAngle();
          if (!spawnPos.equals(pos) || spawnAngle != angle) {
@@ -972,50 +982,38 @@
          }
  
          if (this.lastSpawnChunkRadius > 1) {
--            this.getChunkSource().removeRegionTicket(TicketType.START, new ChunkPos(spawnPos), this.lastSpawnChunkRadius, Unit.INSTANCE);
+-            this.getChunkSource().removeTicketWithRadius(TicketType.START, new ChunkPos(spawnPos), this.lastSpawnChunkRadius);
 +            // Paper start - allow disabling gamerule limits
 +            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(spawnPos, this.lastSpawnChunkRadius - 2)) {
-+                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, ChunkLevel.ENTITY_TICKING_LEVEL);
 +            }
 +            // Paper end - allow disabling gamerule limits
          }
  
          int i = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) + 1;
          if (i > 1) {
--            this.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(pos), i, Unit.INSTANCE);
+-            this.getChunkSource().addTicketWithRadius(TicketType.START, new ChunkPos(pos), i);
 +            // Paper start - allow disabling gamerule limits
 +            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(pos, i - 2)) {
-+                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, ChunkLevel.ENTITY_TICKING_LEVEL);
 +            }
 +            // Paper end - allow disabling gamerule limits
          }
  
          this.lastSpawnChunkRadius = i;
-@@ -1403,6 +_,11 @@
+@@ -1400,6 +_,11 @@
                  DebugPackets.sendPoiRemovedPacket(this, blockPos);
              }));
-             optional1.ifPresent(poiType -> this.getServer().execute(() -> {
+             optional1.ifPresent(holder -> this.getServer().execute(() -> {
 +                // Paper start - Remove stale POIs
 +                if (optional.isEmpty() && this.getPoiManager().exists(blockPos, ignored -> true)) {
 +                    this.getPoiManager().remove(blockPos);
 +                }
 +                // Paper end - Remove stale POIs
-                 this.getPoiManager().add(blockPos, (Holder<PoiType>)poiType);
+                 this.getPoiManager().add(blockPos, (Holder<PoiType>)holder);
                  DebugPackets.sendPoiAddedPacket(this, blockPos);
              }));
-@@ -1543,6 +_,11 @@
-     @Override
-     public void blockUpdated(BlockPos pos, Block block) {
-         if (!this.isDebug()) {
-+            // CraftBukkit start
-+            if (this.populating) {
-+                return;
-+            }
-+            // CraftBukkit end
-             this.updateNeighborsAt(pos, block);
-         }
-     }
-@@ -1562,12 +_,12 @@
+@@ -1552,12 +_,12 @@
      }
  
      public boolean isFlat() {
@@ -1030,7 +1028,7 @@
      }
  
      @Nullable
-@@ -1618,6 +_,7 @@
+@@ -1608,6 +_,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1038,7 +1036,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1699,6 +_,27 @@
+@@ -1697,6 +_,28 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1053,12 +1051,13 @@
 +    }
 +    // Paper end - respect global sound events gamerule
 +    // Paper start - notify observers even if grow failed
++    @Deprecated
 +    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final org.bukkit.craftbukkit.block.CraftBlockState craftBlockState) {
 +        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
 +        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
 +        // tree grew or not
 +        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
-+            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
++            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlags(), 512);
 +        }
 +    }
 +    // Paper end - notify observers even if grow failed
@@ -1066,7 +1065,15 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
-@@ -1723,24 +_,32 @@
+@@ -1712,6 +_,7 @@
+     final class EntityCallbacks implements LevelCallback<Entity> {
+         @Override
+         public void onCreated(Entity entity) {
++            entity.setOldPosAndRot(); // Paper - update old pos / rot for new entities as it will default to Vec3.ZERO
+         }
+ 
+         @Override
+@@ -1721,24 +_,32 @@
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1101,7 +1108,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1757,10 +_,52 @@
+@@ -1755,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1109,12 +1116,12 @@
 +            entity.valid = true; // CraftBukkit
 +            ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server
 +            // Paper start - Entity origin API
-+            if (entity.getOriginVector() == null) {
-+                entity.setOrigin(entity.getBukkitEntity().getLocation());
++            if (entity.origin == null) {
++                entity.origin = entity.position();
 +            }
 +            // Default to current world if unknown, gross assumption but entities rarely change world
-+            if (entity.getOriginWorld() == null) {
-+                entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
++            if (entity.originWorld == null) {
++                entity.originWorld = ServerLevel.this.getWorld().getUID();
 +            }
 +            // Paper end - Entity origin API
 +            new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
@@ -1154,7 +1161,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.remove(serverPlayer);
-@@ -1768,7 +_,7 @@
+@@ -1766,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1163,7 +1170,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1785,6 +_,15 @@
+@@ -1783,6 +_,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
@@ -1179,7 +1186,7 @@
          }
  
          @Override
-@@ -1792,4 +_,24 @@
+@@ -1790,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }
@@ -1187,7 +1194,7 @@
 +    // Paper start - check global player list where appropriate
 +    @Override
 +    @Nullable
-+    public Player getGlobalPlayerByUUID(UUID uuid) {
++    public Player getGlobalPlayerByUUID(java.util.UUID uuid) {
 +        return this.server.getPlayerList().getPlayer(uuid);
 +    }
 +    // Paper end - check global player list where appropriate

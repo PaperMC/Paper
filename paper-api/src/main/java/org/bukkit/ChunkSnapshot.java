@@ -65,7 +65,7 @@ public interface ChunkSnapshot {
      * @return 0-15
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     int getData(int x, int y, int z);
 
     /**

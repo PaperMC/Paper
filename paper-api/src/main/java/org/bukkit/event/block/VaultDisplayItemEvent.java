@@ -14,12 +14,14 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private ItemStack displayItem;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    public VaultDisplayItemEvent(@NotNull Block theBlock, @Nullable ItemStack displayItem) {
-        super(theBlock);
+    private ItemStack displayItem;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public VaultDisplayItemEvent(@NotNull Block vault, @Nullable ItemStack displayItem) {
+        super(vault);
         this.displayItem = displayItem;
     }
 
@@ -30,7 +32,7 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
      */
     @Nullable
     public ItemStack getDisplayItem() {
-        return displayItem;
+        return this.displayItem;
     }
 
     /**
@@ -44,7 +46,7 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -55,11 +57,11 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

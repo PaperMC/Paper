@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/WitherSkull.java
 +++ b/net/minecraft/world/entity/projectile/WitherSkull.java
-@@ -65,11 +_,11 @@
+@@ -66,11 +_,11 @@
                      if (var8.isAlive()) {
                          EnchantmentHelper.doPostAttackEffects(serverLevel, var8, damageSource);
                      } else {
@@ -10,11 +10,11 @@
                  }
              } else {
 -                flag = var8.hurtServer(serverLevel, this.damageSources().magic(), 5.0F);
-+                flag = var8.hurtServer(serverLevel, this.damageSources().magic().customEventDamager(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls // Paper - fix DamageSource API
++                flag = var8.hurtServer(serverLevel, this.damageSources().magic().eventEntityDamager(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls // Paper - fix DamageSource API
              }
  
              if (flag && var8 instanceof LivingEntity livingEntityx) {
-@@ -81,7 +_,7 @@
+@@ -82,7 +_,7 @@
                  }
  
                  if (i > 0) {
@@ -23,7 +23,7 @@
                  }
              }
          }
-@@ -91,8 +_,15 @@
+@@ -92,8 +_,13 @@
      protected void onHit(HitResult result) {
          super.onHit(result);
          if (!this.level().isClientSide) {
@@ -31,9 +31,7 @@
 -            this.discard();
 +            // CraftBukkit start
 +            org.bukkit.event.entity.ExplosionPrimeEvent event = new org.bukkit.event.entity.ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
-+            this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+            if (!event.isCancelled()) {
++            if (event.callEvent()) {
 +                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
 +            }
 +            // CraftBukkit end

@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -63,7 +64,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "1.21.4")
     private static <A extends Keyed> Registry<A> legacyRegistryFor(final Class<A> clazz) {
-        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
+        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), () -> "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
     }
 
     /**
@@ -147,8 +148,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server cat types.
      *
      * @see Cat.Type
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#CAT_VARIANT}
      */
-    Registry<Cat.Type> CAT_VARIANT = registryFor(RegistryKey.CAT_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Cat.Type> CAT_VARIANT = legacyRegistryFor(Cat.Type.class);
     /**
      * Server enchantments.
      *
@@ -290,15 +293,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
+    Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
-        public Iterator iterator() {
+        public Iterator<MemoryKey<?>> iterator() {
             return MemoryKey.values().iterator();
         }
 
         @Override
-        public @Nullable MemoryKey get(final NamespacedKey key) {
+        public int size() {
+            return MemoryKey.values().size();
+        }
+
+        @Override
+        public @Nullable MemoryKey<?> get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
     };
@@ -312,8 +320,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Frog variants.
      *
      * @see Frog.Variant
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#FROG_VARIANT}
      */
-    Registry<Frog.Variant> FROG_VARIANT = registryFor(RegistryKey.FROG_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Frog.Variant> FROG_VARIANT = legacyRegistryFor(Frog.Variant.class);
     /**
      * Wolf variants.
      *
@@ -536,6 +546,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return (namespacedKey != null) ? this.get(namespacedKey) : null;
     }
 
+    /**
+     * Gets the size of the registry.
+     *
+     * @return the size of the registry
+     */
+    int size();
+
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -565,6 +582,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
         public Iterator<T> iterator() {
             return this.map.values().iterator();
         }
@@ -582,6 +604,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Stream<A> stream() {
             return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public int size() {
+            return Iterables.size(this);
         }
 
         @Override

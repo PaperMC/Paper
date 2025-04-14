@@ -14,19 +14,19 @@ movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 334859c5ff7023c730513301cc11c9837b2c7823..45f69a914d5a0565196c4105d61541047301470f 100644
+index a8eaccde3ec9ed912cbc6df0b29e9f8136a46578..0f6ca6ef161ac2934ba761a1eca3215290c7262b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -218,6 +218,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -223,6 +223,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Share random for entities to make them more random
-     public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
+     public @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
  
 +    public boolean collisionLoadChunks = false; // Paper
-     private org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
+     private @Nullable org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
  
      public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntity() {
 diff --git a/net/minecraft/world/level/BlockCollisions.java b/net/minecraft/world/level/BlockCollisions.java
-index fd2c338db43aad070cc32c24891b40599c544ac9..2861ea4b699d403b1245f8be5a62503d366ded65 100644
+index ed6e4f9fd0c7ad1219e66bc1cb4038191dd6edd8..45a20dbb935b12d429153463dba5d6fd3385dd7a 100644
 --- a/net/minecraft/world/level/BlockCollisions.java
 +++ b/net/minecraft/world/level/BlockCollisions.java
 @@ -80,16 +80,37 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
@@ -76,7 +76,7 @@ index fd2c338db43aad070cc32c24891b40599c544ac9..2861ea4b699d403b1245f8be5a62503d
                          && (nextType != 2 || blockState.is(Blocks.MOVING_PISTON))) {
                          VoxelShape collisionShape = this.context.getCollisionShape(blockState, this.collisionGetter, this.pos);
 diff --git a/net/minecraft/world/level/CollisionGetter.java b/net/minecraft/world/level/CollisionGetter.java
-index cb54c3aadd8f3c719d3f7ef1fda4aa517919b7c3..844f76a38884e823a558fe59c421ffd4711f80b4 100644
+index 79af1e4dd1f84580e509ac3e9a77bcd5531c8da6..a031d39854eb049a701f3de9e11c73419883d5ca 100644
 --- a/net/minecraft/world/level/CollisionGetter.java
 +++ b/net/minecraft/world/level/CollisionGetter.java
 @@ -50,11 +50,13 @@ public interface CollisionGetter extends BlockGetter {

@@ -34,7 +34,7 @@ public final class RegistryEventMap {
 
     @SuppressWarnings("unchecked")
     public <T, E extends LifecycleEvent> LifecycleEventType<BootstrapContext, E, ?> getEventType(final RegistryKey<T> registryKey) {
-        return (LifecycleEventType<BootstrapContext, E, ?>) Objects.requireNonNull(this.eventTypes.get(registryKey), "No hook for " + registryKey);
+        return (LifecycleEventType<BootstrapContext, E, ?>) Objects.requireNonNull(this.eventTypes.get(registryKey), () -> "No hook for " + registryKey);
     }
 
     public boolean hasHandlers(final RegistryKey<?> registryKey) {

@@ -21,8 +21,8 @@ public class PlayerAttemptPickupItemEvent extends PlayerEvent implements Cancell
 
     private boolean cancelled;
 
-    @Deprecated // Remove in 1.13 // Remove in 1.14?
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public PlayerAttemptPickupItemEvent(final Player player, final Item item) {
         this(player, item, 0);
     }
@@ -54,7 +54,7 @@ public class PlayerAttemptPickupItemEvent extends PlayerEvent implements Cancell
 
     /**
      * Set if the item will fly at the player
-     * <p>Cancelling the event will set this value to false.</p>
+     * <p>Cancelling the event will set this value to {@code false}.</p>
      *
      * @param flyAtPlayer {@code true} for item to fly at player
      */

@@ -25,10 +25,4 @@ public class CraftSound extends OldEnumHolderable<Sound, SoundEvent> implements 
     public CraftSound(Holder<SoundEvent> soundEffect) {
         super(soundEffect, count++);
     }
-
-    // Paper start
-    public static String getSound(Sound sound) {
-        return sound.getKey().getKey();
-    }
-    // Paper end
 }

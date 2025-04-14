@@ -11,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Vanilla keys for {@link RegistryKey#ITEM}.
+ * Vanilla tag keys for {@link RegistryKey#ITEM}.
  *
  * @apiNote The fields provided here are a direct representation of
  * what is available from the vanilla game source. They may be
@@ -23,8 +23,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 @ApiStatus.Experimental
 public final class ItemTypeTagKeys {
     /**
@@ -117,6 +117,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> BOATS = create(key("boats"));
+
+    /**
+     * {@code #minecraft:book_cloning_target}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> BOOK_CLONING_TARGET = create(key("book_cloning_target"));
 
     /**
      * {@code #minecraft:bookshelf_books}
@@ -350,6 +357,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> DYEABLE = create(key("dyeable"));
 
     /**
+     * {@code #minecraft:eggs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> EGGS = create(key("eggs"));
+
+    /**
      * {@code #minecraft:emerald_ores}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -509,6 +523,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> FISHES = create(key("fishes"));
+
+    /**
+     * {@code #minecraft:flowers}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> FLOWERS = create(key("flowers"));
 
     /**
      * {@code #minecraft:foot_armor}

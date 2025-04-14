@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -16,8 +17,10 @@ import static org.bukkit.Material.*;
  * Called when the player themselves change their armor items
  * <p>
  * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
+ * @apiNote Use {@link io.papermc.paper.event.entity.EntityEquipmentChangedEvent} for all entity equipment changes
  */
 @NullMarked
+@ApiStatus.Obsolete(since = "1.21.4")
 public class PlayerArmorChangeEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -38,9 +41,25 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
      * Gets the type of slot being altered.
      *
      * @return type of slot being altered
+     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot. Use {@link #getSlot()} instead.
      */
+    @Deprecated(since = "1.21.4")
     public SlotType getSlotType() {
         return this.slotType;
+    }
+
+    /**
+     * Gets the slot being altered.
+     *
+     * @return slot being altered
+     */
+    public EquipmentSlot getSlot() {
+        return switch (this.slotType) {
+            case HEAD -> EquipmentSlot.HEAD;
+            case CHEST -> EquipmentSlot.CHEST;
+            case LEGS -> EquipmentSlot.LEGS;
+            case FEET -> EquipmentSlot.FEET;
+        };
     }
 
     /**
@@ -70,6 +89,10 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
         return HANDLER_LIST;
     }
 
+    /**
+     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot.
+     */
+    @Deprecated(since = "1.21.4")
     public enum SlotType {
         HEAD(NETHERITE_HELMET, DIAMOND_HELMET, GOLDEN_HELMET, IRON_HELMET, CHAINMAIL_HELMET, LEATHER_HELMET, CARVED_PUMPKIN, PLAYER_HEAD, SKELETON_SKULL, ZOMBIE_HEAD, CREEPER_HEAD, WITHER_SKELETON_SKULL, TURTLE_HELMET, DRAGON_HEAD, PIGLIN_HEAD),
         CHEST(NETHERITE_CHESTPLATE, DIAMOND_CHESTPLATE, GOLDEN_CHESTPLATE, IRON_CHESTPLATE, CHAINMAIL_CHESTPLATE, LEATHER_CHESTPLATE, ELYTRA),

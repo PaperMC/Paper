@@ -10,7 +10,7 @@ public interface Endermite extends Monster {
      * @return player spawned status
      * @deprecated this functionality no longer exists
      */
-    @Deprecated(since = "1.17")
+    @Deprecated(since = "1.17", forRemoval = true)
     boolean isPlayerSpawned();
 
     /**
@@ -21,7 +21,7 @@ public interface Endermite extends Monster {
      * @param playerSpawned player spawned status
      * @deprecated this functionality no longer exists
      */
-    @Deprecated(since = "1.17")
+    @Deprecated(since = "1.17", forRemoval = true)
     void setPlayerSpawned(boolean playerSpawned);
     // Paper start
     /**

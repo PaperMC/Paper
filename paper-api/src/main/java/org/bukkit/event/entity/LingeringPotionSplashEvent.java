@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,16 +15,21 @@ import org.jetbrains.annotations.Nullable;
  * Called when a splash potion hits an area
  */
 public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private final AreaEffectCloud entity;
-    private boolean allowEmptyAreaEffectCreation; // Paper
 
-    @Deprecated(since = "1.20.2")
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final AreaEffectCloud entity;
+    private boolean allowEmptyAreaEffectCreation;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud entity) {
        this(potion, null, null, null, entity);
     }
 
+    @ApiStatus.Internal
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, @NotNull final AreaEffectCloud entity) {
         super(potion, hitEntity, hitBlock, hitFace);
         this.entity = entity;
@@ -32,7 +38,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     @NotNull
     @Override
     public ThrownPotion getEntity() {
-        return (ThrownPotion) super.getEntity();
+        return (ThrownPotion) this.entity;
     }
 
     /**
@@ -78,11 +84,11 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

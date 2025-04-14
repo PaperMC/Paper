@@ -158,14 +158,14 @@ public class CraftMapCanvas implements MapCanvas {
                 x = xStart;
                 y += font.getHeight() + 1;
                 continue;
-            } else if (ch == '\u00A7') {
+            } else if (ch == '§') {
                 int j = text.indexOf(';', i);
                 Preconditions.checkArgument(j >= 0, "text (%s) unterminated color string", text);
                 try {
                     color = Byte.parseByte(text.substring(i + 1, j));
                     i = j;
                     continue;
-                } catch (NumberFormatException ex) {
+                } catch (NumberFormatException ignored) {
                 }
             }
 

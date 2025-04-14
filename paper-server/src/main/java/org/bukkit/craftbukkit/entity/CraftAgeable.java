@@ -32,7 +32,7 @@ public class CraftAgeable extends CraftCreature implements Ageable {
     @Override
     public void setBaby() {
         if (this.isAdult()) {
-            this.setAge(-24000);
+            this.setAge(AgeableMob.BABY_START_AGE);
         }
     }
 

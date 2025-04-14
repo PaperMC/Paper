@@ -124,7 +124,7 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
                 }
 
                 converted = this.unwrapArgumentWrapper(pureArgumentNode, customArgumentType, customArgumentType.getNativeType(), suggestionProvider);
-            } else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType) {
+            } else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?, ?> nativeWrapperArgumentType) {
                 converted = this.unwrapArgumentWrapper(pureArgumentNode, nativeWrapperArgumentType, nativeWrapperArgumentType, null); // "null" for suggestion provider so it uses the argument type's suggestion provider
 
             /*
@@ -140,6 +140,8 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
                 // Unknown argument type was passed
                 throw new IllegalArgumentException("Custom unknown argument type was passed, should be wrapped inside an CustomArgumentType.");
             }
+        } else if (pureNode == this) {
+            return (CommandNode) this.getDispatcher().getRoot();
         } else {
             throw new IllegalArgumentException("Unknown command node passed. Don't know how to unwrap this.");
         }

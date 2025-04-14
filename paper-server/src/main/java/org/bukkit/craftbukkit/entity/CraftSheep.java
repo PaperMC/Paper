@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Sheep;
 
 public class CraftSheep extends CraftAnimals implements Sheep, io.papermc.paper.entity.PaperShearable { // Paper
-    public CraftSheep(CraftServer server, net.minecraft.world.entity.animal.Sheep entity) {
+    public CraftSheep(CraftServer server, net.minecraft.world.entity.animal.sheep.Sheep entity) {
         super(server, entity);
     }
 
@@ -30,8 +30,8 @@ public class CraftSheep extends CraftAnimals implements Sheep, io.papermc.paper.
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Sheep getHandle() {
-        return (net.minecraft.world.entity.animal.Sheep) this.entity;
+    public net.minecraft.world.entity.animal.sheep.Sheep getHandle() {
+        return (net.minecraft.world.entity.animal.sheep.Sheep) this.entity;
     }
 
     @Override

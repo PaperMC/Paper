@@ -208,7 +208,7 @@ public interface FishHook extends Projectile {
      * @return chance the bite chance
      * @deprecated has no effect in newer Minecraft versions
      */
-    @Deprecated(since = "1.9.2")
+    @Deprecated(since = "1.9.2", forRemoval = true)
     public double getBiteChance();
 
     /**
@@ -222,7 +222,7 @@ public interface FishHook extends Projectile {
      *     and 1
      * @deprecated has no effect in newer Minecraft versions
      */
-    @Deprecated(since = "1.9.2")
+    @Deprecated(since = "1.9.2", forRemoval = true)
     public void setBiteChance(double chance) throws IllegalArgumentException;
 
     /**

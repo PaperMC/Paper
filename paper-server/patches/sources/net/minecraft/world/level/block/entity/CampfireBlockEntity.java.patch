@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-@@ -36,6 +_,7 @@
+@@ -38,6 +_,7 @@
      private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
      public final int[] cookingProgress = new int[4];
      public final int[] cookingTime = new int[4];
@@ -8,7 +8,7 @@
  
      public CampfireBlockEntity(BlockPos pos, BlockState blockState) {
          super(BlockEntityType.CAMPFIRE, pos, blockState);
-@@ -54,14 +_,44 @@
+@@ -56,14 +_,44 @@
              ItemStack itemStack = campfire.items.get(i);
              if (!itemStack.isEmpty()) {
                  flag = true;
@@ -55,25 +55,24 @@
                          campfire.items.set(i, ItemStack.EMPTY);
                          level.sendBlockUpdated(pos, state, state, 3);
                          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
-@@ -133,6 +_,17 @@
-             int[] intArray = tag.getIntArray("CookingTotalTimes");
-             System.arraycopy(intArray, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, intArray.length));
-         }
+@@ -135,6 +_,16 @@
+             .ifPresentOrElse(
+                 ints -> System.arraycopy(ints, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, ints.length)), () -> Arrays.fill(this.cookingTime, 0)
+             );
 +
 +        // Paper start - Add more Campfire API
-+        if (tag.contains("Paper.StopCooking", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_BYTE_ARRAY)) {
-+            byte[] abyte = tag.getByteArray("Paper.StopCooking");
-+            boolean[] cookingState = new boolean[4];
-+            for (int index = 0; index < abyte.length; index++) {
-+                cookingState[index] = abyte[index] == 1;
++        tag.getByteArray("Paper.StopCooking").ifPresent(bytes -> {
++            final boolean[] cookingState = new boolean[4];
++            for (int index = 0; index < bytes.length; index++) {
++                cookingState[index] = bytes[index] == 1;
 +            }
-+            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, abyte.length));
-+        }
++            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, bytes.length));
++        });
 +        // Paper end - Add more Campfire API
      }
  
      @Override
-@@ -141,6 +_,13 @@
+@@ -143,6 +_,13 @@
          ContainerHelper.saveAllItems(tag, this.items, true, registries);
          tag.putIntArray("CookingTimes", this.cookingProgress);
          tag.putIntArray("CookingTotalTimes", this.cookingTime);
@@ -87,7 +86,7 @@
      }
  
      @Override
-@@ -165,7 +_,15 @@
+@@ -167,7 +_,15 @@
                      return false;
                  }
  

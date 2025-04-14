@@ -72,7 +72,7 @@ public enum InventoryAction {
      * The hotbar includes the player's off hand.
      * @deprecated This action no longer happens, they are all {@link #HOTBAR_SWAP}s.
      */
-    @Deprecated(since = "1.20.6") // Paper
+    @Deprecated(since = "1.20.6", forRemoval = true) // Paper
     HOTBAR_MOVE_AND_READD,
     /**
      * The clicked slot and the picked hotbar slot are swapped.

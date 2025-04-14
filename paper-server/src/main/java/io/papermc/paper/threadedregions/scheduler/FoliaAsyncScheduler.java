@@ -181,7 +181,7 @@ public final class FoliaAsyncScheduler implements AsyncScheduler {
 
         private void setDelay(final ScheduledFuture<?> delay) {
             this.delay = delay;
-            this.state = STATE_SCHEDULED_EXECUTOR;
+            this.state = delay == null ? STATE_SCHEDULED_EXECUTOR : STATE_ON_TIMER;
         }
 
         @Override

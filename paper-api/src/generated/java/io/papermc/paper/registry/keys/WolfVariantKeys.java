@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Wolf;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -23,9 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.5")
 public final class WolfVariantKeys {
     /**
      * {@code minecraft:ashen}
@@ -94,12 +92,11 @@ public final class WolfVariantKeys {
     }
 
     /**
-     * Creates a key for {@link Wolf.Variant} in the registry {@code minecraft:wolf_variant}.
+     * Creates a typed key for {@link Wolf.Variant} in the registry {@code minecraft:wolf_variant}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
-    @ApiStatus.Experimental
     public static TypedKey<Wolf.Variant> create(final Key key) {
         return TypedKey.create(RegistryKey.WOLF_VARIANT, key);
     }

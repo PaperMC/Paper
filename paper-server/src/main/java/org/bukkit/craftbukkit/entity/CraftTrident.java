@@ -32,7 +32,6 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
         return "CraftTrident";
     }
 
-    // Paper start
     @Override
     public boolean hasGlint() {
         return this.getHandle().isFoil();
@@ -63,5 +62,4 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
     public void setHasDealtDamage(boolean hasDealtDamage) {
         this.getHandle().dealtDamage = hasDealtDamage;
     }
-    // Paper end
 }

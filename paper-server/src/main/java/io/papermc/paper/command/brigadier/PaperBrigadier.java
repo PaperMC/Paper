@@ -1,23 +1,18 @@
 package io.papermc.paper.command.brigadier;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
 import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
+import java.util.Map;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
-
-import java.util.Map;
 
 public final class PaperBrigadier {
 
@@ -40,8 +35,9 @@ public final class PaperBrigadier {
             throw new IllegalArgumentException("Unsure how to wrap a " + node);
         }
 
-        if (!(node instanceof PluginCommandNode pluginCommandNode)) {
-            return new VanillaCommandWrapper(null, node);
+        final PluginCommandMeta meta;
+        if ((meta = node.pluginCommandMeta) == null) {
+            return new VanillaCommandWrapper(node);
         }
         CommandNode<CommandSourceStack> argumentCommandNode = node;
         if (argumentCommandNode.getRedirect() != null) {
@@ -49,8 +45,8 @@ public final class PaperBrigadier {
         }
 
         Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, DUMMY);
-        String usage = map.isEmpty() ? pluginCommandNode.getUsageText() :  pluginCommandNode.getUsageText() + " " + String.join("\n" + pluginCommandNode.getUsageText() + " ", map.values());
-        return new PluginVanillaCommandWrapper(pluginCommandNode.getName(), pluginCommandNode.getDescription(), usage, pluginCommandNode.getAliases(), node, pluginCommandNode.getPlugin());
+        String usage = map.isEmpty() ? node.getUsageText() :  node.getUsageText() + " " + String.join("\n" + node.getUsageText() + " ", map.values());
+        return new PluginVanillaCommandWrapper(node.getName(), meta.description(), usage, meta.aliases(), node, meta.plugin());
     }
 
     /*
@@ -69,5 +65,20 @@ public final class PaperBrigadier {
                 after.getDispatcher().getRoot().addChild((CommandNode<net.minecraft.commands.CommandSourceStack>) node);
             }
         }
+    }
+
+    public static <S> LiteralCommandNode<S> copyLiteral(final String newLiteral, final LiteralCommandNode<S> source) {
+        // logic copied from LiteralCommandNode#createBuilder
+        final LiteralArgumentBuilder<S> copyBuilder = LiteralArgumentBuilder.<S>literal(newLiteral)
+            .requires(source.getRequirement())
+            .forward(source.getRedirect(), source.getRedirectModifier(), source.isFork());
+        if (source.getCommand() != null) {
+            copyBuilder.executes(source.getCommand());
+        }
+
+        for (final CommandNode<S> child : source.getChildren()) {
+            copyBuilder.then(child);
+        }
+        return copyBuilder.build();
     }
 }

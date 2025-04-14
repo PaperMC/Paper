@@ -1,6 +1,7 @@
 package io.papermc.paper;
 
 import net.kyori.adventure.util.Services;
+import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -35,5 +36,14 @@ public interface InternalAPIBridge {
      * @return the damage effect.
      */
     DamageEffect getDamageEffect(String key);
+
+    /**
+     * Constructs the legacy custom biome instance for the biome enum.
+     *
+     * @return the created biome.
+     */
+    @Deprecated(forRemoval = true, since = "1.21.5")
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+    Biome constructLegacyCustomBiome();
 }
 

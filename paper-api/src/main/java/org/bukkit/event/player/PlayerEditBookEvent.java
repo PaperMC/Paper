@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.meta.BookMeta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,28 +14,24 @@ import org.jetbrains.annotations.NotNull;
  * cancelled, no changes are made to the BookMeta
  */
 public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final BookMeta previousBookMeta;
     private final int slot;
     private BookMeta newBookMeta;
     private boolean isSigning;
-    private boolean cancel;
 
-    public PlayerEditBookEvent(@NotNull Player who, int slot, @NotNull BookMeta previousBookMeta, @NotNull BookMeta newBookMeta, boolean isSigning) {
-        super(who);
+    private boolean cancelled;
 
-        Preconditions.checkArgument(slot >= -1 && slot <= 8, "Slot must be in range (-1)-8 inclusive");
-        Preconditions.checkArgument(previousBookMeta != null, "Previous book meta must not be null");
-        Preconditions.checkArgument(newBookMeta != null, "New book meta must not be null");
-
-        Bukkit.getItemFactory().equals(previousBookMeta, newBookMeta);
+    @ApiStatus.Internal
+    public PlayerEditBookEvent(@NotNull Player player, int slot, @NotNull BookMeta previousBookMeta, @NotNull BookMeta newBookMeta, boolean isSigning) {
+        super(player);
 
         this.previousBookMeta = previousBookMeta;
         this.newBookMeta = newBookMeta;
         this.slot = slot;
         this.isSigning = isSigning;
-        this.cancel = false;
     }
 
     /**
@@ -47,7 +44,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public BookMeta getPreviousBookMeta() {
-        return previousBookMeta.clone();
+        return this.previousBookMeta.clone();
     }
 
     /**
@@ -61,7 +58,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public BookMeta getNewBookMeta() {
-        return newBookMeta.clone();
+        return this.newBookMeta.clone();
     }
 
     /**
@@ -74,9 +71,9 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      * @return the inventory slot number that the book item occupies
      * @deprecated books may be signed from off hand
      */
-    @Deprecated(since = "1.13.1")
+    @Deprecated(since = "1.13.1", forRemoval = true)
     public int getSlot() {
-        return slot;
+        return this.slot;
     }
 
     /**
@@ -92,43 +89,43 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Gets whether or not the book is being signed. If a book is signed the
+     * Gets whether the book is being signed. If a book is signed the
      * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
      *
-     * @return true if the book is being signed
+     * @return {@code true} if the book is being signed
      */
     public boolean isSigning() {
-        return isSigning;
+        return this.isSigning;
     }
 
     /**
-     * Sets whether or not the book is being signed. If a book is signed the
+     * Sets whether the book is being signed. If a book is signed the
      * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
      *
-     * @param signing whether or not the book is being signed.
+     * @param signing whether the book is being signed.
      */
     public void setSigning(boolean signing) {
-        isSigning = signing;
+        this.isSigning = signing;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        return HANDLER_LIST;
     }
 }

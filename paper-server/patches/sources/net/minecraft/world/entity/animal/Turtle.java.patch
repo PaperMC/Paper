@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Turtle.java
 +++ b/net/minecraft/world/entity/animal/Turtle.java
-@@ -303,7 +_,9 @@
+@@ -259,7 +_,9 @@
      protected void ageBoundaryReached() {
          super.ageBoundaryReached();
          if (!this.isBaby() && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
@@ -10,16 +10,16 @@
          }
      }
  
-@@ -328,7 +_,7 @@
+@@ -284,7 +_,7 @@
  
      @Override
      public void thunderHit(ServerLevel level, LightningBolt lightning) {
 -        this.hurtServer(level, this.damageSources().lightningBolt(), Float.MAX_VALUE);
-+        this.hurtServer(level, this.damageSources().lightningBolt().customEventDamager(lightning), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
++        this.hurtServer(level, this.damageSources().lightningBolt().eventEntityDamager(lightning), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
      }
  
      @Override
-@@ -355,6 +_,10 @@
+@@ -311,6 +_,10 @@
              if (loveCause == null && this.partner.getLoveCause() != null) {
                  loveCause = this.partner.getLoveCause();
              }
@@ -30,7 +30,7 @@
  
              if (loveCause != null) {
                  loveCause.awardStat(Stats.ANIMALS_BRED);
-@@ -368,7 +_,7 @@
+@@ -324,7 +_,7 @@
              this.partner.resetLove();
              RandomSource random = this.animal.getRandom();
              if (getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
@@ -39,34 +39,32 @@
              }
          }
      }
-@@ -392,7 +_,7 @@
+@@ -347,7 +_,7 @@
+                 && (
                      this.turtle.hasEgg()
-                         || this.turtle.getRandom().nextInt(reducedTickDelay(700)) == 0
-                             && !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0)
+                         || this.turtle.getRandom().nextInt(reducedTickDelay(700)) == 0 && !this.turtle.homePos.closerToCenterThan(this.turtle.position(), 64.0)
 -                );
 +                ) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper - Turtle API
          }
  
          @Override
-@@ -500,16 +_,22 @@
+@@ -455,14 +_,20 @@
              BlockPos blockPos = this.turtle.blockPosition();
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {
 -                    this.turtle.setLayingEgg(true);
-+                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos)).callEvent()); // Paper - Turtle API
++                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.blockPos, this.turtle.level())).callEvent()); // Paper - Turtle API
                  } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
 +                    // Paper start - Turtle API
 +                    int eggCount = this.turtle.random.nextInt(4) + 1;
-+                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos.above()), eggCount);
++                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.blockPos.above(), this.turtle.level()), eggCount);
 +                    if (layEggEvent.callEvent() && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()))) {
 +                    // Paper end - Turtle API
                      Level level = this.turtle.level();
                      level.playSound(null, blockPos, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + level.random.nextFloat() * 0.2F);
                      BlockPos blockPos1 = this.blockPos.above();
-                     BlockState blockState = Blocks.TURTLE_EGG
-                         .defaultBlockState()
--                        .setValue(TurtleEggBlock.EGGS, Integer.valueOf(this.turtle.random.nextInt(4) + 1));
-+                        .setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()); // Paper
+-                    BlockState blockState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1);
++                    BlockState blockState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()); // Paper
                      level.setBlock(blockPos1, blockState, 3);
                      level.gameEvent(GameEvent.BLOCK_PLACE, blockPos1, GameEvent.Context.of(this.turtle, blockState));
 +                    } // CraftBukkit

@@ -5,6 +5,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,39 +13,34 @@ import org.jetbrains.annotations.Nullable;
  * Called when a block is ignited. If you want to catch when a Player places
  * fire, you need to use {@link BlockPlaceEvent}.
  * <p>
- * If a Block Ignite event is cancelled, the block will not be ignited.
+ * If this event is cancelled, the block will not be ignited.
  */
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final IgniteCause cause;
     private final Entity ignitingEntity;
     private final Block ignitingBlock;
-    private boolean cancel;
 
-    public BlockIgniteEvent(@NotNull final Block theBlock, @NotNull final IgniteCause cause, @Nullable final Entity ignitingEntity) {
-        this(theBlock, cause, ignitingEntity, null);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public BlockIgniteEvent(@NotNull final Block block, @NotNull final IgniteCause cause, @Nullable final Entity ignitingEntity) {
+        this(block, cause, ignitingEntity, null);
     }
 
-    public BlockIgniteEvent(@NotNull final Block theBlock, @NotNull final IgniteCause cause, @NotNull final Block ignitingBlock) {
-        this(theBlock, cause, null, ignitingBlock);
+    @ApiStatus.Internal
+    public BlockIgniteEvent(@NotNull final Block block, @NotNull final IgniteCause cause, @NotNull final Block ignitingBlock) {
+        this(block, cause, null, ignitingBlock);
     }
 
-    public BlockIgniteEvent(@NotNull final Block theBlock, @NotNull final IgniteCause cause, @Nullable final Entity ignitingEntity, @Nullable final Block ignitingBlock) {
-        super(theBlock);
+    @ApiStatus.Internal
+    public BlockIgniteEvent(@NotNull final Block block, @NotNull final IgniteCause cause, @Nullable final Entity ignitingEntity, @Nullable final Block ignitingBlock) {
+        super(block);
         this.cause = cause;
         this.ignitingEntity = ignitingEntity;
         this.ignitingBlock = ignitingBlock;
-        this.cancel = false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
     }
 
     /**
@@ -54,18 +50,18 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public IgniteCause getCause() {
-        return cause;
+        return this.cause;
     }
 
     /**
      * Gets the player who ignited this block
      *
-     * @return The Player that placed/ignited the fire block, or null if not ignited by a Player.
+     * @return The Player that placed/ignited the fire block, or {@code null} if not ignited by a Player.
      */
     @Nullable
     public Player getPlayer() {
-        if (ignitingEntity instanceof Player) {
-            return (Player) ignitingEntity;
+        if (this.ignitingEntity instanceof Player) {
+            return (Player) this.ignitingEntity;
         }
 
         return null;
@@ -74,21 +70,21 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the entity who ignited this block
      *
-     * @return The Entity that placed/ignited the fire block, or null if not ignited by a Entity.
+     * @return The Entity that placed/ignited the fire block, or {@code null} if not ignited by a Entity.
      */
     @Nullable
     public Entity getIgnitingEntity() {
-        return ignitingEntity;
+        return this.ignitingEntity;
     }
 
     /**
      * Gets the block which ignited this block
      *
-     * @return The Block that placed/ignited the fire block, or null if not ignited by a Block.
+     * @return The Block that placed/ignited the fire block, or {@code null} if not ignited by a Block.
      */
     @Nullable
     public Block getIgnitingBlock() {
-        return ignitingBlock;
+        return this.ignitingBlock;
     }
 
     /**
@@ -127,17 +123,27 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
         /**
          * Block ignition caused by a flaming arrow.
          */
-        ARROW,
+        ARROW
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

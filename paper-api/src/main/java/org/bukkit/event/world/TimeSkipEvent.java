@@ -3,6 +3,7 @@ package org.bukkit.event.world;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,12 +13,14 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TimeSkipEvent extends WorldEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    //
-    private boolean cancelled;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final SkipReason skipReason;
     private long skipAmount;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public TimeSkipEvent(@NotNull World world, @NotNull SkipReason skipReason, long skipAmount) {
         super(world);
         this.skipReason = skipReason;
@@ -31,7 +34,7 @@ public class TimeSkipEvent extends WorldEvent implements Cancellable {
      */
     @NotNull
     public SkipReason getSkipReason() {
-        return skipReason;
+        return this.skipReason;
     }
 
     /**
@@ -40,7 +43,7 @@ public class TimeSkipEvent extends WorldEvent implements Cancellable {
      * @return Amount of time skipped
      */
     public long getSkipAmount() {
-        return skipAmount;
+        return this.skipAmount;
     }
 
     /**
@@ -65,12 +68,12 @@ public class TimeSkipEvent extends WorldEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**

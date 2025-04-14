@@ -16,10 +16,11 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public final class CraftProfileProperty {
 
     /**
@@ -30,7 +31,7 @@ public final class CraftProfileProperty {
         /**
          * A {@link JsonFormatter} that uses a compact formatting style.
          */
-        public static final JsonFormatter COMPACT = new JsonFormatter() {
+        JsonFormatter COMPACT = new JsonFormatter() {
 
             private final Gson gson = new GsonBuilder().create();
 
@@ -40,7 +41,7 @@ public final class CraftProfileProperty {
             }
         };
 
-        public String format(JsonElement jsonElement);
+        String format(JsonElement jsonElement);
     }
 
     private static final ServicesKeySet PUBLIC_KEYS;
@@ -53,12 +54,11 @@ public final class CraftProfileProperty {
         }
     }
 
-    public static boolean hasValidSignature(@Nonnull Property property) {
+    public static boolean hasValidSignature(Property property) {
         return property.hasSignature() && CraftProfileProperty.PUBLIC_KEYS.keys(ServicesKeyType.PROFILE_PROPERTY).stream().anyMatch((key) -> key.validateProperty(property));
     }
 
-    @Nullable
-    private static String decodeBase64(@Nonnull String encoded) {
+    private static @Nullable String decodeBase64(String encoded) {
         try {
             return new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
@@ -66,8 +66,7 @@ public final class CraftProfileProperty {
         }
     }
 
-    @Nullable
-    public static JsonObject decodePropertyValue(@Nonnull String encodedPropertyValue) {
+    public static @Nullable JsonObject decodePropertyValue(String encodedPropertyValue) {
         String json = CraftProfileProperty.decodeBase64(encodedPropertyValue);
         if (json == null) return null;
         try {
@@ -79,14 +78,12 @@ public final class CraftProfileProperty {
         }
     }
 
-    @Nonnull
-    public static String encodePropertyValue(@Nonnull JsonObject propertyValue, @Nonnull JsonFormatter formatter) {
+    public static String encodePropertyValue(JsonObject propertyValue, JsonFormatter formatter) {
         String json = formatter.format(propertyValue);
         return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
     }
 
-    @Nonnull
-    public static String toString(@Nonnull Property property) {
+    public static String toString(Property property) {
         StringBuilder builder = new StringBuilder();
         builder.append("{");
         builder.append("name=");
@@ -99,7 +96,7 @@ public final class CraftProfileProperty {
         return builder.toString();
     }
 
-    public static int hashCode(@Nonnull Property property) {
+    public static int hashCode(Property property) {
         int result = 1;
         result = 31 * result + Objects.hashCode(property.name());
         result = 31 * result + Objects.hashCode(property.value());
@@ -115,7 +112,7 @@ public final class CraftProfileProperty {
         return true;
     }
 
-    public static Map<String, Object> serialize(@Nonnull Property property) {
+    public static Map<String, Object> serialize(Property property) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("name", property.name());
         map.put("value", property.value());
@@ -125,7 +122,7 @@ public final class CraftProfileProperty {
         return map;
     }
 
-    public static Property deserialize(@Nonnull Map<?, ?> map) {
+    public static Property deserialize(Map<?, ?> map) {
         String name = ConfigSerializationUtil.getString(map, "name", false);
         String value = ConfigSerializationUtil.getString(map, "value", false);
         String signature = ConfigSerializationUtil.getString(map, "signature", true);

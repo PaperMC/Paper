@@ -22,19 +22,19 @@ public interface EnchantmentStorageMeta extends ItemMeta {
     /**
      * Checks for storage of the specified enchantment.
      *
-     * @param ench enchantment to check
+     * @param enchant enchantment to check
      * @return true if this enchantment is stored in this meta
      */
-    boolean hasStoredEnchant(@NotNull Enchantment ench);
+    boolean hasStoredEnchant(@NotNull Enchantment enchant);
 
     /**
      * Checks for the level of the stored enchantment.
      *
-     * @param ench enchantment to check
+     * @param enchant enchantment to check
      * @return The level that the specified stored enchantment has, or 0 if
      *     none
      */
-    int getStoredEnchantLevel(@NotNull Enchantment ench);
+    int getStoredEnchantLevel(@NotNull Enchantment enchant);
 
     /**
      * Gets a copy the stored enchantments in this ItemMeta.
@@ -47,7 +47,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
     /**
      * Stores the specified enchantment in this item meta.
      *
-     * @param ench Enchantment to store
+     * @param enchant Enchantment to store
      * @param level Level for the enchantment
      * @param ignoreLevelRestriction this indicates the enchantment should be
      *     applied, ignoring the level limit
@@ -55,26 +55,26 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      *     otherwise
      * @throws IllegalArgumentException if enchantment is null
      */
-    boolean addStoredEnchant(@NotNull Enchantment ench, int level, boolean ignoreLevelRestriction);
+    boolean addStoredEnchant(@NotNull Enchantment enchant, int level, boolean ignoreLevelRestriction);
 
     /**
      * Remove the specified stored enchantment from this item meta.
      *
-     * @param ench Enchantment to remove
+     * @param enchant Enchantment to remove
      * @return true if the item meta changed as a result of this call, false
      *     otherwise
      * @throws IllegalArgumentException if enchantment is null
      */
-    boolean removeStoredEnchant(@NotNull Enchantment ench) throws IllegalArgumentException;
+    boolean removeStoredEnchant(@NotNull Enchantment enchant) throws IllegalArgumentException;
 
     /**
      * Checks if the specified enchantment conflicts with any enchantments in
      * this ItemMeta.
      *
-     * @param ench enchantment to test
+     * @param enchant enchantment to test
      * @return true if the enchantment conflicts, false otherwise
      */
-    boolean hasConflictingStoredEnchant(@NotNull Enchantment ench);
+    boolean hasConflictingStoredEnchant(@NotNull Enchantment enchant);
 
     @Override
     @NotNull

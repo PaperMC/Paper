@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
-@@ -49,6 +_,9 @@
+@@ -56,6 +_,9 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
@@ -10,7 +10,7 @@
  
      public ItemEntity(EntityType<? extends ItemEntity> entityType, Level level) {
          super(entityType, level);
-@@ -57,7 +_,12 @@
+@@ -64,7 +_,12 @@
      }
  
      public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack itemStack) {
@@ -24,7 +24,7 @@
      }
  
      public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack itemStack, double deltaX, double deltaY, double deltaZ) {
-@@ -119,7 +_,7 @@
+@@ -126,7 +_,7 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -33,7 +33,7 @@
          } else {
              super.tick();
              if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
-@@ -147,11 +_,15 @@
+@@ -154,11 +_,15 @@
                  }
              }
  
@@ -44,14 +44,14 @@
                  float f = 0.98F;
 -                if (this.onGround()) {
 +                // Paper start - Friction API
-+                if (frictionState == net.kyori.adventure.util.TriState.FALSE) {
++                if (this.frictionState == net.kyori.adventure.util.TriState.FALSE) {
 +                    f = 1F;
 +                } else if (this.onGround()) {
 +                    // Paper end - Friction API
                      f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
  
-@@ -184,8 +_,14 @@
+@@ -191,8 +_,14 @@
                  }
              }
  
@@ -68,7 +68,7 @@
              }
          }
      }
-@@ -210,9 +_,18 @@
+@@ -217,9 +_,18 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -88,7 +88,7 @@
                      this.tryToMerge(itemEntity);
                      if (this.isRemoved()) {
                          break;
-@@ -224,14 +_,14 @@
+@@ -231,7 +_,7 @@
  
      private boolean isMergable() {
          ItemStack item = this.getItem();
@@ -97,15 +97,7 @@
      }
  
      private void tryToMerge(ItemEntity itemEntity) {
-         ItemStack item = this.getItem();
-         ItemStack item1 = itemEntity.getItem();
-         if (Objects.equals(this.target, itemEntity.target) && areMergable(item, item1)) {
--            if (item1.getCount() < item.getCount()) {
-+            if (true || item1.getCount() < item.getCount()) { // Spigot
-                 merge(this, item, itemEntity, item1);
-             } else {
-                 merge(itemEntity, item1, this, item);
-@@ -257,11 +_,16 @@
+@@ -264,11 +_,16 @@
      }
  
      private static void merge(ItemEntity destinationEntity, ItemStack destinationStack, ItemEntity originEntity, ItemStack originStack) {
@@ -123,7 +115,7 @@
          }
      }
  
-@@ -289,12 +_,17 @@
+@@ -296,12 +_,17 @@
          } else if (!this.getItem().canBeHurtBy(damageSource)) {
              return false;
          } else {
@@ -142,9 +134,9 @@
              }
  
              return true;
-@@ -322,6 +_,11 @@
-         if (!this.getItem().isEmpty()) {
-             compound.put("Item", this.getItem().save(this.registryAccess()));
+@@ -324,6 +_,11 @@
+             RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+             compound.store("Item", ItemStack.CODEC, registryOps, this.getItem());
          }
 +        // Paper start - Friction API
 +        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
@@ -154,28 +146,28 @@
      }
  
      @Override
-@@ -347,9 +_,19 @@
-         } else {
-             this.setItem(ItemStack.EMPTY);
-         }
+@@ -336,8 +_,19 @@
+         this.cachedThrower = null;
+         RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+         this.setItem(compound.read("Item", ItemStack.CODEC, registryOps).orElse(ItemStack.EMPTY));
++
 +        // Paper start - Friction API
-+        if (compound.contains("Paper.FrictionState")) {
-+            String fs = compound.getString("Paper.FrictionState");
++        compound.getString("Paper.FrictionState").ifPresent(frictionState -> {
 +            try {
-+                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++                this.frictionState = net.kyori.adventure.util.TriState.valueOf(frictionState);
 +            } catch (Exception ignored) {
-+                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state {} for {}", fs, this);
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state {} for {}", frictionState, this);
 +            }
-+        }
++        });
 +        // Paper end - Friction API
- 
++
          if (this.getItem().isEmpty()) {
 -            this.discard();
 +            this.discard(null); // CraftBukkit - add Bukkit remove cause
          }
      }
  
-@@ -359,10 +_,73 @@
+@@ -347,10 +_,73 @@
              ItemStack item = this.getItem();
              Item item1 = item.getItem();
              int count = item.getCount();
@@ -250,7 +242,7 @@
                      item.setCount(count);
                  }
  
-@@ -400,6 +_,7 @@
+@@ -388,6 +_,7 @@
  
      public void setItem(ItemStack stack) {
          this.getEntityData().set(DATA_ITEM, stack);
@@ -258,7 +250,7 @@
      }
  
      @Override
-@@ -453,7 +_,7 @@
+@@ -441,7 +_,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();

@@ -1,16 +1,17 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.UndefinedNullability;
 import org.bukkit.Utility;
@@ -19,6 +20,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
  */
-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder, DataComponentHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
     private MaterialData data = null;
 
@@ -57,16 +59,32 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @org.jetbrains.annotations.Contract(value = "_, _ -> new", pure = true)
     public static @NotNull ItemStack of(final @NotNull Material type, final int amount) {
-        Preconditions.checkArgument(type.asItemType() != null, type + " isn't an item");
+        Preconditions.checkArgument(type.asItemType() != null, "%s isn't an item", type);
         Preconditions.checkArgument(amount > 0, "amount must be greater than 0");
         return java.util.Objects.requireNonNull(type.asItemType(), type + " is not an item").createItemStack(amount); // Paper - delegate
     }
     // Paper end
 
     // Paper start - pdc
+    /**
+     * @see #editPersistentDataContainer(Consumer)
+     */
     @Override
     public io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer() {
         return this.craftDelegate.getPersistentDataContainer();
+    }
+
+    /**
+     * Edits the {@link PersistentDataContainer} of this stack. The
+     * {@link PersistentDataContainer} instance is only valid inside the
+     * consumer.
+     *
+     * @param consumer the persistent data container consumer
+     * @return {@code true} if the edit was successful, {@code false} otherwise. Failure to edit the persistent data
+     * container may be caused by empty or invalid itemstacks.
+     */
+    public boolean editPersistentDataContainer(@NotNull Consumer<PersistentDataContainer> consumer) {
+        return this.craftDelegate.editPersistentDataContainer(consumer);
     }
     // Paper end - pdc
 
@@ -353,21 +371,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Checks if this ItemStack contains the given {@link Enchantment}
      *
-     * @param ench Enchantment to test
+     * @param enchant Enchantment to test
      * @return True if this has the given enchantment
      */
-    public boolean containsEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.containsEnchantment(ench); // Paper - delegate
+    public boolean containsEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.containsEnchantment(enchant); // Paper - delegate
     }
 
     /**
      * Gets the level of the specified enchantment on this item stack
      *
-     * @param ench Enchantment to check
+     * @param enchant Enchantment to check
      * @return Level of the enchantment, or 0
      */
-    public int getEnchantmentLevel(@NotNull Enchantment ench) {
-        return this.craftDelegate.getEnchantmentLevel(ench); // Paper - delegate
+    public int getEnchantmentLevel(@NotNull Enchantment enchant) {
+        return this.craftDelegate.getEnchantmentLevel(enchant); // Paper - delegate
     }
 
     /**
@@ -407,21 +425,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * If this item stack already contained the given enchantment (at any
      * level), it will be replaced.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      * @throws IllegalArgumentException if enchantment null, or enchantment is
      *     not applicable
      */
     @Utility
-    public void addEnchantment(@NotNull Enchantment ench, int level) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
-        if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
-            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
-        } else if (!ench.canEnchantItem(this)) {
+    public void addEnchantment(@NotNull Enchantment enchant, int level) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
+        if ((level < enchant.getStartLevel()) || (level > enchant.getMaxLevel())) {
+            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + enchant.getStartLevel() + " to " + enchant.getMaxLevel() + ")");
+        } else if (!enchant.canEnchantItem(this)) {
             throw new IllegalArgumentException("Specified enchantment cannot be applied to this itemstack");
         }
 
-        addUnsafeEnchantment(ench, level);
+        addUnsafeEnchantment(enchant, level);
     }
 
     /**
@@ -449,22 +467,22 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * This method is unsafe and will ignore level restrictions or item type.
      * Use at your own discretion.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      */
-    public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
-        this.craftDelegate.addUnsafeEnchantment(ench, level); // Paper - delegate
+    public void addUnsafeEnchantment(@NotNull Enchantment enchant, int level) {
+        this.craftDelegate.addUnsafeEnchantment(enchant, level); // Paper - delegate
     }
 
     /**
      * Removes the specified {@link Enchantment} if it exists on this
      * ItemStack
      *
-     * @param ench Enchantment to remove
+     * @param enchant Enchantment to remove
      * @return Previous level, or 0
      */
-    public int removeEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.removeEnchantment(ench); // Paper - delegate
+    public int removeEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.removeEnchantment(enchant); // Paper - delegate
     }
 
     /**
@@ -478,21 +496,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Utility
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
-
-        result.put("v", Bukkit.getUnsafe().getDataVersion()); // Include version to indicate we are using modern material names (or LEGACY prefix)
-        result.put("type", getType().name());
-
-        if (getAmount() != 1) {
-            result.put("amount", getAmount());
-        }
-
-        ItemMeta meta = getItemMeta();
-        if (!Bukkit.getItemFactory().equals(meta, null)) {
-            result.put("meta", meta);
-        }
-
-        return result;
+        return Bukkit.getUnsafe().serializeStack(this);
     }
 
     /**
@@ -504,6 +508,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack deserialize(@NotNull Map<String, Object> args) {
+        // Parse internally, if schema_version is not defined, assume legacy and fall through to unsafe legacy deserialization logic
+        if (args.containsKey("schema_version")) {
+            return org.bukkit.Bukkit.getUnsafe().deserializeStack(args);
+        }
+
         int version = (args.containsKey("v")) ? ((Number) args.get("v")).intValue() : -1;
         short damage = 0;
         int amount = 1;
@@ -667,7 +676,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * <p>If this ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param levels levels to use for enchanting
      * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
@@ -676,7 +685,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @throws IllegalArgumentException on bad arguments
      */
     @NotNull
-    public ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
+    public ItemStack enchantWithLevels(final int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
         return Bukkit.getServer().getItemFactory().enchantWithLevels(this, levels, allowTreasure, random);
     }
 
@@ -685,7 +694,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param levels levels to use for enchanting
      * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
@@ -693,7 +702,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    public @NotNull ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
+    public @NotNull ItemStack enchantWithLevels(final int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
         return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
     }
 
@@ -1288,6 +1297,31 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @org.jetbrains.annotations.ApiStatus.Experimental
     public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         this.craftDelegate.resetData(type);
+    }
+
+    /**
+     * Copies component values and component removals from the provided ItemStack.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Set<DataComponentType> types = Set.of(
+     *     DataComponentTypes.CONSUMABLE,
+     *     DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE,
+     *     DataComponentTypes.RARITY
+     * );
+     *
+     * ItemStack source = ItemStack.of(Material.ENCHANTED_GOLDEN_APPLE);
+     * ItemStack target = ItemStack.of(Material.GOLDEN_CARROT);
+     *
+     * target.copyDataFrom(source, types::contains);
+     * }</pre>
+     *
+     * @param source the item stack to copy from
+     * @param filter predicate for which components to copy
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void copyDataFrom(final @NotNull ItemStack source, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+        this.craftDelegate.copyDataFrom(source, filter);
     }
 
     /**

@@ -13,7 +13,7 @@ public class CraftStructurePiece implements StructurePiece {
 
     @Override
     public BoundingBox getBoundingBox() {
-        net.minecraft.world.level.levelgen.structure.BoundingBox bb = this.handle.getBoundingBox();
-        return new BoundingBox(bb.minX(), bb.minY(), bb.minZ(), bb.maxX(), bb.maxY(), bb.maxZ());
+        net.minecraft.world.level.levelgen.structure.BoundingBox box = this.handle.getBoundingBox();
+        return new BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ());
     }
 }
