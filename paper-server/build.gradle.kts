@@ -163,6 +163,9 @@ dependencies {
     runtimeOnly("org.xerial:sqlite-jdbc:3.49.1.0")
     runtimeOnly("com.mysql:mysql-connector-j:9.2.0")
     runtimeOnly("com.lmax:disruptor:3.4.4")
+    implementation("com.googlecode.json-simple:json-simple:1.1.1") { // change to runtimeOnly once Timings is removed
+        isTransitive = false // includes junit
+    }
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
