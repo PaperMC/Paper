@@ -58,14 +58,12 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
         }
     }
 
-    private static GameRules.Type<?> getGameRuleType(String name) {
-        GameRules.Type<?> type = null;
-        for (Map.Entry<GameRules.Key<?>, GameRules.Type<?>> gameRules : GameRules.GAME_RULE_TYPES.entrySet()) {
+    private static GameRules.Type<?> getGameRuleType(final String name) {
+        for (final Map.Entry<GameRules.Key<?>, GameRules.Type<?>> gameRules : GameRules.GAME_RULE_TYPES.entrySet()) {
             if (gameRules.getKey().getId().equals(name)) {
-                type = gameRules.getValue();
-                break;
+                return gameRules.getValue();
             }
         }
-        return type;
+        return null;
     }
 }
