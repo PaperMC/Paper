@@ -2873,7 +2873,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Checks if the bonus chest is enabled.
      *
-     * @return true if the bonus chest is enabled, false otherwise
+     * @return {@code true} if the bonus chest is enabled, {@code false} otherwise
      */
     boolean hasBonusChest();
 

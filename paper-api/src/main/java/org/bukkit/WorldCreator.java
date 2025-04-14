@@ -454,7 +454,7 @@ public class WorldCreator {
 
     /**
      * Gets whether the world will be hardcore or not.
-     *
+     * <p>
      * In a hardcore world the difficulty will be locked to hard.
      *
      * @return hardcore status
@@ -466,11 +466,11 @@ public class WorldCreator {
     /**
      * Sets whether a bonus chest should be generated or not.
      *
-     * @param bonusChest Indicating whether the bonus chest should be generated
+     * @param bonusChest indicating whether the bonus chest should be generated
      * @return This object, for chaining
      */
     @NotNull
-    public WorldCreator bonusChest(boolean bonusChest) {
+    public WorldCreator bonusChest(final boolean bonusChest) {
         this.bonusChest = bonusChest;
         return this;
     }
