@@ -205,7 +205,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     @Override
     @NotNull
-    public List<PotionEffect> getEffects() {
+    public List<PotionEffect> getAllEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
         if (this.hasBasePotionType()) {
             builder.addAll(this.getBasePotionType().getPotionEffects());
@@ -326,7 +326,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             return getColor();
         }
 
-        Iterable<MobEffectInstance> allPotionEffects = getEffects().stream()
+        Iterable<MobEffectInstance> allPotionEffects = getAllEffects().stream()
             .map(CraftPotionUtil::fromBukkit).toList();
 
         return Color.fromRGB(
