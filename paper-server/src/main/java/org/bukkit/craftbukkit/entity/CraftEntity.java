@@ -726,6 +726,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public boolean isTrackedBy(final Player player) {
+        Preconditions.checkState(!this.entity.generation, "Cannot check tracking players during world generation");
+        Preconditions.checkArgument(player != null, "Player cannot be null");
+
+        ServerLevel world = ((CraftWorld) this.getWorld()).getHandle();
+        ChunkMap.TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
+        if (entityTracker == null) return false;
+
+        return entityTracker.seenBy.contains(((CraftPlayer) player).getHandle().connection);
+    }
+
+    @Override
     public void sendMessage(String message) {
 
     }

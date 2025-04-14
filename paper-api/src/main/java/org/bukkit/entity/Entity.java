@@ -699,6 +699,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     Set<Player> getTrackedBy();
 
     /**
+     * Checks to see if a player is currently tracking this entity.
+     *
+     * @param player the player to check
+     * @return if the player is currently tracking this entity
+     * @see #getTrackedBy()
+     */
+    boolean isTrackedBy(@NotNull Player player);
+
+    /**
      * Sets whether the entity has a team colored (default: white) glow.
      *
      * <b>nb: this refers to the 'Glowing' entity property, not whether a
