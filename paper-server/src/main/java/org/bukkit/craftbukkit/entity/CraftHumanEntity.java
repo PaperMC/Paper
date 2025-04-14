@@ -926,7 +926,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
         net.minecraft.world.entity.EquipmentSlot equipmentSlot = CraftEquipmentSlot.getNMS(slot);
-        return equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR || equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HAND;
+        return (equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR || equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HAND) && super.canUseEquipmentSlot(slot);
     }
 
     @Override
