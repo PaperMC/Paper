@@ -65,7 +65,6 @@ public interface TNTPrimed extends Explosive {
         return this.getOrigin();
     }
 
-    // Paper start
     /**
      * Sets the visual block data of this
      * primed tnt.
@@ -85,5 +84,4 @@ public interface TNTPrimed extends Explosive {
      */
     @org.jetbrains.annotations.NotNull
     org.bukkit.block.data.BlockData getBlockData();
-    // Paper end
 }

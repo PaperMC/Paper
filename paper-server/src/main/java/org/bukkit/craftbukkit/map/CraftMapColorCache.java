@@ -20,7 +20,7 @@ import org.bukkit.map.MapPalette;
 
 public class CraftMapColorCache implements MapPalette.MapColorCache {
 
-    private static final String MD5_CACHE_HASH = "E88EDD068D12D39934B40E8B6B124C83";
+    private static final String MD5_CACHE_HASH = "E88EDD068D12D39934B40E8B6B124C83"; // 248 colors
     private static final File CACHE_FILE = new File("map-color-cache.dat");
     private byte[] cache;
     private final Logger logger;
@@ -31,10 +31,16 @@ public class CraftMapColorCache implements MapPalette.MapColorCache {
         this.logger = logger;
     }
 
+    private static CraftMapColorCache dryRun() {
+        CraftMapColorCache mapColorCache = new CraftMapColorCache(Logger.getGlobal());
+        mapColorCache.cache = new byte[256 * 256 * 256];
+        mapColorCache.buildCache();
+        return mapColorCache;
+    }
+
     // Builds and prints the md5 hash of the cache, this should be run when new map colors are added to update the MD5_CACHE_HASH string
     public static void main(String[] args) {
-        CraftMapColorCache craftMapColorCache = new CraftMapColorCache(Logger.getGlobal());
-        craftMapColorCache.buildCache();
+        CraftMapColorCache craftMapColorCache = CraftMapColorCache.dryRun();
         try {
             byte[] hash = MessageDigest.getInstance("MD5").digest(craftMapColorCache.cache);
             System.out.println("MD5_CACHE_HASH: " + CraftMapColorCache.bytesToString(hash));
@@ -151,7 +157,7 @@ public class CraftMapColorCache implements MapPalette.MapColorCache {
 
     @Override
     public byte matchColor(Color color) {
-        Preconditions.checkState(this.isCached(), "Cache not build jet");
+        Preconditions.checkState(this.isCached(), "Cache not build yet");
 
         return this.cache[this.toInt(color)];
     }

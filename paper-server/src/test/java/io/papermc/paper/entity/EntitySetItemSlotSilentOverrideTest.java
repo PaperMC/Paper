@@ -9,6 +9,7 @@ import io.github.classgraph.ScanResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import net.minecraft.world.entity.LivingEntity;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,7 +27,7 @@ public class EntitySetItemSlotSilentOverrideTest {
             .whitelistPackages("net.minecraft")
             .scan()
         ) {
-            for (final ClassInfo subclass : scanResult.getSubclasses("net.minecraft.world.entity.LivingEntity")) {
+            for (final ClassInfo subclass : scanResult.getSubclasses(LivingEntity.class.getName())) {
                 final MethodInfoList setItemSlot = subclass.getDeclaredMethodInfo("setItemSlot");
                 if (!setItemSlot.isEmpty()) {
                     classInfo.add(subclass);

@@ -5,14 +5,13 @@ import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
-import io.papermc.paper.util.ItemObfuscationBinding;
+import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -184,6 +183,10 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
         @Comment("This setting controls what compression format is used for region files.")
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
+        @Comment("This setting controls if equipment should be updated when handling certain player actions.")
+        public boolean updateEquipmentOnPlayerActions = true;
+        @Comment("Only checks an item's amount and type instead of its full data during inventory desync checks.")
+        public boolean simplifyRemoteItemMatching = false;
 
         public enum CompressionFormat {
             GZIP,
@@ -198,6 +201,8 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
         public boolean timeCommandAffectsAllWorlds = false;
+        @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
+        public boolean rideCommandAllowPlayerAsVehicle = false;
     }
 
     public Logging logging;

@@ -111,7 +111,7 @@ public class CraftDamageSource implements DamageSource {
             nmsDirectEntity = craftDirectEntity.getHandle();
         }
 
-        Vec3 sourcePos = (damageLocation == null) ? null : CraftLocation.toVec3D(damageLocation);
+        Vec3 sourcePos = (damageLocation == null) ? null : CraftLocation.toVec3(damageLocation);
 
         return new CraftDamageSource(new net.minecraft.world.damagesource.DamageSource(holderDamageType, nmsDirectEntity, nmsCausingEntity, sourcePos));
     }

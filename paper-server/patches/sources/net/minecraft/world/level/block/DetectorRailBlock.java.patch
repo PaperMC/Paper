@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/level/block/DetectorRailBlock.java
 +++ b/net/minecraft/world/level/block/DetectorRailBlock.java
-@@ -54,6 +_,7 @@
+@@ -49,6 +_,7 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide) {
              if (!state.getValue(POWERED)) {
                  this.checkPressed(level, pos, state);
-@@ -84,6 +_,7 @@
+@@ -79,6 +_,7 @@
  
      private void checkPressed(Level level, BlockPos pos, BlockState state) {
          if (this.canSurvive(state, level, pos)) {
@@ -16,13 +16,13 @@
              boolean poweredValue = state.getValue(POWERED);
              boolean flag = false;
              List<AbstractMinecart> interactingMinecartOfType = this.getInteractingMinecartOfType(level, pos, AbstractMinecart.class, entity -> true);
-@@ -91,6 +_,16 @@
+@@ -86,6 +_,16 @@
                  flag = true;
              }
  
 +            // CraftBukkit start
 +            if (poweredValue != flag) {
-+                org.bukkit.block.Block block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +
 +                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 15 : 0);
 +                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
@@ -31,5 +31,5 @@
 +            }
 +            // CraftBukkit end
              if (flag && !poweredValue) {
-                 BlockState blockState = state.setValue(POWERED, Boolean.valueOf(true));
+                 BlockState blockState = state.setValue(POWERED, true);
                  level.setBlock(pos, blockState, 3);

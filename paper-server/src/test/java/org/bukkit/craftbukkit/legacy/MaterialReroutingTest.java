@@ -98,7 +98,7 @@ public class MaterialReroutingTest {
                     }
                     // Paper start - filter out more methods from rerouting test
                     if (methodNode.name.startsWith("lambda$")) continue;
-                    if (isInternal(methodNode.invisibleAnnotations)) continue;
+                    if ((methodNode.access & Opcodes.ACC_PRIVATE) != 0 || isInternal(methodNode.invisibleAnnotations)) continue;
                     // Paper end - filter out more methods from rerouting test
 
                     if (!Commodore.rerouteMethods(ApiVersion.CURRENT, MaterialReroutingTest.MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {

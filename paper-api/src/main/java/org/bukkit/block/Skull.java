@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -155,7 +156,7 @@ public interface Skull extends TileState {
      * @return the type of skull
      * @deprecated check {@link Material} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     @NotNull
     public SkullType getSkullType();
 
@@ -165,7 +166,27 @@ public interface Skull extends TileState {
      * @param skullType the type of skull
      * @deprecated check {@link Material} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     @Contract("_ -> fail")
     public void setSkullType(SkullType skullType);
+
+    /**
+     * Get the custom name of skull.
+     * <p>This name is set when placing a skull item that has a custom name.
+     * This name is only carried back to the item when broken for player heads
+     * (skeleton/creeper heads will not retain the name).</p>
+     *
+     * @return Custom name of skull
+     */
+    public @Nullable Component customName();
+
+    /**
+     * Set the custom name of skull.
+     * <p>This name is set when placing a skull item that has a custom name.
+     * This name is only carried back to the item when broken for player heads
+     * (skeleton/creeper heads will not retain the name).</p>
+     *
+     * @param customName Custom name of skull
+     */
+    public void customName(@Nullable Component customName);
 }

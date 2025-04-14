@@ -1,23 +1,37 @@
 --- a/net/minecraft/world/entity/monster/Creeper.java
 +++ b/net/minecraft/world/entity/monster/Creeper.java
-@@ -49,6 +_,7 @@
+@@ -53,6 +_,7 @@
      public int maxSwell = 30;
      public int explosionRadius = 3;
      private int droppedSkulls;
-+    public Entity entityIgniter; // CraftBukkit
++    public @Nullable Entity entityIgniter; // CraftBukkit
  
      public Creeper(EntityType<? extends Creeper> entityType, Level level) {
          super(entityType, level);
-@@ -121,7 +_,7 @@
-         }
- 
-         if (compound.getBoolean("ignited")) {
+@@ -116,7 +_,7 @@
+         this.maxSwell = compound.getShortOr("Fuse", (short)30);
+         this.explosionRadius = compound.getByteOr("ExplosionRadius", (byte)3);
+         if (compound.getBooleanOr("ignited", false)) {
 -            this.ignite();
 +            this.entityData.set(DATA_IS_IGNITED, true); // Paper - set directly to avoid firing event
          }
      }
  
-@@ -204,8 +_,19 @@
+@@ -149,10 +_,11 @@
+     }
+ 
+     @Override
+-    public void setTarget(@Nullable LivingEntity target) {
++    public boolean setTarget(@Nullable LivingEntity target, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) { // CraftBukkit
+         if (!(target instanceof Goat)) {
+-            super.setTarget(target);
++            return super.setTarget(target, reason); // CraftBukkit
+         }
++        return false; // CraftBukkit
+     }
+ 
+     @Override
+@@ -199,9 +_,20 @@
      @Override
      public void thunderHit(ServerLevel level, LightningBolt lightning) {
          super.thunderHit(level, lightning);
@@ -28,16 +42,17 @@
 +        // CraftBukkit end
          this.entityData.set(DATA_IS_POWERED, true);
      }
+ 
 +    // CraftBukkit start
 +    public void setPowered(boolean powered) {
-+        this.entityData.set(Creeper.DATA_IS_POWERED, powered);
++        this.entityData.set(DATA_IS_POWERED, powered);
 +    }
 +    // CraftBukkit end
 +
- 
      @Override
      protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-@@ -215,8 +_,9 @@
+         ItemStack itemInHand = player.getItemInHand(hand);
+@@ -210,8 +_,9 @@
              this.level()
                  .playSound(player, this.getX(), this.getY(), this.getZ(), soundEvent, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
              if (!this.level().isClientSide) {
@@ -48,7 +63,7 @@
                      itemInHand.shrink(1);
                  } else {
                      itemInHand.hurtAndBreak(1, player, getSlotForHand(hand));
-@@ -232,18 +_,29 @@
+@@ -227,18 +_,29 @@
      public void explodeCreeper() {
          if (this.level() instanceof ServerLevel serverLevel) {
              float f = this.isPowered() ? 2.0F : 1.0F;
@@ -81,7 +96,7 @@
              areaEffectCloud.setRadius(2.5F);
              areaEffectCloud.setRadiusOnUse(-0.5F);
              areaEffectCloud.setWaitTime(10);
-@@ -254,16 +_,27 @@
+@@ -250,16 +_,27 @@
                  areaEffectCloud.addEffect(new MobEffectInstance(mobEffectInstance));
              }
  
@@ -92,7 +107,7 @@
 +        }
 +    }
 +
-+    // Paper start - CreeperIgniteEvent
++    // Paper start - Call CreeperIgniteEvent
 +    public void setIgnited(boolean ignited) {
 +        if (isIgnited() != ignited) {
 +            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
@@ -101,7 +116,7 @@
 +            }
 +        }
 +    }
-+    // Paper end - CreeperIgniteEvent
++    // Paper end - Call CreeperIgniteEvent
  
      public boolean isIgnited() {
          return this.entityData.get(DATA_IS_IGNITED);
@@ -109,7 +124,7 @@
  
      public void ignite() {
 -        this.entityData.set(DATA_IS_IGNITED, true);
-+        setIgnited(true); // Paper - CreeperIgniteEvent
++        setIgnited(true); // Paper - Call CreeperIgniteEvent
      }
  
      public boolean canDropMobsSkull() {

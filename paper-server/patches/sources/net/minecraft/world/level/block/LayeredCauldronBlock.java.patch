@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -61,35 +_,68 @@
+@@ -62,35 +_,67 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (level instanceof ServerLevel serverLevel && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
 -            entity.clearFire();
@@ -22,32 +22,29 @@
  
 -    private void handleEntityOnFireInside(BlockState state, Level level, BlockPos pos) {
 +    // CraftBukkit start
-+    private boolean handleEntityOnFireInside(BlockState state, Level level, BlockPos pos, Entity entity) {
++    private boolean handleEntityOnFireInside(BlockState state, Level level, BlockPos pos, @javax.annotation.Nullable Entity entity) {
          if (this.precipitationType == Biome.Precipitation.SNOW) {
 -            lowerFillLevel(Blocks.WATER_CAULDRON.defaultBlockState().setValue(LEVEL, state.getValue(LEVEL)), level, pos);
-+            return LayeredCauldronBlock.lowerFillLevel((BlockState) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, (Integer) state.getValue(LayeredCauldronBlock.LEVEL)), level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
++            return lowerFillLevel(Blocks.WATER_CAULDRON.defaultBlockState().setValue(LEVEL, state.getValue(LEVEL)), level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
          } else {
 -            lowerFillLevel(state, level, pos);
-+            return LayeredCauldronBlock.lowerFillLevel(state, level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
++            return lowerFillLevel(state, level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
          }
      }
  
      public static void lowerFillLevel(BlockState state, Level level, BlockPos pos) {
--        int i = state.getValue(LEVEL) - 1;
--        BlockState blockState = i == 0 ? Blocks.CAULDRON.defaultBlockState() : state.setValue(LEVEL, Integer.valueOf(i));
++    // Paper start
++        lowerFillLevel(state, level, pos, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.UNKNOWN);
++    }
++    public static boolean lowerFillLevel(BlockState state, Level level, BlockPos pos, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
++    // Paper end
+         int i = state.getValue(LEVEL) - 1;
+         BlockState blockState = i == 0 ? Blocks.CAULDRON.defaultBlockState() : state.setValue(LEVEL, i);
 -        level.setBlockAndUpdate(pos, blockState);
 -        level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
 -    }
-+        // CraftBukkit start
-+        LayeredCauldronBlock.lowerFillLevel(state, level, pos, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.UNKNOWN);
++        return changeLevel(level, pos, blockState, entity, reason); // Paper
 +    }
-+    public static boolean lowerFillLevel(BlockState state, Level level, BlockPos pos, Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
-+        int i = (Integer) state.getValue(LayeredCauldronBlock.LEVEL) - 1;
-+        BlockState iblockdata1 = i == 0 ? Blocks.CAULDRON.defaultBlockState() : (BlockState) state.setValue(LayeredCauldronBlock.LEVEL, i);
-+
-+        return LayeredCauldronBlock.changeLevel(level, pos, iblockdata1, entity, reason);
-+     }
-+
 +    // CraftBukkit start
 +    // Paper start - Call CauldronLevelChangeEvent
 +    public static boolean changeLevel(Level level, BlockPos pos, BlockState newBlock, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
@@ -66,7 +63,7 @@
 +        if (!event.callEvent()) {
 +            return false;
 +        }
-+        newState.update(true);
++        newState.place(3);
 +        if (sendGameEvent) level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newBlock)); // Paper - Call CauldronLevelChangeEvent
 +        return true;
 +    }
@@ -78,18 +75,18 @@
              BlockState blockState = state.cycle(LEVEL);
 -            level.setBlockAndUpdate(pos, blockState);
 -            level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
-+            LayeredCauldronBlock.changeLevel(level, pos, blockState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL); // CraftBukkit
++            changeLevel(level, pos, blockState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL); // CraftBukkit
          }
      }
  
-@@ -107,8 +_,11 @@
+@@ -108,8 +_,11 @@
      protected void receiveStalactiteDrip(BlockState state, Level level, BlockPos pos, Fluid fluid) {
          if (!this.isFull(state)) {
-             BlockState blockState = state.setValue(LEVEL, Integer.valueOf(state.getValue(LEVEL) + 1));
+             BlockState blockState = state.setValue(LEVEL, state.getValue(LEVEL) + 1);
 -            level.setBlockAndUpdate(pos, blockState);
 -            level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
 +            // CraftBukkit start
-+            if (!LayeredCauldronBlock.changeLevel(level, pos, blockState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
++            if (!changeLevel(level, pos, blockState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
 +                return;
 +            }
 +            // CraftBukkit end

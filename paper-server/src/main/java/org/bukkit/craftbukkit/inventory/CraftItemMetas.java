@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
@@ -247,7 +246,8 @@ public final class CraftItemMetas {
                 || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
                 || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
                 || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT
-                || itemType == ItemType.CREAKING_HEART) {
+                || itemType == ItemType.CREAKING_HEART || itemType == ItemType.TEST_BLOCK
+                || itemType == ItemType.TEST_INSTANCE_BLOCK) {
             return CraftItemMetas.asType(CraftItemMetas.BLOCK_STATE_META_DATA);
         }
         if (itemType == ItemType.SHIELD) {
@@ -265,7 +265,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.SUSPICIOUS_STEW) {
             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
         }
-        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET // Paper
+        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET
                 || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
                 || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);

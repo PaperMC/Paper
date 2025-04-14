@@ -30,7 +30,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
      * compatibility measures.
      */
     public static final String BUKKIT = "bukkit";
-    //
+
     private final String namespace;
     private final String key;
 
@@ -83,14 +83,12 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
      * @see #NamespacedKey(Plugin, String)
      */
     public NamespacedKey(@NotNull String namespace, @NotNull String key) {
-        Preconditions.checkArgument(namespace != null && isValidNamespace(namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
-        Preconditions.checkArgument(key != null && isValidKey(key), "Invalid key. Must be [a-z0-9/._-]: %s", key);
-
+        Preconditions.checkArgument(namespace != null, "Namespace cannot be null");
+        Preconditions.checkArgument(key != null, "Key cannot be null");
         this.namespace = namespace;
         this.key = key;
 
-        String string = toString();
-        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
+        this.validate();
     }
 
     /**
@@ -108,16 +106,17 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
     public NamespacedKey(@NotNull Plugin plugin, @NotNull String key) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         Preconditions.checkArgument(key != null, "Key cannot be null");
-
         this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
         this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
+        this.validate();
+    }
+
+    private void validate() {
+        Preconditions.checkArgument(this.namespace.length() + 1 + this.key.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters");
         Preconditions.checkArgument(isValidNamespace(this.namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
         Preconditions.checkArgument(isValidKey(this.key), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
-
-        String string = toString();
-        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
     }
 
     @NotNull

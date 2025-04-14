@@ -25,7 +25,7 @@ public class CraftEntityFactory implements EntityFactory {
 
         CompoundTag tag;
         try {
-            tag = TagParser.parseTag(input);
+            tag = TagParser.parseCompoundFully(input);
         } catch (CommandSyntaxException e) {
             throw new IllegalArgumentException("Could not parse Entity: " + input, e);
         }

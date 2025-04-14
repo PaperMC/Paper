@@ -1,10 +1,13 @@
 package org.bukkit.event.player;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when the GameMode of the player is changed.
@@ -15,35 +18,27 @@ import org.jetbrains.annotations.NotNull;
  * to check before changing player state.
  */
 public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private final GameMode newGameMode;
-    // Paper start
-    private final Cause cause;
-    private net.kyori.adventure.text.Component cancelMessage;
 
-    @Deprecated // Paper end
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final GameMode newGameMode;
+    private final Cause cause;
+    private Component cancelMessage;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode) {
-        // Paper start
         this(player, newGameMode, Cause.UNKNOWN, null);
     }
 
+    @ApiStatus.Internal
     public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode, @NotNull Cause cause, @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component cancelMessage) {
-        // Paper end
         super(player);
         this.newGameMode = newGameMode;
-        this.cause = cause; // Paper
-        this.cancelMessage = cancelMessage; // Paper
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
+        this.cause = cause;
+        this.cancelMessage = cancelMessage;
     }
 
     /**
@@ -53,20 +48,9 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      */
     @NotNull
     public GameMode getNewGameMode() {
-        return newGameMode;
+        return this.newGameMode;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-    // Paper start
     /**
      * Gets the cause of this gamemode change.
      *
@@ -74,7 +58,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      */
     @NotNull
     public Cause getCause() {
-        return cause;
+        return this.cause;
     }
 
     /**
@@ -84,13 +68,13 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * <p>
      * This returns {@code null} if the gamemode change was due to a plugin, or a
      * player joining the game with a gamemode not equal to the server default gamemode
-     * and {@code force-gamemode} is set to true.
+     * and {@code force-gamemode} is set to {@code true}.
      *
-     * @return the error message shown to the command user, null if not directly caused by a command
+     * @return the error message shown to the command user, {@code null} if not directly caused by a command
      */
-    @org.jetbrains.annotations.Nullable
-    public net.kyori.adventure.text.Component cancelMessage() {
-        return cancelMessage;
+    @Nullable
+    public Component cancelMessage() {
+        return this.cancelMessage;
     }
 
     /**
@@ -98,10 +82,31 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * <b>The message is only shown to cancelled events that are directly called by a command
      * not by a plugin or a player joining with the wrong gamemode.</b>
      *
-     * @param message the error message shown to the command user, null to show no message.
+     * @param message the error message shown to the command user, {@code null} to show no message.
      */
-    public void cancelMessage(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component message) {
+    public void cancelMessage(@Nullable Component message) {
         this.cancelMessage = message;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
+
+    @NotNull
+    @Override
+    public HandlerList getHandlers() {
+        return HANDLER_LIST;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
+        return HANDLER_LIST;
     }
 
     public enum Cause {
@@ -111,32 +116,27 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
          * {@link Player#setGameMode(GameMode)}.
          */
         PLUGIN,
-
         /**
          * The {@code /gamemode} command was used.
          */
         COMMAND,
-
         /**
          * A player had their gamemode changed as a result of
          * the {@code /defaultgamemode} command, or they joined
          * with a gamemode that was not the default gamemode and
-         * {@code force-gamemode} in {@code server.properties} is set to true.
+         * {@code force-gamemode} in {@code server.properties} is set to {@code true}.
          */
         DEFAULT_GAMEMODE,
-
         /**
          * When the player dies in a hardcore world and has their gamemode
          * changed to {@link GameMode#SPECTATOR}.
          */
         HARDCORE_DEATH,
-
         /**
          * This cause is only used if a plugin fired their own
          * {@link PlayerGameModeChangeEvent} and did not include a
          * cause. Can usually be ignored.
          */
-        UNKNOWN,
+        UNKNOWN
     }
-    // Paper end
 }

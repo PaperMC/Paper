@@ -70,7 +70,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
 
     @Override
     public void scheduleTick(BlockPos pos, Block block, int delay) {
-        // Used by BlockComposter
+        // Used by ComposterBlock
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void playSound(Player source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
+    public void playSound(Entity source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -114,8 +114,8 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void levelEvent(Player player, int eventId, BlockPos pos, int data) {
-        // Used by PowderSnowBlock.removeFluid
+    public void levelEvent(Entity entity, int eventId, BlockPos pos, int data) {
+        // Used by PowderSnowBlock.pickupBlock
     }
 
     @Override
@@ -212,23 +212,22 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     public FluidState getFluidState(BlockPos pos) {
         return Fluids.EMPTY.defaultFluidState(); // SPIGOT-6634
     }
-    // Paper start - if loaded util
-    @javax.annotation.Nullable
+
     @Override
     public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public BlockState getBlockStateIfLoaded(BlockPos blockposition) {
+    public BlockState getBlockStateIfLoaded(BlockPos pos) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public FluidState getFluidIfLoaded(BlockPos blockposition) {
+    public FluidState getFluidIfLoaded(BlockPos pos) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    // Paper end
+
     @Override
     public WorldBorder getWorldBorder() {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -245,7 +244,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
+    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
         return false;
     }
 
@@ -255,11 +254,11 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean drop, Entity breakingEntity, int maxUpdateDepth) {
+    public boolean destroyBlock(BlockPos pos, boolean drop, Entity breakingEntity, int recursionLeft) {
         return false; // SPIGOT-6515
     }
 
-    // Paper start - add more methods
+    @Override
     public void scheduleTick(BlockPos pos, Fluid fluid, int delay) {}
 
     @Override
@@ -267,5 +266,4 @@ public class DummyGeneratorAccess implements WorldGenLevel {
 
     @Override
     public void scheduleTick(BlockPos pos, Fluid fluid, int delay, net.minecraft.world.ticks.TickPriority priority) {}
-    // Paper end - add more methods
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
-@@ -20,6 +_,48 @@
+@@ -24,6 +_,48 @@
  import net.minecraft.world.ticks.ContainerSingleItem;
  
  public class DecoratedPotBlockEntity extends BlockEntity implements RandomizableContainer, ContainerSingleItem.BlockContainerSingleItem {
@@ -35,12 +35,12 @@
 +    }
 +
 +    @Override
-+    public void setMaxStackSize(int i) {
-+        this.maxStack = i;
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
 +    }
 +
 +    @Override
-+    public org.bukkit.Location getLocation() {
++    public @Nullable org.bukkit.Location getLocation() {
 +        if (this.level == null) return null;
 +        return org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.worldPosition, this.level.getWorld());
 +    }
@@ -49,18 +49,18 @@
      public static final String TAG_SHERDS = "sherds";
      public static final String TAG_ITEM = "item";
      public static final int EVENT_POT_WOBBLES = 1;
-@@ -41,8 +_,8 @@
-     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-         super.saveAdditional(tag, registries);
-         this.decorations.save(tag);
+@@ -48,8 +_,8 @@
+             tag.store("sherds", PotDecorations.CODEC, this.decorations);
+         }
+ 
 -        if (!this.trySaveLootTable(tag) && !this.item.isEmpty()) {
--            tag.put("item", this.item.save(registries));
+-            tag.store("item", ItemStack.CODEC, registries.createSerializationContext(NbtOps.INSTANCE), this.item);
 +        if (!this.trySaveLootTable(tag) && !this.item.isEmpty()) { // Paper - diff on change - hide unnecessary update data
-+            tag.put("item", this.item.save(registries)); // Paper - diff on change - hide unnecessary update data
++            tag.store("item", ItemStack.CODEC, registries.createSerializationContext(NbtOps.INSTANCE), this.item); // Paper - diff on change - hide unnecessary update data
          }
      }
  
-@@ -66,7 +_,12 @@
+@@ -72,7 +_,14 @@
  
      @Override
      public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
@@ -68,7 +68,9 @@
 +        // Paper start - hide unnecessary update data
 +        // Like chests, decorated pots should not allow clients to inspect their contents without breaking them.
 +        final CompoundTag compoundTag = new CompoundTag();
-+        this.decorations.save(compoundTag);
++        if (!this.decorations.equals(PotDecorations.EMPTY)) {
++            compoundTag.store("sherds", PotDecorations.CODEC, this.decorations);
++        }
 +        return compoundTag;
 +        // Paper end - hide unnecessary update data
      }

@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,26 +15,19 @@ import org.jetbrains.annotations.Nullable;
  * (Wolf), or commands (/teleport).
  */
 public class EntityTeleportEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Location from;
     private Location to;
 
-    public EntityTeleportEvent(@NotNull Entity what, @NotNull Location from, @Nullable Location to) {
-        super(what);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public EntityTeleportEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to) {
+        super(entity);
         this.from = from;
         this.to = to;
-        this.cancel = false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
     }
 
     /**
@@ -43,7 +37,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Location getFrom() {
-        return from;
+        return this.from;
     }
 
     /**
@@ -62,7 +56,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      */
     @Nullable
     public Location getTo() {
-        return to;
+        return this.to;
     }
 
     /**
@@ -74,14 +68,24 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
         this.to = to != null ? to.clone() : null;
     }
 
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
+
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

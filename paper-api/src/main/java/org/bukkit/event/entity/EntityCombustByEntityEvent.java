@@ -1,19 +1,23 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity causes another entity to combust.
  */
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
+
     private final Entity combuster;
 
-    @Deprecated(since = "1.21")
+    @ApiStatus.Internal
+    @Deprecated(since = "1.21", forRemoval = true)
     public EntityCombustByEntityEvent(@NotNull final Entity combuster, @NotNull final Entity combustee, final int duration) {
         this(combuster, combustee, (float) duration);
     }
 
+    @ApiStatus.Internal
     public EntityCombustByEntityEvent(@NotNull final Entity combuster, @NotNull final Entity combustee, final float duration) {
         super(combustee, duration);
         this.combuster = combuster;
@@ -26,6 +30,6 @@ public class EntityCombustByEntityEvent extends EntityCombustEvent {
      */
     @NotNull
     public Entity getCombuster() {
-        return combuster;
+        return this.combuster;
     }
 }

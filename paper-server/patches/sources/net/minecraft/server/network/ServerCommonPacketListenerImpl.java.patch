@@ -47,7 +47,7 @@
 +    }
 +
 +    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
-+        return this.player == null ? null : this.player.getBukkitEntity();
++        return this.player.getBukkitEntity();
 +    }
 +
 +    @Override
@@ -81,7 +81,7 @@
 +        this.onDisconnect(details, null);
 +    }
 +
-+    public void onDisconnect(DisconnectionDetails info, @Nullable net.kyori.adventure.text.Component quitMessage) {
++    public void onDisconnect(DisconnectionDetails details, @Nullable net.kyori.adventure.text.Component quitMessage) {
 +        // Paper end - Fix kick event leave message not being sent
          if (this.isSingleplayerOwner()) {
              LOGGER.info("Stopping singleplayer server as player logged out");
@@ -95,74 +95,78 @@
          }
      }
  
-@@ -88,30 +_,119 @@
+@@ -88,30 +_,123 @@
      public void handlePong(ServerboundPongPacket packet) {
      }
  
-+    private static final net.minecraft.resources.ResourceLocation CUSTOM_REGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
++    public static final net.minecraft.resources.ResourceLocation CUSTOM_REGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
 +    private static final net.minecraft.resources.ResourceLocation CUSTOM_UNREGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("unregister"); // CraftBukkit
 +
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
 -    }
-+        // CraftBukkit start
-+        // Paper start - Brand support
++        // Paper start
 +        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
 +            this.player.clientBrandName = brand;
 +        }
-+        // Paper end - Brand support
++
 +        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
 +            return;
 +        }
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-+        net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
-+        io.netty.buffer.ByteBuf payload = discardedPayload.data();
 +
-+        if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_REGISTER)) {
-+            try {
-+                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
-+                for (String channel : channels.split("\0")) {
-+                    this.getCraftPlayer().addChannel(channel);
-+                }
-+            } catch (Exception ex) {
-+                ServerGamePacketListenerImpl.LOGGER.error("Couldn't register custom payload", ex);
-+                this.disconnect(Component.literal("Invalid payload REGISTER!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
-+            }
-+        } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
-+            try {
-+                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
-+                for (String channel : channels.split("\0")) {
-+                    this.getCraftPlayer().removeChannel(channel);
-+                }
-+            } catch (Exception ex) {
-+                ServerGamePacketListenerImpl.LOGGER.error("Couldn't unregister custom payload", ex);
-+                this.disconnect(Component.literal("Invalid payload UNREGISTER!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
-+            }
-+        } else {
-+            try {
-+                byte[] data = new byte[payload.readableBytes()];
-+                payload.readBytes(data);
-+                // Paper start - Brand support; Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
-+                if (identifier.equals(MINECRAFT_BRAND)) {
-+                    try {
-+                        this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
-+                    } catch (StringIndexOutOfBoundsException ex) {
-+                        this.player.clientBrandName = "illegal";
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++
++        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
++        final byte[] data = discardedPayload.data();
++        try {
++            final boolean registerChannel = ServerCommonPacketListenerImpl.CUSTOM_REGISTER.equals(identifier);
++            if (registerChannel || ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER.equals(identifier)) {
++                // Strings separated by zeros instead of length prefixes
++                int startIndex = 0;
++                for (int i = 0; i < data.length; i++) {
++                    final byte b = data[i];
++                    if (b != 0) {
++                        continue;
 +                    }
++
++                    readChannelIdentifier(data, startIndex, i, registerChannel);
++                    startIndex = i + 1;
 +                }
-+                // Paper end - Brand support
-+                this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
-+            } catch (Exception ex) {
-+                ServerGamePacketListenerImpl.LOGGER.error("Couldn't dispatch custom payload", ex);
-+                this.disconnect(Component.literal("Invalid custom payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++
++                // Read the last one
++                readChannelIdentifier(data, startIndex, data.length, registerChannel);
++                return;
 +            }
++
++            if (identifier.equals(MINECRAFT_BRAND)) {
++                this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++            }
++
++            this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
++        } catch (final Exception e) {
++            ServerGamePacketListenerImpl.LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
++            this.disconnect(Component.literal("Invalid custom payload payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++        }
++    }
++
++    private void readChannelIdentifier(final byte[] data, final int from, final int to, final boolean register) {
++        final int length = to - from;
++        if (length == 0) {
++            return;
++        }
++
++        final String channel = new String(data, from, length, java.nio.charset.StandardCharsets.US_ASCII);
++        if (register) {
++            this.getCraftPlayer().addChannel(channel);
++        } else {
++            this.getCraftPlayer().removeChannel(channel);
 +        }
 +    }
 +
 +    public final boolean isDisconnected() {
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
 +    }
-+    // CraftBukkit end
++    // Paper end
  
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
@@ -268,7 +272,7 @@
 +        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
 +    }
 +
-+    public void disconnect(final Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++    public void disconnect(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
 +        this.disconnect(new DisconnectionDetails(reason), cause);
 +        // Paper end - kick event causes
 +    }

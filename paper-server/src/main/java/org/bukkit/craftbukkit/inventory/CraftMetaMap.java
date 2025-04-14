@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.MapItemColor;
@@ -34,18 +35,17 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     CraftMetaMap(CraftMetaItem meta) {
         super(meta);
 
-        if (!(meta instanceof CraftMetaMap)) {
+        if (!(meta instanceof final CraftMetaMap mapMeta)) {
             return;
         }
 
-        CraftMetaMap map = (CraftMetaMap) meta;
-        this.mapId = map.mapId;
-        this.scaling = map.scaling;
-        this.color = map.color;
+        this.mapId = mapMeta.mapId;
+        this.scaling = mapMeta.scaling;
+        this.color = mapMeta.color;
     }
 
-    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        super(tag, extraHandledDcts);
 
         getOrEmpty(tag, CraftMetaMap.MAP_ID).ifPresent((mapId) -> {
             this.mapId = mapId.id();
@@ -57,7 +57,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         getOrEmpty(tag, CraftMetaMap.MAP_COLOR).ifPresent((mapColor) -> {
             try {
-                this.color = mapColor.rgb(); // Paper
+                this.color = mapColor.rgb();
             } catch (IllegalArgumentException ex) {
                 // Invalid colour
             }
@@ -101,7 +101,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         }
 
         if (this.hasColor()) {
-            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color)); // Paper
+            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color));
         }
     }
 
@@ -121,7 +121,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public int getMapId() {
-        Preconditions.checkState(this.hasMapId(), "Item does not have map associated - check hasMapId() first!"); // Paper - fix NPE
+        Preconditions.checkState(this.hasMapId(), "Item does not have map associated - check hasMapId() first!");
         return this.mapId;
     }
 
@@ -182,12 +182,12 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public Color getColor() {
-        return this.color == null ? null : Color.fromRGB(this.color & 0xFFFFFF); // Paper
+        return this.color == null ? null : Color.fromRGB(this.color & 0x00FFFFFF);
     }
 
     @Override
     public void setColor(Color color) {
-        this.color = color == null ? null : color.asRGB(); // Paper
+        this.color = color == null ? null : color.asRGB();
     }
 
     @Override
@@ -195,12 +195,10 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaMap) {
-            CraftMetaMap that = (CraftMetaMap) meta;
-
-            return (this.scaling == that.scaling)
-                    && (this.hasMapId() ? that.hasMapId() && this.mapId.equals(that.mapId) : !that.hasMapId())
-                    && (this.hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor());
+        if (meta instanceof final CraftMetaMap other) {
+            return this.scaling == other.scaling
+                    && Objects.equals(this.mapId, other.mapId)
+                    && Objects.equals(this.color, other.color);
         }
         return true;
     }

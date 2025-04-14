@@ -6,9 +6,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryHorse extends CraftSaddledInventory implements HorseInventory {
 
-    // Paper start - properly combine both inventories
-    public CraftInventoryHorse(Container inventory, Container bodyArmorInventory) {
-        super(inventory, bodyArmorInventory);
+    public CraftInventoryHorse(Container inventory, Container bodyArmorInventory, Container saddleInventory) {
+        super(inventory, bodyArmorInventory, saddleInventory);
     }
-    // Paper end - properly combine both inventories
 }

@@ -12,7 +12,7 @@ import java.nio.file.Path
 import kotlin.random.Random
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-beta.14" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.16" apply false
 }
 
 subprojects {
@@ -38,6 +38,7 @@ subprojects {
         options.encoding = Charsets.UTF_8.name()
         options.release = 21
         options.isFork = true
+        options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()

@@ -52,6 +52,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -169,7 +170,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
             public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
             public boolean filterBadTileEntityNbtFromFallingBlocks = true;
-            public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "SleepingX", "SleepingY", "SleepingZ"));
+            public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "sleeping_pos"));
             public boolean disableMobSpawnerSpawnEggTransformation = false;
             public boolean perPlayerMobSpawns = true;
             public boolean scanForLegacyEnderDragon = true;
@@ -236,7 +237,7 @@ public class WorldConfiguration extends ConfigurationPart {
 
             public class WanderingTrader extends ConfigurationPart {
                 public int spawnMinuteLength = 1200;
-                public int spawnDayLength = 24000;
+                public int spawnDayLength = net.minecraft.world.entity.npc.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
                 public int spawnChanceFailureIncrement = 25;
                 public int spawnChanceMin = 25;
                 public int spawnChanceMax = 75;
@@ -389,7 +390,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public Bamboo bamboo;
 
         public class Bamboo extends ConfigurationPart {
-            public int max = 16;
+            public int max = BambooStalkBlock.MAX_HEIGHT;
             public int min = 11;
         }
     }

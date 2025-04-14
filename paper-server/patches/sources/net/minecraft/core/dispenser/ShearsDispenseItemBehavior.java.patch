@@ -1,26 +1,24 @@
 --- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -20,9 +_,32 @@
+@@ -20,9 +_,30 @@
      @Override
      protected ItemStack execute(BlockSource blockSource, ItemStack item) {
          ServerLevel serverLevel = blockSource.level();
-+
 +        // CraftBukkit start
 +        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
 +        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(item); // Paper - ignore stack size on damageable items
 +        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
-+        if (!DispenserBlock.eventFired) {
-+            serverLevel.getCraftServer().getPluginManager().callEvent(event);
-+        }
++        serverLevel.getCraftServer().getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) {
++            this.setSuccess(false);
 +            return item;
 +        }
 +
 +        if (!event.getItem().equals(craftItem)) {
 +            // Chain to handler for new item
 +            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
++            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
 +            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
 +                dispenseBehavior.dispense(blockSource, eventStack);
 +                return item;

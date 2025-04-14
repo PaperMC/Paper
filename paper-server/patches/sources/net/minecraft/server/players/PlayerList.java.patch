@@ -47,7 +47,7 @@
          GameProfile gameProfile = player.getGameProfile();
          GameProfileCache profileCache = this.server.getProfileCache();
          String string;
-@@ -150,30 +_,93 @@
+@@ -150,30 +_,94 @@
          }
  
          Optional<CompoundTag> optional = this.load(player);
@@ -55,11 +55,7 @@
 -                compoundTag -> DimensionType.parseLegacy(new Dynamic<>(NbtOps.INSTANCE, compoundTag.get("Dimension"))).resultOrPartial(LOGGER::error)
 +        // CraftBukkit start - Better rename detection
 +        if (optional.isPresent()) {
-+            CompoundTag nbttagcompound = optional.get();
-+            if (nbttagcompound.contains("bukkit")) {
-+                CompoundTag bukkit = nbttagcompound.getCompound("bukkit");
-+                string = bukkit.contains("lastKnownName", 8) ? bukkit.getString("lastKnownName") : string;
-+            }
++            string = optional.flatMap(t -> t.getCompound("bukkit")).flatMap(t -> t.getString("lastKnownName")).orElse(string);
 +        }
 +        // CraftBukkit end
 +        // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
@@ -68,10 +64,15 @@
 +        bukkitData: if (optional.isPresent()) {
 +            // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
 +            final org.bukkit.World bWorld;
-+            if (optional.get().contains("WorldUUIDMost") && optional.get().contains("WorldUUIDLeast")) {
-+                bWorld = org.bukkit.Bukkit.getServer().getWorld(new UUID(optional.get().getLong("WorldUUIDMost"), optional.get().getLong("WorldUUIDLeast")));
-+            } else if (optional.get().contains("world", net.minecraft.nbt.Tag.TAG_STRING)) { // Paper - legacy bukkit world name
-+                bWorld = org.bukkit.Bukkit.getServer().getWorld(optional.get().getString("world"));
++            final CompoundTag playerData = optional.get();
++            // TODO maybe convert this to a codec and use compoundTag#read, we need silent variants of that method first.
++            final Optional<Long> worldUUIDMost = playerData.getLong("WorldUUIDMost");
++            final Optional<Long> worldUUIDLeast = playerData.getLong("WorldUUIDLeast");
++            final java.util.Optional<String> worldName = playerData.getString("world");
++            if (worldUUIDMost.isPresent() && worldUUIDLeast.isPresent()) {
++                bWorld = org.bukkit.Bukkit.getServer().getWorld(new UUID(worldUUIDMost.get(), worldUUIDLeast.get()));
++            } else if (worldName.isPresent()) { // Paper - legacy bukkit world name
++                bWorld = org.bukkit.Bukkit.getServer().getWorld(worldName.get());
 +            } else {
 +                break bukkitData; // if neither of the bukkit data points exist, proceed to the vanilla migration section
 +            }
@@ -113,7 +114,7 @@
 +        }
 +        if (optional.isEmpty() || invalidPlayerWorld[0]) {
 +            // Paper end - reset to main world spawn if first spawn or invalid world
-+            player.moveTo(player.adjustSpawnLocation(serverLevel, serverLevel.getSharedSpawnPos()).getBottomCenter(), serverLevel.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
++            player.snapTo(player.adjustSpawnLocation(serverLevel, serverLevel.getSharedSpawnPos()).getBottomCenter(), serverLevel.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
 +        }
 +        // Paper end - Entity#getEntitySpawnReason
          player.setServerLevel(serverLevel);
@@ -153,7 +154,7 @@
          LevelData levelData = serverLevel.getLevelData();
          player.loadGameTypes(optional.orElse(null));
          ServerGamePacketListenerImpl serverGamePacketListenerImpl = new ServerGamePacketListenerImpl(this.server, connection, player, cookie);
-@@ -190,8 +_,8 @@
+@@ -191,8 +_,8 @@
                  levelData.isHardcore(),
                  this.server.levelKeys(),
                  this.getMaxPlayers(),
@@ -164,15 +165,15 @@
                  _boolean1,
                  !_boolean,
                  _boolean2,
-@@ -199,6 +_,7 @@
+@@ -200,6 +_,7 @@
                  this.server.enforceSecureProfile()
              )
          );
 +        player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          serverGamePacketListenerImpl.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          serverGamePacketListenerImpl.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
-         serverGamePacketListenerImpl.send(new ClientboundSetHeldSlotPacket(player.getInventory().selected));
-@@ -218,24 +_,117 @@
+         serverGamePacketListenerImpl.send(new ClientboundSetHeldSlotPacket(player.getInventory().getSelectedSlot()));
+@@ -219,26 +_,119 @@
              mutableComponent = Component.translatable("multiplayer.player.joined.renamed", player.getDisplayName(), string);
          }
  
@@ -201,8 +202,10 @@
 -        this.sendActivePlayerEffects(player);
 +        this.server.getCustomBossEvents().onPlayerConnect(player); // see commented out section below serverLevel.addPlayerJoin(player);
 +        // Paper end - Fire PlayerJoinEvent when Player is actually ready
-         player.loadAndSpawnEnderpearls(optional);
-         player.loadAndSpawnParentVehicle(optional);
+         optional.ifPresent(compoundTag -> {
+             player.loadAndSpawnEnderPearls(compoundTag);
+             player.loadAndSpawnParentVehicle(compoundTag);
+         });
 +        // CraftBukkit start
 +        org.bukkit.craftbukkit.entity.CraftPlayer bukkitPlayer = player.getBukkitEntity();
 +
@@ -296,7 +299,7 @@
      }
  
      public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {
-@@ -258,30 +_,31 @@
+@@ -261,30 +_,31 @@
      }
  
      public void addWorldborderListener(ServerLevel level) {
@@ -333,7 +336,7 @@
              }
  
              @Override
-@@ -309,56 +_,162 @@
+@@ -312,56 +_,156 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -353,11 +356,11 @@
      }
  
 -    public void remove(ServerPlayer player) {
-+    public net.kyori.adventure.text.Component remove(ServerPlayer player) { // CraftBukkit - return string // Paper - return Component
++    public @Nullable net.kyori.adventure.text.Component remove(ServerPlayer player) { // CraftBukkit - return string // Paper - return Component
 +        // Paper start - Fix kick event leave message not being sent
 +        return this.remove(player, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? player.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(player.getDisplayName())));
 +    }
-+    public net.kyori.adventure.text.Component remove(ServerPlayer player, net.kyori.adventure.text.Component leaveMessage) {
++    public @Nullable net.kyori.adventure.text.Component remove(ServerPlayer player, net.kyori.adventure.text.Component leaveMessage) {
 +        // Paper end - Fix kick event leave message not being sent
          ServerLevel serverLevel = player.serverLevel();
          player.awardStat(Stats.LEAVE_GAME);
@@ -469,28 +472,22 @@
 -        if (this.bans.isBanned(gameProfile)) {
 -            UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
 +    // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-+    public ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
++    public @Nullable ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
 +        // if (this.bans.isBanned(gameProfile)) {
 +        //     UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
-+        // Moved from processLogin
++        // Moved from disconnectAllPlayersWithProfile
 +        UUID uuid = gameProfile.getId();
 +        List<ServerPlayer> list = Lists.newArrayList();
 +
-+        ServerPlayer entityplayer;
-+
-+        for (int i = 0; i < this.players.size(); ++i) {
-+            entityplayer = (ServerPlayer) this.players.get(i);
-+            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
-+                list.add(entityplayer);
++        for (net.minecraft.server.level.ServerPlayer serverPlayer : this.players) {
++            if (serverPlayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
++                list.add(serverPlayer);
 +            }
 +        }
 +
-+        java.util.Iterator iterator = list.iterator();
-+
-+        while (iterator.hasNext()) {
-+            entityplayer = (ServerPlayer) iterator.next();
-+            this.save(entityplayer); // CraftBukkit - Force the player's inventory to be saved
-+            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login"), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
++        for (final net.minecraft.server.level.ServerPlayer serverPlayer : list) {
++            this.save(serverPlayer); // CraftBukkit - Force the player's inventory to be saved
++            serverPlayer.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
 +        }
 +
 +        // Instead of kicking then returning, we need to store the kick reason
@@ -510,7 +507,7 @@
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReason());
              if (userBanListEntry.getExpires() != null) {
                  mutableComponent.append(
-@@ -366,10 +_,12 @@
+@@ -369,10 +_,12 @@
                  );
              }
  
@@ -527,7 +524,7 @@
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReason());
              if (ipBanListEntry.getExpires() != null) {
-@@ -378,69 +_,129 @@
+@@ -381,69 +_,130 @@
                  );
              }
  
@@ -614,10 +611,11 @@
 +    }
 +
 +    // CraftBukkit start
-+    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
 +        return this.respawn(player, keepInventory, reason, eventReason, null);
 +    }
-+    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, org.bukkit.Location location) {
++
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, @Nullable org.bukkit.Location location) {
 +        player.stopRiding(); // CraftBukkit
          this.players.remove(player);
 +        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
@@ -665,7 +663,7 @@
 +           location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(teleportTransition.position(), teleportTransition.newLevel().getWorld(), teleportTransition.yRot(), teleportTransition.xRot());
 +           // Paper end - Add PlayerPostRespawnEvent
 +        } else {
-+            teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3D(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
++            teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
 +        }
 +        // Spigot start
 +        if (teleportTransition == null) { // Paper - Add PlayerPostRespawnEvent - diff on change - spigot early returns if respawn pos is null, that is how they handle disconnected player in respawn event
@@ -677,13 +675,13 @@
 +        serverPlayer.unsetRemoved();
 +        serverPlayer.setShiftKeyDown(false);
          Vec3 vec3 = teleportTransition.position();
--        serverPlayer.moveTo(vec3.x, vec3.y, vec3.z, teleportTransition.yRot(), teleportTransition.xRot());
+-        serverPlayer.snapTo(vec3.x, vec3.y, vec3.z, teleportTransition.yRot(), teleportTransition.xRot());
 +        serverPlayer.forceSetPositionRotation(vec3.x, vec3.y, vec3.z, teleportTransition.yRot(), teleportTransition.xRot());
-+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3.x()) >> 4, net.minecraft.util.Mth.floor(vec3.z()) >> 4), 1, player.getId()); // Paper - post teleport ticket type
++        level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3.x()) >> 4, net.minecraft.util.Mth.floor(vec3.z()) >> 4), 1); // Paper - post teleport ticket type
 +        // CraftBukkit end
          if (teleportTransition.missingRespawnBlock()) {
              serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
-+            serverPlayer.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
++            serverPlayer.setRespawnPosition(null, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
          }
  
          byte b = (byte)(keepInventory ? 1 : 0);
@@ -698,7 +696,7 @@
          serverPlayer.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getSharedSpawnPos(), level.getSharedSpawnAngle()));
          serverPlayer.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          serverPlayer.connection
-@@ -448,10 +_,13 @@
+@@ -451,10 +_,13 @@
          this.sendActivePlayerEffects(serverPlayer);
          this.sendLevelInfo(serverPlayer, level);
          this.sendPlayerPermissionLevel(serverPlayer);
@@ -714,19 +712,19 @@
 +        }
 +        // serverPlayer.initInventoryMenu();
          serverPlayer.setHealth(serverPlayer.getHealth());
-         BlockPos respawnPosition = serverPlayer.getRespawnPosition();
-         ServerLevel level1 = this.server.getLevel(serverPlayer.getRespawnDimension());
-@@ -472,7 +_,40 @@
-                         )
-                     );
+         ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
+         if (!keepInventory && respawnConfig != null) {
+@@ -477,8 +_,41 @@
+                             )
+                         );
+                 }
++                // Paper start - Add PlayerPostRespawnEvent
++                if (blockState.is(net.minecraft.tags.BlockTags.BEDS) && !teleportTransition.missingRespawnBlock()) {
++                    isBedSpawn = true;
++                }
++                // Paper end - Add PlayerPostRespawnEvent
              }
--        }
-+            // Paper start - Add PlayerPostRespawnEvent
-+            if (blockState.is(net.minecraft.tags.BlockTags.BEDS) && !teleportTransition.missingRespawnBlock()) {
-+                isBedSpawn = true;
-+            }
-+            // Paper end - Add PlayerPostRespawnEvent
-+        }
+         }
 +        // Added from changeDimension
 +        this.sendAllPlayerInfo(player); // Update health, etc...
 +        player.onUpdateAbilities();
@@ -758,7 +756,7 @@
  
          return serverPlayer;
      }
-@@ -482,24 +_,60 @@
+@@ -488,24 +_,60 @@
      }
  
      public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl connection) {
@@ -822,19 +820,20 @@
      public void broadcastAll(Packet<?> packet) {
          for (ServerPlayer serverPlayer : this.players) {
              serverPlayer.connection.send(packet);
-@@ -575,6 +_,11 @@
+@@ -581,6 +_,12 @@
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permLevel) {
 +        // Paper start - Add sendOpLevel API
 +        this.sendPlayerPermissionLevel(player, permLevel, true);
 +    }
++
 +    public void sendPlayerPermissionLevel(ServerPlayer player, int permLevel, boolean recalculatePermissions) {
 +        // Paper end - Add sendOpLevel API
          if (player.connection != null) {
              byte b;
              if (permLevel <= 0) {
-@@ -588,11 +_,32 @@
+@@ -594,11 +_,33 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b));
          }
  
@@ -849,6 +848,7 @@
 +        // Paper start - ProfileWhitelistVerifyEvent
 +        return this.isWhiteListed(profile, null);
 +    }
++
 +    public boolean isWhiteListed(GameProfile gameprofile, @Nullable org.bukkit.event.player.PlayerLoginEvent loginEvent) {
 +        boolean isOp = this.ops.contains(gameprofile);
 +        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(gameprofile);
@@ -868,7 +868,7 @@
      }
  
      public boolean isOp(GameProfile profile) {
-@@ -603,21 +_,17 @@
+@@ -609,21 +_,17 @@
  
      @Nullable
      public ServerPlayer getPlayerByName(String username) {
@@ -896,7 +896,7 @@
              if (serverPlayer != except && serverPlayer.level().dimension() == dimension) {
                  double d = x - serverPlayer.getX();
                  double d1 = y - serverPlayer.getY();
-@@ -630,9 +_,11 @@
+@@ -636,9 +_,11 @@
      }
  
      public void saveAll() {
@@ -908,7 +908,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -655,14 +_,18 @@
+@@ -661,14 +_,18 @@
      }
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel level) {
@@ -931,15 +931,20 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -671,8 +_,16 @@
+@@ -677,8 +_,21 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
 -        player.resetSentInfo();
 +        // entityplayer.resetSentInfo();
-+        player.getBukkitEntity().updateScaledHealth(); // CraftBukkit - Update scaled health on respawn and worldchange
++        // Paper start - send all attributes
++        // needs to be done because the ServerPlayer instance is being reused on respawn instead of getting replaced like on vanilla
++        java.util.Collection<net.minecraft.world.entity.ai.attributes.AttributeInstance> syncableAttributes = player.getAttributes().getSyncableAttributes();
++        player.getBukkitEntity().injectScaledMaxHealth(syncableAttributes, true);
++        player.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(player.getId(), syncableAttributes));
++        // Paper end - send all attributes
 +        player.refreshEntityData(player); // CraftBukkit - SPIGOT-7218: sync metadata
-         player.connection.send(new ClientboundSetHeldSlotPacket(player.getInventory().selected));
+         player.connection.send(new ClientboundSetHeldSlotPacket(player.getInventory().getSelectedSlot()));
 +        // CraftBukkit start - from GameRules
 +        int i = player.serverLevel().getGameRules().getBoolean(GameRules.RULE_REDUCEDDEBUGINFO) ? 22 : 23;
 +        player.connection.send(new ClientboundEntityEventPacket(player, (byte) i));
@@ -949,7 +954,7 @@
      }
  
      public int getPlayerCount() {
-@@ -688,6 +_,7 @@
+@@ -694,6 +_,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -957,7 +962,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -725,10 +_,35 @@
+@@ -731,10 +_,35 @@
      }
  
      public void removeAll() {
@@ -997,7 +1002,7 @@
  
      public void broadcastSystemMessage(Component message, boolean bypassHiddenChat) {
          this.broadcastSystemMessage(message, serverPlayer -> message, bypassHiddenChat);
-@@ -750,20 +_,39 @@
+@@ -756,20 +_,39 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType) {
@@ -1040,12 +1045,7 @@
              flag1 |= flag2 && message.isFullyFiltered();
          }
  
-@@ -772,18 +_,25 @@
-         }
-     }
- 
--    private boolean verifyChatTrusted(PlayerChatMessage message) {
-+    public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
+@@ -782,14 +_,21 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -1071,7 +1071,7 @@
                  Path path = file2.toPath();
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
                      file2.renameTo(file1);
-@@ -791,7 +_,7 @@
+@@ -797,7 +_,7 @@
              }
  
              serverStatsCounter = new ServerStatsCounter(this.server, file1);
@@ -1080,7 +1080,7 @@
          }
  
          return serverStatsCounter;
-@@ -799,11 +_,11 @@
+@@ -805,11 +_,11 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1094,7 +1094,7 @@
          }
  
          playerAdvancements.setPlayer(player);
-@@ -846,11 +_,34 @@
+@@ -852,11 +_,34 @@
      }
  
      public void reloadResources() {
@@ -1113,7 +1113,7 @@
 +        // }
 +        for (ServerPlayer player : this.players) {
 +            player.getAdvancements().reload(this.server.getAdvancements());
-+            player.getAdvancements().flushDirty(player); // CraftBukkit - trigger immediate flush of advancements
++            player.getAdvancements().flushDirty(player, false); // CraftBukkit - trigger immediate flush of advancements
          }
 +        // CraftBukkit end
  
