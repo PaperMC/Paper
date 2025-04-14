@@ -21,6 +21,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
 
     private final boolean isBedSpawn;
     private final boolean isAnchorSpawn;
+    private final boolean missingRespawnBlock;
     private final RespawnReason respawnReason;
     private final Set<RespawnFlag> respawnFlags;
     private Location respawnLocation;
@@ -40,16 +41,17 @@ public class PlayerRespawnEvent extends PlayerEvent {
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, respawnReason, com.google.common.collect.ImmutableSet.builder());
+        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, respawnReason, com.google.common.collect.ImmutableSet.builder());
     }
 
     @ApiStatus.Internal
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
         super(respawnPlayer);
         this.respawnLocation = respawnLocation;
         this.isBedSpawn = isBedSpawn;
         this.isAnchorSpawn = isAnchorSpawn;
         this.respawnReason = respawnReason;
+        this.missingRespawnBlock = missingRespawnBlock;
         if (this.isBedSpawn) { respawnFlags.add(RespawnFlag.BED_SPAWN); }
         if (this.isAnchorSpawn) { respawnFlags.add(RespawnFlag.ANCHOR_SPAWN); }
         this.respawnFlags = respawnFlags.build();
@@ -93,6 +95,19 @@ public class PlayerRespawnEvent extends PlayerEvent {
      */
     public boolean isAnchorSpawn() {
         return this.isAnchorSpawn;
+    }
+
+    /**
+     * Gets whether the player is missing a valid respawn block.
+     * <p>
+     * This will occur if the players respawn block is obstructed,
+     * or it is the first death after it was either destroyed or
+     * in case of a respawn anchor, ran out of charges.
+     *
+     * @return whether the player is missing a valid respawn block
+     */
+    public boolean isMissingRespawnBlock() {
+        return this.missingRespawnBlock;
     }
 
     /**
