@@ -948,7 +948,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassenger(tag, false, false, false)) {
+        if (!this.getHandle().saveAsPassenger(tag, false, true, true)) {
             return null;
         }
 
