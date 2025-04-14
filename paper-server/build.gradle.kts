@@ -11,7 +11,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.4+build.6")
+    mache("io.papermc:mache:1.21.4+build.7")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -20,10 +20,6 @@ paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
     // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
     // gitFilePatches = true
-
-    paper {
-        reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
-    }
 
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
@@ -124,7 +120,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.2")
+    implementation("ca.spottedleaf:concurrentutil:0.0.3")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -141,10 +137,10 @@ dependencies {
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
-    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
+    implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.1.115.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.7.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")

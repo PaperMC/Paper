@@ -263,11 +263,11 @@ public class Main {
                     Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
 
                     Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -2);
+                    deadline.add(Calendar.DAY_OF_YEAR, -14);
                     if (buildDate.before(deadline.getTime())) {
                         // Paper start - This is some stupid bullshit
                         System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads/paper ***"); // Paper
+                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***"); // Paper
                         //System.err.println("*** Server will start in 20 seconds ***");
                         //Thread.sleep(TimeUnit.SECONDS.toMillis(20));
                         // Paper end

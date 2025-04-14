@@ -93,7 +93,7 @@
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
-@@ -853,6 +_,14 @@
+@@ -853,6 +_,18 @@
                  if (loveCause1 != null && loveCause != loveCause1) {
                      fox.addTrustedUUID(loveCause1.getUUID());
                  }
@@ -102,13 +102,17 @@
 +                fox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
 +                int experience = this.animal.getRandom().nextInt(7) + 1;
 +                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(fox, this.animal, this.partner, loveCause, this.animal.breedItem, experience);
-+                if (entityBreedEvent.isCancelled()) return;
++                if (entityBreedEvent.isCancelled()) {
++                    this.animal.resetLove();
++                    this.partner.resetLove();
++                    return;
++                }
 +                experience = entityBreedEvent.getExperience();
-+                // CraftBukkit end
++                // CraftBukkit end - call EntityBreedEvent
  
                  if (serverPlayer != null) {
                      serverPlayer.awardStat(Stats.ANIMALS_BRED);
-@@ -863,15 +_,17 @@
+@@ -863,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -117,22 +121,15 @@
 -                serverLevel.addFreshEntityWithPassengers(fox);
 +                serverLevel.addFreshEntityWithPassengers(fox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
                  this.level.broadcastEntityEvent(this.animal, (byte)18);
-                 if (serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
--                    this.level
--                        .addFreshEntity(
+-                if (serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
++                if (experience > 0 && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - call EntityBreedEvent
+                     this.level
+                         .addFreshEntity(
 -                            new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), this.animal.getRandom().nextInt(7) + 1)
--                        );
-+                    // CraftBukkit start - use event experience
-+                    if (experience > 0) {
-+                        this.level
-+                            .addFreshEntity(
-+                                new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, fox) // Paper
-+                            );
-+                    }
-+                    // CraftBukkit end
++                            new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, fox) // Paper - call EntityBreedEvent, add spawn context
+                         );
                  }
              }
-         }
 @@ -934,6 +_,7 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);

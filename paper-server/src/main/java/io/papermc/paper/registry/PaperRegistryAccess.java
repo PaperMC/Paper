@@ -107,7 +107,7 @@ public class PaperRegistryAccess implements RegistryAccess {
 
     public <M> void lockReferenceHolders(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey) {
         final RegistryEntry<M, Keyed> entry = PaperRegistries.getEntry(resourceKey);
-        if (entry == null || !(entry.meta() instanceof final RegistryEntryMeta.ServerSide<M, Keyed> serverSide) || !serverSide.registryTypeMapper().supportsDirectHolders()) {
+        if (entry == null || !(entry.meta() instanceof final RegistryEntryMeta.ServerSide<M, Keyed> serverSide) || !serverSide.registryTypeMapper().constructorUsesHolder()) {
             return;
         }
         final CraftRegistry<?, M> registry = (CraftRegistry<?, M>) this.getRegistry(entry.apiKey());

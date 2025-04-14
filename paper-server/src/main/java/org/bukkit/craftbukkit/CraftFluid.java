@@ -4,7 +4,6 @@ import java.util.Locale;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.Fluid;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +12,7 @@ public class CraftFluid implements Fluid, Handleable<net.minecraft.world.level.m
     private static int count = 0;
 
     public static Fluid minecraftToBukkit(net.minecraft.world.level.material.Fluid minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.FLUID, Registry.FLUID);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.FLUID);
     }
 
     public static net.minecraft.world.level.material.Fluid bukkitToMinecraft(Fluid bukkit) {

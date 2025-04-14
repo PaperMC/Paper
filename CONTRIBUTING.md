@@ -208,7 +208,8 @@ required.
   with `// Paper end - <COMMIT DESCRIPTION>`.
 - One-line changes should have `// Paper - <COMMIT DESCRIPTION>` at the end of the line.
 
-> [!NOTE] These comments are incredibly important to be able to keep track of changes
+> [!NOTE]
+> These comments are incredibly important to be able to keep track of changes
 > across files and to remember what they are for, even a decade into the future.
 
 Here's an example of how to mark changes by Paper:

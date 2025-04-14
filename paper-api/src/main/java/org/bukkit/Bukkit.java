@@ -40,6 +40,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -1372,7 +1373,11 @@ public final class Bukkit {
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
+     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
+     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
+     * via events or third-party plugin APIs.
      */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     public static void setSpawnRadius(int value) {
         server.setSpawnRadius(value);
     }
@@ -1925,7 +1930,10 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @deprecated The title parameter is no-longer needed when used with
+     * {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
      */
+    @Deprecated(since = "1.21.4")
     public static @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title) {
         return server.createMerchant(title);
     }
@@ -1936,12 +1944,23 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
-     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}. The title parameter is
+     * no-longer needed when used with {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}
      */
     @NotNull
     @Deprecated // Paper
     public static Merchant createMerchant(@Nullable String title) {
         return server.createMerchant(title);
+    }
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @return a new merchant
+     */
+    @NotNull
+    public static Merchant createMerchant() {
+        return server.createMerchant();
     }
 
     /**

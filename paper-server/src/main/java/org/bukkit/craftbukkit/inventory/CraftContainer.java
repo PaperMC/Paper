@@ -132,7 +132,7 @@ public class CraftContainer extends AbstractContainerMenu {
                 if (menu == null) {
                     return net.minecraft.world.inventory.MenuType.GENERIC_9x3;
                 } else {
-                    return ((CraftMenuType<?>) menu).getHandle();
+                    return ((CraftMenuType<?, ?>) menu).getHandle();
                 }
         }
     }

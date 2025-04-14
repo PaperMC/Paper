@@ -34,6 +34,26 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     }
 
     @Override
+    public long getCooldownEnd() {
+        return this.getSnapshot().trialSpawner.getData().cooldownEndsAt;
+    }
+
+    @Override
+    public void setCooldownEnd(long ticks) {
+        this.getSnapshot().trialSpawner.getData().cooldownEndsAt = ticks;
+    }
+
+    @Override
+    public long getNextSpawnAttempt() {
+        return this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt;
+    }
+
+    @Override
+    public void setNextSpawnAttempt(long ticks) {
+        this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt = ticks;
+    }
+
+    @Override
     public int getCooldownLength() {
         return this.getSnapshot().trialSpawner.getTargetCooldownLength();
     }

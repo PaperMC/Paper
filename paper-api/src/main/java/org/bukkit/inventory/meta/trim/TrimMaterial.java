@@ -1,5 +1,7 @@
 package org.bukkit.inventory.meta.trim;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -59,7 +61,7 @@ public interface TrimMaterial extends Keyed, Translatable {
 
     @NotNull
     private static TrimMaterial getTrimMaterial(@NotNull String key) {
-        return Registry.TRIM_MATERIAL.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_MATERIAL).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     // Paper start - adventure

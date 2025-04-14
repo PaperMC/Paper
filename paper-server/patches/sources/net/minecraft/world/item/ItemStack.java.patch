@@ -21,14 +21,15 @@
 +            if (value.isEmpty() || value.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
                  buffer.writeVarInt(0);
              } else {
-                 buffer.writeVarInt(value.getCount());
+-                buffer.writeVarInt(value.getCount());
++                buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
                  ITEM_STREAM_CODEC.encode(buffer, value.getItemHolder());
 +                // Spigot start - filter
 +                // value = value.copy();
 +                // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
 +                // Paper start - adventure; conditionally render translatable components
 +                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
-+                try {
++                try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
 +                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
                  DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
 +                } finally {
@@ -218,6 +219,7 @@
  
 -    public void hurtAndBreak(int damage, ServerLevel level, @Nullable ServerPlayer player, Consumer<Item> onBreak) {
 -        int i = this.processDurabilityChange(damage, level, player);
+-        if (i != 0) {
 +    public void hurtAndBreak(int damage, ServerLevel level, @Nullable LivingEntity player, Consumer<Item> onBreak) { // Paper - Add EntityDamageItemEvent
 +        // Paper start - add force boolean overload
 +        this.hurtAndBreak(damage, level, player, onBreak, false);
@@ -227,7 +229,7 @@
 +        final int originalDamage = damage; // Paper - Expand PlayerItemDamageEvent
 +        int i = this.processDurabilityChange(damage, level, player, force); // Paper
 +        // CraftBukkit start
-+        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++        if (i > 0 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent - limit to positive damage and run for player
 +            org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i, originalDamage); // Paper - Add EntityDamageItemEvent
 +            event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
@@ -240,7 +242,7 @@
 +
 +            i = event.getDamage();
 +            // Paper start - Add EntityDamageItemEvent
-+        } else if (player != null) {
++        } else if (i > 0 && player != null) {
 +            io.papermc.paper.event.entity.EntityDamageItemEvent event = new io.papermc.paper.event.entity.EntityDamageItemEvent(player.getBukkitLivingEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i);
 +            if (!event.callEvent()) {
 +                return;
@@ -249,7 +251,7 @@
 +            // Paper end - Add EntityDamageItemEvent
 +        }
 +        // CraftBukkit end
-         if (i != 0) {
++        if (i != 0) { // Paper - Add EntityDamageItemEvent - diff on change for above event ifs.
              this.applyDamage(this.getDamageValue() + i, player, onBreak);
          }
      }
@@ -290,7 +292,33 @@
              this.shrink(1);
              onBreak.accept(item);
          }
-@@ -512,9 +_,14 @@
+@@ -506,15 +_,39 @@
+                 return;
+             }
+ 
+-            int min = Math.min(this.getDamageValue() + i, this.getMaxDamage() - 1);
++            int min = Math.min(this.getDamageValue() + i, this.getMaxDamage() - 1); // Paper - Expand PlayerItemDamageEvent - diff on change as min computation is copied post event.
++
++            // Paper start - Expand PlayerItemDamageEvent
++            if (min - this.getDamageValue() > 0) {
++                org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(
++                    serverPlayer.getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this),
++                    min - this.getDamageValue(),
++                    damage
++                );
++                if (!event.callEvent() || event.getDamage() == 0) {
++                    return;
++                }
++
++                // Prevent breaking the item in this code path as callers may expect the item to survive
++                // (given the method name)
++                min = Math.min(this.getDamageValue() + event.getDamage(), this.getMaxDamage() - 1);
++            }
++            // Paper end - Expand PlayerItemDamageEvent
++
+             this.applyDamage(min, serverPlayer, item -> {});
+         }
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {

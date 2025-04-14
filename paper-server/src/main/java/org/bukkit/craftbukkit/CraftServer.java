@@ -131,6 +131,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
@@ -258,6 +259,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -883,7 +885,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean hasWhitelist() {
-        return this.getProperties().whiteList.get();
+        return this.playerList.isUsingWhitelist();
     }
 
     // NOTE: Temporary calls through to server.properies until its replaced
@@ -1863,22 +1865,12 @@ public final class CraftServer implements Server {
         return result;
     }
 
-    public void removeBukkitSpawnRadius() {
-        this.configuration.set("settings.spawn-radius", null);
-        this.saveConfig();
-    }
-
-    public int getBukkitSpawnRadius() {
-        return this.configuration.getInt("settings.spawn-radius", -1);
-    }
-
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component shutdownMessage() {
         String msg = getShutdownMessage();
         return msg != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(msg) : null;
     }
-    // Paper end
+
     @Override
     @Deprecated // Paper
     public String getShutdownMessage() {
@@ -2486,6 +2478,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public @NotNull Merchant createMerchant() {
+        return new CraftMerchantCustom(net.kyori.adventure.text.Component.empty());
+    }
+
+    @Override
     public int getMaxChainedNeighborUpdates() {
         return this.getServer().getMaxChainedNeighborUpdates();
     }
@@ -2550,7 +2547,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean isPrimaryThread() {
-        return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
+        return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread(); // Paper - rewrite chunk system
     }
 
     // Paper start - Adventure
@@ -2856,8 +2853,13 @@ public final class CraftServer implements Server {
     @Override
     public BlockData createBlockData(org.bukkit.Material material, String data) {
         Preconditions.checkArgument(material != null || data != null, "Must provide one of material or data");
+        BlockType type = null;
+        if (material != null) {
+            type = material.asBlockType();
+            Preconditions.checkArgument(type != null, "Provided material must be a block");
+        }
 
-        return CraftBlockData.newData((material != null) ? material.asBlockType() : null, data);
+        return CraftBlockData.newData(type, data);
     }
 
     @Override

@@ -29,7 +29,6 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
         return this.getHandle().isLayingEgg();
     }
 
-    // Paper start
     @Override
     public org.bukkit.Location getHome() {
         return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getHomePos());
@@ -46,13 +45,7 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
     }
 
     @Override
-    public boolean isDigging() {
-        return this.getHandle().isLayingEgg();
-    }
-
-    @Override
     public void setHasEgg(boolean hasEgg) {
         this.getHandle().setHasEgg(hasEgg);
     }
-    // Paper end
 }

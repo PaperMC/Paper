@@ -48,11 +48,13 @@ public interface Inventory extends Iterable<ItemStack> {
      * <b>Caveats:</b>
      * <ul>
      * <li>Not all inventories respect this value.
-     * <li>Stacks larger than 127 may be clipped when the world is saved.
+     * <li>Stacks larger than 99 will throw errors when serialized.
      * <li>This value is not guaranteed to be preserved; be sure to set it
      *     before every time you want to set a slot over the max stack size.
      * <li>Stacks larger than the default max size for this type of inventory
-     *     may not display correctly in the client.
+     *     are ignored by the client, resulting in the vanilla client
+     *     always trimming it down to default maximum stack size.
+     * <li>Most operations ignore this value if it is over {@link ItemStack#getMaxStackSize()}
      * </ul>
      *
      * @param size The new maximum stack size for items in this inventory.

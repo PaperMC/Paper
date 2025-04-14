@@ -5,7 +5,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.map.MapCursor;
@@ -17,7 +16,7 @@ public final class CraftMapCursor {
         private static int count = 0;
 
         public static MapCursor.Type minecraftToBukkit(MapDecorationType minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.MAP_DECORATION_TYPE, Registry.MAP_DECORATION_TYPE);
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.MAP_DECORATION_TYPE);
         }
 
         public static MapCursor.Type minecraftHolderToBukkit(Holder<MapDecorationType> minecraft) {

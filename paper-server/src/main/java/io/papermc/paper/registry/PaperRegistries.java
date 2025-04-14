@@ -97,21 +97,21 @@ public final class PaperRegistries {
             start(Registries.MENU, RegistryKey.MENU).craft(MenuType.class, CraftMenuType::new).build(),
             start(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE).craft(Attribute.class, CraftAttribute::new).build(),
             start(Registries.FLUID, RegistryKey.FLUID).craft(Fluid.class, CraftFluid::new).build(),
-            start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new).build(),
+            start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new, true).build(),
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
 
             // data-drivens
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
             start(Registries.STRUCTURE, RegistryKey.STRUCTURE).craft(Structure.class, CraftStructure::new).build().delayed(),
-            start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new).build().delayed(),
-            start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new).build().delayed(),
+            start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new, true).build().delayed(),
+            start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new, true).build().delayed(),
             start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).writable(PaperDamageTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).build().delayed(),
             start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).build().delayed(),
-            start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new).build().delayed(),
+            start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new, true).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).build().delayed(),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

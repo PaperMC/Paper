@@ -1,9 +1,7 @@
 package org.bukkit.event.entity;
 
-import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,9 +10,11 @@ import org.jetbrains.annotations.NotNull;
  * This event should only be used for monitoring. The result
  * of modifying the entity during or after this event is unspecified.
  * This event is not called for a {@link org.bukkit.entity.Player}.
- * @deprecated use {@link EntityRemoveFromWorldEvent} instead
+ * <p>
+ * It differs from {@link com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent} as to when it is called.
+ * Modifications to the entity, as noted above, are not defined and are expected to not be persisted in e.g., chunk
+ * unloads.
  */
-@Deprecated(forRemoval = true)
 public class EntityRemoveEvent extends EntityEvent {
 
     private static final HandlerList handlers = new HandlerList();

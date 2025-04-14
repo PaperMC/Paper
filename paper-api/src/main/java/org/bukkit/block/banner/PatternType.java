@@ -2,6 +2,8 @@ package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -95,8 +97,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      *
      * @param identifier the identifier
      * @return the matched pattern type or null
-     * @see Registry#BANNER_PATTERN
-     * @deprecated magic value, use {@link Registry#get(NamespacedKey)} instead
+     * @deprecated magic value, use {@link Registry#get(NamespacedKey)} instead with {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}
      */
     @Contract("null -> null")
     @Nullable
@@ -117,7 +118,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
 
     @NotNull
     private static PatternType getType(@NotNull String key) {
-        return Registry.BANNER_PATTERN.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

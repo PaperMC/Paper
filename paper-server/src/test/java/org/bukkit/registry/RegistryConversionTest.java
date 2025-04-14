@@ -1,8 +1,5 @@
 package org.bukkit.registry;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.*;
-import static org.mockito.Mockito.*;
 import com.google.common.base.Joiner;
 import io.papermc.paper.registry.RegistryKey;
 import java.lang.reflect.InvocationTargetException;
@@ -13,7 +10,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceKey;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -24,6 +20,13 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.provider.Arguments;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.mock;
 
 @AllFeatures
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

@@ -22,7 +22,6 @@ public interface Turtle extends Animals {
      */
     boolean isLayingEgg();
 
-    // Paper start
     /**
      * Get the turtle's home location
      *
@@ -49,8 +48,12 @@ public interface Turtle extends Animals {
      * Get if turtle is digging to lay eggs
      *
      * @return True if digging
+     * @deprecated in favor of {@link #isLayingEgg()}
      */
-    boolean isDigging();
+    @Deprecated(since = "1.21.4")
+    default boolean isDigging() {
+        return this.isLayingEgg();
+    }
 
     /**
      * Set if turtle is carrying egg
@@ -58,5 +61,4 @@ public interface Turtle extends Animals {
      * @param hasEgg True if carrying egg
      */
     void setHasEgg(boolean hasEgg);
-    // Paper end
 }

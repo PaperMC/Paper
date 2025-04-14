@@ -79,7 +79,8 @@ interface RemovedConfigurations {
         path("warnWhenSettingExcessiveVelocity"),
         path("logging", "use-rgb-for-named-text-colors"),
         path("unsupported-settings", "allow-grindstone-overstacking"),
-        path("unsupported-settings", "allow-tripwire-disarming-exploits")
+        path("unsupported-settings", "allow-tripwire-disarming-exploits"),
+        path("commands", "fix-target-selector-tag-completion"),
     };
 
 }

@@ -580,9 +580,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * If the effect is not applicable to this class of entity, it will not play.
      *
-     * @param type Effect to play.
+     * @param effect Effect to play.
      */
-    public void playEffect(@NotNull EntityEffect type);
+    public void playEffect(@NotNull EntityEffect effect);
 
     /**
      * Get the type of the entity.

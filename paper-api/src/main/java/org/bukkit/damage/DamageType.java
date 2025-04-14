@@ -1,5 +1,7 @@
 package org.bukkit.damage;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -12,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Constants in this class include the base types provided by the vanilla
  * server. Data packs are capable of registering more types of damage which may
- * be obtained through the {@link Registry#DAMAGE_TYPE}.
+ * be obtained through {@link io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)} and {@link RegistryKey#DAMAGE_TYPE}.
  *
  * @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
  */
@@ -71,7 +73,7 @@ public interface DamageType extends Keyed, Translatable {
 
     @NotNull
     private static DamageType getDamageType(@NotNull String key) {
-        return Registry.DAMAGE_TYPE.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

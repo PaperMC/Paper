@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -105,7 +107,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {
-            return Registry.WOLF_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.WOLF_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
         }
     }
 }

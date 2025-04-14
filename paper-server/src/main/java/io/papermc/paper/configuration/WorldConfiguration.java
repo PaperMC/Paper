@@ -88,17 +88,6 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class Anticheat extends ConfigurationPart {
 
-        public Obfuscation obfuscation;
-
-        public class Obfuscation extends ConfigurationPart {
-            public Items items = new Items();
-            public class Items extends ConfigurationPart {
-                public boolean hideItemmeta = false;
-                public boolean hideDurability = false;
-                public boolean hideItemmetaWithVisualEffects = false;
-            }
-        }
-
         public AntiXray antiXray;
 
         public class AntiXray extends ConfigurationPart {

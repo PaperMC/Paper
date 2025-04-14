@@ -112,16 +112,21 @@
              this.removeEntitiesOnShoulder();
          }
      }
-@@ -717,6 +_,13 @@
+@@ -717,6 +_,18 @@
  
      @Nullable
      public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName) {
 +        // CraftBukkit start - SPIGOT-2942: Add boolean to call event
-+        return this.drop(droppedItem, dropAround, includeThrowerName, true);
++        return this.drop(droppedItem, dropAround, includeThrowerName, true, null);
 +    }
 +
 +    @Nullable
 +    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName, boolean callEvent) {
++        return this.drop(droppedItem, dropAround, includeThrowerName, callEvent, null);
++    }
++
++    @Nullable
++    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) {
 +        // CraftBukkit end
          if (!droppedItem.isEmpty() && this.level().isClientSide) {
              this.swing(InteractionHand.MAIN_HAND);
@@ -669,20 +674,25 @@
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack item = this.inventory.getItem(i);
-@@ -2007,7 +_,15 @@
-                     }
-                 }
+@@ -2089,12 +_,20 @@
+     }
  
--                return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
-+                // Paper start - PlayerUseBowWithoutProjectileEvent
-+                if (this.abilities.instabuild) {
-+                    return new ItemStack(Items.ARROW);
-+                } else {
-+                    io.papermc.paper.event.player.PlayerUseBowWithoutProjectileEvent event = new io.papermc.paper.event.player.PlayerUseBowWithoutProjectileEvent((org.bukkit.entity.Player) getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(shootable));
-+                    event.callEvent();
-+                    return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getProjectileItem());
-+                }
-+                // Paper end - PlayerUseBowWithoutProjectileEvent
-             }
+     public boolean hasClientLoaded() {
+-        return this.clientLoaded || this.clientLoadedTimeoutTimer <= 0;
++        return this.clientLoaded; // Paper - Add PlayerLoadedWorldEvent
+     }
+ 
+     public void tickClientLoadTimeout() {
+         if (!this.clientLoaded) {
+             this.clientLoadedTimeoutTimer--;
++            // Paper start - Add PlayerLoadedWorldEvent
++            if (this.clientLoadedTimeoutTimer <= 0) {
++                this.clientLoaded = true;
++
++                final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent((org.bukkit.craftbukkit.entity.CraftPlayer) getBukkitEntity(), true);
++                event.callEvent();
++            }
++            // Paper end - Add PlayerLoadedWorldEvent
          }
      }
+ 

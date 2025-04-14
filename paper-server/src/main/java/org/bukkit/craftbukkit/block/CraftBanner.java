@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.level.block.AbstractBannerBlock;
@@ -39,7 +40,7 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
             for (int i = 0; i < banner.getPatterns().layers().size(); i++) {
                 BannerPatternLayers.Layer p = banner.getPatterns().layers().get(i);
                 // Paper start - fix upstream not handling inlined banner pattern
-                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern());
+                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(RegistryKey.BANNER_PATTERN, p.pattern());
                 if (type.isEmpty()) continue;
                 this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), type.get()));
                 // Paper end - fix upstream not handling inlined banner pattern

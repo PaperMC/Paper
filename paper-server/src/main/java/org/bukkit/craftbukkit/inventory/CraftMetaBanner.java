@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
                 BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
-                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
+                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
 
                 if (color != null && pattern != null) {
                     this.patterns.add(new Pattern(color, pattern));

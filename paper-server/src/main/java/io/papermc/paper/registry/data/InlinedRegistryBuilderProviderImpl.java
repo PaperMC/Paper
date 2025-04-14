@@ -24,7 +24,7 @@ public final class InlinedRegistryBuilderProviderImpl implements InlinedRegistry
         Preconditions.checkArgument(buildableMeta.registryTypeMapper().supportsDirectHolders(), "Registry type mapper must support direct holders");
         final PaperRegistryBuilderFactory<M, A, B> builderFactory = new PaperRegistryBuilderFactory<>(Conversions.global(), buildableMeta.builderFiller(), CraftRegistry.getMinecraftRegistry(buildableMeta.mcKey())::getValue);
         value.accept(builderFactory);
-        return buildableMeta.registryTypeMapper().convertDirectHolder(Holder.direct(builderFactory.requireBuilder().build()));
+        return buildableMeta.registryTypeMapper().createBukkit(Holder.direct(builderFactory.requireBuilder().build()));
     }
 
     @Override
