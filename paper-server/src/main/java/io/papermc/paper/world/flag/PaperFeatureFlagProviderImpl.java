@@ -52,7 +52,7 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
         } else if (dependant instanceof final PotionType potionType) {
             return CraftPotionType.bukkitToMinecraft(potionType);
         } else if (dependant instanceof final GameRule<?> gameRule) {
-            return getGameRuleType(gameRule.getName());
+            return getGameRuleType(gameRule.getName()).asFeatureElement();
         } else {
             throw new IllegalArgumentException(dependant + " is not a valid feature dependant");
         }
