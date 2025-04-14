@@ -251,6 +251,6 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         ItemStack itemInHand = playerOwner.getItemInHand(hand);
         Preconditions.checkState(itemInHand.is(Items.FISHING_ROD), "Item in slot is not a FISHING_ROD");
 
-        return fishingHook.retrieve(hand, itemInHand);
+        return fishingHook.retrieve(itemInHand, hand);
     }
 }
