@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -250,7 +251,7 @@ public class SpigotConfig {
         if (enabled instanceof Boolean value) {
             SpigotConfig.enableSpamExclusions = value;
         } else {
-            if (spamExclusions.size() == 1 && spamExclusions.getFirst().equals("/skill")) {
+            if (spamExclusions.size() == 1 && Objects.equals(spamExclusions.getFirst(), "/skill")) {
                 SpigotConfig.enableSpamExclusions = false;
                 SpigotConfig.set("commands.enable-spam-exclusions", false);
             } else {
