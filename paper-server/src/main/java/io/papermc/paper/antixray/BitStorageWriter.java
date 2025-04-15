@@ -16,7 +16,7 @@ public final class BitStorageWriter {
 
     public void setBits(int bits) {
         this.bits = bits;
-        mask = (1L << bits) - 1;
+        mask = BitManipulationUtil.createBitMask(bits);
     }
 
     public void setIndex(int index) {
@@ -26,30 +26,13 @@ public final class BitStorageWriter {
     }
 
     private void init() {
-        if (buffer.length > longInBufferIndex + 7) {
-            current = ((((long) buffer[longInBufferIndex]) << 56)
-                | (((long) buffer[longInBufferIndex + 1] & 0xff) << 48)
-                | (((long) buffer[longInBufferIndex + 2] & 0xff) << 40)
-                | (((long) buffer[longInBufferIndex + 3] & 0xff) << 32)
-                | (((long) buffer[longInBufferIndex + 4] & 0xff) << 24)
-                | (((long) buffer[longInBufferIndex + 5] & 0xff) << 16)
-                | (((long) buffer[longInBufferIndex + 6] & 0xff) << 8)
-                | (((long) buffer[longInBufferIndex + 7] & 0xff)));
-        }
-
+        current = BitManipulationUtil.readLongFromBuffer(buffer, longInBufferIndex);
         dirty = false;
     }
 
     public void flush() {
-        if (dirty && buffer.length > longInBufferIndex + 7) {
-            buffer[longInBufferIndex] = (byte) (current >> 56 & 0xff);
-            buffer[longInBufferIndex + 1] = (byte) (current >> 48 & 0xff);
-            buffer[longInBufferIndex + 2] = (byte) (current >> 40 & 0xff);
-            buffer[longInBufferIndex + 3] = (byte) (current >> 32 & 0xff);
-            buffer[longInBufferIndex + 4] = (byte) (current >> 24 & 0xff);
-            buffer[longInBufferIndex + 5] = (byte) (current >> 16 & 0xff);
-            buffer[longInBufferIndex + 6] = (byte) (current >> 8 & 0xff);
-            buffer[longInBufferIndex + 7] = (byte) (current & 0xff);
+        if (dirty) {
+            BitManipulationUtil.writeLongToBuffer(buffer, longInBufferIndex, current);
         }
     }
 

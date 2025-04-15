@@ -4,7 +4,7 @@ public final class BitStorageReader {
 
     private byte[] buffer;
     private int bits;
-    private int mask;
+    private long mask; // Changed from int to long to match the utility's return type
     private int longInBufferIndex;
     private int bitInLongIndex;
     private long current;
@@ -15,7 +15,7 @@ public final class BitStorageReader {
 
     public void setBits(int bits) {
         this.bits = bits;
-        mask = (1 << bits) - 1;
+        mask = BitManipulationUtil.createBitMask(bits);
     }
 
     public void setIndex(int index) {
@@ -25,16 +25,7 @@ public final class BitStorageReader {
     }
 
     private void init() {
-        if (buffer.length > longInBufferIndex + 7) {
-            current = ((((long) buffer[longInBufferIndex]) << 56)
-                | (((long) buffer[longInBufferIndex + 1] & 0xff) << 48)
-                | (((long) buffer[longInBufferIndex + 2] & 0xff) << 40)
-                | (((long) buffer[longInBufferIndex + 3] & 0xff) << 32)
-                | (((long) buffer[longInBufferIndex + 4] & 0xff) << 24)
-                | (((long) buffer[longInBufferIndex + 5] & 0xff) << 16)
-                | (((long) buffer[longInBufferIndex + 6] & 0xff) << 8)
-                | (((long) buffer[longInBufferIndex + 7] & 0xff)));
-        }
+        current = BitManipulationUtil.readLongFromBuffer(buffer, longInBufferIndex);
     }
 
     public int read() {
@@ -44,7 +35,7 @@ public final class BitStorageReader {
             init();
         }
 
-        int value = (int) (current >>> bitInLongIndex) & mask;
+        int value = (int) (current >>> bitInLongIndex) & (int)mask;
         bitInLongIndex += bits;
         return value;
     }

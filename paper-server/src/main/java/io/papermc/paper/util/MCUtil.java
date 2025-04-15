@@ -9,6 +9,7 @@ import io.papermc.paper.math.Position;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
 
+/**
+ * Utility class providing server-wide functionality for thread management,
+ * coordinate conversions, and common operations in the Paper server implementation.
+ */
 public final class MCUtil {
+    /**
+     * Executor that runs tasks on the main server thread, or immediately if already on the main thread.
+     * This is used to ensure thread safety for operations that must run on the server thread.
+     */
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
         if (!isMainThread()) {
             MinecraftServer.getServer().execute(run);
@@ -37,6 +46,11 @@ public final class MCUtil {
             run.run();
         }
     };
+
+    /**
+     * Thread pool for asynchronous task execution.
+     * Limited to 2 threads to prevent excessive thread creation.
+     */
     public static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
         .setNameFormat("Paper Async Task Handler Thread - %1$d")
         .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
@@ -44,8 +58,17 @@ public final class MCUtil {
     );
 
     private MCUtil() {
+        // Prevent instantiation of utility class
     }
 
+    /**
+     * Gets a spiral of chunk coordinates outward from a center point.
+     * This is useful for expanding outward from a location in a predictable pattern.
+     *
+     * @param blockposition Center point to spiral out from
+     * @param radius Maximum radius in chunks to spiral out to
+     * @return List of chunk positions in spiral order
+     */
     public static List<ChunkPos> getSpiralOutChunks(BlockPos blockposition, int radius) {
         List<ChunkPos> list = com.google.common.collect.Lists.newArrayList();
 
@@ -69,30 +92,68 @@ public final class MCUtil {
         return list;
     }
 
+    /**
+     * Ensures a CompletableFuture's callbacks execute on the main server thread.
+     *
+     * @param <T> The result type of the CompletableFuture
+     * @param future The future to ensure executes on the main thread
+     * @return A new CompletableFuture that will complete on the main thread
+     */
     public static <T> CompletableFuture<T> ensureMain(CompletableFuture<T> future) {
         return future.thenApplyAsync(r -> r, MAIN_EXECUTOR);
     }
 
+    /**
+     * Registers a callback to be executed on the main thread when the future completes.
+     *
+     * @param <T> The result type of the CompletableFuture
+     * @param future The future to attach the callback to
+     * @param consumer The callback to execute on the main thread
+     */
     public static <T> void thenOnMain(CompletableFuture<T> future, Consumer<T> consumer) {
+        Objects.requireNonNull(consumer, "Consumer cannot be null");
         future.thenAcceptAsync(consumer, MAIN_EXECUTOR);
     }
 
+    /**
+     * Registers a callback to be executed on the main thread when the future completes or fails.
+     *
+     * @param <T> The result type of the CompletableFuture
+     * @param future The future to attach the callback to
+     * @param consumer The callback to execute on the main thread
+     */
     public static <T> void thenOnMain(CompletableFuture<T> future, BiConsumer<T, Throwable> consumer) {
+        Objects.requireNonNull(consumer, "Consumer cannot be null");
         future.whenCompleteAsync(consumer, MAIN_EXECUTOR);
     }
 
+    /**
+     * Checks if the current thread is the server's main thread.
+     *
+     * @return true if the current thread is the main thread, false otherwise
+     */
     public static boolean isMainThread() {
         return MinecraftServer.getServer().isSameThread();
     }
 
+    /**
+     * Ensures the target code runs on the main thread.
+     *
+     * @param run The code to run on the main thread
+     */
     public static void ensureMain(Runnable run) {
         ensureMain(null, run);
     }
 
     /**
-     * Ensures the target code is running on the main thread.
+     * Ensures the target code runs on the main thread, with optional reason logging.
+     *
+     * @param reason The reason for needing main thread execution (for logging)
+     * @param run The code to run on the main thread
      */
     public static void ensureMain(String reason, Runnable run) {
+        Objects.requireNonNull(run, "Runnable cannot be null");
+
         if (!isMainThread()) {
             if (reason != null) {
                 MinecraftServer.LOGGER.warn("Asynchronous " + reason + "!", new IllegalStateException());
@@ -103,14 +164,29 @@ public final class MCUtil {
         run.run();
     }
 
+    /**
+     * Ensures a supplier function runs on the main thread and returns its result.
+     *
+     * @param <T> The return type of the supplier
+     * @param run The supplier to run on the main thread
+     * @return The result of the supplier
+     */
     public static <T> T ensureMain(Supplier<T> run) {
         return ensureMain(null, run);
     }
 
     /**
-     * Ensures the target code is running on the main thread.
+     * Ensures a supplier function runs on the main thread and returns its result,
+     * with optional reason logging.
+     *
+     * @param <T> The return type of the supplier
+     * @param reason The reason for needing main thread execution (for logging)
+     * @param run The supplier to run on the main thread
+     * @return The result of the supplier
      */
     public static <T> T ensureMain(String reason, Supplier<T> run) {
+        Objects.requireNonNull(run, "Supplier cannot be null");
+
         if (!isMainThread()) {
             if (reason != null) {
                 MinecraftServer.LOGGER.warn("Asynchronous " + reason + "! Blocking thread until it returns ", new IllegalStateException());
@@ -126,16 +202,40 @@ public final class MCUtil {
                 return wait.get();
             } catch (InterruptedException | ExecutionException e) {
                 MinecraftServer.LOGGER.warn("Encountered exception", e);
+                Thread.currentThread().interrupt(); // Reset interrupt flag if interrupted
             }
             return null;
         }
         return run.get();
     }
 
+    /**
+     * Calculates the Euclidean distance between two 3D points.
+     *
+     * @param x1 First point X coordinate
+     * @param y1 First point Y coordinate
+     * @param z1 First point Z coordinate
+     * @param x2 Second point X coordinate
+     * @param y2 Second point Y coordinate
+     * @param z2 Second point Z coordinate
+     * @return The Euclidean distance between the points
+     */
     public static double distance(double x1, double y1, double z1, double x2, double y2, double z2) {
         return Math.sqrt(distanceSq(x1, y1, z1, x2, y2, z2));
     }
 
+    /**
+     * Calculates the squared Euclidean distance between two 3D points.
+     * This is more efficient than distance() when only comparing distances.
+     *
+     * @param x1 First point X coordinate
+     * @param y1 First point Y coordinate
+     * @param z1 First point Z coordinate
+     * @param x2 Second point X coordinate
+     * @param y2 Second point Y coordinate
+     * @param z2 Second point Z coordinate
+     * @return The squared Euclidean distance between the points
+     */
     public static double distanceSq(double x1, double y1, double z1, double x2, double y2, double z2) {
         return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
     }
@@ -156,13 +256,25 @@ public final class MCUtil {
         return new Vec3(position.x(), position.y(), position.z());
     }
 
+    /**
+     * Determines if a position is at the edge of a chunk.
+     *
+     * @param pos The position to check
+     * @return true if the position is at a chunk edge, false otherwise
+     */
     public static boolean isEdgeOfChunk(BlockPos pos) {
         final int modX = pos.getX() & 15;
         final int modZ = pos.getZ() & 15;
         return (modX == 0 || modX == 15 || modZ == 0 || modZ == 15);
     }
 
+    /**
+     * Schedules a task to run asynchronously using the Paper async executor.
+     *
+     * @param run The task to run
+     */
     public static void scheduleAsyncTask(Runnable run) {
+        Objects.requireNonNull(run, "Task cannot be null");
         ASYNC_EXECUTOR.execute(run);
     }
 
@@ -177,15 +289,51 @@ public final class MCUtil {
         return CraftNamespacedKey.fromMinecraft(key.location());
     }
 
+    /**
+     * Creates an unmodifiable transformed list from a source list.
+     *
+     * @param <A> Target element type
+     * @param <M> Source element type
+     * @param nms Source list
+     * @param converter Function to convert from source to target type
+     * @return Unmodifiable list of converted elements
+     */
     public static <A, M> List<A> transformUnmodifiable(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
+        Objects.requireNonNull(nms, "Source list cannot be null");
+        Objects.requireNonNull(converter, "Converter function cannot be null");
         return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
     }
 
+    /**
+     * Creates an unmodifiable transformed collection from a source collection.
+     *
+     * @param <A> Target element type
+     * @param <M> Source element type
+     * @param nms Source collection
+     * @param converter Function to convert from source to target type
+     * @return Unmodifiable collection of converted elements
+     */
     public static <A, M> Collection<A> transformUnmodifiable(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
+        Objects.requireNonNull(nms, "Source collection cannot be null");
+        Objects.requireNonNull(converter, "Converter function cannot be null");
         return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
     }
 
+    /**
+     * Converts elements from a source collection and adds them to a target collection.
+     *
+     * @param <A> Source element type
+     * @param <M> Target element type
+     * @param <C> Target collection type
+     * @param target Collection to add converted elements to
+     * @param toAdd Collection of elements to convert and add
+     * @param converter Function to convert from source to target type
+     */
     public static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
+        Objects.requireNonNull(target, "Target collection cannot be null");
+        Objects.requireNonNull(toAdd, "Source collection cannot be null");
+        Objects.requireNonNull(converter, "Converter function cannot be null");
+
         for (final A value : toAdd) {
             target.add(converter.apply(value));
         }

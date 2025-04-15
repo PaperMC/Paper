@@ -7,7 +7,19 @@ import net.minecraft.world.level.levelgen.MarsagliaPolarGaussian;
 import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 
 /**
- * Avoid costly CAS of superclass
+ * A fast, non-thread-safe random number generator optimized for single-threaded usage.
+ * <p>
+ * IMPORTANT: This class is NOT thread-safe. Multiple threads accessing the same instance
+ * will produce unpredictable results and lead to data corruption. Use either:
+ * - One instance per thread (using ThreadLocal)
+ * - Synchronization when accessing from multiple threads
+ * - A thread-safe alternative when shared access is required
+ * </p>
+ * <p>
+ * This implementation uses a linear congruential generator (LCG) for fast random number
+ * generation with good statistical properties for game mechanics and simulations.
+ * It trades thread safety for performance in single-threaded contexts.
+ * </p>
  */
 public class ThreadUnsafeRandom implements BitRandomSource { // Paper - replace random
 
@@ -44,6 +56,41 @@ public class ThreadUnsafeRandom implements BitRandomSource { // Paper - replace 
         return (int)(seed >>> (BITS - Integer.SIZE));
     }
 
+    /**
+     * Returns a pseudorandom, uniformly distributed int value between 0 (inclusive)
+     * and the specified bound (exclusive).
+     *
+     * @param bound the upper bound (exclusive) for the random value
+     * @return a random int in the range [0, bound)
+     * @throws IllegalArgumentException if bound is not positive
+     */
+    public int nextInt(final int bound) {
+        if (bound <= 0) {
+            throw new IllegalArgumentException("bound must be positive");
+        }
+
+        // Fast path for power of 2 bounds
+        if ((bound & -bound) == bound) {
+            return (int)(advanceSeed() & (bound - 1));
+        }
+
+        // Rejection sampling for uniform distribution
+        int r = nextInt();
+        int m = bound - 1;
+        if ((bound & m) == 0) {
+            // Power of two case
+            r = (int)((bound * (long)r) >> 31);
+        } else {
+            // General case
+            int u = r >>> 1;
+            while (u + m - (r = u % bound) < 0) {
+                u = nextInt() >>> 1;
+            }
+        }
+
+        return r;
+    }
+
     @Override
     public double nextGaussian() {
         return this.gaussianSource.nextGaussian();
@@ -59,6 +106,10 @@ public class ThreadUnsafeRandom implements BitRandomSource { // Paper - replace 
         return new ThreadUnsafeRandomPositionalFactory(this.nextLong());
     }
 
+    /**
+     * Factory for creating position-based random sources.
+     * This allows for consistent random generation based on world positions.
+     */
     public static final class ThreadUnsafeRandomPositionalFactory implements PositionalRandomFactory {
 
         private final long seed;

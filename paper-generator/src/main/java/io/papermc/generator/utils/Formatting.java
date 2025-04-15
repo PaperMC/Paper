@@ -49,28 +49,54 @@ public final class Formatting {
         return IntStream.of(values).mapToObj(Integer::toString).toArray(String[]::new);
     }
 
+    /**
+     * Strips a word from a camelCase name, ensuring the word is properly part of the camelCase structure.
+     * This implementation avoids creating unnecessary intermediate strings by using StringBuilder.
+     *
+     * @param name The original name in camelCase
+     * @param word The word to strip
+     * @param onlyOnce True to strip only the first occurrence, false to strip all occurrences
+     * @return The name with the specified word removed
+     */
     public static String stripWordOfCamelCaseName(String name, String word, boolean onlyOnce) {
-        String newName = name;
+        StringBuilder result = new StringBuilder(name.length());
         int startIndex = 0;
-        while (true) {
-            int baseIndex = newName.indexOf(word, startIndex);
-            if (baseIndex == -1) {
-                return newName;
+        int currentIndex = 0;
+
+        while ((currentIndex = name.indexOf(word, startIndex)) != -1) {
+            // Check if this occurrence meets our criteria
+            boolean validOccurrence = true;
+
+            if (currentIndex > 0 && !Character.isLowerCase(name.charAt(currentIndex - 1))) {
+                validOccurrence = false;
             }
 
-            if ((baseIndex > 0 && !Character.isLowerCase(newName.charAt(baseIndex - 1))) ||
-                (baseIndex + word.length() < newName.length() && !Character.isUpperCase(newName.charAt(baseIndex + word.length())))) {
-                startIndex = baseIndex + word.length();
-                continue;
+            if (currentIndex + word.length() < name.length() &&
+                !Character.isUpperCase(name.charAt(currentIndex + word.length()))) {
+                validOccurrence = false;
             }
 
-            newName = newName.substring(0, baseIndex) + newName.substring(baseIndex + word.length());
-            startIndex = baseIndex;
-            if (onlyOnce) {
-                break;
+            if (validOccurrence) {
+                // Append text before this occurrence
+                result.append(name, startIndex, currentIndex);
+                // Skip the word
+                startIndex = currentIndex + word.length();
+
+                if (onlyOnce) {
+                    break;
+                }
+            } else {
+                // Move past this occurrence
+                startIndex = currentIndex + 1;
             }
         }
-        return newName;
+
+        // Append any remaining text
+        if (startIndex < name.length()) {
+            result.append(name, startIndex, name.length());
+        }
+
+        return result.toString();
     }
 
     public static final Comparator<String> ALPHABETIC_KEY_ORDER = alphabeticKeyOrder(path -> path);

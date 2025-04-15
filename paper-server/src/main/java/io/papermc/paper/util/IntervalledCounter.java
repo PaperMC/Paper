@@ -81,33 +81,38 @@ public final class IntervalledCounter {
     }
 
     private void resize() {
-        final long[] oldElements = this.times;
-        final long[] oldCounts = this.counts;
-        final long[] newElements = new long[this.times.length * 2];
-        final long[] newCounts = new long[this.times.length * 2];
-        this.times = newElements;
-        this.counts = newCounts;
+        final int oldLength = this.times.length;
+        final int newLength = Math.min(Integer.MAX_VALUE >>> 1, oldLength << 1); // Safe doubling with overflow check
+
+        if (newLength <= oldLength) {
+            throw new OutOfMemoryError("Cannot resize array beyond maximum size");
+        }
+
+        final long[] newTimes = new long[newLength];
+        final long[] newCounts = new long[newLength];
 
         final int head = this.head;
         final int tail = this.tail;
-        final int size = tail >= head ? (tail - head) : (tail + (oldElements.length - head));
-        this.head = 0;
-        this.tail = size;
+        final int size = tail >= head ? (tail - head) : (tail + (oldLength - head));
 
         if (tail >= head) {
-            // sequentially ordered from [head, tail)
-            System.arraycopy(oldElements, head, newElements, 0, size);
-            System.arraycopy(oldCounts, head, newCounts, 0, size);
+            // Sequential case: [head, tail)
+            System.arraycopy(this.times, head, newTimes, 0, size);
+            System.arraycopy(this.counts, head, newCounts, 0, size);
         } else {
-            // ordered from [head, length)
-            // then followed by [0, tail)
+            // Wrapped case: [head, oldLength) + [0, tail)
+            int firstPartLength = oldLength - head;
+            System.arraycopy(this.times, head, newTimes, 0, firstPartLength);
+            System.arraycopy(this.times, 0, newTimes, firstPartLength, tail);
 
-            System.arraycopy(oldElements, head, newElements, 0, oldElements.length - head);
-            System.arraycopy(oldElements, 0, newElements, oldElements.length - head, tail);
-
-            System.arraycopy(oldCounts, head, newCounts, 0, oldCounts.length - head);
-            System.arraycopy(oldCounts, 0, newCounts, oldCounts.length - head, tail);
+            System.arraycopy(this.counts, head, newCounts, 0, firstPartLength);
+            System.arraycopy(this.counts, 0, newCounts, firstPartLength, tail);
         }
+
+        this.times = newTimes;
+        this.counts = newCounts;
+        this.head = 0;
+        this.tail = size;
     }
 
     // returns in units per second

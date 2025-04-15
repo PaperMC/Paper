@@ -34,7 +34,13 @@ public final class AtomicFiles {
     }
 
     private static Path tempFile(final Path path) {
-        return path.resolveSibling("." + System.nanoTime() + "-" + ThreadLocalRandom.current().nextInt() + "-" + path.getFileName().toString() + ".tmp");    }
+        String filename = path.getFileName().toString();
+        String timestamp = Long.toString(System.nanoTime(), 36); // Base-36 encoding for shorter representation
+        String random = Integer.toString(ThreadLocalRandom.current().nextInt(0x1000000), 36); // Limit range for readability
+        String prefix = ".tmp-" + timestamp + "-" + random + "-";
+
+        return path.resolveSibling(prefix + filename);
+    }
 
     @SuppressWarnings("BusyWait") // not busy waiting
     public static void atomicMove(final Path from, final Path to, final boolean replaceExisting) throws IOException {

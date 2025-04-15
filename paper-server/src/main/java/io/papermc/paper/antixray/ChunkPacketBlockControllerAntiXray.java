@@ -199,11 +199,18 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         executor.execute((Runnable) chunkPacketInfo);
     }
 
-    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay (even without ThreadLocal)
-    // If an ExecutorService with multiple threads is used, ThreadLocal must be used here
+    // ThreadLocal implementations that properly pre-initialize with global values for better efficiency
     private final ThreadLocal<int[]> presetBlockStateBits = ThreadLocal.withInitial(() -> new int[getPresetBlockStatesFullLength()]);
-    private static final ThreadLocal<boolean[]> SOLID = ThreadLocal.withInitial(() -> new boolean[Block.BLOCK_STATE_REGISTRY.size()]);
-    private static final ThreadLocal<boolean[]> OBFUSCATE = ThreadLocal.withInitial(() -> new boolean[Block.BLOCK_STATE_REGISTRY.size()]);
+    private static final ThreadLocal<boolean[]> SOLID = ThreadLocal.withInitial(() -> {
+        boolean[] array = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
+        System.arraycopy(solidGlobal, 0, array, 0, solidGlobal.length);
+        return array;
+    });
+    private static final ThreadLocal<boolean[]> OBFUSCATE = ThreadLocal.withInitial(() -> {
+        boolean[] array = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
+        System.arraycopy(obfuscateGlobal, 0, array, 0, obfuscateGlobal.length);
+        return array;
+    });
     // These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
     private static final ThreadLocal<boolean[][]> CURRENT = ThreadLocal.withInitial(() -> new boolean[16][16]);
     private static final ThreadLocal<boolean[][]> NEXT = ThreadLocal.withInitial(() -> new boolean[16][16]);
