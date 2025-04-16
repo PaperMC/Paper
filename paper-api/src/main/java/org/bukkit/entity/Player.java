@@ -3275,6 +3275,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     java.util.Locale locale();
     // Paper end
+
+    /**
+     * Returns the locale the server will use to send messages translated via the Adventure global translator.
+     * By default, the value of {@link Player#locale()} is used.
+     *
+     * @return the locale.
+     */
+    java.util.Locale getEffectiveLocale();
+
+    /**
+     * Change the locale the server will be translating its messages to.
+     *
+     * @param locale the locale to translate to
+     */
+    void setEffectiveLocale(java.util.@Nullable Locale locale);
+
     /**
      * Gets the player's estimated ping in milliseconds.
      *
