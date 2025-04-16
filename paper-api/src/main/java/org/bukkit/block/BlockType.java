@@ -2491,7 +2491,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockData createBlockData(@Nullable String data);
 
     /**
-     * Check if the blockt type is solid (can be built upon)
+     * Check if the block type is solid (can be built upon)
      *
      * @return True if this block type is solid
      */
