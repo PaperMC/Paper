@@ -35,7 +35,7 @@ public class BlockDataChangeEvent extends BlockEvent implements Cancellable {
      * @return The new {@link BlockData}
      */
     public BlockData getNewData() {
-        return newData;
+        return newData.clone();
     }
 
     /**
@@ -44,7 +44,7 @@ public class BlockDataChangeEvent extends BlockEvent implements Cancellable {
      * @param newData The new {@link BlockData}
      */
     public void setNewData(final BlockData newData) {
-        this.newData = newData;
+        this.newData = newData.clone();
     }
 
     /**
