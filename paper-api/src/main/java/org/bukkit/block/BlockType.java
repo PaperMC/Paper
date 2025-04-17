@@ -121,7 +121,6 @@ import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.data.type.WallSkull;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
