@@ -19,7 +19,9 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     private int newExp = 0;
     private int newLevel = 0;
     private int newTotalExp = 0;
-    private Component deathMessage;
+    private boolean displayDeathMessage;
+    private Component deathChatMessage;
+    private Component deathScreenMessage;
     private boolean doExpDrop;
     private boolean keepLevel = false;
     private boolean keepInventory = false;
@@ -27,27 +29,29 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     private final List<ItemStack> itemsToKeep = new ArrayList<>();
 
     @ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable Component deathMessage) {
-        this(player, damageSource, drops, droppedExp, 0, deathMessage);
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable Component deathMessage, final boolean displayDeathMessage) {
+        this(player, damageSource, drops, droppedExp, 0, deathMessage, displayDeathMessage);
     }
 
     @ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable Component deathMessage) {
-        this(player, damageSource, drops, droppedExp, newExp, 0, 0, deathMessage);
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable Component deathMessage, final boolean displayDeathMessage) {
+        this(player, damageSource, drops, droppedExp, newExp, 0, 0, deathMessage, displayDeathMessage);
     }
 
     @ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage) {
-        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage, final boolean displayDeathMessage) {
+        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, displayDeathMessage, true);
     }
 
     @ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage, final boolean doExpDrop) {
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage, final boolean displayDeathMessage, final boolean doExpDrop) {
         super(player, damageSource, drops, droppedExp);
         this.newExp = newExp;
         this.newTotalExp = newTotalExp;
         this.newLevel = newLevel;
-        this.deathMessage = deathMessage;
+        this.deathChatMessage = deathMessage;
+        this.deathScreenMessage = deathMessage;
+        this.displayDeathMessage = displayDeathMessage;
         this.doExpDrop = doExpDrop;
     }
 
@@ -76,7 +80,9 @@ public class PlayerDeathEvent extends EntityDeathEvent {
         this.newExp = newExp;
         this.newTotalExp = newTotalExp;
         this.newLevel = newLevel;
-        this.deathMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
+        this.displayDeathMessage = true;
+        this.deathChatMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
+        this.deathScreenMessage = this.deathChatMessage;
         this.doExpDrop = doExpDrop;
     }
 
@@ -84,6 +90,30 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     @Override
     public Player getEntity() {
         return (Player) this.entity;
+    }
+
+    /**
+     * Get whether the death message should be shown.
+     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     *
+     * @return whether the death message should be shown
+     * @see #deathChatMessage()
+     * @see #deathScreenMessage()
+     */
+    public boolean allowDisplayingDeathMessage() {
+        return displayDeathMessage;
+    }
+
+    /**
+     * Set whether the death message should be shown.
+     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     *
+     * @param displayDeathMessage whether the death message should be shown
+     * @see #deathChatMessage()
+     * @see #deathScreenMessage()
+     */
+    public void allowDisplayingDeathMessage(boolean displayDeathMessage) {
+        this.displayDeathMessage = displayDeathMessage;
     }
 
     /**
@@ -157,44 +187,89 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     }
 
     /**
-     * Set the death message that will appear to everyone on the server.
+     * Set the death message that will be broadcasted and appear on the players death screen.
      *
      * @param deathMessage Component message to appear to other players on the server.
      */
     public void deathMessage(final @Nullable Component deathMessage) {
-        this.deathMessage = deathMessage;
+        this.deathChatMessage = deathMessage;
+        this.deathScreenMessage = deathMessage;
     }
 
     /**
      * Get the death message that will appear to everyone on the server.
      *
      * @return Component message to appear to other players on the server.
+     * @deprecated in favour of {@link #deathChatMessage()} and {@link #deathScreenMessage()}
      */
+    @Deprecated
     public @Nullable Component deathMessage() {
-        return this.deathMessage;
+        return this.deathChatMessage;
     }
 
     /**
-     * Set the death message that will appear to everyone on the server.
+     * Set the death message that will be broadcasted and appear on the players death screen.
      *
-     * @param deathMessage Message to appear to other players on the server.
+     * @param deathMessage message to appear to other players on the server.
      * @deprecated in favour of {@link #deathMessage(Component)}
      */
     @Deprecated
     public void setDeathMessage(@Nullable String deathMessage) {
-        this.deathMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
+        this.deathChatMessage = this.deathScreenMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
     }
 
     /**
      * Get the death message that will appear to everyone on the server.
      *
      * @return Message to appear to other players on the server.
-     * @deprecated in favour of {@link #deathMessage()}
+     * @deprecated in favour of {@link #deathChatMessage()} and {@link #deathScreenMessage()}
      */
     @Nullable
     @Deprecated
     public String getDeathMessage() {
-        return LegacyComponentSerializer.legacySection().serializeOrNull(this.deathMessage);
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.deathChatMessage);
+    }
+
+    /**
+     * Set the death message that will appear in the chat.
+     * <p>
+     * If set to null, no message will be sent to chat.
+     *
+     * @param deathChatMessage Message to appear in the chat when the player dies.
+     */
+    public void deathChatMessage(@Nullable Component deathChatMessage) {
+        this.deathChatMessage = deathChatMessage;
+    }
+
+    /**
+     * Get the death message that will appear in the chat.
+     *
+     * @return Message to appear in chat.
+     */
+    public @Nullable Component deathChatMessage() {
+        return this.deathChatMessage;
+    }
+    /**
+     * Set the death message that will appear on the death screen of the dying player.
+     * <p>
+     * If set to null, no message will be shown to the dying player.
+     * <p>
+     * If the message exceeds 256 characters it will be truncated.
+     *
+     * @param deathScreenMessage Message to appear on the death screen to the dying player.
+     */
+    public void deathScreenMessage(@Nullable Component deathScreenMessage) {
+        this.deathScreenMessage = deathScreenMessage;
+    }
+
+    /**
+     * Get the death message that will appear on the death screen of the dying player.
+     * By default, it is the same value as {@link #deathChatMessage()}.
+     *
+     * @return Message to appear on the death screen to the dying player.
+     */
+    public @Nullable Component deathScreenMessage() {
+        return this.deathScreenMessage;
     }
 
     /**
