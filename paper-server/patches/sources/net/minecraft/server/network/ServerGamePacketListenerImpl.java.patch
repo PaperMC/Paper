@@ -519,7 +519,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = packet.getCommandBlock(this.player.level());
-@@ -661,7 +_,7 @@
+@@ -661,11 +_,11 @@
                  boolean flag = this.player.hasInfiniteMaterials() && packet.includeData();
                  ItemStack cloneItemStack = blockState.getCloneItemStack(serverLevel, blockPos, flag);
                  if (!cloneItemStack.isEmpty()) {
@@ -528,7 +528,23 @@
                          addBlockDataToItem(blockState, serverLevel, blockPos, cloneItemStack);
                      }
  
-@@ -698,18 +_,29 @@
+-                    this.tryPickItem(cloneItemStack);
++                    this.tryPickItem(cloneItemStack, blockPos, null, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+                 }
+             }
+         }
+@@ -689,27 +_,41 @@
+         if (entityOrPart != null && this.player.canInteractWithEntity(entityOrPart, 3.0)) {
+             ItemStack pickResult = entityOrPart.getPickResult();
+             if (pickResult != null && !pickResult.isEmpty()) {
+-                this.tryPickItem(pickResult);
++                this.tryPickItem(pickResult, null, entityOrPart, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+             }
+         }
+     }
+ 
+-    private void tryPickItem(ItemStack stack) {
++    private void tryPickItem(ItemStack stack, @Nullable BlockPos blockPos, @Nullable Entity entity, boolean includeData) { // Paper - Extend PlayerPickItemEvent API
          if (stack.isItemEnabled(this.player.level().enabledFeatures())) {
              Inventory inventory = this.player.getInventory();
              int i = inventory.findSlotMatchingItem(stack);
@@ -536,7 +552,10 @@
 +            final int sourceSlot = i;
 +            final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
 +            final org.bukkit.entity.Player bukkitPlayer = this.player.getBukkitEntity();
-+            final io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(bukkitPlayer, targetSlot, sourceSlot);
++            final io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(
++                bukkitPlayer, blockPos != null ? org.bukkit.craftbukkit.block.CraftBlock.at(this.player.level(), blockPos) : null,
++                entity != null ? entity.getBukkitEntity() : null, includeData, targetSlot, sourceSlot
++            );
 +            if (!event.callEvent()) {
 +                return;
 +            }
