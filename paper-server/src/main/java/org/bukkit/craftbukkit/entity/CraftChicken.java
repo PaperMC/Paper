@@ -12,6 +12,8 @@ import net.minecraft.world.item.EitherHolder;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Chicken;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 import java.util.Optional;
 
@@ -85,6 +87,28 @@ public class CraftChicken extends CraftAnimals implements Chicken {
 
         public CraftVariant(Holder<ChickenVariant> holder) {
             super(holder);
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetId() {
+            return PaperAdventure.asAdventure(this.getHandle().modelAndTexture().asset().id());
+        }
+
+        @Override
+        public @Nullable Model getModel() {
+            return fromNms(this.getHandle().modelAndTexture().model());
+        }
+
+        public static Variant.Model fromNms(ChickenVariant.ModelType modelType) {
+            Preconditions.checkArgument(modelType != null, "Model Type may not be null");
+
+            return Model.values()[modelType.ordinal()];
+        }
+
+        public static ChickenVariant.ModelType toNms(Model model) {
+            Preconditions.checkArgument(model != null, "Model may not be null");
+
+            return ChickenVariant.ModelType.values()[model.ordinal()];
         }
     }
 

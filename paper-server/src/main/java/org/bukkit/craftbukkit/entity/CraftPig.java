@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -9,11 +10,11 @@ import net.minecraft.world.entity.animal.PigVariant;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Pig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -99,6 +100,28 @@ public class CraftPig extends CraftAnimals implements Pig {
 
         public CraftVariant(final Holder<PigVariant> holder) {
             super(holder);
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetId() {
+            return PaperAdventure.asAdventure(this.getHandle().modelAndTexture().asset().id());
+        }
+
+        @Override
+        public @Nullable Pig.Variant.Model getModel() {
+            return fromNms(this.getHandle().modelAndTexture().model());
+        }
+
+        public static Pig.Variant.Model fromNms(PigVariant.ModelType modelType) {
+            Preconditions.checkArgument(modelType != null, "Model Type may not be null");
+
+            return Pig.Variant.Model.values()[modelType.ordinal()];
+        }
+
+        public static PigVariant.ModelType toNms(Pig.Variant.Model model) {
+            Preconditions.checkArgument(model != null, "Model may not be null");
+
+            return PigVariant.ModelType.values()[model.ordinal()];
         }
     }
 
