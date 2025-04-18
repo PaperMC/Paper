@@ -60,6 +60,36 @@
              }
          }
  
+@@ -394,10 +_,10 @@
+             boolean flag = this instanceof Player;
+             if (this.isInWall()) {
+                 this.hurtServer(serverLevel1, this.damageSources().inWall(), 1.0F);
+-            } else if (flag && !serverLevel1.getWorldBorder().isWithinBounds(this.getBoundingBox())) {
+-                double d = serverLevel1.getWorldBorder().getDistanceToBorder(this) + serverLevel1.getWorldBorder().getDamageSafeZone();
++            } else if (flag && !this.getWorldBorder().isWithinBounds(this.getBoundingBox())) { // Paper - use the first WorldBorder available
++                double d = this.getWorldBorder().getDistanceToBorder(this) + serverLevel1.getWorldBorder().getDamageSafeZone(); // Paper - use the first WorldBorder available
+                 if (d < 0.0) {
+-                    double damagePerBlock = serverLevel1.getWorldBorder().getDamagePerBlock();
++                    double damagePerBlock = this.getWorldBorder().getDamagePerBlock(); // Paper - use the first WorldBorder available
+                     if (damagePerBlock > 0.0) {
+                         this.hurtServer(serverLevel1, this.damageSources().outOfBorder(), Math.max(1, Mth.floor(-d * damagePerBlock)));
+                     }
+@@ -478,6 +_,15 @@
+         return Mth.lerp((float)this.getAttributeValue(Attributes.MOVEMENT_EFFICIENCY), super.getBlockSpeedFactor(), 1.0F);
+     }
+ 
++    // Paper start - helper for WorldBorder
++    private net.minecraft.world.level.border.WorldBorder getWorldBorder() {
++        if (this instanceof ServerPlayer serverPlayer && serverPlayer.getBukkitEntity().hasClientWorldBorder()) {
++            return ((org.bukkit.craftbukkit.CraftWorldBorder)serverPlayer.getBukkitEntity().getWorldBorder()).getHandle();
++        }
++        return this.level().getWorldBorder();
++    }
++    // Paper end
++
+     public float getLuck() {
+         return 0.0F;
+     }
 @@ -535,7 +_,7 @@
          this.deathTime++;
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
