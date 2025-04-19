@@ -12,11 +12,24 @@
 +    }
 +
 +    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack, boolean consume) {
-+        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume);
++        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume ? ProjectileDrawingItemConsumption.IMMEDIATELY : ProjectileDrawingItemConsumption.NEVER); // Paper - prevent item consumption for cancelled events
 +        // Paper end - Add EntityLoadCrossbowEvent
          if (!list.isEmpty()) {
              crossbowStack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
              return true;
+@@ -122,8 +_,10 @@
+         }
+ 
+         projectile.shoot(projectileShotVector.x(), projectileShotVector.y(), projectileShotVector.z(), velocity, inaccuracy);
+-        float shotPitch = getShotPitch(shooter.getRandom(), index);
+-        shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(), SoundEvents.CROSSBOW_SHOOT, shooter.getSoundSource(), 1.0F, shotPitch);
++        // Paper start - moved up to ensure events weren't cancelled
++        // float shotPitch = getShotPitch(shooter.getRandom(), index);
++        // shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(), SoundEvents.CROSSBOW_SHOOT, shooter.getSoundSource(), 1.0F, shotPitch);
++        // Paper end - moved up to ensure events weren't cancelled
+     }
+ 
+     private static Vector3f getProjectileShotVector(LivingEntity shooter, Vec3 distance, float angle) {
 @@ -141,7 +_,11 @@
      @Override
      protected Projectile createProjectile(Level level, LivingEntity shooter, ItemStack weapon, ItemStack ammo, boolean isCrit) {
@@ -30,6 +43,27 @@
          } else {
              Projectile projectile = super.createProjectile(level, shooter, weapon, ammo, isCrit);
              if (projectile instanceof AbstractArrow abstractArrow) {
+@@ -161,9 +_,9 @@
+         Level level, LivingEntity shooter, InteractionHand hand, ItemStack weapon, float velocity, float inaccuracy, @Nullable LivingEntity target
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+-            ChargedProjectiles chargedProjectiles = weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
++            ChargedProjectiles chargedProjectiles = weapon.get(DataComponents.CHARGED_PROJECTILES); // Paper - prevent item consumption for cancelled events
+             if (chargedProjectiles != null && !chargedProjectiles.isEmpty()) {
+-                this.shoot(serverLevel, shooter, hand, weapon, chargedProjectiles.getItems(), velocity, inaccuracy, shooter instanceof Player, target);
++                if (!this.shoot(serverLevel, shooter, hand, weapon, chargedProjectiles.getItems(), velocity, inaccuracy, shooter instanceof Player, target)) return; // Paper - prevent item consumption for cancelled events
+                 if (shooter instanceof ServerPlayer serverPlayer) {
+                     CriteriaTriggers.SHOT_CROSSBOW.trigger(serverPlayer, weapon);
+                     serverPlayer.awardStat(Stats.ITEM_USED.get(weapon.getItem()));
+@@ -172,7 +_,7 @@
+         }
+     }
+ 
+-    private static float getShotPitch(RandomSource random, int index) {
++    public static float getShotPitch(RandomSource random, int index) {
+         return index == 0 ? 1.0F : getRandomShotPitch((index & 1) == 1, random);
+     }
+ 
 @@ -211,7 +_,14 @@
                      );
              }
