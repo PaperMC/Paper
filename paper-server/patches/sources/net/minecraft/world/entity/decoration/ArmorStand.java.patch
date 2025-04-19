@@ -198,7 +198,7 @@
                  }
  
                  return true;
-@@ -400,31 +_,34 @@
+@@ -400,31 +_,42 @@
          float health = this.getHealth();
          health -= damageAmount;
          if (health <= 0.5F) {
@@ -231,13 +231,24 @@
 +        // this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved down
  
          for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
-             ItemStack itemStack = this.equipment.set(equipmentSlot, ItemStack.EMPTY);
+-            ItemStack itemStack = this.equipment.set(equipmentSlot, ItemStack.EMPTY);
++            ItemStack itemStack = this.equipment.get(equipmentSlot); // Paper - move equipment removal past event call
              if (!itemStack.isEmpty()) {
 -                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
+-            }
+-        }
 +                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly}
-             }
-         }
-+        return this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved from above // Paper
++            }
++        }
++        // Paper start - move equipment removal past event call
++        org.bukkit.event.entity.EntityDeathEvent event = this.dropAllDeathLoot(level, damageSource);
++        if (!event.isCancelled()) {
++            for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
++                this.equipment.set(equipmentSlot, ItemStack.EMPTY);
++            }
++        }
++        return event;
++        // Paper end - move equipment removal past event call
      }
  
      private void playBrokenSound() {
