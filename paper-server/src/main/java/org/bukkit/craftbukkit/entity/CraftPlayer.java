@@ -2996,6 +2996,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return getHandle().adventure$locale;
     }
     // Paper end
+
+
+    @Override
+    public java.util.Locale getEffectiveLocale() {
+        if (getHandle().effectiveLocale == null) {
+            return locale();
+        }
+        return getHandle().effectiveLocale;
+    }
+
+    @Override
+    public void setEffectiveLocale(final java.util.Locale locale) {
+        getHandle().effectiveLocale = locale;
+        getHandle().connection.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(getEffectiveLocale());
+    }
+
     @Override
     public int getPing() {
         return this.getHandle().connection.latency();
