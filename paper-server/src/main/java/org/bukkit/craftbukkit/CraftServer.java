@@ -451,6 +451,7 @@ public final class CraftServer implements Server {
         if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
         this.commandsConfiguration.setDefaults(commandsDefaults);
         // Paper end - don't enforce icanhasbukkit default if alias block exists
+        this.commandsConfiguration.options().setHeader(commandsDefaults.options().getHeader());
         this.saveCommandsConfig();
 
         // Migrate aliases from old file and add previously implicit $1- to pass all arguments
