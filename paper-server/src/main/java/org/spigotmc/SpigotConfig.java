@@ -33,17 +33,17 @@ public class SpigotConfig {
 
     private static File CONFIG_FILE;
     private static final String HEADER = """
-        This is the main configuration file for Spigot.
+        This is the Spigot configuration file for Paper.
         As you can see, there's tons to configure. Some options may impact gameplay, so use
         with caution, and make sure you know what each option does before configuring.
-        For a reference for any variable inside this file, check out the Spigot wiki at
-        http://www.spigotmc.org/wiki/spigot-configuration/
         
-        If you need help with the configuration or have any questions related to Spigot,
-        join us at the Discord or drop by our forums and leave a post.
+        If you need help with the configuration or have any questions related to Paper,
+        join us in our Discord or check the docs page.
         
-        Discord: https://www.spigotmc.org/go/discord
-        Forums: http://www.spigotmc.org/
+        File Reference: https://docs.papermc.io/paper/reference/spigot-configuration/
+        Docs: https://docs.papermc.io/
+        Discord: https://discord.gg/papermc
+        Website: https://papermc.io/
         """;
     /*========================================================================*/
     public static YamlConfiguration config;
