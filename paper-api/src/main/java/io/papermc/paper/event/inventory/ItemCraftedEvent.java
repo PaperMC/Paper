@@ -12,37 +12,37 @@ import org.jspecify.annotations.NullMarked;
  * Called when a player picks up a crafted item from the result slot of a crafting grid.
  */
 @NullMarked
-public class ItemCraftedEvent extends Event{
+public class ItemCraftedEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
     private final Player player;
     private final ItemStack craftedItemStack;
 
     @ApiStatus.Internal
-    public ItemCraftedEvent(Player player, ItemStack craftedItemStack) {
+    public ItemCraftedEvent(final Player player, final ItemStack craftedItemStack) {
         this.player = player;
         this.craftedItemStack = craftedItemStack;
     }
 
     /**
-     * Gets the Player who triggered the event by picking up the crafted item.
+     * Gets the player who triggered the event by picking up the crafted item.
      *
-     * @return Player
+     * @return player
      */
     public Player getPlayer() {
         return player;
     }
 
     /**
-     * Gets the ItemStack that was crafted and picked up by the Player.
+     * Gets the itemstack that was crafted and picked up by the player.
      *
-     * @return ItemStack
+     * @return the itemstack
      */
     public ItemStack getCraftedItemStack() {
-        return craftedItemStack;
+        return craftedItemStack.clone();
     }
 
     @Override
-    public  HandlerList getHandlers() {
+    public HandlerList getHandlers() {
         return HANDLERS;
     }
 
