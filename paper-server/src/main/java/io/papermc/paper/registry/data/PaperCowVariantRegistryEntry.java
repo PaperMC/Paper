@@ -47,8 +47,12 @@ public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
 
     public static final class PaperBuilder extends PaperCowVariantRegistryEntry implements Builder, PaperRegistryBuilder<CowVariant, Cow.Variant> {
 
+        private final CowVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable CowVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -67,7 +71,7 @@ public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
         public CowVariant build() {
             return new CowVariant(
                 new ModelAndTexture<>(this.model == null ? CowVariant.ModelType.NORMAL : this.model, this.assetId),
-                SpawnPrioritySelectors.EMPTY
+                internal.spawnConditions()
             );
         }
     }

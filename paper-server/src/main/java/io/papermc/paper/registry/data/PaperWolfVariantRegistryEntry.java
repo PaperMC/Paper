@@ -52,8 +52,12 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
 
+        private final WolfVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable WolfVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -76,7 +80,7 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
         @Override
         public WolfVariant build() {
-            return new WolfVariant(new WolfVariant.AssetInfo(assetInfoWild, assetInfoTame, assetInfoAngry), SpawnPrioritySelectors.EMPTY);
+            return new WolfVariant(new WolfVariant.AssetInfo(assetInfoWild, assetInfoTame, assetInfoAngry), internal.spawnConditions());
         }
     }
 }

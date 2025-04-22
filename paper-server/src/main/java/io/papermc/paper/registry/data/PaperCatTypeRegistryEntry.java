@@ -38,8 +38,12 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
 
     public static final class PaperBuilder extends PaperCatTypeRegistryEntry implements Builder, PaperRegistryBuilder<CatVariant, Cat.Type> {
 
+        private final CatVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable CatVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -50,7 +54,7 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
 
         @Override
         public CatVariant build() {
-            return new CatVariant(assetInfo, SpawnPrioritySelectors.EMPTY);
+            return new CatVariant(assetInfo, internal.spawnConditions());
         }
     }
 }

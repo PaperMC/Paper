@@ -47,8 +47,12 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
 
     public static final class PaperBuilder extends PaperPigVariantRegistryEntry implements Builder, PaperRegistryBuilder<PigVariant, Pig.Variant> {
 
+        private final PigVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable PigVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -67,7 +71,7 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
         public PigVariant build() {
             return new PigVariant(
                 new ModelAndTexture<>(this.model == null ? PigVariant.ModelType.NORMAL : this.model, this.assetId),
-                SpawnPrioritySelectors.EMPTY
+                internal.spawnConditions()
             );
         }
     }

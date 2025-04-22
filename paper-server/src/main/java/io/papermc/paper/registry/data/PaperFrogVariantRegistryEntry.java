@@ -38,8 +38,12 @@ public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
 
     public static final class PaperBuilder extends PaperFrogVariantRegistryEntry implements Builder, PaperRegistryBuilder<FrogVariant, Frog.Variant> {
 
+        private final FrogVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable FrogVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -50,7 +54,7 @@ public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
 
         @Override
         public FrogVariant build() {
-            return new FrogVariant(assetInfo, SpawnPrioritySelectors.EMPTY);
+            return new FrogVariant(assetInfo, internal.spawnConditions());
         }
     }
 }

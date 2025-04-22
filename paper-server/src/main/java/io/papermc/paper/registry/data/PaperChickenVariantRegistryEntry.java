@@ -47,8 +47,12 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
 
     public static final class PaperBuilder extends PaperChickenVariantRegistryEntry implements Builder, PaperRegistryBuilder<ChickenVariant, Chicken.Variant> {
 
+        private final ChickenVariant internal;
+
         public PaperBuilder(final Conversions conversions, final @Nullable ChickenVariant internal) {
             super(conversions, internal);
+
+            this.internal = internal;
         }
 
         @Override
@@ -67,7 +71,7 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
         public ChickenVariant build() {
             return new ChickenVariant(
                 new ModelAndTexture<>(this.model == null ? ChickenVariant.ModelType.NORMAL : this.model, this.assetId),
-                SpawnPrioritySelectors.EMPTY
+                internal.spawnConditions()
             );
         }
     }
