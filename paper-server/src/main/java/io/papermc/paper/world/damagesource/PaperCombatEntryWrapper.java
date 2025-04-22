@@ -1,5 +1,6 @@
 package io.papermc.paper.world.damagesource;
 
+import net.minecraft.Optionull;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.damage.DamageSource;
 import org.jspecify.annotations.NullMarked;
@@ -20,8 +21,7 @@ public record PaperCombatEntryWrapper(net.minecraft.world.damagesource.CombatEnt
 
     @Override
     public @Nullable FallLocationType getFallLocationType() {
-        net.minecraft.world.damagesource.FallLocation fallLocation = this.handle.fallLocation();
-        return fallLocation == null ? null : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
+        return Optionull.map(this.handle.fallLocation(), PaperCombatTrackerWrapper::minecraftToPaper);
     }
 
     @Override
