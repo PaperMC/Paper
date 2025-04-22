@@ -1,16 +1,21 @@
 package io.papermc.paper.world.damagesource;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import io.papermc.paper.adventure.PaperAdventure;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.text.Component;
+import net.minecraft.Util;
+import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @NullMarked
-public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatTracker handle) implements CombatTracker {
+public record PaperCombatTrackerWrapper(
+    net.minecraft.world.damagesource.CombatTracker handle
+) implements CombatTracker {
 
     @Override
     public LivingEntity getEntity() {
@@ -19,20 +24,20 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
 
     @Override
     public List<CombatEntry> getCombatEntries() {
-        List<CombatEntry> combatEntries = new ArrayList<>(this.handle.entries.size());
+        final List<CombatEntry> combatEntries = new ArrayList<>(this.handle.entries.size());
         this.handle.entries.forEach(combatEntry -> combatEntries.add(new PaperCombatEntryWrapper(combatEntry)));
         return combatEntries;
     }
 
     @Override
-    public void setCombatEntries(List<CombatEntry> combatEntries) {
+    public void setCombatEntries(final List<CombatEntry> combatEntries) {
         this.handle.entries.clear();
         combatEntries.forEach(combatEntry -> this.handle.entries.add(((PaperCombatEntryWrapper) combatEntry).handle()));
     }
 
     @Override
     public @Nullable CombatEntry computeMostSignificantFall() {
-        net.minecraft.world.damagesource.CombatEntry combatEntry = this.handle.getMostSignificantFall();
+        final net.minecraft.world.damagesource.CombatEntry combatEntry = this.handle.getMostSignificantFall();
         return combatEntry == null ? null : new PaperCombatEntryWrapper(combatEntry);
     }
 
@@ -52,8 +57,8 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
     }
 
     @Override
-    public void addCombatEntry(CombatEntry combatEntry) {
-        net.minecraft.world.damagesource.CombatEntry entry = ((PaperCombatEntryWrapper) combatEntry).handle();
+    public void addCombatEntry(final CombatEntry combatEntry) {
+        final net.minecraft.world.damagesource.CombatEntry entry = ((PaperCombatEntryWrapper) combatEntry).handle();
         this.handle.recordDamageAndCheckCombatState(entry);
     }
 
@@ -67,48 +72,33 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
         this.handle.resetCombatState();
     }
 
-    public static net.minecraft.world.damagesource.FallLocation paperToMinecraft(FallLocationType fallLocationType) {
-        return switch (fallLocationType) {
-            case FallLocationType fl when fl == FallLocationType.GENERIC -> net.minecraft.world.damagesource.FallLocation.GENERIC;
-            case FallLocationType fl when fl == FallLocationType.LADDER -> net.minecraft.world.damagesource.FallLocation.LADDER;
-            case FallLocationType fl when fl == FallLocationType.VINES -> net.minecraft.world.damagesource.FallLocation.VINES;
-            case FallLocationType fl when fl == FallLocationType.WEEPING_VINES -> net.minecraft.world.damagesource.FallLocation.WEEPING_VINES;
-            case FallLocationType fl when fl == FallLocationType.TWISTING_VINES -> net.minecraft.world.damagesource.FallLocation.TWISTING_VINES;
-            case FallLocationType fl when fl == FallLocationType.SCAFFOLDING -> net.minecraft.world.damagesource.FallLocation.SCAFFOLDING;
-            case FallLocationType fl when fl == FallLocationType.OTHER_CLIMBABLE -> net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE;
-            case FallLocationType fl when fl == FallLocationType.WATER -> net.minecraft.world.damagesource.FallLocation.WATER;
-            default -> throw new IllegalArgumentException("Unknown fall location type: " + fallLocationType.id());
-        };
+    private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {
+        final BiMap<FallLocation, FallLocationType> map = HashBiMap.create(8);
+        map.put(FallLocation.GENERIC, FallLocationType.GENERIC);
+        map.put(FallLocation.LADDER, FallLocationType.LADDER);
+        map.put(FallLocation.VINES, FallLocationType.VINES);
+        map.put(FallLocation.WEEPING_VINES, FallLocationType.WEEPING_VINES);
+        map.put(FallLocation.TWISTING_VINES, FallLocationType.TWISTING_VINES);
+        map.put(FallLocation.SCAFFOLDING, FallLocationType.SCAFFOLDING);
+        map.put(FallLocation.OTHER_CLIMBABLE, FallLocationType.OTHER_CLIMBABLE);
+        map.put(FallLocation.WATER, FallLocationType.WATER);
+        return map;
+    });
+
+    public static net.minecraft.world.damagesource.FallLocation paperToMinecraft(final FallLocationType fallLocationType) {
+        final FallLocation fallLocation = FALL_LOCATION_MAPPING.inverse().get(fallLocationType);
+        if (fallLocation == null) {
+            throw new IllegalArgumentException("Unknown fall location type: " + fallLocationType.id());
+        }
+        return fallLocation;
     }
 
-    public static FallLocationType minecraftToPaper(net.minecraft.world.damagesource.FallLocation fallLocation) {
-        return switch (fallLocation) {
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.GENERIC ->
-                FallLocationType.GENERIC;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.LADDER ->
-                FallLocationType.LADDER;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.VINES ->
-                FallLocationType.VINES;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.WEEPING_VINES ->
-                FallLocationType.WEEPING_VINES;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.TWISTING_VINES ->
-                FallLocationType.TWISTING_VINES;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.SCAFFOLDING ->
-                FallLocationType.SCAFFOLDING;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE ->
-                FallLocationType.OTHER_CLIMBABLE;
-            case
-                net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.WATER ->
-                FallLocationType.WATER;
-            default -> throw new IllegalArgumentException("Unknown fall location: " + fallLocation.id());
-        };
+    public static FallLocationType minecraftToPaper(final net.minecraft.world.damagesource.FallLocation fallLocation) {
+        final FallLocationType fallLocationType = FALL_LOCATION_MAPPING.get(fallLocation);
+        if (fallLocationType == null) {
+            throw new IllegalArgumentException("Unknown fall location: " + fallLocation.id());
+        }
+        return fallLocationType;
     }
 
 }

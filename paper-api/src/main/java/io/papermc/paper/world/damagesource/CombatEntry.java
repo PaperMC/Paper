@@ -17,28 +17,28 @@ import org.jspecify.annotations.Nullable;
 public interface CombatEntry {
 
     /**
-     * Gets the damage source
+     * Gets the damage source.
      *
      * @return the damage source
      */
     DamageSource getDamageSource();
 
     /**
-     * Gets the amount of damage caused
+     * Gets the amount of damage caused.
      *
      * @return the amount of damage caused
      */
     float getDamage();
 
     /**
-     * Gets the fall location type at the time of this damage
+     * Gets the fall location type at the time of this damage.
      *
      * @return the fall location type
      */
     @Nullable FallLocationType getFallLocationType();
 
     /**
-     * Gets the fall distance at the time of this damage
+     * Gets the fall distance at the time of this damage.
      *
      * @return the fall distance
      */
@@ -55,7 +55,7 @@ public interface CombatEntry {
      * @return combat entry
      * @see #combatEntry(DamageSource, float, FallLocationType, float)
      */
-    static CombatEntry combatEntry(LivingEntity entity, DamageSource damageSource, float damage) {
+    static CombatEntry combatEntry(final LivingEntity entity, final DamageSource damageSource, final float damage) {
         return InternalAPIBridge.get().createCombatEntry(entity, damageSource, damage);
     }
 
@@ -70,7 +70,12 @@ public interface CombatEntry {
      * @see LivingEntity#calculateFallLocationType()
      * @see Entity#getFallDistance()
      */
-    static CombatEntry combatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
+    static CombatEntry combatEntry(
+        final DamageSource damageSource,
+        final float damage,
+        @Nullable final FallLocationType fallLocationType,
+        final float fallDistance
+    ) {
         return InternalAPIBridge.get().createCombatEntry(damageSource, damage, fallLocationType, fallDistance);
     }
 

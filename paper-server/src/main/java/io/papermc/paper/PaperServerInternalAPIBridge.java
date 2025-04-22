@@ -6,6 +6,10 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import net.minecraft.Optionull;
+import net.minecraft.world.damagesource.FallLocation;
+import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -33,20 +37,40 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public CombatEntry createCombatEntry(LivingEntity entity, DamageSource damageSource, float damage) {
-        net.minecraft.world.entity.LivingEntity mob = ((CraftLivingEntity) entity).getHandle();
-        net.minecraft.world.damagesource.FallLocation fallLocation = net.minecraft.world.damagesource.FallLocation.getCurrentFallLocation(mob);
-        float fallDistance = mob.fallDistance;
-        return createCombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation, fallDistance);
+    public CombatEntry createCombatEntry(final LivingEntity entity, final DamageSource damageSource, final float damage) {
+        final net.minecraft.world.entity.LivingEntity mob = ((CraftLivingEntity) entity).getHandle();
+        final FallLocation fallLocation = FallLocation.getCurrentFallLocation(mob);
+        return createCombatEntry(
+            ((CraftDamageSource) damageSource).getHandle(),
+            damage,
+            fallLocation,
+            (float) mob.fallDistance
+        );
     }
 
     @Override
-    public CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
-        net.minecraft.world.damagesource.FallLocation fallLocation = fallLocationType == null ? null : PaperCombatTrackerWrapper.paperToMinecraft(fallLocationType);
-        return createCombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation, fallDistance);
+    public CombatEntry createCombatEntry(
+        final DamageSource damageSource,
+        final float damage,
+        @Nullable final FallLocationType fallLocationType,
+        final float fallDistance
+    ) {
+        return createCombatEntry(
+            ((CraftDamageSource) damageSource).getHandle(),
+            damage,
+            Optionull.map(fallLocationType, PaperCombatTrackerWrapper::paperToMinecraft),
+            fallDistance
+        );
     }
 
-    private CombatEntry createCombatEntry(net.minecraft.world.damagesource.DamageSource damageSource, float damage, net.minecraft.world.damagesource.@Nullable FallLocation fallLocation, float fallDistance) {
-        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(damageSource, damage, fallLocation, fallDistance));
+    private CombatEntry createCombatEntry(
+        final net.minecraft.world.damagesource.DamageSource damageSource,
+        final float damage,
+        final net.minecraft.world.damagesource.@Nullable FallLocation fallLocation,
+        final float fallDistance
+    ) {
+        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(
+            damageSource, damage, fallLocation, fallDistance
+        ));
     }
 }

@@ -17,7 +17,7 @@ import java.util.List;
 public interface CombatTracker {
 
     /**
-     * Gets the entity behind this combat tracker
+     * Gets the entity behind this combat tracker.
      *
      * @return the entity behind this combat tracker
      */
@@ -39,9 +39,9 @@ public interface CombatTracker {
      * Sets the entity's combat history.
      * <p>
      * Note that overriding the entity's combat history won't
-     * have an effect on the entity's current or new combat state.
+     * affect the entity's current or new combat state.
      * Reset the current combat state and register new combat entries instead
-     * if you want the new history to have an effect on the combat state.
+     * if you want the new history to affect the combat state.
      *
      * @param combatEntries combat entries
      * @see #resetCombatState()
@@ -50,7 +50,7 @@ public interface CombatTracker {
     void setCombatEntries(List<CombatEntry> combatEntries);
 
     /**
-     * Calculates the most significant fall damage entry
+     * Calculates the most significant fall damage entry.
      *
      * @return the most significant fall damage entry
      */
@@ -59,7 +59,7 @@ public interface CombatTracker {
     /**
      * Checks whether the entity is in combat,
      * i.e. has taken damage from an entity
-     * since the combat tracking has begun
+     * since the combat tracking has begun.
      *
      * @return whether the entity is in combat
      */
@@ -67,14 +67,14 @@ public interface CombatTracker {
 
     /**
      * Checks whether the entity has started recording damage,
-     * i.e. its combat tracking is active
+     * i.e. its combat tracking is active.
      *
      * @return whether the entity has started recording damage
      */
     boolean isTakingDamage();
 
     /**
-     * Gets the last or current combat duration
+     * Gets the last or current combat duration.
      *
      * @return the combat duration
      * @see #isInCombat()
@@ -83,21 +83,21 @@ public interface CombatTracker {
 
     /**
      * Adds a new entry the pool of combat entries,
-     * updating the entity's combat state
+     * updating the entity's combat state.
      *
      * @param combatEntry combat entry
      */
     void addCombatEntry(CombatEntry combatEntry);
 
     /**
-     * Constructs a death message based on the current combat history
+     * Constructs a death message based on the current combat history.
      *
      * @return a death message
      */
     Component getDeathMessage();
 
     /**
-     * Resets entity's combat state, clearing combat history
+     * Resets entity's combat state, clearing combat history.
      */
     void resetCombatState();
 
