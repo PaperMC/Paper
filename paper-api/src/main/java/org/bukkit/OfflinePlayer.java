@@ -257,7 +257,10 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Nullable
     @Deprecated(since = "1.20.4")
-    public Location getBedSpawnLocation();
+    default Location getBedSpawnLocation() {
+        return this.getRespawnLocation();
+    }
+
     // Paper start
     /**
      * Gets the last date and time that this player logged into the server.

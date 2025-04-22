@@ -13,8 +13,8 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private Location spawnLocation;
 
-    public PlayerSpawnLocationEvent(@NotNull final Player who, @NotNull Location spawnLocation) {
-        super(who);
+    public PlayerSpawnLocationEvent(@NotNull final Player player, @NotNull Location spawnLocation) {
+        super(player);
         this.spawnLocation = spawnLocation;
     }
 

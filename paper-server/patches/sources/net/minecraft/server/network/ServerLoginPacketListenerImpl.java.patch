@@ -1,18 +1,16 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -43,10 +_,19 @@
- import net.minecraft.util.StringUtil;
+@@ -44,9 +_,17 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
+ 
+-public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
 +// CraftBukkit start
-+import net.minecraft.network.protocol.Packet;
-+import net.minecraft.network.protocol.PacketUtils;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
- 
--public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
++
 +public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener, CraftPlayer.TransferCookieConnection {
 +    // CraftBukkit end
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
@@ -47,7 +45,7 @@
 +    }
 +
 +    @Override
-+    public void sendPacket(Packet<?> packet) {
++    public void sendPacket(net.minecraft.network.protocol.Packet<?> packet) {
 +        this.connection.send(packet);
 +    }
 +
@@ -342,7 +340,7 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.server); // CraftBukkit
++        net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(packet, this, this.server); // CraftBukkit
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie commonListenerCookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);
@@ -359,7 +357,7 @@
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
 +        // CraftBukkit start
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
++        net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
 +        if (this.player != null && this.player.getBukkitEntity().handleCookieResponse(packet)) {
 +            return;
 +        }

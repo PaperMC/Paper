@@ -18,7 +18,6 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
         return "CraftPolarBear";
     }
 
-    // Paper start
     @Override
     public boolean isStanding() {
         return this.getHandle().isStanding();
@@ -28,5 +27,4 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
     public void setStanding(boolean standing) {
         this.getHandle().setStanding(standing);
     }
-    // Paper end
 }

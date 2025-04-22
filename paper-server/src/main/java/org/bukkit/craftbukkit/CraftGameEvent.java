@@ -31,7 +31,6 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
         return this.handle;
     }
 
-    // Paper start
     @Override
     public int getRange() {
         return this.handle.notificationRadius();
@@ -41,7 +40,6 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
     public int getVibrationLevel() {
         return net.minecraft.world.level.gameevent.vibrations.VibrationSystem.getGameEventFrequency(this.handleKey);
     }
-    // Paper end
 
     @NotNull
     @Override

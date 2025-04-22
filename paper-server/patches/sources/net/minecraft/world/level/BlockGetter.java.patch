@@ -1,25 +1,18 @@
 --- a/net/minecraft/world/level/BlockGetter.java
 +++ b/net/minecraft/world/level/BlockGetter.java
-@@ -11,6 +_,7 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.util.Mth;
-+import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.entity.BlockEntityType;
- import net.minecraft.world.level.block.state.BlockState;
-@@ -33,6 +_,16 @@
+@@ -33,6 +_,17 @@
  
      BlockState getBlockState(BlockPos pos);
  
 +    // Paper start - if loaded util
-+    @Nullable BlockState getBlockStateIfLoaded(BlockPos blockposition);
++    @Nullable BlockState getBlockStateIfLoaded(BlockPos pos);
 +
-+    default @Nullable Block getBlockIfLoaded(BlockPos blockposition) {
-+        BlockState type = this.getBlockStateIfLoaded(blockposition);
++    default @Nullable net.minecraft.world.level.block.Block getBlockIfLoaded(BlockPos pos) {
++        BlockState type = this.getBlockStateIfLoaded(pos);
 +        return type == null ? null : type.getBlock();
 +    }
-+    @Nullable FluidState getFluidIfLoaded(BlockPos blockposition);
++
++    @Nullable FluidState getFluidIfLoaded(BlockPos pos);
 +    // Paper end
 +
      FluidState getFluidState(BlockPos pos);
@@ -39,7 +32,7 @@
 +        return clip(traverseContext, traversePos, null);
 +    }
 +
-+    default BlockHitResult clip(ClipContext traverseContext, BlockPos traversePos, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
++    default BlockHitResult clip(ClipContext traverseContext, BlockPos traversePos, @Nullable java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
 +        // Paper end - Add predicate for blocks when raytracing
 +        // Paper start - Prevent raytrace from loading chunks
 +        BlockState blockState = this.getBlockStateIfLoaded(traversePos);
@@ -67,7 +60,7 @@
 +        return clip(context, (java.util.function.Predicate<org.bukkit.block.Block>) null);
 +    }
 +
-+    default BlockHitResult clip(ClipContext context, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
++    default BlockHitResult clip(ClipContext context, @Nullable java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
 +        // Paper end - Add predicate for blocks when raytracing
 +        return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
 +            return this.clip(raytrace1, blockposition, canCollide); // CraftBukkit - moved into separate method // Paper - Add predicate for blocks when raytracing

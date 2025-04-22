@@ -4,7 +4,6 @@ import java.util.UUID;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PrimaryLevelData;
-import net.minecraft.world.level.storage.ServerLevelData;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.util.WorldUUID;
 import org.bukkit.generator.WorldInfo;
@@ -27,9 +26,9 @@ public class CraftWorldInfo implements WorldInfo {
         this.vanillaChunkGenerator = chunkGenerator;
         // Paper end
         this.name = worldDataServer.getLevelName();
-        this.uuid = WorldUUID.getUUID(session.levelDirectory.path().toFile());
+        this.uuid = WorldUUID.getOrCreate(session.levelDirectory.path().toFile());
         this.environment = environment;
-        this.seed = ((PrimaryLevelData) worldDataServer).worldGenOptions().seed();
+        this.seed = worldDataServer.worldGenOptions().seed();
         this.minHeight = dimensionManager.minY();
         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
         this.enabledFeatures = worldDataServer.enabledFeatures(); // Paper - feature flag API

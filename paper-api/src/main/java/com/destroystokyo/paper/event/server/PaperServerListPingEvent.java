@@ -55,18 +55,6 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
     private boolean originalPlayerCount = true;
     private Object[] players;
 
-    @Deprecated
-    @ApiStatus.Internal
-    public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull String motd, int numPlayers, int maxPlayers,
-            @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
-        this.client = client;
-        this.numPlayers = numPlayers;
-        this.version = version;
-        this.protocolVersion = protocolVersion;
-        setServerIcon(favicon);
-    }
-
     @ApiStatus.Internal
     public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
                                     @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {

@@ -50,7 +50,6 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu, AnvilInventory
         this.container.maximumRepairCost = cost;
     }
 
-    // Paper start
     @Override
     public boolean bypassesEnchantmentLevelRestriction() {
         return this.container.bypassEnchantmentLevelRestriction;
@@ -60,7 +59,6 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu, AnvilInventory
     public void bypassEnchantmentLevelRestriction(final boolean bypassEnchantmentLevelRestriction) {
         this.container.bypassEnchantmentLevelRestriction = bypassEnchantmentLevelRestriction;
     }
-    // Paper end
 
     public void updateFromLegacy(CraftInventoryAnvil legacy) {
         if (legacy.isRepairCostSet()) {

@@ -154,14 +154,14 @@ public interface Horse extends AbstractHorse {
      * @return carrying chest status
      * @deprecated see {@link ChestedHorse}
      */
-    @Deprecated(since = "1.11")
+    @Deprecated(since = "1.11", forRemoval = true)
     public boolean isCarryingChest();
 
     /**
      * @param chest chest
      * @deprecated see {@link ChestedHorse}
      */
-    @Deprecated(since = "1.11")
+    @Deprecated(since = "1.11", forRemoval = true)
     public void setCarryingChest(boolean chest);
 
     @NotNull

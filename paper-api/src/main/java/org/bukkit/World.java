@@ -1,9 +1,7 @@
 package org.bukkit;
 
-import java.io.File;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import org.bukkit.generator.ChunkGenerator;
-
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,7 +67,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setVoidDamageEnabled(boolean enabled);
 
     /**
-     * Gets the damage applied to the player when they are in the void in this world.
+     * Gets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @return amount of damage to apply
@@ -78,7 +76,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     float getVoidDamageAmount();
 
     /**
-     * Sets the damage applied to the player when they are in the void in this world.
+     * Sets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @param voidDamageAmount amount of damage to apply
@@ -103,27 +101,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     // Paper start
     /**
-     * @return The amount of Entities in this world
+     * @return The amount of entities in this world
      */
     int getEntityCount();
 
     /**
-     * @return The amount of Tile Entities in this world
+     * @return The amount of block entities in this world
      */
     int getTileEntityCount();
 
     /**
-     * @return The amount of Tickable Tile Entities in this world
+     * @return The amount of tickable block entities in this world
      */
     int getTickableTileEntityCount();
 
     /**
-     * @return The amount of Chunks in this world
+     * @return The amount of chunks in this world
      */
     int getChunkCount();
 
     /**
-     * @return The amount of Players in this world
+     * @return The amount of players in this world
      */
     int getPlayerCount();
     // Paper end
@@ -494,7 +492,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Whether the chunk was actually refreshed
      *
      */
-    // @Deprecated(since = "1.8") // Paper
     public boolean refreshChunk(int x, int z);
 
     /**
@@ -744,7 +741,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     this method
      * @return true if the tree was created successfully, otherwise false
      * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
-     * @deprecated this method does not handle tile entities (bee nests)
+     * @deprecated this method does not handle block entities (bee nests)
      */
     @Deprecated(since = "1.17.1")
     public boolean generateTree(@NotNull Location loc, @NotNull TreeType type, @NotNull BlockChangeDelegate delegate);
@@ -2411,9 +2408,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public BiomeProvider getBiomeProvider();
 
     /**
-     * Saves world to disk
+     * Saves the world to disk
      */
-    public void save();
+    default void save() {
+        save(false);
+    }
+
+    /**
+     * Saves the world to disk
+     * @param flush Whether to wait for the chunk writer to finish
+     */
+    void save(boolean flush);
 
     /**
      * Gets a list of all applied {@link BlockPopulator}s for this World
@@ -2478,7 +2483,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
-    @Deprecated(since = "1.20.2") // Paper
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull MaterialData data) throws IllegalArgumentException;
 
     /**
@@ -2513,7 +2518,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     Material} are null or {@link Material} is not a block
      * @deprecated Magic value. Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
-    @Deprecated(since = "1.7.5")
+    @Deprecated(since = "1.7.5", forRemoval = true)
     @NotNull
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull Material material, byte data) throws IllegalArgumentException;
 
@@ -2864,6 +2869,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return True if structures are being generated.
      */
     public boolean canGenerateStructures();
+
+    /**
+     * Checks if the bonus chest is enabled.
+     *
+     * @return {@code true} if the bonus chest is enabled, {@code false} otherwise
+     */
+    boolean hasBonusChest();
 
     /**
      * Gets whether the world is hardcore or not.

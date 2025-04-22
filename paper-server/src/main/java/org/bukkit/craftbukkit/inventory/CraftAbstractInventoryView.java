@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
-    public void setItem(final int slot, @Nullable final ItemStack item) {
+    public void setItem(final int slot, final @Nullable ItemStack item) {
         Inventory inventory = this.getInventory(slot);
         if (inventory != null) {
             inventory.setItem(this.convertSlot(slot), item);
@@ -206,6 +206,11 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
             }
         }
         return type;
+    }
+
+    @Override
+    public void open() {
+        getPlayer().openInventory(this);
     }
 
     @Override

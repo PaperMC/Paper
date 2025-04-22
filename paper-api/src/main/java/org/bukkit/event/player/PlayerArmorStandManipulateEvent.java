@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,22 +14,23 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final ItemStack playerItem;
     private final ItemStack armorStandItem;
     private final EquipmentSlot slot;
 
-    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot, @NotNull EquipmentSlot hand) {
-        super(who, clickedEntity, hand);
+    @ApiStatus.Internal
+    public PlayerArmorStandManipulateEvent(@NotNull final Player player, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot, @NotNull EquipmentSlot hand) {
+        super(player, clickedEntity, hand);
         this.playerItem = playerItem;
         this.armorStandItem = armorStandItem;
         this.slot = slot;
     }
 
-    @Deprecated(since = "1.19.2")
-    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
-        this(who, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
+    @Deprecated(since = "1.19.2", forRemoval = true)
+    public PlayerArmorStandManipulateEvent(@NotNull final Player player, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
+        this(player, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
     }
 
     /**
@@ -96,11 +98,11 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

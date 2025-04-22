@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.Optionull;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Dolphin;
 
 public class CraftDolphin extends CraftAgeable implements Dolphin {
@@ -19,7 +21,6 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
         return "CraftDolphin";
     }
 
-    // Paper start - Missing Dolphin API
     @Override
     public int getMoistness() {
         return this.getHandle().getMoistnessLevel();
@@ -42,12 +43,11 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     @Override
     public org.bukkit.Location getTreasureLocation() {
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getTreasurePos());
+        return Optionull.map(this.getHandle().treasurePos, pos -> CraftLocation.toBukkit(pos, this.getHandle().level()));
     }
 
     @Override
     public void setTreasureLocation(org.bukkit.Location location) {
-        this.getHandle().setTreasurePos(io.papermc.paper.util.MCUtil.toBlockPosition(location));
+        this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPosition(location);
     }
-    // Paper end - Missing Dolphin API
 }

@@ -1,13 +1,18 @@
 package org.bukkit.event.server;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerCommandSendEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a {@link CommandSender} of any description (ie: player or
@@ -18,33 +23,34 @@ import org.jetbrains.annotations.NotNull;
  * themselves. Plugins wishing to remove commands from tab completion are
  * advised to ensure the client does not have permission for the relevant
  * commands, or use {@link PlayerCommandSendEvent}.
+ *
  * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
  * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
  */
 public class TabCompleteEvent extends Event implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    //
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final CommandSender sender;
     private final String buffer;
+    private final boolean isCommand;
+    private final Location location;
     private List<String> completions;
+
     private boolean cancelled;
 
+    @ApiStatus.Internal
     public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
-        // Paper start
-        this(sender, buffer, completions, sender instanceof org.bukkit.command.ConsoleCommandSender || buffer.startsWith("/"), null);
+        this(sender, buffer, completions, sender instanceof ConsoleCommandSender || buffer.startsWith("/"), null);
     }
-    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @org.jetbrains.annotations.Nullable org.bukkit.Location location) {
-        this.isCommand = isCommand;
-        this.loc = location;
-        // Paper end
-        Preconditions.checkArgument(sender != null, "sender");
-        Preconditions.checkArgument(buffer != null, "buffer");
-        Preconditions.checkArgument(completions != null, "completions");
 
+    @ApiStatus.Internal
+    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @Nullable Location location) {
         this.sender = sender;
         this.buffer = buffer;
-        this.completions = new java.util.ArrayList<>(completions); // Paper - Completions must be mutable
+        this.completions = new ArrayList<>(completions);
+        this.isCommand = isCommand;
+        this.location = location;
     }
 
     /**
@@ -54,7 +60,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
      */
     @NotNull
     public CommandSender getSender() {
-        return sender;
+        return this.sender;
     }
 
     /**
@@ -64,7 +70,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
      */
     @NotNull
     public String getBuffer() {
-        return buffer;
+        return this.buffer;
     }
 
     /**
@@ -75,43 +81,39 @@ public class TabCompleteEvent extends Event implements Cancellable {
      */
     @NotNull
     public List<String> getCompletions() {
-        return completions;
+        return this.completions;
     }
-
-    // Paper start
-    private final boolean isCommand;
-    private final org.bukkit.Location loc;
-    /**
-     * @return True if it is a command being tab completed, false if it is a chat message.
-     */
-    public boolean isCommand() {
-        return isCommand;
-    }
-
-    /**
-     * @return The position looked at by the sender, or null if none
-     */
-    @org.jetbrains.annotations.Nullable
-    public org.bukkit.Location getLocation() {
-        return this.loc != null ? this.loc.clone() : null;
-    }
-    // Paper end
 
     /**
      * Set the completions offered, overriding any already set.
-     *
+     * <br>
      * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
      *
      * @param completions the new completions
      */
     public void setCompletions(@NotNull List<String> completions) {
-        Preconditions.checkArgument(completions != null);
-        this.completions = new java.util.ArrayList<>(completions); // Paper - completions must be mutable
+        Preconditions.checkArgument(completions != null, "completions cannot be null");
+        this.completions = new ArrayList<>(completions);
+    }
+
+    /**
+     * @return {@code true} if it is a command being tab completed, {@code false} if it is a chat message.
+     */
+    public boolean isCommand() {
+        return this.isCommand;
+    }
+
+    /**
+     * @return The position looked at by the sender, or {@code null} if none
+     */
+    @Nullable
+    public Location getLocation() {
+        return this.location != null ? this.location.clone() : null;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -122,11 +124,11 @@ public class TabCompleteEvent extends Event implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

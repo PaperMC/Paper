@@ -6,10 +6,8 @@ import org.bukkit.inventory.LlamaInventory;
 
 public class CraftInventoryLlama extends CraftInventoryAbstractHorse implements LlamaInventory {
 
-    // Paper start - properly combine both inventories
-    public CraftInventoryLlama(Container inventory, Container bodyArmorInventory) {
-        super(inventory, bodyArmorInventory);
-        // Paper end - properly combine both inventories
+    public CraftInventoryLlama(Container inventory, Container bodyArmorInventory, Container saddleInventory) {
+        super(inventory, bodyArmorInventory, saddleInventory);
     }
 
     @Override

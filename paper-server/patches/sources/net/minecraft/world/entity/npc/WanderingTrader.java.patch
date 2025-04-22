@@ -1,23 +1,15 @@
 --- a/net/minecraft/world/entity/npc/WanderingTrader.java
 +++ b/net/minecraft/world/entity/npc/WanderingTrader.java
-@@ -47,11 +_,23 @@
+@@ -45,11 +_,15 @@
  import net.minecraft.world.phys.Vec3;
  import org.apache.commons.lang3.tuple.Pair;
  
 -public class WanderingTrader extends AbstractVillager implements Consumable.OverrideConsumeSound {
-+// CraftBukkit start
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
-+import org.bukkit.entity.AbstractVillager;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.entity.VillagerAcquireTradeEvent;
-+// CraftBukkit end
-+
-+public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVillager implements Consumable.OverrideConsumeSound {
-     private static final int NUMBER_OF_TRADE_OFFERS = 5;
++public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVillager implements Consumable.OverrideConsumeSound { // CraftBukkit
+     private static final int DEFAULT_DESPAWN_DELAY = 0;
      @Nullable
      private BlockPos wanderTarget;
-     private int despawnDelay;
+     private int despawnDelay = 0;
 +    // Paper start - Add more WanderingTrader API
 +    public boolean canDrinkPotion = true;
 +    public boolean canDrinkMilk = true;
@@ -25,43 +17,25 @@
  
      public WanderingTrader(EntityType<? extends WanderingTrader> entityType, Level level) {
          super(entityType, level);
-@@ -67,7 +_,7 @@
+@@ -65,7 +_,7 @@
                      this,
                      PotionContents.createItemStack(Items.POTION, Potions.INVISIBILITY),
                      SoundEvents.WANDERING_TRADER_DISAPPEARED,
--                    wanderingTrader -> this.level().isNight() && !wanderingTrader.isInvisible()
-+                    wanderingTrader -> this.canDrinkPotion && this.level().isNight() && !wanderingTrader.isInvisible() // Paper - Add more WanderingTrader API
+-                    wanderingTrader -> this.level().isDarkOutside() && !wanderingTrader.isInvisible()
++                    wanderingTrader -> this.canDrinkPotion && this.level().isDarkOutside() && !wanderingTrader.isInvisible() // Paper - Add more WanderingTrader API
                  )
              );
          this.goalSelector
-@@ -77,7 +_,7 @@
+@@ -75,7 +_,7 @@
                      this,
                      new ItemStack(Items.MILK_BUCKET),
                      SoundEvents.WANDERING_TRADER_REAPPEARED,
--                    wanderingTrader -> this.level().isDay() && wanderingTrader.isInvisible()
-+                    wanderingTrader -> this.canDrinkMilk && this.level().isDay() && wanderingTrader.isInvisible() // Paper - Add more WanderingTrader API
+-                    wanderingTrader -> this.level().isBrightOutside() && wanderingTrader.isInvisible()
++                    wanderingTrader -> this.canDrinkMilk && this.level().isBrightOutside() && wanderingTrader.isInvisible() // Paper - Add more WanderingTrader API
                  )
              );
          this.goalSelector.addGoal(1, new TradeWithPlayerGoal(this));
-@@ -145,7 +_,16 @@
-                 VillagerTrades.ItemListing itemListing = itemListings1[randomInt];
-                 MerchantOffer offer = itemListing.getOffer(this, this.random);
-                 if (offer != null) {
--                    offers.add(offer);
-+                    // CraftBukkit start
-+                    VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((AbstractVillager) this.getBukkitEntity(), offer.asBukkit());
-+                    // Suppress during worldgen
-+                    if (this.valid) {
-+                        Bukkit.getPluginManager().callEvent(event);
-+                    }
-+                    if (!event.isCancelled()) {
-+                        offers.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
-+                    }
-+                    // CraftBukkit end
-                 }
-             }
-         }
-@@ -189,7 +_,7 @@
+@@ -163,7 +_,7 @@
      protected void rewardTradeXp(MerchantOffer offer) {
          if (offer.shouldRewardExp()) {
              int i = 3 + this.random.nextInt(4);
@@ -70,12 +44,12 @@
          }
      }
  
-@@ -241,7 +_,7 @@
+@@ -215,7 +_,7 @@
  
      private void maybeDespawn() {
          if (this.despawnDelay > 0 && !this.isTrading() && --this.despawnDelay == 0) {
 -            this.discard();
-+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          }
      }
  

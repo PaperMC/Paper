@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated this API part has been replaced by {@link PersistentDataHolder}.
  * Please use {@link PersistentDataAdapterContext} instead of this.
  */
-@Deprecated(since = "1.14")
+@Deprecated(since = "1.14", forRemoval = true)
 public interface ItemTagAdapterContext {
 
     /**

@@ -31,16 +31,6 @@ public record PaperItemAttributeModifiers(
     }
 
     @Override
-    public boolean showInTooltip() {
-        return this.impl.showInTooltip();
-    }
-
-    @Override
-    public ItemAttributeModifiers showInTooltip(final boolean showInTooltip) {
-        return new PaperItemAttributeModifiers(this.impl.withTooltip(showInTooltip));
-    }
-
-    @Override
     public @Unmodifiable List<Entry> modifiers() {
         return convert(this.impl);
     }
@@ -51,7 +41,6 @@ public record PaperItemAttributeModifiers(
     static final class BuilderImpl implements ItemAttributeModifiers.Builder {
 
         private final List<net.minecraft.world.item.component.ItemAttributeModifiers.Entry> entries = new ObjectArrayList<>();
-        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 
         @Override
         public Builder addModifier(final Attribute attribute, final AttributeModifier modifier) {
@@ -77,20 +66,13 @@ public record PaperItemAttributeModifiers(
         }
 
         @Override
-        public ItemAttributeModifiers.Builder showInTooltip(final boolean showInTooltip) {
-            this.showInTooltip = showInTooltip;
-            return this;
-        }
-
-        @Override
         public ItemAttributeModifiers build() {
             if (this.entries.isEmpty()) {
-                return new PaperItemAttributeModifiers(net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.withTooltip(this.showInTooltip));
+                return new PaperItemAttributeModifiers(net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY);
             }
 
             return new PaperItemAttributeModifiers(new net.minecraft.world.item.component.ItemAttributeModifiers(
-                new ObjectArrayList<>(this.entries),
-                this.showInTooltip
+                new ObjectArrayList<>(this.entries)
             ));
         }
     }

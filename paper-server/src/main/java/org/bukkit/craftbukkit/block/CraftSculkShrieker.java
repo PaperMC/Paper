@@ -10,8 +10,8 @@ import org.bukkit.entity.Player;
 
 public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlockEntity> implements SculkShrieker {
 
-    public CraftSculkShrieker(World world, SculkShriekerBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftSculkShrieker(World world, SculkShriekerBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSculkShrieker(CraftSculkShrieker state, Location location) {
@@ -32,8 +32,8 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
     public void tryShriek(Player player) {
         this.requirePlaced();
 
-        ServerPlayer entityPlayer = (player == null) ? null : ((CraftPlayer) player).getHandle();
-        this.getTileEntity().tryShriek(this.world.getHandle(), entityPlayer);
+        ServerPlayer serverPlayer = player == null ? null : ((CraftPlayer) player).getHandle();
+        this.getBlockEntity().tryShriek(this.world.getHandle(), serverPlayer);
     }
 
     @Override

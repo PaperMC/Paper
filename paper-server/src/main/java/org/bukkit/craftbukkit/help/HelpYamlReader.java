@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.help;
 
-import com.google.common.base.Charsets;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,17 +26,16 @@ public class HelpYamlReader {
         this.server = server;
 
         File helpYamlFile = new File("help.yml");
-        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/help.yml"), Charsets.UTF_8));
+        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/help.yml"), StandardCharsets.UTF_8));
 
         try {
             this.helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
             this.helpYaml.options().copyDefaults(true);
             this.helpYaml.setDefaults(defaultConfig);
+            this.helpYaml.options().setHeader(defaultConfig.options().getHeader());
 
             try {
-                if (!helpYamlFile.exists()) {
-                    this.helpYaml.save(helpYamlFile);
-                }
+                this.helpYaml.save(helpYamlFile);
             } catch (IOException ex) {
                 server.getLogger().log(Level.SEVERE, "Could not save " + helpYamlFile, ex);
             }
@@ -52,7 +51,7 @@ public class HelpYamlReader {
      * @return A list of general topics.
      */
     public List<HelpTopic> getGeneralTopics() {
-        List<HelpTopic> topics = new LinkedList<HelpTopic>();
+        List<HelpTopic> topics = new LinkedList<>();
         ConfigurationSection generalTopics = this.helpYaml.getConfigurationSection("general-topics");
         if (generalTopics != null) {
             for (String topicName : generalTopics.getKeys(false)) {
@@ -72,7 +71,7 @@ public class HelpYamlReader {
      * @return A list of index topics.
      */
     public List<HelpTopic> getIndexTopics() {
-        List<HelpTopic> topics = new LinkedList<HelpTopic>();
+        List<HelpTopic> topics = new LinkedList<>();
         ConfigurationSection indexTopics = this.helpYaml.getConfigurationSection("index-topics");
         if (indexTopics != null) {
             for (String topicName : indexTopics.getKeys(false)) {
@@ -93,7 +92,7 @@ public class HelpYamlReader {
      * @return A list of amendments.
      */
     public List<HelpTopicAmendment> getTopicAmendments() {
-        List<HelpTopicAmendment> amendments = new LinkedList<HelpTopicAmendment>();
+        List<HelpTopicAmendment> amendments = new LinkedList<>();
         ConfigurationSection commandTopics = this.helpYaml.getConfigurationSection("amended-topics");
         if (commandTopics != null) {
             for (String topicName : commandTopics.getKeys(false)) {

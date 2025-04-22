@@ -30,20 +30,6 @@ public class PlayerClientOptionsChangeEvent extends PlayerEvent {
     private final boolean textFilteringEnabled;
     private final ParticleVisibility particleVisibility;
 
-    @Deprecated
-    public PlayerClientOptionsChangeEvent(final Player player, final String locale, final int viewDistance, final ChatVisibility chatVisibility, final boolean chatColors, final SkinParts skinParts, final MainHand mainHand) {
-        super(player);
-        this.locale = locale;
-        this.viewDistance = viewDistance;
-        this.chatVisibility = chatVisibility;
-        this.chatColors = chatColors;
-        this.skinparts = skinParts;
-        this.mainHand = mainHand;
-        this.allowsServerListings = false;
-        this.textFilteringEnabled = false;
-        this.particleVisibility = ParticleVisibility.ALL;
-    }
-
     @ApiStatus.Internal
     public PlayerClientOptionsChangeEvent(final Player player, final Map<ClientOption<?>, ?> options) {
         super(player);
