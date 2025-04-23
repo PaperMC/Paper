@@ -75,7 +75,7 @@ public class CraftBlockState implements BlockState {
 
     // Returns null if weakWorld is not available and the BlockState is not placed.
     // If this returns a World instead of only a GeneratorAccess, this implies that this BlockState is placed.
-    @org.jspecify.annotations.Nullable
+    @Nullable
     public LevelAccessor getWorldHandle() {
         if (this.weakWorld == null) {
             return this.isPlaced() ? this.world.getHandle() : null;
