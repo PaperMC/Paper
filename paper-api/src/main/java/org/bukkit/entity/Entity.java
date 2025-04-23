@@ -1048,7 +1048,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Check if entity is in water or rain
      *
-     * @deprecated use {@link #isInWater()}} and {@link #isInRain()}
+     * @deprecated use {@link #isInWater()} and {@link #isInRain()}
      */
     @Deprecated(since = "1.21.5")
     default boolean isInWaterOrRain() {
@@ -1068,7 +1068,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Check if entity is in water or rain or bubble column
      *
-     * @deprecated use {@link #isInWaterOrRain()}, bubble column is considered as water
+     * @deprecated bubble column is considered as water, use {@link #isInWater()} and {@link #isInRain()}
      */
     @Deprecated(since = "1.21.5")
     default boolean isInWaterOrRainOrBubbleColumn() {

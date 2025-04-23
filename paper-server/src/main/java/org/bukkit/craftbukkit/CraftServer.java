@@ -432,7 +432,9 @@ public final class CraftServer implements Server {
 
         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
         this.configuration.options().copyDefaults(true);
-        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8)));
+        YamlConfiguration configurationDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8));
+        this.configuration.setDefaults(configurationDefaults);
+        this.configuration.options().setHeader(configurationDefaults.options().getHeader());
         ConfigurationSection legacyAlias = null;
         if (!this.configuration.isString("aliases")) {
             legacyAlias = this.configuration.getConfigurationSection("aliases");
@@ -449,6 +451,7 @@ public final class CraftServer implements Server {
         if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
         this.commandsConfiguration.setDefaults(commandsDefaults);
         // Paper end - don't enforce icanhasbukkit default if alias block exists
+        this.commandsConfiguration.options().setHeader(commandsDefaults.options().getHeader());
         this.saveCommandsConfig();
 
         // Migrate aliases from old file and add previously implicit $1- to pass all arguments
