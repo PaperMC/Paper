@@ -60,6 +60,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.MemorySection;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -507,11 +508,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
+            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
+        }
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), compound).orElseThrow());
     }
 
     @Override
     public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
+        if (itemStack.isEmpty()) {
+            return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, this.getDataVersion(), "schema_version", 1);
+        }
         final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
         NbtUtils.addCurrentDataVersion(tag);
 
@@ -559,7 +566,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 }
                 case "components" -> {
                     if (version == 1) {
-                        final Map<String, String> componentMap = (Map<String, String>) value;
+                        Map<String, String> componentMap;
+                        if (value instanceof Map) {
+                            componentMap = (Map<String, String>) value;
+                        } else if (value instanceof MemorySection memory) {
+                            componentMap = new HashMap<>();
+                            for (final String memoryKey : memory.getKeys(false)) {
+                                componentMap.put(memoryKey, memory.getString(memoryKey));
+                            }
+                        } else {
+                            throw new IllegalArgumentException("components must be a Map");
+                        }
                         final CompoundTag componentsTag = new CompoundTag();
                         componentMap.forEach((componentKey, componentString) -> {
                             final Tag componentTag;

@@ -58,7 +58,10 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public HorseInventory getInventory() {
-        return new CraftInventoryHorse(this.getHandle().inventory, this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY));
+        return new CraftInventoryHorse(this.getHandle().inventory,
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
+        );
     }
 
     @Override
