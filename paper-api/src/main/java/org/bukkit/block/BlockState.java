@@ -297,7 +297,7 @@ public interface BlockState extends Metadatable {
     /**
      * Checks if the block state can suffocate.
      *
-     * @return <code>true</code> if the block state can suffocate
+     * @return {@code true} if the block state can suffocate
      * @throws IllegalStateException if this block state is not placed
      */
     boolean isSuffocating();
