@@ -821,7 +821,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     /**
      * Checks if the block can suffocate.
      *
-     * @return <code>true</code> if the block can suffocate
+     * @return {@code true} if the block can suffocate
      */
     boolean isSuffocating();
 }
