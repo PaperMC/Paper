@@ -1288,12 +1288,30 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setDifficulty(Difficulty difficulty) {
-        this.getHandle().getServer().setDifficulty(this.getHandle(), net.minecraft.world.Difficulty.byId(difficulty.getValue()), null, true); // Paper - per level difficulty; don't skip other difficulty-changing logic; WorldDifficultyChangeEvent
+        this.getHandle().getServer().setDifficulty(this.getHandle(), toMinecraft(difficulty), null, true); // Paper - per level difficulty; don't skip other difficulty-changing logic; WorldDifficultyChangeEvent
     }
 
     @Override
     public Difficulty getDifficulty() {
-        return Difficulty.getByValue(this.getHandle().getDifficulty().ordinal());
+        return toBukkit(this.getHandle().getDifficulty());
+    }
+
+    public static org.bukkit.Difficulty toBukkit(net.minecraft.world.Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> org.bukkit.Difficulty.EASY;
+            case HARD -> org.bukkit.Difficulty.HARD;
+            case NORMAL -> org.bukkit.Difficulty.NORMAL;
+            case PEACEFUL -> org.bukkit.Difficulty.PEACEFUL;
+        };
+    }
+
+    public static net.minecraft.world.Difficulty toMinecraft(org.bukkit.Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> net.minecraft.world.Difficulty.EASY;
+            case HARD -> net.minecraft.world.Difficulty.HARD;
+            case NORMAL -> net.minecraft.world.Difficulty.NORMAL;
+            case PEACEFUL -> net.minecraft.world.Difficulty.PEACEFUL;
+        };
     }
 
     @Override
