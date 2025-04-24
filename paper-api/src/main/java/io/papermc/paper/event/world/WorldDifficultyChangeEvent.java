@@ -11,6 +11,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a world's difficulty is changed, either by command or by api.
+ * <p>
+ * If the world is in {@link World#isHardcore() hardcore}
+ * the resulting difficulty will always be {@link Difficulty#HARD}
  */
 @NullMarked
 public class WorldDifficultyChangeEvent extends WorldEvent implements Cancellable {
