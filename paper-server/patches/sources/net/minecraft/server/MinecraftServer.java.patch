@@ -1101,7 +1101,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1243,11 +_,14 @@
+@@ -1243,11 +_,36 @@
          }
      }
  
@@ -1110,11 +1110,33 @@
 -            this.worldData.setDifficulty(this.worldData.isHardcore() ? Difficulty.HARD : difficulty);
 -            this.updateMobSpawningFlags();
 -            this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
-+    // Paper start - per level difficulty
-+    public void setDifficulty(ServerLevel level, Difficulty difficulty, boolean forced) {
++    // Paper start - per level difficulty, WorldDifficultyChangeEvent
++    private static org.bukkit.Difficulty toBukkit(Difficulty difficulty) {
++        return switch (difficulty) {
++            case EASY -> org.bukkit.Difficulty.EASY;
++            case HARD -> org.bukkit.Difficulty.HARD;
++            case NORMAL -> org.bukkit.Difficulty.NORMAL;
++            case PEACEFUL -> org.bukkit.Difficulty.PEACEFUL;
++        };
++    }
++
++    private static Difficulty fromBukkit(org.bukkit.Difficulty difficulty) {
++        return switch (difficulty) {
++            case EASY -> Difficulty.EASY;
++            case HARD -> Difficulty.HARD;
++            case NORMAL -> Difficulty.NORMAL;
++            case PEACEFUL -> Difficulty.PEACEFUL;
++        };
++    }
++
++    public void setDifficulty(ServerLevel level, Difficulty difficulty, @Nullable CommandSourceStack source, boolean forced) {
 +        net.minecraft.world.level.storage.PrimaryLevelData worldData = level.serverLevelData;
 +        if (forced || !worldData.isDifficultyLocked()) {
-+            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
++            io.papermc.paper.event.world.WorldDifficultyChangeEvent event = new io.papermc.paper.event.world.WorldDifficultyChangeEvent(
++                level.getWorld(), source != null ? source.getBukkitSender() : null, toBukkit(difficulty)
++            );
++            if (!event.callEvent()) return;
++            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : fromBukkit(event.getDifficulty()));
 +            level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((net.minecraft.server.dedicated.DedicatedServer) this).settings.getProperties().spawnMonsters);
 +            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
 +            // Paper end - per level difficulty
