@@ -107,6 +107,7 @@ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
+import org.bukkit.craftbukkit.util.CraftDifficulty;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
@@ -1288,30 +1289,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setDifficulty(Difficulty difficulty) {
-        this.getHandle().getServer().setDifficulty(this.getHandle(), toMinecraft(difficulty), null, true); // Paper - per level difficulty; don't skip other difficulty-changing logic; WorldDifficultyChangeEvent
+        this.getHandle().getServer().setDifficulty(this.getHandle(), CraftDifficulty.toMinecraft(difficulty), null, true); // Paper - per level difficulty; don't skip other difficulty-changing logic; WorldDifficultyChangeEvent
     }
 
     @Override
     public Difficulty getDifficulty() {
-        return toBukkit(this.getHandle().getDifficulty());
-    }
-
-    public static org.bukkit.Difficulty toBukkit(net.minecraft.world.Difficulty difficulty) {
-        return switch (difficulty) {
-            case EASY -> org.bukkit.Difficulty.EASY;
-            case HARD -> org.bukkit.Difficulty.HARD;
-            case NORMAL -> org.bukkit.Difficulty.NORMAL;
-            case PEACEFUL -> org.bukkit.Difficulty.PEACEFUL;
-        };
-    }
-
-    public static net.minecraft.world.Difficulty toMinecraft(org.bukkit.Difficulty difficulty) {
-        return switch (difficulty) {
-            case EASY -> net.minecraft.world.Difficulty.EASY;
-            case HARD -> net.minecraft.world.Difficulty.HARD;
-            case NORMAL -> net.minecraft.world.Difficulty.NORMAL;
-            case PEACEFUL -> net.minecraft.world.Difficulty.PEACEFUL;
-        };
+        return CraftDifficulty.toBukkit(this.getHandle().getDifficulty());
     }
 
     @Override
