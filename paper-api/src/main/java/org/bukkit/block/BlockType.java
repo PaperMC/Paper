@@ -2491,7 +2491,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockData createBlockData(@Nullable String data);
 
     /**
-     * Check if the blockt type is solid (can be built upon)
+     * Check if the block type is solid (can be built upon)
      *
      * @return True if this block type is solid
      */
@@ -2525,7 +2525,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *   <li>Only occluding blocks can be "powered" ({@link Block#isBlockPowered()}).
      * </ul>
      * This list may be inconclusive. For a full list of the side effects of an occluding
-     * block, see the <a href="https://minecraft.fandom.com/wiki/Opacity">Minecraft Wiki</a>.
+     * block, see the <a href="https://minecraft.wiki/w/Opacity">Minecraft Wiki</a>.
      *
      * @return True if this block type occludes light
      */

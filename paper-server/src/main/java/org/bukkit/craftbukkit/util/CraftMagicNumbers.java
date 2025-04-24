@@ -60,6 +60,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.MemorySection;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -565,7 +566,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 }
                 case "components" -> {
                     if (version == 1) {
-                        final Map<String, String> componentMap = (Map<String, String>) value;
+                        Map<String, String> componentMap;
+                        if (value instanceof Map) {
+                            componentMap = (Map<String, String>) value;
+                        } else if (value instanceof MemorySection memory) {
+                            componentMap = new HashMap<>();
+                            for (final String memoryKey : memory.getKeys(false)) {
+                                componentMap.put(memoryKey, memory.getString(memoryKey));
+                            }
+                        } else {
+                            throw new IllegalArgumentException("components must be a Map");
+                        }
                         final CompoundTag componentsTag = new CompoundTag();
                         componentMap.forEach((componentKey, componentString) -> {
                             final Tag componentTag;

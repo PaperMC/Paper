@@ -52,7 +52,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
     @Override
     public JukeboxSong getSong() {
         Optional<Holder<net.minecraft.world.item.JukeboxSong>> song = this.handle.song().unwrap(CraftRegistry.getMinecraftRegistry());
-        return (song.isPresent()) ? CraftJukeboxSong.minecraftHolderToBukkit(song.get()) : null;
+        return song.map(CraftJukeboxSong::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override

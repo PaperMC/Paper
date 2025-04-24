@@ -38,7 +38,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     @NotNull
     @Override
     public ThrownPotion getEntity() {
-        return (ThrownPotion) this.entity;
+        return (ThrownPotion) super.getEntity();
     }
 
     /**
