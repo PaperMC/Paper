@@ -3009,7 +3009,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setEffectiveLocale(final java.util.Locale locale) {
         getHandle().effectiveLocale = locale;
-        getHandle().connection.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(getEffectiveLocale());
+
+        if (getHandle().connection != null) {
+            getHandle().connection.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(getEffectiveLocale());
+        }
     }
 
     @Override
