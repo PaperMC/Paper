@@ -6,7 +6,9 @@ import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -73,5 +75,22 @@ public interface InternalAPIBridge {
      * @return combat entry
      */
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
+
+    /**
+     * Rolls a new set of enchantment offers based on a target item stack, a seed and a bookshelf count.
+     *
+     * @param targetStack    the itemstack for which the enchantment offers are rolled.
+     * @param seed           the seed used for random selection of enchantments.
+     *                       Mirrors {@link org.bukkit.inventory.view.EnchantmentView#getEnchantmentSeed()}.
+     * @param bookshelfCount the number of virtual bookshelves to consider when rolling the enchantments.
+     * @param offerAmount    the amount of enchantment offers to roll.
+     * @return an array of enchantment offers with size {@code offerAmount}.
+     */
+    @Nullable EnchantmentOffer[] rollEnchantmentOffers(
+        final ItemStack targetStack,
+        final int seed,
+        final int bookshelfCount,
+        final int offerAmount
+    );
 }
 

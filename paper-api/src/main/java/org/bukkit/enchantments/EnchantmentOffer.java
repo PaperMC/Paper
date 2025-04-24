@@ -1,7 +1,11 @@
 package org.bukkit.enchantments;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.util.Objects;
 
 /**
  * A class for the available enchantment offers in the enchantment table.
@@ -79,5 +83,36 @@ public class EnchantmentOffer {
         Preconditions.checkArgument(cost > 0, "The cost must be greater than 0!");
 
         this.cost = cost;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final EnchantmentOffer that = (EnchantmentOffer) o;
+        return getEnchantmentLevel() == that.getEnchantmentLevel() && getCost() == that.getCost() && Objects.equals(getEnchantment(), that.getEnchantment());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEnchantment(), getEnchantmentLevel(), getCost());
+    }
+
+    /**
+     * Rolls a new set of enchantment offers based on a target item stack, a seed and a bookshelf count.
+     *
+     * @param targetStack    the itemstack for which the enchantment offers are rolled.
+     * @param seed           the seed used for random selection of enchantments.
+     *                       Mirrors {@link org.bukkit.inventory.view.EnchantmentView#getEnchantmentSeed()}.
+     * @param bookshelfCount the number of virtual bookshelves to consider when rolling the enchantments.
+     * @param offerAmount    the amount of enchantment offers to roll.
+     * @return an array of enchantment offers with size {@code offerAmount}.
+     */
+    public static @Nullable EnchantmentOffer[] rollEnchantmentOffers(
+        final ItemStack targetStack,
+        final int seed,
+        final int bookshelfCount,
+        final int offerAmount
+    ) {
+        return InternalAPIBridge.get().rollEnchantmentOffers(targetStack, seed, bookshelfCount, offerAmount);
     }
 }
