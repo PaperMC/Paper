@@ -1,8 +1,6 @@
 package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -10,20 +8,19 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
- * Event that is fired when a player uses the pick item functionality (middle-clicking a block or entity to get the
- * appropriate item). After the handling of this event, the contents of the source and the target slot will be swapped
+ * Event that is fired when a player uses the pick item functionality
+ * (middle-clicking a {@link PlayerPickBlockEvent block}
+ * or {@link PlayerPickEntityEvent entity} to get the appropriate item).
+ * After the handling of this event, the contents of the source and the target slot will be swapped,
  * and the currently selected hotbar slot of the player will be set to the target slot.
  */
 @NullMarked
-public class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
+public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final @Nullable Block block;
-    private final @Nullable Entity entity;
     private final boolean includeData;
 
     private int targetSlot;
@@ -32,31 +29,11 @@ public class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerPickItemEvent(final Player player, final @Nullable Block block, final @Nullable Entity entity, final boolean includeData, final int targetSlot, final int sourceSlot) {
+    protected PlayerPickItemEvent(final Player player, final boolean includeData, final int targetSlot, final int sourceSlot) {
         super(player);
-        this.block = block;
-        this.entity = entity;
         this.includeData = includeData;
         this.targetSlot = targetSlot;
         this.sourceSlot = sourceSlot;
-    }
-
-    /**
-     * Retrieves the block associated with this event.
-     *
-     * @return the block involved in the event, or {@code null} if no block is associated
-     */
-    public @Nullable Block getBlock() {
-        return this.block;
-    }
-
-    /**
-     * Retrieves the entity associated with this event.
-     *
-     * @return the entity involved in the event, or {@code null} if no entity is associated
-     */
-    public @Nullable Entity getEntity() {
-        return this.entity;
     }
 
     /**
