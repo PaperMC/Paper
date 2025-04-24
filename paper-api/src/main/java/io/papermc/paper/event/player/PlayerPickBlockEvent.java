@@ -24,7 +24,7 @@ public class PlayerPickBlockEvent extends PlayerPickItemEvent {
     /**
      * Retrieves the block associated with this event.
      *
-     * @return the block involved in the event, or {@code null} if no block is associated
+     * @return the block involved in the event
      */
     public Block getBlock() {
         return this.block;

@@ -24,7 +24,7 @@ public class PlayerPickEntityEvent extends PlayerPickItemEvent {
     /**
      * Retrieves the entity associated with this event.
      *
-     * @return the entity involved in the event, or {@code null} if no entity is associated
+     * @return the entity involved in the event
      */
     public Entity getEntity() {
         return this.entity;
