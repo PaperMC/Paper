@@ -233,6 +233,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
     }
 
+    @NotNull
+    @Override
+    public Stream<NamespacedKey> keyStream() {
+        return this.minecraftRegistry.keySet().stream().map(CraftNamespacedKey::fromMinecraft);
+    }
+
     @Override
     public int size() {
         return this.minecraftRegistry.size();
