@@ -8,6 +8,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a potion or item that can have custom effects.
@@ -82,7 +83,7 @@ public interface PotionMeta extends ItemMeta {
      * @return an unmodifiable list of all effects.
      */
     @NotNull
-    List<PotionEffect> getAllEffects();
+    @Unmodifiable List<PotionEffect> getAllEffects();
 
     /**
      * Adds a custom potion effect to this potion.

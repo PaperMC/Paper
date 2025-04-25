@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
@@ -206,7 +207,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     @NotNull
     public List<PotionEffect> getAllEffects() {
-        ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
+        final ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
         if (this.hasBasePotionType()) {
             builder.addAll(this.getBasePotionType().getPotionEffects());
         }
@@ -322,15 +323,10 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     @NotNull
     public Color getEffectiveColor() {
-        if (hasColor()) {
-            return getColor();
-        }
-
-        Iterable<MobEffectInstance> allPotionEffects = getAllEffects().stream()
-            .map(CraftPotionUtil::fromBukkit).toList();
+        if (hasColor()) return getColor();
 
         return Color.fromRGB(
-            PotionContents.getColorOptional(allPotionEffects)
+            PotionContents.getColorOptional(Collections2.transform(getAllEffects(), CraftPotionUtil::fromBukkit))
                 .orElse(PotionContents.BASE_POTION_COLOR) & 0xFFFFFF
         );
     }
