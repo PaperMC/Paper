@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -3282,14 +3283,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the locale.
      */
-    java.util.Locale getEffectiveLocale();
+    Locale getEffectiveLocale();
 
     /**
      * Change the locale the server will be translating its messages to.
+     * If set, the effective locale overrides the client locale for server-side translations.
      *
      * @param locale the locale to translate to
      */
-    void setEffectiveLocale(java.util.@Nullable Locale locale);
+    void setEffectiveLocale(@Nullable Locale locale);
 
     /**
      * Gets the player's estimated ping in milliseconds.
