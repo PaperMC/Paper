@@ -146,7 +146,7 @@
          if (stack.isEmpty()) {
              return null;
          } else if (this.level().isClientSide) {
-@@ -741,6 +_,51 @@
+@@ -741,6 +_,54 @@
          } else {
              ItemEntity itemEntity = this.createItemStackToDrop(stack, randomizeMotion, includeThrower);
              if (itemEntity != null) {
@@ -169,11 +169,14 @@
 +                            player.getInventory().setItemInMainHand(inHandItem);
 +                        } else {
 +                            // Fallback
-+                            java.util.Map<Integer, org.bukkit.inventory.ItemStack> failed = player.getInventory().addItem(drop.getItemStack());
++                            final java.util.Map<Integer, org.bukkit.inventory.ItemStack> failed = player.getInventory().addItem(drop.getItemStack());
 +
 +                            // The item could not be added to the inventory.
 +                            // We can attempt to set/merge it into the cursor now.
-+                            if (failed.containsKey(0) && this instanceof final ServerPlayer serverPlayer) {
++                            // This cursor level logic is only applicable to non-creative mode users.
++                            // The creative client does not share its cursor with the server in most cases.
++                            // Setting the cursor to something while the player is in creative mode results in buggy behaviour.
++                            if (failed.containsKey(0) && this instanceof final ServerPlayer serverPlayer && !serverPlayer.hasInfiniteMaterials()) {
 +                                final ItemStack itemNotAddedToInventory = CraftItemStack.asNMSCopy(failed.get(0));
 +                                final ItemStack carriedAfterDropping = serverPlayer.containerMenu.getCarried();
 +                                final boolean stackable = net.minecraft.world.item.ItemStack.isSameItemSameComponents(carriedAfterDropping, itemNotAddedToInventory);
@@ -181,7 +184,7 @@
 +                                    if (carriedAfterDropping.isEmpty()) {
 +                                        serverPlayer.containerMenu.setCarried(itemNotAddedToInventory);
 +                                    } else {
-+                                        // We can merge, if there *is* any overflow, there is nothing we can do.
++                                        // We can merge, if there is any overflow, there is nothing we can do.
 +                                        // Those items will be lost.
 +                                        carriedAfterDropping.grow(itemNotAddedToInventory.getCount());
 +                                        carriedAfterDropping.limitSize(carriedAfterDropping.getMaxStackSize());
