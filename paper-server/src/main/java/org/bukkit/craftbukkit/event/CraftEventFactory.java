@@ -817,7 +817,7 @@ public class CraftEventFactory {
     public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags, boolean checkSetResult) {
         // Suppress during worldgen
         if (!(world instanceof Level)) {
-            boolean result = world.setBlock(target, state, flags);
+            boolean result = world.setBlock(target, state, flags | net.minecraft.world.level.block.Block.UPDATE_SKIP_DATA_CHANGE_EVENT);
             return !checkSetResult || result;
         }
 

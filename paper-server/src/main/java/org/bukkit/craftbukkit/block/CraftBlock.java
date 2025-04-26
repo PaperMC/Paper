@@ -155,7 +155,7 @@ public class CraftBlock implements Block {
     }
 
     private void setData(final byte data, int flags) {
-        this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
+        this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags | net.minecraft.world.level.block.Block.UPDATE_SKIP_DATA_CHANGE_EVENT);
     }
 
     @Override
@@ -202,17 +202,18 @@ public class CraftBlock implements Block {
             if (world instanceof net.minecraft.world.level.Level) {
                 ((net.minecraft.world.level.Level) world).removeBlockEntity(pos);
             } else {
-                world.setBlock(pos, Blocks.AIR.defaultBlockState(), 0);
+                world.setBlock(pos, Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_SKIP_DATA_CHANGE_EVENT);
             }
         }
 
         if (applyPhysics) {
-            return world.setBlock(pos, newState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+            return world.setBlock(pos, newState, net.minecraft.world.level.block.Block.UPDATE_ALL | net.minecraft.world.level.block.Block.UPDATE_SKIP_DATA_CHANGE_EVENT);
         } else {
             boolean success = world.setBlock(pos, newState,
                 net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
                     net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
-                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE |
+                    net.minecraft.world.level.block.Block.UPDATE_SKIP_DATA_CHANGE_EVENT);
             if (success && world instanceof net.minecraft.world.level.Level) {
                 world.getMinecraftWorld().sendBlockUpdated(
                     pos,
