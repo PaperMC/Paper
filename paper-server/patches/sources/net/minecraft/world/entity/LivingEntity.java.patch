@@ -146,7 +146,7 @@
          if (stack.isEmpty()) {
              return null;
          } else if (this.level().isClientSide) {
-@@ -741,6 +_,36 @@
+@@ -741,6 +_,51 @@
          } else {
              ItemEntity itemEntity = this.createItemStackToDrop(stack, randomizeMotion, includeThrower);
              if (itemEntity != null) {
@@ -170,10 +170,25 @@
 +                        } else {
 +                            // Fallback
 +                            java.util.Map<Integer, org.bukkit.inventory.ItemStack> failed = player.getInventory().addItem(drop.getItemStack());
-+                            if (!failed.isEmpty()) {
-+                                net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) this;
-+                                serverPlayer.containerMenu.setCarried(CraftItemStack.asNMSCopy(drop.getItemStack()));
-+                                serverPlayer.containerMenu.broadcastFullState();
++
++                            // The item could not be added to the inventory.
++                            // We can attempt to set/merge it into the cursor now.
++                            if (failed.containsKey(0) && this instanceof final ServerPlayer serverPlayer) {
++                                final ItemStack itemNotAddedToInventory = CraftItemStack.asNMSCopy(failed.get(0));
++                                final ItemStack carriedAfterDropping = serverPlayer.containerMenu.getCarried();
++                                final boolean stackable = net.minecraft.world.item.ItemStack.isSameItemSameComponents(carriedAfterDropping, itemNotAddedToInventory);
++                                if (carriedAfterDropping.isEmpty() || stackable) {
++                                    if (carriedAfterDropping.isEmpty()) {
++                                        serverPlayer.containerMenu.setCarried(itemNotAddedToInventory);
++                                    } else {
++                                        // We can merge, if there *is* any overflow, there is nothing we can do.
++                                        // Those items will be lost.
++                                        carriedAfterDropping.grow(itemNotAddedToInventory.getCount());
++                                        carriedAfterDropping.limitSize(carriedAfterDropping.getMaxStackSize());
++                                        serverPlayer.containerMenu.setCarried(carriedAfterDropping);
++                                    }
++                                    serverPlayer.containerMenu.broadcastFullState();
++                                }
 +                            }
 +                        }
 +                        return null;
