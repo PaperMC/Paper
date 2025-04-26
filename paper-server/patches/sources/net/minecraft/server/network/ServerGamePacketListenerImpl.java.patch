@@ -2566,7 +2566,7 @@
                  );
          }
      }
-@@ -1997,6 +_,7 @@
+@@ -1997,27 +_,32 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2574,16 +2574,19 @@
          this.signedMessageDecoder = chatSession.createMessageDecoder(this.player.getUUID());
          this.chatMessageChain
              .append(
-@@ -2005,7 +_,7 @@
+                 () -> {
++                    server.executeBlocking(() -> { // Paper - Broadcast chat session update sync
+                     this.player.setChatSession(chatSession);
                      this.server
                          .getPlayerList()
                          .broadcastAll(
 -                            new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player))
 +                            new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)), this.player // Paper - Use single player info update packet on join
                          );
++                    });
                  }
              );
-@@ -2013,11 +_,13 @@
+     }
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
