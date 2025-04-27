@@ -1060,15 +1060,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T>       the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
+    @SuppressWarnings("unchecked")
     default <T extends Entity> @NotNull Collection<T> getNearbyEntitiesByType(@Nullable Class<? extends Entity> clazz, final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
         if (clazz == null) {
             clazz = Entity.class;
         }
         final List<T> nearby = new ArrayList<>();
         for (final Entity bukkitEntity : this.getNearbyEntities(loc, xRadius, yRadius, zRadius)) {
-            //noinspection unchecked
             if (clazz.isAssignableFrom(bukkitEntity.getClass()) && (predicate == null || predicate.test((T) bukkitEntity))) {
-                //noinspection unchecked
                 nearby.add((T) bukkitEntity);
             }
         }
