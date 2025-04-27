@@ -243,12 +243,12 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public int retrieve(EquipmentSlot slot) {
         Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
-        FishingHook fishingHook = getHandle();
-        Player playerOwner = fishingHook.getPlayerOwner();
+        final FishingHook fishingHook = getHandle();
+        final Player playerOwner = fishingHook.getPlayerOwner();
         Preconditions.checkState(playerOwner != null, "Player owner cannot be null");
 
-        InteractionHand hand = CraftEquipmentSlot.getHand(slot);
-        ItemStack itemInHand = playerOwner.getItemInHand(hand);
+        final InteractionHand hand = CraftEquipmentSlot.getHand(slot);
+        final ItemStack itemInHand = playerOwner.getItemInHand(hand);
         Preconditions.checkState(itemInHand.is(Items.FISHING_ROD), "Item in slot is not a FISHING_ROD");
 
         return fishingHook.retrieve(itemInHand, hand);
