@@ -371,7 +371,7 @@ public interface FishHook extends Projectile {
     /**
      * Retrieve this fishhook back to the casting player.
      * <p>
-     * This method will trigger all normal bukkit events, which are subject to cancellation.
+     * This method will trigger and respect API events, which may be subject to cancellation.
      * Plugins listening to {@link org.bukkit.event.player.PlayerFishEvent} might for example cancel this action.
      *
      * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
