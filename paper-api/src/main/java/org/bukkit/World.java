@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.audience.Audience;
@@ -1096,7 +1097,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Use either the Future or the Consumer based methods
      */
     @Deprecated(since = "1.13.1")
-    interface ChunkLoadCallback extends java.util.function.Consumer<Chunk> {
+    interface ChunkLoadCallback extends Consumer<Chunk> {
         void onLoad(@NotNull Chunk chunk);
 
         @Override
@@ -1126,7 +1127,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Deprecated(since = "1.13.1")
     default void getChunkAtAsync(int x, int z, @NotNull ChunkLoadCallback cb) {
-        this.getChunkAtAsync(x, z, (java.util.function.Consumer<Chunk>) cb);
+        this.getChunkAtAsync(x, z, (Consumer<Chunk>) cb);
     }
 
     /**
@@ -1369,7 +1370,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc Location to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true);
     }
 
@@ -1390,7 +1391,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc, final boolean gen) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc, final boolean gen) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen);
     }
 
@@ -1410,7 +1411,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param block Block to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true);
     }
 
@@ -1431,7 +1432,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen   Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block, final boolean gen) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block, final boolean gen) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen);
     }
 
@@ -1452,7 +1453,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true);
     }
 
@@ -1474,7 +1475,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
         return this.getChunkAtAsync(x, z, gen, false);
     }
 
@@ -1494,7 +1495,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc Location to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true, true);
     }
 
@@ -1515,7 +1516,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc, final boolean gen) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc, final boolean gen) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen, true);
     }
 
@@ -1535,7 +1536,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param block Block to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, true);
     }
 
@@ -1556,7 +1557,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen   Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block, final boolean gen) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block, final boolean gen) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, true);
     }
 
@@ -1577,7 +1578,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true, true);
     }
 
@@ -1600,8 +1601,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
      * @return Future that will resolve when the chunk is loaded
      */
-    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
-        java.util.concurrent.CompletableFuture<Chunk> ret = new java.util.concurrent.CompletableFuture<>();
+    default @NotNull CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
+        CompletableFuture<Chunk> ret = new CompletableFuture<>();
         this.getChunkAtAsync(x, z, gen, urgent, ret::complete);
         return ret;
     }
