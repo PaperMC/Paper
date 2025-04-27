@@ -4402,7 +4402,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         CUSTOM(-999);
 
         private final int id;
-        private static final Map<Integer, Environment> lookup = new HashMap<Integer, Environment>();
+        private static final Map<Integer, Environment> lookup = new HashMap<>();
 
         Environment(int id) {
             this.id = id;
