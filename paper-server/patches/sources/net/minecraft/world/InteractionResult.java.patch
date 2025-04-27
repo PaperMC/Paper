@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/InteractionResult.java
++++ b/net/minecraft/world/InteractionResult.java
+@@ -30,18 +_,34 @@
+     public record Pass() implements InteractionResult {
+     }
+ 
+-    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext) implements InteractionResult {
++    // Paper start - track more context in interaction result
++    public record PaperSuccessContext(net.minecraft.core.@org.jspecify.annotations.Nullable BlockPos placedBlockPosition) {
++        static PaperSuccessContext DEFAULT = new PaperSuccessContext(null);
++
++        public PaperSuccessContext placedBlockAt(final net.minecraft.core.BlockPos blockPos) {
++            return new PaperSuccessContext(blockPos);
++        }
++    }
++    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext, PaperSuccessContext paperSuccessContext) implements InteractionResult {
++        public InteractionResult.Success configurePaper(final java.util.function.UnaryOperator<PaperSuccessContext> edit) {
++            return new InteractionResult.Success(this.swingSource, this.itemContext, edit.apply(this.paperSuccessContext));
++        }
++
++        public Success(final net.minecraft.world.InteractionResult.SwingSource swingSource, final net.minecraft.world.InteractionResult.ItemContext itemContext) {
++            this(swingSource, itemContext, PaperSuccessContext.DEFAULT);
++        }
++    // Paper end - track more context in interaction result
+         @Override
+         public boolean consumesAction() {
+             return true;
+         }
+ 
+         public InteractionResult.Success heldItemTransformedTo(ItemStack stack) {
+-            return new InteractionResult.Success(this.swingSource, new InteractionResult.ItemContext(true, stack));
++            return new InteractionResult.Success(this.swingSource, new InteractionResult.ItemContext(true, stack), this.paperSuccessContext); // Paper - track more context in interaction result
+         }
+ 
+         public InteractionResult.Success withoutItem() {
+-            return new InteractionResult.Success(this.swingSource, InteractionResult.ItemContext.NONE);
++            return new InteractionResult.Success(this.swingSource, InteractionResult.ItemContext.NONE, this.paperSuccessContext); // Paper - track more context in interaction result
+         }
+ 
+         public boolean wasItemInteraction() {
