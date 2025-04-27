@@ -4162,7 +4162,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          */
         @NotNull
         @Deprecated(since = "1.20.4")
-        LightningStrike strikeLightning(@NotNull Location loc, boolean isSilent) {
+        public LightningStrike strikeLightning(@NotNull Location loc, boolean isSilent) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -4177,7 +4177,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          */
         @NotNull
         @Deprecated(since = "1.20.4")
-        LightningStrike strikeLightningEffect(@NotNull Location loc, boolean isSilent) {
+        public LightningStrike strikeLightningEffect(@NotNull Location loc, boolean isSilent) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -4428,7 +4428,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          */
         @ApiStatus.Internal
         @Nullable
-        static Environment getEnvironment(int id) {
+        public static Environment getEnvironment(int id) {
             return lookup.get(id);
         }
 
