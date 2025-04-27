@@ -1265,10 +1265,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *               Will be executed synchronously
      * @see Chunk
      */
-    void getChunksAtAsync(
-        final int minX, final int minZ, final int maxX, final int maxZ, final boolean urgent,
-        final @NotNull Runnable cb
-    );
+    void getChunksAtAsync(final int minX, final int minZ, final int maxX, final int maxZ, final boolean urgent, final @NotNull Runnable cb);
 
     /**
      * Requests a {@link Chunk} to be loaded at the given {@link Location}
