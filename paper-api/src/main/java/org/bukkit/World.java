@@ -49,9 +49,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
-
-    // Paper start - void damage configuration
+public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience {
 
     /**
      * Checks if void damage is enabled on this world.
@@ -98,9 +96,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param minBuildHeightOffset offset from min build height
      */
     void setVoidDamageMinBuildHeightOffset(double minBuildHeightOffset);
-    // Paper end - void damage configuration
-
-    // Paper start
 
     /**
      * @return The amount of entities in this world
@@ -126,8 +121,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The amount of players in this world
      */
     int getPlayerCount();
-    // Paper end
-    // Paper start - structure check API
 
     /**
      * Check if the naturally-generated structure exists at the position.
@@ -151,7 +144,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     default boolean isPositionLoaded(io.papermc.paper.math.@NotNull Position position) {
         return this.isChunkLoaded(position.blockX() >> 4, position.blockZ() >> 4);
     }
-    // Paper end
 
     /**
      * Gets the {@link Block} at the given coordinates
@@ -172,8 +164,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     public Block getBlockAt(@NotNull Location location);
-
-    // Paper start
 
     /**
      * Gets the {@link Block} at the given block key
@@ -207,7 +197,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         int z = Block.getBlockKeyZ(key);
         return new Location(this, x, y, z);
     }
-    // Paper end
 
     /**
      * Gets the highest non-empty (impassable) block at the given coordinates.
@@ -292,8 +281,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public Chunk getChunkAt(@NotNull Block block);
 
-    // Paper start - chunk long key API
-
     /**
      * Gets the chunk at the specified chunk key, which is the X and Z packed into a long.
      * <p>
@@ -322,9 +309,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     default Chunk getChunkAt(long chunkKey, boolean generate) {
         return getChunkAt((int) chunkKey, (int) (chunkKey >> 32), generate);
     }
-    // Paper end - chunk long key API
-
-    // Paper start - isChunkGenerated API
 
     /**
      * Checks if a {@link Chunk} has been generated at the specified chunk key,
@@ -336,7 +320,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     default boolean isChunkGenerated(long chunkKey) {
         return isChunkGenerated((int) chunkKey, (int) (chunkKey >> 32));
     }
-    // Paper end - isChunkGenerated API
 
     /**
      * Checks if the specified {@link Chunk} is loaded
@@ -763,8 +746,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public LightningStrike strikeLightningEffect(@NotNull Location loc);
 
-    // Paper start
-
     /**
      * Finds the location of the nearest unobstructed Lightning Rod in a 128-block
      * radius around the given location. Returns {@code null} if no Lightning Rod is found.
@@ -793,7 +774,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     public Location findLightningTarget(@NotNull Location location);
-    // Paper end
 
     /**
      * Get a list of all entities in this World
@@ -846,8 +826,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     public Collection<Entity> getEntitiesByClasses(@NotNull Class<?>... classes);
-
-    // Paper start - additional getNearbyEntities API
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
@@ -1096,9 +1074,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         }
         return nearby;
     }
-    // Paper end - additional getNearbyEntities API
-
-    // Paper start - async chunks API
 
     /**
      * This is the Legacy API before Java 8 was supported. Java 8 Consumer is provided,
@@ -1119,7 +1094,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public static interface ChunkLoadCallback extends java.util.function.Consumer<Chunk> {
         public void onLoad(@NotNull Chunk chunk);
 
-        // backwards compat to old api
         @Override
         default void accept(@NotNull Chunk chunk) {
             onLoad(chunk);
@@ -1629,7 +1603,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         this.getChunkAtAsync(x, z, gen, urgent, ret::complete);
         return ret;
     }
-    // Paper end - async chunks API
 
     /**
      * Get a list of all players in this World
@@ -1639,13 +1612,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public List<Player> getPlayers();
 
-    // Paper start
     @NotNull
     @Override
     default Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
         return this.getPlayers();
     }
-    // Paper end
 
     /**
      * Returns a list of entities within a bounding box centered around a
@@ -1665,8 +1636,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z);
 
-    // Paper start - getEntity by UUID API
-
     /**
      * Gets an entity in this world by its UUID
      *
@@ -1675,7 +1644,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     public Entity getEntity(@NotNull java.util.UUID uuid);
-    // Paper end
 
     /**
      * Returns a list of entities within a bounding box centered around a
@@ -1808,8 +1776,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
 
-    // Paper start
-
     /**
      * Performs a ray trace that checks for entity collisions.
      * <p>
@@ -1828,7 +1794,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * is no hit
      */
     @Nullable RayTraceResult rayTraceEntities(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
@@ -1893,8 +1858,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
 
-    // Paper start
-
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
@@ -1920,7 +1883,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for both block and entity collisions.
@@ -1955,8 +1917,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
 
-    // Paper start
-
     /**
      * Performs a ray trace that checks for both block and entity collisions.
      * <p>
@@ -1990,7 +1950,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * entity, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for collisions with the specified
@@ -2089,15 +2048,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     public void setFullTime(long time);
 
-    // Paper start
-
     /**
      * Check if it is currently daytime in this world
      *
      * @return True if it is daytime
      */
     public boolean isDayTime();
-    // Paper end
 
     /**
      * Gets the full in-game time on this world since the world generation
@@ -2281,8 +2237,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     public boolean createExplosion(@NotNull Location loc, float power, boolean setFire);
 
-    // Paper start
-
     /**
      * Creates explosion at given location with given power and optionally
      * setting blocks on fire, with the specified entity as the source.
@@ -2381,7 +2335,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public default boolean createExplosion(@NotNull Entity source, float power) {
         return createExplosion(source, source.getLocation(), power, true, true);
     }
-    // Paper end
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2537,7 +2490,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
-    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2") // Paper
+    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2")
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
 
     /**
@@ -3924,7 +3877,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     public default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
         spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true);
-    }// Paper start - Expand Particle API
+    }
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3977,8 +3930,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *                  and shows to players using any vanilla client particle settings
      */
     public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
-    // Paper end
-
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -4128,8 +4079,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
 
-    // Paper start
-
     /**
      * Locates the nearest biome based on an origin, biome type, and radius to search.
      * Step defaults to {@code 8}.
@@ -4193,10 +4142,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param position     the position in the world where to post the event to listeners
      */
     void sendGameEvent(@Nullable Entity sourceEntity, @NotNull GameEvent gameEvent, @NotNull Vector position);
-    // Paper end
 
-    // Spigot start
-    @Deprecated(forRemoval = true) // Paper
+    @Deprecated(forRemoval = true)
     public class Spigot {
 
         /**
@@ -4235,9 +4182,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     @Deprecated
-    // Paper
     Spigot spigot();
-    // Spigot end
 
     /**
      * Find the closest nearby location with a biome matching the provided
@@ -4302,8 +4247,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public Raid locateNearestRaid(@NotNull Location location, int radius);
 
-    // Paper start - more Raid API
-
     /**
      * Get a raid with the specific id from {@link Raid#getId}
      * from this world.
@@ -4312,7 +4255,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the raid or null if none with that id
      */
     @Nullable Raid getRaid(int id);
-    // Paper end - more Raid API
 
     /**
      * Gets all raids that are going on over this world.
@@ -4344,8 +4286,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     public Set<FeatureFlag> getFeatureFlags();
-
-    // Paper start - view distance api
 
     /**
      * Sets the view distance for this world.
@@ -4406,7 +4346,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param viewDistance view distance in [2, 32] or -1
      */
     void setSendViewDistance(int viewDistance);
-    // Paper end - view distance api
 
     /**
      * Gets all generated structures that intersect the chunk at the given
@@ -4470,7 +4409,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return dimension ID
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal // Paper
+        @org.jetbrains.annotations.ApiStatus.Internal
         public int getId() {
             return id;
         }
@@ -4482,7 +4421,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return The environment
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal // Paper
+        @org.jetbrains.annotations.ApiStatus.Internal
         @Nullable
         public static Environment getEnvironment(int id) {
             return lookup.get(id);
