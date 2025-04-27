@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.util.ArrayList;
@@ -7,9 +8,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.audience.ForwardingAudience;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -42,6 +47,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience {
+public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, ForwardingAudience {
 
     /**
      * Checks if void damage is enabled on this world.
@@ -126,14 +132,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Check if the naturally-generated structure exists at the position.
      * <p>
      * Note that if the position is not loaded, this may cause chunk loads/generation
-     * to check if a structure is at that position. Use {@link #isPositionLoaded(io.papermc.paper.math.Position)}
+     * to check if a structure is at that position. Use {@link #isPositionLoaded(Position)}
      * to check if a position is loaded
      *
      * @param position  the position to check at
      * @param structure the structure to check for
      * @return true if that structure exists at the position
      */
-    boolean hasStructureAt(io.papermc.paper.math.@NotNull Position position, @NotNull Structure structure);
+    boolean hasStructureAt(@NotNull Position position, @NotNull Structure structure);
 
     /**
      * Checks if this position is loaded.
@@ -141,7 +147,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param position position to check
      * @return true if loaded
      */
-    default boolean isPositionLoaded(io.papermc.paper.math.@NotNull Position position) {
+    default boolean isPositionLoaded(@NotNull Position position) {
         return this.isChunkLoaded(position.blockX() >> 4, position.blockZ() >> 4);
     }
 
@@ -699,7 +705,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param speed     Speed of the arrow. A recommend speed is 0.6
      * @param spread    Spread of the arrow. A recommend spread is 12
      * @param clazz     the Entity class for the arrow
-     *                  {@link org.bukkit.entity.SpectralArrow},{@link org.bukkit.entity.Arrow},{@link org.bukkit.entity.TippedArrow}
+     *                  {@link org.bukkit.entity.SpectralArrow},{@link Arrow},{@link org.bukkit.entity.TippedArrow}
      * @return Arrow entity spawned as a result of this method
      */
     @NotNull
@@ -722,7 +728,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param delegate A class to call for each block changed as a result of
      *                 this method
      * @return true if the tree was created successfully, otherwise false
-     * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
+     * @see #generateTree(Location, java.util.Random, TreeType, Consumer)
      * @deprecated this method does not handle block entities (bee nests)
      */
     @Deprecated(since = "1.17.1")
@@ -1179,7 +1185,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param x  Chunk x-coordinate
@@ -1201,7 +1207,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param x   Chunk x-coordinate
@@ -1224,7 +1230,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param x      Chunk x-coordinate
@@ -1274,7 +1280,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param loc Location of the chunk
@@ -1295,7 +1301,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param loc Location of the chunk
@@ -1317,7 +1323,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param block Block to get the containing chunk from
@@ -1338,7 +1344,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * immediately, and you wish to let the server control the speed
      * of chunk loads, keeping performance in mind.
      * <p>
-     * The {@link java.util.function.Consumer} will always be executed synchronously
+     * The {@link Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
      * @param block Block to get the containing chunk from
@@ -1613,7 +1619,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     @NotNull
     @Override
-    default Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
+    default Iterable<? extends Audience> audiences() {
         return this.getPlayers();
     }
 
@@ -1642,7 +1648,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the entity with the given UUID, or null if it isn't found
      */
     @Nullable
-    Entity getEntity(@NotNull java.util.UUID uuid);
+    Entity getEntity(@NotNull UUID uuid);
 
     /**
      * Returns a list of entities within a bounding box centered around a
@@ -1792,7 +1798,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest ray trace hit result, or <code>null</code> if there
      * is no hit
      */
-    @Nullable RayTraceResult rayTraceEntities(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
+    @Nullable RayTraceResult rayTraceEntities(@NotNull Position start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
@@ -1881,7 +1887,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *                             with, or <code>null</code> to consider all blocks
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
+    @Nullable RayTraceResult rayTraceBlocks(@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
 
     /**
      * Performs a ray trace that checks for both block and entity collisions.
@@ -1948,7 +1954,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest ray trace hit result with either a block or an
      * entity, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
+    @Nullable RayTraceResult rayTrace(@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
 
     /**
      * Performs a ray trace that checks for collisions with the specified
@@ -2489,7 +2495,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
-    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2")
+    @ApiStatus.Obsolete(since = "1.20.2")
     FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
 
     /**
@@ -4091,7 +4097,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Deprecated
     @Nullable
     default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius) {
-        return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, 8, 8, biome)).map(BiomeSearchResult::getLocation).orElse(null);
+        return Optional.ofNullable(this.locateNearestBiome(origin, radius, 8, 8, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
 
     /**
@@ -4108,7 +4114,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Deprecated
     @Nullable
     default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius, int step) {
-        return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
+        return Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
 
     /**
@@ -4151,7 +4157,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @param loc      The location to strike lightning
          * @param isSilent Whether this strike makes no sound
          * @return The lightning entity.
-         * @see World#strikeLightning(org.bukkit.Location)
+         * @see World#strikeLightning(Location)
          * @deprecated sound is now client side and cannot be removed
          */
         @NotNull
@@ -4166,7 +4172,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @param loc      The location to strike lightning
          * @param isSilent Whether this strike makes no sound
          * @return The lightning entity.
-         * @see World#strikeLightningEffect(org.bukkit.Location)
+         * @see World#strikeLightningEffect(Location)
          * @deprecated sound is now client side and cannot be removed
          */
         @NotNull
@@ -4408,7 +4414,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return dimension ID
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal
+        @ApiStatus.Internal
         int getId() {
             return id;
         }
@@ -4420,7 +4426,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return The environment
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal
+        @ApiStatus.Internal
         @Nullable
         static Environment getEnvironment(int id) {
             return lookup.get(id);
