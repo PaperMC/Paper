@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import java.util.Set;
 
@@ -91,7 +92,7 @@ public abstract class AbstractRespawnEvent extends PlayerEvent {
      * @deprecated in favour of {@link #getRespawnReason()}/{@link #isBedSpawn}/{@link #isAnchorSpawn()}
      */
     @Deprecated
-    public Set<PlayerRespawnEvent.RespawnFlag> getRespawnFlags() {
+    public @Unmodifiable Set<PlayerRespawnEvent.RespawnFlag> getRespawnFlags() {
         return this.respawnFlags;
     }
 }
