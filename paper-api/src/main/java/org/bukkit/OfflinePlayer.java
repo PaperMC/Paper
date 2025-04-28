@@ -295,8 +295,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @return respawn location if exists, otherwise {@code null}.
      * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
      */
-    @Nullable
-    default Location getRespawnLocation() {
+    default @Nullable Location getRespawnLocation() {
         return this.getRespawnLocation(false); // keep old behavior for offline players
     }
 
@@ -309,8 +308,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *                                will induce a sync chunk load and must hence be used with caution.
      * @return respawn location if exists, otherwise {@code null}.
      */
-    @Nullable
-    Location getRespawnLocation(boolean loadLocationAndValidate);
+    @Nullable Location getRespawnLocation(boolean loadLocationAndValidate);
 
     /**
      * Increments the given statistic for this player.
