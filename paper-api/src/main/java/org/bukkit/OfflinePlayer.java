@@ -293,6 +293,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Unlike online players, the location if found will not be loaded by default.
      *
      * @return respawn location if exists, otherwise {@code null}.
+     * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
      */
     @Nullable
     default Location getRespawnLocation() {
@@ -303,12 +304,13 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Gets the Location where the player will spawn at, {@code null} if they
      * don't have a valid respawn point.
      *
-     * @param load load the current location to retrieve the exact position of the spawn block
-     *             and check if this position is still valid or not
+     * @param loadLocationAndValidate load the expected respawn location to retrieve the exact position of the spawn
+     *                                block and check if this position is still valid or not. Loading the location
+     *                                will induce a sync chunk load and must hence be used with caution.
      * @return respawn location if exists, otherwise {@code null}.
      */
     @Nullable
-    Location getRespawnLocation(boolean load);
+    Location getRespawnLocation(boolean loadLocationAndValidate);
 
     /**
      * Increments the given statistic for this player.

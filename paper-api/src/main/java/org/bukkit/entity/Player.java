@@ -545,9 +545,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public boolean isSleepingIgnored();
 
-    @Nullable
+    /**
+     * Gets the Location where the player will spawn at, {@code null} if they
+     * don't have a valid respawn point.
+     * <br>
+     * Unlike offline players, the location if found will be loaded to validate by default.
+     *
+     * @return respawn location if exists, otherwise {@code null}.
+     * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
+     */
     @Override
-    default Location getRespawnLocation() {
+    default @Nullable Location getRespawnLocation() {
         return this.getRespawnLocation(true);
     }
 

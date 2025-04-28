@@ -359,24 +359,23 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public Location getRespawnLocation(boolean load) {
-        CompoundTag data = this.getData();
+    public Location getRespawnLocation(final boolean loadLocationAndValidate) {
+        final CompoundTag data = this.getData();
         if (data == null) return null;
 
         final ServerPlayer.RespawnConfig respawnConfig = data.read("respawn", ServerPlayer.RespawnConfig.CODEC).orElse(null);
-        if (respawnConfig != null) {
-            final ServerLevel level = this.server.console.getLevel(respawnConfig.dimension());
-            if (level != null) {
-                if (!load) {
-                    return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
-                }
+        if (respawnConfig == null) return null;
 
-                return ServerPlayer.findRespawnAndUseSpawnBlock(level, respawnConfig, false)
-                    .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level.getWorld(), resolvedPos.yaw(), 0))
-                    .orElse(null);
-            }
+        final ServerLevel level = this.server.console.getLevel(respawnConfig.dimension());
+        if (level == null) return null;
+
+        if (!loadLocationAndValidate) {
+            return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
         }
-        return null;
+
+        return ServerPlayer.findRespawnAndUseSpawnBlock(level, respawnConfig, false)
+            .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level.getWorld(), resolvedPos.yaw(), 0))
+            .orElse(null);
     }
 
     private ServerStatsCounter getStatisticManager() {
