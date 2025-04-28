@@ -1944,10 +1944,12 @@ public final class CraftServer implements Server {
 
     @Override
     public CraftMapView getMap(int id) {
-        net.minecraft.world.level.Level overworld = this.console.overworld();
+        final net.minecraft.world.level.Level overworld = this.console.overworld();
         if (overworld == null) return null;
-        MapItemSavedData mapData = overworld.getMapData(new MapId(id));
+
+        final MapItemSavedData mapData = overworld.getMapData(new MapId(id));
         if (mapData == null) return null;
+
         return mapData.mapView;
     }
 
