@@ -1945,10 +1945,10 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public CraftMapView getMap(int id) {
-        MapItemSavedData mapData = this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).getMapData(new MapId(id));
-        if (mapData == null) {
-            return null;
-        }
+        net.minecraft.world.level.Level overworld = this.console.overworld();
+        if (overworld == null) return null;
+        MapItemSavedData mapData = overworld.getMapData(new MapId(id));
+        if (mapData == null) return null;
         return mapData.mapView;
     }
 
