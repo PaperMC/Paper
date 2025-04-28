@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 // import jline.console.ConsoleReader;
+import net.minecraft.Optionull;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -2333,7 +2334,11 @@ public final class CraftServer implements Server {
 
     @Override
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).serverLevelData.getGameType().getId());
+        return GameMode.getByValue(Optionull.mapOrDefault(
+            this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD),
+            l -> l.serverLevelData.getGameType(),
+            this.console.getProperties().gamemode
+        ).getId());
     }
 
     @Override
