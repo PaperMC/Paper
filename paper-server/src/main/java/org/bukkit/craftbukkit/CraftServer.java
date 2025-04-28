@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -2263,7 +2264,7 @@ public final class CraftServer implements Server {
     public GameMode getDefaultGameMode() {
         ServerLevel level = this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD);
         GameType type = level != null ? level.serverLevelData.getGameType() : this.console.getProperties().gamemode;
-        return GameMode.getByValue(type.getId());
+        return Objects.requireNonNull(GameMode.getByValue(type.getId()));
     }
 
     @Override
