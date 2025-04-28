@@ -2261,7 +2261,9 @@ public final class CraftServer implements Server {
 
     @Override
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).serverLevelData.getGameType().getId());
+        ServerLevel level = this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD);
+        GameType type = level != null ? level.serverLevelData.getGameType() : this.console.getProperties().gamemode;
+        return GameMode.getByValue(type.getId());
     }
 
     @Override
