@@ -1943,7 +1943,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public CraftMapView getMap(int id) {
         net.minecraft.world.level.Level overworld = this.console.overworld();
         if (overworld == null) return null;
