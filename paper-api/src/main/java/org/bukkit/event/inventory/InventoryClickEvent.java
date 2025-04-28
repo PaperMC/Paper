@@ -203,10 +203,13 @@ public class InventoryClickEvent extends InventoryInteractEvent {
 
     /**
      * If the ClickType is NUMBER_KEY, this method will return the index of
-     * the pressed key (0-8).
+     * the pressed key (0-8) and -1 if player swapped with off-hand (or the action is not NUMBER_KEY).
+     * ClickType -> NUMBER_KEY, getHotbarButton() -> -1 -> off-hand swap
+     * ClickType -> NUMBER_KEY, getHotbarButton() -> 0-8 -> hotbar slots swap
+     * ClickType -> other than NUMBER_KEY, getHotbarButton() -> -1 -> something else
      *
-     * @return the number on the key minus 1 (range 0-8); or -1 if not
-     *     a NUMBER_KEY action
+     * @return the number on the key minus 1 (range 0-8);
+     * or -1 if ClickType is NUMBER_KEY and player did an off-hand swap. Is also -1 if ClickType is not NUMBER_KEY
      */
     public int getHotbarButton() {
         return this.hotbarKey;
