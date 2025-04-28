@@ -2109,6 +2109,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param other The other {@link Player} to list.
      * @return True if the {@code other} player was not listed.
+     * @throws IllegalStateException if this player can't see the other player
+     * @see #canSee(Player)
      */
     boolean listPlayer(Player other);
     // Paper end
