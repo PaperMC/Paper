@@ -1,5 +1,27 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -64,6 +_,7 @@
+     public final AnimationState peekAnimationState = new AnimationState();
+     private int scuteTime;
+     private boolean peekReceivedClient = false;
++    private boolean isFrozen = false; // Paper - add frozen state.
+ 
+     public Armadillo(EntityType<? extends Animal> entityType, Level level) {
+         super(entityType, level);
+@@ -110,6 +_,13 @@
+     }
+ 
+     public void switchToState(Armadillo.ArmadilloState state) {
++        // Paper start - add ArmadilloStateChangeEvent.
++        ArmadilloState oldState = this.getState();
++        if (oldState == state) return;
++        if (this.isFrozen) return;
++        io.papermc.paper.event.entity.ArmadilloStateChangeEvent event = new io.papermc.paper.event.entity.ArmadilloStateChangeEvent((org.bukkit.entity.Armadillo) this.getBukkitEntity(), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(oldState), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(state));
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        // Paper end - add ArmadilloStateChangeEvent.
+         this.entityData.set(ARMADILLO_STATE, state);
+     }
+ 
 @@ -142,10 +_,12 @@
          ArmadilloAi.updateActivity(this);
          profilerFiller.pop();
@@ -13,6 +35,22 @@
  
              this.scuteTime = this.pickNextScuteDropTime();
          }
+@@ -255,6 +_,7 @@
+     }
+ 
+     public void rollUp() {
++        if (this.isFrozen) return; // Paper start - add check for frozen state.
+         if (!this.isScared()) {
+             this.stopInPlace();
+             this.resetLove();
+@@ -265,6 +_,7 @@
+     }
+ 
+     public void rollOut() {
++        if (this.isFrozen) return; // Paper start - add check for frozen state.
+         if (this.isScared()) {
+             this.gameEvent(GameEvent.ENTITY_ACTION);
+             this.makeSound(SoundEvents.ARMADILLO_UNROLL_FINISH);
 @@ -282,8 +_,11 @@
      }
  
@@ -45,3 +83,22 @@
                  this.gameEvent(GameEvent.ENTITY_INTERACT);
                  this.playSound(SoundEvents.ARMADILLO_BRUSH);
              }
+@@ -434,4 +_,18 @@
+             return this.animationDuration;
+         }
+     }
++
++    // Paper start - add methods to freeze armadillo state.
++    public void freezeState() {
++        this.isFrozen = true;
++    }
++
++    public void unfreezeState() {
++        this.isFrozen = false;
++    }
++
++    public boolean isFrozen() {
++        return this.isFrozen;
++    }
++    // Paper end - add methods to freeze armadillo state.
+ }
