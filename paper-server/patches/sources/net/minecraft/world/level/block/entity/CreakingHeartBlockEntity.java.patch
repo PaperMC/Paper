@@ -5,7 +5,7 @@
                          Creaking creaking = creakingProtector.get();
                          if (!CreakingHeartBlock.isNaturalNight(level) && !creaking.isPersistenceRequired()
 -                            || creakingHeart.distanceToCreaking() > 34.0
-+                            || creakingHeart.distanceToCreaking() > creakingHeart.getDistanceCreakingTooFar() // Paper - custom distance for creaking
++                            || creakingHeart.distanceToCreaking() > creakingHeart.distanceCreakingTooFar // Paper - custom distance for creaking
                              || creaking.playerIsStuckInYou()) {
                              creakingHeart.removeProtector(null);
                          }
@@ -13,11 +13,11 @@
  
      @Nullable
      public static Creaking spawnProtector(ServerLevel level, CreakingHeartBlockEntity creakingHeart) {
-+        if (creakingHeart.getDistanceCreakingTooFar() <= 0) return null; // Paper - avoid spawn if the max distance is 0
++        if (creakingHeart.distanceCreakingTooFar <= 0) return null; // Paper - avoid spawn if the max distance is 0
          BlockPos blockPos = creakingHeart.getBlockPos();
          Optional<Creaking> optional = SpawnUtil.trySpawnMob(
 -            EntityType.CREAKING, EntitySpawnReason.SPAWNER, level, blockPos, 5, 16, 8, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER_NO_LEAVES, true
-+            EntityType.CREAKING, EntitySpawnReason.SPAWNER, level, blockPos, 5, Math.min(SPAWN_RANGE_XZ, creakingHeart.getDistanceCreakingTooFar()), Math.min(SPAWN_RANGE_Y, creakingHeart.getDistanceCreakingTooFar()), SpawnUtil.Strategy.ON_TOP_OF_COLLIDER_NO_LEAVES, true // Paper - handle too far distance for avoid spawn out of limits
++            EntityType.CREAKING, EntitySpawnReason.SPAWNER, level, blockPos, 5, Math.min(SPAWN_RANGE_XZ, creakingHeart.distanceCreakingTooFar), Math.min(SPAWN_RANGE_Y, creakingHeart.distanceCreakingTooFar), SpawnUtil.Strategy.ON_TOP_OF_COLLIDER_NO_LEAVES, true // Paper - handle too far distance to avoid spawn out of limits
          );
          if (optional.isEmpty()) {
              return null;
@@ -25,32 +25,19 @@
      protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
          super.loadAdditional(tag, registries);
          tag.read("creaking", UUIDUtil.CODEC).ifPresentOrElse(this::setCreakingInfo, this::clearCreakingInfo);
-+        tag.read(PAPER_CREAKING_MAX_DISTANCE_TAG, net.minecraft.util.ExtraCodecs.NON_NEGATIVE_INT).ifPresentOrElse(this::setDistanceCreakingTooFar, this::resetDistanceCreakingTooFar); // Paper - Custom max distance for Creaking
++        tag.read(PAPER_CREAKING_MAX_DISTANCE_TAG, net.minecraft.util.ExtraCodecs.NON_NEGATIVE_INT).ifPresent(distance -> this.distanceCreakingTooFar = distance); // Paper - Custom max distance for Creaking
      }
  
      @Override
-@@ -358,5 +_,23 @@
+@@ -358,5 +_,11 @@
          if (this.creakingInfo != null) {
              tag.store("creaking", UUIDUtil.CODEC, this.creakingInfo.map(Entity::getUUID, uuid -> (UUID)uuid));
          }
--    }
 +        if (this.distanceCreakingTooFar != DISTANCE_CREAKING_TOO_FAR) tag.store(PAPER_CREAKING_MAX_DISTANCE_TAG, net.minecraft.util.ExtraCodecs.NON_NEGATIVE_INT, this.distanceCreakingTooFar); // Paper - Custom max distance for Creaking
-+    }
+     }
 +
 +    // Paper start - Custom Properties
 +    private final String PAPER_CREAKING_MAX_DISTANCE_TAG = "Paper.CreakingMaxDistance";
-+    private int distanceCreakingTooFar = DISTANCE_CREAKING_TOO_FAR;
-+
-+    public int getDistanceCreakingTooFar() {
-+        return this.distanceCreakingTooFar;
-+    }
-+
-+    public void setDistanceCreakingTooFar(int distance) {
-+        this.distanceCreakingTooFar = distance;
-+    }
-+
-+    public void resetDistanceCreakingTooFar() {
-+        this.distanceCreakingTooFar = DISTANCE_CREAKING_TOO_FAR;
-+    }
++    public int distanceCreakingTooFar = DISTANCE_CREAKING_TOO_FAR;
 +    // Paper end
  }
