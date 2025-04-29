@@ -63,13 +63,14 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Nullable
     @Override
     public Creaking spawnCreaking() {
+        if (!this.getBlockEntity().hasLevel()) {
+            return null;
+        }
         net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(this.getBlockEntity().getLevel().getMinecraftWorld(), this.getBlockEntity());
         if (creaking != null) {
             this.getBlockEntity().setCreakingInfo(creaking);
             creaking.makeSound(SoundEvents.CREAKING_SPAWN);
-            if (this.getBlockEntity().hasLevel()) {
-                this.getBlockEntity().getLevel().playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
-            }
+            this.getBlockEntity().getLevel().playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
         return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
     }
