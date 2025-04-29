@@ -32,7 +32,7 @@ public interface CreakingHeart extends TileState {
      *
      * @return the max distance
      */
-    int getMaxDistanceForCreaking();
+    int getCreakingRemovalDistance();
 
     /**
      * Sets the max distance between the Creaking Heart and the Creaking before to remove.
