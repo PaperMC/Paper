@@ -36,16 +36,16 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
 
     @Override
     public @Nullable Creaking getCreaking() {
-        return this.getTileEntity().getCreakingProtector().map(creaking -> ((Creaking) creaking.getBukkitEntity())).orElse(null);
+        return this.getBlockEntity().getCreakingProtector().map(creaking -> ((Creaking) creaking.getBukkitEntity())).orElse(null);
     }
 
     @Override
     public void setCreaking(@Nullable final Creaking creaking) {
         if (creaking == null) {
-            this.getTileEntity().clearCreakingInfo();
+            this.getBlockEntity().clearCreakingInfo();
         } else {
             Preconditions.checkArgument(this.getLocation().getWorld().equals(creaking.getLocation().getWorld()), "the location of this creaking must be in the same world than this CreakingHeart");
-            this.getTileEntity().setCreakingInfo(((CraftCreaking) creaking).getHandle());
+            this.getBlockEntity().setCreakingInfo(((CraftCreaking) creaking).getHandle());
         }
     }
 
@@ -63,11 +63,13 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Nullable
     @Override
     public Creaking spawnCreaking() {
-        net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(this.getTileEntity().getLevel().getMinecraftWorld(), this.getTileEntity());
+        net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(this.getBlockEntity().getLevel().getMinecraftWorld(), this.getBlockEntity());
         if (creaking != null) {
-            this.getTileEntity().setCreakingInfo(creaking);
+            this.getBlockEntity().setCreakingInfo(creaking);
             creaking.makeSound(SoundEvents.CREAKING_SPAWN);
-            this.getTileEntity().getLevel().playSound(null, this.getTileEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+            if (this.getBlockEntity().hasLevel()) {
+                this.getBlockEntity().getLevel().playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+            }
         }
         return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
     }
@@ -75,6 +77,6 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Nullable
     @Override
     public Location spreadResin() {
-        return this.getTileEntity().spreadResin().map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
+        return this.getBlockEntity().spreadResin().map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
     }
 }
