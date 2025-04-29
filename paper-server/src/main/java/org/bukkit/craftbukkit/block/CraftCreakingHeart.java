@@ -36,11 +36,15 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
 
     @Override
     public @Nullable Creaking getCreaking() {
+        if (!this.isPlaced()) {
+            return null;
+        }
         return this.getBlockEntity().getCreakingProtector().map(creaking -> ((Creaking) creaking.getBukkitEntity())).orElse(null);
     }
 
     @Override
     public void setCreaking(@Nullable final Creaking creaking) {
+        this.requirePlaced();
         if (creaking == null) {
             this.getBlockEntity().clearCreakingInfo();
         } else {
@@ -63,6 +67,7 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Nullable
     @Override
     public Creaking spawnCreaking() {
+        this.requirePlaced();
         if (!this.getBlockEntity().hasLevel()) {
             return null;
         }
@@ -78,6 +83,7 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Nullable
     @Override
     public Location spreadResin() {
+        this.requirePlaced();
         return this.getBlockEntity().spreadResin().map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
     }
 }

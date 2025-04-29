@@ -24,6 +24,7 @@ public interface CreakingHeart extends TileState {
      *
      * @param creaking the creaking or null for make this creaking heart don't have protector
      * @throws IllegalArgumentException if the creaking passed it's in another world
+     * @throws IllegalStateException if this block state is not placed
      */
     void setCreaking(@Nullable Creaking creaking);
 
@@ -46,6 +47,7 @@ public interface CreakingHeart extends TileState {
      * Attempts to spawn a creaking for protect this creaking heart.
      *
      * @return the {@link Creaking} for protect the creaking heart or null if fails
+     * @throws IllegalStateException if this block state is not placed
      */
     @Nullable
     Creaking spawnCreaking();
@@ -55,6 +57,7 @@ public interface CreakingHeart extends TileState {
      *
      * @apiNote This method triggers events related to a block being modified
      * @return the location of spread resin or null if it cannot spread
+     * @throws IllegalStateException if this block state is not placed
      */
     @Nullable
     Location spreadResin();
