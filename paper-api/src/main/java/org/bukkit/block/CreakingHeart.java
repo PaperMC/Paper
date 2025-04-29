@@ -40,7 +40,7 @@ public interface CreakingHeart extends TileState {
      * @param distance the max distance
      * @throws IllegalArgumentException if the distance is negative
      */
-    void setMaxDistanceForCreaking(int distance);
+    void setCreakingRemovalDistance(int distance);
 
     /**
      * Attempts to spawn a creaking for protect this creaking heart.

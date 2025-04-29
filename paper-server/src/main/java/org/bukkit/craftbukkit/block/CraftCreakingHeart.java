@@ -50,12 +50,12 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     }
 
     @Override
-    public int getMaxDistanceForCreaking() {
+    public int getCreakingRemovalDistance() {
         return this.getSnapshot().getDistanceCreakingTooFar();
     }
 
     @Override
-    public void setMaxDistanceForCreaking(final int distance) {
+    public void setCreakingRemovalDistance(final int distance) {
         Preconditions.checkArgument(distance >= 0, "the distance must be >= 0");
         this.getSnapshot().setDistanceCreakingTooFar(distance);
     }
