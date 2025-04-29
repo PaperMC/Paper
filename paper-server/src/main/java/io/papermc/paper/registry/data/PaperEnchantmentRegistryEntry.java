@@ -126,7 +126,7 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
     @Override
     public List<org.bukkit.inventory.EquipmentSlotGroup> activeSlots() {
-        return Collections.unmodifiableList(Lists.transform(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlot));
+        return Collections.unmodifiableList(Lists.transform(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlotGroup));
     }
 
     @Override

@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.MusicInstrument;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -23,9 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.5")
 public final class InstrumentKeys {
     /**
      * {@code minecraft:admire_goat_horn}
@@ -87,12 +85,11 @@ public final class InstrumentKeys {
     }
 
     /**
-     * Creates a key for {@link MusicInstrument} in the registry {@code minecraft:instrument}.
+     * Creates a typed key for {@link MusicInstrument} in the registry {@code minecraft:instrument}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
-    @ApiStatus.Experimental
     public static TypedKey<MusicInstrument> create(final Key key) {
         return TypedKey.create(RegistryKey.INSTRUMENT, key);
     }

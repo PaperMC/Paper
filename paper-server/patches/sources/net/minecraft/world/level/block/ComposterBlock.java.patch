@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/net/minecraft/world/level/block/ComposterBlock.java
-@@ -243,6 +_,11 @@
+@@ -252,6 +_,11 @@
          if (levelValue < 8 && COMPOSTABLES.containsKey(stack.getItem())) {
              if (levelValue < 7 && !level.isClientSide) {
                  BlockState blockState = addItem(player, state, level, pos, stack);
@@ -12,7 +12,7 @@
                  level.levelEvent(1500, pos, state != blockState ? 1 : 0);
                  player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
                  stack.consume(1, player);
-@@ -268,7 +_,19 @@
+@@ -277,7 +_,19 @@
      public static BlockState insertItem(Entity entity, BlockState state, ServerLevel level, ItemStack stack, BlockPos pos) {
          int levelValue = state.getValue(LEVEL);
          if (levelValue < 7 && COMPOSTABLES.containsKey(stack.getItem())) {
@@ -33,7 +33,7 @@
              stack.shrink(1);
              return blockState;
          } else {
-@@ -277,6 +_,14 @@
+@@ -286,6 +_,14 @@
      }
  
      public static BlockState extractProduce(Entity entity, BlockState state, Level level, BlockPos pos) {
@@ -48,7 +48,7 @@
          if (!level.isClientSide) {
              Vec3 vec3 = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandom(level.random, 0.7F);
              ItemEntity itemEntity = new ItemEntity(level, vec3.x(), vec3.y(), vec3.z(), new ItemStack(Items.BONE_MEAL));
-@@ -296,14 +_,39 @@
+@@ -305,14 +_,39 @@
          return blockState;
      }
  
@@ -80,7 +80,7 @@
              return state;
          } else {
              int i = levelValue + 1;
-             BlockState blockState = state.setValue(LEVEL, Integer.valueOf(i));
+             BlockState blockState = state.setValue(LEVEL, i);
 +            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
 +            if (entity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, blockState)) {
 +                return null;
@@ -89,7 +89,7 @@
              level.setBlock(pos, blockState, 3);
              level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(entity, blockState));
              if (i == 7) {
-@@ -348,13 +_,14 @@
+@@ -357,13 +_,14 @@
          if (levelValue == 8) {
              return new ComposterBlock.OutputContainer(state, level, pos, new ItemStack(Items.BONE_MEAL));
          } else {
@@ -106,7 +106,7 @@
          }
  
          @Override
-@@ -381,6 +_,7 @@
+@@ -390,6 +_,7 @@
  
          public InputContainer(BlockState state, LevelAccessor level, BlockPos pos) {
              super(1);
@@ -114,7 +114,7 @@
              this.state = state;
              this.level = level;
              this.pos = pos;
-@@ -412,6 +_,11 @@
+@@ -421,6 +_,11 @@
              if (!item.isEmpty()) {
                  this.changed = true;
                  BlockState blockState = ComposterBlock.addItem(null, this.state, this.level, this.pos, item);
@@ -126,7 +126,7 @@
                  this.level.levelEvent(1500, this.pos, blockState != this.state ? 1 : 0);
                  this.removeItemNoUpdate(0);
              }
-@@ -426,6 +_,7 @@
+@@ -435,6 +_,7 @@
  
          public OutputContainer(BlockState state, LevelAccessor level, BlockPos pos, ItemStack stack) {
              super(stack);
@@ -134,7 +134,7 @@
              this.state = state;
              this.level = level;
              this.pos = pos;
-@@ -453,8 +_,15 @@
+@@ -462,8 +_,15 @@
  
          @Override
          public void setChanged() {

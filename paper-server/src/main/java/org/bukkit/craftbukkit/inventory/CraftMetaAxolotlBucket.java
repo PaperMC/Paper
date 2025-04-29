@@ -2,13 +2,13 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.component.CustomData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 
@@ -26,32 +26,25 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     CraftMetaAxolotlBucket(CraftMetaItem meta) {
         super(meta);
 
-        if (!(meta instanceof CraftMetaAxolotlBucket)) {
+        if (!(meta instanceof final CraftMetaAxolotlBucket bucketMeta)) {
             return;
         }
 
-        CraftMetaAxolotlBucket bucket = (CraftMetaAxolotlBucket) meta;
-        this.variant = bucket.variant;
-        this.entityTag = bucket.entityTag;
-        this.bucketEntityTag = bucket.bucketEntityTag;
+        this.variant = bucketMeta.variant;
+        this.entityTag = bucketMeta.entityTag;
+        this.bucketEntityTag = bucketMeta.bucketEntityTag;
     }
 
-    CraftMetaAxolotlBucket(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaAxolotlBucket(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        super(tag, extraHandledDcts);
 
         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();
-
-            if (this.entityTag.contains(CraftMetaAxolotlBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT);
-            }
+            this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
         getOrEmpty(tag, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
             this.bucketEntityTag = nbt.copyTag();
-
-            if (this.bucketEntityTag.contains(CraftMetaAxolotlBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT);
-            }
+            this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
     }
 
@@ -68,12 +61,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.contains(CraftMetaAxolotlBucket.ENTITY_TAG.NBT)) {
-            this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT);
-        }
-        if (tag.contains(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT)) {
-            this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT);
-        }
+        this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
+        this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
     }
 
     @Override
@@ -118,13 +107,13 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
     @Override
     public Axolotl.Variant getVariant() {
-        com.google.common.base.Preconditions.checkState(this.hasVariant(), "Variant is absent, check hasVariant first!"); // Paper - fix NPE
+        com.google.common.base.Preconditions.checkState(this.hasVariant(), "Variant is absent, check hasVariant first!");
         return Axolotl.Variant.values()[this.variant];
     }
 
     @Override
     public void setVariant(Axolotl.Variant variant) {
-        com.google.common.base.Preconditions.checkArgument(variant != null, "Variant cannot be null!"); // Paper
+        com.google.common.base.Preconditions.checkArgument(variant != null, "Variant cannot be null!");
         this.variant = variant.ordinal();
     }
 
@@ -138,12 +127,10 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaAxolotlBucket) {
-            CraftMetaAxolotlBucket that = (CraftMetaAxolotlBucket) meta;
-
-            return (this.hasVariant() ? that.hasVariant() && this.variant.equals(that.variant) : !that.hasVariant())
-                    && (this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null)
-                    && (this.bucketEntityTag != null ? that.bucketEntityTag != null && this.bucketEntityTag.equals(that.bucketEntityTag) : that.bucketEntityTag == null);
+        if (meta instanceof final CraftMetaAxolotlBucket other) {
+            return Objects.equals(this.variant, other.variant)
+                    && Objects.equals(this.entityTag, other.entityTag)
+                    && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
         }
         return true;
     }

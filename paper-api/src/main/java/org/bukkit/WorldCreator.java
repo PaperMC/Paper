@@ -23,6 +23,7 @@ public class WorldCreator {
     private boolean generateStructures = true;
     private String generatorSettings = "";
     private boolean hardcore = false;
+    private boolean bonusChest = false;
     private net.kyori.adventure.util.TriState keepSpawnLoaded = net.kyori.adventure.util.TriState.NOT_SET; // Paper
 
     /**
@@ -123,6 +124,7 @@ public class WorldCreator {
         type = world.getWorldType();
         generateStructures = world.canGenerateStructures();
         hardcore = world.isHardcore();
+        bonusChest = world.hasBonusChest();
         this.keepSpawnLoaded = net.kyori.adventure.util.TriState.byBoolean(world.getKeepSpawnInMemory()); // Paper
 
         return this;
@@ -146,6 +148,7 @@ public class WorldCreator {
         generateStructures = creator.generateStructures();
         generatorSettings = creator.generatorSettings();
         hardcore = creator.hardcore();
+        bonusChest = creator.bonusChest();
         keepSpawnLoaded = creator.keepSpawnLoaded(); // Paper
 
         return this;
@@ -451,13 +454,34 @@ public class WorldCreator {
 
     /**
      * Gets whether the world will be hardcore or not.
-     *
+     * <p>
      * In a hardcore world the difficulty will be locked to hard.
      *
      * @return hardcore status
      */
     public boolean hardcore() {
         return hardcore;
+    }
+
+    /**
+     * Sets whether a bonus chest should be generated or not.
+     *
+     * @param bonusChest indicating whether the bonus chest should be generated
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator bonusChest(final boolean bonusChest) {
+        this.bonusChest = bonusChest;
+        return this;
+    }
+
+    /**
+     * Gets whether the bonus chest feature is enabled.
+     *
+     * @return true if the bonus chest is enabled, false otherwise.
+     */
+    public boolean bonusChest() {
+        return bonusChest;
     }
 
     /**

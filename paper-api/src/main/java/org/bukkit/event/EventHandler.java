@@ -32,7 +32,7 @@ public @interface EventHandler {
     /**
      * Define if the handler ignores a cancelled event.
      * <p>
-     * If ignoreCancelled is true and the event is cancelled, the method is
+     * If ignoreCancelled is {@code true} and the event is cancelled, the method is
      * not called. Otherwise, the method is always called.
      *
      * @return whether cancelled events should be ignored

@@ -152,7 +152,7 @@ public interface AreaEffectCloud extends Entity {
      * @param data PotionData to set the base potion state to
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
      */
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     void setBasePotionData(@Nullable PotionData data);
 
     /**
@@ -162,7 +162,7 @@ public interface AreaEffectCloud extends Entity {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
      */
     @Nullable
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     PotionData getBasePotionData();
 
     /**
@@ -223,7 +223,7 @@ public interface AreaEffectCloud extends Entity {
      * @param type the potion effect type to check for
      * @return true if the potion has this effect
      */
-    boolean hasCustomEffect(@Nullable PotionEffectType type);
+    boolean hasCustomEffect(@NotNull PotionEffectType type);
 
     /**
      * Removes all custom potion effects from this cloud.

@@ -5,6 +5,7 @@ import java.util.Collection;
 import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,13 +16,16 @@ import org.jetbrains.annotations.NotNull;
 @Deprecated(since = "1.13")
 @Warning(reason = "This event is no longer fired due to client changes")
 public class PlayerChatTabCompleteEvent extends PlayerEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final String message;
     private final String lastToken;
     private final Collection<String> completions;
 
-    public PlayerChatTabCompleteEvent(@NotNull final Player who, @NotNull final String message, @NotNull final Collection<String> completions) {
-        super(who);
+    @ApiStatus.Internal
+    public PlayerChatTabCompleteEvent(@NotNull final Player player, @NotNull final String message, @NotNull final Collection<String> completions) {
+        super(player);
         Preconditions.checkArgument(message != null, "Message cannot be null");
         Preconditions.checkArgument(completions != null, "Completions cannot be null");
         this.message = message;
@@ -41,7 +45,7 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      */
     @NotNull
     public String getChatMessage() {
-        return message;
+        return this.message;
     }
 
     /**
@@ -54,7 +58,7 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      */
     @NotNull
     public String getLastToken() {
-        return lastToken;
+        return this.lastToken;
     }
 
     /**
@@ -64,17 +68,17 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      */
     @NotNull
     public Collection<String> getTabCompletions() {
-        return completions;
+        return this.completions;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

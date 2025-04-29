@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Cat;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -23,9 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.5")
 public final class CatVariantKeys {
     /**
      * {@code minecraft:all_black}
@@ -107,7 +105,13 @@ public final class CatVariantKeys {
     private CatVariantKeys() {
     }
 
-    private static TypedKey<Cat.Type> create(final Key key) {
+    /**
+     * Creates a typed key for {@link Cat.Type} in the registry {@code minecraft:cat_variant}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    public static TypedKey<Cat.Type> create(final Key key) {
         return TypedKey.create(RegistryKey.CAT_VARIANT, key);
     }
 }

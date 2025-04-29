@@ -8,7 +8,7 @@
  ) {
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(
          Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState()
-@@ -107,12 +_,39 @@
+@@ -109,12 +_,38 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -17,10 +17,10 @@
 +    public static ChunkPos getChunkCoordinate(final CompoundTag chunkData) {
 +        final int dataVersion = ChunkStorage.getVersion(chunkData);
 +        if (dataVersion < 2842) { // Level tag is removed after this version
-+            final CompoundTag levelData = chunkData.getCompound("Level");
-+            return new ChunkPos(levelData.getInt("xPos"), levelData.getInt("zPos"));
++            final CompoundTag levelData = chunkData.getCompoundOrEmpty("Level");
++            return new ChunkPos(levelData.getIntOr("xPos", 0), levelData.getIntOr("zPos", 0));
 +        } else {
-+            return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
++            return new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0));
 +        }
 +    }
 +    // Paper end - guard against serializing mismatching coordinates
@@ -32,50 +32,49 @@
 +
      @Nullable
      public static SerializableChunkData parse(LevelHeightAccessor levelHeightAccessor, RegistryAccess registries, CompoundTag tag) {
-         if (!tag.contains("Status", 8)) {
+         if (tag.getString("Status").isEmpty()) {
              return null;
          } else {
--            ChunkPos chunkPos = new ChunkPos(tag.getInt("xPos"), tag.getInt("zPos"));
+-            ChunkPos chunkPos = new ChunkPos(tag.getIntOr("xPos", 0), tag.getIntOr("zPos", 0));
 +            // Paper start - Do not let the server load chunks from newer versions
-+            if (tag.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+                final int dataVersion = tag.getInt("DataVersion");
++            tag.getInt("DataVersion").ifPresent(dataVersion -> {
 +                if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
 +                    new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
 +                    System.exit(1);
 +                }
-+            }
++            });
 +            // Paper end - Do not let the server load chunks from newer versions
-+            ChunkPos chunkPos = new ChunkPos(tag.getInt("xPos"), tag.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
-             long _long = tag.getLong("LastUpdate");
-             long _long1 = tag.getLong("InhabitedTime");
-             ChunkStatus chunkStatus = ChunkStatus.byName(tag.getString("Status"));
-@@ -181,7 +_,7 @@
-             ListTag list7 = tag.getList("sections", 10);
-             List<SerializableChunkData.SectionData> list8 = new ArrayList<>(list7.size());
++            ChunkPos chunkPos = new ChunkPos(tag.getIntOr("xPos", 0), tag.getIntOr("zPos", 0)); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
+             long longOr = tag.getLongOr("LastUpdate", 0L);
+             long longOr1 = tag.getLongOr("InhabitedTime", 0L);
+             ChunkStatus chunkStatus = tag.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
+@@ -154,7 +_,7 @@
+             ListTag listOrEmpty2 = tag.getListOrEmpty("sections");
+             List<SerializableChunkData.SectionData> list5 = new ArrayList<>(listOrEmpty2.size());
              Registry<Biome> registry = registries.lookupOrThrow(Registries.BIOME);
 -            Codec<PalettedContainerRO<Holder<Biome>>> codec = makeBiomeCodec(registry);
 +            Codec<PalettedContainer<Holder<Biome>>> codec = makeBiomeCodecRW(registry); // CraftBukkit - read/write
  
-             for (int i2 = 0; i2 < list7.size(); i2++) {
-                 CompoundTag compound2 = list7.getCompound(i2);
-@@ -199,7 +_,7 @@
-                         );
-                     }
- 
--                    PalettedContainerRO<Holder<Biome>> palettedContainerRo;
-+                    PalettedContainer<Holder<Biome>> palettedContainerRo; // CraftBukkit - read/write
-                     if (compound2.contains("biomes", 10)) {
-                         palettedContainerRo = codec.parse(NbtOps.INSTANCE, compound2.getCompound("biomes"))
-                             .promotePartial(string -> logErrors(chunkPos, _byte, string))
-@@ -239,6 +_,7 @@
-                 list5,
-                 list6,
-                 compound1
+             for (int i2 = 0; i2 < listOrEmpty2.size(); i2++) {
+                 Optional<CompoundTag> compound = listOrEmpty2.getCompound(i2);
+@@ -174,7 +_,7 @@
+                                     Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES
+                                 )
+                             );
+-                        PalettedContainerRO<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes")
++                        PalettedContainer<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes") // CraftBukkit - read/write
+                             .map(
+                                 compoundTag1 -> codec.parse(NbtOps.INSTANCE, compoundTag1)
+                                     .promotePartial(string -> logErrors(chunkPos, byteOr, string))
+@@ -215,6 +_,7 @@
+                 list3,
+                 list4,
+                 compoundOrEmpty
 +                , tag.get("ChunkBukkitValues") // CraftBukkit - ChunkBukkitValues
              );
          }
      }
-@@ -316,6 +_,12 @@
+@@ -292,6 +_,12 @@
              }
          }
  
@@ -88,21 +87,7 @@
          chunkAccess.setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> set = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -346,6 +_,13 @@
-             }
- 
-             for (CompoundTag compoundTag : this.blockEntities) {
-+                // Paper start - do not read tile entities positioned outside the chunk
-+                final BlockPos blockposition = BlockEntity.getPosFromTag(compoundTag);
-+                if ((blockposition.getX() >> 4) != this.chunkPos.x || (blockposition.getZ() >> 4) != this.chunkPos.z) {
-+                    LOGGER.warn("Tile entity serialized in chunk {} in world '{}' positioned at {} is located outside of the chunk", this.chunkPos, level.getWorld().getName(), blockposition);
-+                    continue;
-+                }
-+                // Paper end - do not read tile entities positioned outside the chunk
-                 protoChunk1.setBlockEntityNbt(compoundTag);
-             }
- 
-@@ -370,6 +_,12 @@
+@@ -346,6 +_,12 @@
          );
      }
  
@@ -115,7 +100,7 @@
      public static SerializableChunkData copyOf(ServerLevel level, ChunkAccess chunk) {
          if (!chunk.canBeSerialized()) {
              throw new IllegalArgumentException("Chunk can't be serialized: " + chunk);
-@@ -428,6 +_,12 @@
+@@ -404,6 +_,12 @@
              CompoundTag compoundTag = packStructureData(
                  StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences()
              );
@@ -128,7 +113,7 @@
              return new SerializableChunkData(
                  level.registryAccess().lookupOrThrow(Registries.BIOME),
                  pos,
-@@ -447,6 +_,7 @@
+@@ -423,6 +_,7 @@
                  list2,
                  list1,
                  compoundTag
@@ -136,7 +121,7 @@
              );
          }
      }
-@@ -525,6 +_,11 @@
+@@ -489,6 +_,11 @@
          this.heightmaps.forEach((types, longs) -> compoundTag2.put(types.getSerializationKey(), new LongArrayTag(longs)));
          compoundTag.put("Heightmaps", compoundTag2);
          compoundTag.put("structures", this.structureData);
@@ -148,26 +133,12 @@
          return compoundTag;
      }
  
-@@ -562,6 +_,13 @@
-                     chunk.setBlockEntityNbt(compoundTag);
-                 } else {
-                     BlockPos posFromTag = BlockEntity.getPosFromTag(compoundTag);
-+                    // Paper start - do not read tile entities positioned outside the chunk
-+                    ChunkPos chunkPos = chunk.getPos();
-+                    if ((posFromTag.getX() >> 4) != chunkPos.x || (posFromTag.getZ() >> 4) != chunkPos.z) {
-+                        LOGGER.warn("Tile entity serialized in chunk " + chunkPos + " in world '" + level.getWorld().getName() + "' positioned at " + posFromTag + " is located outside of the chunk");
-+                        continue;
-+                    }
-+                    // Paper end - do not read tile entities positioned outside the chunk
-                     BlockEntity blockEntity = BlockEntity.loadStatic(posFromTag, chunk.getBlockState(posFromTag), compoundTag, level.registryAccess());
-                     if (blockEntity != null) {
-                         chunk.setBlockEntity(blockEntity);
-@@ -610,6 +_,12 @@
+@@ -562,6 +_,12 @@
              } else {
-                 StructureStart structureStart = StructureStart.loadStaticStart(context, compound.getCompound(string), seed);
+                 StructureStart structureStart = StructureStart.loadStaticStart(context, compoundOrEmpty.getCompoundOrEmpty(string), seed);
                  if (structureStart != null) {
 +                    // CraftBukkit start - load persistent data for structure start
-+                    net.minecraft.nbt.Tag persistentBase = compound.getCompound(string).get("StructureBukkitValues");
++                    net.minecraft.nbt.Tag persistentBase = compoundOrEmpty.getCompoundOrEmpty(string).get("StructureBukkitValues");
 +                    if (persistentBase instanceof CompoundTag compoundTag) {
 +                        structureStart.persistentDataContainer.putAll(compoundTag);
 +                    }

@@ -1,8 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.entity.villager.Reputation;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -19,12 +23,6 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityTransformEvent;
-
-// Paper start
-import com.destroystokyo.paper.entity.villager.Reputation;
-import java.util.Map;
-import java.util.UUID;
-// Paper end
 
 public class CraftVillager extends CraftAbstractVillager implements Villager {
 
@@ -51,36 +49,36 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public Profession getProfession() {
-        return CraftProfession.minecraftToBukkit(this.getHandle().getVillagerData().getProfession());
+        return CraftProfession.minecraftHolderToBukkit(this.getHandle().getVillagerData().profession());
     }
 
     @Override
     public void setProfession(Profession profession) {
         Preconditions.checkArgument(profession != null, "Profession cannot be null");
-        this.getHandle().setVillagerData(this.getHandle().getVillagerData().setProfession(CraftProfession.bukkitToMinecraft(profession)));
+        this.getHandle().setVillagerData(this.getHandle().getVillagerData().withProfession(CraftProfession.bukkitToMinecraftHolder(profession)));
     }
 
     @Override
     public Type getVillagerType() {
-        return CraftType.minecraftToBukkit(this.getHandle().getVillagerData().getType());
+        return CraftType.minecraftHolderToBukkit(this.getHandle().getVillagerData().type());
     }
 
     @Override
     public void setVillagerType(Type type) {
         Preconditions.checkArgument(type != null, "Type cannot be null");
-        this.getHandle().setVillagerData(this.getHandle().getVillagerData().setType(CraftType.bukkitToMinecraft(type)));
+        this.getHandle().setVillagerData(this.getHandle().getVillagerData().withType(CraftType.bukkitToMinecraftHolder(type)));
     }
 
     @Override
     public int getVillagerLevel() {
-        return this.getHandle().getVillagerData().getLevel();
+        return this.getHandle().getVillagerData().level();
     }
 
     @Override
     public void setVillagerLevel(int level) {
         Preconditions.checkArgument(1 <= level && level <= 5, "level (%s) must be between [1, 5]", level);
 
-        this.getHandle().setVillagerData(this.getHandle().getVillagerData().setLevel(level));
+        this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(level));
     }
 
     @Override
@@ -104,10 +102,10 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL));
 
         it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.VillagerTrades.ItemListing[]> trades =
-            net.minecraft.world.entity.npc.VillagerTrades.TRADES.get(this.getHandle().getVillagerData().getProfession());
+            net.minecraft.world.entity.npc.VillagerTrades.TRADES.get((this.getHandle().getVillagerData().profession().unwrapKey().orElseThrow()));
 
         if (trades == null || trades.isEmpty()) {
-            this.getHandle().setVillagerData(this.getHandle().getVillagerData().setLevel(supposedFinalLevel));
+            this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(supposedFinalLevel));
             return false;
         }
 
@@ -143,8 +141,8 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
 
         BlockPos position = CraftLocation.toBlockPosition(location);
-        BlockState iblockdata = this.getHandle().level().getBlockState(position);
-        if (!(iblockdata.getBlock() instanceof BedBlock)) {
+        BlockState state = this.getHandle().level().getBlockState(position);
+        if (!(state.getBlock() instanceof BedBlock)) {
             return false;
         }
 
@@ -178,8 +176,16 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE);
         }
 
+        public static Type minecraftHolderToBukkit(Holder<VillagerType> minecraft) {
+            return CraftType.minecraftToBukkit(minecraft.value());
+        }
+
         public static VillagerType bukkitToMinecraft(Type bukkit) {
             return CraftRegistry.bukkitToMinecraft(bukkit);
+        }
+
+        public static Holder<VillagerType> bukkitToMinecraftHolder(Type bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_TYPE);
         }
 
         private final NamespacedKey key;
@@ -254,6 +260,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     public static class CraftProfession implements Profession, Handleable<VillagerProfession> {
         private static int count = 0;
+
+        public static Profession minecraftHolderToBukkit(Holder<VillagerProfession> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
+        }
+
+        public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_PROFESSION);
+        }
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {
             return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
@@ -333,7 +347,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
     }
 
-    // Paper start - Add villager reputation API
     @Override
     public Reputation getReputation(UUID uniqueId) {
         net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().gossips.get(uniqueId);
@@ -372,5 +385,4 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void clearReputations() {
         getHandle().getGossips().gossips.clear();
     }
-    // Paper end
 }

@@ -5,6 +5,7 @@ import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -74,4 +75,6 @@ public interface ChunkSystemHooks {
     public void removePlayerFromDistanceMaps(final ServerLevel world, final ServerPlayer player);
 
     public void updateMaps(final ServerLevel world, final ServerPlayer player);
+
+    public long[] getCounterTypesUncached(final TicketType type);
 }

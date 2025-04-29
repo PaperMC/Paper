@@ -16,8 +16,8 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlockEntity> implements CreakingHeart {
 
-    public CraftCreakingHeart(World world, CreakingHeartBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftCreakingHeart(World world, CreakingHeartBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftCreakingHeart(CraftCreakingHeart state, Location location) {

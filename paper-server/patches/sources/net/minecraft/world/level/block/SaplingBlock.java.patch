@@ -1,25 +1,25 @@
 --- a/net/minecraft/world/level/block/SaplingBlock.java
 +++ b/net/minecraft/world/level/block/SaplingBlock.java
-@@ -26,6 +_,7 @@
-     protected static final float AABB_OFFSET = 6.0F;
-     protected static final VoxelShape SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 12.0, 14.0);
+@@ -25,6 +_,7 @@
+     public static final IntegerProperty STAGE = BlockStateProperties.STAGE;
+     private static final VoxelShape SHAPE = Block.column(12.0, 0.0, 12.0);
      protected final TreeGrower treeGrower;
-+    public static org.bukkit.TreeType treeType; // CraftBukkit
++    public static @javax.annotation.Nullable org.bukkit.TreeType treeType; // CraftBukkit
  
      @Override
      public MapCodec<? extends SaplingBlock> codec() {
-@@ -45,7 +_,7 @@
+@@ -44,7 +_,7 @@
  
      @Override
      protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 -        if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextInt(7) == 0) {
-+        if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (level.spigotConfig.saplingModifier / (100.0f * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (level.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextFloat() < (level.spigotConfig.saplingModifier / (100.0F * 7))) { // Spigot - SPIGOT-7159: Better modifier resolution
              this.advanceTree(level, pos, state, random);
          }
      }
-@@ -54,7 +_,33 @@
+@@ -53,7 +_,34 @@
          if (state.getValue(STAGE) == 0) {
-             level.setBlock(pos, state.cycle(STAGE), 4);
+             level.setBlock(pos, state.cycle(STAGE), 260);
          } else {
 -            this.treeGrower.growTree(level, level.getChunkSource().getGenerator(), pos, state, random);
 +            // CraftBukkit start
@@ -42,8 +42,9 @@
 +                    }
 +                    if (event == null || !event.isCancelled()) {
 +                        for (org.bukkit.block.BlockState blockstate : blocks) {
-+                            org.bukkit.craftbukkit.block.CapturedBlockState.setBlockState(blockstate);
-+                            level.checkCapturedTreeStateForObserverNotify(pos, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
++                            org.bukkit.craftbukkit.block.CraftBlockState craftBlockState = (org.bukkit.craftbukkit.block.CraftBlockState) blockstate;
++                            craftBlockState.place(craftBlockState.getFlags());
++                            level.checkCapturedTreeStateForObserverNotify(pos, craftBlockState); // Paper - notify observers even if grow failed
 +                        }
 +                    }
 +                }

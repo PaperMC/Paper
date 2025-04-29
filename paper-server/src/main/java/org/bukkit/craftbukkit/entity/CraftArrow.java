@@ -31,7 +31,7 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
 
     @Override
     public String toString() {
-        return "CraftTippedArrow";
+        return "CraftArrow";
     }
 
     @Override
@@ -43,7 +43,6 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
             this.removeCustomEffect(effect.getType());
         }
         this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
-        // this.getHandle().updateColor(); // Paper - already done above
         return true;
     }
 
@@ -51,7 +50,6 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
     public void clearCustomEffects() {
         PotionContents old = this.getHandle().getPotionContents();
         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of(), old.customName()));
-        // this.getHandle().updateColor(); // Paper - already done above
     }
 
     @Override

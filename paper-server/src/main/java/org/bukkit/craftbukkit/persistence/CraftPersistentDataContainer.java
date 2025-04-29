@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.persistence;
 
 import com.google.common.base.Preconditions;
+import com.mojang.serialization.Codec;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 public class CraftPersistentDataContainer extends io.papermc.paper.persistence.PaperPersistentDataContainerView implements PersistentDataContainer { // Paper - split up view and mutable
 
     private final Map<String, Tag> customDataTags = new HashMap<>();
-    // Paper - move to PersistentDataContainerView
 
     public CraftPersistentDataContainer(Map<String, Tag> customTags, CraftPersistentDataTypeRegistry registry) {
         this(registry);
@@ -27,15 +27,13 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
     }
 
     public CraftPersistentDataContainer(CraftPersistentDataTypeRegistry registry) {
-        super(registry); // Paper - move to PersistentDataContainerView
+        super(registry);
     }
 
-    // Paper start
     @Override
     public Tag getTag(final String key) {
         return this.customDataTags.get(key);
     }
-    // Paper end
 
     @Override
     public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
@@ -45,8 +43,6 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
 
         this.customDataTags.put(key.toString(), this.registry.wrap(type, type.toPrimitive(value, this.adapterContext)));
     }
-
-    // Paper - move to PersistentDataContainerView
 
     @NotNull
     @Override
@@ -122,7 +118,7 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
     }
 
     public void putAll(CompoundTag compound) {
-        for (String key : compound.getAllKeys()) {
+        for (String key : compound.keySet()) {
             this.customDataTags.put(key, compound.get(key));
         }
     }
@@ -146,14 +142,10 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
         return CraftNBTTagConfigSerializer.serialize(this.toTagCompound());
     }
 
-    // Paper start
     public void clear() {
         this.customDataTags.clear();
     }
-    // Paper end
 
-    // Paper start - byte array serialization
-    // Paper - move to PersistentDataContainerView
     @Override
     public void readFromBytes(final byte[] bytes, final boolean clear) throws java.io.IOException {
         if (clear) {
@@ -164,13 +156,18 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
             this.putAll(compound);
         }
     }
-    // Paper end - byte array serialization
 
-    // Paper start - deep clone tags
     public Map<String, Tag> getTagsCloned() {
         final Map<String, Tag> tags = new HashMap<>();
         this.customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
         return tags;
     }
-    // Paper end - deep clone tags
+
+    public static Codec<CraftPersistentDataContainer> createCodec(final CraftPersistentDataTypeRegistry registry) {
+        return CompoundTag.CODEC.xmap(tag -> {
+            final CraftPersistentDataContainer container = new CraftPersistentDataContainer(registry);
+            container.putAll(tag);
+            return container;
+        }, CraftPersistentDataContainer::toTagCompound);
+    }
 }

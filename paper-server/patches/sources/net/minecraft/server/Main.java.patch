@@ -52,13 +52,13 @@
 +                File configFile = (File) optionSet.valueOf("bukkit-settings");
 +                org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
 +                configuration.options().copyDefaults(true);
-+                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), com.google.common.base.Charsets.UTF_8)));
++                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8)));
 +                configuration.save(configFile);
 +
 +                File commandFile = (File) optionSet.valueOf("commands-settings");
 +                org.bukkit.configuration.file.YamlConfiguration commandsConfiguration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(commandFile);
 +                commandsConfiguration.options().copyDefaults(true);
-+                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), com.google.common.base.Charsets.UTF_8)));
++                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), java.nio.charset.StandardCharsets.UTF_8)));
 +                commandsConfiguration.save(commandFile);
 +                // CraftBukkit end
                  LOGGER.info("Initialized '{}' and '{}'", path1.toAbsolutePath(), path2.toAbsolutePath());
@@ -116,7 +116,7 @@
              Dynamic<?> dataTag;
              if (levelStorageAccess.hasWorldData()) {
                  LevelSummary summary;
-@@ -169,12 +_,30 @@
+@@ -169,12 +_,33 @@
              }
  
              Dynamic<?> dynamic = dataTag;
@@ -134,12 +134,15 @@
 +            }
 +            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
 +            try {
-+                com.google.common.io.Files.write("{\n"
-+                        + "    \"pack\": {\n"
-+                        + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
-+                        + "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA) + "\n"
-+                        + "    }\n"
-+                        + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
++                com.google.common.io.Files.asCharSink(mcMeta, java.nio.charset.StandardCharsets.UTF_8).write("""
++                    {
++                        "pack": {
++                            "description": "Data pack for resources provided by Bukkit plugins",
++                            "pack_format": %d
++                        }
++                    }
++                    """.formatted(SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA))
++                );
 +            } catch (java.io.IOException ex) {
 +                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
 +            }
@@ -180,11 +183,11 @@
  
 +            /*
              RegistryAccess.Frozen frozen = worldStem.registries().compositeAccess();
-             boolean hasOptionSpec1 = optionSet.has(optionSpec6);
-             if (optionSet.has(optionSpec4) || hasOptionSpec1) {
-@@ -245,9 +_,13 @@
- 
              WorldData worldData = worldStem.worldData();
+             boolean hasOptionSpec1 = optionSet.has(optionSpec6);
+@@ -245,9 +_,13 @@
+             }
+ 
              levelStorageAccess.saveDataTag(frozen, worldData);
 +            */
              final DedicatedServer dedicatedServer = MinecraftServer.spin(
@@ -241,12 +244,12 @@
          } catch (Exception var42) {
              LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var42);
          }
-@@ -316,7 +_,7 @@
+@@ -317,7 +_,7 @@
          RegistryAccess registryAccess,
          boolean recreateRegionFiles
      ) {
 -        LOGGER.info("Forcing world upgrade!");
 +        LOGGER.info("Forcing world upgrade! {}", levelStorage.getLevelId()); // CraftBukkit
  
-         try (WorldUpgrader worldUpgrader = new WorldUpgrader(levelStorage, dataFixer, registryAccess, eraseCache, recreateRegionFiles)) {
+         try (WorldUpgrader worldUpgrader = new WorldUpgrader(levelStorage, dataFixer, worldData, registryAccess, eraseCache, recreateRegionFiles)) {
              Component component = null;

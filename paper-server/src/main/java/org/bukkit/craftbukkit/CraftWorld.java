@@ -2,14 +2,11 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -45,14 +42,11 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.SortedArraySet;
-import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -63,9 +57,11 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelResource;
@@ -87,7 +83,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -219,7 +214,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int getTileEntityCount() {
-        // We don't use the full world tile entity list, so we must iterate chunks
+        // We don't use the full world block entity list, so we must iterate chunks
         int size = 0;
         for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
@@ -454,7 +449,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean unloadChunkRequest(int x, int z) {
         org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
         if (this.isChunkLoaded(x, z)) {
-            this.world.getChunkSource().removeRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
+            this.world.getChunkSource().removeTicketWithRadius(TicketType.PLUGIN, new ChunkPos(x, z), 1);
         }
 
         return true;
@@ -474,33 +469,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         this.world.getChunkSource().purgeUnload();
         return !this.isChunkLoaded(x, z);
-    }
-
-    @Override
-    public boolean regenerateChunk(int x, int z) {
-        org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
-        throw new UnsupportedOperationException("Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)");
-        /*
-        if (!unloadChunk0(x, z, false)) {
-            return false;
-        }
-        warnUnsafeChunk("regenerating a faraway chunk", x, z); // Paper
-
-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
-        world.getChunkProvider().unloadQueue.remove(chunkKey);
-
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
-        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
-        if (playerChunk != null) {
-            playerChunk.chunk = chunk;
-        }
-
-        if (chunk != null) {
-            refreshChunk(x, z);
-        }
-
-        return chunk != null;
-        */
     }
 
     @Override
@@ -565,8 +533,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             chunk = this.world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
         }
 
-        if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
-            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
+        if (chunk instanceof LevelChunk) {
+            this.world.getChunkSource().addTicketWithRadius(TicketType.PLUGIN, new ChunkPos(x, z), 1);
             return true;
         }
 
@@ -594,7 +562,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
         final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        if (distanceManager.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
+        if (distanceManager.ticketStorage.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
             this.getChunkAt(x, z); // ensure it's loaded
             return true;
         }
@@ -607,7 +575,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkNotNull(plugin, "null plugin");
 
         final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        return distanceManager.removePluginRegionTicket(new ChunkPos(x, z), plugin);
+        return distanceManager.ticketStorage.removePluginRegionTicket(new ChunkPos(x, z), plugin);
     }
 
     @Override
@@ -615,7 +583,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkNotNull(plugin, "null plugin");
 
         DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        chunkDistanceManager.removeAllTicketsFor(TicketType.PLUGIN_TICKET, 31, plugin); // keep in-line with force loading, remove at level 31
+        chunkDistanceManager.ticketStorage.removeAllPluginRegionTickets(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, plugin);
     }
 
     @Override
@@ -649,7 +617,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isChunkForceLoaded(int x, int z) {
-        return this.getHandle().getForcedChunks().contains(ChunkPos.asLong(x, z));
+        return this.getHandle().getForceLoadedChunks().contains(ChunkPos.asLong(x, z));
     }
 
     @Override
@@ -662,7 +630,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public Collection<Chunk> getForceLoadedChunks() {
         Set<Chunk> chunks = new HashSet<>();
 
-        for (long coord : this.getHandle().getForcedChunks()) {
+        for (long coord : this.getHandle().getForceLoadedChunks()) {
             chunks.add(this.getChunkAt(ChunkPos.getX(coord), ChunkPos.getZ(coord)));
         }
 
@@ -733,7 +701,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
         }
 
-        arrow.moveTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+        arrow.snapTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         this.world.addFreshEntity(arrow);
         return (T) arrow.getBukkitEntity();
@@ -753,7 +721,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
 
         LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(this.world, EntitySpawnReason.COMMAND);
-        lightning.moveTo(loc.getX(), loc.getY(), loc.getZ());
+        lightning.snapTo(loc.getX(), loc.getY(), loc.getZ());
         lightning.isEffect = isVisual; // Paper - Properly handle lightning effects api
         this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
         return (LightningStrike) lightning.getBukkitEntity();
@@ -762,8 +730,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - Add methods to find targets for lightning strikes
     @Override
     public Location findLightningRod(Location location) {
-        return this.world.findLightningRod(io.papermc.paper.util.MCUtil.toBlockPosition(location))
-            .map(blockPos -> io.papermc.paper.util.MCUtil.toLocation(this.world, blockPos)
+        return this.world.findLightningRod(CraftLocation.toBlockPosition(location))
+            .map(blockPos -> CraftLocation.toBukkit(blockPos, this.world)
                 // get the actual rod pos
                 .subtract(0, 1, 0))
             .orElse(null);
@@ -771,8 +739,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Location findLightningTarget(Location location) {
-        final BlockPos pos = this.world.findLightningTargetAround(io.papermc.paper.util.MCUtil.toBlockPosition(location), true);
-        return pos == null ? null : io.papermc.paper.util.MCUtil.toLocation(this.world, pos);
+        final BlockPos pos = this.world.findLightningTargetAround(CraftLocation.toBlockPosition(location), true);
+        return pos == null ? null : CraftLocation.toBukkit(pos, this.world);
     }
     // Paper end - Add methods to find targets for lightning strikes
 
@@ -792,10 +760,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             for (BlockState blockstate : this.world.capturedBlockStates.values()) {
                 BlockPos position = ((CraftBlockState) blockstate).getPosition();
                 net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
-                int flag = ((CraftBlockState) blockstate).getFlag();
+                int flags = ((CraftBlockState) blockstate).getFlags();
                 delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
                 net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
-                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flag, 512);
+                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, net.minecraft.world.level.block.Block.UPDATE_LIMIT);
             }
             this.world.capturedBlockStates.clear();
             return true;
@@ -827,15 +795,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public long getTime() {
-        long time = this.getFullTime() % 24000;
-        if (time < 0) time += 24000;
+        long time = this.getFullTime() % Level.TICKS_PER_DAY;
+        if (time < 0) time += Level.TICKS_PER_DAY;
         return time;
     }
 
     @Override
     public void setTime(long time) {
-        long margin = (time - this.getFullTime()) % 24000;
-        if (margin < 0) margin += 24000;
+        long margin = (time - this.getFullTime()) % Level.TICKS_PER_DAY;
+        if (margin < 0) margin += Level.TICKS_PER_DAY;
         this.setFullTime(this.getFullTime() + margin);
     }
 
@@ -867,7 +835,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start
     @Override
     public boolean isDayTime() {
-        return getHandle().isDay();
+        return getHandle().isBrightOutside();
     }
     // Paper end
 
@@ -1210,9 +1178,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Vector dir = direction.clone().normalize().multiply(maxDistance);
         Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
-        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
+        HitResult hitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
 
-        return CraftRayTraceResult.fromNMS(this, nmsHitResult);
+        return CraftRayTraceResult.convertFromInternal(this.getHandle(), hitResult);
     }
 
     @Override
@@ -1297,13 +1265,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper end
 
     @Override
-    public void save() {
+    public void save(boolean flush) {
         org.spigotmc.AsyncCatcher.catchOp("world save"); // Spigot
         this.server.checkSaveState();
         boolean oldSave = this.world.noSave;
 
         this.world.noSave = false;
-        this.world.save(null, false, false);
+        this.world.save(null, flush, false);
 
         this.world.noSave = oldSave;
     }
@@ -1650,6 +1618,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean canGenerateStructures() {
         return this.world.serverLevelData.worldGenOptions().generateStructures();
+    }
+
+    @Override
+    public boolean hasBonusChest() {
+        return this.world.serverLevelData.worldGenOptions().generateBonusChest();
     }
 
     @Override
@@ -2078,13 +2051,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public <T> T getGameRuleValue(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName())));
+        GameRules.Key<? extends GameRules.Value<?>> key = this.getGameRulesNMS().get(rule.getName());
+        Preconditions.checkArgument(key != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, this.getHandle().getGameRules().getRule(key));
     }
 
     @Override
     public <T> T getGameRuleDefault(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getGameRuleDefinitions().get(rule.getName()).createRule());
+        GameRules.Type<?> type = this.getGameRuleDefinitions().get(rule.getName());
+        Preconditions.checkArgument(type != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, type.createRule());
     }
 
     @Override
@@ -2104,7 +2083,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return true;
     }
 
-    private <T> T convert(GameRule<T> rule, GameRules.Value<?> value) {
+    private <T> T getGameRuleResult(GameRule<T> rule, GameRules.Value<?> value) {
         if (value == null) {
             return null;
         }
@@ -2341,7 +2320,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return null;
         }
 
-        return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), new Location(this, found.getFirst().getX(), found.getFirst().getY(), found.getFirst().getZ()));
+        return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), CraftLocation.toBukkit(found.getFirst(), this));
     }
 
     @Override
@@ -2351,21 +2330,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         Raids persistentRaid = this.world.getRaids();
         net.minecraft.world.entity.raid.Raid raid = persistentRaid.getNearbyRaid(CraftLocation.toBlockPosition(location), radius * radius);
-        return (raid == null) ? null : new CraftRaid(raid);
+        return (raid == null) ? null : new CraftRaid(raid, this.world);
     }
 
     // Paper start - more Raid API
     @Override
     public @Nullable Raid getRaid(final int id) {
         final net.minecraft.world.entity.raid.@Nullable Raid nmsRaid = this.world.getRaids().raidMap.get(id);
-        return nmsRaid != null ? new CraftRaid(nmsRaid) : null;
+        return nmsRaid != null ? new CraftRaid(nmsRaid, this.world) : null;
     }
     // Paper end - more Raid API
 
     @Override
     public List<Raid> getRaids() {
         Raids persistentRaid = this.world.getRaids();
-        return persistentRaid.raidMap.values().stream().map(CraftRaid::new).collect(Collectors.toList());
+        return persistentRaid.raidMap.values().stream().map(raid -> new CraftRaid(raid, this.world)).collect(Collectors.toList());
     }
 
     @Override
@@ -2417,24 +2396,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     // Spigot start
-    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
-    {
+    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot() {
 
         @Override
-        public LightningStrike strikeLightning(Location loc, boolean isSilent)
-        {
+        public LightningStrike strikeLightning(Location loc, boolean isSilent) {
             return CraftWorld.this.strikeLightning(loc);
         }
 
         @Override
-        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent)
-        {
+        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent) {
             return CraftWorld.this.strikeLightningEffect(loc);
         }
     };
 
-    public org.bukkit.World.Spigot spigot()
-    {
+    public org.bukkit.World.Spigot spigot() {
         return this.spigot;
     }
     // Spigot end

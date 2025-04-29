@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/FarmBlock.java
 +++ b/net/minecraft/world/level/block/FarmBlock.java
-@@ -95,31 +_,56 @@
+@@ -95,31 +_,59 @@
      @Override
      protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
          int moistureValue = state.getValue(MOISTURE);
@@ -8,22 +8,22 @@
 +        if (moistureValue == 0 && level.paperConfig().tickRates.dryFarmland != 1 && (level.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % level.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
          if (!isNearWater(level, pos) && !level.isRainingAt(pos.above())) {
              if (moistureValue > 0) {
--                level.setBlock(pos, state.setValue(MOISTURE, Integer.valueOf(moistureValue - 1)), 2);
-+                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(FarmBlock.MOISTURE, moistureValue - 1), 2); // CraftBukkit
+-                level.setBlock(pos, state.setValue(MOISTURE, moistureValue - 1), 2);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(MOISTURE, moistureValue - 1), 2); // CraftBukkit
              } else if (!shouldMaintainFarmland(level, pos)) {
                  turnToDirt(null, state, level, pos);
              }
          } else if (moistureValue < 7) {
--            level.setBlock(pos, state.setValue(MOISTURE, Integer.valueOf(7)), 2);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(FarmBlock.MOISTURE, 7), 2); // CraftBukkit
+-            level.setBlock(pos, state.setValue(MOISTURE, 7), 2);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(MOISTURE, 7), 2); // CraftBukkit
          }
      }
  
      @Override
-     public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+     public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
 +        super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
          if (level instanceof ServerLevel serverLevel
-             && level.random.nextFloat() < fallDistance - 0.5F
+             && level.random.nextFloat() < fallDistance - 0.5
              && entity instanceof LivingEntity
              && (entity instanceof Player || serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))
              && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
@@ -32,7 +32,7 @@
 +                if (entity instanceof Player) {
 +                    cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((Player) entity, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
 +                } else {
-+                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
 +                    level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
 +                }
 +
@@ -53,8 +53,11 @@
  
      public static void turnToDirt(@Nullable Entity entity, BlockState state, Level level, BlockPos pos) {
 +        // CraftBukkit start
-+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
-+            return;
++        if (entity == null) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory
++                .callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
++                return;
++            }
 +        }
 +        // CraftBukkit end
          BlockState blockState = pushEntitiesUp(state, Blocks.DIRT.defaultBlockState(), level, pos);

@@ -101,6 +101,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             The world configuration options have been moved inside
             their respective world folder. The files are named %s
 
+            File Reference: https://docs.papermc.io/paper/reference/global-configuration/
             Docs: https://docs.papermc.io/
             Discord: https://discord.gg/papermc
             Website: https://papermc.io/""", WORLD_CONFIG_FILE_NAME);
@@ -116,6 +117,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             Configuration options here apply to all worlds, unless you specify overrides inside
             the world-specific config file inside each world folder.
 
+            File Reference: https://docs.papermc.io/paper/reference/world-configuration/
             Docs: https://docs.papermc.io/
             Discord: https://discord.gg/papermc
             Website: https://papermc.io/""";
@@ -123,6 +125,8 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     private static final Function<ContextMap, String> WORLD_HEADER = map -> String.format("""
         This is a world configuration file for Paper.
         This file may start empty but can be filled with settings to override ones in the %s/%s
+        
+        For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
         
         World: %s (%s)""",
         PaperConfigurations.CONFIG_DIR,

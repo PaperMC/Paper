@@ -4,20 +4,14 @@ import org.bukkit.Location;
 import org.bukkit.block.Biome;
 import org.bukkit.util.BiomeSearchResult;
 
-public class CraftBiomeSearchResult implements BiomeSearchResult {
+public record CraftBiomeSearchResult(Biome biome, Location location) implements BiomeSearchResult {
 
-    private final Biome biome;
-    private final Location location;
-
-    public CraftBiomeSearchResult(Biome biome, Location location) {
-        this.biome = biome;
-        this.location = location;
-    }
-
+    @Override
     public Biome getBiome() {
         return this.biome;
     }
 
+    @Override
     public Location getLocation() {
         return this.location;
     }

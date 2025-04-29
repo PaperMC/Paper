@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -23,9 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.5")
 public final class GameEventKeys {
     /**
      * {@code minecraft:block_activate}
@@ -451,12 +449,11 @@ public final class GameEventKeys {
     }
 
     /**
-     * Creates a key for {@link GameEvent} in the registry {@code minecraft:game_event}.
+     * Creates a typed key for {@link GameEvent} in the registry {@code minecraft:game_event}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
-    @ApiStatus.Experimental
     public static TypedKey<GameEvent> create(final Key key) {
         return TypedKey.create(RegistryKey.GAME_EVENT, key);
     }

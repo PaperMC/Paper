@@ -5,6 +5,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,36 +14,31 @@ import org.jetbrains.annotations.Nullable;
  */
 public class EntityBreedEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    //
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final LivingEntity mother;
     private final LivingEntity father;
     private final LivingEntity breeder;
     private final ItemStack bredWith;
     private int experience;
-    //
-    private boolean cancel;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public EntityBreedEvent(@NotNull LivingEntity child, @NotNull LivingEntity mother, @NotNull LivingEntity father, @Nullable LivingEntity breeder, @Nullable ItemStack bredWith, int experience) {
         super(child);
 
-        Preconditions.checkArgument(child != null, "Cannot have null child");
-        Preconditions.checkArgument(mother != null, "Cannot have null mother");
-        Preconditions.checkArgument(father != null, "Cannot have null father");
-
-        // Breeder can be null in the case of spontaneous conception
         this.mother = mother;
         this.father = father;
-        this.breeder = breeder;
+        this.breeder = breeder; // Breeder can be null in the case of spontaneous conception
         this.bredWith = bredWith;
-
-        setExperience(experience);
+        this.experience = experience;
     }
 
     @NotNull
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) entity;
+        return (LivingEntity) this.entity;
     }
 
     /**
@@ -52,7 +48,7 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public LivingEntity getMother() {
-        return mother;
+        return this.mother;
     }
 
     /**
@@ -62,18 +58,18 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public LivingEntity getFather() {
-        return father;
+        return this.father;
     }
 
     /**
-     * Gets the Entity responsible for breeding. Breeder is null for spontaneous
+     * Gets the Entity responsible for breeding. Breeder is {@code null} for spontaneous
      * conception.
      *
      * @return The Entity who initiated breeding.
      */
     @Nullable
     public LivingEntity getBreeder() {
-        return breeder;
+        return this.breeder;
     }
 
     /**
@@ -83,7 +79,7 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      */
     @Nullable
     public ItemStack getBredWith() {
-        return bredWith;
+        return this.bredWith;
     }
 
     /**
@@ -92,7 +88,7 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      * @return experience amount
      */
     public int getExperience() {
-        return experience;
+        return this.experience;
     }
 
     /**
@@ -107,22 +103,22 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

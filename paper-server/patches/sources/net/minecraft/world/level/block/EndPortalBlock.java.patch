@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/level/block/EndPortalBlock.java
 +++ b/net/minecraft/world/level/block/EndPortalBlock.java
-@@ -56,8 +_,15 @@
+@@ -57,8 +_,15 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (entity.canUsePortal(false)) {
 +            // CraftBukkit start - Entity in portal
-+            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(level.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.ENDER); // Paper - add portal type
++            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level), org.bukkit.PortalType.ENDER); // Paper - add portal type
 +            level.getCraftServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) return; // Paper - make cancellable
 +            // CraftBukkit end
@@ -16,7 +16,7 @@
                  serverPlayer.showEndCredits();
              } else {
                  entity.setAsInsidePortal(this, pos);
-@@ -67,7 +_,7 @@
+@@ -68,7 +_,7 @@
  
      @Override
      public TeleportTransition getPortalDestination(ServerLevel level, Entity entity, BlockPos pos) {
@@ -25,7 +25,7 @@
          ServerLevel level1 = level.getServer().getLevel(resourceKey);
          if (level1 == null) {
              return null;
-@@ -78,7 +_,7 @@
+@@ -79,7 +_,7 @@
              float f;
              Set<Relative> set;
              if (flag) {
@@ -34,7 +34,7 @@
                  f = Direction.WEST.toYRot();
                  set = Relative.union(Relative.DELTA, Set.of(Relative.X_ROT));
                  if (entity instanceof ServerPlayer) {
-@@ -88,15 +_,21 @@
+@@ -89,15 +_,23 @@
                  f = 0.0F;
                  set = Relative.union(Relative.DELTA, Relative.ROTATION);
                  if (entity instanceof ServerPlayer serverPlayer) {
@@ -49,13 +49,15 @@
 -                level1, bottomCenter, Vec3.ZERO, f, 0.0F, set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET)
 -            );
 +            // CraftBukkit start
-+            org.bukkit.craftbukkit.event.CraftPortalEvent event = entity.callPortalEvent(entity, org.bukkit.craftbukkit.util.CraftLocation.toBukkit(bottomCenter, level1.getWorld(), f, entity.getXRot()), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
++            set.removeAll(Relative.ROTATION); // remove relative rotation flags to simplify event mutation
++            float absoluteYaw = flag ? f : entity.getYRot() + f;
++            org.bukkit.craftbukkit.event.CraftPortalEvent event = entity.callPortalEvent(entity, org.bukkit.craftbukkit.util.CraftLocation.toBukkit(bottomCenter, level1.getWorld(), absoluteYaw, entity.getXRot()), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
 +            if (event == null) {
 +                return null;
 +            }
 +            org.bukkit.Location to = event.getTo();
 +
-+            return new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3D(to), entity.getDeltaMovement(), to.getYaw(), to.getPitch(), set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL);
++            return new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch(), set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL);
 +            // CraftBukkit end
          }
      }

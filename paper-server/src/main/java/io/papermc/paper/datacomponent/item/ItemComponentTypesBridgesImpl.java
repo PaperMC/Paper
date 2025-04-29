@@ -36,11 +36,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public Unbreakable.Builder unbreakable() {
-        return new PaperUnbreakable.BuilderImpl();
-    }
-
-    @Override
     public ItemLore.Builder lore() {
         return new PaperItemLore.BuilderImpl();
     }
@@ -235,5 +230,20 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         return new PaperOminousBottleAmplifier(
             new OminousBottleAmplifier(amplifier)
         );
+    }
+
+    @Override
+    public BlocksAttacks.Builder blocksAttacks() {
+        return new PaperBlocksAttacks.BuilderImpl();
+    }
+
+    @Override
+    public TooltipDisplay.Builder tooltipDisplay() {
+        return new PaperTooltipDisplay.BuilderImpl();
+    }
+
+    @Override
+    public Weapon.Builder weapon() {
+        return new PaperWeapon.BuilderImpl();
     }
 }

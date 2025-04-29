@@ -19,7 +19,6 @@ public interface Tadpole extends Fish {
      */
     public void setAge(int age);
 
-    // Paper start - Tadpole age lock api
     /**
      * Lock the age of the animal, setting this will prevent the animal from
      * maturing.
@@ -34,5 +33,4 @@ public interface Tadpole extends Fish {
      * @return the current agelock
      */
     boolean getAgeLock();
-    // Paper end
 }

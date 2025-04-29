@@ -1,17 +1,21 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPos;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockCollisions;
+import net.minecraft.world.phys.AABB;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AbstractArrow;
-import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.projectiles.ProjectileSource;
+import java.util.List;
 
-public class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
+public abstract class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
 
     public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.AbstractArrow entity) {
         super(server, entity);
@@ -28,7 +32,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public double getDamage() {
-        return this.getHandle().getBaseDamage();
+        return this.getHandle().baseDamage;
     }
 
     @Override
@@ -68,12 +72,16 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public Block getAttachedBlock() {
+        return Iterables.getFirst(getAttachedBlocks(), null);
+    }
+
+    @Override
+    public List<Block> getAttachedBlocks() {
         if (!this.isInBlock()) {
-            return null;
+            return ImmutableList.of();
         }
 
-        BlockPos pos = this.getHandle().blockPosition();
-        return this.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+        return ImmutableList.copyOf(new BlockCollisions<>(this.getHandle().level(), (Entity) null, new AABB(this.getHandle().position(), this.getHandle().position()).inflate(0.06), false, (mutableBlockPos, voxelShape) -> CraftBlock.at(this.getHandle().level(), mutableBlockPos)));
     }
 
     @Override
@@ -138,7 +146,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public String toString() {
-        return "CraftArrow";
+        return "CraftAbstractArrow";
     }
 
     // Paper start
@@ -150,7 +158,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     @Override
     public void setItemStack(final ItemStack stack) {
         Preconditions.checkArgument(stack != null, "ItemStack cannot be null");
-        this.getHandle().setPickupItemStackPublic(CraftItemStack.asNMSCopy(stack));
+        this.getHandle().setPickupItemStack(CraftItemStack.asNMSCopy(stack));
     }
 
     @Override
@@ -165,7 +173,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public org.bukkit.Sound getHitSound() {
-        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
+        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().getHitGroundSoundEvent());
     }
 
     @Override

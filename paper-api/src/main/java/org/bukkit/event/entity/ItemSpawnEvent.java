@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,11 +10,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ItemSpawnEvent extends EntitySpawnEvent {
 
-    @Deprecated(since = "1.13.2")
+    @ApiStatus.Internal
+    @Deprecated(since = "1.13.2", forRemoval = true)
     public ItemSpawnEvent(@NotNull final Item spawnee, final Location loc) {
         this(spawnee);
     }
 
+    @ApiStatus.Internal
     public ItemSpawnEvent(@NotNull final Item spawnee) {
         super(spawnee);
     }
@@ -21,6 +24,6 @@ public class ItemSpawnEvent extends EntitySpawnEvent {
     @NotNull
     @Override
     public Item getEntity() {
-        return (Item) entity;
+        return (Item) this.entity;
     }
 }
