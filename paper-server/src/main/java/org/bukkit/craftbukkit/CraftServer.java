@@ -87,6 +87,7 @@ import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -1717,25 +1718,31 @@ public final class CraftServer implements Server {
 
     private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack itemStack, CraftingContainer inventoryCrafting) {
         CraftItemCraftResult craftItemResult = new CraftItemCraftResult(itemStack);
-        recipe.map((holder) -> holder.value().getRemainingItems(inventoryCrafting.asCraftInput())).ifPresent((remainingItems) -> {
+        // tl;dr: this is an API adopted implementation of ResultSlot#onTake
+        final CraftingInput.Positioned positionedCraftInput = inventoryCrafting.asPositionedCraftInput();
+        final CraftingInput craftingInput = positionedCraftInput.input();
+        recipe.map((holder) -> holder.value().getRemainingItems(craftingInput)).ifPresent((remainingItems) -> {
             // Set the resulting matrix items and overflow items
-            for (int i = 0; i < remainingItems.size(); ++i) {
-                net.minecraft.world.item.ItemStack itemstack1 = inventoryCrafting.getItem(i);
-                net.minecraft.world.item.ItemStack itemstack2 = remainingItems.get(i);
+            for (int height = 0; height < craftingInput.height(); height++) {
+                for (int width = 0; width < craftingInput.width(); width++) {
+                    final int inventorySlot = width + positionedCraftInput.left() + (height + positionedCraftInput.top()) * inventoryCrafting.getWidth();
+                    net.minecraft.world.item.ItemStack itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                    net.minecraft.world.item.ItemStack remainingItem = remainingItems.get(width + height * craftingInput.width());
 
-                if (!itemstack1.isEmpty()) {
-                    inventoryCrafting.removeItem(i, 1);
-                    itemstack1 = inventoryCrafting.getItem(i);
-                }
+                    if (!itemInMenu.isEmpty()) {
+                        inventoryCrafting.removeItem(inventorySlot, 1);
+                        itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                    }
 
-                if (!itemstack2.isEmpty()) {
-                    if (itemstack1.isEmpty()) {
-                        inventoryCrafting.setItem(i, itemstack2);
-                    } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemstack1, itemstack2)) {
-                        itemstack2.grow(itemstack1.getCount());
-                        inventoryCrafting.setItem(i, itemstack2);
-                    } else {
-                        craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(itemstack2));
+                    if (!remainingItem.isEmpty()) {
+                        if (itemInMenu.isEmpty()) {
+                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                        } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemInMenu, remainingItem)) {
+                            remainingItem.grow(itemInMenu.getCount());
+                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                        } else {
+                            craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(remainingItem));
+                        }
                     }
                 }
             }
