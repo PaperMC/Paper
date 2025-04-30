@@ -73,7 +73,7 @@ public class VersionCommand {
             .or(() -> Arrays.stream(Bukkit.getPluginManager().getPlugins())
                 .filter(plugin -> plugin.getName().toLowerCase(Locale.ROOT).contains(pluginName))
                 .findAny())
-            .ifPresentOrElse(plugin -> describeToSender(plugin, sender), () -> {
+            .ifPresentOrElse(plugin -> sendPluginInfo(plugin, sender), () -> {
                 sender.sendMessage(Component.text("This server is not running any plugin by that name."));
                 sender.sendMessage(Component.text("Use /plugins to get a list of plugins.")
                     .clickEvent(ClickEvent.suggestCommand("/plugins")));
@@ -81,7 +81,7 @@ public class VersionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static void describeToSender(Plugin plugin, CommandSender sender) {
+    private static void sendPluginInfo(Plugin plugin, CommandSender sender) {
         PluginMeta meta = plugin.getPluginMeta();
 
         sender.sendMessage(Component.text(meta.getName(), NamedTextColor.GREEN)
