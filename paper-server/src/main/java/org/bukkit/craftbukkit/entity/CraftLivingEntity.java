@@ -1174,7 +1174,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
         return this.getHandle().canUseSlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
     }
-    // Paper end - Expose canUseSlot
 
     @Override
     public CombatTracker getCombatTracker() {

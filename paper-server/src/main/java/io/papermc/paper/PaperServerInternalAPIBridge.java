@@ -1,11 +1,9 @@
 package io.papermc.paper;
 
-import org.bukkit.block.Biome;
-import org.bukkit.craftbukkit.block.CraftBiome;
 import io.papermc.paper.world.damagesource.CombatEntry;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
-import io.papermc.paper.world.damagesource.FallLocationType;
 import net.minecraft.Optionull;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.block.Biome;
