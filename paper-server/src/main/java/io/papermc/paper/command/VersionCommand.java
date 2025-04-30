@@ -17,7 +17,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantLock;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -36,6 +35,11 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class VersionCommand {
     private static final VersionFetcher versionFetcher = new PaperVersionFetcher();
+    private static final Set<CommandSender> versionWaiters = new HashSet<>();
+
+    private static @Nullable Component versionMessage = null;
+    private static boolean versionTaskStarted = false;
+    private static long lastCheck = 0;
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         // todo: what about description? how are we doing this?
@@ -122,61 +126,35 @@ public class VersionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static final ReentrantLock versionLock = new ReentrantLock();
-    private static @Nullable Component versionMessage = null;
-    private static final Set<CommandSender> versionWaiters = new HashSet<>();
-    private static boolean versionTaskStarted = false;
-    private static long lastCheck = 0;
-
+    private static void sendVersion(CommandSender sender) {
         if (versionMessage != null) {
             if (System.currentTimeMillis() - lastCheck > versionFetcher.getCacheTime()) {
-                lastCheck = System.currentTimeMillis();
                 versionMessage = null;
             } else {
                 sender.sendMessage(versionMessage);
                 return;
             }
         }
-        versionLock.lock();
-        try {
-            versionWaiters.add(sender);
-            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
-            if (!versionTaskStarted) {
-                versionTaskStarted = true;
-                new Thread(VersionCommand::obtainVersion).start();
-            }
-        } finally {
-            versionLock.unlock();
-        }
+        versionWaiters.add(sender);
+        sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
+        if (versionTaskStarted) return;
+        versionTaskStarted = true;
+        new Thread(VersionCommand::setVersionMessage).start();
     }
 
-
-    private static void obtainVersion() {
-        setVersionMessage(versionFetcher.getVersionMessage(Bukkit.getVersion()));
-    }
-
-    private static void setVersionMessage(final @NotNull Component msg) {
-        lastCheck = System.currentTimeMillis();
-        final Component message = Component.textOfChildren(
+    private static void setVersionMessage() {
+        Component message = Component.textOfChildren(
             Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
             Component.newline(),
-            msg
+            versionFetcher.getVersionMessage()
         );
-        versionMessage = Component.text()
-            .append(message)
-            .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
-            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)))
-            .build();
 
-        versionLock.lock();
-        try {
-            versionTaskStarted = false;
-            for (CommandSender sender : versionWaiters) {
-                sender.sendMessage(versionMessage);
-            }
-            versionWaiters.clear();
-        } finally {
-            versionLock.unlock();
-        }
+        versionMessage = message.hoverEvent(Component.translatable("chat.copy.click", NamedTextColor.WHITE))
+            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)));
+
+        versionTaskStarted = false;
+        lastCheck = System.currentTimeMillis();
+        versionWaiters.forEach(sender -> sender.sendMessage(versionMessage));
+        versionWaiters.clear();
     }
 }
