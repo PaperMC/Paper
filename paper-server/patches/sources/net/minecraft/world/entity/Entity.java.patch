@@ -715,7 +715,7 @@
              }
 +            } // CraftBukkit
  
-+            this.setDeltaMovement(Double.isNaN(this.deltaMovement.x) || Double.isInfinite(this.deltaMovement.x) ? 0 : this.deltaMovement.x, Double.isNaN(this.deltaMovement.y) || Double.isInfinite(this.deltaMovement.y) ? 0 : this.deltaMovement.y, Double.isNaN(this.deltaMovement.z) || Double.isInfinite(this.deltaMovement.z) ? 0 : this.deltaMovement.z); // Paper - remove NaN values before usage in saving
++            this.setDeltaMovement(io.papermc.paper.util.MCUtil.sanitizeNanInf(this.deltaMovement, 0D)); // Paper - remove NaN values before usage in saving
              compound.store("Motion", Vec3.CODEC, this.getDeltaMovement());
 +            // CraftBukkit start - Checking for NaN pitch/yaw and resetting to zero
 +            // TODO: make sure this is the best way to address this.
@@ -811,15 +811,15 @@
              return compound;
          } catch (Throwable var8) {
              CrashReport crashReport = CrashReport.forThrowable(var8, "Saving entity NBT");
-@@ -1890,7 +_,7 @@
+@@ -1888,7 +_,7 @@
+     public void load(CompoundTag compound) {
+         try {
              Vec3 vec3 = compound.read("Pos", Vec3.CODEC).orElse(Vec3.ZERO);
-             Vec3 vec31 = compound.read("Motion", Vec3.CODEC).orElse(Vec3.ZERO);
+-            Vec3 vec31 = compound.read("Motion", Vec3.CODEC).orElse(Vec3.ZERO);
++            Vec3 vec31 = compound.read("Motion", Vec3.CODEC).orElse(Vec3.ZERO); vec31 = io.papermc.paper.util.MCUtil.sanitizeNanInf(vec31, 0D); // Paper - avoid setting NaN values
              Vec2 vec2 = compound.read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
--            this.setDeltaMovement(Math.abs(vec31.x) > 10.0 ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 ? 0.0 : vec31.z);
-+            this.setDeltaMovement(Math.abs(vec31.x) > 10.0 || Double.isNaN(vec31.x) || Double.isInfinite(vec31.x) ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 || Double.isNaN(vec31.y) || Double.isInfinite(vec31.y) ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 || Double.isNaN(vec31.z) || Double.isInfinite(vec31.z) ? 0.0 : vec31.z); // Paper - avoid setting NaN values
+             this.setDeltaMovement(Math.abs(vec31.x) > 10.0 ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 ? 0.0 : vec31.z);
              this.hasImpulse = true;
-             double d = 3.0000512E7;
-             this.setPosRaw(Mth.clamp(vec3.x, -3.0000512E7, 3.0000512E7), Mth.clamp(vec3.y, -2.0E7, 2.0E7), Mth.clamp(vec3.z, -3.0000512E7, 3.0000512E7));
 @@ -1932,6 +_,67 @@
              } else {
                  throw new IllegalStateException("Entity has invalid rotation");
