@@ -67,7 +67,7 @@ public interface CombatEntry {
      * @param fallLocationType fall location type
      * @param fallDistance fall distance
      * @return a new combat entry
-     * @see LivingEntity#calculateFallLocationType()
+     * @see CombatTracker#calculateFallLocationType()
      * @see Entity#getFallDistance()
      */
     static CombatEntry combatEntry(
