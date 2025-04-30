@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.Optionull;
+import io.papermc.paper.world.damagesource.CombatTracker;
+import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -90,10 +93,14 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+
+    private final PaperCombatTrackerWrapper combatTracker;
     private CraftEntityEquipment equipment;
 
     public CraftLivingEntity(final CraftServer server, final net.minecraft.world.entity.LivingEntity entity) {
         super(server, entity);
+
+        this.combatTracker = new PaperCombatTrackerWrapper(entity.getCombatTracker());
 
         if (entity instanceof Mob || entity instanceof ArmorStand) {
             this.equipment = new CraftEntityEquipment(this);
@@ -1166,5 +1173,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
         return this.getHandle().canUseSlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
+    }
+
+    @Override
+    public CombatTracker getCombatTracker() {
+        return this.combatTracker;
     }
 }
