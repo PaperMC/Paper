@@ -71,7 +71,8 @@ public class VersionCommand {
                 .findAny())
             .ifPresentOrElse(plugin -> describeToSender(plugin, sender), () -> {
                 sender.sendMessage(Component.text("This server is not running any plugin by that name."));
-                sender.sendMessage(Component.text("Use /plugins to get a list of plugins."));
+                sender.sendMessage(Component.text("Use /plugins to get a list of plugins.")
+                    .clickEvent(ClickEvent.suggestCommand("/plugins")));
             });
         return Command.SINGLE_SUCCESS;
     }
