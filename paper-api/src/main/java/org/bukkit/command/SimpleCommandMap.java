@@ -20,23 +20,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class SimpleCommandMap implements CommandMap {
-    protected final Map<String, Command> knownCommands; // Paper
+    protected final Map<String, Command> knownCommands;
     private final Server server;
 
-    // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     public SimpleCommandMap(@NotNull final Server server, Map<String, Command> backing) {
         this.knownCommands = backing;
-    // Paper end
         this.server = server;
         setDefaultCommands();
     }
 
     private void setDefaultCommands() {
-        //register("bukkit", new VersionCommand("version")); // Paper
         register("bukkit", new ReloadCommand("reload"));
-        //register("bukkit", new PluginsCommand("plugins")); // Paper
-        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
+        register("bukkit", new co.aikar.timings.TimingsCommand("timings"));
     }
 
     public void setFallbackCommands() {
