@@ -30,7 +30,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.StringUtil;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -77,7 +76,7 @@ public class VersionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+    private static void describeToSender(Plugin plugin, CommandSender sender) {
         PluginMeta meta = plugin.getPluginMeta();
 
         sender.sendMessage(Component.text(meta.getName(), NamedTextColor.GREEN)
@@ -106,7 +105,7 @@ public class VersionCommand {
         }
     }
 
-    private static Component getNameList(@NotNull final List<String> names) {
+    private static Component getNameList(List<String> names) {
         JoinConfiguration configuration = JoinConfiguration.separators(
             Component.text(", ", NamedTextColor.WHITE),
             Component.text(" and ", NamedTextColor.WHITE)
@@ -128,7 +127,6 @@ public class VersionCommand {
     private static boolean versionTaskStarted = false;
     private static long lastCheck = 0;
 
-    private static void sendVersion(@NotNull CommandSender sender) {
         if (versionMessage != null) {
             if (System.currentTimeMillis() - lastCheck > versionFetcher.getCacheTime()) {
                 lastCheck = System.currentTimeMillis();
