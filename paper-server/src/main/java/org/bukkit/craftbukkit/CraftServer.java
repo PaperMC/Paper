@@ -12,6 +12,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.event.server.DefaultGameModeChangeEvent;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -2281,8 +2282,11 @@ public final class CraftServer implements Server {
     public void setDefaultGameMode(GameMode mode) {
         Preconditions.checkArgument(mode != null, "GameMode cannot be null");
 
+        DefaultGameModeChangeEvent event = new DefaultGameModeChangeEvent(null, mode);
+        paperPluginManager.callEvent(event);
+
         for (World world : this.getWorlds()) {
-            ((CraftWorld) world).getHandle().serverLevelData.setGameType(GameType.byId(mode.getValue()));
+            ((CraftWorld) world).getHandle().serverLevelData.setGameType(GameType.byId(event.getNewGameMode().getValue()));
         }
     }
 
