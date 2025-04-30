@@ -1515,6 +1515,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     void setDefaultGameMode(@NotNull GameMode mode);
 
+    /**
+     * Gets whether the default gamemode is being enforced.
+     *
+     * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
+     */
     boolean isForceDefaultGameMode();
 
     /**
