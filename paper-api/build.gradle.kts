@@ -9,11 +9,12 @@ java {
     withJavadocJar()
 }
 
-val annotationsVersion = "26.0.1"
-val bungeeCordChatVersion = "1.20-R0.2"
-val adventureVersion = "4.18.0"
-val slf4jVersion = "2.0.9"
-val log4jVersion = "2.17.1"
+val annotationsVersion = "26.0.2"
+// Keep in sync with paper-server adventure-text-serializer-ansi dep
+val adventureVersion = "4.21.0"
+val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
+val slf4jVersion = "2.0.16"
+val log4jVersion = "2.24.1"
 
 val apiAndDocs: Configuration by configurations.creating {
     attributes {
@@ -39,7 +40,6 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 }
 
 dependencies {
-
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
@@ -47,16 +47,13 @@ dependencies {
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
     }
-    api("com.googlecode.json-simple:json-simple:1.1.1") {
-        isTransitive = false // includes junit
-    }
     api("it.unimi.dsi:fastutil:8.5.15")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("com.mojang:brigadier:1.3.10")
 
     // Deprecate bungeecord-chat in favor of adventure
-    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion-deprecated+build.19") {
+    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {
         exclude("com.google.guava", "guava")
     }
 
@@ -77,32 +74,32 @@ dependencies {
     compileOnly(annotations)
     testCompileOnly(annotations)
 
-    val checkerQual = "org.checkerframework:checker-qual:3.33.0"
+    val checkerQual = "org.checkerframework:checker-qual:3.49.2"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
     api("org.jspecify:jspecify:1.0.0")
 
     // Test dependencies
-    testImplementation("org.apache.commons:commons-lang3:3.12.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.apache.commons:commons-lang3:3.17.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
-    testImplementation("org.ow2.asm:asm-tree:9.7.1")
+    testImplementation("org.ow2.asm:asm-tree:9.8")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // configure mockito agent that is needed in newer java versions
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-val generatedApiPath: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
+val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
 idea {
     module {
-        generatedSourceDirs.add(generatedApiPath.toFile())
+        generatedSourceDirs.add(generatedDir.toFile())
     }
 }
 sourceSets {
     main {
         java {
-            srcDir(generatedApiPath)
+            srcDir(generatedDir)
         }
     }
 }
@@ -187,7 +184,7 @@ tasks.withType<Javadoc> {
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
-        "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
+        "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")
@@ -228,21 +225,23 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
-val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
 }
 tasks.check {
-    dependsOn(scanJar)
+    dependsOn(scanJarForBadCalls)
 }
 
-val scanJarForOldGeneratedCode = tasks.register("scanJarForOldGeneratedCode", io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-    mcVersion.set(providers.gradleProperty("mcVersion"))
-    annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-    classpath.from(configurations.compileClasspath)
-}
-tasks.check {
-    dependsOn(scanJarForOldGeneratedCode)
+if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
+    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
+        mcVersion.set(providers.gradleProperty("mcVersion"))
+        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
+        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+        classpath.from(configurations.compileClasspath)
+    }
+    tasks.check {
+        dependsOn(scanJarForOldGeneratedCode)
+    }
 }

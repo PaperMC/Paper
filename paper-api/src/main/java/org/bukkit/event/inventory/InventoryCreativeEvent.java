@@ -3,6 +3,7 @@ package org.bukkit.event.inventory;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,17 +12,19 @@ import org.jetbrains.annotations.NotNull;
  * Inventory while in creative mode.
  */
 public class InventoryCreativeEvent extends InventoryClickEvent {
+
     private ItemStack item;
 
-    public InventoryCreativeEvent(@NotNull InventoryView what, @NotNull SlotType type, int slot, @NotNull ItemStack newItem) {
-        super(what, type, slot, ClickType.CREATIVE, InventoryAction.PLACE_ALL);
+    @ApiStatus.Internal
+    public InventoryCreativeEvent(@NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ItemStack newItem) {
+        super(view, type, slot, ClickType.CREATIVE, InventoryAction.PLACE_ALL);
         this.item = newItem;
     }
 
     @Override
     @NotNull
     public ItemStack getCursor() {
-        return item;
+        return this.item;
     }
 
     @Override

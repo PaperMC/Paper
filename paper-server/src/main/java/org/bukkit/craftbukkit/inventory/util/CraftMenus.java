@@ -3,14 +3,7 @@ package org.bukkit.craftbukkit.inventory.util;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.inventory.AnvilMenu;
-import net.minecraft.world.inventory.CartographyTableMenu;
-import net.minecraft.world.inventory.CraftingMenu;
-import net.minecraft.world.inventory.EnchantmentMenu;
-import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.inventory.SmithingMenu;
-import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.Blocks;
@@ -61,7 +54,7 @@ public final class CraftMenus {
         final Merchant minecraftMerchant = ((CraftMerchant) merchant.getBukkitView().getMerchant()).getMerchant();
         int level = 1;
         if (minecraftMerchant instanceof final Villager villager) {
-            level = villager.getVillagerData().getLevel();
+            level = villager.getVillagerData().level();
         }
 
         if (minecraftMerchant.getTradingPlayer() != null) { // merchant's can only have one trader
@@ -73,13 +66,13 @@ public final class CraftMenus {
         player.connection.send(new ClientboundOpenScreenPacket(merchant.containerId, net.minecraft.world.inventory.MenuType.MERCHANT, merchant.getTitle()));
         player.containerMenu = merchant;
         player.initMenu(merchant);
-        // Copy IMerchant#openTradingScreen
-        MerchantOffers merchantrecipelist = minecraftMerchant.getOffers();
 
-        if (!merchantrecipelist.isEmpty()) {
-            player.sendMerchantOffers(merchant.containerId, merchantrecipelist, level, minecraftMerchant.getVillagerXp(), minecraftMerchant.showProgressBar(), minecraftMerchant.canRestock());
+        // Copy Merchant#openTradingScreen
+        MerchantOffers offers = minecraftMerchant.getOffers();
+        if (!offers.isEmpty()) {
+            player.sendMerchantOffers(merchant.containerId, offers, level, minecraftMerchant.getVillagerXp(), minecraftMerchant.showProgressBar(), minecraftMerchant.canRestock());
         }
-        // End Copy IMerchant#openTradingScreen
+        // End Copy Merchant#openTradingScreen
     }
 
     public static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> getMenuTypeData(final CraftMenuType<?, ?> menuType) {
@@ -123,12 +116,12 @@ public final class CraftMenus {
         if (menuType == MenuType.GRINDSTONE) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.GRINDSTONE)));
         }
-        // We really don't need to be creating a tile entity for hopper but currently InventoryType doesn't have capacity
+        // We really don't need to be creating a block entity for hopper but currently InventoryType doesn't have capacity
         // to understand otherwise
         if (menuType == MenuType.HOPPER) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.HOPPER, HopperBlockEntity::new)));
         }
-        // We also don't need to create a tile entity for lectern, but again InventoryType isn't smart enough to know any better
+        // We also don't need to create a block entity for lectern, but again InventoryType isn't smart enough to know any better
         if (menuType == MenuType.LECTERN) {
             return asType(new MenuTypeData<>(LecternView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.LECTERN, LecternBlockEntity::new)));
         }

@@ -153,9 +153,9 @@ public final class TimingsManager {
     public static Timing getCommandTiming(@Nullable String pluginName, @NotNull Command command) {
         Plugin plugin = null;
         final Server server = Bukkit.getServer();
-        if (!(  server == null || pluginName == null ||
-                "minecraft".equals(pluginName) || "bukkit".equals(pluginName) ||
-                "spigot".equalsIgnoreCase(pluginName) || "paper".equals(pluginName)
+        if (!(server == null || pluginName == null ||
+            "minecraft".equals(pluginName) || "bukkit".equals(pluginName) ||
+            "spigot".equalsIgnoreCase(pluginName) || "paper".equals(pluginName)
         )) {
             plugin = server.getPluginManager().getPlugin(pluginName);
         }

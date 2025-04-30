@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/BaseSpawner.java
 +++ b/net/minecraft/world/level/BaseSpawner.java
-@@ -44,13 +_,15 @@
+@@ -46,13 +_,15 @@
      public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
@@ -8,7 +8,7 @@
  
      public void setEntityId(EntityType<?> type, @Nullable Level level, RandomSource random, BlockPos pos) {
          this.getOrCreateNextSpawnData(level, random, pos).getEntityToSpawn().putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
-+        this.spawnPotentials = SimpleWeightedRandomList.empty(); // CraftBukkit - SPIGOT-3496, MC-92282
++        this.spawnPotentials = WeightedList.of(); // CraftBukkit - SPIGOT-3496, MC-92282
      }
  
      public boolean isNearPlayer(Level level, BlockPos pos) {
@@ -17,7 +17,7 @@
      }
  
      public void clientTick(Level level, BlockPos pos) {
-@@ -73,13 +_,19 @@
+@@ -75,13 +_,19 @@
      }
  
      public void serverTick(ServerLevel serverLevel, BlockPos pos) {
@@ -39,15 +39,15 @@
              } else {
                  boolean flag = false;
                  RandomSource random = serverLevel.getRandom();
-@@ -113,6 +_,21 @@
+@@ -118,6 +_,21 @@
                              continue;
                          }
  
 +                        // Paper start - PreCreatureSpawnEvent
 +                        com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent event = new com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent(
-+                            io.papermc.paper.util.MCUtil.toLocation(serverLevel, d, d1, d2),
++                            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3, serverLevel.getWorld()),
 +                            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(optional.get()),
-+                            io.papermc.paper.util.MCUtil.toLocation(serverLevel, pos)
++                            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel)
 +                        );
 +                        if (!event.callEvent()) {
 +                            flag = true;
@@ -59,17 +59,17 @@
 +                        // Paper end - PreCreatureSpawnEvent
 +
                          Entity entity = EntityType.loadEntityRecursive(entityToSpawn, serverLevel, EntitySpawnReason.SPAWNER, entity1 -> {
-                             entity1.moveTo(d, d1, d2, entity1.getYRot(), entity1.getXRot());
+                             entity1.snapTo(vec3.x, vec3.y, vec3.z, entity1.getYRot(), entity1.getXRot());
                              return entity1;
-@@ -133,6 +_,7 @@
+@@ -138,6 +_,7 @@
                              return;
                          }
  
 +                        entity.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; preserve entity motion from tag
-                         entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), random.nextFloat() * 360.0F, 0.0F);
+                         entity.snapTo(entity.getX(), entity.getY(), entity.getZ(), random.nextFloat() * 360.0F, 0.0F);
                          if (entity instanceof Mob mob) {
                              if (nextSpawnData.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(serverLevel, EntitySpawnReason.SPAWNER)
-@@ -147,9 +_,22 @@
+@@ -152,9 +_,22 @@
                              }
  
                              nextSpawnData.getEquipment().ifPresent(mob::equip);
@@ -93,7 +93,7 @@
                              this.delay(serverLevel, pos);
                              return;
                          }
-@@ -160,7 +_,7 @@
+@@ -165,7 +_,7 @@
                              ((Mob)entity).spawnAnim();
                          }
  
@@ -102,39 +102,26 @@
                      }
                  }
  
-@@ -184,7 +_,13 @@
+@@ -189,12 +_,14 @@
      }
  
      public void load(@Nullable Level level, BlockPos pos, CompoundTag tag) {
-+        // Paper start - use larger int if set
-+        if (tag.contains("Paper.Delay")) {
-+            this.spawnDelay = tag.getInt("Paper.Delay");
-+        } else {
-         this.spawnDelay = tag.getShort("Delay");
-+        }
-+        // Paper end
-         boolean flag = tag.contains("SpawnData", 10);
-         if (flag) {
-             SpawnData spawnData = SpawnData.CODEC
-@@ -205,9 +_,15 @@
-             this.spawnPotentials = SimpleWeightedRandomList.single(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData());
-         }
- 
-+        // Paper start - use ints if set
-+        if (tag.contains("Paper.MinSpawnDelay", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            this.minSpawnDelay = tag.getInt("Paper.MinSpawnDelay");
-+            this.maxSpawnDelay = tag.getInt("Paper.MaxSpawnDelay");
-+            this.spawnCount = tag.getShort("SpawnCount");
-+        } else // Paper end
-         if (tag.contains("MinSpawnDelay", 99)) {
--            this.minSpawnDelay = tag.getShort("MinSpawnDelay");
--            this.maxSpawnDelay = tag.getShort("MaxSpawnDelay");
-+            this.minSpawnDelay = tag.getInt("MinSpawnDelay"); // Paper - short -> int
-+            this.maxSpawnDelay = tag.getInt("MaxSpawnDelay"); // Paper - short -> int
-             this.spawnCount = tag.getShort("SpawnCount");
-         }
- 
-@@ -224,9 +_,20 @@
+-        this.spawnDelay = tag.getShortOr("Delay", (short)20);
++        this.spawnDelay = tag.getIntOr("Paper.Delay", tag.getShortOr("Delay", (short) 20)); // Paper - use int if set
+         tag.read("SpawnData", SpawnData.CODEC).ifPresent(spawnData -> this.setNextSpawnData(level, pos, spawnData));
+         this.spawnPotentials = tag.read("SpawnPotentials", SpawnData.LIST_CODEC)
+-            .orElseGet(() -> WeightedList.of(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData()));
+-        this.minSpawnDelay = tag.getIntOr("MinSpawnDelay", 200);
+-        this.maxSpawnDelay = tag.getIntOr("MaxSpawnDelay", 800);
++                .orElseGet(() -> WeightedList.of(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData()));
++        // Paper start - use int if set
++        this.minSpawnDelay = tag.getIntOr("Paper.MinSpawnDelay", tag.getIntOr("MinSpawnDelay", 200));
++        this.maxSpawnDelay = tag.getIntOr("Paper.MaxSpawnDelay", tag.getIntOr("MaxSpawnDelay", 800));
++        // Paper end - use int if set
+         this.spawnCount = tag.getIntOr("SpawnCount", 4);
+         this.maxNearbyEntities = tag.getIntOr("MaxNearbyEntities", 6);
+         this.requiredPlayerRange = tag.getIntOr("RequiredPlayerRange", 16);
+@@ -203,9 +_,19 @@
      }
  
      public CompoundTag save(CompoundTag tag) {
@@ -142,16 +129,15 @@
 -        tag.putShort("MinSpawnDelay", (short)this.minSpawnDelay);
 -        tag.putShort("MaxSpawnDelay", (short)this.maxSpawnDelay);
 +        // Paper start
-+        if (spawnDelay > Short.MAX_VALUE) {
++        if (this.spawnDelay > Short.MAX_VALUE) {
 +            tag.putInt("Paper.Delay", this.spawnDelay);
 +        }
 +        tag.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
 +
-+        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++        if (this.minSpawnDelay > Short.MAX_VALUE || this.maxSpawnDelay > Short.MAX_VALUE) {
 +            tag.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
 +            tag.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
 +        }
-+
 +        tag.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
 +        tag.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
 +        // Paper end

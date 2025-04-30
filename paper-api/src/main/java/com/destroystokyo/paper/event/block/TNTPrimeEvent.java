@@ -33,8 +33,8 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public TNTPrimeEvent(@NotNull Block theBlock, @NotNull PrimeReason reason, @Nullable Entity primerEntity) {
-        super(theBlock);
+    public TNTPrimeEvent(@NotNull Block block, @NotNull PrimeReason reason, @Nullable Entity primerEntity) {
+        super(block);
         this.reason = reason;
         this.primerEntity = primerEntity;
     }

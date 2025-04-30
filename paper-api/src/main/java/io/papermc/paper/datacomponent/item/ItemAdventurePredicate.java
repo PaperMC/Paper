@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.block.BlockPredicate;
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemAdventurePredicate extends ShownInTooltip<ItemAdventurePredicate> {
+public interface ItemAdventurePredicate {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemAdventurePredicate itemAdventurePredicate(final List<BlockPredicate> predicates) {
@@ -41,7 +42,7 @@ public interface ItemAdventurePredicate extends ShownInTooltip<ItemAdventurePred
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<ItemAdventurePredicate> {
+    interface Builder extends DataComponentBuilder<ItemAdventurePredicate> {
         /**
          * Adds a block predicate to this builder.
          *

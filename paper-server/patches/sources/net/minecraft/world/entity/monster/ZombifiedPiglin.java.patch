@@ -14,7 +14,7 @@
          this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0, false));
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
 -        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers());
-+        this.targetSelector.addGoal(1, this.pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this)).setAlertOthers()); // Paper - fix PigZombieAngerEvent cancellation
++        this.targetSelector.addGoal(1, this.hurtByTargetGoal = (new HurtByTargetGoal(this)).setAlertOthers()); // Paper - fix PigZombieAngerEvent cancellation
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
 -        this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
 +        this.targetSelector.addGoal(3,this.resetUniversalTarget = (new ResetUniversalAngerTargetGoal<ZombifiedPiglin>(this, true))); // Paper - fix ZombifiedPiglin anger persistence after player death
@@ -26,25 +26,23 @@
              .filter(zombifiedPiglin -> zombifiedPiglin.getTarget() == null)
              .filter(zombifiedPiglin -> !zombifiedPiglin.isAlliedTo(this.getTarget()))
 -            .forEach(zombifiedPiglin -> zombifiedPiglin.setTarget(this.getTarget()));
-+            .forEach(zombifiedPiglin -> zombifiedPiglin.setTarget(this.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true)); // CraftBukkit
++            .forEach(zombifiedPiglin -> zombifiedPiglin.setTarget(this.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY)); // CraftBukkit
      }
  
      private void playAngerSound() {
-@@ -156,7 +_,7 @@
+@@ -152,18 +_,27 @@
      }
  
      @Override
 -    public void setTarget(@Nullable LivingEntity livingEntity) {
-+    public boolean setTarget(@Nullable LivingEntity livingEntity, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) { // CraftBukkit - signature
++    public boolean setTarget(@Nullable LivingEntity livingEntity, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) { // CraftBukkit - signature
          if (this.getTarget() == null && livingEntity != null) {
              this.playFirstAngerSoundIn = FIRST_ANGER_SOUND_DELAY.sample(this.random);
              this.ticksUntilNextAlert = ALERT_INTERVAL.sample(this.random);
-@@ -166,12 +_,22 @@
-             this.setLastHurtByPlayer((Player)livingEntity);
          }
  
 -        super.setTarget(livingEntity);
-+        return super.setTarget(livingEntity, reason, fireEvent); // CraftBukkit
++        return super.setTarget(livingEntity, reason); // CraftBukkit
      }
  
      @Override

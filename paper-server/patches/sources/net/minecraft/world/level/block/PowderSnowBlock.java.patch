@@ -1,25 +1,25 @@
 --- a/net/minecraft/world/level/block/PowderSnowBlock.java
 +++ b/net/minecraft/world/level/block/PowderSnowBlock.java
-@@ -58,6 +_,7 @@
+@@ -60,6 +_,7 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!(entity instanceof LivingEntity) || entity.getInBlockState().is(this)) {
              entity.makeStuckInBlock(state, new Vec3(0.9F, 1.5, 0.9F));
              if (level.isClientSide) {
-@@ -80,8 +_,13 @@
-         entity.setIsInPowderSnow(true);
-         if (level instanceof ServerLevel serverLevel) {
-             if (entity.isOnFire()
--                && (serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity instanceof Player)
-+                // CraftBukkit - move down
-                 && entity.mayInteract(serverLevel, pos)) {
-+                // CraftBukkit start
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !(serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity instanceof Player))) {
-+                    return;
-+                }
-+                // CraftBukkit end
-                 level.destroyBlock(pos, false);
+@@ -85,8 +_,13 @@
+             entity1 -> {
+                 if (level instanceof ServerLevel serverLevel
+                     && entity1.isOnFire()
+-                    && (serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity1 instanceof Player)
++                        // CraftBukkit - move down
+                     && entity1.mayInteract(serverLevel, blockPos)) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity1, pos, Blocks.AIR.defaultBlockState(), !(serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity1 instanceof Player))) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     level.destroyBlock(blockPos, false);
+                 }
              }
- 

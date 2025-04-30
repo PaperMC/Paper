@@ -46,10 +46,8 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
        return SkeletonType.NORMAL;
     }
 
-    // Paper start
     @Override
     public int inPowderedSnowTime() {
-        return getHandle().inPowderSnowTime;
+        return this.getHandle().inPowderSnowTime;
     }
-    // Paper end
 }

@@ -23,6 +23,7 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -141,9 +142,6 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
-
-    @ApiStatus.Internal
-    Biome getCustomBiome();
 
     // Paper start
     @Deprecated(forRemoval = true)
@@ -382,4 +380,8 @@ public interface UnsafeValues {
     @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
 
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
+
+    @NotNull Map<String, Object> serializeStack(ItemStack itemStack);
+
+    @NotNull ItemStack deserializeStack(@NotNull Map<String, Object> args);
 }

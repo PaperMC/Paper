@@ -91,7 +91,6 @@ public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystok
     @NotNull
     public Set<Material> getBarterList();
 
-    // Paper start
     /**
      * Causes the piglin to appear as if they are charging
      * a crossbow.
@@ -131,6 +130,5 @@ public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystok
      * @return is dancing
      */
     boolean isDancing();
-    // Paper end
 
 }

@@ -5,12 +5,13 @@ import io.papermc.paper.configuration.type.DurationOrDisabled;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import org.bukkit.entity.Player;
@@ -164,30 +165,25 @@ public class PaperLootableInventoryData {
     private static final String LOOTED_PLAYERS = "lootedPlayers";
 
     public void loadNbt(final CompoundTag base) {
-        if (!base.contains(ROOT, Tag.TAG_COMPOUND)) {
+        final Optional<CompoundTag> compOpt = base.getCompound(ROOT);
+        if (compOpt.isEmpty()) {
             return;
         }
-        final CompoundTag comp = base.getCompound(ROOT);
-        if (comp.contains(LAST_FILL)) {
-            this.lastFill = comp.getLong(LAST_FILL);
+        CompoundTag comp = compOpt.get();
+        this.lastFill = comp.getLongOr(LAST_FILL, -1);
+        this.nextRefill = comp.getLongOr(NEXT_REFILL, -1);
+        this.numRefills = comp.getIntOr(NUM_REFILLS, 0);
+        final ListTag list = comp.getListOrEmpty(LOOTED_PLAYERS);
+        final int size = list.size();
+        if (size > 0) {
+            this.lootedPlayers = new HashMap<>(list.size());
         }
-        if (comp.contains(NEXT_REFILL)) {
-            this.nextRefill = comp.getLong(NEXT_REFILL);
-        }
-
-        if (comp.contains(NUM_REFILLS)) {
-            this.numRefills = comp.getInt(NUM_REFILLS);
-        }
-        if (comp.contains(LOOTED_PLAYERS, Tag.TAG_LIST)) {
-            final ListTag list = comp.getList(LOOTED_PLAYERS, Tag.TAG_COMPOUND);
-            final int size = list.size();
-            if (size > 0) {
-                this.lootedPlayers = new HashMap<>(list.size());
-            }
-            for (int i = 0; i < size; i++) {
-                final CompoundTag cmp = list.getCompound(i);
-                this.lootedPlayers.put(cmp.getUUID("UUID"), cmp.getLong("Time"));
-            }
+        for (int i = 0; i < size; i++) {
+            list.getCompound(i).ifPresent(tag -> {
+                tag.read("UUID", UUIDUtil.CODEC).ifPresent(uuid -> {
+                    this.lootedPlayers.put(uuid, tag.getLongOr("Time", 0));
+                });
+            });
         }
     }
 
@@ -206,7 +202,7 @@ public class PaperLootableInventoryData {
             final ListTag list = new ListTag();
             for (final Map.Entry<UUID, Long> entry : this.lootedPlayers.entrySet()) {
                 final CompoundTag cmp = new CompoundTag();
-                cmp.putUUID("UUID", entry.getKey());
+                cmp.store("UUID", UUIDUtil.CODEC, entry.getKey());
                 cmp.putLong("Time", entry.getValue());
                 list.add(cmp);
             }

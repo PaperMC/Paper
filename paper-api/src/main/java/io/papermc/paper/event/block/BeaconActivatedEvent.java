@@ -17,8 +17,8 @@ public class BeaconActivatedEvent extends BlockEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     @ApiStatus.Internal
-    public BeaconActivatedEvent(final Block block) {
-        super(block);
+    public BeaconActivatedEvent(final Block beacon) {
+        super(beacon);
     }
 
     /**

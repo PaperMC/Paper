@@ -51,12 +51,10 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
         this.getParent().setHealth(health);
     }
 
-    // Paper start - entity heal API
     @Override
     public void heal(final double amount, final org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason) {
         this.getParent().heal(amount, reason);
     }
-    // Paper end - entity heal API
 
     @Override
     public double getAbsorptionAmount() {

@@ -5,12 +5,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import java.util.Collection;
 
 /**
  * Represents a captured state of a block, which will not change
@@ -226,14 +230,14 @@ public interface BlockState extends Metadatable {
      * @deprecated Magic value
      */
     @Deprecated(since = "1.6.2", forRemoval = true)
-    public byte getRawData();
+    byte getRawData();
 
     /**
      * @param data The new data value for the block.
      * @deprecated Magic value
      */
     @Deprecated(since = "1.6.2", forRemoval = true)
-    public void setRawData(byte data);
+    void setRawData(byte data);
 
     /**
      * Returns whether this state is placed in the world.
@@ -246,7 +250,6 @@ public interface BlockState extends Metadatable {
      */
     boolean isPlaced();
 
-    // Paper start
     /**
      * Checks if this block state is collidable.
      *
@@ -261,7 +264,7 @@ public interface BlockState extends Metadatable {
      * @throws IllegalStateException if this block state is not placed
      */
     @NotNull
-    default java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops() {
+    default @Unmodifiable Collection<ItemStack> getDrops() {
         return this.getDrops(null);
     }
 
@@ -274,7 +277,7 @@ public interface BlockState extends Metadatable {
      * @throws IllegalStateException if this block state is not placed
      */
     @NotNull
-    default java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops(@Nullable org.bukkit.inventory.ItemStack tool) {
+    default @Unmodifiable Collection<ItemStack> getDrops(@Nullable ItemStack tool) {
         return this.getDrops(tool, null);
     }
 
@@ -288,6 +291,14 @@ public interface BlockState extends Metadatable {
      * @throws IllegalStateException if this block state is not placed
      */
     @NotNull
-    java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops(@Nullable org.bukkit.inventory.ItemStack tool, @Nullable org.bukkit.entity.Entity entity);
-    // Paper end
+    @Unmodifiable
+    Collection<ItemStack> getDrops(@Nullable ItemStack tool, @Nullable Entity entity);
+
+    /**
+     * Checks if the block state can suffocate.
+     *
+     * @return {@code true} if the block state can suffocate
+     * @throws IllegalStateException if this block state is not placed
+     */
+    boolean isSuffocating();
 }

@@ -17,6 +17,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
+import org.bukkit.craftbukkit.tag.CraftGameEventTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -76,6 +77,13 @@ public final class DummyServerHelper {
                     TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
                     if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
                         return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                    }
+                }
+                case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
+                    Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class, "Game event namespace must have game event");
+                    TagKey<net.minecraft.world.level.gameevent.GameEvent> gameEventKey = TagKey.create(Registries.GAME_EVENT, key); // Paper - address remapping issues
+                    if (BuiltInRegistries.GAME_EVENT.get(gameEventKey).isPresent()) {
+                        return new CraftGameEventTag(BuiltInRegistries.GAME_EVENT, gameEventKey);
                     }
                 }
                 default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions

@@ -17,8 +17,8 @@ public class BlockFailedDispenseEvent extends BlockEvent {
     private boolean shouldPlayEffect = true;
 
     @ApiStatus.Internal
-    public BlockFailedDispenseEvent(final Block theBlock) {
-        super(theBlock);
+    public BlockFailedDispenseEvent(final Block block) {
+        super(block);
     }
 
     /**
