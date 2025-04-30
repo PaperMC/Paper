@@ -101,4 +101,10 @@ public interface CombatTracker {
      */
     void resetCombatState();
 
+    /**
+     * Calculates the fall location type from the current entity's location.
+     *
+     * @return the fall location type
+     */
+    @Nullable FallLocationType calculateFallLocationType();
 }

@@ -72,6 +72,12 @@ public record PaperCombatTrackerWrapper(
         this.handle.resetCombatState();
     }
 
+    @Override
+    public FallLocationType calculateFallLocationType() {
+        final FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.handle().mob);
+        return fallLocation == null ? FallLocationType.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
+    }
+
     private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {
         final BiMap<FallLocation, FallLocationType> map = HashBiMap.create(8);
         map.put(FallLocation.GENERIC, FallLocationType.GENERIC);
@@ -85,7 +91,7 @@ public record PaperCombatTrackerWrapper(
         return map;
     });
 
-    public static net.minecraft.world.damagesource.FallLocation paperToMinecraft(final FallLocationType fallLocationType) {
+    public static FallLocation paperToMinecraft(final FallLocationType fallLocationType) {
         final FallLocation fallLocation = FALL_LOCATION_MAPPING.inverse().get(fallLocationType);
         if (fallLocation == null) {
             throw new IllegalArgumentException("Unknown fall location type: " + fallLocationType.id());
@@ -93,7 +99,7 @@ public record PaperCombatTrackerWrapper(
         return fallLocation;
     }
 
-    public static FallLocationType minecraftToPaper(final net.minecraft.world.damagesource.FallLocation fallLocation) {
+    public static FallLocationType minecraftToPaper(final FallLocation fallLocation) {
         final FallLocationType fallLocationType = FALL_LOCATION_MAPPING.get(fallLocation);
         if (fallLocationType == null) {
             throw new IllegalArgumentException("Unknown fall location: " + fallLocation.id());

@@ -1180,10 +1180,4 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public CombatTracker getCombatTracker() {
         return this.combatTracker;
     }
-
-    @Override
-    public FallLocationType calculateFallLocationType() {
-        net.minecraft.world.damagesource.FallLocation fallLocation = net.minecraft.world.damagesource.FallLocation.getCurrentFallLocation(this.getHandle());
-        return fallLocation == null ? FallLocationType.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
-    }
 }
