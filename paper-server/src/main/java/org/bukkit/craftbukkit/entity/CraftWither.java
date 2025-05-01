@@ -27,11 +27,6 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
     }
 
     @Override
-    public String toString() {
-        return "CraftWither";
-    }
-
-    @Override
     public BossBar getBossBar() {
         return this.bossBar;
     }

@@ -4,6 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Ocelot;
 
 public class CraftOcelot extends CraftAnimals implements Ocelot {
+
     public CraftOcelot(CraftServer server, net.minecraft.world.entity.animal.Ocelot ocelot) {
         super(server, ocelot);
     }
@@ -31,10 +32,5 @@ public class CraftOcelot extends CraftAnimals implements Ocelot {
     @Override
     public void setCatType(Type type) {
         throw new UnsupportedOperationException("Cats are now a different entity!");
-    }
-
-    @Override
-    public String toString() {
-        return "CraftOcelot";
     }
 }

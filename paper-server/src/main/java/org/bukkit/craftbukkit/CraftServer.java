@@ -40,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import net.minecraft.Optionull;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -86,6 +87,7 @@ import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -432,7 +434,9 @@ public final class CraftServer implements Server {
 
         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
         this.configuration.options().copyDefaults(true);
-        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8)));
+        YamlConfiguration configurationDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8));
+        this.configuration.setDefaults(configurationDefaults);
+        this.configuration.options().setHeader(configurationDefaults.options().getHeader());
         ConfigurationSection legacyAlias = null;
         if (!this.configuration.isString("aliases")) {
             legacyAlias = this.configuration.getConfigurationSection("aliases");
@@ -449,6 +453,7 @@ public final class CraftServer implements Server {
         if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
         this.commandsConfiguration.setDefaults(commandsDefaults);
         // Paper end - don't enforce icanhasbukkit default if alias block exists
+        this.commandsConfiguration.options().setHeader(commandsDefaults.options().getHeader());
         this.saveCommandsConfig();
 
         // Migrate aliases from old file and add previously implicit $1- to pass all arguments
@@ -1345,7 +1350,7 @@ public final class CraftServer implements Server {
             registryAccess = levelDataAndDimensions.dimensions().dimensionsRegistryAccess();
         } else {
             LevelSettings levelSettings;
-            WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
+            WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), creator.bonusChest());
             WorldDimensions worldDimensions;
 
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
@@ -1713,25 +1718,31 @@ public final class CraftServer implements Server {
 
     private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack itemStack, CraftingContainer inventoryCrafting) {
         CraftItemCraftResult craftItemResult = new CraftItemCraftResult(itemStack);
-        recipe.map((holder) -> holder.value().getRemainingItems(inventoryCrafting.asCraftInput())).ifPresent((remainingItems) -> {
+        // tl;dr: this is an API adopted implementation of ResultSlot#onTake
+        final CraftingInput.Positioned positionedCraftInput = inventoryCrafting.asPositionedCraftInput();
+        final CraftingInput craftingInput = positionedCraftInput.input();
+        recipe.map((holder) -> holder.value().getRemainingItems(craftingInput)).ifPresent((remainingItems) -> {
             // Set the resulting matrix items and overflow items
-            for (int i = 0; i < remainingItems.size(); ++i) {
-                net.minecraft.world.item.ItemStack itemstack1 = inventoryCrafting.getItem(i);
-                net.minecraft.world.item.ItemStack itemstack2 = remainingItems.get(i);
+            for (int height = 0; height < craftingInput.height(); height++) {
+                for (int width = 0; width < craftingInput.width(); width++) {
+                    final int inventorySlot = width + positionedCraftInput.left() + (height + positionedCraftInput.top()) * inventoryCrafting.getWidth();
+                    net.minecraft.world.item.ItemStack itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                    net.minecraft.world.item.ItemStack remainingItem = remainingItems.get(width + height * craftingInput.width());
 
-                if (!itemstack1.isEmpty()) {
-                    inventoryCrafting.removeItem(i, 1);
-                    itemstack1 = inventoryCrafting.getItem(i);
-                }
+                    if (!itemInMenu.isEmpty()) {
+                        inventoryCrafting.removeItem(inventorySlot, 1);
+                        itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                    }
 
-                if (!itemstack2.isEmpty()) {
-                    if (itemstack1.isEmpty()) {
-                        inventoryCrafting.setItem(i, itemstack2);
-                    } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemstack1, itemstack2)) {
-                        itemstack2.grow(itemstack1.getCount());
-                        inventoryCrafting.setItem(i, itemstack2);
-                    } else {
-                        craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(itemstack2));
+                    if (!remainingItem.isEmpty()) {
+                        if (itemInMenu.isEmpty()) {
+                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                        } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemInMenu, remainingItem)) {
+                            remainingItem.grow(itemInMenu.getCount());
+                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                        } else {
+                            craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(remainingItem));
+                        }
                     }
                 }
             }
@@ -1940,12 +1951,13 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public CraftMapView getMap(int id) {
-        MapItemSavedData mapData = this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).getMapData(new MapId(id));
-        if (mapData == null) {
-            return null;
-        }
+        final net.minecraft.world.level.Level overworld = this.console.overworld();
+        if (overworld == null) return null;
+
+        final MapItemSavedData mapData = overworld.getMapData(new MapId(id));
+        if (mapData == null) return null;
+
         return mapData.mapView;
     }
 
@@ -2258,7 +2270,11 @@ public final class CraftServer implements Server {
 
     @Override
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).serverLevelData.getGameType().getId());
+        return GameMode.getByValue(Optionull.mapOrDefault(
+            this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD),
+            l -> l.serverLevelData.getGameType(),
+            this.console.getProperties().gamemode
+        ).getId());
     }
 
     @Override

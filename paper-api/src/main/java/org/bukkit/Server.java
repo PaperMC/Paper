@@ -830,9 +830,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
      */
-    // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
-    public MapView getMap(int id);
+    MapView getMap(int id);
 
     /**
      * Create a new map with an automatically assigned ID.

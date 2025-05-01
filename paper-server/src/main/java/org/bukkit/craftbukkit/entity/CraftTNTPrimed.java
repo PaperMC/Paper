@@ -13,6 +13,11 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     }
 
     @Override
+    public PrimedTnt getHandle() {
+        return (PrimedTnt) this.entity;
+    }
+
+    @Override
     public float getYield() {
         return this.getHandle().explosionPower;
     }
@@ -40,16 +45,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     @Override
     public void setFuseTicks(int fuseTicks) {
         this.getHandle().setFuse(fuseTicks);
-    }
-
-    @Override
-    public PrimedTnt getHandle() {
-        return (PrimedTnt) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTNTPrimed";
     }
 
     @Override

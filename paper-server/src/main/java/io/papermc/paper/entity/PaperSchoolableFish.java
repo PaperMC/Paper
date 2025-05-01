@@ -13,7 +13,7 @@ public class PaperSchoolableFish extends CraftFish implements SchoolableFish {
 
     @Override
     public AbstractSchoolingFish getHandle() {
-        return (AbstractSchoolingFish) super.getHandle();
+        return (AbstractSchoolingFish) this.entity;
     }
 
     @Override

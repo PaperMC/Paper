@@ -21,11 +21,6 @@ public class CraftAnimals extends CraftAgeable implements Animals {
     }
 
     @Override
-    public String toString() {
-        return "CraftAnimals";
-    }
-
-    @Override
     public UUID getBreedCause() {
         return this.getHandle().loveCause;
     }

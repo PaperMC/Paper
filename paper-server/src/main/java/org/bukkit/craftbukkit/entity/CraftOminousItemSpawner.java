@@ -17,11 +17,6 @@ public class CraftOminousItemSpawner extends CraftEntity implements OminousItemS
     }
 
     @Override
-    public String toString() {
-        return "CraftOminousItemSpawner";
-    }
-
-    @Override
     public ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
     }

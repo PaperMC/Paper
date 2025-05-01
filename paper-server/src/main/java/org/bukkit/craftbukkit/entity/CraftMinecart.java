@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
@@ -16,8 +15,14 @@ import org.bukkit.util.Vector;
 import java.util.Optional;
 
 public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+
     public CraftMinecart(CraftServer server, AbstractMinecart entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractMinecart getHandle() {
+        return (AbstractMinecart) this.entity;
     }
 
     @Override
@@ -78,11 +83,6 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         return CraftMagicNumbers.getMaterial(this.getHandle().getDropItem());
     }
     // Paper end
-
-    @Override
-    public AbstractMinecart getHandle() {
-        return (AbstractMinecart) this.entity;
-    }
 
     @Override
     public void setDisplayBlock(MaterialData material) {

@@ -321,7 +321,12 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * custom item model.
      *
      * @return true if this has custom model data
+     * @deprecated more complex custom model data can be specified with
+     * {@link #hasCustomModelDataComponent()}. Integers from the old custom
+     * model data are equivalent to a single float in the
+     * {@link CustomModelDataComponent#getFloats()} list.
      */
+    @Deprecated(since = "1.21.5")
     boolean hasCustomModelData();
 
     /**
@@ -334,7 +339,12 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * before calling this method.
      *
      * @return the custom model data that is set
+     * @deprecated more complex custom model data can be specified with
+     * {@link #getCustomModelDataComponent()}. Integers from the old custom
+     * model data are equivalent to a single float in the
+     * {@link CustomModelDataComponent#getFloats()} list.
      */
+    @Deprecated(since = "1.21.5")
     int getCustomModelData();
 
     /**
@@ -359,8 +369,20 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * custom item model.
      *
      * @param data the data to set, or null to clear
+     * @deprecated more complex custom model data can be specified with
+     * {@link #setCustomModelDataComponent(org.bukkit.inventory.meta.components.CustomModelDataComponent)}.
+     * Integers from the old custom model data are equivalent to a single float
+     * in the {@link CustomModelDataComponent#setFloats(java.util.List)} list.
      */
+    @Deprecated(since = "1.21.5")
     void setCustomModelData(@Nullable Integer data);
+
+    /**
+     * Checks if the custom model data component is set.
+     *
+     * @return if a custom model data component is set
+     */
+    boolean hasCustomModelDataComponent();
 
     /**
      * Sets the custom model data component.

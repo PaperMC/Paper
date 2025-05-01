@@ -13,12 +13,7 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     @Override
     public net.minecraft.world.entity.animal.Dolphin getHandle() {
-        return (net.minecraft.world.entity.animal.Dolphin) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftDolphin";
+        return (net.minecraft.world.entity.animal.Dolphin) this.entity;
     }
 
     @Override

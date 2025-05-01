@@ -16,11 +16,6 @@ public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFi
     }
 
     @Override
-    public String toString() {
-        return "CraftTropicalFish";
-    }
-
-    @Override
     public DyeColor getPatternColor() {
         return CraftTropicalFish.getPatternColor(this.getHandle().getPackedVariant());
     }

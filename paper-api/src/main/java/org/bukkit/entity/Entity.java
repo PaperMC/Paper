@@ -699,6 +699,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     Set<Player> getTrackedBy();
 
     /**
+     * Checks to see if a player is currently tracking this entity.
+     *
+     * @param player the player to check
+     * @return if the player is currently tracking this entity
+     * @see #getTrackedBy()
+     */
+    boolean isTrackedBy(@NotNull Player player);
+
+    /**
      * Sets whether the entity has a team colored (default: white) glow.
      *
      * <b>nb: this refers to the 'Glowing' entity property, not whether a
@@ -1039,7 +1048,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Check if entity is in water or rain
      *
-     * @deprecated use {@link #isInWater()}} and {@link #isInRain()}
+     * @deprecated use {@link #isInWater()} and {@link #isInRain()}
      */
     @Deprecated(since = "1.21.5")
     default boolean isInWaterOrRain() {
@@ -1059,7 +1068,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Check if entity is in water or rain or bubble column
      *
-     * @deprecated use {@link #isInWaterOrRain()}, bubble column is considered as water
+     * @deprecated bubble column is considered as water, use {@link #isInWater()} and {@link #isInRain()}
      */
     @Deprecated(since = "1.21.5")
     default boolean isInWaterOrRainOrBubbleColumn() {

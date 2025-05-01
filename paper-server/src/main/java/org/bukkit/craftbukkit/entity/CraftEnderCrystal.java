@@ -8,8 +8,14 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EnderCrystal;
 
 public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
+
     public CraftEnderCrystal(CraftServer server, EndCrystal entity) {
         super(server, entity);
+    }
+
+    @Override
+    public EndCrystal getHandle() {
+        return (EndCrystal) this.entity;
     }
 
     @Override
@@ -37,15 +43,5 @@ public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
         } else {
             this.getHandle().setBeamTarget(CraftLocation.toBlockPosition(location));
         }
-    }
-
-    @Override
-    public EndCrystal getHandle() {
-        return (EndCrystal) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderCrystal";
     }
 }

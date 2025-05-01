@@ -546,6 +546,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public boolean isSleepingIgnored();
 
     /**
+     * Gets the Location where the player will spawn at, {@code null} if they
+     * don't have a valid respawn point.
+     * <br>
+     * Unlike offline players, the location if found will be loaded to validate by default.
+     *
+     * @return respawn location if exists, otherwise {@code null}.
+     * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
+     */
+    @Override
+    default @Nullable Location getRespawnLocation() {
+        return this.getRespawnLocation(true);
+    }
+
+    /**
      * Sets the Location where the player will spawn at their bed.
      *
      * @param location where to set the respawn location
@@ -2109,6 +2123,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param other The other {@link Player} to list.
      * @return True if the {@code other} player was not listed.
+     * @throws IllegalStateException if this player can't see the other player
+     * @see #canSee(Player)
      */
     boolean listPlayer(Player other);
     // Paper end

@@ -21,11 +21,6 @@ public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warde
     }
 
     @Override
-    public String toString() {
-        return "CraftWarden";
-    }
-
-    @Override
     public int getAnger() {
         return this.getHandle().getAngerManagement().getActiveAnger(this.getHandle().getTarget());
     }

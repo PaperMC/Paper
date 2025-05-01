@@ -24,11 +24,6 @@ public class CraftFirework extends CraftProjectile implements Firework {
     }
 
     @Override
-    public String toString() {
-        return "CraftFirework";
-    }
-
-    @Override
     public FireworkMeta getFireworkMeta() {
         return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET); // Paper - Expose firework item directly
     }

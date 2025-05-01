@@ -2871,6 +2871,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public boolean canGenerateStructures();
 
     /**
+     * Checks if the bonus chest is enabled.
+     *
+     * @return {@code true} if the bonus chest is enabled, {@code false} otherwise
+     */
+    boolean hasBonusChest();
+
+    /**
      * Gets whether the world is hardcore or not.
      *
      * In a hardcore world the difficulty is locked to hard.

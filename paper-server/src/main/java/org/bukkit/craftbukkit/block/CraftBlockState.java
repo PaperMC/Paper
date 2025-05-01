@@ -75,6 +75,7 @@ public class CraftBlockState implements BlockState {
 
     // Returns null if weakWorld is not available and the BlockState is not placed.
     // If this returns a World instead of only a GeneratorAccess, this implies that this BlockState is placed.
+    @Nullable
     public LevelAccessor getWorldHandle() {
         if (this.weakWorld == null) {
             return this.isPlaced() ? this.world.getHandle() : null;
@@ -177,7 +178,7 @@ public class CraftBlockState implements BlockState {
 
     @Override
     public Material getType() {
-        return this.data.getBukkitMaterial(); // Paper - optimise getType calls
+        return this.data.getBukkitMaterial();
     }
 
     public void setFlags(int flags) {
@@ -357,7 +358,6 @@ public class CraftBlockState implements BlockState {
         return new CraftBlockState(this, location);
     }
 
-    // Paper start
     @Override
     public boolean isCollidable() {
         return this.data.getBlock().hasCollision;
@@ -381,5 +381,10 @@ public class CraftBlockState implements BlockState {
             return java.util.Collections.emptyList();
         }
     }
-    // Paper end
+
+    @Override
+    public boolean isSuffocating() {
+        this.requirePlaced();
+        return this.data.isSuffocating(this.getWorldHandle(), this.position);
+    }
 }

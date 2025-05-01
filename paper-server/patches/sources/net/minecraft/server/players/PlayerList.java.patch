@@ -524,7 +524,7 @@
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReason());
              if (ipBanListEntry.getExpires() != null) {
-@@ -381,69 +_,130 @@
+@@ -381,69 +_,131 @@
                  );
              }
  
@@ -649,6 +649,7 @@
 +        // Paper start - Add PlayerPostRespawnEvent
 +        boolean isBedSpawn = false;
 +        boolean isRespawn = false;
++        boolean isAnchorSpawn = false;
 +        // Paper end - Add PlayerPostRespawnEvent
 +
 +        // CraftBukkit start - fire PlayerRespawnEvent
@@ -714,13 +715,17 @@
          serverPlayer.setHealth(serverPlayer.getHealth());
          ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
          if (!keepInventory && respawnConfig != null) {
-@@ -477,8 +_,41 @@
+@@ -477,8 +_,52 @@
                              )
                          );
                  }
 +                // Paper start - Add PlayerPostRespawnEvent
-+                if (blockState.is(net.minecraft.tags.BlockTags.BEDS) && !teleportTransition.missingRespawnBlock()) {
-+                    isBedSpawn = true;
++                if (!teleportTransition.missingRespawnBlock()) {
++                    if (blockState.is(net.minecraft.tags.BlockTags.BEDS)) {
++                        isBedSpawn = true;
++                    } else if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
++                        isAnchorSpawn = true;
++                    }
 +                }
 +                // Paper end - Add PlayerPostRespawnEvent
              }
@@ -748,7 +753,14 @@
 +
 +        // Paper start - Add PlayerPostRespawnEvent
 +        if (isRespawn) {
-+            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(player.getBukkitEntity(), location, isBedSpawn));
++            new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(
++                player.getBukkitEntity(),
++                location,
++                isBedSpawn,
++                isAnchorSpawn,
++                teleportTransition.missingRespawnBlock(),
++                eventReason
++            ).callEvent();
 +        }
 +        // Paper end - Add PlayerPostRespawnEvent
 +
@@ -756,7 +768,7 @@
  
          return serverPlayer;
      }
-@@ -488,24 +_,60 @@
+@@ -488,24 +_,59 @@
      }
  
      public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl connection) {
@@ -800,12 +812,11 @@
  
 +    // CraftBukkit start - add a world/entity limited version
 +    public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
-+        for (int i = 0; i < this.players.size(); ++i) {
-+            ServerPlayer entityplayer =  this.players.get(i);
++        for (ServerPlayer entityplayer : this.players) { // Paper - replace for i with for each for thread safety
 +            if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
 +                continue;
 +            }
-+            ((ServerPlayer) this.players.get(i)).connection.send(packet);
++            ((ServerPlayer) entityplayer).connection.send(packet); // Paper - replace for i with for each for thread safety
 +        }
 +    }
 +

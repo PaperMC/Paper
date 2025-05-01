@@ -14,7 +14,7 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
 
     @Override
     public ThrownTrident getHandle() {
-        return (ThrownTrident) super.getHandle();
+        return (ThrownTrident) this.entity;
     }
 
     @Override
@@ -25,11 +25,6 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
     @Override
     public void setItem(ItemStack itemStack) {
         this.getHandle().pickupItemStack = CraftItemStack.asNMSCopy(itemStack);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTrident";
     }
 
     @Override

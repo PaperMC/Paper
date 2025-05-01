@@ -15,5 +15,4 @@ public abstract class CraftAbstractCow extends CraftAnimals implements AbstractC
     public net.minecraft.world.entity.animal.AbstractCow getHandle() {
         return (net.minecraft.world.entity.animal.AbstractCow) this.entity;
     }
-
 }

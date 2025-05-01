@@ -18,21 +18,21 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final AreaEffectCloud entity;
+    private final AreaEffectCloud effectCloud;
     private boolean allowEmptyAreaEffectCreation;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
     @Deprecated(since = "1.20.2", forRemoval = true)
-    public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud entity) {
-       this(potion, null, null, null, entity);
+    public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud effectCloud) {
+       this(potion, null, null, null, effectCloud);
     }
 
     @ApiStatus.Internal
-    public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, @NotNull final AreaEffectCloud entity) {
+    public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, @NotNull final AreaEffectCloud effectCloud) {
         super(potion, hitEntity, hitBlock, hitFace);
-        this.entity = entity;
+        this.effectCloud = effectCloud;
     }
 
     @NotNull
@@ -48,10 +48,9 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
      */
     @NotNull
     public AreaEffectCloud getAreaEffectCloud() {
-        return entity;
+        return effectCloud;
     }
 
-    // Paper start
     /**
      * Sets if an Empty AreaEffectCloud may be created
      *
@@ -69,7 +68,6 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     public boolean allowsEmptyCreation() {
         return allowEmptyAreaEffectCreation;
     }
-    // Paper end
 
     @Override
     public boolean isCancelled() {

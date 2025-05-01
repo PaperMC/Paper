@@ -32,11 +32,10 @@ public class HelpYamlReader {
             this.helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
             this.helpYaml.options().copyDefaults(true);
             this.helpYaml.setDefaults(defaultConfig);
+            this.helpYaml.options().setHeader(defaultConfig.options().getHeader());
 
             try {
-                if (!helpYamlFile.exists()) {
-                    this.helpYaml.save(helpYamlFile);
-                }
+                this.helpYaml.save(helpYamlFile);
             } catch (IOException ex) {
                 server.getLogger().log(Level.SEVERE, "Could not save " + helpYamlFile, ex);
             }

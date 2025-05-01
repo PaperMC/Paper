@@ -12,12 +12,7 @@ public class CraftAxolotl extends CraftAnimals implements Axolotl, io.papermc.pa
 
     @Override
     public net.minecraft.world.entity.animal.axolotl.Axolotl getHandle() {
-        return (net.minecraft.world.entity.animal.axolotl.Axolotl) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftAxolotl";
+        return (net.minecraft.world.entity.animal.axolotl.Axolotl) this.entity;
     }
 
     @Override

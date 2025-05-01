@@ -5,8 +5,14 @@ import org.bukkit.entity.ExperienceOrb;
 import java.util.UUID;
 
 public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
+
     public CraftExperienceOrb(CraftServer server, net.minecraft.world.entity.ExperienceOrb entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.ExperienceOrb getHandle() {
+        return (net.minecraft.world.entity.ExperienceOrb) this.entity;
     }
 
     @Override
@@ -42,15 +48,5 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
     @Override
     public SpawnReason getSpawnReason() {
         return this.getHandle().spawnReason;
-    }
-
-    @Override
-    public net.minecraft.world.entity.ExperienceOrb getHandle() {
-        return (net.minecraft.world.entity.ExperienceOrb) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftExperienceOrb";
     }
 }
