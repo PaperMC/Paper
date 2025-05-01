@@ -379,6 +379,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             public class Items extends ConfigurationPart {
 
                 public boolean enableItemObfuscation = false;
+                public boolean obfuscateInEntityData = false;
                 public ItemObfuscationBinding.AssetObfuscationConfiguration allModels = new ItemObfuscationBinding.AssetObfuscationConfiguration(
                     true,
                     Set.of(DataComponents.LODESTONE_TRACKER),
