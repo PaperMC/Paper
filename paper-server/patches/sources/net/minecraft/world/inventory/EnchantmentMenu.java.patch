@@ -64,7 +64,7 @@
                  this.access.execute((level, blockPos) -> {
                      IdMap<Holder<Enchantment>> holderIdMap = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
                      int i1 = 0;
-@@ -119,6 +_,42 @@
+@@ -119,6 +_,64 @@
                          }
                      }
  
@@ -88,6 +88,28 @@
 +                        }
 +                        return;
 +                    }
++
++                    // Paper Start - refreshing enchantment hint with configuring bookshelf power
++                    // refreshing offers with event's bookshelf power if event's bookshelf power value is not equal to previous natural bookshelf power value.
++                    if (event.getEnchantmentBonus() != i1) {
++                        for (int i = 0; i < 3; i++) {
++                            org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[i] >= 0) ? org.bukkit.craftbukkit.enchantments.CraftEnchantment.minecraftHolderToBukkit(holderIdMap.byId(this.enchantClue[i])) : null;
++                            event.getOffers()[i] = (enchantment != null) ? new org.bukkit.enchantments.EnchantmentOffer(enchantment, this.levelClue[i], this.costs[i]) : null;
++
++                            this.costs[i] = EnchantmentHelper.getEnchantmentCost(this.random, i, event.getEnchantmentBonus(), item);
++                            this.enchantClue[i] = -1;
++                            this.levelClue[i] = -1;
++                            if (this.costs[i] < i + 1) continue;
++
++                            List<EnchantmentInstance> enchantmentList = this.getEnchantmentList(level.registryAccess(), item, i, this.costs[i]);
++                            if (!enchantmentList.isEmpty()) {
++                                EnchantmentInstance enchantmentInstance = enchantmentList.get(this.random.nextInt(enchantmentList.size()));
++                                this.enchantClue[i] = holderIdMap.getId(enchantmentInstance.enchantment());
++                                this.levelClue[i] = enchantmentInstance.level();
++                            }
++                        }
++                    }
++                    // Paper end
 +
 +                    for (int j = 0; j < 3; j++) {
 +                        org.bukkit.enchantments.EnchantmentOffer offer = event.getOffers()[j];
