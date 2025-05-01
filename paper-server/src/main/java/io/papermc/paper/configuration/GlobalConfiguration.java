@@ -360,6 +360,22 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Constraints.Min(1)
         @Constraints.Max(100)
         public double xpMergePercentage = 2.5;
+        @PostProcess
+        private void postProcess() {
+            if (this.xpMergePercentage >= 100.0) {
+                this.xpMergeModulo = 1;
+            } else if (xpMergePercentage <= 2.5) {
+                this.xpMergeModulo = 40;
+            } else {
+                // Linear interpolation: y = mx + b
+                // Where x is orbPercentage, y is the result
+                // For (2.5, 40) and (100, 1): m = (1-40)/(100-2.5) = -39/97.5 = -0.4
+                double interpolated = 40 - 0.4 * (xpMergePercentage - 2.5);
+                this.xpMergeModulo = (int) Math.ceil(interpolated);
+            }
+
+        }
+        public transient int xpMergeModulo = 40;
     }
 
     public BlockUpdates blockUpdates;
