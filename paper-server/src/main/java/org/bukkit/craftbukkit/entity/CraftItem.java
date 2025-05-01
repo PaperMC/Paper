@@ -143,9 +143,4 @@ public class CraftItem extends CraftEntity implements Item {
     public UUID getThrower() {
         return this.getHandle().thrower;
     }
-
-    @Override
-    public String toString() {
-        return "CraftItem";
-    }
 }

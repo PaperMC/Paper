@@ -18,12 +18,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
 
     @Override
     public net.minecraft.world.entity.animal.sniffer.Sniffer getHandle() {
-        return (net.minecraft.world.entity.animal.sniffer.Sniffer) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftSniffer";
+        return (net.minecraft.world.entity.animal.sniffer.Sniffer) this.entity;
     }
 
     @Override

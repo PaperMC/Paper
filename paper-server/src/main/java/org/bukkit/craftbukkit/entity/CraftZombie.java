@@ -18,11 +18,6 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     @Override
-    public String toString() {
-        return "CraftZombie";
-    }
-
-    @Override
     public boolean isBaby() {
         return this.getHandle().isBaby();
     }

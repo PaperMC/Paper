@@ -108,6 +108,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public net.minecraft.world.entity.LivingEntity getHandle() {
+        return (net.minecraft.world.entity.LivingEntity) this.entity;
+    }
+
+    @Override
     public double getHealth() {
         return Math.min(Math.max(0, this.getHandle().getHealth()), this.getMaxHealth());
     }
@@ -501,20 +506,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setNoActionTicks(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
         this.getHandle().setNoActionTime(ticks);
-    }
-
-    @Override
-    public net.minecraft.world.entity.LivingEntity getHandle() {
-        return (net.minecraft.world.entity.LivingEntity) this.entity;
-    }
-
-    public void setHandle(final net.minecraft.world.entity.LivingEntity entity) {
-        super.setHandle(entity);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftLivingEntity{" + "id=" + this.getEntityId() + '}';
     }
 
     @Override
