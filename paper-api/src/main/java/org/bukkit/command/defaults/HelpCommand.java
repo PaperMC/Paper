@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -85,19 +86,19 @@ public class HelpCommand extends BukkitCommand {
 
         ChatPaginator.ChatPage page = ChatPaginator.paginate(topic.getFullText(sender), pageNumber, pageWidth, pageHeight);
 
-        Component header = Component.empty()
+        TextComponent.Builder header = Component.text()
             .append(Component.text("--------- ", NamedTextColor.YELLOW))
             .append(Component.text("Help: ", NamedTextColor.WHITE))
             .append(Component.text(topic.getName()))
             .append(Component.empty());
         if (page.getTotalPages() > 1) {
-            header = header.append(Component.text(" ("))
+            header.append(Component.text(" ("))
                 .append(Component.text(page.getPageNumber()))
                 .append(Component.text("/"))
                 .append(Component.text(page.getTotalPages()))
                 .append(Component.text(") "));
         }
-        header = header.append(Component.text("---------", NamedTextColor.YELLOW));
+        header.append(Component.text("---------", NamedTextColor.YELLOW));
 
         sender.sendMessage(header);
 
