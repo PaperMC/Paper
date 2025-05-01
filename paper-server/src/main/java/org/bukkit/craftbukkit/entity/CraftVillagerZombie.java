@@ -16,12 +16,7 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
 
     @Override
     public net.minecraft.world.entity.monster.ZombieVillager getHandle() {
-        return (net.minecraft.world.entity.monster.ZombieVillager) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftVillagerZombie";
+        return (net.minecraft.world.entity.monster.ZombieVillager) this.entity;
     }
 
     @Override

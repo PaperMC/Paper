@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.world.damagesource.CombatTracker;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -21,6 +23,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1452,4 +1455,12 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
     // Paper end - Expose canUseSlot
+
+    /**
+     * Gets the entity's combat tracker
+     *
+     * @return the entity's combat tracker
+     */
+    @ApiStatus.Experimental
+    @NotNull CombatTracker getCombatTracker();
 }

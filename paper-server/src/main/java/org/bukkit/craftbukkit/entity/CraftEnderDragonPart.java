@@ -17,16 +17,6 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
     }
 
     @Override
-    public net.minecraft.world.entity.boss.EnderDragonPart getHandle() {
-        return (net.minecraft.world.entity.boss.EnderDragonPart) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderDragonPart";
-    }
-
-    @Override
     public void damage(double amount, DamageSource damageSource) {
         this.getParent().damage(amount, damageSource);
     }

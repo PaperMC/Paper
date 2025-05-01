@@ -16,11 +16,6 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
     }
 
     @Override
-    public String toString() {
-        return "CraftWanderingTrader";
-    }
-
-    @Override
     public int getDespawnDelay() {
         return this.getHandle().getDespawnDelay();
     }

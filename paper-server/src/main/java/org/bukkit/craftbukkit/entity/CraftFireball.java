@@ -9,8 +9,14 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftFireball extends AbstractProjectile implements Fireball {
+
     public CraftFireball(CraftServer server, AbstractHurtingProjectile entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractHurtingProjectile getHandle() {
+        return (AbstractHurtingProjectile) this.entity;
     }
 
     @Override
@@ -78,14 +84,4 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         return this.getAcceleration();
     }
     // Paper end - Expose power on fireball projectiles
-
-    @Override
-    public AbstractHurtingProjectile getHandle() {
-        return (AbstractHurtingProjectile) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFireball";
-    }
 }

@@ -34,11 +34,6 @@ public class CraftMerchantCustom implements CraftMerchant {
     // Paper end
 
     @Override
-    public String toString() {
-        return "CraftMerchantCustom";
-    }
-
-    @Override
     public MinecraftMerchant getMerchant() {
         return this.merchant;
     }

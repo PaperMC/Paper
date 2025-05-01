@@ -11,12 +11,7 @@ public class CraftEndermite extends CraftMonster implements Endermite {
 
     @Override
     public net.minecraft.world.entity.monster.Endermite getHandle() {
-        return (net.minecraft.world.entity.monster.Endermite) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEndermite";
+        return (net.minecraft.world.entity.monster.Endermite) this.entity;
     }
 
     @Override

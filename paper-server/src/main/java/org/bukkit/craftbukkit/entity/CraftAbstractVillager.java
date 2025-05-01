@@ -26,11 +26,6 @@ public abstract class CraftAbstractVillager extends CraftAgeable implements Craf
     }
 
     @Override
-    public String toString() {
-        return "CraftAbstractVillager";
-    }
-
-    @Override
     public Inventory getInventory() {
         return new CraftInventory(this.getHandle().getInventory());
     }

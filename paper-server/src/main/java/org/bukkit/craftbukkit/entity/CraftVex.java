@@ -15,7 +15,7 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public net.minecraft.world.entity.monster.Vex getHandle() {
-        return (net.minecraft.world.entity.monster.Vex) super.getHandle();
+        return (net.minecraft.world.entity.monster.Vex) this.entity;
     }
 
     @Override
@@ -47,11 +47,6 @@ public class CraftVex extends CraftMonster implements Vex {
     @Override
     public void setLimitedLifetimeTicks(int ticks) {
         this.getHandle().limitedLifeTicks = ticks;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftVex";
     }
 
     @Override

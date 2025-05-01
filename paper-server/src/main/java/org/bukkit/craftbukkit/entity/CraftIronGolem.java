@@ -14,11 +14,6 @@ public class CraftIronGolem extends CraftGolem implements IronGolem {
     }
 
     @Override
-    public String toString() {
-        return "CraftIronGolem";
-    }
-
-    @Override
     public boolean isPlayerCreated() {
         return this.getHandle().isPlayerCreated();
     }

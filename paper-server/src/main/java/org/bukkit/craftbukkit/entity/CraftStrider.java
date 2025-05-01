@@ -15,6 +15,11 @@ public class CraftStrider extends CraftAnimals implements Strider {
     }
 
     @Override
+    public net.minecraft.world.entity.monster.Strider getHandle() {
+        return (net.minecraft.world.entity.monster.Strider) this.entity;
+    }
+
+    @Override
     public boolean isShivering() {
         return this.getHandle().isSuffocating();
     }
@@ -66,15 +71,5 @@ public class CraftStrider extends CraftAnimals implements Strider {
     @Override
     public Material getSteerMaterial() {
         return Material.WARPED_FUNGUS_ON_A_STICK;
-    }
-
-    @Override
-    public net.minecraft.world.entity.monster.Strider getHandle() {
-        return (net.minecraft.world.entity.monster.Strider) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftStrider";
     }
 }

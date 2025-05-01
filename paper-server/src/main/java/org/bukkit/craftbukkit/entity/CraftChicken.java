@@ -23,11 +23,6 @@ public class CraftChicken extends CraftAnimals implements Chicken {
     }
 
     @Override
-    public String toString() {
-        return "CraftChicken";
-    }
-
-    @Override
     public Variant getVariant() {
         return CraftVariant.minecraftHolderToBukkit(this.getHandle().getVariant());
     }

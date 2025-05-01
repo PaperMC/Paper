@@ -11,13 +11,13 @@ public abstract class CraftAbstractSkeleton extends CraftMonster implements Abst
     }
 
     @Override
-    public void setSkeletonType(Skeleton.SkeletonType type) {
-        throw new UnsupportedOperationException("Not supported.");
+    public net.minecraft.world.entity.monster.AbstractSkeleton getHandle() {
+        return (net.minecraft.world.entity.monster.AbstractSkeleton) this.entity;
     }
 
     @Override
-    public net.minecraft.world.entity.monster.AbstractSkeleton getHandle() {
-        return (net.minecraft.world.entity.monster.AbstractSkeleton) super.getHandle();
+    public void setSkeletonType(Skeleton.SkeletonType type) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

@@ -11,6 +11,11 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
     }
 
     @Override
+    public net.minecraft.world.entity.projectile.ShulkerBullet getHandle() {
+        return (net.minecraft.world.entity.projectile.ShulkerBullet) this.entity;
+    }
+
+    @Override
     public org.bukkit.entity.Entity getTarget() {
         return this.getHandle().getTarget() != null ? this.getHandle().getTarget().getBukkitEntity() : null;
     }
@@ -58,15 +63,5 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
     @Override
     public void setFlightSteps(int steps) {
         this.getHandle().flightSteps = steps;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftShulkerBullet";
-    }
-
-    @Override
-    public net.minecraft.world.entity.projectile.ShulkerBullet getHandle() {
-        return (net.minecraft.world.entity.projectile.ShulkerBullet) this.entity;
     }
 }

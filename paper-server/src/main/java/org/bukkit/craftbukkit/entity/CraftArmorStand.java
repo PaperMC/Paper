@@ -16,13 +16,8 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     }
 
     @Override
-    public String toString() {
-        return "CraftArmorStand";
-    }
-
-    @Override
     public net.minecraft.world.entity.decoration.ArmorStand getHandle() {
-        return (net.minecraft.world.entity.decoration.ArmorStand) super.getHandle();
+        return (net.minecraft.world.entity.decoration.ArmorStand) this.entity;
     }
 
     @Override

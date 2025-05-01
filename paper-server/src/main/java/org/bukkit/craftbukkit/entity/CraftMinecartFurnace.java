@@ -6,6 +6,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.minecart.PoweredMinecart;
 
 public class CraftMinecartFurnace extends CraftMinecart implements PoweredMinecart {
+
     public CraftMinecartFurnace(CraftServer server, MinecartFurnace entity) {
         super(server, entity);
     }
@@ -46,10 +47,5 @@ public class CraftMinecartFurnace extends CraftMinecart implements PoweredMineca
     public void setPushZ(double zPush) {
         final net.minecraft.world.phys.Vec3 push = this.getHandle().push;
         this.getHandle().push = new net.minecraft.world.phys.Vec3(push.x, push.y, zPush);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecartFurnace";
     }
 }

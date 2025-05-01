@@ -12,12 +12,7 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
 
     @Override
     public net.minecraft.world.entity.animal.Turtle getHandle() {
-        return (net.minecraft.world.entity.animal.Turtle) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTurtle";
+        return (net.minecraft.world.entity.animal.Turtle) this.entity;
     }
 
     @Override

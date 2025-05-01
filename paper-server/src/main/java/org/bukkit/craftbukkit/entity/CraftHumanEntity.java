@@ -80,6 +80,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+
     private CraftInventoryPlayer inventory;
     private final CraftInventory enderChest;
     protected final PermissibleBase perm = new PermissibleBase(this);
@@ -91,6 +92,21 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         this.mode = server.getDefaultGameMode();
         this.inventory = new CraftInventoryPlayer(entity.getInventory());
         this.enderChest = new CraftInventory(entity.getEnderChestInventory());
+    }
+
+    @Override
+    public Player getHandle() {
+        return (Player) this.entity;
+    }
+
+    public void setHandle(final Player entity) {
+        super.setHandle(entity);
+        this.inventory = new CraftInventoryPlayer(entity.getInventory());
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{name=" + this.getName() + ", uuid=" + this.getUniqueId() + '}';
     }
 
     @Override
@@ -302,21 +318,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(mode != null, "GameMode cannot be null");
 
         this.mode = mode;
-    }
-
-    @Override
-    public Player getHandle() {
-        return (Player) this.entity;
-    }
-
-    public void setHandle(final Player entity) {
-        super.setHandle(entity);
-        this.inventory = new CraftInventoryPlayer(entity.getInventory());
-    }
-
-    @Override
-    public String toString() {
-        return "CraftHumanEntity{" + "id=" + this.getEntityId() + "name=" + this.getName() + '}';
     }
 
     @Override
