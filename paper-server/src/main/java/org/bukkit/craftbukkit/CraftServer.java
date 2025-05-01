@@ -40,6 +40,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.Optionull;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
@@ -114,7 +116,6 @@ import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
@@ -2544,7 +2545,7 @@ public final class CraftServer implements Server {
                 completions = this.getCommandMap().tabComplete(player, message, CraftLocation.toBukkit(pos, world.getWorld()));
             }
         } catch (CommandException ex) {
-            player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
+            player.sendMessage(Component.text("An internal error occurred while attempting to tab-complete this command", NamedTextColor.RED));
             this.getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
         }
 
