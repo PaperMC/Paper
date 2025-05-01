@@ -14,6 +14,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockRotProcessor;
@@ -114,7 +115,8 @@ public class CraftStructure implements Structure {
         access.setDelegate(handle);
         access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2 | (placementOptions.isStrict() ? 816 : 0));
+        // Strict placement option copied from net.minecraft.server.commands.PlaceCommand#placeTemplate
+        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS | (placementOptions.isStrict() ? Block.UPDATE_SKIP_ALL_SIDEEFFECTS : 0));
         access.getStructureTransformer().discard();
     }
 
