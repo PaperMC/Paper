@@ -60,8 +60,9 @@ public class CraftStructure implements Structure {
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity);
-        this.place(location, placementOptions, blockTransformers, entityTransformers);
+        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+            .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
+        this.place(location, placementOptions);
     }
 
     @Override
@@ -70,7 +71,14 @@ public class CraftStructure implements Structure {
     }
 
     @Override
-    public void place(Location location, PlacementOptions placementOptions, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+    public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+            .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
+        this.place(regionAccessor, location, placementOptions);
+    }
+
+    @Override
+    public void place(Location location, PlacementOptions placementOptions) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         location.checkFinite();
         World world = location.getWorld();
@@ -78,13 +86,6 @@ public class CraftStructure implements Structure {
 
         BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         this.place(world, blockVector, placementOptions);
-    }
-
-    @Override
-    public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
-            .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
-        this.place(regionAccessor, location, placementOptions);
     }
 
     @Override

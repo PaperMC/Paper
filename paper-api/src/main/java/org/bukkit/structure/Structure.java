@@ -160,11 +160,9 @@ public interface Structure extends PersistentDataHolder {
      *
      * @param location The location to place the structure at.
      * @param placementOptions Options used to determine different settings applied to the structure.
-     * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
-     * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
      */
     @ApiStatus.Experimental
-    void place(@NotNull Location location, @NotNull PlacementOptions placementOptions, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
+    void place(@NotNull Location location, @NotNull PlacementOptions placementOptions);
 
     /**
      * Place a structure in the world.
