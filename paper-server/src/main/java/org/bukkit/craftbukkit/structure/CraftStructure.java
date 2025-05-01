@@ -101,7 +101,7 @@ public class CraftStructure implements Structure {
         StructurePlaceSettings definedstructureinfo = new StructurePlaceSettings()
                 .setMirror(net.minecraft.world.level.block.Mirror.valueOf(placementOptions.getMirror().name()))
                 .setRotation(Rotation.valueOf(placementOptions.getStructureRotation().name()))
-                .setIgnoreEntities(!placementOptions.isIncludeEntities())
+                .setIgnoreEntities(!placementOptions.includeEntities())
                 .addProcessor(new BlockRotProcessor(placementOptions.getIntegrity()))
                 .setKnownShape(placementOptions.isStrict())
                 .setLiquidSettings(placementOptions.isApplyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)

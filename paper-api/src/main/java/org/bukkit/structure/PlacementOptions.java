@@ -53,7 +53,7 @@ public class PlacementOptions {
      *
      * @return Whether to include entities.
      */
-    public boolean isIncludeEntities() {
+    public boolean includeEntities() {
         return includeEntities;
     }
 
