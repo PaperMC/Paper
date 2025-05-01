@@ -81,11 +81,11 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     public abstract Component description();
 
     /**
-     * Gets the sound/sound-event for this instrument.
+     * Gets the sound for this instrument.
      *
      * @return a sound
      */
-    public abstract Sound getSoundEvent();
+    public abstract Sound getSound();
 
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},

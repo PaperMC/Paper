@@ -85,7 +85,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     }
 
     @Override
-    public Sound getSoundEvent() {
+    public Sound getSound() {
         return CraftSound.minecraftHolderToBukkit(this.getHandle().soundEvent());
     }
 
