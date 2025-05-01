@@ -15,11 +15,6 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
     }
 
     @Override
-    public String toString() {
-        return "CraftRabbit{RabbitType=" + this.getRabbitType() + "}";
-    }
-
-    @Override
     public Type getRabbitType() {
         return Type.values()[this.getHandle().getVariant().ordinal()];
     }

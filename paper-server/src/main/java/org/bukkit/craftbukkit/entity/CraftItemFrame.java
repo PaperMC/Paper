@@ -12,8 +12,14 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ItemFrame;
 
 public class CraftItemFrame extends CraftHanging implements ItemFrame {
+
     public CraftItemFrame(CraftServer server, net.minecraft.world.entity.decoration.ItemFrame entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.decoration.ItemFrame getHandle() {
+        return (net.minecraft.world.entity.decoration.ItemFrame) this.entity;
     }
 
     @Override
@@ -149,15 +155,5 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
     @Override
     public void setFixed(boolean fixed) {
         this.getHandle().fixed = fixed;
-    }
-
-    @Override
-    public net.minecraft.world.entity.decoration.ItemFrame getHandle() {
-        return (net.minecraft.world.entity.decoration.ItemFrame) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftItemFrame{item=" + this.getItem() + ", rotation=" + this.getRotation() + "}";
     }
 }

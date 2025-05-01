@@ -16,9 +16,15 @@ import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 
-final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
-    CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
+public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
+
+    public CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
         super(server, entity);
+    }
+
+    @Override
+    public MinecartSpawner getHandle() {
+        return (MinecartSpawner) this.entity;
     }
 
     @Override
@@ -160,16 +166,6 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     @Override
     public void setSpawnRange(int spawnRange) {
         this.getHandle().getSpawner().spawnRange = spawnRange;
-    }
-
-    @Override
-    public MinecartSpawner getHandle() {
-        return (MinecartSpawner) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecartMobSpawner";
     }
 
     @Override

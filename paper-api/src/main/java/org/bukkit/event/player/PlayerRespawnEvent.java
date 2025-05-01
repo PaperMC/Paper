@@ -1,6 +1,7 @@
 package org.bukkit.event.player;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -15,16 +16,9 @@ import java.util.Set;
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
  */
-public class PlayerRespawnEvent extends PlayerEvent {
+public class PlayerRespawnEvent extends AbstractRespawnEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final boolean isBedSpawn;
-    private final boolean isAnchorSpawn;
-    private final boolean missingRespawnBlock;
-    private final RespawnReason respawnReason;
-    private final Set<RespawnFlag> respawnFlags;
-    private Location respawnLocation;
 
     @ApiStatus.Internal
     @Deprecated(since = "1.16.1", forRemoval = true)
@@ -35,40 +29,16 @@ public class PlayerRespawnEvent extends PlayerEvent {
     @ApiStatus.Internal
     @Deprecated(since = "1.19.4", forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, RespawnReason.PLUGIN);
+        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, RespawnReason.PLUGIN);
     }
 
     @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, respawnReason, com.google.common.collect.ImmutableSet.builder());
-    }
-
-    @ApiStatus.Internal
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
-        super(respawnPlayer);
-        this.respawnLocation = respawnLocation;
-        this.isBedSpawn = isBedSpawn;
-        this.isAnchorSpawn = isAnchorSpawn;
-        this.respawnReason = respawnReason;
-        this.missingRespawnBlock = missingRespawnBlock;
-        if (this.isBedSpawn) { respawnFlags.add(RespawnFlag.BED_SPAWN); }
-        if (this.isAnchorSpawn) { respawnFlags.add(RespawnFlag.ANCHOR_SPAWN); }
-        this.respawnFlags = respawnFlags.build();
+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason) {
+        super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
     }
 
     /**
-     * Gets the current respawn location
-     *
-     * @return Location current respawn location
-     */
-    @NotNull
-    public Location getRespawnLocation() {
-        return this.respawnLocation;
-    }
-
-    /**
-     * Sets the new respawn location
+     * Sets the new respawn location.
      *
      * @param respawnLocation new location for the respawn
      */
@@ -77,57 +47,6 @@ public class PlayerRespawnEvent extends PlayerEvent {
         Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
 
         this.respawnLocation = respawnLocation.clone();
-    }
-
-    /**
-     * Gets whether the respawn location is the player's bed.
-     *
-     * @return {@code true} if the respawn location is the player's bed.
-     */
-    public boolean isBedSpawn() {
-        return this.isBedSpawn;
-    }
-
-    /**
-     * Gets whether the respawn location is the player's respawn anchor.
-     *
-     * @return {@code true} if the respawn location is the player's respawn anchor.
-     */
-    public boolean isAnchorSpawn() {
-        return this.isAnchorSpawn;
-    }
-
-    /**
-     * Gets whether the player is missing a valid respawn block.
-     * <p>
-     * This will occur if the players respawn block is obstructed,
-     * or it is the first death after it was either destroyed or
-     * in case of a respawn anchor, ran out of charges.
-     *
-     * @return whether the player is missing a valid respawn block
-     */
-    public boolean isMissingRespawnBlock() {
-        return this.missingRespawnBlock;
-    }
-
-    /**
-     * Gets the reason this respawn event was called.
-     *
-     * @return the reason the event was called.
-     */
-    @NotNull
-    public RespawnReason getRespawnReason() {
-        return this.respawnReason;
-    }
-
-    /**
-     * Get the set of flags that apply to this respawn.
-     *
-     * @return an immutable set of the flags that apply to this respawn
-     */
-    @NotNull
-    public @Unmodifiable Set<RespawnFlag> getRespawnFlags() {
-        return this.respawnFlags;
     }
 
     @NotNull

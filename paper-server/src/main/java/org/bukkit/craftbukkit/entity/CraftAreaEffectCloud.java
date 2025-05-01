@@ -30,12 +30,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public net.minecraft.world.entity.AreaEffectCloud getHandle() {
-        return (net.minecraft.world.entity.AreaEffectCloud) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftAreaEffectCloud";
+        return (net.minecraft.world.entity.AreaEffectCloud) this.entity;
     }
 
     @Override
