@@ -359,21 +359,15 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("Defines percentage of how many orbs in an area will actually merge.")
         @Constraints.Min(1)
         @Constraints.Max(100)
-        public double xpMergePercentage = 2.5;
+        public DoubleOr.Default xpMergePercentage = DoubleOr.Default.USE_DEFAULT;
         @PostProcess
         private void postProcess() {
-            if (this.xpMergePercentage >= 100.0) {
-                this.xpMergeModulo = 1;
-            } else if (xpMergePercentage <= 2.5) {
-                this.xpMergeModulo = 40;
-            } else {
-                // Linear interpolation: y = mx + b
-                // Where x is orbPercentage, y is the result
-                // For (2.5, 40) and (100, 1): m = (1-40)/(100-2.5) = -39/97.5 = -0.4
-                double interpolated = 40 - 0.4 * (xpMergePercentage - 2.5);
-                this.xpMergeModulo = (int) Math.ceil(interpolated);
-            }
-
+            double xpMergePercentage = this.xpMergePercentage.or(2.5);
+            // Linear interpolation: y = mx + b
+            // Where x is orbPercentage, y is the result
+            // For (2.5, 40) and (100, 1): m = (1-40)/(100-2.5) = -39/97.5 = -0.4
+            double interpolated = 41 - 0.4 * xpMergePercentage;
+            this.xpMergeModulo = (int) Math.ceil(Math.clamp(interpolated, 1, 40));
         }
         public transient int xpMergeModulo = 40;
     }
