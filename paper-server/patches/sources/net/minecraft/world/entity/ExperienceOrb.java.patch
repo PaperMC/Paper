@@ -126,12 +126,31 @@
          AABB aabb = AABB.ofSize(pos, 1.0, 1.0, 1.0);
          int randomInt = level.getRandom().nextInt(40);
          List<ExperienceOrb> entities = level.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), aabb, orb -> canMerge(orb, randomInt, amount));
-@@ -189,13 +_,18 @@
+@@ -189,13 +_,37 @@
      }
  
      private static boolean canMerge(ExperienceOrb orb, int amount, int other) {
 -        return !orb.isRemoved() && (orb.getId() - amount) % 40 == 0 && orb.getValue() == other;
-+        return !orb.isRemoved() && (orb.getId() - amount) % io.papermc.paper.configuration.GlobalConfiguration.get().misc.xpMergePercentage == 0 && orb.getValue() == other; // Paper - Configure how many orbs will merge together
++        // Paper start - Configure how many orbs will merge together
++        // We want to interpolate the percentage (where 100 maps to 1 and 2.5 maps to 40)
++        double orbPercentage = io.papermc.paper.configuration.GlobalConfiguration.get().misc.xpMergePercentage;
++        int mergeModulo;
++        
++        if (orbPercentage >= 100.0) {
++            mergeModulo = 1;
++        } else if (orbPercentage <= 2.5) {
++            mergeModulo = 40;
++        } else {
++            // Linear interpolation: y = mx + b
++            // Where x is orbPercentage, y is the result
++            // For (2.5, 40) and (100, 1): m = (1-40)/(100-2.5) = -39/97.5 = -0.4
++            double interpolated = 40 - 0.4 * (orbPercentage - 2.5);
++            mergeModulo = (int) Math.ceil(interpolated);
++        }
++        System.out.println("mergeModulo: " + mergeModulo);
++        
++        return !orb.isRemoved() && (orb.getId() - amount) % mergeModulo == 0 && orb.getValue() == other;
++        // Paper end - Configure how many orbs will merge together
      }
  
      private void merge(ExperienceOrb orb) {

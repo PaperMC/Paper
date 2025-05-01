@@ -356,13 +356,10 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
-        @Comment(
-            "Defines how many orbs in an area will actually merge." +
-            "This is a percentage. Where 40 is 2.5% of the orbs will merge and 1 is 100% of the orbs will merge."
-        )
+        @Comment("Defines percentage of how many orbs in an area will actually merge.")
         @Constraints.Min(1)
-        @Constraints.Max(40)
-        public int xpMergePercentage = 40;
+        @Constraints.Max(100)
+        public double xpMergePercentage = 2.5;
     }
 
     public BlockUpdates blockUpdates;
