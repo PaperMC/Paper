@@ -2,7 +2,6 @@ package org.bukkit;
 
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
-import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
