@@ -5,7 +5,7 @@ Subject: [PATCH] optimize dirt and snow spreading
 
 
 diff --git a/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-index 11937aa74efe08bdbd66a619c7a825f91d971afd..722f2b9a24679e0fc67aae2cd27051f96f962efe 100644
+index d1c112a50ca2c16e4a5c91be2cc91c302918a1c7..f8cc3f870d88715386bb4de0da81a74fa04fd216 100644
 --- a/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 +++ b/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 @@ -17,8 +17,13 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
@@ -58,7 +58,7 @@ index 11937aa74efe08bdbd66a619c7a825f91d971afd..722f2b9a24679e0fc67aae2cd27051f9
                  for (int i = 0; i < 4; i++) {
                      BlockPos blockPos = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
 -                    if (level.getBlockState(blockPos).is(Blocks.DIRT) && canPropagate(blockState, level, blockPos)) {
--                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, blockState.setValue(SNOWY, Boolean.valueOf(isSnowySetting(level.getBlockState(blockPos.above()))))); // CraftBukkit
+-                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, blockState.setValue(SNOWY, isSnowySetting(level.getBlockState(blockPos.above()))), 3); // CraftBukkit
 +                    // Paper start - Perf: optimize dirt and snow spreading
 +                    if (pos.getX() == blockPos.getX() && pos.getY() == blockPos.getY() && pos.getZ() == blockPos.getZ()) {
 +                        continue;
@@ -71,7 +71,7 @@ index 11937aa74efe08bdbd66a619c7a825f91d971afd..722f2b9a24679e0fc67aae2cd27051f9
 +                        access = level.getChunkAt(blockPos);
 +                    }
 +                    if (access.getBlockState(blockPos).is(Blocks.DIRT) && SpreadingSnowyDirtBlock.canPropagate(access, blockState, level, blockPos)) {
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, (BlockState) blockState.setValue(SpreadingSnowyDirtBlock.SNOWY, isSnowySetting(access.getBlockState(blockPos.above())))); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, blockState.setValue(SNOWY, isSnowySetting(access.getBlockState(blockPos.above()))), 3); // CraftBukkit
 +                        // Paper end - Perf: optimize dirt and snow spreading
                      }
                  }

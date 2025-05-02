@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import java.util.Set;
@@ -9,14 +10,19 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.EnderDragon.Phase;
 
 public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnemy {
 
     public CraftEnderDragon(CraftServer server, net.minecraft.world.entity.boss.enderdragon.EnderDragon entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
+        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
     }
 
     @Override
@@ -28,16 +34,6 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
         }
 
         return builder.build();
-    }
-
-    @Override
-    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
-        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderDragon";
     }
 
     @Override
@@ -77,8 +73,7 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
     // Paper start - Allow changing the EnderDragon podium
     @Override
     public org.bukkit.Location getPodium() {
-        net.minecraft.core.BlockPos blockPosOrigin = this.getHandle().getPodium();
-        return new org.bukkit.Location(getWorld(), blockPosOrigin.getX(), blockPosOrigin.getY(), blockPosOrigin.getZ());
+        return CraftLocation.toBukkit(this.getHandle().getPodium(), this.getWorld());
     }
 
     @Override
@@ -86,8 +81,8 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
         if (location == null) {
             this.getHandle().setPodium(null);
         } else {
-            org.apache.commons.lang.Validate.isTrue(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
-            this.getHandle().setPodium(io.papermc.paper.util.MCUtil.toBlockPos(location));
+            Preconditions.checkArgument(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
+            this.getHandle().setPodium(CraftLocation.toBlockPosition(location));
         }
     }
     // Paper end - Allow changing the EnderDragon podium

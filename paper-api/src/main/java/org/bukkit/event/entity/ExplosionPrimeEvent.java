@@ -4,36 +4,31 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Explosive;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity has made a decision to explode.
  */
 public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private float radius;
     private boolean fire;
 
-    public ExplosionPrimeEvent(@NotNull final Entity what, final float radius, final boolean fire) {
-        super(what);
-        this.cancel = false;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public ExplosionPrimeEvent(@NotNull final Entity entity, final float radius, final boolean fire) {
+        super(entity);
         this.radius = radius;
         this.fire = fire;
     }
 
+    @ApiStatus.Internal
     public ExplosionPrimeEvent(@NotNull final Explosive explosive) {
         this(explosive, explosive.getYield(), explosive.isIncendiary());
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
     }
 
     /**
@@ -42,7 +37,7 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
      * @return returns the radius of the explosion
      */
     public float getRadius() {
-        return radius;
+        return this.radius;
     }
 
     /**
@@ -57,29 +52,39 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     /**
      * Gets whether this explosion will create fire or not
      *
-     * @return true if this explosion will create fire
+     * @return {@code true} if this explosion will create fire
      */
     public boolean getFire() {
-        return fire;
+        return this.fire;
     }
 
     /**
      * Sets whether this explosion will create fire or not
      *
-     * @param fire true if you want this explosion to create fire
+     * @param fire {@code true} if you want this explosion to create fire
      */
     public void setFire(boolean fire) {
         this.fire = fire;
     }
 
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
+
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

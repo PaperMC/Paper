@@ -10,6 +10,11 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
     }
 
     @Override
+    public net.minecraft.world.entity.projectile.Projectile getHandle() {
+        return (net.minecraft.world.entity.projectile.Projectile) this.entity;
+    }
+
+    @Override
     public boolean doesBounce() {
         return false;
     }
@@ -51,11 +56,6 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
     @Override
     public void hitEntity(org.bukkit.entity.Entity entity, org.bukkit.util.Vector vector) {
         this.getHandle().preHitTargetOrDeflectSelf(new net.minecraft.world.phys.EntityHitResult(((CraftEntity) entity).getHandle(), new net.minecraft.world.phys.Vec3(vector.getX(), vector.getY(), vector.getZ())));
-    }
-
-    @Override
-    public net.minecraft.world.entity.projectile.Projectile getHandle() {
-        return (net.minecraft.world.entity.projectile.Projectile) entity;
     }
 
     @Override

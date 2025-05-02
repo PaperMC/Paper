@@ -20,8 +20,8 @@ public class PlayerClientLoadedWorldEvent extends PlayerEvent {
     private final boolean timeout;
 
     @ApiStatus.Internal
-    public PlayerClientLoadedWorldEvent(final Player who, final boolean timeout) {
-        super(who);
+    public PlayerClientLoadedWorldEvent(final Player player, final boolean timeout) {
+        super(player);
         this.timeout = timeout;
     }
 

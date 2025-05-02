@@ -1,17 +1,20 @@
 package org.bukkit.craftbukkit.entity;
 
-import java.util.stream.Collectors;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.AbstractBoat;
 import org.bukkit.TreeSpecies;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
-import org.bukkit.entity.Entity;
 
 public abstract class CraftBoat extends CraftVehicle implements Boat, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
 
     public CraftBoat(CraftServer server, AbstractBoat entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractBoat getHandle() {
+        return (AbstractBoat) this.entity;
     }
 
     @Override
@@ -78,12 +81,10 @@ public abstract class CraftBoat extends CraftVehicle implements Boat, io.papermc
         this.getHandle().landBoats = workOnLand;
     }
 
-    // Paper start
     @Override
     public org.bukkit.Material getBoatMaterial() {
         return org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this.getHandle().getDropItem());
     }
-    // Paper end
 
     @Override
     public Status getStatus() {
@@ -99,16 +100,6 @@ public abstract class CraftBoat extends CraftVehicle implements Boat, io.papermc
         }
         // Paper end - Fix NPE on Boat getStatus
         return CraftBoat.boatStatusFromNms(this.getHandle().status);
-    }
-
-    @Override
-    public AbstractBoat getHandle() {
-        return (AbstractBoat) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftBoat{boatType=" + this.getBoatType() + ",status=" + this.getStatus() + ",passengers=" + this.getPassengers().stream().map(Entity::toString).collect(Collectors.joining("-", "{", "}")) + "}";
     }
 
     public static Boat.Type boatTypeFromNms(EntityType<?> boatType) {

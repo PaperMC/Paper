@@ -7,8 +7,8 @@ import org.bukkit.block.BlastFurnace;
 
 public class CraftBlastFurnace extends CraftFurnace<BlastFurnaceBlockEntity> implements BlastFurnace {
 
-    public CraftBlastFurnace(World world, BlastFurnaceBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBlastFurnace(World world, BlastFurnaceBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBlastFurnace(CraftBlastFurnace state, Location location) {

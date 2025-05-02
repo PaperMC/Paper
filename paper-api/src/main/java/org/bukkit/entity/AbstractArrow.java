@@ -20,9 +20,9 @@ public interface AbstractArrow extends Projectile {
      *
      * @return the knockback strength value
      * @see #getWeapon()
-     * @deprecated a function of the firing weapon
+     * @deprecated moved to being a function of the firing weapon, always returns 0 here
      */
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true)
     public int getKnockbackStrength();
 
     /**
@@ -30,9 +30,9 @@ public interface AbstractArrow extends Projectile {
      *
      * @param knockbackStrength the knockback strength value
      * @see #setWeapon(org.bukkit.inventory.ItemStack)
-     * @deprecated a function of the firing weapon
+     * @deprecated moved to being a function of the firing weapon, does nothing here
      */
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true)
     public void setKnockbackStrength(int knockbackStrength);
 
     /**
@@ -145,9 +145,9 @@ public interface AbstractArrow extends Projectile {
      *
      * @param shotFromCrossbow if shot from a crossbow
      * @see #setWeapon(org.bukkit.inventory.ItemStack)
-     * @deprecated a function of the firing weapon instead
+     * @deprecated a function of the firing weapon instead, this method does nothing
      */
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true)
     public void setShotFromCrossbow(boolean shotFromCrossbow);
 
     /**
@@ -165,7 +165,7 @@ public interface AbstractArrow extends Projectile {
      * Sets the ItemStack which will be picked up from this arrow.
      *
      * @param item ItemStack set to be picked up
-     * @deprecated use {@link #getItemStack()}
+     * @deprecated use {@link #setItemStack(ItemStack)}
      */
     @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper

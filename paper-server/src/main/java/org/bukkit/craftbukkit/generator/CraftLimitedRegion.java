@@ -41,7 +41,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     private final int buffer = 16;
     private final BoundingBox region;
     boolean entitiesLoaded = false;
-    // Minecraft saves the entities as NBTTagCompound during chunk generation. This causes that
+    // Minecraft saves the entities as CompoundTag during chunk generation. This causes that
     // changes made to the returned bukkit entity are not saved. To combat this we keep them and
     // save them when the population is finished.
     private final List<net.minecraft.world.entity.Entity> entities = new ArrayList<>();

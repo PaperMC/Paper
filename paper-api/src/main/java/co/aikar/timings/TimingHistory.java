@@ -289,7 +289,7 @@ public class TimingHistory {
         final TicksRecord ticksRecord = new TicksRecord();
         final PingRecord pingRecord = new PingRecord();
         final TimingData fst = TimingsManager.FULL_SERVER_TICK.minuteData.clone();
-        final double tps = 1E9 / ( System.nanoTime() - lastMinuteTime ) * ticksRecord.timed;
+        final double tps = 1E9 / (System.nanoTime() - lastMinuteTime) * ticksRecord.timed;
         final double usedMemory = TimingsManager.FULL_SERVER_TICK.avgUsedMemory;
         final double freeMemory = TimingsManager.FULL_SERVER_TICK.avgFreeMemory;
         final double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();

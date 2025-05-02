@@ -19,6 +19,11 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
     }
 
     @Override
+    public net.minecraft.world.entity.monster.piglin.Piglin getHandle() {
+        return (net.minecraft.world.entity.monster.piglin.Piglin) this.entity;
+    }
+
+    @Override
     public boolean isAbleToHunt() {
         return this.getHandle().cannotHunt;
     }
@@ -76,16 +81,6 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
     }
 
     @Override
-    public net.minecraft.world.entity.monster.piglin.Piglin getHandle() {
-        return (net.minecraft.world.entity.monster.piglin.Piglin) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPiglin";
-    }
-    // Paper start
-    @Override
     public void setChargingCrossbow(boolean chargingCrossbow) {
         this.getHandle().setChargingCrossbow(chargingCrossbow);
     }
@@ -116,5 +111,4 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
     public boolean isDancing() {
         return this.getHandle().isDancing();
     }
-    // Paper end
 }

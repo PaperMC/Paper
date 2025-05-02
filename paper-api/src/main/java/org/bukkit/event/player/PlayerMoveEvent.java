@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,45 +13,19 @@ import org.jetbrains.annotations.Nullable;
  * Holds information for player movement events
  */
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel = false;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Location from;
     private Location to;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public PlayerMoveEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player);
         this.from = from;
         this.to = to;
-    }
-
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     * <p>
-     * If a move or teleport event is cancelled, the player will be moved or
-     * teleported back to the Location as defined by getFrom(). This will not
-     * fire an event
-     *
-     * @return true if this event is cancelled
-     */
-    @Override
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     * <p>
-     * If a move or teleport event is cancelled, the player will be moved or
-     * teleported back to the Location as defined by getFrom(). This will not
-     * fire an event
-     *
-     * @param cancel true if you wish to cancel this event
-     */
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
     }
 
     /**
@@ -60,7 +35,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public Location getFrom() {
-        return from;
+        return this.from;
     }
 
     /**
@@ -69,7 +44,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @param from New location to mark as the players previous location
      */
     public void setFrom(@NotNull Location from) {
-        validateLocation(from);
+        this.validateLocation(from);
         this.from = from.clone();
     }
 
@@ -89,18 +64,17 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @param to New Location this player will move to
      */
     public void setTo(@NotNull Location to) {
-        validateLocation(to);
+        this.validateLocation(to);
         this.to = to.clone();
     }
 
-    // Paper start - PlayerMoveEvent improvements
     /**
      * Check if the player has changed position (even within the same block) in the event
      *
      * @return whether the player has changed position or not
      */
     public boolean hasChangedPosition() {
-        return hasExplicitlyChangedPosition() || !from.getWorld().equals(to.getWorld());
+        return this.hasExplicitlyChangedPosition() || !this.from.getWorld().equals(this.to.getWorld());
     }
 
     /**
@@ -109,7 +83,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @return whether the player has changed position or not
      */
     public boolean hasExplicitlyChangedPosition() {
-        return from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
+        return this.from.getX() != this.to.getX() || this.from.getY() != this.to.getY() || this.from.getZ() != this.to.getZ();
     }
 
     /**
@@ -118,7 +92,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @return whether the player has moved to a new block or not
      */
     public boolean hasChangedBlock() {
-        return hasExplicitlyChangedBlock() || !from.getWorld().equals(to.getWorld());
+        return this.hasExplicitlyChangedBlock() || !this.from.getWorld().equals(this.to.getWorld());
     }
 
     /**
@@ -127,7 +101,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @return whether the player has moved to a new block or not
      */
     public boolean hasExplicitlyChangedBlock() {
-        return from.getBlockX() != to.getBlockX() || from.getBlockY() != to.getBlockY() || from.getBlockZ() != to.getBlockZ();
+        return this.from.getBlockX() != this.to.getBlockX() || this.from.getBlockY() != this.to.getBlockY() || this.from.getBlockZ() != this.to.getBlockZ();
     }
 
     /**
@@ -136,9 +110,32 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * @return whether the player has changed orientation or not
      */
     public boolean hasChangedOrientation() {
-        return from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
+        return this.from.getPitch() != this.to.getPitch() || this.from.getYaw() != this.to.getYaw();
     }
-    // Paper end
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If a move or teleport event is cancelled, the player will be moved or
+     * teleported back to the Location as defined by getFrom(). This will not
+     * fire an event
+     */
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If a move or teleport event is cancelled, the player will be moved or
+     * teleported back to the Location as defined by getFrom(). This will not
+     * fire an event
+     */
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 
     private void validateLocation(@NotNull Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
@@ -148,11 +145,11 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

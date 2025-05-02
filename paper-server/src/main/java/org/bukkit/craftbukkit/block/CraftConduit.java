@@ -15,8 +15,8 @@ import org.bukkit.util.BoundingBox;
 
 public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> implements Conduit {
 
-    public CraftConduit(World world, ConduitBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftConduit(World world, ConduitBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftConduit(CraftConduit state, Location location) {
@@ -36,14 +36,14 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
     @Override
     public boolean isActive() {
         this.ensureNoWorldGeneration();
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         return conduit != null && conduit.isActive();
     }
 
     @Override
     public boolean isHunting() {
         this.ensureNoWorldGeneration();
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         return conduit != null && conduit.isHunting();
     }
 
@@ -52,7 +52,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
         this.ensureNoWorldGeneration();
         Collection<Block> blocks = new ArrayList<>();
 
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         if (conduit != null) {
             for (BlockPos position : conduit.effectBlocks) {
                 blocks.add(CraftBlock.at(this.getWorldHandle(), position));
@@ -65,20 +65,20 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
     @Override
     public int getFrameBlockCount() {
         this.ensureNoWorldGeneration();
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         return (conduit != null) ? conduit.effectBlocks.size() : 0;
     }
 
     @Override
     public int getRange() {
         this.ensureNoWorldGeneration();
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         return (conduit != null) ? ConduitBlockEntity.getRange(conduit.effectBlocks) : 0;
     }
 
     @Override
     public boolean setTarget(LivingEntity target) {
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         if (conduit == null) {
             return false;
         }
@@ -107,7 +107,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
 
     @Override
     public LivingEntity getTarget() {
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         if (conduit == null) {
             return null;
         }
@@ -118,7 +118,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
 
     @Override
     public boolean hasTarget() {
-        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
         return conduit != null && conduit.destroyTarget != null && conduit.destroyTarget.isAlive();
     }
 

@@ -10,7 +10,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
@@ -153,7 +152,9 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ItemParser.ItemResult arg = new ItemParser(MinecraftServer.getDefaultRegistryAccess()).parse(new StringReader(input));
+            StringReader reader = new StringReader(input);
+            ItemParser.ItemResult arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
+            Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
 
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
@@ -213,9 +214,9 @@ public final class CraftItemFactory implements ItemFactory {
         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
     }
 
-    // Paper start - Adventure
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
+        Preconditions.checkArgument(item.getAmount() > 0 && item.getAmount() <= Item.ABSOLUTE_MAX_STACK_SIZE, "ItemStack amount must be between 1 and %s but was %s", Item.ABSOLUTE_MAX_STACK_SIZE, item.getAmount());
         return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
             net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
                 item.getType().getKey(),
@@ -228,7 +229,6 @@ public final class CraftItemFactory implements ItemFactory {
     public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
     }
-    // Paper end - Adventure
 
     // Paper start - ensure server conversions API
     // TODO: DO WE NEED THIS?

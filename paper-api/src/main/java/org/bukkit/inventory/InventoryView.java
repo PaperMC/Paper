@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -243,6 +244,11 @@ public interface InventoryView {
     public InventoryType.SlotType getSlotType(int slot);
 
     /**
+     * Opens the inventory view.
+     */
+    void open();
+
+    /**
      * Closes the inventory view.
      */
     public void close();
@@ -316,4 +322,16 @@ public interface InventoryView {
      */
     @Deprecated(since = "1.21.1") // Paper
     public void setTitle(@NotNull String title);
+
+    /**
+     * Gets the menu type of the inventory view if applicable.
+     * <p>
+     * Some inventory types do not support a menu type. In such cases, this method
+     * returns null. This typically applies to inventories belonging to entities
+     * like players or animals (e.g., a horse).
+     *
+     * @return the menu type of the inventory view or null if not applicable
+     */
+    @ApiStatus.Experimental
+    @Nullable MenuType getMenuType();
 }

@@ -7,9 +7,9 @@
 -        if (level.dimensionType().natural()
 +        if (level.spigotConfig.enableZombiePigmenPortalSpawns && level.dimensionType().natural() // Spigot
              && level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
-             && random.nextInt(2000) < level.getDifficulty().getId()) {
-             while (level.getBlockState(pos).is(this)) {
-@@ -78,9 +_,13 @@
+             && random.nextInt(2000) < level.getDifficulty().getId()
+             && level.anyPlayerCloseEnoughForSpawning(pos)) {
+@@ -79,9 +_,13 @@
              }
  
              if (level.getBlockState(pos).isValidSpawn(level, pos, EntityType.ZOMBIFIED_PIGLIN)) {
@@ -24,21 +24,21 @@
                      Entity vehicle = entity.getVehicle();
                      if (vehicle != null) {
                          vehicle.setPortalCooldown();
-@@ -111,7 +_,13 @@
+@@ -112,7 +_,13 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (entity.canUsePortal(false)) {
 +            // CraftBukkit start - Entity in portal
-+            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(level.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.NETHER); // Paper - add portal type
++            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level), org.bukkit.PortalType.NETHER); // Paper - add portal type
 +            level.getCraftServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) return; // Paper - make cancellable
 +            // CraftBukkit end
              entity.setAsInsidePortal(this, pos);
          }
      }
-@@ -134,22 +_,46 @@
+@@ -135,22 +_,46 @@
      @Nullable
      @Override
      public TeleportTransition getPortalDestination(ServerLevel level, Entity entity, BlockPos pos) {
@@ -90,7 +90,7 @@
          BlockUtil.FoundRectangle largestRectangleAround;
          TeleportTransition.PostTeleportTransition postTeleportTransition;
          if (optional.isPresent()) {
-@@ -164,17 +_,22 @@
+@@ -165,17 +_,22 @@
                  blockPos1 -> level.getBlockState(blockPos1) == blockState
              );
              postTeleportTransition = TeleportTransition.PLAY_PORTAL_SOUND.then(entity1 -> entity1.placePortalTicket(blockPos));
@@ -116,7 +116,7 @@
  
          return getDimensionTransitionFromExit(entity, pos, largestRectangleAround, level, postTeleportTransition);
      }
-@@ -220,7 +_,7 @@
+@@ -221,7 +_,7 @@
          boolean flag = axis1 == Direction.Axis.X;
          Vec3 vec3 = new Vec3(blockPos.getX() + (flag ? d2 : d4), blockPos.getY() + d3, blockPos.getZ() + (flag ? d4 : d2));
          Vec3 vec31 = PortalShape.findCollisionFreePosition(vec3, level, entity, dimensions);

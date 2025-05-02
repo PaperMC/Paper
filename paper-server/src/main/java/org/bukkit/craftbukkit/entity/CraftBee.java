@@ -19,11 +19,6 @@ public class CraftBee extends CraftAnimals implements Bee {
     }
 
     @Override
-    public String toString() {
-        return "CraftBee";
-    }
-
-    @Override
     public Location getHive() {
         BlockPos hive = this.getHandle().getHivePos();
         return (hive == null) ? null : CraftLocation.toBukkit(hive, this.getWorld());
@@ -86,7 +81,7 @@ public class CraftBee extends CraftAnimals implements Bee {
     public void setCannotEnterHiveTicks(int ticks) {
         this.getHandle().setStayOutOfHiveCountdown(ticks);
     }
-    // Paper start
+
     @Override
     public void setRollingOverride(net.kyori.adventure.util.TriState rolling) {
         this.getHandle().rollingOverride = rolling;
@@ -123,5 +118,4 @@ public class CraftBee extends CraftAnimals implements Bee {
     public int getTicksSincePollination() {
         return this.getHandle().ticksWithoutNectarSinceExitingHive;
     }
-    // Paper end
 }

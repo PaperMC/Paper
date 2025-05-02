@@ -22,9 +22,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
@@ -103,6 +101,18 @@ public final class MCUtil {
         run.run();
     }
 
+    public static double sanitizeNanInf(final double value, final double defaultValue) {
+        return Double.isNaN(value) || Double.isInfinite(value) ? defaultValue : value;
+    }
+
+    public static Vec3 sanitizeNanInf(final Vec3 vec3, final double defaultValue) {
+        return new Vec3(
+            sanitizeNanInf(vec3.x, defaultValue),
+            sanitizeNanInf(vec3.y, defaultValue),
+            sanitizeNanInf(vec3.z, defaultValue)
+        );
+    }
+
     public static <T> T ensureMain(Supplier<T> run) {
         return ensureMain(null, run);
     }
@@ -138,18 +148,6 @@ public final class MCUtil {
 
     public static double distanceSq(double x1, double y1, double z1, double x2, double y2, double z2) {
         return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
-    }
-
-    public static Location toLocation(Level world, double x, double y, double z) {
-        return new Location(world.getWorld(), x, y, z);
-    }
-
-    public static Location toLocation(Level world, BlockPos pos) {
-        return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
-    }
-
-    public static BlockPos toBlockPosition(Location loc) {
-        return new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public static BlockPos toBlockPos(Position pos) {

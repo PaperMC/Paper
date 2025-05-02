@@ -64,7 +64,7 @@ public class CraftMapCanvas implements MapCanvas {
             return;
         if (this.buffer[y * 128 + x] != color) {
             this.buffer[y * 128 + x] = color;
-            this.mapView.worldMap.setColorsDirty(x, y);
+            this.mapView.worldMap.setColorsDirty(x, y, false); // Paper - Fix unnecessary map data saves
         }
     }
 
@@ -141,8 +141,8 @@ public class CraftMapCanvas implements MapCanvas {
         }
 
         // Mark all colors within the image as dirty
-        this.mapView.worldMap.setColorsDirty(destX, destY);
-        this.mapView.worldMap.setColorsDirty(destX + effectiveWidth - 1, destY + effectiveHeight - 1);
+        this.mapView.worldMap.setColorsDirty(destX, destY, false);
+        this.mapView.worldMap.setColorsDirty(destX + effectiveWidth - 1, destY + effectiveHeight - 1, false);
         // Paper end
     }
 
@@ -158,14 +158,14 @@ public class CraftMapCanvas implements MapCanvas {
                 x = xStart;
                 y += font.getHeight() + 1;
                 continue;
-            } else if (ch == '\u00A7') {
+            } else if (ch == '§') {
                 int j = text.indexOf(';', i);
                 Preconditions.checkArgument(j >= 0, "text (%s) unterminated color string", text);
                 try {
                     color = Byte.parseByte(text.substring(i + 1, j));
                     i = j;
                     continue;
-                } catch (NumberFormatException ex) {
+                } catch (NumberFormatException ignored) {
                 }
             }
 

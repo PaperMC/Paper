@@ -1,8 +1,11 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.Location;
+import org.bukkit.PortalType;
 import org.bukkit.entity.Entity;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,21 +14,26 @@ import org.jetbrains.annotations.NotNull;
  * Cancelling this event prevents any further processing of the portal for that tick.
  * @see io.papermc.paper.event.entity.EntityInsideBlockEvent
  */
-public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
-    private static final HandlerList handlers = new HandlerList();
-    private final Location location;
+public class EntityPortalEnterEvent extends EntityEvent implements Cancellable {
 
-    @Deprecated(since = "1.21") @io.papermc.paper.annotation.DoNotUse // Paper
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final Location location;
+    private final PortalType portalType;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.21")
     public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location) {
-        // Paper start
-        this(entity, location, org.bukkit.PortalType.CUSTOM);
+        this(entity, location, PortalType.CUSTOM);
     }
-    @org.jetbrains.annotations.ApiStatus.Internal
-    public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final org.bukkit.PortalType portalType) {
-        // Paper end
+
+    @ApiStatus.Internal
+    public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final PortalType portalType) {
         super(entity);
         this.location = location;
-        this.portalType = portalType; // Paper
+        this.portalType = portalType;
     }
 
     /**
@@ -35,12 +43,8 @@ public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.ev
      */
     @NotNull
     public Location getLocation() {
-        return location.clone(); // Paper - clone to avoid changes
+        return location.clone();
     }
-
-    // Paper start
-    private boolean cancelled = false;
-    private final org.bukkit.PortalType portalType;
 
     /**
      * Get the portal type.
@@ -57,19 +61,18 @@ public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.ev
     }
 
     @Override
-    public void setCancelled(final boolean cancel) {
+    public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }
-    // Paper end
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

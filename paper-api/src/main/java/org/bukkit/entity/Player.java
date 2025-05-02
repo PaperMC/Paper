@@ -332,18 +332,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Deprecated // Paper
     public void kickPlayer(@Nullable String message);
 
-    // Paper start
     /**
      * Kicks the player with the default kick message.
+     *
      * @see #kick(net.kyori.adventure.text.Component)
      */
     void kick();
+
     /**
      * Kicks player with custom kick message.
      *
      * @param message kick message
      */
-    void kick(final net.kyori.adventure.text.@Nullable Component message);
+    default void kick(final net.kyori.adventure.text.@Nullable Component message) {
+        this.kick(message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN);
+    }
 
     /**
      * Kicks player with custom kick message and cause.
@@ -352,7 +355,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param cause kick cause
      */
     void kick(final net.kyori.adventure.text.@Nullable Component message, org.bukkit.event.player.PlayerKickEvent.Cause cause);
-    // Paper end
 
     /**
      * Adds this user to the {@link ProfileBanList}. If a previous ban exists, this will
@@ -544,29 +546,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public boolean isSleepingIgnored();
 
     /**
-     * Gets the Location where the player will spawn at their bed, null if
-     * they have not slept in one or their current bed spawn is invalid.
-     *
-     * @return Bed Spawn Location if bed exists, otherwise null.
-     *
-     * @see #getRespawnLocation()
-     * @deprecated Misleading name. This method also returns the location of
-     * respawn anchors.
-     */
-    @Nullable
-    @Override
-    @Deprecated(since = "1.20.4")
-    public Location getBedSpawnLocation();
-
-    /**
-     * Gets the Location where the player will spawn at, null if they
+     * Gets the Location where the player will spawn at, {@code null} if they
      * don't have a valid respawn point.
+     * <br>
+     * Unlike offline players, the location if found will be loaded to validate by default.
      *
-     * @return respawn location if exists, otherwise null.
+     * @return respawn location if exists, otherwise {@code null}.
+     * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
      */
-    @Nullable
     @Override
-    public Location getRespawnLocation();
+    default @Nullable Location getRespawnLocation() {
+        return this.getRespawnLocation(true);
+    }
 
     /**
      * Sets the Location where the player will spawn at their bed.
@@ -973,7 +964,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * than 1.19.4
      */
     @Deprecated(since = "1.20")
-    public void sendBlockChanges(Collection<BlockState> blocks, boolean suppressLightUpdates);
+    default void sendBlockChanges(Collection<BlockState> blocks, boolean suppressLightUpdates) {
+        this.sendBlockChanges(blocks);
+    }
 
     /**
      * Send block damage. This fakes block break progress at a certain location
@@ -1294,7 +1287,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public void sendMap(MapView map);
 
-    // Paper start
     /**
      * Shows the player the win screen that normally is only displayed after one kills the ender dragon
      * and exits the end for the first time.
@@ -1333,9 +1325,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @see <a href="https://minecraft.wiki/wiki/End_Poem">https://minecraft.wiki/wiki/End_Poem</a>
      */
     public void setHasSeenWinScreen(boolean hasSeenWinScreen);
-    // Paper end
 
-    // Paper start
     /**
      * Permanently Bans the Profile and IP address currently used by the player.
      *
@@ -1346,7 +1336,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // For reference, Bukkit defines this as nullable, while they impl isn't, we'll follow API.
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason) {
-        return banPlayerFull(reason, null, null);
+        return this.banPlayerFull(reason, null, null);
     }
 
     /**
@@ -1359,7 +1349,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, @Nullable String source) {
-        return banPlayerFull(reason, null, source);
+        return this.banPlayerFull(reason, null, source);
     }
 
     /**
@@ -1372,7 +1362,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, java.util.@Nullable Date expires) {
-        return banPlayerFull(reason, expires, null);
+        return this.banPlayerFull(reason, expires, null);
     }
 
     /**
@@ -1386,8 +1376,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source) {
-        banPlayer(reason, expires, source);
-        return banPlayerIP(reason, expires, source, true);
+        this.banPlayer(reason, expires, source);
+        return this.banPlayerIP(reason, expires, source, true);
     }
 
     /**
@@ -1401,7 +1391,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, boolean kickPlayer) {
-        return banPlayerIP(reason, null, null, kickPlayer);
+        return this.banPlayerIP(reason, null, null, kickPlayer);
     }
 
     /**
@@ -1415,7 +1405,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, @Nullable String source, boolean kickPlayer) {
-        return banPlayerIP(reason, null, source, kickPlayer);
+        return this.banPlayerIP(reason, null, source, kickPlayer);
     }
 
     /**
@@ -1429,7 +1419,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, boolean kickPlayer) {
-        return banPlayerIP(reason, expires, null, kickPlayer);
+        return this.banPlayerIP(reason, expires, null, kickPlayer);
     }
 
     /**
@@ -1442,7 +1432,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason) {
-        return banPlayerIP(reason, null, null);
+        return this.banPlayerIP(reason, null, null);
     }
 
     /**
@@ -1455,7 +1445,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, @Nullable String source) {
-        return banPlayerIP(reason, null, source);
+        return this.banPlayerIP(reason, null, source);
     }
 
     /**
@@ -1468,7 +1458,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires) {
-        return banPlayerIP(reason, expires, null);
+        return this.banPlayerIP(reason, expires, null);
     }
 
     /**
@@ -1482,7 +1472,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source) {
-        return banPlayerIP(reason, expires, source, true);
+        return this.banPlayerIP(reason, expires, source, true);
     }
 
     /**
@@ -1499,7 +1489,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source, boolean kickPlayer) {
         org.bukkit.BanEntry banEntry = org.bukkit.Bukkit.getServer().getBanList(org.bukkit.BanList.Type.IP).addBan(getAddress().getAddress().getHostAddress(), reason, expires, source);
         if (kickPlayer && isOnline()) {
-            getPlayer().kickPlayer(reason);
+            this.getPlayer().kickPlayer(reason);
         }
 
         return banEntry;
@@ -1546,7 +1536,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Override
     @Deprecated
     public default void sendMessage(net.md_5.bungee.api.chat.BaseComponent component) {
-        spigot().sendMessage(component);
+        this.spigot().sendMessage(component);
     }
 
     /**
@@ -1558,7 +1548,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Override
     @Deprecated
     public default void sendMessage(net.md_5.bungee.api.chat.BaseComponent... components) {
-        spigot().sendMessage(components);
+        this.spigot().sendMessage(components);
     }
 
     /**
@@ -1570,7 +1560,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated
     public default void sendMessage(net.md_5.bungee.api.ChatMessageType position, net.md_5.bungee.api.chat.BaseComponent... components) {
-        spigot().sendMessage(position, components);
+        this.spigot().sendMessage(position, components);
     }
 
     /**
@@ -2133,6 +2123,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param other The other {@link Player} to list.
      * @return True if the {@code other} player was not listed.
+     * @throws IllegalStateException if this player can't see the other player
+     * @see #canSee(Player)
      */
     boolean listPlayer(Player other);
     // Paper end

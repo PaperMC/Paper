@@ -1,7 +1,5 @@
 package ca.spottedleaf.moonrise.common.misc;
 
-import ca.spottedleaf.concurrentutil.util.IntegerUtil;
-
 public abstract class SingleUserAreaMap<T> {
 
     public static final int NOT_SET = Integer.MIN_VALUE;
@@ -99,8 +97,8 @@ public abstract class SingleUserAreaMap<T> {
         final int dx = toX - fromX;
         final int dz = toZ - fromZ;
 
-        final int totalX = IntegerUtil.branchlessAbs(fromX - toX);
-        final int totalZ = IntegerUtil.branchlessAbs(fromZ - toZ);
+        final int totalX = Math.abs(fromX - toX);
+        final int totalZ = Math.abs(fromZ - toZ);
 
         if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
             // teleported
@@ -120,7 +118,7 @@ public abstract class SingleUserAreaMap<T> {
                 for (int currZ = oldMinZ; currZ <= oldMaxZ; ++currZ) {
 
                     // only remove if we're outside the new view distance...
-                    if (Math.max(IntegerUtil.branchlessAbs(currX - toX), IntegerUtil.branchlessAbs(currZ - toZ)) > newViewDistance) {
+                    if (Math.max(Math.abs(currX - toX), Math.abs(currZ - toZ)) > newViewDistance) {
                         this.removeCallback(parameter, currX, currZ);
                     }
                 }
@@ -136,7 +134,7 @@ public abstract class SingleUserAreaMap<T> {
                 for (int currZ = newMinZ; currZ <= newMaxZ; ++currZ) {
 
                     // only add if we're outside the old view distance...
-                    if (Math.max(IntegerUtil.branchlessAbs(currX - fromX), IntegerUtil.branchlessAbs(currZ - fromZ)) > oldViewDistance) {
+                    if (Math.max(Math.abs(currX - fromX), Math.abs(currZ - fromZ)) > oldViewDistance) {
                         this.addCallback(parameter, currX, currZ);
                     }
                 }

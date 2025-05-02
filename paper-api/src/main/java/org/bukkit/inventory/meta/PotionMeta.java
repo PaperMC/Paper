@@ -8,6 +8,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a potion or item that can have custom effects.
@@ -20,7 +21,7 @@ public interface PotionMeta extends ItemMeta {
      * @param data PotionData to set the base potion state to
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
      */
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     void setBasePotionData(@Nullable PotionData data);
 
     /**
@@ -30,7 +31,7 @@ public interface PotionMeta extends ItemMeta {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
      */
     @Nullable
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     PotionData getBasePotionData();
 
     /**
@@ -73,6 +74,16 @@ public interface PotionMeta extends ItemMeta {
      */
     @NotNull
     List<PotionEffect> getCustomEffects();
+
+    /**
+     * All effects that this potion meta holds.
+     * <p>
+     * This is a combination of the base potion type and any custom effects.
+     *
+     * @return an unmodifiable list of all effects.
+     */
+    @NotNull
+    @Unmodifiable List<PotionEffect> getAllEffects();
 
     /**
      * Adds a custom potion effect to this potion.
@@ -145,6 +156,16 @@ public interface PotionMeta extends ItemMeta {
      * @param color the color to set
      */
     void setColor(@Nullable Color color);
+
+    /**
+     * Computes the effective colour of this potion meta.
+     * <p>
+     * This blends all custom effects, or uses a default fallback color.
+     *
+     * @return the effective potion color
+     */
+    @NotNull
+    Color computeEffectiveColor();
 
     /**
      * Checks for existence of a custom potion name translation suffix.

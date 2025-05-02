@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 public final class TrimMaterialKeys {
     /**
      * {@code minecraft:amethyst}
@@ -106,7 +106,7 @@ public final class TrimMaterialKeys {
     }
 
     /**
-     * Creates a key for {@link TrimMaterial} in the registry {@code minecraft:trim_material}.
+     * Creates a typed key for {@link TrimMaterial} in the registry {@code minecraft:trim_material}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/DistanceManager.java
 +++ b/net/minecraft/server/level/DistanceManager.java
-@@ -107,6 +_,12 @@
+@@ -72,6 +_,12 @@
          }
  
          if (!this.chunksToUpdateFutures.isEmpty()) {
@@ -13,51 +13,7 @@
              for (ChunkHolder chunkHolder : this.chunksToUpdateFutures) {
                  chunkHolder.updateHighestAllowedStatus(chunkMap);
              }
-@@ -177,16 +_,42 @@
-     public <T> void addRegionTicket(TicketType<T> type, ChunkPos pos, int distance, T value) {
-         Ticket<T> ticket = new Ticket<>(type, ChunkLevel.byStatus(FullChunkStatus.FULL) - distance, value);
-         long packedChunkPos = pos.toLong();
--        this.addTicket(packedChunkPos, ticket);
-+        this.addTicket(packedChunkPos, ticket); // Paper - diff on change above
-         this.tickingTicketsTracker.addTicket(packedChunkPos, ticket);
-     }
- 
-     public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int distance, T value) {
-         Ticket<T> ticket = new Ticket<>(type, ChunkLevel.byStatus(FullChunkStatus.FULL) - distance, value);
-         long packedChunkPos = pos.toLong();
-+        this.removeTicket(packedChunkPos, ticket); // Paper - diff on change above
-+        this.tickingTicketsTracker.removeTicket(packedChunkPos, ticket);
-+    }
-+
-+    // Paper start
-+    public boolean addPluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
-+        Ticket<org.bukkit.plugin.Plugin> ticket = new Ticket<>(TicketType.PLUGIN_TICKET, ChunkLevel.byStatus(FullChunkStatus.FULL) - 2, value); // Copied from below and keep in-line with force loading, add at level 31
-+        final long packedChunkPos = pos.toLong();
-+        final Set<Ticket<?>> tickets = this.getTickets(packedChunkPos);
-+        if (tickets.contains(ticket)) {
-+            return false;
-+        }
-+        this.addTicket(packedChunkPos, ticket);
-+        this.tickingTicketsTracker.addTicket(packedChunkPos, ticket);
-+        return true;
-+    }
-+
-+    public boolean removePluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
-+        Ticket<org.bukkit.plugin.Plugin> ticket = new Ticket<>(TicketType.PLUGIN_TICKET, ChunkLevel.byStatus(FullChunkStatus.FULL) - 2, value); // Copied from below and keep in-line with force loading, add at level 31
-+        final long packedChunkPos = pos.toLong();
-+        final Set<Ticket<?>> tickets = this.tickets.get(packedChunkPos); // Don't use getTickets, we don't want to create a new set
-+        if (tickets == null || !tickets.contains(ticket)) {
-+            return false;
-+        }
-         this.removeTicket(packedChunkPos, ticket);
-         this.tickingTicketsTracker.removeTicket(packedChunkPos, ticket);
-+        return true;
-     }
-+    // Paper end
- 
-     private SortedArraySet<Ticket<?>> getTickets(long chunkPos) {
-         return this.tickets.computeIfAbsent(chunkPos, l -> SortedArraySet.create(4));
-@@ -217,8 +_,10 @@
+@@ -121,8 +_,10 @@
          ChunkPos chunkPos = sectionPos.chunk();
          long packedChunkPos = chunkPos.toLong();
          ObjectSet<ServerPlayer> set = this.playersPerChunk.get(packedChunkPos);
@@ -70,39 +26,3 @@
              this.playersPerChunk.remove(packedChunkPos);
              this.naturalSpawnChunkCounter.update(packedChunkPos, Integer.MAX_VALUE, false);
              this.playerTicketManager.update(packedChunkPos, Integer.MAX_VALUE, false);
-@@ -299,7 +_,7 @@
-     }
- 
-     public void removeTicketsOnClosing() {
--        ImmutableSet<TicketType<?>> set = ImmutableSet.of(TicketType.UNKNOWN);
-+        ImmutableSet<TicketType<?>> set = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.FUTURE_AWAIT); // Paper - add additional tickets to preserve
-         ObjectIterator<Entry<SortedArraySet<Ticket<?>>>> objectIterator = this.tickets.long2ObjectEntrySet().fastIterator();
- 
-         while (objectIterator.hasNext()) {
-@@ -329,6 +_,26 @@
-     public boolean hasTickets() {
-         return !this.tickets.isEmpty();
-     }
-+
-+    // CraftBukkit start
-+    public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
-+        Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
-+
-+        for (java.util.Iterator<Entry<SortedArraySet<Ticket<?>>>> iterator = this.tickets.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
-+            Entry<SortedArraySet<Ticket<?>>> entry = iterator.next();
-+            SortedArraySet<Ticket<?>> tickets = entry.getValue();
-+            if (tickets.remove(target)) {
-+                // copied from removeTicket
-+                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt(tickets), false);
-+
-+                // can't use entry after it's removed
-+                if (tickets.isEmpty()) {
-+                    iterator.remove();
-+                }
-+            }
-+        }
-+    }
-+    // CraftBukkit end
- 
-     class ChunkTicketTracker extends ChunkTracker {
-         private static final int MAX_LEVEL = ChunkLevel.MAX_LEVEL + 1;

@@ -18,12 +18,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public net.minecraft.world.entity.raid.Raider getHandle() {
-        return (net.minecraft.world.entity.raid.Raider) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftRaider";
+        return (net.minecraft.world.entity.raid.Raider) this.entity;
     }
 
     @Override
@@ -33,7 +28,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public Raid getRaid() {
-        return this.getHandle().getCurrentRaid() == null ? null : new CraftRaid(this.getHandle().getCurrentRaid());
+        return this.getHandle().getCurrentRaid() == null ? null : new CraftRaid(this.getHandle().getCurrentRaid(), this.getHandle().level());
     }
 
     @Override

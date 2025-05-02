@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,40 +15,31 @@ import org.jetbrains.annotations.Nullable;
  * Called when a LivingEntity shoots a bow firing an arrow
  */
 public class EntityShootBowEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ItemStack bow;
     private final ItemStack consumable;
     private Entity projectile;
     private final EquipmentSlot hand;
     private final float force;
     private boolean consumeItem;
+
     private boolean cancelled;
-    // Paper start
-    @Deprecated
-    public void setConsumeArrow(boolean consumeArrow) {
-        this.setConsumeItem(consumeArrow);
-    }
 
-    @Deprecated
-    public boolean getConsumeArrow() {
-        return this.shouldConsumeItem();
-    }
-
-    @Nullable @Deprecated
-    public ItemStack getArrowItem() {
-        return this.getConsumable();
-    }
-
-    @Deprecated
+    @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull final Entity projectile, final float force) {
         this(shooter, bow, new ItemStack(org.bukkit.Material.AIR), projectile, force);
     }
 
-    @Deprecated
+    @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull ItemStack arrowItem, @NotNull final Entity projectile, final float force) {
         this(shooter, bow, arrowItem, projectile, EquipmentSlot.HAND, force, true);
     }
-    // Paper end
+
+    @ApiStatus.Internal
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @Nullable final ItemStack consumable, @NotNull final Entity projectile, @NotNull final EquipmentSlot hand, final float force, final boolean consumeItem) {
         super(shooter);
         this.bow = bow;
@@ -61,7 +53,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) entity;
+        return (LivingEntity) this.entity;
     }
 
     /**
@@ -71,12 +63,12 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      */
     @Nullable
     public ItemStack getBow() {
-        return bow;
+        return this.bow;
     }
 
     /**
      * Get the ItemStack to be consumed in this event (if any).
-     *
+     * <br>
      * For instance, bows will consume an arrow ItemStack in a player's
      * inventory.
      *
@@ -84,7 +76,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      */
     @Nullable
     public ItemStack getConsumable() {
-        return consumable;
+        return this.consumable;
     }
 
     /**
@@ -94,7 +86,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Entity getProjectile() {
-        return projectile;
+        return this.projectile;
     }
 
     /**
@@ -113,7 +105,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public EquipmentSlot getHand() {
-        return hand;
+        return this.hand;
     }
 
     /**
@@ -122,13 +114,13 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * @return bow shooting force, up to 1.0
      */
     public float getForce() {
-        return force;
+        return this.force;
     }
 
     /**
-     * Set whether or not the consumable item should be consumed in this event.
-     *
-     * If set to false, it is recommended that a call to
+     * Set whether the consumable item should be consumed in this event.
+     * <p>
+     * If set to {@code false}, it is recommended that a call to
      * {@link Player#updateInventory()} is made as the client may disagree with
      * the server's decision to not consume a consumable item.
      * <p>
@@ -136,7 +128,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * (skeletons, pillagers, etc.) or with crossbows (as no item is being
      * consumed).
      *
-     * @param consumeItem whether or not to consume the item
+     * @param consumeItem whether to consume the item
      * @deprecated not currently functional
      */
     @Deprecated(since = "1.20.5")
@@ -145,32 +137,47 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Get whether or not the consumable item should be consumed in this event.
+     * Get whether the consumable item should be consumed in this event.
      *
-     * @return true if consumed, false otherwise
+     * @return {@code true} if consumed, {@code false} otherwise
      */
     public boolean shouldConsumeItem() {
-        return consumeItem;
+        return this.consumeItem;
+    }
+
+    @Nullable @Deprecated
+    public ItemStack getArrowItem() {
+        return this.getConsumable();
+    }
+
+    @Deprecated
+    public void setConsumeArrow(boolean consumeArrow) {
+        this.setConsumeItem(consumeArrow);
+    }
+
+    @Deprecated
+    public boolean getConsumeArrow() {
+        return this.shouldConsumeItem();
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        cancelled = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

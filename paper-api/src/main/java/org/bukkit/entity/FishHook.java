@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -208,7 +209,7 @@ public interface FishHook extends Projectile {
      * @return chance the bite chance
      * @deprecated has no effect in newer Minecraft versions
      */
-    @Deprecated(since = "1.9.2")
+    @Deprecated(since = "1.9.2", forRemoval = true)
     public double getBiteChance();
 
     /**
@@ -222,7 +223,7 @@ public interface FishHook extends Projectile {
      *     and 1
      * @deprecated has no effect in newer Minecraft versions
      */
-    @Deprecated(since = "1.9.2")
+    @Deprecated(since = "1.9.2", forRemoval = true)
     public void setBiteChance(double chance) throws IllegalArgumentException;
 
     /**
@@ -323,7 +324,6 @@ public interface FishHook extends Projectile {
         BOBBING;
     }
 
-    // Paper start - More FishHook API
     /**
      * Get the number of ticks the hook needs to wait for a fish to bite.
      *
@@ -367,5 +367,18 @@ public interface FishHook extends Projectile {
      * enchantment.
      */
     void resetFishingState();
-    // Paper end
+
+    /**
+     * Retrieve this fishhook back to the casting player.
+     * <p>
+     * This method will trigger and respect API events, which may be subject to cancellation.
+     * Plugins listening to {@link org.bukkit.event.player.PlayerFishEvent} might for example cancel this action.
+     *
+     * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
+     * @return The amount of damage which would be applied to the itemstack
+     * @throws IllegalStateException if the fish hook does not have a player casting it.
+     * @throws IllegalStateException if the player casting it is not holding a
+     *                               {@link org.bukkit.inventory.ItemType#FISHING_ROD} in the specified equipment slot.
+     */
+    int retrieve(@NotNull EquipmentSlot slot);
 }

@@ -1,50 +1,50 @@
 --- a/net/minecraft/core/component/DataComponentPatch.java
 +++ b/net/minecraft/core/component/DataComponentPatch.java
-@@ -86,6 +_,11 @@
-                 buffer.writeVarInt(0);
-                 buffer.writeVarInt(0);
-             } else {
-+                // Paper start - data sanitization for items
-+                final io.papermc.paper.util.ItemObfuscationSession itemObfuscationSession = value.map.isEmpty()
-+                    ? null // Avoid thread local lookup of current session if it won't be needed anyway.
-+                    : io.papermc.paper.util.ItemObfuscationSession.currentSession();
-+                // Paper end - data sanitization for items
-                 int i = 0;
-                 int i1 = 0;
+@@ -106,6 +_,11 @@
+                     buffer.writeVarInt(0);
+                     buffer.writeVarInt(0);
+                 } else {
++                    // Paper start - data sanitization for items
++                    final io.papermc.paper.util.sanitizer.ItemObfuscationSession itemObfuscationSession = value.map.isEmpty()
++                        ? null // Avoid thread local lookup of current session if it won't be needed anyway.
++                        : io.papermc.paper.util.sanitizer.ItemObfuscationSession.currentSession();
++                    // Paper end - data sanitization for items
+                     int i = 0;
+                     int i1 = 0;
  
-@@ -93,7 +_,7 @@
-                     value.map
-                 )) {
-                     if (entry.getValue().isPresent()) {
--                        i++;
-+                        if (!io.papermc.paper.util.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) i++; // Paper - data sanitization for items
-                     } else {
-                         i1++;
-                     }
-@@ -106,6 +_,7 @@
-                     value.map
-                 )) {
-                     Optional<?> optional = entryx.getValue();
-+                    optional = io.papermc.paper.util.ItemComponentSanitizer.override(itemObfuscationSession, entryx.getKey(), entryx.getValue()); // Paper - data sanitization for items
-                     if (optional.isPresent()) {
-                         DataComponentType<?> dataComponentType = entryx.getKey();
-                         DataComponentType.STREAM_CODEC.encode(buffer, dataComponentType);
-@@ -125,7 +_,13 @@
-         }
+@@ -113,7 +_,7 @@
+                         value.map
+                     )) {
+                         if (entry.getValue().isPresent()) {
+-                            i++;
++                            if (!io.papermc.paper.util.sanitizer.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) i++; // Paper - data sanitization for items
+                         } else {
+                             i1++;
+                         }
+@@ -126,6 +_,7 @@
+                         value.map
+                     )) {
+                         Optional<?> optional = entryx.getValue();
++                        optional = io.papermc.paper.util.sanitizer.ItemComponentSanitizer.override(itemObfuscationSession, entryx.getKey(), entryx.getValue()); // Paper - data sanitization for items
+                         if (optional.isPresent()) {
+                             DataComponentType<?> dataComponentType = entryx.getKey();
+                             DataComponentType.STREAM_CODEC.encode(buffer, dataComponentType);
+@@ -145,7 +_,13 @@
+             }
  
-         private static <T> void encodeComponent(RegistryFriendlyByteBuf buffer, DataComponentType<T> component, Object value) {
--            component.streamCodec().encode(buffer, (T)value);
-+            // Paper start - codec errors of random anonymous classes are useless
-+            try {
-+                component.streamCodec().encode(buffer, (T)value);
-+            } catch (final Exception e) {
-+                throw new RuntimeException("Error encoding component " + component, e);
-+            }
-+            // Paper end - codec errors of random anonymous classes are useless
-         }
-     };
-     private static final String REMOVED_PREFIX = "!";
-@@ -230,6 +_,42 @@
+             private <T> void encodeComponent(RegistryFriendlyByteBuf buffer, DataComponentType<T> component, Object value) {
+-                codecGetter.apply(component).encode(buffer, (T)value);
++                // Paper start - codec errors of random anonymous classes are useless
++                try {
++                    codecGetter.apply(component).encode(buffer, (T)value);
++                } catch (final Exception e) {
++                    throw new RuntimeException("Error encoding component " + component, e);
++                }
++                // Paper end - codec errors of random anonymous classes are useless
+             }
+         };
+     }
+@@ -249,6 +_,42 @@
  
          Builder() {
          }

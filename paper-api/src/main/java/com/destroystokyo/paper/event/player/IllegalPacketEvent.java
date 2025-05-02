@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @deprecated Not used
  */
-@Deprecated(since = "1.16.4")
+@Deprecated(since = "1.16.4", forRemoval = true)
 public class IllegalPacketEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

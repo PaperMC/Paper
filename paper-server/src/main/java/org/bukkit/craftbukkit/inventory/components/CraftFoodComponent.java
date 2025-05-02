@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory.components;
 import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import net.minecraft.world.food.FoodProperties;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
@@ -78,7 +77,7 @@ public final class CraftFoodComponent implements FoodComponent {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 73 * hash + Objects.hashCode(this.handle);
+        hash = 73 * hash + this.handle.hashCode();
         return hash;
     }
 
@@ -87,18 +86,15 @@ public final class CraftFoodComponent implements FoodComponent {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (this.getClass() != obj.getClass()) {
+        if (obj == null || this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftFoodComponent other = (CraftFoodComponent) obj;
-        return Objects.equals(this.handle, other.handle);
+        return this.handle.equals(other.handle);
     }
 
     @Override
     public String toString() {
-        return "CraftFoodComponent{" + "handle=" + this.handle + '}';
+        return "CraftFoodComponent{component=" + this.handle + '}';
     }
 }

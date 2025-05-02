@@ -27,11 +27,6 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
     }
 
     @Override
-    public String toString() {
-        return "CraftWither";
-    }
-
-    @Override
     public BossBar getBossBar() {
         return this.bossBar;
     }
@@ -68,7 +63,6 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
         this.getHandle().setInvulnerableTicks(ticks);
     }
 
-    // Paper start
     @Override
     public boolean isCharged() {
         return getHandle().isPowered();
@@ -98,5 +92,4 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
     public void enterInvulnerabilityPhase() {
         this.getHandle().makeInvulnerable();
     }
-    // Paper end
 }

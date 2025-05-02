@@ -65,7 +65,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "1.21.4")
     private static <A extends Keyed> Registry<A> legacyRegistryFor(final Class<A> clazz) {
-        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
+        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), () -> "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
     }
 
     /**
@@ -149,8 +149,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server cat types.
      *
      * @see Cat.Type
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#CAT_VARIANT}
      */
-    Registry<Cat.Type> CAT_VARIANT = registryFor(RegistryKey.CAT_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Cat.Type> CAT_VARIANT = legacyRegistryFor(Cat.Type.class);
     /**
      * Server enchantments.
      *
@@ -298,10 +300,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
+    Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
-        public Iterator iterator() {
+        public Iterator<MemoryKey<?>> iterator() {
             return MemoryKey.values().iterator();
         }
 
@@ -311,7 +313,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public @Nullable MemoryKey get(final NamespacedKey key) {
+        public @Nullable MemoryKey<?> get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
     };
@@ -325,8 +327,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Frog variants.
      *
      * @see Frog.Variant
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#FROG_VARIANT}
      */
-    Registry<Frog.Variant> FROG_VARIANT = registryFor(RegistryKey.FROG_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Frog.Variant> FROG_VARIANT = legacyRegistryFor(Frog.Variant.class);
     /**
      * Wolf variants.
      *
@@ -529,6 +533,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     Stream<T> stream();
 
     /**
+     * Returns a new stream, which contains all registry keys, which are registered to the registry.
+     *
+     * @return a stream of all registry keys
+     */
+    Stream<NamespacedKey> keyStream();
+
+    /**
      * Attempts to match the registered object with the given key.
      * <p>
      * This will attempt to find a reasonable match based on the provided input
@@ -594,6 +605,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return this.map.values().iterator();
         }
 
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return this.map.keySet().stream();
+        }
+
         @ApiStatus.Internal
         @Deprecated(since = "1.20.6", forRemoval = true)
         public Class<T> getType() {
@@ -607,6 +623,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Stream<A> stream() {
             return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return stream().map(this::getKey);
         }
 
         @Override

@@ -241,7 +241,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      * @deprecated enchantments are badly named, use {@link #getKey()}.
      */
     @NotNull
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public abstract String getName();
 
     /**

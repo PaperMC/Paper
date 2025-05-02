@@ -4,17 +4,21 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public class VillagerCareerChangeEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Profession profession;
     private final ChangeReason reason;
 
-    public VillagerCareerChangeEvent(@NotNull Villager what, @NotNull Profession profession, @NotNull ChangeReason reason) {
-        super(what);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public VillagerCareerChangeEvent(@NotNull Villager villager, @NotNull Profession profession, @NotNull ChangeReason reason) {
+        super(villager);
         this.profession = profession;
         this.reason = reason;
     }
@@ -22,7 +26,7 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
     @NotNull
     @Override
     public Villager getEntity() {
-        return (Villager) super.getEntity();
+        return (Villager) this.entity;
     }
 
     /**
@@ -32,7 +36,7 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
      */
     @NotNull
     public Profession getProfession() {
-        return profession;
+        return this.profession;
     }
 
     /**
@@ -51,28 +55,28 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
      */
     @NotNull
     public ChangeReason getReason() {
-        return reason;
+        return this.reason;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        cancelled = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**

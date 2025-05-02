@@ -46,7 +46,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated please use {@link PersistentDataType} as this part of the api is being replaced
  */
-@Deprecated(since = "1.14")
+@Deprecated(since = "1.14", forRemoval = true)
 public interface ItemTagType<T, Z> {
 
     /*
