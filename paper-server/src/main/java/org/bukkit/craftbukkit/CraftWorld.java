@@ -1183,7 +1183,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Vector dir = direction.clone().normalize().multiply(maxDistance);
         Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
-        HitResult HitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ClipContext.Block.values()[blockCollisionMode.ordinal()], CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), canCollide);
+        HitResult hitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ClipContext.Block.values()[blockCollisionMode.ordinal()], CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), canCollide);
 
         return CraftRayTraceResult.convertFromInternal(this.getHandle(), hitResult);
     }
