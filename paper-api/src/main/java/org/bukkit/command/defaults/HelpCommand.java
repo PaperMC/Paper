@@ -81,7 +81,7 @@ public class HelpCommand extends BukkitCommand {
         }
 
         if (topic == null || !topic.canSee(sender)) {
-            sender.sendMessage(Component.text("No help for" + command, NamedTextColor.RED));
+            sender.sendMessage(Component.text("No help for " + command, NamedTextColor.RED));
             return true;
         }
 
@@ -91,7 +91,7 @@ public class HelpCommand extends BukkitCommand {
             .append(Component.text("--------- ", NamedTextColor.YELLOW))
             .append(Component.text("Help: ", NamedTextColor.WHITE))
             .append(Component.text(topic.getName()))
-            .append(Component.empty());
+            .append(Component.space());
         if (page.getTotalPages() > 1) {
             header.append(Component.text(" ("))
                 .append(Component.text(page.getPageNumber()))
