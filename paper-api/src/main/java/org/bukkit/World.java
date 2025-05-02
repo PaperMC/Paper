@@ -4125,9 +4125,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Finds the nearest point of interest closest to the given location
      * <p>
-     * Note when presenting any occupancy other than
-     * {@link PoiType.Occupancy#ANY} for the {@link PoiType#BEEHIVE} or
-     * {@link PoiType#BEE_NEST} all other occupancy values will return null
+     * {@link PoiType} that return false for {@link PoiType#hasOccupants()}
+     * may not behave as expected for given occupancies other than
+     * {@link PoiType.Occupancy#ANY}
      *
      * @param origin where to start looking for a new point of interest at
      * @param poiType the poi type to find
@@ -4141,6 +4141,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Finds all valid {@link PoiType} in the provided radius and returns them
      * in a list format
+     * <p>
+     * {@link PoiType} that return false for {@link PoiType#hasOccupants()}
+     * may not behave as expected for given occupancies other than
+     * {@link PoiType.Occupancy#ANY}
      *
      * @param origin the center point of the radius
      * @param poiTypePredicate the predicate to test whether or not a PoiType

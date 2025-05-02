@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Many PoiTypes act as a marker vs storing occupants examples of this are most
  * explicitly {@link #NETHER_PORTAL}. This state can be checked using the method
- * {@link #isMarker()} which will return true if the PoiType can have occupants
+ * {@link #hasOccupants()} which will return true if the PoiType can have occupants
  */
 @NullMarked
 public interface PoiType extends Keyed {
@@ -109,12 +109,11 @@ public interface PoiType extends Keyed {
     boolean is(@NotNull final BlockData data);
 
     /**
-     * Determines whether or not this PoiType acts more of like a marker rather
-     * than acting as a store for occupants
+     * Determines whether or not this PoiType can actually hold occupants
      *
-     * @return true if this PoiType is acting as a "marker" otherwise false
+     * @return true if this PoiType can hold occupants
      */
-    boolean isMarker();
+    boolean hasOccupants();
 
     private static PoiType get(String key) {
         return Registry.POINT_OF_INTEREST_TYPE.getOrThrow(NamespacedKey.minecraft(key));
