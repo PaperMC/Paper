@@ -26,10 +26,12 @@ import org.bukkit.entity.minecart.CommandMinecart;
 public class VanillaCommandWrapper extends BukkitCommand { // Paper
 
     public final CommandNode<CommandSourceStack> vanillaCommand;
+    public final String helpCommandNamespace;
 
-    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand) {
+    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> internalCommand, String helpCommandNamespace) {
         super(name, description, usageMessage, aliases);
-        this.vanillaCommand = vanillaCommand;
+        this.vanillaCommand = internalCommand;
+        this.helpCommandNamespace = helpCommandNamespace;
     }
 
     Commands commands() {
@@ -40,6 +42,7 @@ public class VanillaCommandWrapper extends BukkitCommand { // Paper
         super(vanillaCommand.getName(), "A Mojang provided command.", vanillaCommand.getUsageText(), Collections.emptyList());
         this.vanillaCommand = vanillaCommand;
         this.setPermission(VanillaCommandWrapper.getPermission(vanillaCommand));
+        this.helpCommandNamespace = "Minecraft";
     }
 
     @Override
