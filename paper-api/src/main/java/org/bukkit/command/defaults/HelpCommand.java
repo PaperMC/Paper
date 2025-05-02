@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -98,9 +99,11 @@ public class HelpCommand extends BukkitCommand {
                 .append(Component.text(page.getTotalPages()))
                 .append(Component.text(") "));
         }
-        header.append(Component.text("---------", NamedTextColor.YELLOW));
+        final TextComponent headerComponent = header.build();
+        final int headerSize = PlainTextComponentSerializer.plainText().serialize(headerComponent).length();
+        final int headerEndingCount = Math.max(0, ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH - headerSize);
 
-        sender.sendMessage(header);
+        sender.sendMessage(headerComponent.append(Component.text("-".repeat(headerEndingCount), NamedTextColor.YELLOW)));
 
         sender.sendMessage(page.getLines());
 
