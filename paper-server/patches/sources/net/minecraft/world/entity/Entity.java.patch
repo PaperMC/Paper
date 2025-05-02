@@ -126,6 +126,15 @@
      private final double[] pistonDeltas = new double[]{0.0, 0.0, 0.0};
      private long pistonDeltasGameTime;
      private EntityDimensions dimensions;
+@@ -251,7 +_,7 @@
+     private boolean onGroundNoBlocks = false;
+     private float crystalSoundIntensity;
+     private int lastCrystalSoundPlayTick;
+-    public boolean hasVisualFire;
++    public net.kyori.adventure.util.TriState visualFire; // Paper - improve visual fire API
+     @Nullable
+     private BlockState inBlockState = null;
+     private final List<List<Entity.Movement>> movementThisTick = new ObjectArrayList<>();
 @@ -259,6 +_,41 @@
      private final LongSet visitedBlocks = new LongOpenHashSet();
      private final InsideBlockEffectApplier.StepBasedCollector insideEffectCollector = new InsideBlockEffectApplier.StepBasedCollector();
@@ -392,7 +401,12 @@
          }
  
          this.checkBelowWorld();
-@@ -504,7 +_,12 @@
+@@ -500,11 +_,16 @@
+     }
+ 
+     public void setSharedFlagOnFire(boolean isOnFire) {
+-        this.setSharedFlag(0, isOnFire || this.hasVisualFire);
++        this.setSharedFlag(0, this.visualFire.toBooleanOrElse(isOnFire)); // Paper - improve visual fire API
      }
  
      public void checkBelowWorld() {
@@ -761,6 +775,20 @@
              Component customName = this.getCustomName();
              if (customName != null) {
                  RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+@@ -1848,9 +_,11 @@
+                 compound.putInt("TicksFrozen", this.getTicksFrozen());
+             }
+ 
+-            if (this.hasVisualFire) {
+-                compound.putBoolean("HasVisualFire", this.hasVisualFire);
++            // Paper start - improve visual fire API
++            if (this.visualFire.equals(net.kyori.adventure.util.TriState.TRUE)) {
++                compound.putBoolean("HasVisualFire", true);
+             }
++            // Paper end
+ 
+             if (!this.tags.isEmpty()) {
+                 compound.store("Tags", TAG_LIST_CODEC, List.copyOf(this.tags));
 @@ -1860,13 +_,13 @@
                  compound.store("data", CustomData.CODEC, this.customData);
              }
@@ -820,6 +848,25 @@
              Vec2 vec2 = compound.read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
              this.setDeltaMovement(Math.abs(vec31.x) > 10.0 ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 ? 0.0 : vec31.z);
              this.hasImpulse = true;
+@@ -1921,7 +_,17 @@
+                 this.setNoGravity(compound.getBooleanOr("NoGravity", false));
+                 this.setGlowingTag(compound.getBooleanOr("Glowing", false));
+                 this.setTicksFrozen(compound.getIntOr("TicksFrozen", 0));
+-                this.hasVisualFire = compound.getBooleanOr("HasVisualFire", false);
++                // Paper start - improve visual fire API
++                compound.getString("Paper.FireOverride").ifPresentOrElse(override -> {
++                    try {
++                        this.visualFire = net.kyori.adventure.util.TriState.valueOf(override);
++                    } catch (Exception ignored) {
++                        LOGGER.error("Unknown fire override {} for {}", override, this);
++                    }
++                }, () -> this.visualFire = compound.getBoolean("HasVisualFire")
++                    .map(net.kyori.adventure.util.TriState::byBoolean)
++                    .orElse(net.kyori.adventure.util.TriState.NOT_SET));
++                // Paper end
+                 this.customData = compound.read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
+                 this.tags.clear();
+                 compound.read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
 @@ -1932,6 +_,67 @@
              } else {
                  throw new IllegalStateException("Entity has invalid rotation");
