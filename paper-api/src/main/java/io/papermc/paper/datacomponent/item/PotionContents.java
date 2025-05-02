@@ -61,9 +61,9 @@ public interface PotionContents {
     @Nullable String customName();
 
     /**
-     * All effects that this item applies.
+     * All effects that this component applies.
      * <p>
-     * This is a Combination of the base potion type and any custom effects.
+     * This is a combination of the base potion type and any custom effects.
      *
      * @return an unmodifiable list of all effects.
      */
@@ -71,14 +71,15 @@ public interface PotionContents {
     @Unmodifiable List<PotionEffect> allEffects();
 
     /**
-     * The resulting colour of the potion.
+     * Computes the effective colour of this potion contents component.
      * <p>
-     * It may or may not have an alpha, used for tipped arrows.
+     * This blends all custom effects, or uses a default fallback colour.
+     * It may or may not have an alpha channel, used for tipped arrows.
      *
-     * @return the visible colour
+     * @return the effective colour this component would display with.
      */
     @Contract(pure = true)
-    Color resultingColor();
+    Color computeEffectiveColor();
 
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable

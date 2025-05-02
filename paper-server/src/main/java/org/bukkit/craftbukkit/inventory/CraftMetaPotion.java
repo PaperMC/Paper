@@ -322,7 +322,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     @Override
     @NotNull
-    public Color getEffectiveColor() {
+    public Color computeEffectiveColor() {
         if (hasColor()) return getColor();
 
         return Color.fromRGB(

@@ -59,7 +59,7 @@ public record PaperPotionContents(
     }
 
     @Override
-    public Color resultingColor() {
+    public Color computeEffectiveColor() {
         return Color.fromARGB(this.impl.getColor());
     }
 

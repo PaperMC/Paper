@@ -76,9 +76,9 @@ public interface PotionMeta extends ItemMeta {
     List<PotionEffect> getCustomEffects();
 
     /**
-     * All effects that this item applies.
+     * All effects that this potion meta holds.
      * <p>
-     * This is a Combination of the base potion type and any custom effects.
+     * This is a combination of the base potion type and any custom effects.
      *
      * @return an unmodifiable list of all effects.
      */
@@ -158,14 +158,14 @@ public interface PotionMeta extends ItemMeta {
     void setColor(@Nullable Color color);
 
     /**
-     * Gets the display color of the potion.
+     * Computes the effective colour of this potion meta.
      * <p>
      * This blends all custom effects, or uses a default fallback color.
      *
      * @return the effective potion color
      */
     @NotNull
-    Color getEffectiveColor();
+    Color computeEffectiveColor();
 
     /**
      * Checks for existence of a custom potion name translation suffix.
