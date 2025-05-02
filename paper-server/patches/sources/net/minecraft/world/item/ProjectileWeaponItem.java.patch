@@ -1,6 +1,53 @@
 --- a/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -62,12 +_,29 @@
+@@ -40,7 +_,20 @@
+ 
+     public abstract int getDefaultProjectileRange();
+ 
+-    protected void shoot(
++    // Paper start - prevent item consumption for cancelled events
++    protected record UnrealizedDrawResult(
++        List<ItemStack> projectileStacks,
++        @Nullable ItemStack originalInPlayerInventory // Null in case the unrealised draw result is a noop (case of Crossbow)
++    ) {
++        public void consumeProjectilesFromPlayerInventory(int projectStackIndex) {
++            if (projectStackIndex != 0 || originalInPlayerInventory == null) return;
++            if (projectileStacks.isEmpty()) return; // Whatever happened here, nothing
++            final ItemStack nonIntangibleStack = projectileStacks.get(projectStackIndex);
++            originalInPlayerInventory.shrink(nonIntangibleStack.getCount());
++        }
++    }
++    protected boolean shoot(
++    // Paper end - prevent item consumption for cancelled events
+         ServerLevel level,
+         LivingEntity shooter,
+         InteractionHand hand,
+@@ -51,6 +_,24 @@
+         boolean isCrit,
+         @Nullable LivingEntity target
+     ) {
++        // Paper start - prevent item consumption for cancelled events
++        return shoot(level, shooter, hand, weapon, new UnrealizedDrawResult(projectileItems, null), velocity, inaccuracy, isCrit, target);
++    }
++
++    protected boolean shoot(
++        ServerLevel level,
++        LivingEntity shooter,
++        InteractionHand hand,
++        ItemStack weapon,
++        UnrealizedDrawResult unrealizedDrawResult,
++        float velocity,
++        float inaccuracy,
++        boolean isCrit,
++        @Nullable LivingEntity target
++    ) {
++        List<ItemStack> projectileItems = unrealizedDrawResult.projectileStacks();
++        boolean atLeastOneShootBowEventUncancelled = false;
++        // Paper end - prevent item consumption for cancelled events
+         float f = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
+         float f1 = projectileItems.size() == 1 ? 0.0F : 2.0F * f / (projectileItems.size() - 1);
+         float f2 = (projectileItems.size() - 1) % 2 * f1 / 2.0F;
+@@ -62,18 +_,55 @@
                  float f4 = f2 + f3 * ((i + 1) / 2) * f1;
                  f3 = -f3;
                  int i1 = i;
@@ -14,11 +61,13 @@
 +                Projectile projectile = this.createProjectile(level, shooter, weapon, itemStack, isCrit);
 +                this.shootProjectile(shooter, projectile, i1, velocity, inaccuracy, f4, target);
 +
-+                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, true);
++                boolean preConsumption = weapon.is(Items.CROSSBOW) || shooter.level().shouldConsumeArrow;
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, preConsumption);
 +                if (event.isCancelled()) {
 +                    event.getProjectile().remove();
-+                    return;
++                    continue; // Paper - prevent item consumption for cancelled events; call for each shot projectile
 +                }
++                atLeastOneShootBowEventUncancelled = true; // Paper - prevent item consumption for cancelled events
 +
 +                if (event.getProjectile() == projectile.getBukkitEntity()) {
 +                    if (Projectile.spawnProjectile(
@@ -29,31 +78,93 @@
 +                        if (shooter instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
 +                            serverPlayer.containerMenu.sendAllDataToRemote();
 +                        }
-+                        return;
++                        // Paper start - prevent item consumption for cancelled events
++                        continue; // call for each shot projectile
++                    }
++                }
++                if (this instanceof CrossbowItem crossbow) {
++                    // moved up to ensure events uncancelled
++                    float shotPitch = crossbow.getShotPitch(shooter.getRandom(), i1);
++                    shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(), net.minecraft.sounds.SoundEvents.CROSSBOW_SHOOT, shooter.getSoundSource(), 1.0F, shotPitch);
++                }
++                if (!event.shouldConsumeItem() && projectile instanceof final AbstractArrow abstractArrow) abstractArrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
++                if (event.shouldConsumeItem()) {
++                    if (weapon.is(net.minecraft.world.item.Items.CROSSBOW)) {
++                        List<ItemStack> newProjectiles = new java.util.ArrayList<>(weapon.get(DataComponents.CHARGED_PROJECTILES).getItems());
++                        newProjectiles.remove(i - (projectileItems.size() - newProjectiles.size()));
++                        weapon.set(DataComponents.CHARGED_PROJECTILES, net.minecraft.world.item.component.ChargedProjectiles.of(newProjectiles));
++                    } else if (level.shouldConsumeArrow) {
++                        unrealizedDrawResult.consumeProjectilesFromPlayerInventory(i);
++                        // Paper end - prevent item consumption for cancelled events
 +                    }
 +                }
 +                // CraftBukkit end
                  weapon.hurtAndBreak(this.getDurabilityUse(itemStack), shooter, LivingEntity.getSlotForHand(hand));
                  if (weapon.isEmpty()) {
                      break;
-@@ -95,6 +_,11 @@
+                 }
+             }
+         }
++        return atLeastOneShootBowEventUncancelled; // Paper - prevent item consumption for cancelled events
+     }
+ 
+     protected int getDurabilityUse(ItemStack stack) {
+@@ -95,6 +_,21 @@
      }
  
      protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
-+        // Paper start
-+        return draw(weapon, ammo, shooter, true);
++        // Paper start - prevent item consumption for cancelled events
++        return draw(weapon, ammo, shooter, ProjectileDrawingItemConsumption.IMMEDIATELY);
 +    }
-+    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean consume) {
-+        // Paper end
++    protected enum ProjectileDrawingItemConsumption {
++        // Will immediately consume from the passed projectile stack, like vanilla would
++        IMMEDIATELY,
++        // Will create a copyWithCount from the projectileStack, allowing for later reduction.
++        // The stacks yielded will adhere to vanilla's intangibility layout, with the first itemstack
++        // being tangible, allowing for it to be picked up once shot.
++        // Callers that do *not* consume later are responsible for marking the shot projectile as intangible.
++        MAYBE_LATER,
++        NEVER,
++    }
++    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, final ProjectileDrawingItemConsumption consume) {
++        // Paper end - prevent item consumption for cancelled events
          if (ammo.isEmpty()) {
              return List.of();
          } else {
-@@ -103,7 +_,7 @@
+@@ -102,8 +_,9 @@
+             List<ItemStack> list = new ArrayList<>(i);
              ItemStack itemStack = ammo.copy();
  
++            shooter.level().shouldConsumeArrow = true; // Paper - prevent item consumption for cancelled events
              for (int i1 = 0; i1 < i; i1++) {
 -                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0);
-+                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0 || !consume); // Paper
++                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0, consume); // Paper
                  if (!itemStack1.isEmpty()) {
                      list.add(itemStack1);
                  }
+@@ -114,17 +_,23 @@
+     }
+ 
+     protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable) {
+-        int i = !intangable && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
++        // Paper start - prevent item consumption for cancelled events
++        return useAmmo(weapon, ammo, shooter, intangable, ProjectileDrawingItemConsumption.IMMEDIATELY);
++    }
++    protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable, final ProjectileDrawingItemConsumption consumption) {
++        int i = !intangable && consumption != ProjectileDrawingItemConsumption.NEVER && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
+             ? EnchantmentHelper.processAmmoUse(serverLevel, weapon, ammo, 1)
+             : 0;
++        // Paper end - prevent item consumption for cancelled events
+         if (i > ammo.getCount()) {
+             return ItemStack.EMPTY;
+         } else if (i == 0) {
++            if (!intangable) shooter.level().shouldConsumeArrow = false; // Paper - prevent item consumption for cancelled events
+             ItemStack itemStack = ammo.copyWithCount(1);
+             itemStack.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+             return itemStack;
+         } else {
+-            ItemStack itemStack = ammo.split(i);
++            ItemStack itemStack = consumption == ProjectileDrawingItemConsumption.MAYBE_LATER ? ammo.copyWithCount(i) : ammo.split(i); // Paper - prevent item consumption for cancelled events
+             if (ammo.isEmpty() && shooter instanceof Player player) {
+                 player.getInventory().removeItem(ammo);
+             }
