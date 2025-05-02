@@ -13,9 +13,4 @@ public class CraftEnderPearl extends CraftThrowableProjectile implements EnderPe
     public ThrownEnderpearl getHandle() {
         return (ThrownEnderpearl) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftEnderPearl";
-    }
 }

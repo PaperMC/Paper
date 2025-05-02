@@ -165,7 +165,7 @@ public class CraftBlockData implements BlockData {
      * @throws IllegalStateException if the Enum could not be converted
      */
     @SuppressWarnings("unchecked")
-    private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
+    public static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
         if (nms instanceof Direction) {
             return (B) CraftBlock.notchToBlockFace((Direction) nms);
         }
