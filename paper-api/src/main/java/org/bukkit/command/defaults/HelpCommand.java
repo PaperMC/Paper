@@ -93,7 +93,7 @@ public class HelpCommand extends BukkitCommand {
             .append(Component.text(topic.getName()))
             .append(Component.space());
         if (page.getTotalPages() > 1) {
-            header.append(Component.text(" ("))
+            header.append(Component.text("("))
                 .append(Component.text(page.getPageNumber()))
                 .append(Component.text("/"))
                 .append(Component.text(page.getTotalPages()))
