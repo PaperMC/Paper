@@ -3,6 +3,8 @@ package org.bukkit.structure;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+
+import io.papermc.paper.structure.PlacementOptions;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
 import org.bukkit.block.structure.Mirror;

@@ -1,4 +1,4 @@
-package org.bukkit.structure;
+package io.papermc.paper.structure;
 
 import com.google.common.base.Preconditions;
 import java.util.Collection;
@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Random;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
+import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.EntityTransformer;
 import org.jetbrains.annotations.NotNull;
