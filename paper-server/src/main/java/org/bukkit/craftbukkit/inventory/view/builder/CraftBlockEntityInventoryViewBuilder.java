@@ -15,9 +15,9 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
-    private final Block block;
-    private final boolean useFakeBlockEntity;
-    private final @Nullable CraftBlockInventoryBuilder builder;
+    protected final Block block;
+    protected final boolean useFakeBlockEntity;
+    protected final @Nullable CraftBlockInventoryBuilder builder;
 
     public CraftBlockEntityInventoryViewBuilder(
         final MenuType<?> handle,
@@ -68,7 +68,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         return atBlock;
     }
 
-    private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
+    protected AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
         if (inventory instanceof final BlockEntity blockEntity) {
             blockEntity.setLevel(this.world);

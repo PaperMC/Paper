@@ -3,7 +3,16 @@ package org.bukkit.craftbukkit.inventory.util;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.inventory.BlastFurnaceMenu;
+import net.minecraft.world.inventory.BrewingStandMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.DispenserMenu;
+import net.minecraft.world.inventory.FurnaceMenu;
+import net.minecraft.world.inventory.HopperMenu;
 import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.inventory.ShulkerBoxMenu;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.SmokerMenu;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.Blocks;
@@ -24,6 +33,7 @@ import org.bukkit.craftbukkit.inventory.view.builder.CraftAccessLocationInventor
 import org.bukkit.craftbukkit.inventory.view.builder.CraftBlockEntityInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftDoubleChestInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftEnchantmentInventoryViewBuilder;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftInventorySupportBlockEntityInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftMerchantInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftStandardInventoryViewBuilder;
 import org.bukkit.inventory.InventoryView;
@@ -42,6 +52,8 @@ import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
+
+import static org.bukkit.craftbukkit.inventory.view.builder.CraftInventorySupportBlockEntityInventoryViewBuilder.SimpleMenuBuilder.chest;
 
 @NullMarked
 public final class CraftMenus {
@@ -78,16 +90,28 @@ public final class CraftMenus {
     public static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> getMenuTypeData(final CraftMenuType<?, ?> menuType) {
         final net.minecraft.world.inventory.MenuType<?> handle = menuType.getHandle();
         // this sucks horribly but it should work for now
-        if (menuType == MenuType.GENERIC_9X6) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
+        if (menuType == MenuType.GENERIC_9X1) {
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle, chest(1, handle))));
+        }
+        if (menuType == MenuType.GENERIC_9X2) {
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle, chest(2, handle))));
         }
         if (menuType == MenuType.GENERIC_9X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, false)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, (id, pi, container) -> new ChestMenu(net.minecraft.world.inventory.MenuType.GENERIC_9x3, id, pi, container, 3), false)));
+        }
+        if (menuType == MenuType.GENERIC_9X4) {
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle, chest(4, handle))));
+        }
+        if (menuType == MenuType.GENERIC_9X5) {
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle, chest(5, handle))));
+        }
+        if (menuType == MenuType.GENERIC_9X6) {
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
         }
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
         // this needs to be removed when inventory creation is overhauled
         if (menuType == MenuType.GENERIC_3X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.DISPENSER, DispenserBlockEntity::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.DISPENSER, DispenserBlockEntity::new, DispenserMenu::new)));
         }
         if (menuType == MenuType.CRAFTER_3X3) {
             return asType(new MenuTypeData<>(CrafterView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CRAFTER, CrafterBlockEntity::new)));
@@ -99,10 +123,10 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(BeaconView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.BEACON, BeaconBlockEntity::new)));
         }
         if (menuType == MenuType.BLAST_FURNACE) {
-            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.BLAST_FURNACE, BlastFurnaceBlockEntity::new)));
+            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.BLAST_FURNACE, BlastFurnaceBlockEntity::new, (id, pi, container) -> new BlastFurnaceMenu(id ,pi ,container, new SimpleContainerData(4)))));
         }
         if (menuType == MenuType.BREWING_STAND) {
-            return asType(new MenuTypeData<>(BrewingStandView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.BREWING_STAND, BrewingStandBlockEntity::new)));
+            return asType(new MenuTypeData<>(BrewingStandView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.BREWING_STAND, BrewingStandBlockEntity::new, (id, pi, c) -> new BrewingStandMenu(id, pi, c, new SimpleContainerData(5)))));
         }
         if (menuType == MenuType.CRAFTING) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.CRAFTING_TABLE)));
@@ -111,7 +135,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(EnchantmentView.class, () -> new CraftEnchantmentInventoryViewBuilder(handle)));
         }
         if (menuType == MenuType.FURNACE) {
-            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.FURNACE, FurnaceBlockEntity::new)));
+            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.FURNACE, FurnaceBlockEntity::new, (id, pi ,c) -> new FurnaceMenu(id, pi, c, new SimpleContainerData(4)))));
         }
         if (menuType == MenuType.GRINDSTONE) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.GRINDSTONE)));
@@ -119,7 +143,7 @@ public final class CraftMenus {
         // We really don't need to be creating a block entity for hopper but currently InventoryType doesn't have capacity
         // to understand otherwise
         if (menuType == MenuType.HOPPER) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.HOPPER, HopperBlockEntity::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.HOPPER, HopperBlockEntity::new, HopperMenu::new)));
         }
         // We also don't need to create a block entity for lectern, but again InventoryType isn't smart enough to know any better
         if (menuType == MenuType.LECTERN) {
@@ -132,13 +156,13 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftMerchantInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.SHULKER_BOX) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, ShulkerBoxBlockEntity::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, ShulkerBoxBlockEntity::new, ShulkerBoxMenu::new)));
         }
         if (menuType == MenuType.SMITHING) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.SMITHING_TABLE)));
         }
         if (menuType == MenuType.SMOKER) {
-            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SMOKER, SmokerBlockEntity::new)));
+            return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftInventorySupportBlockEntityInventoryViewBuilder<>(handle, Blocks.SMOKER, SmokerBlockEntity::new, (id, pi, c) -> new SmokerMenu(id, pi, c, new SimpleContainerData(4)))));
         }
         if (menuType == MenuType.CARTOGRAPHY_TABLE) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.CARTOGRAPHY_TABLE)));
@@ -147,7 +171,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(StonecutterView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.STONECUTTER)));
         }
 
-        return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle)));
+        throw new IllegalArgumentException("No menu type data allocated for " + menuType.getHandle());
     }
 
     @SuppressWarnings("unchecked")
