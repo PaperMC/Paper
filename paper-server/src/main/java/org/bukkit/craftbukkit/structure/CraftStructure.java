@@ -37,7 +37,7 @@ import org.bukkit.craftbukkit.util.TransformerGeneratorAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
-import org.bukkit.structure.PlacementOptions;
+import io.papermc.paper.structure.PlacementOptions;
 import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
@@ -92,22 +92,22 @@ public class CraftStructure implements Structure {
     public void place(RegionAccessor regionAccessor, BlockVector location, PlacementOptions placementOptions) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
-        Collection<BlockTransformer> blockTransformers = placementOptions.getBlockTransformers();
+        Collection<BlockTransformer> blockTransformers = placementOptions.blockTransformers();
         Preconditions.checkState(blockTransformers != null, "BlockTransformers cannot be null");
-        Collection<EntityTransformer> entityTransformers = placementOptions.getEntityTransformers();
+        Collection<EntityTransformer> entityTransformers = placementOptions.entityTransformers();
         Preconditions.checkState(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
-        RandomSource randomSource = new RandomSourceWrapper(placementOptions.getRandom());
+        RandomSource randomSource = new RandomSourceWrapper(placementOptions.random());
         StructurePlaceSettings definedstructureinfo = new StructurePlaceSettings()
-                .setMirror(net.minecraft.world.level.block.Mirror.valueOf(placementOptions.getMirror().name()))
-                .setRotation(Rotation.valueOf(placementOptions.getStructureRotation().name()))
+                .setMirror(net.minecraft.world.level.block.Mirror.valueOf(placementOptions.mirror().name()))
+                .setRotation(Rotation.valueOf(placementOptions.structureRotation().name()))
                 .setIgnoreEntities(!placementOptions.includeEntities())
-                .addProcessor(new BlockRotProcessor(placementOptions.getIntegrity()))
+                .addProcessor(new BlockRotProcessor(placementOptions.integrity()))
                 .setKnownShape(placementOptions.isStrict())
                 .setLiquidSettings(placementOptions.isApplyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)
                 .setRandom(randomSource);
-        definedstructureinfo.palette = placementOptions.getPalette();
+        definedstructureinfo.palette = placementOptions.palette();
 
         BlockPos pos = CraftBlockVector.toBlockPosition(location);
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();

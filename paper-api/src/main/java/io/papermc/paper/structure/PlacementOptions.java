@@ -75,7 +75,7 @@ public class PlacementOptions {
      *
      * @return Rotation to place with.
      */
-    public @NotNull StructureRotation getStructureRotation() {
+    public @NotNull StructureRotation structureRotation() {
         return structureRotation;
     }
 
@@ -96,7 +96,7 @@ public class PlacementOptions {
      *
      * @return Mirror to place with.
      */
-    public @NotNull Mirror getMirror() {
+    public @NotNull Mirror mirror() {
         return mirror;
     }
 
@@ -118,7 +118,7 @@ public class PlacementOptions {
      *
      * @return Palette used for placing a structure.
      */
-    public int getPalette() {
+    public int palette() {
         return palette;
     }
 
@@ -142,7 +142,7 @@ public class PlacementOptions {
      *
      * @return Integrity used for placing a structure.
      */
-    public float getIntegrity() {
+    public float integrity() {
         return integrity;
     }
 
@@ -218,7 +218,7 @@ public class PlacementOptions {
      *
      * @return BlockTransformers to apply.
      */
-    public @NotNull Collection<BlockTransformer> getBlockTransformers() {
+    public @NotNull Collection<BlockTransformer> blockTransformers() {
         return blockTransformers;
     }
 
@@ -251,7 +251,7 @@ public class PlacementOptions {
      *
      * @return EntityTransformers to apply.
      */
-    public @NotNull Collection<EntityTransformer> getEntityTransformers() {
+    public @NotNull Collection<EntityTransformer> entityTransformers() {
         return entityTransformers;
     }
 
@@ -260,7 +260,7 @@ public class PlacementOptions {
      *
      * @return Random assigned.
      */
-    public @NotNull Random getRandom() {
+    public @NotNull Random random() {
         return random;
     }
 
