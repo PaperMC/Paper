@@ -46,24 +46,24 @@ public final class PaperCommands {
     }
 
     public static void registerCommands() {
-        registerInternalCommand(
-            LiteralArgumentBuilder.<CommandSourceStack>literal("cool-paper").executes(commandContext -> {
-                commandContext.getSource().getSender().sendMessage("Hi");
-                return 1;
-            }).build(),
-            "Paper command to say paper is cool",
-            List.of(),
-            Set.of()
-        );
-        registerInternalCommand(
-            LiteralArgumentBuilder.<CommandSourceStack>literal("paper-callback-2.0").executes(commandContext -> {
-                commandContext.getSource().getSender().sendMessage("Hi");
-                return 1;
-            }).build(),
-            "Server sided only command, like for callback command",
-            List.of(),
-            Set.of(CommandRegistrationFlag.SERVER_ONLY)
-        );
+        // registerInternalCommand(
+        //     LiteralArgumentBuilder.<CommandSourceStack>literal("cool-paper").executes(commandContext -> {
+        //         commandContext.getSource().getSender().sendMessage("Hi");
+        //         return 1;
+        //     }).build(),
+        //     "Paper command to say paper is cool",
+        //     List.of(),
+        //     Set.of()
+        // );
+        // registerInternalCommand(
+        //     LiteralArgumentBuilder.<CommandSourceStack>literal("paper-callback-2.0").executes(commandContext -> {
+        //         commandContext.getSource().getSender().sendMessage("Hi");
+        //         return 1;
+        //     }).build(),
+        //     "Server sided only command, like for callback command",
+        //     List.of(),
+        //     Set.of(CommandRegistrationFlag.SERVER_ONLY)
+        // );
     }
 
     private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {
