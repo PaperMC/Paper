@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -48,6 +_,7 @@
- import net.minecraft.world.level.block.state.pattern.BlockPattern;
- import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
- import net.minecraft.world.level.block.state.predicate.BlockPredicate;
-+import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.chunk.ChunkAccess;
- import net.minecraft.world.level.chunk.LevelChunk;
- import net.minecraft.world.level.chunk.status.ChunkStatus;
 @@ -69,8 +_,9 @@
      private static final int GATEWAY_DISTANCE = 96;
      public static final int DRAGON_SPAWN_Y = 128;
@@ -50,7 +42,7 @@
          ChunkPos chunkPos = new ChunkPos(this.origin);
  
 +        // Paper start
-+        BlockPattern.BlockPatternMatch originSearch = findExitPortalExitAroundOrigin();
++        BlockPattern.BlockPatternMatch originSearch = this.findExitPortalAroundOrigin();
 +        if (originSearch != null) {
 +            return originSearch;
 +        }
@@ -70,15 +62,14 @@
                              }
  
                              return blockPatternMatch;
-@@ -291,11 +_,24 @@
+@@ -291,11 +_,23 @@
              }
          }
  
-+     // Paper start - exit portal optimization look around the origin first
++    // Paper start - exit portal optimization look around the origin first
 +        return null;
 +    }
-+    public BlockPattern.@org.checkerframework.checker.nullness.qual.Nullable BlockPatternMatch findExitPortalExitAroundOrigin() {
-+        BlockPos targetPos;
++    public @Nullable BlockPattern.BlockPatternMatch findExitPortalAroundOrigin() {
 +    // Paper end - exit portal optimization look around the origin first
          BlockPos location = EndPodiumFeature.getLocation(this.origin);
          int i1 = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, location).getY();
@@ -86,13 +77,13 @@
          for (int i2 = i1; i2 >= this.level.getMinY(); i2--) {
 -            BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, new BlockPos(location.getX(), i2, location.getZ()));
 +            // Paper start
-+            targetPos = new BlockPos(location.getX(), i2, location.getZ());
++            BlockPos targetPos = new BlockPos(location.getX(), i2, location.getZ());
 +            // Early exit if we encroached a non bedrock block because the middle column MUST be bedrock
-+            if (!this.level.getBlockState(targetPos).is(net.minecraft.world.level.block.Blocks.BEDROCK)) {
++            if (!this.level.getBlockState(targetPos).is(Blocks.BEDROCK)) {
 +                continue;
 +            }
 +            BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, targetPos);
-+           // Paper end
++            // Paper end
              if (blockPatternMatch1 != null) {
                  if (this.portalLocation == null) {
                      this.portalLocation = blockPatternMatch1.getBlock(3, 3, 3).getPos();
