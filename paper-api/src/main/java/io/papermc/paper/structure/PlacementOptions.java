@@ -174,7 +174,7 @@ public class PlacementOptions {
      *
      * @return Will place with strict block placement.
      */
-    public boolean isStrict() {
+    public boolean strict() {
         return strict;
     }
 
@@ -196,7 +196,7 @@ public class PlacementOptions {
      *
      * @return Waterlogging will apply.
      */
-    public boolean isApplyWaterlogging() {
+    public boolean applyWaterlogging() {
         return applyWaterlogging;
     }
 

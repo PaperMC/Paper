@@ -104,8 +104,8 @@ public class CraftStructure implements Structure {
                 .setRotation(Rotation.valueOf(placementOptions.structureRotation().name()))
                 .setIgnoreEntities(!placementOptions.includeEntities())
                 .addProcessor(new BlockRotProcessor(placementOptions.integrity()))
-                .setKnownShape(placementOptions.isStrict())
-                .setLiquidSettings(placementOptions.isApplyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)
+                .setKnownShape(placementOptions.strict())
+                .setLiquidSettings(placementOptions.applyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)
                 .setRandom(randomSource);
         definedstructureinfo.palette = placementOptions.palette();
 
@@ -117,7 +117,7 @@ public class CraftStructure implements Structure {
         access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
         // Strict placement option copied from net.minecraft.server.commands.PlaceCommand#placeTemplate
-        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS | (placementOptions.isStrict() ? Block.UPDATE_SKIP_ALL_SIDEEFFECTS : 0));
+        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS | (placementOptions.strict() ? Block.UPDATE_SKIP_ALL_SIDEEFFECTS : 0));
         access.getStructureTransformer().discard();
     }
 
