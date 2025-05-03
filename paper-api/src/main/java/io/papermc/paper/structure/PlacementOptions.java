@@ -203,18 +203,6 @@ public class PlacementOptions {
     }
 
     /**
-     * Add a {@link BlockTransformer} to apply to the structure.
-     * <p>Will default to an empty list if not included.</p>
-     *
-     * @param blockTransformer BlockTransformer to apply.
-     * @return This PlacementOptions.
-     */
-    public PlacementOptions addBlockTransformer(BlockTransformer blockTransformer) {
-        this.blockTransformers.add(blockTransformer);
-        return this;
-    }
-
-    /**
      * Collection of {@link BlockTransformer BlockTransformers} to apply to the structure.
      *
      * @return BlockTransformers to apply.
@@ -232,18 +220,6 @@ public class PlacementOptions {
      */
     public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
         this.entityTransformers = entityTransformers;
-        return this;
-    }
-
-    /**
-     * Add an {@link EntityTransformer} to apply to the structure.
-     * <p>Will default to an empty list if not included.</p>
-     *
-     * @param entityTransformer EntityTransformer to apply.
-     * @return This PlacementOptions.
-     */
-    public PlacementOptions addEntityTransformer(EntityTransformer entityTransformer) {
-        this.entityTransformers.add(entityTransformer);
         return this;
     }
 
