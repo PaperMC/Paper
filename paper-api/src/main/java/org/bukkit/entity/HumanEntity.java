@@ -3,6 +3,8 @@ package org.bukkit.entity;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
+import io.papermc.paper.datacomponent.item.UseCooldown;
+import net.kyori.adventure.key.Key;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -368,7 +370,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     /**
      * Set a cooldown on the specified material for a certain amount of ticks.
-     * ticks. 0 ticks will result in the removal of the cooldown.
+     * 0 ticks will result in the removal of the cooldown.
      * <p>
      * Cooldowns are used by the server for items such as ender pearls and
      * shields to prevent them from being used repeatedly.
@@ -415,7 +417,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     /**
      * Set a cooldown on the specified item for a certain amount of ticks.
-     * ticks. 0 ticks will result in the removal of the cooldown.
+     * 0 ticks will result in the removal of the cooldown.
      * <p>
      * Cooldowns are used by the server for items such as ender pearls and
      * shields to prevent them from being used repeatedly.
@@ -427,6 +429,31 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to set or 0 to remove
      */
     public void setCooldown(ItemStack item, int ticks);
+
+    /**
+     * Get the cooldown time in ticks remaining for the specified cooldown group.
+     *
+     * @param key the cooldown group to check
+     * @return the remaining cooldown time in ticks
+     * @see UseCooldown#cooldownGroup()
+     */
+    public int getCooldown(Key key);
+
+    /**
+     * Set a cooldown on items with the specified cooldown group for a certain amount of ticks.
+     * 0 ticks will result in the removal of the cooldown.
+     * <p>
+     * Cooldowns are used by the server for items such as ender pearls and
+     * shields to prevent them from being used repeatedly.
+     * <p>
+     * Note that cooldowns will not by themselves stop an item from being used
+     * for attacking.
+     *
+     * @param key cooldown group to set the cooldown for
+     * @param ticks the amount of ticks to set or 0 to remove
+     * @see UseCooldown#cooldownGroup()
+     */
+    public void setCooldown(Key key, int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.
@@ -458,9 +485,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * to validate if the current respawn location is still valid.
      *
      * @return respawn location if exists, otherwise null.
+     * @deprecated this method doesn't take the respawn angle into account, use
+     * {@link Player#getRespawnLocation(boolean)} with loadLocationAndValidate = false instead
      */
-    @Nullable
-    Location getPotentialRespawnLocation();
+    @Deprecated(since = "1.21.5")
+    @Nullable Location getPotentialRespawnLocation();
 
     /**
      * @return the player's fishing hook if they are fishing

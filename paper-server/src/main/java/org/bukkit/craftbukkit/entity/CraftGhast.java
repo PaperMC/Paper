@@ -15,11 +15,6 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
     }
 
     @Override
-    public String toString() {
-        return "CraftGhast";
-    }
-
-    @Override
     public boolean isCharging() {
         return this.getHandle().isCharging();
     }

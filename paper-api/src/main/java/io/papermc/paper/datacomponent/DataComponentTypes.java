@@ -367,7 +367,7 @@ public final class DataComponentTypes {
     // TODO: This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
     public static final DataComponentType.Valued<Chicken.Variant> CHICKEN_VARIANT = valued("chicken/variant");
     public static final DataComponentType.Valued<Frog.Variant> FROG_VARIANT = valued("frog/variant");
-    public static final DataComponentType.Valued<Horse.Style> HORSE_VARIANT = valued("horse/variant");
+    public static final DataComponentType.Valued<Horse.Color> HORSE_VARIANT = valued("horse/variant");
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
     public static final DataComponentType.Valued<Llama.Color> LLAMA_VARIANT = valued("llama/variant");
     public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");

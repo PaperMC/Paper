@@ -9,13 +9,12 @@ java {
     withJavadocJar()
 }
 
-val annotationsVersion = "26.0.1"
+val annotationsVersion = "26.0.2"
 // Keep in sync with paper-server adventure-text-serializer-ansi dep
-val adventureVersion = "4.21.0-mc1215-SNAPSHOT" // FIXME move to release asap
-val adventureJavadocVersion = "4.20.0" // Fixme remove me
+val adventureVersion = "4.21.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
-val slf4jVersion = "2.0.9"
-val log4jVersion = "2.17.1"
+val slf4jVersion = "2.0.16"
+val log4jVersion = "2.24.1"
 
 val apiAndDocs: Configuration by configurations.creating {
     attributes {
@@ -41,16 +40,12 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 }
 
 dependencies {
-
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
     api("org.yaml:snakeyaml:2.2")
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
-    }
-    api("com.googlecode.json-simple:json-simple:1.1.1") {
-        isTransitive = false // includes junit
     }
     api("it.unimi.dsi:fastutil:8.5.15")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
@@ -62,15 +57,13 @@ dependencies {
         exclude("com.google.guava", "guava")
     }
 
-    // FIXME remove me when we are using a release again
-    val adventureGroup = "io.papermc.adventure"
-    apiAndDocs(platform("$adventureGroup:adventure-bom:$adventureVersion"))
-    apiAndDocs("$adventureGroup:adventure-api")
-    apiAndDocs("$adventureGroup:adventure-text-minimessage")
-    apiAndDocs("$adventureGroup:adventure-text-serializer-gson")
-    apiAndDocs("$adventureGroup:adventure-text-serializer-legacy")
-    apiAndDocs("$adventureGroup:adventure-text-serializer-plain")
-    apiAndDocs("$adventureGroup:adventure-text-logger-slf4j")
+    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
+    apiAndDocs("net.kyori:adventure-api")
+    apiAndDocs("net.kyori:adventure-text-minimessage")
+    apiAndDocs("net.kyori:adventure-text-serializer-gson")
+    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
+    apiAndDocs("net.kyori:adventure-text-serializer-plain")
+    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
 
     api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
@@ -81,18 +74,18 @@ dependencies {
     compileOnly(annotations)
     testCompileOnly(annotations)
 
-    val checkerQual = "org.checkerframework:checker-qual:3.33.0"
+    val checkerQual = "org.checkerframework:checker-qual:3.49.2"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
     api("org.jspecify:jspecify:1.0.0")
 
     // Test dependencies
-    testImplementation("org.apache.commons:commons-lang3:3.12.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.apache.commons:commons-lang3:3.17.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
-    testImplementation("org.ow2.asm:asm-tree:9.7.1")
+    testImplementation("org.ow2.asm:asm-tree:9.8")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // configure mockito agent that is needed in newer java versions
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -183,15 +176,15 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.joml/joml/1.10.8/",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
-        "https://jd.advntr.dev/api/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/key/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/text-minimessage/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/text-serializer-gson/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/text-serializer-legacy/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/text-serializer-plain/$adventureJavadocVersion/",
-        "https://jd.advntr.dev/text-logger-slf4j/$adventureJavadocVersion/",
+        "https://jd.advntr.dev/api/$adventureVersion/",
+        "https://jd.advntr.dev/key/$adventureVersion/",
+        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
+        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
-        "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
+        "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")

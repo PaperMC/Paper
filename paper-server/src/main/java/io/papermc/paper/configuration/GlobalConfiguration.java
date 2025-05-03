@@ -356,6 +356,9 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
+        @Comment("Defines how many orbs groups can exist in an area.")
+        @Constraints.Min(1)
+        public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
     }
 
     public BlockUpdates blockUpdates;

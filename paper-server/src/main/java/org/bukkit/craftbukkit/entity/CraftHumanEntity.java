@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -41,6 +43,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
@@ -77,6 +80,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+
     private CraftInventoryPlayer inventory;
     private final CraftInventory enderChest;
     protected final PermissibleBase perm = new PermissibleBase(this);
@@ -88,6 +92,21 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         this.mode = server.getDefaultGameMode();
         this.inventory = new CraftInventoryPlayer(entity.getInventory());
         this.enderChest = new CraftInventory(entity.getEnderChestInventory());
+    }
+
+    @Override
+    public Player getHandle() {
+        return (Player) this.entity;
+    }
+
+    public void setHandle(final Player entity) {
+        super.setHandle(entity);
+        this.inventory = new CraftInventoryPlayer(entity.getInventory());
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{name=" + this.getName() + ", uuid=" + this.getUniqueId() + '}';
     }
 
     @Override
@@ -299,21 +318,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(mode != null, "GameMode cannot be null");
 
         this.mode = mode;
-    }
-
-    @Override
-    public Player getHandle() {
-        return (Player) this.entity;
-    }
-
-    public void setHandle(final Player entity) {
-        super.setHandle(entity);
-        this.inventory = new CraftInventoryPlayer(entity.getInventory());
-    }
-
-    @Override
-    public String toString() {
-        return "CraftHumanEntity{" + "id=" + this.getEntityId() + "name=" + this.getName() + '}';
     }
 
     @Override
@@ -650,14 +654,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public boolean hasCooldown(ItemStack item) {
-        Preconditions.checkArgument(item != null, "Material cannot be null");
+        Preconditions.checkArgument(item != null, "Item cannot be null");
 
         return this.getHandle().getCooldowns().isOnCooldown(CraftItemStack.asNMSCopy(item));
     }
 
     @Override
     public int getCooldown(ItemStack item) {
-        Preconditions.checkArgument(item != null, "Material cannot be null");
+        Preconditions.checkArgument(item != null, "Item cannot be null");
 
         ResourceLocation group = this.getHandle().getCooldowns().getCooldownGroup(CraftItemStack.asNMSCopy(item));
         if (group == null) {
@@ -670,10 +674,26 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setCooldown(ItemStack item, int ticks) {
-        Preconditions.checkArgument(item != null, "Material cannot be null");
+        Preconditions.checkArgument(item != null, "Item cannot be null");
         Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
 
         this.getHandle().getCooldowns().addCooldown(CraftItemStack.asNMSCopy(item), ticks);
+    }
+
+    @Override
+    public int getCooldown(Key key) {
+        Preconditions.checkArgument(key != null, "Key cannot be null");
+
+        ItemCooldowns.CooldownInstance cooldown = this.getHandle().getCooldowns().cooldowns.get(PaperAdventure.asVanilla(key));
+        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime() - this.getHandle().getCooldowns().tickCount);
+    }
+
+    @Override
+    public void setCooldown(Key key, int ticks) {
+        Preconditions.checkArgument(key != null, "Key cannot be null");
+        Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
+
+        this.getHandle().getCooldowns().addCooldown(PaperAdventure.asVanilla(key), ticks);
     }
 
     @Override
@@ -920,6 +940,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         FireworkRocketEntity fireworks = new FireworkRocketEntity(this.getHandle().level(), CraftItemStack.asNMSCopy(fireworkItemStack), this.getHandle());
         boolean success = this.getHandle().level().addFreshEntity(fireworks, SpawnReason.CUSTOM);
         return success ? (Firework) fireworks.getBukkitEntity() : null;
+    }
+
+    @Override
+    public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
+        net.minecraft.world.entity.EquipmentSlot equipmentSlot = CraftEquipmentSlot.getNMS(slot);
+        return (equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HUMANOID_ARMOR || equipmentSlot.getType() == net.minecraft.world.entity.EquipmentSlot.Type.HAND) && super.canUseEquipmentSlot(slot);
     }
 
     @Override

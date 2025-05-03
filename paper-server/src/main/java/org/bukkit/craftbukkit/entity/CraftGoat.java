@@ -11,12 +11,7 @@ public class CraftGoat extends CraftAnimals implements Goat {
 
     @Override
     public net.minecraft.world.entity.animal.goat.Goat getHandle() {
-        return (net.minecraft.world.entity.animal.goat.Goat) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftGoat";
+        return (net.minecraft.world.entity.animal.goat.Goat) this.entity;
     }
 
     @Override

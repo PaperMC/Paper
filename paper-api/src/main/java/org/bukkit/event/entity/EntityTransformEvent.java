@@ -6,11 +6,12 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an entity is about to be replaced by another entity.
  */
+@NullMarked
 public class EntityTransformEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,10 +23,10 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityTransformEvent(@NotNull Entity original, @NotNull List<Entity> convertedList, @NotNull TransformReason transformReason) {
+    public EntityTransformEvent(Entity original, List<Entity> convertedList, TransformReason transformReason) {
         super(original);
         this.convertedList = Collections.unmodifiableList(convertedList);
-        this.converted = convertedList.get(0);
+        this.converted = convertedList.getFirst();
         this.transformReason = transformReason;
     }
 
@@ -34,7 +35,6 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      *
      * @return The transformed entities.
      */
-    @NotNull
     public List<Entity> getTransformedEntities() {
         return this.convertedList;
     }
@@ -47,7 +47,6 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      * @return The transformed entity.
      * @see #getTransformedEntities()
      */
-    @NotNull
     public Entity getTransformedEntity() {
         return this.converted;
     }
@@ -57,7 +56,6 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      *
      * @return The reason for conversion that has occurred.
      */
-    @NotNull
     public TransformReason getTransformReason() {
         return this.transformReason;
     }
@@ -72,13 +70,11 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
