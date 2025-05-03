@@ -51,6 +51,7 @@ dependencies {
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("com.mojang:brigadier:1.3.10")
+    api("org.apache.commons:commons-lang3:3.17.0")
 
     // Deprecate bungeecord-chat in favor of adventure
     api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {
@@ -65,9 +66,8 @@ dependencies {
     apiAndDocs("net.kyori:adventure-text-serializer-plain")
     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
 
-    api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
-    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-    compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
+    api("org.apache.maven:maven-resolver-provider:3.9.9") // make API dependency for Paper Plugins
+    compileOnly("org.apache.maven.resolver:maven-resolver-supplier-mvn3:2.0.8")
 
     // Annotations - Slowly migrate to jspecify
     val annotations = "org.jetbrains:annotations:$annotationsVersion"

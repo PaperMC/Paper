@@ -167,9 +167,8 @@ dependencies {
         isTransitive = false // includes junit
     }
 
-    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
+    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.9")
+    runtimeOnly("org.apache.maven.resolver:maven-resolver-supplier-mvn3:2.0.8")
 
     testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
