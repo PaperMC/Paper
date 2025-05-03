@@ -1,20 +1,8 @@
 package io.papermc.paper.command;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import net.kyori.adventure.text.Component;
-import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.commands.CommandSource;
-import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.Command;
 
@@ -24,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
-import org.jetbrains.annotations.NotNull;
 
 @DefaultQualifier(NonNull.class)
 public final class PaperCommands {
@@ -67,7 +54,7 @@ public final class PaperCommands {
     }
 
     private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {
-        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.registerWithFlagInternal(
+        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.registerWithFlagsInternal(
             null,
             "paper",
             "Paper",
