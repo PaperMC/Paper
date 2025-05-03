@@ -48,6 +48,7 @@ public class PlacementOptions {
      * @param includeEntities Whether to include entities.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions includeEntities(boolean includeEntities) {
         this.includeEntities = includeEntities;
         return this;
