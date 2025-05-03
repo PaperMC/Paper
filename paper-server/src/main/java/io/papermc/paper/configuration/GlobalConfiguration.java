@@ -356,6 +356,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
+        @Comment("If true, items in open inventory slots and the cursor item return to the player's inventory on death with keep-inventory; otherwise, they drop.")
+        public boolean returnItemsToInventoryUponKeepInventoryDeath = false;
     }
 
     public BlockUpdates blockUpdates;
