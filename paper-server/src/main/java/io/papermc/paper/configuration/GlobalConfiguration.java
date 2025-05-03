@@ -12,7 +12,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ExperienceOrb;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -357,20 +356,9 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
-        @Comment("Defines percentage of how many orbs in an area will actually merge.")
+        @Comment("Defines how many orbs groups can exist in an area.")
         @Constraints.Min(1)
-        @Constraints.Max(100)
-        public DoubleOr.Default xpMergePercentage = DoubleOr.Default.USE_DEFAULT;
-        @PostProcess
-        private void postProcess() {
-            double xpMergePercentage = this.xpMergePercentage.or(102.5 - 2.5 * ExperienceOrb.ORB_GROUPS_PER_AREA);
-            // Linear interpolation: y = mx + b
-            // Where x is orbPercentage, y is the result
-            // For (2.5, 40) and (100, 1): m = (1-40)/(100-2.5) = -39/97.5 = -0.4
-            double interpolated = 41 - 0.4 * xpMergePercentage;
-            this.xpMergeModulo = (int) Math.ceil(Math.clamp(interpolated, 1, 40));
-        }
-        public transient int xpMergeModulo = ExperienceOrb.ORB_GROUPS_PER_AREA;
+        public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
     }
 
     public BlockUpdates blockUpdates;
