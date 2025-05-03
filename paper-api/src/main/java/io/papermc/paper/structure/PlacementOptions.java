@@ -200,7 +200,7 @@ public class PlacementOptions {
      * @return This PlacementOptions.
      */
     public PlacementOptions blockTransformers(Collection<BlockTransformer> blockTransformers) {
-        this.blockTransformers = blockTransformers;
+        this.blockTransformers = new ArrayList<>(blockTransformers);
         return this;
     }
 
@@ -221,7 +221,7 @@ public class PlacementOptions {
      * @return This PlacementOptions.
      */
     public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
-        this.entityTransformers = entityTransformers;
+        this.entityTransformers = new ArrayList<>(entityTransformers);
         return this;
     }
 
