@@ -10,6 +10,7 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.EntityTransformer;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
 
@@ -68,6 +69,7 @@ public class PlacementOptions {
      * @param structureRotation Rotation to place with.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions structureRotation(StructureRotation structureRotation) {
         this.structureRotation = structureRotation;
         return this;
@@ -89,6 +91,7 @@ public class PlacementOptions {
      * @param mirror Mirror to place with.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions mirror(Mirror mirror) {
         this.mirror = mirror;
         return this;
@@ -111,6 +114,7 @@ public class PlacementOptions {
      *                {@code 0}, or {@code -1} to pick a random palette.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions palette(int palette) {
         this.palette = palette;
         return this;
@@ -134,6 +138,7 @@ public class PlacementOptions {
      *                  0 removing all blocks and 1 spawning the structure in pristine condition.
      * @return This PlacementOptions
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions integrity(float integrity) {
         Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
         this.integrity = integrity;
@@ -158,6 +163,7 @@ public class PlacementOptions {
      * @param strict Whether to restrict block updates.
      * @return This PlacementOptions
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions strict(boolean strict) {
         this.strict = strict;
         return this;
@@ -179,6 +185,7 @@ public class PlacementOptions {
      * @param applyWaterlogging Whether to apply waterlogging.
      * @return This PlacementOptions
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
         this.applyWaterlogging = applyWaterlogging;
         return this;
@@ -199,6 +206,7 @@ public class PlacementOptions {
      * @param blockTransformers Collection of BlockTransformers.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions blockTransformers(Collection<BlockTransformer> blockTransformers) {
         this.blockTransformers = new ArrayList<>(blockTransformers);
         return this;
@@ -220,6 +228,7 @@ public class PlacementOptions {
      * @param entityTransformers EntityTransformers to apply.
      * @return This PlacementOptions.
      */
+    @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
         this.entityTransformers = new ArrayList<>(entityTransformers);
         return this;
