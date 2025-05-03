@@ -43,9 +43,9 @@ public class PaperSoundEventRegistryEntry implements SoundEventRegistryEntry {
         return this.fixedRange;
     }
 
-    public static final class Builder extends PaperSoundEventRegistryEntry implements SoundEventRegistryEntry.Builder, PaperRegistryBuilder<SoundEvent, Sound> {
+    public static final class PaperBuilder extends PaperSoundEventRegistryEntry implements SoundEventRegistryEntry.Builder, PaperRegistryBuilder<SoundEvent, Sound> {
 
-        public Builder(final Conversions conversions, final @Nullable SoundEvent soundEvent) {
+        public PaperBuilder(final Conversions conversions, final @Nullable SoundEvent soundEvent) {
             super(conversions, soundEvent);
         }
 

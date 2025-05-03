@@ -1,6 +1,7 @@
 package io.papermc.generator.rewriter.types.registry;
 
 import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.registry.RegistryEntry;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.event.RegistryEventProvider;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -17,7 +18,7 @@ public class RegistryEventsRewriter extends SearchReplaceRewriter {
     @Override
     public void insert(SearchMetadata metadata, StringBuilder builder) {
         RegistryEntries.forEach(entry -> {
-            if (entry.apiRegistryBuilder() != null) {
+            if (entry.apiRegistryBuilder() != null && entry.modificationApiSupport() != RegistryEntry.RegistryModificationApiSupport.NONE) {
                 builder.append(metadata.indent());
                 builder.append("%s %s %s ".formatted(PUBLIC, STATIC, FINAL));
                 builder.append(RegistryEventProvider.class.getSimpleName());

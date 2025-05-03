@@ -18,7 +18,6 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
 public class Conversions {
@@ -70,7 +69,7 @@ public class Conversions {
         final RegistryEntryMeta.Buildable<M, A, B> meta = getDirectHolderBuildableMeta(registryKey);
         final PaperRegistryBuilderFactory<M, A, B> builderFactory = this.createRegistryBuilderFactory(registryKey, meta);
         value.accept(builderFactory);
-        return meta.registryTypeMapper().convertDirectHolder(Holder.direct(builderFactory.requireBuilder().build()));
+        return meta.registryTypeMapper().createBukkit(Holder.direct(builderFactory.requireBuilder().build()));
     }
 
     public <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> Holder<M> createHolderFromBuilder(final ResourceKey<? extends Registry<M>> registryKey, final Consumer<? super PaperRegistryBuilderFactory<M, A, B>> value) {
@@ -80,7 +79,7 @@ public class Conversions {
         return Holder.direct(builderFactory.requireBuilder().build());
     }
 
-    private <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> @NotNull PaperRegistryBuilderFactory<M, A, B> createRegistryBuilderFactory(
+    private <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> PaperRegistryBuilderFactory<M, A, B> createRegistryBuilderFactory(
         final ResourceKey<? extends Registry<M>> registryKey,
         final RegistryEntryMeta.Buildable<M, A, B> buildableMeta
     ) {

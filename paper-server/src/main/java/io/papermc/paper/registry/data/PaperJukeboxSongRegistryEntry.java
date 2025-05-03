@@ -68,9 +68,9 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
         return asConfigured(this.comparatorOutput, "comparatorOutput");
     }
 
-    public static final class Builder extends PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry.Builder, PaperRegistryBuilder<JukeboxSong, org.bukkit.JukeboxSong> {
+    public static final class PaperBuilder extends PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry.Builder, PaperRegistryBuilder<JukeboxSong, org.bukkit.JukeboxSong> {
 
-        public Builder(final Conversions conversions, final @Nullable JukeboxSong internal) {
+        public PaperBuilder(final Conversions conversions, final @Nullable JukeboxSong internal) {
             super(conversions, internal);
         }
 
