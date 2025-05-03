@@ -1,6 +1,7 @@
 package io.papermc.paper.structure;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Random;
@@ -9,6 +10,7 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.EntityTransformer;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -207,8 +209,8 @@ public class PlacementOptions {
      *
      * @return BlockTransformers to apply.
      */
-    public Collection<BlockTransformer> blockTransformers() {
-        return blockTransformers;
+    public @UnmodifiableView Collection<BlockTransformer> blockTransformers() {
+        return new ArrayList<>(blockTransformers);
     }
 
     /**
@@ -228,8 +230,8 @@ public class PlacementOptions {
      *
      * @return EntityTransformers to apply.
      */
-    public Collection<EntityTransformer> entityTransformers() {
-        return entityTransformers;
+    public @UnmodifiableView Collection<EntityTransformer> entityTransformers() {
+        return new ArrayList<>(entityTransformers);
     }
 
     /**
