@@ -9,11 +9,12 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.EntityTransformer;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents options for placing a {@link Structure}.
  */
+@NullMarked
 public class PlacementOptions {
 
     private boolean includeEntities = true;
@@ -33,7 +34,7 @@ public class PlacementOptions {
      * @param random The randomizer used for setting the structure's
      *               {@link org.bukkit.loot.LootTable LootTables} and integrity.
      */
-    public PlacementOptions(@NotNull Random random) {
+    public PlacementOptions(Random random) {
         this.random = random;
     }
 
@@ -44,7 +45,7 @@ public class PlacementOptions {
      * @param includeEntities Whether to include entities.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions includeEntities(boolean includeEntities) {
+    public PlacementOptions includeEntities(boolean includeEntities) {
         this.includeEntities = includeEntities;
         return this;
     }
@@ -65,7 +66,7 @@ public class PlacementOptions {
      * @param structureRotation Rotation to place with.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions structureRotation(@NotNull StructureRotation structureRotation) {
+    public PlacementOptions structureRotation(StructureRotation structureRotation) {
         this.structureRotation = structureRotation;
         return this;
     }
@@ -75,7 +76,7 @@ public class PlacementOptions {
      *
      * @return Rotation to place with.
      */
-    public @NotNull StructureRotation structureRotation() {
+    public StructureRotation structureRotation() {
         return structureRotation;
     }
 
@@ -86,7 +87,7 @@ public class PlacementOptions {
      * @param mirror Mirror to place with.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions mirror(@NotNull Mirror mirror) {
+    public PlacementOptions mirror(Mirror mirror) {
         this.mirror = mirror;
         return this;
     }
@@ -96,7 +97,7 @@ public class PlacementOptions {
      *
      * @return Mirror to place with.
      */
-    public @NotNull Mirror mirror() {
+    public Mirror mirror() {
         return mirror;
     }
 
@@ -108,7 +109,7 @@ public class PlacementOptions {
      *                {@code 0}, or {@code -1} to pick a random palette.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions palette(int palette) {
+    public PlacementOptions palette(int palette) {
         this.palette = palette;
         return this;
     }
@@ -131,7 +132,7 @@ public class PlacementOptions {
      *                  0 removing all blocks and 1 spawning the structure in pristine condition.
      * @return This PlacementOptions
      */
-    public @NotNull PlacementOptions integrity(float integrity) {
+    public PlacementOptions integrity(float integrity) {
         Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
         this.integrity = integrity;
         return this;
@@ -155,7 +156,7 @@ public class PlacementOptions {
      * @param strict Whether to restrict block updates.
      * @return This PlacementOptions
      */
-    public @NotNull PlacementOptions strict(boolean strict) {
+    public PlacementOptions strict(boolean strict) {
         this.strict = strict;
         return this;
     }
@@ -176,7 +177,7 @@ public class PlacementOptions {
      * @param applyWaterlogging Whether to apply waterlogging.
      * @return This PlacementOptions
      */
-    public @NotNull PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
+    public PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
         this.applyWaterlogging = applyWaterlogging;
         return this;
     }
@@ -196,7 +197,7 @@ public class PlacementOptions {
      * @param blockTransformers Collection of BlockTransformers.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions blockTransformers(@NotNull Collection<BlockTransformer> blockTransformers) {
+    public PlacementOptions blockTransformers(Collection<BlockTransformer> blockTransformers) {
         this.blockTransformers = blockTransformers;
         return this;
     }
@@ -208,7 +209,7 @@ public class PlacementOptions {
      * @param blockTransformer BlockTransformer to apply.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions addBlockTransformer(@NotNull BlockTransformer blockTransformer) {
+    public PlacementOptions addBlockTransformer(BlockTransformer blockTransformer) {
         this.blockTransformers.add(blockTransformer);
         return this;
     }
@@ -218,7 +219,7 @@ public class PlacementOptions {
      *
      * @return BlockTransformers to apply.
      */
-    public @NotNull Collection<BlockTransformer> blockTransformers() {
+    public Collection<BlockTransformer> blockTransformers() {
         return blockTransformers;
     }
 
@@ -229,7 +230,7 @@ public class PlacementOptions {
      * @param entityTransformers EntityTransformers to apply.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions entityTransformers(@NotNull Collection<EntityTransformer> entityTransformers) {
+    public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
         this.entityTransformers = entityTransformers;
         return this;
     }
@@ -241,7 +242,7 @@ public class PlacementOptions {
      * @param entityTransformer EntityTransformer to apply.
      * @return This PlacementOptions.
      */
-    public @NotNull PlacementOptions addEntityTransformer(@NotNull EntityTransformer entityTransformer) {
+    public PlacementOptions addEntityTransformer(EntityTransformer entityTransformer) {
         this.entityTransformers.add(entityTransformer);
         return this;
     }
@@ -251,7 +252,7 @@ public class PlacementOptions {
      *
      * @return EntityTransformers to apply.
      */
-    public @NotNull Collection<EntityTransformer> entityTransformers() {
+    public Collection<EntityTransformer> entityTransformers() {
         return entityTransformers;
     }
 
@@ -260,7 +261,7 @@ public class PlacementOptions {
      *
      * @return Random assigned.
      */
-    public @NotNull Random random() {
+    public Random random() {
         return random;
     }
 
