@@ -4,7 +4,7 @@ package io.papermc.paper.configuration;
  * Represents the configuration settings for a server.
  * <p>
  * This interface doesn't aim to cover every possible server configuration
- * option but focuses on selected critical settings.
+ * option but focuses on selected critical settings and behaviors.
  */
 public interface ServerConfiguration {
 
