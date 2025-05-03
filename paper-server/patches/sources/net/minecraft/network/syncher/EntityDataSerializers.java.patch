@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/syncher/EntityDataSerializers.java
 +++ b/net/minecraft/network/syncher/EntityDataSerializers.java
-@@ -51,10 +_,31 @@
+@@ -51,10 +_,27 @@
      public static final EntityDataSerializer<Optional<Component>> OPTIONAL_COMPONENT = EntityDataSerializer.forValueType(
          ComponentSerialization.TRUSTED_OPTIONAL_STREAM_CODEC
      );
@@ -13,6 +13,8 @@
 +
 +        @Override
 +        public void encode(final net.minecraft.network.RegistryFriendlyByteBuf buffer, final net.minecraft.world.item.ItemStack value) {
++            // If the codec is called during an obfuscation session, downgrade the context's obf level to OVERSIZED if it isn't already.
++            // Entity data cannot be fully obfuscated as entities might render out specific values (e.g. count or custom name).
 +            try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.sanitizer.ItemObfuscationSession.withContext(c -> c.level(io.papermc.paper.util.sanitizer.ItemObfuscationSession.ObfuscationLevel.OVERSIZED))) {
 +                ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, value);
 +            }
@@ -23,13 +25,7 @@
          @Override
          public StreamCodec<? super RegistryFriendlyByteBuf, ItemStack> codec() {
 -            return ItemStack.OPTIONAL_STREAM_CODEC;
-+            // Paper start - do not obfuscate items send as entity data
-+            if (io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.obfuscation.items.obfuscateInEntityData) {
-+                return ItemStack.OPTIONAL_STREAM_CODEC;
-+            } else {
-+                return OVERSIZED_ITEM_CODEC;
-+            }
-+            // Paper end - do not obfuscate items send as entity data
++            return OVERSIZED_ITEM_CODEC; // Paper start - do not obfuscate items send as entity data
          }
  
          @Override
