@@ -1,10 +1,8 @@
 package io.papermc.paper.registry.data;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.data.client.ClientAsset;
 import io.papermc.paper.registry.data.util.Conversions;
-import net.kyori.adventure.key.Key;
-import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Wolf;
@@ -15,9 +13,9 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
-    protected ClientAsset assetInfoAngry;
-    protected ClientAsset assetInfoWild;
-    protected ClientAsset assetInfoTame;
+    protected net.minecraft.core.@Nullable ClientAsset angryClientAsset;
+    protected net.minecraft.core.@Nullable ClientAsset wildClientAsset;
+    protected net.minecraft.core.@Nullable ClientAsset tameClientAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -27,60 +25,66 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         final @Nullable WolfVariant internal
     ) {
         this.conversions = conversions;
-        if (internal == null) return;
+        if (internal == null) {
+            this.spawnConditions = SpawnPrioritySelectors.EMPTY;
+            return;
+        }
 
-        this.assetInfoAngry = internal.assetInfo().angry();
-        this.assetInfoWild = internal.assetInfo().wild();
-        this.assetInfoTame = internal.assetInfo().tame();
+        this.angryClientAsset = internal.assetInfo().angry();
+        this.wildClientAsset = internal.assetInfo().wild();
+        this.tameClientAsset = internal.assetInfo().tame();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public Key assetIdAngry() {
-        return PaperAdventure.asAdventure(asConfigured(this.assetInfoAngry.id(), "assetIdAngry"));
+    public ClientAsset angryClientAsset() {
+        return this.conversions.asBukkit(asConfigured(this.angryClientAsset, "angryClientAsset"));
     }
 
     @Override
-    public Key assetIdWild() {
-        return PaperAdventure.asAdventure(asConfigured(this.assetInfoWild.id(), "assetIdWild"));
+    public ClientAsset wildClientAsset() {
+        return this.conversions.asBukkit(asConfigured(this.wildClientAsset, "wildClientAsset"));
     }
 
     @Override
-    public Key assetIdTame() {
-        return PaperAdventure.asAdventure(asConfigured(this.assetInfoTame.id(), "assetIdTame"));
+    public ClientAsset tameClientAsset() {
+        return this.conversions.asBukkit(asConfigured(this.tameClientAsset, "tameClientAsset"));
     }
 
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
 
-        private final WolfVariant internal;
-
         public PaperBuilder(final Conversions conversions, final @Nullable WolfVariant internal) {
             super(conversions, internal);
-
-            this.internal = internal;
         }
 
         @Override
-        public Builder assetIdAngry(final Key assetId) {
-            this.assetInfoAngry = new ClientAsset(PaperAdventure.asVanilla(asArgument(assetId, "assetIdAngry")));
+        public Builder angryClientAsset(final ClientAsset angryClientAsset) {
+            this.angryClientAsset = this.conversions.asVanilla(asArgument(angryClientAsset, "angryClientAsset"));
             return this;
         }
 
         @Override
-        public Builder assetIdWild(final Key assetId) {
-            this.assetInfoWild = new ClientAsset(PaperAdventure.asVanilla(asArgument(assetId, "assetIdWild")));
+        public Builder wildClientAsset(final ClientAsset wildClientAsset) {
+            this.wildClientAsset = this.conversions.asVanilla(asArgument(wildClientAsset, "wildClientAsset"));
             return this;
         }
 
         @Override
-        public Builder assetIdTame(final Key assetId) {
-            this.assetInfoTame = new ClientAsset(PaperAdventure.asVanilla(asArgument(assetId, "assetIdTame")));
+        public Builder tameClientAsset(final ClientAsset tameClientAsset) {
+            this.tameClientAsset = this.conversions.asVanilla(asArgument(tameClientAsset, "tameClientAsset"));
             return this;
         }
 
         @Override
         public WolfVariant build() {
-            return new WolfVariant(new WolfVariant.AssetInfo(assetInfoWild, assetInfoTame, assetInfoAngry), internal.spawnConditions());
+            return new WolfVariant(
+                new WolfVariant.AssetInfo(
+                    asConfigured(this.wildClientAsset, "wildClientAsset"),
+                    asConfigured(this.tameClientAsset, "tameClientAsset"),
+                    asConfigured(this.angryClientAsset, "angryClientAsset")
+                ),
+                asConfigured(this.spawnConditions, "spawnConditions")
+            );
         }
     }
 }

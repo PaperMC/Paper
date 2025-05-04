@@ -80,13 +80,6 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         Type WHITE = getType("white");
         // End generate - CatType
 
-        /**
-         * Get the cat type's asset id
-         *
-         * @return the asset id
-         */
-        @NotNull Key assetId();
-
         @NotNull
         private static Type getType(@NotNull String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

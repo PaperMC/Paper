@@ -100,11 +100,6 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
             return this.key;
         }
 
-        @NotNull
-        public net.kyori.adventure.key.Key assetId() {
-            return PaperAdventure.asAdventure(this.getHandle().assetInfo().id());
-        }
-
         @Override
         public int compareTo(Variant variant) {
             return this.ordinal - variant.ordinal();

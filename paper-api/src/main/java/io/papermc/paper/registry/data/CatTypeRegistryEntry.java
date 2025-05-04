@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.data.client.ClientAsset;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Cat;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,19 +15,18 @@ import org.jetbrains.annotations.Contract;
 public interface CatTypeRegistryEntry {
 
     /**
-     * Provides the asset id of the cat type, which is the location of the texture to use.
+     * Provides the asset of the cat type, which represents the texture to use.
      *
-     * @return the asset id.
-     * @see Cat.Type#assetId()
+     * @return the client asset.
      */
-    Key assetId();
+    ClientAsset clientAsset();
 
     /**
      * A mutable builder for the {@link CatTypeRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #assetId(Key)}</li>
+     *     <li>{@link #clientAsset(ClientAsset)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -34,14 +34,13 @@ public interface CatTypeRegistryEntry {
     interface Builder extends CatTypeRegistryEntry, RegistryBuilder<Cat.Type> {
 
         /**
-         * Sets the asset id of the cat type, which is the location of the texture to use.
+         * Sets the client asset of the cat type, which is the location of the texture to use.
          *
-         * @param assetId the asset id.
+         * @param clientAsset the client asset.
          * @return this builder instance.
-         * @see CatTypeRegistryEntry#assetId()
-         * @see Cat.Type#assetId()
+         * @see CatTypeRegistryEntry#clientAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder assetId(Key assetId);
+        Builder clientAsset(ClientAsset clientAsset);
     }
 }

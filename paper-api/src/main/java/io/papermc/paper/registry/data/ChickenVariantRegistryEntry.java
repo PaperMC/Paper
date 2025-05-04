@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.data.client.ClientAsset;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Chicken;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,26 +16,41 @@ import org.jspecify.annotations.Nullable;
 public interface ChickenVariantRegistryEntry {
 
     /**
-     * Provides the asset id of the chicken variant, which is the location of the texture to use.
-     *
-     * @return the asset id.
-     * @see Chicken.Variant#assetId()
+     * The model of the chicken variant to render the configured texture on.
      */
-    Key assetId();
+    enum Model {
+        /**
+         * The normal chicken model.
+         */
+        NORMAL,
+
+        /**
+         * The cold chicken model.
+         */
+        COLD,
+    }
+
+    /**
+     * Provides the asset of the chicken variant, which represents the texture to use.
+     *
+     * @return the client asset.
+     */
+    ClientAsset clientAsset();
 
     /**
      * Provides the model of the chicken variant.
+     *
      * @return the model.
-     * @see Chicken.Variant#getModel()
      */
-    Chicken.Variant.@Nullable Model model();
+    Model model();
 
     /**
      * A mutable builder for the {@link ChickenVariantRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #assetId(Key)}</li>
+     *     <li>{@link #clientAsset(ClientAsset)}</li>
+     *     <li>{@link #model(Model)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -42,25 +58,23 @@ public interface ChickenVariantRegistryEntry {
     interface Builder extends ChickenVariantRegistryEntry, RegistryBuilder<Chicken.Variant> {
 
         /**
+         * Sets the client asset of the chicken variant, which is the location of the texture to use.
+         *
+         * @param clientAsset the client asset.
+         * @return this builder instance.
+         * @see ChickenVariantRegistryEntry#clientAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder clientAsset(ClientAsset clientAsset);
+
+        /**
          * Sets the model to use for this chicken variant.
          *
          * @param model the model.
          * @return this builder instance.
          * @see ChickenVariantRegistryEntry#model()
-         * @see Chicken.Variant#getModel()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder model(Chicken.Variant.Model model);
-
-        /**
-         * Sets the asset id of the chicken variant, which is the location of the texture to use.
-         *
-         * @param assetId the asset id.
-         * @return this builder instance.
-         * @see ChickenVariantRegistryEntry#assetId()
-         * @see Chicken.Variant#assetId()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder assetId(Key assetId);
+        Builder model(Model model);
     }
 }

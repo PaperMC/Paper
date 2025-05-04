@@ -138,21 +138,6 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
             return this.key;
         }
 
-        @NotNull
-        public net.kyori.adventure.key.Key assetIdAngry() {
-            return PaperAdventure.asAdventure(this.getHandle().assetInfo().angry().id());
-        }
-
-        @NotNull
-        public net.kyori.adventure.key.Key assetIdWild() {
-            return PaperAdventure.asAdventure(this.getHandle().assetInfo().wild().id());
-        }
-
-        @NotNull
-        public net.kyori.adventure.key.Key assetIdTame() {
-            return PaperAdventure.asAdventure(this.getHandle().assetInfo().tame().id());
-        }
-
         @Override
         public String toString() {
             return this.key.toString();

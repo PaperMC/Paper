@@ -1,14 +1,11 @@
 package io.papermc.paper.registry.data;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.data.client.ClientAsset;
 import io.papermc.paper.registry.data.util.Conversions;
-import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.animal.PigVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
-import org.bukkit.craftbukkit.entity.CraftPig;
 import org.bukkit.entity.Pig;
 import org.jspecify.annotations.Nullable;
 
@@ -18,7 +15,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
 
     protected PigVariant.@Nullable ModelType model;
-    protected ResourceLocation assetId;
+    protected net.minecraft.core.@Nullable ClientAsset clientAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -28,50 +25,55 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
         final @Nullable PigVariant internal
     ) {
         this.conversions = conversions;
-        if (internal == null) return;
+        if (internal == null) {
+            spawnConditions = SpawnPrioritySelectors.EMPTY;
+            return;
+        }
 
-        this.assetId = internal.modelAndTexture().asset().id();
+        this.clientAsset = internal.modelAndTexture().asset();
         this.model = internal.modelAndTexture().model();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public Key assetId() {
-        return PaperAdventure.asAdventure(asConfigured(this.assetId, "assetId"));
+    public ClientAsset clientAsset() {
+        return this.conversions.asBukkit(asConfigured(this.clientAsset, "clientAsset"));
     }
 
     @Override
-    public Pig.Variant.@Nullable Model model() {
-        return this.model == null ? Pig.Variant.Model.NORMAL : Pig.Variant.Model.values()[this.model.ordinal()];
+    public Model model() {
+        return switch (asConfigured(this.model, "model")) {
+            case NORMAL -> Model.NORMAL;
+            case COLD -> Model.COLD;
+        };
     }
 
     public static final class PaperBuilder extends PaperPigVariantRegistryEntry implements Builder, PaperRegistryBuilder<PigVariant, Pig.Variant> {
 
-        private final PigVariant internal;
-
         public PaperBuilder(final Conversions conversions, final @Nullable PigVariant internal) {
             super(conversions, internal);
-
-            this.internal = internal;
         }
 
         @Override
-        public Builder model(final Pig.Variant.Model model) {
-            this.model = CraftPig.CraftVariant.toNms(model);
+        public Builder clientAsset(final ClientAsset clientAsset) {
+            this.clientAsset = this.conversions.asVanilla(asArgument(clientAsset, "clientAsset"));
             return this;
         }
 
         @Override
-        public Builder assetId(final Key assetId) {
-            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
+        public Builder model(final Model model) {
+            this.model = switch (asArgument(model, "model")) {
+                case NORMAL -> PigVariant.ModelType.NORMAL;
+                case COLD -> PigVariant.ModelType.COLD;
+            };
             return this;
         }
 
         @Override
         public PigVariant build() {
             return new PigVariant(
-                new ModelAndTexture<>(this.model == null ? PigVariant.ModelType.NORMAL : this.model, this.assetId),
-                internal.spawnConditions()
+                new ModelAndTexture<>(asConfigured(this.model, "model"), asConfigured(this.clientAsset, "clientAsset")),
+                asConfigured(this.spawnConditions, "spawnConditions")
             );
         }
     }

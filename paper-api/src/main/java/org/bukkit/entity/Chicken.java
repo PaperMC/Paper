@@ -62,11 +62,6 @@ public interface Chicken extends Animals {
      */
     interface Variant extends Keyed {
 
-        enum Model {
-            COLD,
-            NORMAL
-        }
-
         // Start generate - ChickenVariant
         // @GeneratedFrom 1.21.5
         Variant COLD = getVariant("cold");
@@ -75,20 +70,6 @@ public interface Chicken extends Animals {
 
         Variant WARM = getVariant("warm");
         // End generate - ChickenVariant
-
-        /**
-         * Get the chicken variant's asset id
-         *
-         * @return the asset id
-         */
-        @NotNull Key assetId();
-
-        /**
-         * Get the chicken variant's {@link Model}. Defaults to {@link Model#NORMAL}.
-         *
-         * @return the model
-         */
-        @Nullable Model getModel();
 
         private static Variant getVariant(String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

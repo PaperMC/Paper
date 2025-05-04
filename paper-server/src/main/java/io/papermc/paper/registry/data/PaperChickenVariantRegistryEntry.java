@@ -1,14 +1,11 @@
 package io.papermc.paper.registry.data;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.data.client.ClientAsset;
 import io.papermc.paper.registry.data.util.Conversions;
-import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.animal.ChickenVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
-import org.bukkit.craftbukkit.entity.CraftChicken;
 import org.bukkit.entity.Chicken;
 import org.jspecify.annotations.Nullable;
 
@@ -18,7 +15,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryEntry {
 
     protected ChickenVariant.@Nullable ModelType model;
-    protected ResourceLocation assetId;
+    protected net.minecraft.core.@Nullable ClientAsset clientAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -28,50 +25,55 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
         final @Nullable ChickenVariant internal
     ) {
         this.conversions = conversions;
-        if (internal == null) return;
+        if (internal == null) {
+            this.spawnConditions = SpawnPrioritySelectors.EMPTY;
+            return;
+        }
 
-        this.assetId = internal.modelAndTexture().asset().id();
+        this.clientAsset = internal.modelAndTexture().asset();
         this.model = internal.modelAndTexture().model();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public Key assetId() {
-        return PaperAdventure.asAdventure(asConfigured(this.assetId, "assetId"));
+    public ClientAsset clientAsset() {
+        return this.conversions.asBukkit(asConfigured(this.clientAsset, "clientAsset"));
     }
 
     @Override
-    public Chicken.Variant.@Nullable Model model() {
-        return this.model == null ? Chicken.Variant.Model.NORMAL : Chicken.Variant.Model.values()[this.model.ordinal()];
+    public Model model() {
+        return switch (asConfigured(this.model, "model")) {
+            case NORMAL -> Model.NORMAL;
+            case COLD -> Model.COLD;
+        };
     }
 
     public static final class PaperBuilder extends PaperChickenVariantRegistryEntry implements Builder, PaperRegistryBuilder<ChickenVariant, Chicken.Variant> {
 
-        private final ChickenVariant internal;
-
         public PaperBuilder(final Conversions conversions, final @Nullable ChickenVariant internal) {
             super(conversions, internal);
-
-            this.internal = internal;
         }
 
         @Override
-        public Builder model(final Chicken.Variant.Model model) {
-            this.model = CraftChicken.CraftVariant.toNms(model);
+        public Builder clientAsset(final ClientAsset clientAsset) {
+            this.clientAsset = this.conversions.asVanilla(asArgument(clientAsset, "clientAsset"));
             return this;
         }
 
         @Override
-        public Builder assetId(final Key assetId) {
-            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
+        public Builder model(final Model model) {
+            this.model = switch (asArgument(model, "model")) {
+                case NORMAL -> ChickenVariant.ModelType.NORMAL;
+                case COLD -> ChickenVariant.ModelType.COLD;
+            };
             return this;
         }
 
         @Override
         public ChickenVariant build() {
             return new ChickenVariant(
-                new ModelAndTexture<>(this.model == null ? ChickenVariant.ModelType.NORMAL : this.model, this.assetId),
-                internal.spawnConditions()
+                new ModelAndTexture<>(asConfigured(this.model, "model"), asConfigured(this.clientAsset, "clientAsset")),
+                asConfigured(this.spawnConditions, "spawnConditions")
             );
         }
     }

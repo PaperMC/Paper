@@ -96,11 +96,6 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
             return this.key;
         }
 
-        @NotNull
-        public net.kyori.adventure.key.Key assetId() {
-            return PaperAdventure.asAdventure(this.getHandle().assetInfo().id());
-        }
-
         @Override
         public int compareTo(Type variant) {
             return this.ordinal - variant.ordinal();

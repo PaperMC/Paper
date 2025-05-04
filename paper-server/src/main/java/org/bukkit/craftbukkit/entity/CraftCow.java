@@ -58,27 +58,5 @@ public class CraftCow extends CraftAbstractCow implements Cow {
         public CraftVariant(final Holder<CowVariant> holder) {
             super(holder);
         }
-
-        @NotNull
-        public net.kyori.adventure.key.Key assetId() {
-            return PaperAdventure.asAdventure(this.getHandle().modelAndTexture().asset().id());
-        }
-
-        @Override
-        public @Nullable Cow.Variant.Model getModel() {
-            return fromNms(this.getHandle().modelAndTexture().model());
-        }
-
-        public static Cow.Variant.Model fromNms(CowVariant.ModelType modelType) {
-            Preconditions.checkArgument(modelType != null, "Model Type may not be null");
-
-            return Cow.Variant.Model.values()[modelType.ordinal()];
-        }
-
-        public static CowVariant.ModelType toNms(Cow.Variant.Model model) {
-            Preconditions.checkArgument(model != null, "Model may not be null");
-
-            return CowVariant.ModelType.values()[model.ordinal()];
-        }
     }
 }

@@ -62,13 +62,6 @@ public interface Frog extends Animals {
         Variant WARM = getVariant("warm");
         // End generate - FrogVariant
 
-        /**
-         * Get the frog variant's asset id
-         *
-         * @return the asset id
-         */
-        @NotNull Key assetId();
-
         @NotNull
         private static Variant getVariant(@NotNull String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
