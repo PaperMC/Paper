@@ -114,6 +114,7 @@ public class FieldRename {
             .change("LUCK", "LUCK_OF_THE_SEA")
             .withKeyRename()
             .change("SWEEPING", "SWEEPING_EDGE")
+            .change("HeroesOfTheVillage", "heroes_of_the_village")  // Paper - Fix raid data conversion 
             .build();
 
     public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> ENCHANTMENT_RENAME = ENCHANTMENT_DATA::getReplacement;
