@@ -1,8 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
-import net.kyori.adventure.key.Key;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import org.bukkit.entity.Cow;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -37,9 +36,9 @@ public interface CowVariantRegistryEntry {
     /**
      * Provides the asset of the cow variant, which represents the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset clientAsset();
+    ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the model of the cow variant.
@@ -53,7 +52,7 @@ public interface CowVariantRegistryEntry {
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #clientAsset(ClientAsset)}</li>
+     *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
@@ -62,14 +61,14 @@ public interface CowVariantRegistryEntry {
     interface Builder extends CowVariantRegistryEntry, RegistryBuilder<Cow.Variant> {
 
         /**
-         * Sets the client asset of the cow variant, which is the location of the texture to use.
+         * Sets the client texture asset of the cow variant, which is the location of the texture to use.
          *
-         * @param clientAsset the client asset.
+         * @param clientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see CowVariantRegistryEntry#clientAsset()
+         * @see CowVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder clientAsset(ClientAsset clientAsset);
+        Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
 
         /**
          * Sets the model to use for this cow variant.

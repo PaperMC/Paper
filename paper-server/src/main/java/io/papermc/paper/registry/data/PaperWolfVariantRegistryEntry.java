@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.PaperRegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
@@ -13,9 +13,9 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
-    protected net.minecraft.core.@Nullable ClientAsset angryClientAsset;
-    protected net.minecraft.core.@Nullable ClientAsset wildClientAsset;
-    protected net.minecraft.core.@Nullable ClientAsset tameClientAsset;
+    protected net.minecraft.core.@Nullable ClientAsset angryClientTextureAsset;
+    protected net.minecraft.core.@Nullable ClientAsset wildClientTextureAsset;
+    protected net.minecraft.core.@Nullable ClientAsset tameClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -30,25 +30,25 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
             return;
         }
 
-        this.angryClientAsset = internal.assetInfo().angry();
-        this.wildClientAsset = internal.assetInfo().wild();
-        this.tameClientAsset = internal.assetInfo().tame();
+        this.angryClientTextureAsset = internal.assetInfo().angry();
+        this.wildClientTextureAsset = internal.assetInfo().wild();
+        this.tameClientTextureAsset = internal.assetInfo().tame();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public ClientAsset angryClientAsset() {
-        return this.conversions.asBukkit(asConfigured(this.angryClientAsset, "angryClientAsset"));
+    public ClientTextureAsset angryClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.angryClientTextureAsset, "angryClientTextureAsset"));
     }
 
     @Override
-    public ClientAsset wildClientAsset() {
-        return this.conversions.asBukkit(asConfigured(this.wildClientAsset, "wildClientAsset"));
+    public ClientTextureAsset wildClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.wildClientTextureAsset, "wildClientTextureAsset"));
     }
 
     @Override
-    public ClientAsset tameClientAsset() {
-        return this.conversions.asBukkit(asConfigured(this.tameClientAsset, "tameClientAsset"));
+    public ClientTextureAsset tameClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"));
     }
 
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
@@ -58,20 +58,20 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         }
 
         @Override
-        public Builder angryClientAsset(final ClientAsset angryClientAsset) {
-            this.angryClientAsset = this.conversions.asVanilla(asArgument(angryClientAsset, "angryClientAsset"));
+        public Builder angryClientTextureAsset(final ClientTextureAsset angryClientTextureAsset) {
+            this.angryClientTextureAsset = this.conversions.asVanilla(asArgument(angryClientTextureAsset, "angryClientTextureAsset"));
             return this;
         }
 
         @Override
-        public Builder wildClientAsset(final ClientAsset wildClientAsset) {
-            this.wildClientAsset = this.conversions.asVanilla(asArgument(wildClientAsset, "wildClientAsset"));
+        public Builder wildClientTextureAsset(final ClientTextureAsset wildClientTextureAsset) {
+            this.wildClientTextureAsset = this.conversions.asVanilla(asArgument(wildClientTextureAsset, "wildClientTextureAsset"));
             return this;
         }
 
         @Override
-        public Builder tameClientAsset(final ClientAsset tameClientAsset) {
-            this.tameClientAsset = this.conversions.asVanilla(asArgument(tameClientAsset, "tameClientAsset"));
+        public Builder tameClientTextureAsset(final ClientTextureAsset tameClientTextureAsset) {
+            this.tameClientTextureAsset = this.conversions.asVanilla(asArgument(tameClientTextureAsset, "tameClientTextureAsset"));
             return this;
         }
 
@@ -79,9 +79,9 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         public WolfVariant build() {
             return new WolfVariant(
                 new WolfVariant.AssetInfo(
-                    asConfigured(this.wildClientAsset, "wildClientAsset"),
-                    asConfigured(this.tameClientAsset, "tameClientAsset"),
-                    asConfigured(this.angryClientAsset, "angryClientAsset")
+                    asConfigured(this.wildClientTextureAsset, "wildClientTextureAsset"),
+                    asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"),
+                    asConfigured(this.angryClientTextureAsset, "angryClientTextureAsset")
                 ),
                 asConfigured(this.spawnConditions, "spawnConditions")
             );

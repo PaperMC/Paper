@@ -5,14 +5,14 @@ import org.intellij.lang.annotations.Subst;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Package local implementation of the {@link ClientAsset} type.
+ * Package local implementation of the {@link ClientTextureAsset} type.
  * Chosen over bridging into server internals as no internal types are required for this.
  */
 @NullMarked
-record ClientAssetImpl(
+record ClientTextureAssetImpl(
     Key identifier,
     Key texturePath
-) implements ClientAsset {
+) implements ClientTextureAsset {
 
     /**
      * Constructs the default asset path from the identifier of the asset.

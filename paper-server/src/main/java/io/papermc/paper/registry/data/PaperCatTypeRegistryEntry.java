@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.PaperRegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
@@ -13,7 +13,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
 
-    protected net.minecraft.core.@Nullable ClientAsset clientAsset;
+    protected net.minecraft.core.@Nullable ClientAsset clientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -28,13 +28,13 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
             return;
         }
 
-        this.clientAsset = internal.assetInfo();
+        this.clientTextureAsset = internal.assetInfo();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public ClientAsset clientAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientAsset, "clientAsset"));
+    public ClientTextureAsset clientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
     public static final class PaperBuilder extends PaperCatTypeRegistryEntry implements Builder, PaperRegistryBuilder<CatVariant, Cat.Type> {
@@ -44,15 +44,15 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
         }
 
         @Override
-        public Builder clientAsset(final ClientAsset clientAsset) {
-            this.clientAsset = this.conversions.asVanilla(asArgument(clientAsset, "clientAsset"));
+        public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
+            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
         @Override
         public CatVariant build() {
             return new CatVariant(
-                asConfigured(this.clientAsset, "clientAsset"),
+                asConfigured(this.clientTextureAsset, "clientTextureAsset"),
                 asConfigured(this.spawnConditions, "spawnConditions")
             );
         }

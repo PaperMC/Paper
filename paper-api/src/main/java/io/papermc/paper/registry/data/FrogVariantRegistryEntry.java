@@ -1,8 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
-import net.kyori.adventure.key.Key;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import org.bukkit.entity.Frog;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -17,16 +16,16 @@ public interface FrogVariantRegistryEntry {
     /**
      * Provides the asset of the frog variant, which represents the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset clientAsset();
+    ClientTextureAsset clientTextureAsset();
 
     /**
      * A mutable builder for the {@link FrogVariantRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #clientAsset(ClientAsset)}</li>
+     *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -34,13 +33,13 @@ public interface FrogVariantRegistryEntry {
     interface Builder extends FrogVariantRegistryEntry, RegistryBuilder<Frog.Variant> {
 
         /**
-         * Sets the client asset of the frog variant, which is the location of the texture to use.
+         * Sets the client texture asset of the frog variant, which is the location of the texture to use.
          *
-         * @param clientAsset the client asset.
+         * @param clientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see CatTypeRegistryEntry#clientAsset()
+         * @see CatTypeRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder clientAsset(ClientAsset clientAsset);
+        Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
     }
 }

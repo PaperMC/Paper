@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.PaperRegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.world.entity.animal.CowVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
@@ -15,7 +15,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
 
     protected CowVariant.@Nullable ModelType model = null;
-    protected net.minecraft.core.@Nullable ClientAsset clientAsset = null;
+    protected net.minecraft.core.@Nullable ClientAsset clientTextureAsset = null;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -30,14 +30,14 @@ public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
             return;
         }
 
-        this.clientAsset = internal.modelAndTexture().asset();
+        this.clientTextureAsset = internal.modelAndTexture().asset();
         this.model = internal.modelAndTexture().model();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
-    public ClientAsset clientAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientAsset, "clientAsset"));
+    public ClientTextureAsset clientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
     @Override
@@ -56,8 +56,8 @@ public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
         }
 
         @Override
-        public Builder clientAsset(final ClientAsset clientAsset) {
-            this.clientAsset = this.conversions.asVanilla(asArgument(clientAsset, "clientAsset"));
+        public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
+            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
@@ -74,7 +74,7 @@ public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
         @Override
         public CowVariant build() {
             return new CowVariant(
-                new ModelAndTexture<>(asConfigured(this.model, "model"), asConfigured(this.clientAsset, "clientAsset")),
+                new ModelAndTexture<>(asConfigured(this.model, "model"), asConfigured(this.clientTextureAsset, "clientTextureAsset")),
                 this.spawnConditions
             );
         }

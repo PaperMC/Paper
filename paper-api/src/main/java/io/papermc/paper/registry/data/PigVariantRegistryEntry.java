@@ -1,12 +1,10 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
-import net.kyori.adventure.key.Key;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import org.bukkit.entity.Pig;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A data-centric version-specific registry entry for the {@link Pig.Variant} type.
@@ -33,9 +31,9 @@ public interface PigVariantRegistryEntry {
     /**
      * Provides the asset of the wolf variant, which represents the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset clientAsset();
+    ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the model of the pig variant.
@@ -49,7 +47,7 @@ public interface PigVariantRegistryEntry {
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #clientAsset(ClientAsset)}</li>
+     *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
@@ -58,14 +56,14 @@ public interface PigVariantRegistryEntry {
     interface Builder extends PigVariantRegistryEntry, RegistryBuilder<Pig.Variant> {
 
         /**
-         * Sets the client asset of the pig variant, which is the location of the texture to use.
+         * Sets the client texture asset of the pig variant, which is the location of the texture to use.
          *
-         * @param clientAsset the client asset.
+         * @param clientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see CatTypeRegistryEntry#clientAsset()
+         * @see CatTypeRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder clientAsset(ClientAsset clientAsset);
+        Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
 
         /**
          * Sets the model to use for this pig variant.

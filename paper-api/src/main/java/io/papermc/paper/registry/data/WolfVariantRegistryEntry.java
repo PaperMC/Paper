@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.data.client.ClientAsset;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import org.bukkit.entity.Wolf;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -14,34 +14,34 @@ import org.jetbrains.annotations.Contract;
 public interface WolfVariantRegistryEntry {
 
     /**
-     * Provides the client asset of the wolf variant for when it is angry, which is the location of the texture to use.
+     * Provides the client texture asset of the wolf variant for when it is angry, which is the location of the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset angryClientAsset();
+    ClientTextureAsset angryClientTextureAsset();
 
     /**
-     * Provides the client asset of the wolf variant for when it is wild, which is the location of the texture to use.
+     * Provides the client texture asset of the wolf variant for when it is wild, which is the location of the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset wildClientAsset();
+    ClientTextureAsset wildClientTextureAsset();
 
     /**
-     * Provides the client asset of the wolf variant for when it is tame, which is the location of the texture to use.
+     * Provides the client texture asset of the wolf variant for when it is tame, which is the location of the texture to use.
      *
-     * @return the client asset.
+     * @return the client texture asset.
      */
-    ClientAsset tameClientAsset();
+    ClientTextureAsset tameClientTextureAsset();
 
     /**
      * A mutable builder for the {@link WolfVariantRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
      * <ul>
-     *     <li>{@link #angryClientAsset(ClientAsset)}</li>
-     *     <li>{@link #wildClientAsset(ClientAsset)}</li>
-     *     <li>{@link #tameClientAsset(ClientAsset)}</li>
+     *     <li>{@link #angryClientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #wildClientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #tameClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -49,33 +49,33 @@ public interface WolfVariantRegistryEntry {
     interface Builder extends WolfVariantRegistryEntry, RegistryBuilder<Wolf.Variant> {
 
         /**
-         * Sets the client asset of the wolf variant for when it is angry, which is the location of the texture to use.
+         * Sets the client texture asset of the wolf variant for when it is angry, which is the location of the texture to use.
          *
-         * @param angryClientAsset the client asset.
+         * @param angryClientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see WolfVariantRegistryEntry#angryClientAsset()
+         * @see WolfVariantRegistryEntry#angryClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder angryClientAsset(ClientAsset angryClientAsset);
+        Builder angryClientTextureAsset(ClientTextureAsset angryClientTextureAsset);
 
         /**
-         * Sets the client asset of the wolf variant for when it is wild, which is the location of the texture to use.
+         * Sets the client texture asset of the wolf variant for when it is wild, which is the location of the texture to use.
          *
-         * @param wildClientAsset the client asset.
+         * @param wildClientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see WolfVariantRegistryEntry#wildClientAsset()
+         * @see WolfVariantRegistryEntry#wildClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder wildClientAsset(ClientAsset wildClientAsset);
+        Builder wildClientTextureAsset(ClientTextureAsset wildClientTextureAsset);
 
         /**
-         * Sets the client asset of the wolf variant for when it is tame, which is the location of the texture to use.
+         * Sets the client texture asset of the wolf variant for when it is tame, which is the location of the texture to use.
          *
-         * @param tameClientAsset the client asset.
+         * @param tameClientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see WolfVariantRegistryEntry#tameClientAsset()
+         * @see WolfVariantRegistryEntry#tameClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder tameClientAsset(ClientAsset tameClientAsset);
+        Builder tameClientTextureAsset(ClientTextureAsset tameClientTextureAsset);
     }
 }

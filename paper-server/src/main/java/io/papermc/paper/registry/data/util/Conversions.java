@@ -5,8 +5,7 @@ import com.mojang.serialization.JavaOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
 import java.util.Optional;
-import io.papermc.paper.registry.data.client.ClientAsset;
-import io.papermc.paper.util.MCUtil;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -58,17 +57,17 @@ public class Conversions {
         return vanilla == null ? Component.empty() : this.serializer.deserialize(vanilla);
     }
 
-    public ClientAsset asBukkit(final net.minecraft.core.@Nullable ClientAsset clientAsset) {
-        return clientAsset == null ? null : ClientAsset.clientAsset(
-            PaperAdventure.asAdventure(clientAsset.id()),
-            PaperAdventure.asAdventure(clientAsset.texturePath())
+    public ClientTextureAsset asBukkit(final net.minecraft.core.@Nullable ClientAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : ClientTextureAsset.clientTextureAsset(
+            PaperAdventure.asAdventure(clientTextureAsset.id()),
+            PaperAdventure.asAdventure(clientTextureAsset.texturePath())
         );
     }
 
-    public net.minecraft.core.ClientAsset asVanilla(final @Nullable ClientAsset clientAsset) {
-        return clientAsset == null ? null : new net.minecraft.core.ClientAsset(
-            PaperAdventure.asVanilla(clientAsset.identifier()),
-            PaperAdventure.asVanilla(clientAsset.texturePath())
+    public net.minecraft.core.ClientAsset asVanilla(final @Nullable ClientTextureAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : new net.minecraft.core.ClientAsset(
+            PaperAdventure.asVanilla(clientTextureAsset.identifier()),
+            PaperAdventure.asVanilla(clientTextureAsset.texturePath())
         );
     }
 }
