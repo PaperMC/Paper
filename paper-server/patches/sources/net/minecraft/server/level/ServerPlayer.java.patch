@@ -1,5 +1,13 @@
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -65,7 +_,6 @@
+ import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
+ import net.minecraft.network.protocol.game.ClientboundMerchantOffersPacket;
+ import net.minecraft.network.protocol.game.ClientboundOpenBookPacket;
+-import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
+ import net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket;
+ import net.minecraft.network.protocol.game.ClientboundPlayerAbilitiesPacket;
+ import net.minecraft.network.protocol.game.ClientboundPlayerCombatEndPacket;
 @@ -235,7 +_,8 @@
      private int levitationStartTime;
      private boolean disconnected;
@@ -316,12 +324,19 @@
                  }
  
                  float saturationLevel = this.foodData.getSaturationLevel();
-@@ -793,15 +_,84 @@
+@@ -793,15 +_,36 @@
      }
  
      private void updateScoreForCriteria(ObjectiveCriteria criteria, int points) {
 -        this.getScoreboard().forAllObjectives(criteria, this, score -> score.set(points));
 -    }
+-
+-    @Override
+-    public void die(DamageSource cause) {
+-        this.gameEvent(GameEvent.ENTITY_DIE);
+-        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
+-        if (_boolean) {
+-            Component deathMessage = this.getCombatTracker().getDeathMessage();
 +        this.level().getCraftServer().getScoreboardManager().forAllObjectives(criteria, this, score -> score.set(points)); // CraftBukkit - Use our scores instead
 +    }
 +
@@ -348,13 +363,24 @@
 +        return false;
 +    }
 +    // Paper end - PlayerDeathEvent#getItemsToKeep
- 
-     @Override
-     public void die(DamageSource cause) {
--        this.gameEvent(GameEvent.ENTITY_DIE);
--        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
--        if (_boolean) {
--            Component deathMessage = this.getCombatTracker().getDeathMessage();
++    // Paper start - Expand PlayerDeathEvent API
++    private void sendClientboundPlayerCombatKillPacket(boolean displayMessage, Component deathMessage) {
++        if (displayMessage && deathMessage != CommonComponents.EMPTY) {
++            // Paper - moved from below die(DamageSource) method
+             this.connection
+                 .send(
+                     new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
+@@ -818,6 +_,65 @@
+                         }
+                     )
+                 );
++        } else {
++            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
++        }
++    }
++    // Paper end - Expand PlayerDeathEvent API
++    @Override
++    public void die(DamageSource cause) {
 +        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
 +        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES); final boolean showDeathMessage = _boolean; // Paper - OBFHELPER
 +        // CraftBukkit start - fire PlayerDeathEvent
@@ -382,7 +408,7 @@
 +
 +        String deathmessage = defaultMessage.getString();
 +        this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
-+        org.bukkit.event.entity.PlayerDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerDeathEvent(this, cause, loot, io.papermc.paper.adventure.PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
++        org.bukkit.event.entity.PlayerDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerDeathEvent(this, cause, loot, io.papermc.paper.adventure.PaperAdventure.asAdventure(defaultMessage), showDeathMessage, keepInventory); // Paper - Adventure; Expand PlayerDeathEvent API
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
@@ -400,13 +426,25 @@
 +        }
 +
 +        net.kyori.adventure.text.Component apiDeathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
++        Component deathScreenMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.deathScreenMessageOverride() != null ? event.deathScreenMessageOverride() : apiDeathMessage); // Paper - Expand PlayerDeathEvent API
 +
-+        if (apiDeathMessage != null && apiDeathMessage != net.kyori.adventure.text.Component.empty() && showDeathMessage) { // Paper - Adventure // TODO: allow plugins to override?
++        if (apiDeathMessage != null && apiDeathMessage != net.kyori.adventure.text.Component.empty() && event.getShowDeathMessages()) { // Paper - Adventure; Expand PlayerDeathEvent API
 +            Component deathMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(apiDeathMessage); // Paper - Adventure
 +
-             this.connection
-                 .send(
-                     new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
++            // Paper - moved up to sendClientboundPlayerCombatKillPacket()
++            sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
+             Team team = this.getTeam();
+             if (team == null || team.getDeathMessageVisibility() == Team.Visibility.ALWAYS) {
+                 this.server.getPlayerList().broadcastSystemMessage(deathMessage, false);
+@@ -827,7 +_,7 @@
+                 this.server.getPlayerList().broadcastSystemToAllExceptTeam(this, deathMessage);
+             }
+         } else {
+-            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
++            sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
+         }
+ 
+         this.removeEntitiesOnShoulder();
 @@ -835,11 +_,35 @@
              this.tellNeutralMobsThatIDied();
          }
