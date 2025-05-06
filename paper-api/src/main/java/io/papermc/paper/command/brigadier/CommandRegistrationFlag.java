@@ -15,5 +15,9 @@ public enum CommandRegistrationFlag {
      * @deprecated This is the default behavior now.
      */
     @Deprecated(since = "1.21.4")
-    FLATTEN_ALIASES
+    FLATTEN_ALIASES,
+    /**
+     * Prevents this command from being sent to the client.
+     */
+    SERVER_ONLY
 }
