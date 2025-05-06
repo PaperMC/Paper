@@ -33,7 +33,8 @@ public final class PaperCommands {
     }
 
     public static void registerCommands() {
-         // Paper commands go here
+        // Paper commands go here
+        registerInternalCommand(PaperVersionCommand.create(), PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
     }
 
     private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {
