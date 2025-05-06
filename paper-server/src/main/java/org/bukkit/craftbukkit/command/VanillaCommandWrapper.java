@@ -28,9 +28,9 @@ public class VanillaCommandWrapper extends BukkitCommand { // Paper
     public final CommandNode<CommandSourceStack> vanillaCommand;
     public final String helpCommandNamespace;
 
-    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> internalCommand, String helpCommandNamespace) {
+    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand, String helpCommandNamespace) {
         super(name, description, usageMessage, aliases);
-        this.vanillaCommand = internalCommand;
+        this.vanillaCommand = vanillaCommand;
         this.helpCommandNamespace = helpCommandNamespace;
     }
 
