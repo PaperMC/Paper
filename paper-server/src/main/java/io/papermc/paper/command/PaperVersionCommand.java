@@ -33,7 +33,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class VersionCommand {
+public class PaperVersionCommand {
     private static final VersionFetcher versionFetcher = new PaperVersionFetcher();
     private static final Set<CommandSender> versionWaiters = new HashSet<>();
 
@@ -53,9 +53,9 @@ public class VersionCommand {
         return Commands.literal(name)
             .requires(source -> source.getBukkitSender().hasPermission("bukkit.command.version"))
             .then(Commands.argument("plugin", StringArgumentType.word())
-                .suggests(VersionCommand::suggestPlugins)
-                .executes(VersionCommand::pluginVersion))
-            .executes(VersionCommand::serverVersion);
+                .suggests(PaperVersionCommand::suggestPlugins)
+                .executes(PaperVersionCommand::pluginVersion))
+            .executes(PaperVersionCommand::serverVersion);
     }
 
     private static CompletableFuture<Suggestions> suggestPlugins(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
@@ -139,7 +139,7 @@ public class VersionCommand {
         sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
         if (versionTaskStarted) return;
         versionTaskStarted = true;
-        new Thread(VersionCommand::setVersionMessage).start();
+        new Thread(PaperVersionCommand::setVersionMessage).start();
     }
 
     private static void setVersionMessage() {
