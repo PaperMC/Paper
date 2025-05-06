@@ -33,6 +33,8 @@ import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class PaperVersionCommand {
+    public static final String DESCRIPTION = "Gets the version of this server including any plugins in use";
+
     private static final VersionFetcher versionFetcher = new PaperVersionFetcher();
     private static final Set<CommandSender> versionWaiters = new HashSet<>();
 
