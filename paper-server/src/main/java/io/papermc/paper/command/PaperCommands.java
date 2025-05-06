@@ -34,13 +34,13 @@ public final class PaperCommands {
 
     public static void registerCommands() {
         // Paper commands go here
-        registerInternalCommand(PaperVersionCommand.create(), PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
+        registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
     }
 
-    private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {
+    private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String namespace, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {
         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.registerWithFlagsInternal(
             null,
-            "paper",
+            namespace,
             "Paper",
             node,
             description,
