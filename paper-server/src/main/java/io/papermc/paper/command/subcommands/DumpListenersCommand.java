@@ -65,35 +65,48 @@ public final class DumpListenersCommand implements PaperSubcommand {
     private void dumpToFile(final CommandSender sender) {
         Path parent = Path.of("debug");
         Path path = parent.resolve("listeners-" + FORMATTER.format(LocalDateTime.now()) + ".txt");
-        sender.sendMessage(text("Writing listeners into directory", GREEN).appendSpace().append(text(parent.toString(), WHITE).hoverEvent(text("Click to copy the full path of debug directory", WHITE)).clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))));
-        @Nullable PrintWriter writer = null;
+        sender.sendMessage(
+            text("Writing listeners into directory", GREEN)
+                .appendSpace()
+                .append(
+                    text(parent.toString(), WHITE)
+                        .hoverEvent(text("Click to copy the full path of debug directory", WHITE))
+                        .clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))
+                )
+        );
         try {
             Files.createDirectories(parent);
             Files.createFile(path);
-            writer = new PrintWriter(path.toFile());
-            for (final String eventClass : eventClassNames()) {
-                final HandlerList handlers;
-                try {
-                    handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
-                } catch (final ReflectiveOperationException e) {
-                    continue;
-                }
-                if (handlers.getRegisteredListeners().length != 0) {
-                    writer.println(eventClass);
-                }
-                for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
-                    writer.println(" - " + registeredListener);
+            try (final PrintWriter writer = new PrintWriter(path.toFile())){
+                for (final String eventClass : eventClassNames()) {
+                    final HandlerList handlers;
+                    try {
+                        handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
+                    } catch (final ReflectiveOperationException e) {
+                        continue;
+                    }
+                    if (handlers.getRegisteredListeners().length != 0) {
+                        writer.println(eventClass);
+                    }
+                    for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
+                        writer.println(" - " + registeredListener);
+                    }
                 }
             }
         } catch (final IOException ex) {
             sender.sendMessage(text("Failed to write dumped listener! See the console for more info.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping listeners", ex);
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
+            return;
         }
-        sender.sendMessage(text("Successfully written listeners into", GREEN).appendSpace().append(text(path.toString(), WHITE).hoverEvent(text("Click to copy the full path of the file", WHITE)).clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))));
+        sender.sendMessage(
+            text("Successfully written listeners into", GREEN)
+                .appendSpace()
+                .append(
+                    text(path.toString(), WHITE)
+                        .hoverEvent(text("Click to copy the full path of the file", WHITE))
+                        .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))
+                )
+        );
     }
 
     private void doDumpListeners(final CommandSender sender, final String[] args) {

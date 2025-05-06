@@ -34,6 +34,7 @@ import org.bukkit.plugin.Plugin;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +67,15 @@ public final class DumpPluginsCommand implements PaperSubcommand {
         try {
             Files.createDirectories(parent);
             Files.createFile(path);
-            sender.sendMessage(text("Writing plugin information into directory", GREEN).appendSpace().append(text(parent.toString(), WHITE).hoverEvent(text("Click to copy the full path of debug directory", WHITE)).clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))));
+            sender.sendMessage(
+                text("Writing plugin information into directory", GREEN)
+                    .appendSpace()
+                    .append(
+                        text(parent.toString(), WHITE)
+                            .hoverEvent(text("Click to copy the full path of debug directory", WHITE))
+                            .clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))
+                    )
+            );
 
             final JsonObject data = this.writeDebug();
 
@@ -79,7 +88,15 @@ public final class DumpPluginsCommand implements PaperSubcommand {
             try (PrintStream out = new PrintStream(Files.newOutputStream(path), false, StandardCharsets.UTF_8)) {
                 out.print(stringWriter);
             }
-            sender.sendMessage(text("Successfully written plugin debug information into", GREEN).appendSpace().append(text(path.toString(), WHITE).hoverEvent(text("Click to copy the full path of the file", WHITE)).clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))));
+            sender.sendMessage(
+                text("Successfully written plugin debug information into", GREEN)
+                    .appendSpace()
+                    .append(
+                        text(path.toString(), WHITE)
+                            .hoverEvent(text("Click to copy the full path of the file", WHITE))
+                            .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))
+                    )
+            );
         } catch (Throwable e) {
             sender.sendMessage(text("Failed to write plugin information! See the console for more info.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping plugin info", e);
