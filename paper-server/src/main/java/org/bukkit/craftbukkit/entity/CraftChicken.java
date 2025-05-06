@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftChicken extends CraftAnimals implements Chicken {
 
-
     public CraftChicken(CraftServer server, net.minecraft.world.entity.animal.Chicken entity) {
         super(server, entity);
     }
@@ -52,6 +51,7 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         public static Holder<ChickenVariant> bukkitToMinecraftHolder(Variant bukkit) {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.CHICKEN_VARIANT);
         }
+
 
         public CraftVariant(Holder<ChickenVariant> holder) {
             super(holder);
