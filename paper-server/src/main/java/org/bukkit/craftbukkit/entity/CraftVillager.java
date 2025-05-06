@@ -36,11 +36,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     }
 
     @Override
-    public String toString() {
-        return "CraftVillager";
-    }
-
-    @Override
     public void remove() {
         this.getHandle().releaseAllPois();
 

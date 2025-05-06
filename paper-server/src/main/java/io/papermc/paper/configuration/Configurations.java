@@ -62,7 +62,8 @@ public abstract class Configurations<G, W> {
     protected ObjectMapper.Factory.Builder createObjectMapper() {
         return ObjectMapper.factoryBuilder()
             .addConstraint(Constraint.class, new Constraint.Factory())
-            .addConstraint(Constraints.Min.class, Number.class, new Constraints.Min.Factory());
+            .addConstraint(Constraints.Min.class, Number.class, new Constraints.Min.Factory())
+            .addConstraint(Constraints.Max.class, Number.class, new Constraints.Max.Factory());
     }
 
     protected YamlConfigurationLoader.Builder createLoaderBuilder() {

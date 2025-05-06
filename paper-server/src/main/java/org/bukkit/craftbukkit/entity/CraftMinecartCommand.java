@@ -14,6 +14,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart, io.papermc.paper.commands.PaperCommandBlockHolder {
+
     private final PermissibleBase perm = new PermissibleBase(this);
 
     public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
@@ -39,11 +40,6 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     @Override
     public void setName(String name) {
         this.getHandle().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name));
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecartCommand";
     }
 
     @Override

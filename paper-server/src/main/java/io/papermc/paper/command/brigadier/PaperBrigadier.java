@@ -35,8 +35,8 @@ public final class PaperBrigadier {
             throw new IllegalArgumentException("Unsure how to wrap a " + node);
         }
 
-        final PluginCommandMeta meta;
-        if ((meta = node.pluginCommandMeta) == null) {
+        final APICommandMeta meta;
+        if ((meta = node.apiCommandMeta) == null) {
             return new VanillaCommandWrapper(node);
         }
         CommandNode<CommandSourceStack> argumentCommandNode = node;
@@ -46,6 +46,12 @@ public final class PaperBrigadier {
 
         Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, DUMMY);
         String usage = map.isEmpty() ? node.getUsageText() :  node.getUsageText() + " " + String.join("\n" + node.getUsageText() + " ", map.values());
+
+        // Internal command
+        if (meta.pluginMeta() == null) {
+            return new VanillaCommandWrapper(node.getName(), meta.description(), usage, meta.aliases(), node, meta.helpCommandNamespace());
+        }
+
         return new PluginVanillaCommandWrapper(node.getName(), meta.description(), usage, meta.aliases(), node, meta.plugin());
     }
 

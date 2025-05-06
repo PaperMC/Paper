@@ -15,12 +15,7 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
 
     @Override
     public net.minecraft.world.entity.Display.TextDisplay getHandle() {
-        return (net.minecraft.world.entity.Display.TextDisplay) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTextDisplay";
+        return (net.minecraft.world.entity.Display.TextDisplay) this.entity;
     }
 
     @Override

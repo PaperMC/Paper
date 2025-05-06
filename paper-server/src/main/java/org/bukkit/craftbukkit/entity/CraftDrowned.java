@@ -13,9 +13,4 @@ public class CraftDrowned extends CraftZombie implements Drowned, com.destroysto
     public net.minecraft.world.entity.monster.Drowned getHandle() {
         return (net.minecraft.world.entity.monster.Drowned) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftDrowned";
-    }
 }

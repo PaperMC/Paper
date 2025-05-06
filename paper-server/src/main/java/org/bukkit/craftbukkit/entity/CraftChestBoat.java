@@ -19,11 +19,6 @@ public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.ent
     }
 
     @Override
-    public String toString() {
-        return "CraftChestBoat";
-    }
-
-    @Override
     public Inventory getInventory() {
         return this.inventory;
     }
