@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Contract;
 public interface FrogVariantRegistryEntry {
 
     /**
-     * Provides the asset of the frog variant, which represents the texture to use.
+     * Provides the client texture asset of the frog variant, which represents the texture to use.
      *
      * @return the client texture asset.
      */

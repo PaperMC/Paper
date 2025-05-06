@@ -34,7 +34,7 @@ public interface CowVariantRegistryEntry {
     }
 
     /**
-     * Provides the asset of the cow variant, which represents the texture to use.
+     * Provides the client texture asset of the cow variant, which represents the texture to use.
      *
      * @return the client texture asset.
      */

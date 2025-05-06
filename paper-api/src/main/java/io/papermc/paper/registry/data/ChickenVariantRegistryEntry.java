@@ -29,7 +29,7 @@ public interface ChickenVariantRegistryEntry {
     }
 
     /**
-     * Provides the asset of the chicken variant, which represents the texture to use.
+     * Provides the client texture asset of the chicken variant, which represents the texture to use.
      *
      * @return the client texture asset.
      */

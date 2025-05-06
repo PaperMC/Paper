@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Contract;
 public interface CatTypeRegistryEntry {
 
     /**
-     * Provides the asset of the cat type, which represents the texture to use.
+     * Provides the client texture asset of the cat type, which represents the texture to use.
      *
      * @return the client texture asset.
      */

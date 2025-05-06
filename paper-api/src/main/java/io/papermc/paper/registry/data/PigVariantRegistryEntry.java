@@ -29,7 +29,7 @@ public interface PigVariantRegistryEntry {
     }
 
     /**
-     * Provides the asset of the wolf variant, which represents the texture to use.
+     * Provides the client texture asset of the wolf variant, which represents the texture to use.
      *
      * @return the client texture asset.
      */
