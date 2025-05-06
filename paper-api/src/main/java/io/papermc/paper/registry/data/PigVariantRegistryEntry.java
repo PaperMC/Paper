@@ -29,7 +29,7 @@ public interface PigVariantRegistryEntry {
     }
 
     /**
-     * Provides the client texture asset of the wolf variant, which represents the texture to use.
+     * Provides the client texture asset of the pig variant, which represents the texture to use.
      *
      * @return the client texture asset.
      */
@@ -60,7 +60,7 @@ public interface PigVariantRegistryEntry {
          *
          * @param clientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see CatTypeRegistryEntry#clientTextureAsset()
+         * @see PigVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);

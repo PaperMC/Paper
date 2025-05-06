@@ -37,7 +37,7 @@ public interface FrogVariantRegistryEntry {
          *
          * @param clientTextureAsset the client texture asset.
          * @return this builder instance.
-         * @see CatTypeRegistryEntry#clientTextureAsset()
+         * @see FrogVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
