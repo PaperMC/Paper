@@ -33,6 +33,7 @@ public final class RegistryEntry<T> {
     private Class<?> preloadClass;
     private final String implClass;
 
+    private @Nullable RegistryModificationApiSupport modificationApiSupport;
     private @Nullable Class<?> apiRegistryBuilder;
     private @Nullable String apiRegistryBuilderImpl;
 
@@ -127,9 +128,18 @@ public final class RegistryEntry<T> {
         return this.apiRegistryBuilderImpl;
     }
 
-    public RegistryEntry<T> apiRegistryBuilder(Class<?> builderClass, String builderImplClass) {
+    public @Nullable RegistryModificationApiSupport modificationApiSupport() {
+        return this.modificationApiSupport;
+    }
+
+    public RegistryEntry<T> writableApiRegistryBuilder(Class<?> builderClass, String builderImplClass) {
+       return this.apiRegistryBuilder(builderClass, builderImplClass, RegistryModificationApiSupport.WRITABLE);
+    }
+
+    public RegistryEntry<T> apiRegistryBuilder(Class<?> builderClass, String builderImplClass, RegistryModificationApiSupport modificationApiSupport) {
         this.apiRegistryBuilder = builderClass;
         this.apiRegistryBuilderImpl = builderImplClass;
+        this.modificationApiSupport = modificationApiSupport;
         return this;
     }
 
@@ -210,5 +220,12 @@ public final class RegistryEntry<T> {
             "apiClass=" + this.apiClass + ", " +
             "implClass=" + this.implClass + ", " +
             ']';
+    }
+
+    public enum RegistryModificationApiSupport {
+        NONE,
+        ADDABLE,
+        MODIFIABLE,
+        WRITABLE;
     }
 }

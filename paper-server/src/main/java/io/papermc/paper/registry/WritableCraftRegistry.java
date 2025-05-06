@@ -31,7 +31,7 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
     public void register(final TypedKey<T> key, final Consumer<RegistryBuilderFactory<T, B>> value, final Conversions conversions) {
         final ResourceKey<M> resourceKey = PaperRegistries.toNms(key);
         this.registry.validateWrite(resourceKey);
-        final PaperRegistryBuilderFactory<M, T, B> builderFactory = new PaperRegistryBuilderFactory<>(conversions, this.meta.builderFiller(), this.registry.temporaryUnfrozenMap::get);
+        final PaperRegistryBuilderFactory<M, T, B> builderFactory = new PaperRegistryBuilderFactory<>(this.registry.key(), conversions, this.meta.builderFiller(), this.registry::getValueForCopying);
         value.accept(builderFactory);
         PaperRegistryListenerManager.INSTANCE.registerWithListeners(
             this.registry,

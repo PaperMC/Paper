@@ -3,12 +3,19 @@ package io.papermc.paper.registry.data.util;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.JavaOps;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
-import java.util.Optional;
+import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.PaperRegistryBuilderFactory;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
@@ -20,15 +27,7 @@ public class Conversions {
         if (globalInstance == null) {
             final RegistryAccess globalAccess = CraftRegistry.getMinecraftRegistry();
             Preconditions.checkState(globalAccess != null, "Global registry access is not available");
-            globalInstance = new Conversions(new RegistryOps.RegistryInfoLookup() {
-                @Override
-                public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(final ResourceKey<? extends Registry<? extends T>> registryRef) {
-                    final Registry<T> registry = globalAccess.lookupOrThrow(registryRef);
-                    return Optional.of(
-                        new RegistryOps.RegistryInfo<>(registry, registry, registry.registryLifecycle())
-                    );
-                }
-            });
+            globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(globalAccess));
         }
         return globalInstance;
     }
@@ -46,6 +45,10 @@ public class Conversions {
         return this.lookup;
     }
 
+    public <M> Holder.Reference<M> getReferenceHolder(final ResourceKey<M> key) {
+        return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
+    }
+
     @Contract("null -> null; !null -> !null")
     public net.minecraft.network.chat.@Nullable Component asVanilla(final @Nullable Component adventure) {
         if (adventure == null) return null;
@@ -55,4 +58,33 @@ public class Conversions {
     public Component asAdventure(final net.minecraft.network.chat.@Nullable Component vanilla) {
         return vanilla == null ? Component.empty() : this.serializer.deserialize(vanilla);
     }
+
+    private static <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> RegistryEntryMeta.Buildable<M, A, B> getDirectHolderBuildableMeta(final ResourceKey<? extends Registry<M>> registryKey) {
+        final RegistryEntryMeta.Buildable<M, A, B> buildableMeta = PaperRegistries.getBuildableMeta(registryKey);
+        Preconditions.checkArgument(buildableMeta.registryTypeMapper().supportsDirectHolders(), "Registry type mapper must support direct holders");
+        return buildableMeta;
+    }
+
+    public <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> A createApiInstanceFromBuilder(final ResourceKey<? extends Registry<M>> registryKey, final Consumer<? super PaperRegistryBuilderFactory<M, A, B>> value) {
+        final RegistryEntryMeta.Buildable<M, A, B> meta = getDirectHolderBuildableMeta(registryKey);
+        final PaperRegistryBuilderFactory<M, A, B> builderFactory = this.createRegistryBuilderFactory(registryKey, meta);
+        value.accept(builderFactory);
+        return meta.registryTypeMapper().createBukkit(Holder.direct(builderFactory.requireBuilder().build()));
+    }
+
+    public <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> Holder<M> createHolderFromBuilder(final ResourceKey<? extends Registry<M>> registryKey, final Consumer<? super PaperRegistryBuilderFactory<M, A, B>> value) {
+        final RegistryEntryMeta.Buildable<M, A, B> meta = getDirectHolderBuildableMeta(registryKey);
+        final PaperRegistryBuilderFactory<M, A, B> builderFactory = this.createRegistryBuilderFactory(registryKey, meta);
+        value.accept(builderFactory);
+        return Holder.direct(builderFactory.requireBuilder().build());
+    }
+
+    private <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> PaperRegistryBuilderFactory<M, A, B> createRegistryBuilderFactory(
+        final ResourceKey<? extends Registry<M>> registryKey,
+        final RegistryEntryMeta.Buildable<M, A, B> buildableMeta
+    ) {
+        final HolderLookup.RegistryLookup<M> lookupForBuilders = this.lookup.lookupForValueCopyViaBuilders().lookupOrThrow(registryKey);
+        return new PaperRegistryBuilderFactory<>(registryKey, this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
+    }
+
 }
