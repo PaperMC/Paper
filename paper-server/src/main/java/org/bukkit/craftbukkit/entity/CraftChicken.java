@@ -8,12 +8,11 @@ import net.minecraft.world.entity.animal.ChickenVariant;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Chicken;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class CraftChicken extends CraftAnimals implements Chicken {
+
 
     public CraftChicken(CraftServer server, net.minecraft.world.entity.animal.Chicken entity) {
         super(server, entity);

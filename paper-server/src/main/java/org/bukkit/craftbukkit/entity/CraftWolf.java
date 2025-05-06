@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.adventure.PaperAdventure;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariant;
@@ -12,7 +11,6 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Wolf;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftWolf extends CraftTameableAnimal implements Wolf {
 

@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -9,8 +8,6 @@ import net.minecraft.world.entity.animal.CowVariant;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Cow;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
