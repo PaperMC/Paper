@@ -3,12 +3,13 @@ package io.papermc.paper.command;
 import com.destroystokyo.paper.PaperVersionFetcher;
 import com.destroystokyo.paper.util.VersionFetcher;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,8 +24,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -41,21 +40,14 @@ public class PaperVersionCommand {
     private static boolean versionTaskStarted = false;
     private static long lastCheck = 0;
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        // todo: what about description? how are we doing this?
-        //  "Gets the version of this server including any plugins in use"
-        dispatcher.register(create("version"));
-        dispatcher.register(create("about"));
-        dispatcher.register(create("ver"));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> create(String name) {
-        return Commands.literal(name)
-            .requires(source -> source.getBukkitSender().hasPermission("bukkit.command.version"))
+    public static LiteralCommandNode<CommandSourceStack> create() {
+        return Commands.literal("version")
+            .requires(source -> source.getSender().hasPermission("bukkit.command.version"))
             .then(Commands.argument("plugin", StringArgumentType.word())
                 .suggests(PaperVersionCommand::suggestPlugins)
                 .executes(PaperVersionCommand::pluginVersion))
-            .executes(PaperVersionCommand::serverVersion);
+            .executes(PaperVersionCommand::serverVersion)
+            .build();
     }
 
     private static CompletableFuture<Suggestions> suggestPlugins(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
@@ -67,7 +59,7 @@ public class PaperVersionCommand {
     }
 
     private static int pluginVersion(CommandContext<CommandSourceStack> context) {
-        CommandSender sender = context.getSource().getBukkitSender();
+        CommandSender sender = context.getSource().getSender();
         String pluginName = context.getArgument("plugin", String.class);
         Optional.ofNullable(Bukkit.getPluginManager().getPlugin(pluginName))
             .or(() -> Arrays.stream(Bukkit.getPluginManager().getPlugins())
@@ -122,7 +114,7 @@ public class PaperVersionCommand {
 
 
     private static int serverVersion(CommandContext<CommandSourceStack> context) {
-        sendVersion(context.getSource().getBukkitSender());
+        sendVersion(context.getSource().getSender());
         return Command.SINGLE_SUCCESS;
     }
 
