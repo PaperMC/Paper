@@ -107,8 +107,8 @@ public class EnchantmentOffer {
      * @param offerAmount    the amount of enchantment offers to roll.
      * @return an array of enchantment offers with size {@code offerAmount}.
      */
-    public static @Nullable EnchantmentOffer[] rollEnchantmentOffers(
-        final ItemStack targetStack,
+    public static @Nullable EnchantmentOffer @NotNull [] rollEnchantmentOffers(
+        final @NotNull ItemStack targetStack,
         final int seed,
         final int bookshelfCount,
         final int offerAmount
