@@ -246,14 +246,15 @@
      ) {
 -        for (CommandNode<CommandSourceStack> commandNode : rootCommandSource.getChildren()) {
 +        // Paper start - support filling builders
-+        this.fillUsableCommands(children, rootSuggestion::addChild, source, commandNodeToSuggestionNode);
++        this.fillUsableCommands(children, rootSuggestion::addChild, source, commandNodeToSuggestionNode, true);
 +    }
 +
 +    private void fillUsableCommands(
 +        java.util.Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
 +        Consumer<CommandNode<SharedSuggestionProvider>> rootSuggestion,
 +        CommandSourceStack source,
-+        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
++        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode,
++        boolean isRoot
 +    ) {
 +        // Paper end - support filling builders
 +        for (CommandNode<CommandSourceStack> commandNode : children) { // Paper - Perf: Async command map building; pass copy of children
@@ -262,7 +263,7 @@
 +                commandNode = commandNode.clientNode;
 +            }
 +            // Paper end - Brigadier API
-+            if (!org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
++            if (isRoot && !org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
 +            if (commandNode.wrappedCached != null && commandNode.wrappedCached.apiCommandMeta != null && commandNode.wrappedCached.apiCommandMeta.serverSideOnly()) continue; // Paper
              if (commandNode.canUse(source)) {
                  ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
@@ -294,8 +295,7 @@
 +                        builder.executes(redirect.getCommand());
 +                    }
 +                    // don't blindly copy over children
-+                    this.fillUsableCommands(commandNode.getRedirect().getChildren(),
-+                            builder::then, source, commandNodeToSuggestionNode);
++                    this.fillUsableCommands(commandNode.getRedirect().getChildren(), builder::then, source, commandNodeToSuggestionNode, false);
 +
 +                    argumentBuilder = builder;
 +                }
