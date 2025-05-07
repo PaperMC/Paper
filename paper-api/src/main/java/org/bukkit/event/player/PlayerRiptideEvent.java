@@ -64,4 +64,14 @@ public class PlayerRiptideEvent extends PlayerEvent {
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
+
+    /**
+     * prevent item switching during riptide
+     */
+    public void preventItemSwitching() {
+        Player player = getPlayer();
+        if (player.isRiptiding()) {
+            player.getInventory().setHeldItemSlot(player.getInventory().getHeldItemSlot());
+        }
+    }
 }

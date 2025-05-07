@@ -69,6 +69,9 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
 
     @Override
     public boolean isCancelled() {
+        if (isPlayerRiptiding(getPlayer())) {
+            return false;
+        }
         return this.cancelled;
     }
 
@@ -86,5 +89,15 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
     @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
+    }
+
+    /**
+     * Checks if the player is currently performing a riptide attack.
+     * 
+     * @param player the player to check
+     * @return true if the player is riptiding, false otherwise
+     */
+    private boolean isPlayerRiptiding(@NotNull Player player) {
+        return player.isRiptiding();
     }
 }
