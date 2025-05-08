@@ -1,5 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
+import java.util.Objects;
+import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeMobSpawning;
+import io.papermc.paper.world.biome.BiomeSpecialEffects;
+import io.papermc.paper.world.biome.PaperBiomeClimate;
+import io.papermc.paper.world.biome.PaperBiomeMobSpawning;
+import io.papermc.paper.world.biome.PaperBiomeSpecialEffects;
 import io.papermc.paper.util.OldEnumHolderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -10,7 +17,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Objects;
 
 @NullMarked
 public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.level.biome.Biome> implements Biome {
@@ -40,8 +46,30 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.BIOME);
     }
 
+    private final PaperBiomeClimate climate;
+    private final PaperBiomeSpecialEffects effects;
+    private final PaperBiomeMobSpawning mobSpawning;
+
     public CraftBiome(final Holder<net.minecraft.world.level.biome.Biome> holder) {
         super(holder, count++);
+        this.climate = new PaperBiomeClimate(holder);
+        this.effects = new PaperBiomeSpecialEffects(holder);
+        this.mobSpawning = new PaperBiomeMobSpawning(holder);
+    }
+
+    @Override
+    public @NotNull BiomeClimate climate() {
+        return this.climate;
+    }
+
+    @Override
+    public @NotNull BiomeMobSpawning mobSpawning() {
+        return this.mobSpawning;
+    }
+
+    @Override
+    public @NotNull BiomeSpecialEffects specialEffects() {
+        return this.effects;
     }
 
     /**
@@ -63,6 +91,21 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         @Override
         public @NotNull NamespacedKey getKey() {
             return LEGACY_CUSTOM_KEY;
+        }
+
+        @Override
+        public @NotNull BiomeClimate climate() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support climate");
+        }
+
+        @Override
+        public @NotNull BiomeMobSpawning mobSpawning() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support mobSpawning");
+        }
+
+        @Override
+        public @NotNull BiomeSpecialEffects specialEffects() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support specialEffects");
         }
 
         @Override
