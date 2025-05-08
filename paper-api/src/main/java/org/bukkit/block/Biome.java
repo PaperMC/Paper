@@ -7,6 +7,9 @@ import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
+import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeMobSpawning;
+import io.papermc.paper.world.biome.BiomeSpecialEffects;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
@@ -199,6 +202,27 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     }
 
     // Paper start
+    /**
+     * Get the biome's special effects.
+     *
+     * @return the biome's special effects
+     */
+    @NotNull BiomeSpecialEffects specialEffects();
+
+    /**
+     * Get the biome's climate.
+     *
+     * @return the biome's climate
+     */
+    @NotNull BiomeClimate climate();
+
+    /**
+     * Mob spawn settings for this biome.
+     *
+     * @return the mob spawn settings
+     */
+    @NotNull BiomeMobSpawning mobSpawning();
+
     @Override
     default @NotNull String translationKey() {
         return "biome.minecraft." + this.getKey().getKey();
