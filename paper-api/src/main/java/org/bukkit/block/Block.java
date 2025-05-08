@@ -817,4 +817,11 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
         return this.getBlockData().getDestroySpeed(itemStack, considerEnchants);
     }
     // Paper end - destroy speed API
+
+    /**
+     * Checks if the block can suffocate.
+     *
+     * @return {@code true} if the block can suffocate
+     */
+    boolean isSuffocating();
 }

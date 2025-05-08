@@ -697,6 +697,11 @@ public class CraftBlock implements Block {
         return this.getNMS().getBlock().getDescriptionId();
     }
 
+    @Override
+    public boolean isSuffocating() {
+        return this.getNMS().isSuffocating(this.world, this.position);
+    }
+
     // Paper start
     @Override
     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {

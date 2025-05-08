@@ -199,18 +199,15 @@ public class SimpleHelpMap implements HelpMap {
     }
 
     private String getCommandPluginName(Command command) {
-        // Paper start - Move up
         if (command instanceof PluginIdentifiableCommand) {
             return ((PluginIdentifiableCommand) command).getPlugin().getName();
         }
-        // Paper end
-        if (command instanceof VanillaCommandWrapper) {
-            return "Minecraft";
+        if (command instanceof VanillaCommandWrapper wrapper) {
+            return wrapper.helpCommandNamespace;
         }
         if (command instanceof BukkitCommand) {
             return "Bukkit";
         }
-        // Paper - Move PluginIdentifiableCommand instanceof check to allow brig commands
         return null;
     }
 

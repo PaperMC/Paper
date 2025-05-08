@@ -526,6 +526,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     Stream<T> stream();
 
     /**
+     * Returns a new stream, which contains all registry keys, which are registered to the registry.
+     *
+     * @return a stream of all registry keys
+     */
+    Stream<NamespacedKey> keyStream();
+
+    /**
      * Attempts to match the registered object with the given key.
      * <p>
      * This will attempt to find a reasonable match based on the provided input
@@ -591,6 +598,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return this.map.values().iterator();
         }
 
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return this.map.keySet().stream();
+        }
+
         @ApiStatus.Internal
         @Deprecated(since = "1.20.6", forRemoval = true)
         public Class<T> getType() {
@@ -604,6 +616,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Stream<A> stream() {
             return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return stream().map(this::getKey);
         }
 
         @Override

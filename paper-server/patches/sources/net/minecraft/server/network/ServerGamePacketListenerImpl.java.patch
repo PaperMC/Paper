@@ -523,7 +523,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = packet.getCommandBlock(this.player.level());
-@@ -661,7 +_,7 @@
+@@ -661,11 +_,11 @@
                  boolean flag = this.player.hasInfiniteMaterials() && packet.includeData();
                  ItemStack cloneItemStack = blockState.getCloneItemStack(serverLevel, blockPos, flag);
                  if (!cloneItemStack.isEmpty()) {
@@ -532,7 +532,23 @@
                          addBlockDataToItem(blockState, serverLevel, blockPos, cloneItemStack);
                      }
  
-@@ -698,18 +_,29 @@
+-                    this.tryPickItem(cloneItemStack);
++                    this.tryPickItem(cloneItemStack, blockPos, null, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+                 }
+             }
+         }
+@@ -689,27 +_,40 @@
+         if (entityOrPart != null && this.player.canInteractWithEntity(entityOrPart, 3.0)) {
+             ItemStack pickResult = entityOrPart.getPickResult();
+             if (pickResult != null && !pickResult.isEmpty()) {
+-                this.tryPickItem(pickResult);
++                this.tryPickItem(pickResult, null, entityOrPart, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+             }
+         }
+     }
+ 
+-    private void tryPickItem(ItemStack stack) {
++    private void tryPickItem(ItemStack stack, @Nullable BlockPos blockPos, @Nullable Entity entity, boolean includeData) { // Paper - Extend PlayerPickItemEvent API
          if (stack.isItemEnabled(this.player.level().enabledFeatures())) {
              Inventory inventory = this.player.getInventory();
              int i = inventory.findSlotMatchingItem(stack);
@@ -540,7 +556,9 @@
 +            final int sourceSlot = i;
 +            final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
 +            final org.bukkit.entity.Player bukkitPlayer = this.player.getBukkitEntity();
-+            final io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(bukkitPlayer, targetSlot, sourceSlot);
++            final io.papermc.paper.event.player.PlayerPickItemEvent event = entity != null
++                ? new io.papermc.paper.event.player.PlayerPickEntityEvent(bukkitPlayer, entity.getBukkitEntity(), includeData, targetSlot, sourceSlot)
++                : new io.papermc.paper.event.player.PlayerPickBlockEvent(bukkitPlayer, org.bukkit.craftbukkit.block.CraftBlock.at(this.player.level(), blockPos), includeData, targetSlot, sourceSlot);
 +            if (!event.callEvent()) {
 +                return;
 +            }
@@ -1237,14 +1255,21 @@
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
-@@ -1268,6 +_,7 @@
+@@ -1268,13 +_,7 @@
  
                          this.player.connection.send(new ClientboundBlockUpdatePacket(serverLevel, blockPos));
                          this.player.connection.send(new ClientboundBlockUpdatePacket(serverLevel, blockPos.relative(direction)));
+-                    } else {
+-                        LOGGER.warn(
+-                            "Rejecting UseItemOnPacket from {}: Location {} too far away from hit block {}.",
+-                            this.player.getGameProfile().getName(),
+-                            location,
+-                            blockPos
+-                        );
 +                        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
-                     } else {
-                         LOGGER.warn(
-                             "Rejecting UseItemOnPacket from {}: Location {} too far away from hit block {}.",
+                     }
+                 }
+             }
 @@ -1284,6 +_,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket packet) {
@@ -2559,7 +2584,7 @@
                  );
          }
      }
-@@ -1997,6 +_,7 @@
+@@ -1997,27 +_,32 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2567,16 +2592,19 @@
          this.signedMessageDecoder = chatSession.createMessageDecoder(this.player.getUUID());
          this.chatMessageChain
              .append(
-@@ -2005,7 +_,7 @@
+                 () -> {
++                    server.executeBlocking(() -> { // Paper - Broadcast chat session update sync
+                     this.player.setChatSession(chatSession);
                      this.server
                          .getPlayerList()
                          .broadcastAll(
 -                            new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player))
 +                            new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)), this.player // Paper - Use single player info update packet on join
                          );
++                    });
                  }
              );
-@@ -2013,11 +_,13 @@
+     }
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {

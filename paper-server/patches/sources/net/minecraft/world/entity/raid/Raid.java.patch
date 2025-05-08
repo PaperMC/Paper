@@ -13,11 +13,12 @@
      public static final SpawnPlacementType RAVAGER_SPAWN_PLACEMENT_TYPE = SpawnPlacements.getPlacementType(EntityType.RAVAGER);
      public static final MapCodec<Raid> MAP_CODEC = RecordCodecBuilder.mapCodec(
          instance -> instance.group(
-@@ -74,6 +_,7 @@
+@@ -74,6 +_,8 @@
                  Raid.RaidStatus.CODEC.fieldOf("status").forGetter(raid -> raid.status),
                  BlockPos.CODEC.fieldOf("center").forGetter(raid -> raid.center),
                  UUIDUtil.CODEC_SET.fieldOf("heroes_of_the_village").forGetter(raid -> raid.heroesOfTheVillage)
-+                , org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer.createCodec(PDC_TYPE_REGISTRY).fieldOf(PDC_NBT_KEY).forGetter(raid -> raid.persistentDataContainer)
++                , org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer.createCodec(PDC_TYPE_REGISTRY).lenientOptionalFieldOf(PDC_NBT_KEY) // Paper - add persistent data container
++                    .forGetter(raid -> raid.persistentDataContainer.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(raid.persistentDataContainer)) // Paper - add persistent data container
              )
              .apply(instance, Raid::new)
      );
@@ -33,7 +34,7 @@
          Raid.RaidStatus status,
          BlockPos center,
          Set<UUID> heroesOfTheVillage
-+        , final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer // Paper - add persistent data container
++        , final Optional<org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer> persistentDataContainer // Paper - add persistent data container
      ) {
          this.started = started;
          this.active = active;
@@ -41,7 +42,7 @@
          this.numGroups = numGroups;
          this.status = status;
          this.heroesOfTheVillage.addAll(heroesOfTheVillage);
-+        this.persistentDataContainer = persistentDataContainer; // Paper - add persistent data container
++        this.persistentDataContainer = persistentDataContainer.orElseGet(() -> new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(PDC_TYPE_REGISTRY)); // Paper - add persistent data container
      }
  
      public boolean isOver() {

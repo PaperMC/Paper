@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import io.papermc.paper.configuration.ServerConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -830,9 +831,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
      */
-    // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
-    public MapView getMap(int id);
+    MapView getMap(int id);
 
     /**
      * Create a new map with an automatically assigned ID.
@@ -1267,6 +1267,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if the server authenticates clients, false otherwise
      */
     public boolean getOnlineMode();
+
+    /**
+     * Retrieves the server configuration.
+     *
+     * @return the instance of ServerConfiguration containing the server's configuration details
+     */
+    @NotNull ServerConfiguration getServerConfig();
 
     /**
      * Gets whether this server allows flying or not.
@@ -2320,6 +2327,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
          *  wherever possible, rather than directly reading from a server config.
          *
+         * @see #getServerConfig()
          * @return The server's spigot config.
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
@@ -2332,6 +2340,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
          *  wherever possible, rather than directly reading from a server config.
          *
+         * @see #getServerConfig()
          * @return The server's bukkit config.
          */
         // Paper start
@@ -2346,6 +2355,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
          *  wherever possible, rather than directly reading from a server config.
          *
+         * @see #getServerConfig()
          * @return The server's spigot config.
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
@@ -2359,6 +2369,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
          *  wherever possible, rather than directly reading from a server config.
          *
+         * @see #getServerConfig()
          * @return The server's paper config.
          */
         @Deprecated(since = "1.21.4", forRemoval = true)

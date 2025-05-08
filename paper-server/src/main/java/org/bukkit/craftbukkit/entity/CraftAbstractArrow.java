@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import java.util.List;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockCollisions;
@@ -13,12 +14,16 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.inventory.ItemStack;
-import java.util.List;
 
 public abstract class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
 
     public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.AbstractArrow entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.projectile.AbstractArrow getHandle() {
+        return (net.minecraft.world.entity.projectile.AbstractArrow) this.entity;
     }
 
     @Override
@@ -62,8 +67,6 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     public void setCritical(boolean critical) {
         this.getHandle().setCritArrow(critical);
     }
-
-    // Paper - moved to AbstractProjectile
 
     @Override
     public boolean isInBlock() {
@@ -137,16 +140,6 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
         this.getHandle().firedFromWeapon = CraftItemStack.asNMSCopy(item);
-    }
-
-    @Override
-    public net.minecraft.world.entity.projectile.AbstractArrow getHandle() {
-        return (net.minecraft.world.entity.projectile.AbstractArrow) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftAbstractArrow";
     }
 
     // Paper start

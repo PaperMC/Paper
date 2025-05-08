@@ -20,6 +20,11 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
     }
 
     @Override
+    public AbstractThrownPotion getHandle() {
+        return (AbstractThrownPotion) this.entity;
+    }
+
+    @Override
     public Collection<PotionEffect> getEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
         for (MobEffectInstance effect : this.getHandle().getItem().getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).getAllEffects()) {
@@ -43,10 +48,5 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
     @Override
     public void splash() {
         this.getHandle().splash(null);
-    }
-
-    @Override
-    public AbstractThrownPotion getHandle() {
-        return (AbstractThrownPotion) this.entity;
     }
 }

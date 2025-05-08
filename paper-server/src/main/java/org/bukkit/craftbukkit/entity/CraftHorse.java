@@ -16,7 +16,7 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public net.minecraft.world.entity.animal.horse.Horse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.Horse) super.getHandle();
+        return (net.minecraft.world.entity.animal.horse.Horse) this.entity;
     }
 
     @Override
@@ -62,10 +62,5 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
             this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
             this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
         );
-    }
-
-    @Override
-    public String toString() {
-        return "CraftHorse{variant=" + this.getVariant() + ", owner=" + this.getOwner() + '}';
     }
 }

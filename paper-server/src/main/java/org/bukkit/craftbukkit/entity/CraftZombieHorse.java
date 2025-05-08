@@ -11,11 +11,6 @@ public class CraftZombieHorse extends CraftAbstractHorse implements ZombieHorse 
     }
 
     @Override
-    public String toString() {
-        return "CraftZombieHorse";
-    }
-
-    @Override
     public Variant getVariant() {
         return Variant.UNDEAD_HORSE;
     }

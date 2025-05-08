@@ -19,11 +19,6 @@ public class CraftBee extends CraftAnimals implements Bee {
     }
 
     @Override
-    public String toString() {
-        return "CraftBee";
-    }
-
-    @Override
     public Location getHive() {
         BlockPos hive = this.getHandle().getHivePos();
         return (hive == null) ? null : CraftLocation.toBukkit(hive, this.getWorld());
