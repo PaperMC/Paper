@@ -14,6 +14,8 @@ public final class CraftFluidCollisionMode {
             case ALWAYS -> Fluid.ANY;
             case SOURCE_ONLY -> Fluid.SOURCE_ONLY;
             case NEVER -> Fluid.NONE;
+            case WATER -> Fluid.WATER;
+            case LAVA -> Fluid.LAVA;
         };
     }
 }
