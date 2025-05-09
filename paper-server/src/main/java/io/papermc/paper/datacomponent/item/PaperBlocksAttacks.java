@@ -154,7 +154,7 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public @IntRange(from = 0) float horizontalBlockingAngle() {
+        public @Positive float horizontalBlockingAngle() {
             return this.impl.horizontalBlockingAngle();
         }
 
@@ -184,6 +184,7 @@ public record PaperBlocksAttacks(
 
             @Override
             public Builder horizontalBlockingAngle(@Positive final float horizontalBlockingAngle) {
+                Preconditions.checkArgument(horizontalBlockingAngle > 0, "horizontalBlockingAngle must be positive and not zero, was %s", horizontalBlockingAngle);
                 this.horizontalBlockingAngle = horizontalBlockingAngle;
                 return this;
             }
