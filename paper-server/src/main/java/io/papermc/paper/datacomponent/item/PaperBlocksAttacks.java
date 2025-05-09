@@ -15,8 +15,8 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
-import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.Nullable;
 
 public record PaperBlocksAttacks(
@@ -223,7 +223,7 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public @Positive float threshold() {
+        public @NonNegative float threshold() {
             return this.impl.threshold();
         }
 
@@ -249,7 +249,7 @@ public record PaperBlocksAttacks(
             private float factor;
 
             @Override
-            public Builder threshold(@Positive final float threshold) {
+            public Builder threshold(@NonNegative final float threshold) {
                 Preconditions.checkArgument(threshold >= 0, "threshold must be non-negative, was %s", threshold);
                 this.threshold = threshold;
                 return this;

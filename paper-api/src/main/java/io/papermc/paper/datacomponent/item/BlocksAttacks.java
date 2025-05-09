@@ -5,6 +5,7 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
@@ -102,7 +103,7 @@ public interface BlocksAttacks {
             BlocksAttacks.DamageReduction.Builder type(RegistryKeySet<DamageType> type);
 
             @Contract(value = "_ -> this", mutates = "this")
-            BlocksAttacks.DamageReduction.Builder horizontalBlockingAngle(@IntRange(from = 0) float horizontalBlockingAngle);
+            BlocksAttacks.DamageReduction.Builder horizontalBlockingAngle(@Positive float horizontalBlockingAngle);
 
             @Contract(value = "_ -> this", mutates = "this")
             BlocksAttacks.DamageReduction.Builder base(float base);
@@ -122,7 +123,7 @@ public interface BlocksAttacks {
             return ItemComponentTypesBridge.bridge().blocksAttacksItemDamageFunction();
         }
 
-        @Positive
+        @NonNegative
         float threshold();
 
         float base();
@@ -139,7 +140,7 @@ public interface BlocksAttacks {
         interface Builder extends DataComponentBuilder<ItemDamageFunction> {
 
             @Contract(value = "_ -> this", mutates = "this")
-            BlocksAttacks.ItemDamageFunction.Builder threshold(final float threshold);
+            BlocksAttacks.ItemDamageFunction.Builder threshold(@NonNegative final float threshold);
 
             @Contract(value = "_ -> this", mutates = "this")
             BlocksAttacks.ItemDamageFunction.Builder base(final float base);
