@@ -43,6 +43,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -58,6 +59,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -531,6 +533,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         this.getHandle().ejectPassengers();
         return true;
     }
+
+    // Paper start - pick item result
+    @Override
+    public ItemStack getPickItem() {
+        return CraftItemStack.asCraftMirror(this.getHandle().getPickResult());
+    }
+    // Paper end - pick item result
 
     @Override
     public float getFallDistance() {

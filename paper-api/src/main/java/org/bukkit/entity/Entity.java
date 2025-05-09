@@ -20,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -537,6 +538,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return True if there was a passenger.
      */
     public boolean eject();
+
+    // Paper start - pick item result
+    /**
+     * Gets the {@link ItemStack} that would be returned when a
+     * player uses the pick block action on this entity.
+     *
+     * @return item stack result or null
+     */
+    @Nullable
+    ItemStack getPickItem();
+    // Paper end - pick item result
 
     /**
      * Returns the distance this entity has fallen
