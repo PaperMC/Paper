@@ -15,7 +15,7 @@
  public class ServerExplosion implements Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
      private static final int MAX_DROPS_PER_COMBINED_STACK = 16;
-@@ -47,6 +_,11 @@
+@@ -47,6 +_,12 @@
      private final DamageSource damageSource;
      private final ExplosionDamageCalculator damageCalculator;
      private final Map<Player, Vec3> hitPlayers = new HashMap<>();
@@ -23,6 +23,7 @@
 +    public boolean wasCanceled = false;
 +    public float yield;
 +    // CraftBukkit end
++    public @Nullable io.papermc.paper.event.world.ExplodeEventSource.EnchantmentSource optionalEnchantmentSource; // Paper - track potential enchantment caused explosions
 +    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
  
      public ServerExplosion(
@@ -144,45 +145,20 @@
                              this.hitPlayers.put(player, vec3);
                          }
  
-@@ -222,7 +_,56 @@
+@@ -222,7 +_,31 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
-+        // CraftBukkit start
-+        Location location = CraftLocation.toBukkit(this.center, this.level.getWorld());
-+        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
-+        for (int i1 = blocks.size() - 1; i1 >= 0; i1--) {
-+            org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, blocks.get(i1));
-+            if (!bblock.getType().isAir()) {
-+                blockList.add(bblock);
-+            }
-+        }
-+
-+        List<org.bukkit.block.Block> bukkitBlocks;
-+
-+        if (this.source != null) {
-+            org.bukkit.event.entity.EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        } else {
-+            org.bukkit.block.Block block = location.getBlock();
-+            org.bukkit.block.BlockState blockState = (this.damageSource.causingBlockSnapshot() != null) ? this.damageSource.causingBlockSnapshot() : block.getState();
-+            org.bukkit.event.block.BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        }
-+
-+        blocks.clear();
-+        for (org.bukkit.block.Block bblock : bukkitBlocks) {
-+            blocks.add(((org.bukkit.craftbukkit.block.CraftBlock) bblock).getPosition());
-+        }
-+
++        // Paper start - call explode events
++        // call the generic event (new event) after old events
++        io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callGenericExplodeEvent(this, CraftEventFactory.handleLegacyExplodeEvents(this, blocks));
 +        if (this.wasCanceled) {
 +            return;
 +        }
 +        // CraftBukkit end
++        blocks.clear();
++        blocks.addAll(explodeEvent.getAffectedBlocks().stream().map(block -> ((org.bukkit.craftbukkit.block.CraftBlock) block).getPosition()).toList());
++        // Paper end - call explode events
 +
          for (BlockPos blockPos : blocks) {
 +            // CraftBukkit start - TNTPrimeEvent
@@ -224,6 +200,24 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
          this.hurtEntities();
+@@ -251,8 +_,16 @@
+             this.interactWithBlocks(list);
+             profilerFiller.pop();
+         }
++        // Paper start - call generic event for visual-only explosion
++        else {
++            final io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.handleGenericExplodeEvent(this, list);
++            if (!this.wasCanceled) {
++                list = io.papermc.paper.util.MCUtil.fromBlocks(explodeEvent.getAffectedBlocks());
++            }
++        }
++        // Paper end - call generic event for visual-only explosion
+ 
+-        if (this.fire) {
++        if (this.fire && !this.wasCanceled) { // Paper - skip fire spread if explosion was canceled
+             this.createFire(list);
+         }
+     }
 @@ -339,4 +_,86 @@
              }
          }

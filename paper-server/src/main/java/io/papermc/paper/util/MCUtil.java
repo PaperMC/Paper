@@ -16,14 +16,19 @@ import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
 
@@ -164,6 +169,35 @@ public final class MCUtil {
 
     public static Vec3 toVec3(Position position) {
         return new Vec3(position.x(), position.y(), position.z());
+    }
+
+    public static List<Block> toBlocks(final LevelAccessor levelAccessor, final List<BlockPos> positions) {
+        final List<Block> apiBlocks = new ObjectArrayList<>(positions.size());
+        for (int i = 0; i < positions.size(); i++) {
+            apiBlocks.add(CraftBlock.at(levelAccessor, positions.get(i)));
+        }
+        return apiBlocks;
+    }
+
+    public static List<Block> toBlocksAndFilter(final LevelAccessor levelAccessor, final List<BlockPos> positions, final Predicate<BlockPos> filter) {
+        final List<Block> apiBlocks = new ObjectArrayList<>(); // Not pre-allocating due to the filter possibly removing a lot of them (air in explosion blocks)
+        for (int i = 0; i < positions.size(); i++) {
+            final BlockPos blockPos = positions.get(i);
+            if (!filter.test(blockPos)) continue;
+
+            apiBlocks.add(CraftBlock.at(levelAccessor, blockPos));
+        }
+        return apiBlocks;
+    }
+
+    public static List<BlockPos> fromBlocks(final List<Block> apiBlocks) {
+        final List<BlockPos> internalBlockPos = new ObjectArrayList<>(apiBlocks.size());
+        for (int i = 0; i < apiBlocks.size(); i++) {
+            final Block block = apiBlocks.get(i);
+
+            internalBlockPos.add(((CraftBlock) block).getPosition());
+        }
+        return internalBlockPos;
     }
 
     public static boolean isEdgeOfChunk(BlockPos pos) {

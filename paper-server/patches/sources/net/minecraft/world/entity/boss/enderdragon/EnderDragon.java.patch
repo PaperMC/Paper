@@ -5,17 +5,20 @@
      private final int[] nodeAdjacency = new int[24];
      private final BinaryHeap openSet = new BinaryHeap();
 +    // Paper start
-+    private final net.minecraft.world.level.Explosion explosionSource; // Paper - reusable source for CraftTNTPrimed.getSource()
++    private final net.minecraft.world.level.ServerExplosion explosionSource; // Paper - reusable source for CraftTNTPrimed.getSource()
 +    @Nullable private BlockPos podium;
 +    // Paper end
  
      public EnderDragon(EntityType<? extends EnderDragon> entityType, Level level) {
          super(EntityType.ENDER_DRAGON, level);
-@@ -102,6 +_,7 @@
+@@ -102,6 +_,10 @@
          this.setHealth(this.getMaxHealth());
          this.noPhysics = true;
          this.phaseManager = new EnderDragonPhaseManager(this);
-+        this.explosionSource = new net.minecraft.world.level.ServerExplosion(level.getMinecraftWorld(), this, null, null, new Vec3(Double.NaN, Double.NaN, Double.NaN), Float.NaN, true, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY); // Paper
++        // Paper start - initialize explosion source
++        this.explosionSource = new net.minecraft.world.level.ServerExplosion(level.getMinecraftWorld(), this, level.damageSources().explosion(this, null), null, new Vec3(Double.NaN, Double.NaN, Double.NaN), Float.NaN, true, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY);
++        this.explosionSource.yield = 0f;
++        // Paper end - initialize explosion source
      }
  
      public void setDragonFight(EndDragonFight dragonFight) {
@@ -102,18 +105,18 @@
 +            return flag;
 +        }
 +
-+        org.bukkit.event.entity.EntityExplodeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityExplodeEvent(this, destroyedBlocks, 0F, this.explosionSource.getBlockInteraction());
++        io.papermc.paper.event.world.ExplodeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callGenericExplodeEvent(this.explosionSource, org.bukkit.craftbukkit.event.CraftEventFactory.callLegacyExplodeEvents(this.explosionSource, destroyedBlocks));
 +        if (event.isCancelled()) {
 +            // This flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will cause the dragon to slow down.
 +            // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
 +            return flag;
 +        } else if (event.getYield() == 0F) {
 +            // Yield zero ==> no drops
-+            for (org.bukkit.block.Block block : event.blockList()) {
++            for (org.bukkit.block.Block block : event.getAffectedBlocks()) {
 +                this.level().removeBlock(new BlockPos(block.getX(), block.getY(), block.getZ()), false);
 +            }
 +        } else {
-+            for (org.bukkit.block.Block block : event.blockList()) {
++            for (org.bukkit.block.Block block : event.getAffectedBlocks()) {
 +                org.bukkit.Material blockType = block.getType();
 +                if (blockType.isAir()) {
 +                    continue;
