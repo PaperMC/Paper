@@ -170,10 +170,10 @@ public record PaperBlocksAttacks(
 
         static final class BuilderImpl implements Builder {
 
-            private Optional<HolderSet<net.minecraft.world.damagesource.DamageType>> type;
-            private float horizontalBlockingAngle;
-            private float base;
-            private float factor;
+            private Optional<HolderSet<net.minecraft.world.damagesource.DamageType>> type = Optional.empty();
+            private float horizontalBlockingAngle = 90f;
+            private float base = 0;
+            private float factor = 0;
 
             @Override
             public Builder type(final @Nullable RegistryKeySet<DamageType> type) {
