@@ -122,6 +122,7 @@ public interface BlocksAttacks {
             return ItemComponentTypesBridge.bridge().blocksAttacksItemDamageFunction();
         }
 
+        @Positive
         float threshold();
 
         float base();

@@ -223,7 +223,7 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public float threshold() {
+        public @Positive float threshold() {
             return this.impl.threshold();
         }
 
@@ -249,7 +249,8 @@ public record PaperBlocksAttacks(
             private float factor;
 
             @Override
-            public Builder threshold(final float threshold) {
+            public Builder threshold(@Positive final float threshold) {
+                Preconditions.checkArgument(threshold >= 0, "threshold must be non-negative, was %s", threshold);
                 this.threshold = threshold;
                 return this;
             }
