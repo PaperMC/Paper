@@ -7,14 +7,15 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.tag.TagKey;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +40,12 @@ public record PaperBlocksAttacks(
 
     @Override
     public List<DamageReduction> damageReductions() {
-        return List.of();
+        return this.impl.damageReductions().stream().map(PaperDamageReduction::new).map(paperDamageReduction -> ((DamageReduction) paperDamageReduction)).toList();
+    }
+
+    @Override
+    public ItemDamageFunction itemDamage() {
+        return new PaperItemDamageFunction(this.impl.itemDamage());
     }
 
     @Override
@@ -62,8 +68,8 @@ public record PaperBlocksAttacks(
 
         private float blockDelaySeconds;
         private float disableCooldownScale = 1.0F;
-        private List<DamageReduction> damageReductions = List.of();
-        //private ItemDamageFunction itemDamage = ItemDamageFunction.DEFAULT;
+        private List<DamageReduction> damageReductions = new ArrayList<>();
+        private ItemDamageFunction itemDamage = new PaperItemDamageFunction(net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT);
         private @Nullable TagKey<DamageType> bypassedBy;
         private @Nullable Key blockSound;
         private @Nullable Key disableSound;
@@ -89,10 +95,11 @@ public record PaperBlocksAttacks(
             return this;
         }
 
-        //@Override
-        //public Builder itemDamage(final ItemDamageFunction function) {
-        //    return null;
-        //}
+        @Override
+        public Builder itemDamage(final ItemDamageFunction function) {
+            this.itemDamage = function;
+            return this;
+        }
 
         @Override
         public Builder bypassedBy(@Nullable final TagKey<DamageType> bypassedBy) {
@@ -114,7 +121,7 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder damageReductions(final List<DamageReduction> reductions) {
-            this.damageReductions = List.copyOf(reductions);
+            this.damageReductions = new ArrayList<>(reductions);
             return this;
         }
 
@@ -123,8 +130,8 @@ public record PaperBlocksAttacks(
             return new PaperBlocksAttacks(new net.minecraft.world.item.component.BlocksAttacks(
                 this.blockDelaySeconds,
                 this.disableCooldownScale,
-                this.damageReductions, // TODO, doc: how convert this?
-                net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT, // TODO
+                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).getHandle()).toList(), // TODO, check if this works
+                ((PaperItemDamageFunction) itemDamage).getHandle(), // TODO, check if this works
                 Optional.ofNullable(this.bypassedBy).map(PaperRegistries::toNms),
                 Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
                 Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)
@@ -161,7 +168,7 @@ public record PaperBlocksAttacks(
             return this.impl.factor();
         }
 
-        static final class BuilderImpl implements BlocksAttacks.DamageReduction.Builder {
+        static final class BuilderImpl implements Builder {
 
             private Optional<HolderSet<net.minecraft.world.damagesource.DamageType>> type;
             private float horizontalBlockingAngle;
@@ -169,26 +176,26 @@ public record PaperBlocksAttacks(
             private float factor;
 
             @Override
-            public BlocksAttacks.DamageReduction.Builder type(final @Nullable RegistryKeySet<DamageType> type) {
+            public Builder type(final @Nullable RegistryKeySet<DamageType> type) {
                 this.type = Optional.ofNullable(type)
-                    .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), set));
+                    .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, net.minecraft.server.MinecraftServer.getServer().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE).lookupProvider, set));
                 return this;
             }
 
             @Override
-            public BlocksAttacks.DamageReduction.Builder horizontalBlockingAngle(@IntRange(from = 0) final float horizontalBlockingAngle) {
+            public Builder horizontalBlockingAngle(@Positive final float horizontalBlockingAngle) {
                 this.horizontalBlockingAngle = horizontalBlockingAngle;
                 return this;
             }
 
             @Override
-            public BlocksAttacks.DamageReduction.Builder base(final float base) {
+            public Builder base(final float base) {
                 this.base = base;
                 return this;
             }
 
             @Override
-            public BlocksAttacks.DamageReduction.Builder factor(final float factor) {
+            public Builder factor(final float factor) {
                 this.factor = factor;
                 return this;
             }
@@ -198,6 +205,70 @@ public record PaperBlocksAttacks(
                 return new PaperDamageReduction(new net.minecraft.world.item.component.BlocksAttacks.DamageReduction(
                     this.horizontalBlockingAngle,
                     this.type,
+                    this.base,
+                    this.factor
+                ));
+            }
+        }
+    }
+
+    public record PaperItemDamageFunction(
+        net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction impl
+    ) implements ItemDamageFunction, Handleable<net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction> {
+
+        @Override
+        public net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction getHandle() {
+            return this.impl;
+        }
+
+        @Override
+        public float threshold() {
+            return this.impl.threshold();
+        }
+
+        @Override
+        public float base() {
+            return this.impl.base();
+        }
+
+        @Override
+        public float factor() {
+            return this.impl.factor();
+        }
+
+        @Override
+        public int damageToApply(final float damage) {
+            return this.impl.apply(damage);
+        }
+
+        static final class BuilderImpl implements Builder {
+
+            private float threshold;
+            private float base;
+            private float factor;
+
+            @Override
+            public Builder threshold(final float threshold) {
+                this.threshold = threshold;
+                return this;
+            }
+
+            @Override
+            public Builder base(final float base) {
+                this.base = base;
+                return this;
+            }
+
+            @Override
+            public Builder factor(final float factor) {
+                this.factor = factor;
+                return this;
+            }
+
+            @Override
+            public ItemDamageFunction build() {
+                return new PaperItemDamageFunction(new net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction(
+                    this.threshold,
                     this.base,
                     this.factor
                 ));

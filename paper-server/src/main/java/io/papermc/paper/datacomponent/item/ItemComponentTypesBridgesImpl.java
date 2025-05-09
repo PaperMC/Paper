@@ -238,6 +238,16 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public BlocksAttacks.DamageReduction.Builder blocksAttacksDamageReduction() {
+        return new PaperBlocksAttacks.PaperDamageReduction.BuilderImpl();
+    }
+
+    @Override
+    public BlocksAttacks.ItemDamageFunction.Builder blocksAttacksItemDamageFunction() {
+        return new PaperBlocksAttacks.PaperItemDamageFunction.BuilderImpl();
+    }
+
+    @Override
     public TooltipDisplay.Builder tooltipDisplay() {
         return new PaperTooltipDisplay.BuilderImpl();
     }

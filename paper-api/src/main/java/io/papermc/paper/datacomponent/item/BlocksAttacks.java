@@ -5,7 +5,7 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.EntityType;
+import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -29,7 +29,7 @@ public interface BlocksAttacks {
 
     List<DamageReduction> damageReductions();
 
-    //ItemDamageFunction itemDamage();
+    ItemDamageFunction itemDamage();
 
     @Nullable
     TagKey<DamageType> bypassedBy();
@@ -59,8 +59,8 @@ public interface BlocksAttacks {
         @Contract(value = "_ -> this", mutates = "this")
         Builder damageReductions(List<DamageReduction> reductions);
 
-        //@Contract(value = "_ -> this", mutates = "this")
-        //Builder itemDamage(ItemDamageFunction function);
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder itemDamage(ItemDamageFunction function);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder bypassedBy(@Nullable TagKey<DamageType> bypassedBy);
@@ -76,10 +76,15 @@ public interface BlocksAttacks {
     @ApiStatus.NonExtendable
     interface DamageReduction {
 
+        @Contract(value = "-> new", pure = true)
+        static DamageReduction.Builder damageReduction() {
+            return ItemComponentTypesBridge.bridge().blocksAttacksDamageReduction();
+        }
+
         @Nullable
         RegistryKeySet<DamageType> type();
 
-        @IntRange(from = 0)
+        @Positive
         float horizontalBlockingAngle();
 
         float base();
@@ -106,5 +111,40 @@ public interface BlocksAttacks {
             BlocksAttacks.DamageReduction.Builder factor(float factor);
         }
 
+    }
+
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
+    interface ItemDamageFunction {
+
+        @Contract(value = "-> new", pure = true)
+        static ItemDamageFunction.Builder itemDamageFunction() {
+            return ItemComponentTypesBridge.bridge().blocksAttacksItemDamageFunction();
+        }
+
+        float threshold();
+
+        float base();
+
+        float factor();
+
+        int damageToApply(float damage);
+
+        /**
+         * Builder for {@link BlocksAttacks.DamageReduction}.
+         */
+        @ApiStatus.Experimental
+        @ApiStatus.NonExtendable
+        interface Builder extends DataComponentBuilder<ItemDamageFunction> {
+
+            @Contract(value = "_ -> this", mutates = "this")
+            BlocksAttacks.ItemDamageFunction.Builder threshold(final float threshold);
+
+            @Contract(value = "_ -> this", mutates = "this")
+            BlocksAttacks.ItemDamageFunction.Builder base(final float base);
+
+            @Contract(value = "_ -> this", mutates = "this")
+            BlocksAttacks.ItemDamageFunction.Builder factor(final float factor);
+        }
     }
 }
