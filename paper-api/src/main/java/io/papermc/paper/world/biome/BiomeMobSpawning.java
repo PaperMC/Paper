@@ -50,16 +50,14 @@ public interface BiomeMobSpawning {
          *
          * @return the minimum count
          */
-        @Positive
-        int minCount();
+        @Positive int minCount();
 
         /**
          * The maximum count of mobs to spawn in a pack.
          *
          * @return the maximum count
          */
-        @Positive
-        int maxCount();
+        @Positive int maxCount();
     }
 
     /**

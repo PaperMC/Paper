@@ -9,30 +9,32 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class PaperBiomeClimate implements BiomeClimate {
 
-    private final Holder<Biome> biome;
+    private final Biome.ClimateSettings climate;
+    private final Biome biome;
 
-    public PaperBiomeClimate(Holder<Biome> biome) {
+    public PaperBiomeClimate(Biome.ClimateSettings climate, Biome biome) {
+        this.climate = climate;
         this.biome = biome;
     }
 
     @Override
     public boolean hasPrecipitation() {
-        return this.biome.value().climateSettings.hasPrecipitation();
+        return this.climate.hasPrecipitation();
     }
 
     @Override
     public float temperature() {
-        return this.biome.value().climateSettings.temperature();
+        return this.climate.temperature();
     }
 
     @Override
     public float downfall() {
-        return this.biome.value().climateSettings.downfall();
+        return this.climate.downfall();
     }
 
     @Override
     public float adjustedTemperature(final Location location) {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot get biome climate for a location with a null world");
-        return this.biome.value().getHeightAdjustedTemperature(CraftLocation.toBlockPosition(location), location.getWorld().getSeaLevel());
+        return this.biome.getHeightAdjustedTemperature(CraftLocation.toBlockPosition(location), location.getWorld().getSeaLevel());
     }
 }

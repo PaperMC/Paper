@@ -515,7 +515,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @deprecated Get the temperature from the biome instead.
      *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.5")
     double getTemperature();
 
     /**
@@ -525,7 +525,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @deprecated Get the temperature from the biome instead.
      *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.5")
     double getHumidity();
 
     /**

@@ -46,30 +46,23 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.BIOME);
     }
 
-    private final PaperBiomeClimate climate;
-    private final PaperBiomeSpecialEffects effects;
-    private final PaperBiomeMobSpawning mobSpawning;
-
     public CraftBiome(final Holder<net.minecraft.world.level.biome.Biome> holder) {
         super(holder, count++);
-        this.climate = new PaperBiomeClimate(holder);
-        this.effects = new PaperBiomeSpecialEffects(holder);
-        this.mobSpawning = new PaperBiomeMobSpawning(holder);
     }
 
     @Override
-    public @NotNull BiomeClimate climate() {
-        return this.climate;
+    public BiomeClimate climate() {
+        return new PaperBiomeClimate(this.getHolder().value().climateSettings, this.getHolder().value());
     }
 
     @Override
-    public @NotNull BiomeMobSpawning mobSpawning() {
-        return this.mobSpawning;
+    public BiomeMobSpawning mobSpawning() {
+        return new PaperBiomeMobSpawning(this.getHolder().value().getMobSettings());
     }
 
     @Override
-    public @NotNull BiomeSpecialEffects specialEffects() {
-        return this.effects;
+    public BiomeSpecialEffects specialEffects() {
+        return new PaperBiomeSpecialEffects(this.getHolder().value().getSpecialEffects());
     }
 
     /**
