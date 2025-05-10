@@ -197,7 +197,8 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     @Override
-    public @NotNull Set<org.bukkit.scoreboard.ScoreHolder> getHolders() {
+    @NotNull
+    public Set<org.bukkit.scoreboard.ScoreHolder> getHolders() {
         return this.getHandle().getTrackedPlayers().stream().map(CraftScoreHolder::new).collect(Collectors.toUnmodifiableSet());
     }
 

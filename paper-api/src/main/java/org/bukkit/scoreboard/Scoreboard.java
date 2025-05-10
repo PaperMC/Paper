@@ -344,6 +344,7 @@ public interface Scoreboard {
     @NotNull
     Set<String> getEntries();
 
+    @NotNull
     Set<ScoreHolder> getHolders();
 
     /**
