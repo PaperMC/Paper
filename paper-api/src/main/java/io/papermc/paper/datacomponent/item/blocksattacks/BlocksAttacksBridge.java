@@ -7,7 +7,7 @@ import java.util.ServiceLoader;
 
 @NullMarked
 @ApiStatus.Internal
-public interface BlocksAttacksBridge {
+interface BlocksAttacksBridge {
 
     Optional<BlocksAttacksBridge> BRIDGE = ServiceLoader.load(BlocksAttacksBridge.class).findFirst();
 
