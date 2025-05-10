@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -292,6 +293,24 @@ public final class ArgumentTypes {
         return provider().objectiveCriteria();
     }
 
+    /**
+     * A single score holder argument. Requires resolving.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<ScoreHolderResolver> scoreHolder() {
+        return provider().scoreHolder();
+    }
+
+    /**
+     * A multiple score holders argument. Requires resolving.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<ScoreHolderResolver> scoreHolders() {
+        return provider().scoreHolders();
+    }
+    
     /**
      * An operation argument.
      * Represents operations on scores, but can also be used for simple arithmetic.

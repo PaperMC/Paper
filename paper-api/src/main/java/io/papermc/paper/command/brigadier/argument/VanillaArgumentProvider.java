@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -76,6 +77,10 @@ interface VanillaArgumentProvider {
     ArgumentType<SignedMessageResolver> signedMessage();
 
     ArgumentType<DisplaySlot> scoreboardDisplaySlot();
+    
+    ArgumentType<ScoreHolderResolver> scoreHolder();
+    
+    ArgumentType<ScoreHolderResolver> scoreHolders();
     
     ArgumentType<Operation> operation();
 
