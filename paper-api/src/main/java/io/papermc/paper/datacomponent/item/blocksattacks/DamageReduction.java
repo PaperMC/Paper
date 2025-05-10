@@ -8,6 +8,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * Hold how much damage should be blocked in a given attack.
+ *
+ * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
+ * @see io.papermc.paper.datacomponent.item.BlocksAttacks#damageReductions()
+ */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DamageReduction {
@@ -17,14 +23,34 @@ public interface DamageReduction {
         return BlocksAttacksBridge.bridge().blocksAttacksDamageReduction();
     }
 
+    /**
+     * The damage types to block.
+     *
+     * @return the set of damage type
+     */
     @Nullable
     RegistryKeySet<DamageType> type();
 
+    /**
+     * Get the maximum angle between the users facing direction and the direction of the incoming attack to be blocked.
+     *
+     * @return the angle
+     */
     @Positive
     float horizontalBlockingAngle();
 
+    /**
+     * Get the constant amount of damage to be blocked.
+     *
+     * @return the base
+     */
     float base();
 
+    /**
+     * Get the fraction of the dealt damage to be blocked.
+     *
+     * @return the factor
+     */
     float factor();
 
     /**
