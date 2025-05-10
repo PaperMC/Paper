@@ -230,11 +230,11 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         return this.board;
     }
 
-    static ScoreHolder getScoreHolder(String entry) {
+    public static ScoreHolder getScoreHolder(String entry) {
         return () -> entry;
     }
 
-    static ScoreHolder getScoreHolder(OfflinePlayer player) {
+    public static ScoreHolder getScoreHolder(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
 
         if (player instanceof CraftPlayer craft) {
