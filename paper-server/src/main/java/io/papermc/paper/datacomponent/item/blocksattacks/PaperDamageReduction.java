@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -76,7 +75,7 @@ public record PaperDamageReduction(
         }
 
         @Override
-        public BlocksAttacks.DamageReduction build() {
+        public DamageReduction build() {
             return new PaperDamageReduction(new net.minecraft.world.item.component.BlocksAttacks.DamageReduction(
                 this.horizontalBlockingAngle,
                 this.type,

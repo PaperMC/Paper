@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 
@@ -60,7 +59,7 @@ public record PaperItemDamageFunction(
         }
 
         @Override
-        public BlocksAttacks.ItemDamageFunction build() {
+        public ItemDamageFunction build() {
             return new PaperItemDamageFunction(new net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction(
                 this.threshold,
                 this.base,
