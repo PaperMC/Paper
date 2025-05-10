@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import io.papermc.paper.adventure.PaperAdventure;
-import org.bukkit.scoreboard.ScoreHolder;
 import net.kyori.adventure.text.Component;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
