@@ -124,7 +124,12 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
                 }
 
                 converted = this.unwrapArgumentWrapper(pureArgumentNode, customArgumentType, customArgumentType.getNativeType(), suggestionProvider);
-            } else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?, ?> nativeWrapperArgumentType) {
+            }
+            // This is a special case, as we override the suggestions here
+            else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.ScoreHolderWrapperArgumentType scoreHolderWrapperArgumentType) {
+                converted = this.unwrapArgumentWrapper(pureArgumentNode, scoreHolderWrapperArgumentType, scoreHolderWrapperArgumentType, VanillaArgumentProviderImpl.ScoreHolderWrapperArgumentType.SUGGESTIONS);
+            }
+            else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?, ?> nativeWrapperArgumentType) {
                 converted = this.unwrapArgumentWrapper(pureArgumentNode, nativeWrapperArgumentType, nativeWrapperArgumentType, null); // "null" for suggestion provider so it uses the argument type's suggestion provider
 
             /*
