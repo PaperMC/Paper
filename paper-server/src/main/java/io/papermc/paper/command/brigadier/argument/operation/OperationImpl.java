@@ -4,8 +4,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.arguments.OperationArgument;
 import net.minecraft.world.scores.ScoreAccess;
 import net.minecraft.world.scores.ScoreHolder;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.scoreboard.CraftObjective;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -38,28 +38,13 @@ public class OperationImpl implements Operation {
     }
 
     @Override
-    public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, String target, OfflinePlayer sourcePlayer) throws CommandSyntaxException {
-        apply(scoreboard, targetObjective, sourceObjective, CraftScoreboard.getScoreHolder(target), CraftScoreboard.getScoreHolder(sourcePlayer));
-    }
-
-    @Override
-    public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, OfflinePlayer targetPlayer, String source) throws CommandSyntaxException {
-        apply(scoreboard, targetObjective, sourceObjective, CraftScoreboard.getScoreHolder(targetPlayer), CraftScoreboard.getScoreHolder(source));
-    }
-
-    @Override
-    public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, String target, String source) throws CommandSyntaxException {
-        apply(scoreboard, targetObjective, sourceObjective, CraftScoreboard.getScoreHolder(target), CraftScoreboard.getScoreHolder(source));
-    }
-
-    @Override
-    public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, OfflinePlayer targetPlayer, OfflinePlayer sourcePlayer) throws CommandSyntaxException {
-        apply(scoreboard, targetObjective, sourceObjective, CraftScoreboard.getScoreHolder(targetPlayer), CraftScoreboard.getScoreHolder(sourcePlayer));
+    public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, org.bukkit.scoreboard.ScoreHolder targetHolder, org.bukkit.scoreboard.ScoreHolder sourceHolder) throws CommandSyntaxException {
+        apply(scoreboard, targetObjective, sourceObjective, ((CraftScoreHolder) targetHolder).getHandle(), ((CraftScoreHolder) sourceHolder).getHandle());
     }
 
     private void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, ScoreHolder targetScoreHolder, ScoreHolder sourceScoreHolder) throws CommandSyntaxException {
         net.minecraft.world.scores.Scoreboard nmsScoreboard = ((CraftScoreboard) scoreboard).getHandle();
-        
+
         net.minecraft.world.scores.Objective targetNmsObjective = ((CraftObjective) targetObjective).getHandle();
         net.minecraft.world.scores.Objective sourceNmsObjective = ((CraftObjective) sourceObjective).getHandle();
 
