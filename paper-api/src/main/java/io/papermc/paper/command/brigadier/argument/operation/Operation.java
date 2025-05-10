@@ -8,10 +8,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface Operation {
-    
+
     /**
      * Applies the given operation to a set of integers
-     * @param left The left side of the operation
+     *
+     * @param left  The left side of the operation
      * @param right The right side of the operation
      * @return The result of the operation
      */
@@ -19,37 +20,45 @@ public interface Operation {
 
     /**
      * Applies the given operation to a set of score holders
-     * @param scoreboard The scoreboard to edit the score of
-     * @param objective The objective to operate on
-     * @param target The target of the operation
-     * @param sourcePlayer The source of the operation
+     *
+     * @param scoreboard      The scoreboard to edit the score of
+     * @param sourceObjective The objective to retrieve the score from
+     * @param targetObjective The objective to edit the score of
+     * @param target          The target of the operation
+     * @param sourcePlayer    The source of the operation
      */
-    void apply(Scoreboard scoreboard, Objective objective, String target, OfflinePlayer sourcePlayer) throws CommandSyntaxException;
+    void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, String target, OfflinePlayer sourcePlayer) throws CommandSyntaxException;
 
     /**
      * Applies the given operation to a set of score holders
-     * @param scoreboard The scoreboard to edit the score of
-     * @param objective The objective to operate on
-     * @param targetPlayer The target of the operation
-     * @param source The source of the operation
+     *
+     * @param scoreboard      The scoreboard to edit the score of
+     * @param sourceObjective The objective to retrieve the score from
+     * @param targetObjective The objective to edit the score of
+     * @param targetPlayer    The target of the operation
+     * @param source          The source of the operation
      */
-        void apply(Scoreboard scoreboard, Objective objective, OfflinePlayer targetPlayer, String source) throws CommandSyntaxException;
+    void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, OfflinePlayer targetPlayer, String source) throws CommandSyntaxException;
 
     /**
      * Applies the given operation to a set of score holders
-     * @param scoreboard The scoreboard to edit the score of
-     * @param objective The objective to operate on
-     * @param target The target of the operation
-     * @param source The source of the operation
+     *
+     * @param scoreboard      The scoreboard to edit the score of
+     * @param sourceObjective The objective to retrieve the score from
+     * @param targetObjective The objective to edit the score of
+     * @param target          The target of the operation
+     * @param source          The source of the operation
      */
-    void apply(Scoreboard scoreboard, Objective objective, String target, String source) throws CommandSyntaxException;
+    void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, String target, String source) throws CommandSyntaxException;
 
     /**
      * Applies the given operation to a set of score holders
-     * @param scoreboard The scoreboard to edit the score of
-     * @param objective The objective to operate on
-     * @param targetPlayer The target of the operation
-     * @param sourcePlayer The source of the operation
+     *
+     * @param scoreboard      The scoreboard to edit the score of
+     * @param sourceObjective The objective to retrieve the score from
+     * @param targetObjective The objective to edit the score of
+     * @param targetPlayer    The target of the operation
+     * @param sourcePlayer    The source of the operation
      */
-    void apply(Scoreboard scoreboard, Objective objective, OfflinePlayer targetPlayer, OfflinePlayer sourcePlayer) throws CommandSyntaxException;
+    void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, OfflinePlayer targetPlayer, OfflinePlayer sourcePlayer) throws CommandSyntaxException;
 }
