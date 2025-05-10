@@ -273,14 +273,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     private static <C extends Number & Comparable<C>, T extends RangeProvider<C>> T convertToRange(final MinMaxBounds<C> bounds, final Function<Range<C>, T> converter) {
         if (bounds.isAny()) {
             return converter.apply(Range.all());
-        }
-        else if (bounds.min().isPresent() && bounds.max().isPresent()) {
+        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
             return converter.apply(Range.closed(bounds.min().get(), bounds.max().get()));
-        }
-        else if (bounds.max().isPresent()) {
+        } else if (bounds.max().isPresent()) {
             return converter.apply(Range.atMost(bounds.max().get()));
-        }
-        else if (bounds.min().isPresent()) {
+        } else if (bounds.min().isPresent()) {
             return converter.apply(Range.atLeast(bounds.min().get()));
         }
         throw new IllegalStateException("This is a bug: " + bounds);
@@ -294,8 +291,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             final @Nullable ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
             if (serverLevel == null) {
                 throw DimensionArgument.ERROR_INVALID_VALUE.create(dimensionLocation);
-            }
-            else {
+            } else {
                 return serverLevel.getWorld();
             }
         });
