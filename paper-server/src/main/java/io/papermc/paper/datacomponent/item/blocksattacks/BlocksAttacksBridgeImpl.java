@@ -1,6 +1,11 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
-public final class BlocksAttacksBridgesImpl implements BlocksAttacksBridge {
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
+
+@ApiStatus.Internal
+@NullMarked
+public class BlocksAttacksBridgeImpl implements BlocksAttacksBridge {
 
     @Override
     public DamageReduction.Builder blocksAttacksDamageReduction() {
