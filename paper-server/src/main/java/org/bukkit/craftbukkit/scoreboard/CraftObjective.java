@@ -11,17 +11,17 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import java.util.Objects;
 
-final class CraftObjective extends CraftScoreboardComponent implements Objective {
+public final class CraftObjective extends CraftScoreboardComponent implements Objective {
     private final net.minecraft.world.scores.Objective objective;
     private final CraftCriteria criteria;
 
-    CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
+    public CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);
     }
 
-    net.minecraft.world.scores.Objective getHandle() {
+    public net.minecraft.world.scores.Objective getHandle() {
         return this.objective;
     }
 
