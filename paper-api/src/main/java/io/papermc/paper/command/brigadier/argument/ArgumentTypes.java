@@ -1,6 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
+import io.papermc.paper.command.brigadier.argument.operation.Operation;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -8,6 +9,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -289,6 +291,35 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<Criteria> objectiveCriteria() {
         return provider().objectiveCriteria();
+    }
+
+    /**
+     * Represents a selector that can capture any single
+     * score holder.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<ScoreHolderResolver> scoreHolder() {
+        return provider().scoreHolder();
+    }
+
+    /**
+     * Represents a selector that can capture multiple
+     * score holders.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<ScoreHolderResolver> scoreHolders() {
+        return provider().scoreHolders();
+    }
+    
+    /**
+     * An operation argument.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<Operation> operation() {
+        return provider().operation();
     }
 
     /**
