@@ -11,9 +11,11 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -70,5 +72,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(
             damageSource, damage, fallLocation, fallDistance
         ));
+    }
+
+    @Override
+    public ScoreHolder scoreHolderOf(final String entry) {
+        return new CraftScoreHolder.CraftStringScoreHolder(entry);
     }
 }

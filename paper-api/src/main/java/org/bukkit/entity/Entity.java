@@ -24,6 +24,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
  */
-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, DataComponentView { // Paper
+public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, DataComponentView, ScoreHolder { // Paper
 
     /**
      * Gets the entity's current position

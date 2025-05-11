@@ -8,7 +8,6 @@ import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -51,7 +50,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
@@ -123,6 +121,7 @@ import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -241,6 +240,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public ServerPlayer getHandle() {
         return (ServerPlayer) this.entity;
+    }
+
+    @Override
+    public ScoreHolder asNmsScoreHolder() {
+        return this.entity;
     }
 
     @Override
