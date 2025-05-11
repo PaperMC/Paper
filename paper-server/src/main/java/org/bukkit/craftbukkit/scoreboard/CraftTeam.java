@@ -16,10 +16,10 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.NameTagVisibility;
 import org.bukkit.scoreboard.Team;
 
-final class CraftTeam extends CraftScoreboardComponent implements Team {
+public final class CraftTeam extends CraftScoreboardComponent implements Team {
     private final PlayerTeam team;
 
-    CraftTeam(CraftScoreboard scoreboard, PlayerTeam team) {
+    public CraftTeam(CraftScoreboard scoreboard, PlayerTeam team) {
         super(scoreboard);
         this.team = team;
     }
