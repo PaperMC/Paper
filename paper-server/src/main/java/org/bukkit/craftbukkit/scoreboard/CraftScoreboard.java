@@ -155,7 +155,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         PlayerTeam team = this.getHandle().getPlayersTeam(entry);
         return team == null ? null : new CraftTeam(this, team);
     }
-    
+
     @Override
     public Team getTeam(String teamName) {
         Preconditions.checkArgument(teamName != null, "Team name cannot be null");
