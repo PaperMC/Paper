@@ -1,5 +1,6 @@
 package org.bukkit.scoreboard;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
@@ -223,40 +224,41 @@ public interface Scoreboard {
     Objective getObjective(@NotNull DisplaySlot slot);
 
     /**
-     * Gets all scores for a player on this Scoreboard
-     *
-     * @param player the player whose scores are being retrieved
-     * @return immutable set of all scores tracked for the player
-     * @see #getScores(String)
-     */
-    // @Deprecated(since = "1.7.8") // Paper
-    @NotNull
-    Set<Score> getScores(@NotNull OfflinePlayer player);
-
-    /**
      * Gets all scores for an entry on this Scoreboard
      *
      * @param entry the entry whose scores are being retrieved
      * @return immutable set of all scores tracked for the entry
      */
     @NotNull
-    Set<Score> getScores(@NotNull String entry);
+    default Set<Score> getScores(@NotNull String entry) {
+        return getScores(ScoreHolder.of(entry));
+    }
 
     /**
-     * Removes all scores for a player on this Scoreboard
+     * Gets all scores for a {@link ScoreHolder} on this Scoreboard
      *
-     * @param player the player to drop all current scores for
-     * @see #resetScores(String)
+     * @param holder the ScoreHolder whose scores are being retrieved
+     * @return immutable set of all scores tracked for the entry
      */
-    // @Deprecated(since = "1.7.8") // Paper
-    void resetScores(@NotNull OfflinePlayer player);
+    @NotNull
+    ImmutableSet<Score> getScores(@NotNull ScoreHolder holder);
 
     /**
      * Removes all scores for an entry on this Scoreboard
      *
      * @param entry the entry to drop all current scores for
      */
-    void resetScores(@NotNull String entry);
+    default void resetScores(@NotNull String entry) {
+        resetScores(ScoreHolder.of(entry));
+    }
+
+    /**
+     * Removes all scores for a {@link ScoreHolder} on this Scoreboard
+     *
+     * @param holder the holder to drop all current scores for
+     * @see #resetScores(String)
+     */
+    void resetScores(@NotNull ScoreHolder holder);
 
     /**
      * Gets a player's Team on this Scoreboard
@@ -324,6 +326,9 @@ public interface Scoreboard {
     @NotNull
     Set<String> getEntries();
 
+    @NotNull
+    Set<ScoreHolder> getHolders();
+
     /**
      * Clears any objective in the specified slot.
      *
@@ -361,4 +366,24 @@ public interface Scoreboard {
      */
     @Nullable Team getEntityTeam(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException;
     // Paper end - improve scoreboard entries
+
+    /**
+     * Gets all scores for a score holder on this Scoreboard
+     *
+     * @param holder the score holder whose scores are being retrieved
+     * @return immutable set of all scores tracked for the entity
+     * @throws IllegalArgumentException if entity is null
+     * @see #getScores(ScoreHolder)
+     */
+    @NotNull Set<Score> getScoresFor(@NotNull ScoreHolder holder) throws IllegalArgumentException;
+
+    /**
+     * Removes all scores for a score holder on this Scoreboard
+     *
+     * @param holder the score holder to drop all current scores for
+     * @throws IllegalArgumentException if entity is null
+     * @see #resetScores(ScoreHolder)
+     */
+    void resetScoresFor(@NotNull ScoreHolder holder) throws IllegalArgumentException;
+
 }

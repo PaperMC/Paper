@@ -12,6 +12,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.profile.PlayerProfile;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -22,7 +23,7 @@ import org.jspecify.annotations.Nullable;
  * player needing to be online.
  */
 @NullMarked
-public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder, PlayerHeadObjectContents.SkinSource { // Paper - Add Offline PDC API
+public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder, PlayerHeadObjectContents.SkinSource, ScoreHolder {
 
     /**
      * Checks if this player is currently online

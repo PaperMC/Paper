@@ -38,6 +38,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -51,6 +52,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
@@ -79,7 +81,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-public abstract class CraftEntity implements org.bukkit.entity.Entity {
+public abstract class CraftEntity implements org.bukkit.entity.Entity, CraftScoreHolder {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -139,6 +141,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public Entity getHandle() {
+        return this.entity;
+    }
+
+    @Override
+    public ScoreHolder asNmsScoreHolder() {
         return this.entity;
     }
 
