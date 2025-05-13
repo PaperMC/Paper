@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.entity.TeleportFlag;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -123,8 +124,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
         /**
          * Indicates the teleportation was caused by a player consuming chorus
          * fruit
+         * @deprecated in favor of {@link #CONSUMABLE_TELEPORT}
          */
+        @Deprecated(since = "1.21.4")
         CHORUS_FRUIT,
+        /**
+         * Indicates the teleportation was caused by a player consuming an item with Component {@link ConsumeEffect.TeleportRandomly}
+         */
+        CONSUMABLE_TELEPORT,
         /**
          * Indicates the teleportation was caused by a player exiting a vehicle
          */
