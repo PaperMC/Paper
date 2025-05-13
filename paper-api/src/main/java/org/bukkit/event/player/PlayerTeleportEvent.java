@@ -126,7 +126,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          * fruit
          * @deprecated in favor of {@link #CONSUMABLE_TELEPORT}
          */
-        @Deprecated(since = "1.21.4")
+        @Deprecated(since = "1.21.5", forRemoval = true)
         CHORUS_FRUIT,
         /**
          * Indicates the teleportation was caused by a player consuming an item with Component {@link ConsumeEffect.TeleportRandomly}
