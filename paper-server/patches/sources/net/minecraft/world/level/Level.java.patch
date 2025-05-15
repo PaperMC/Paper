@@ -490,7 +490,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -463,32 +_,48 @@
+@@ -463,32 +_,72 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -502,8 +502,32 @@
 -            TickingBlockEntity tickingBlockEntity = iterator.next();
 +        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
 +        toRemove.add(null); // Paper - Fix MC-117075
-+        for (this.tileTickPosition = 0; this.tileTickPosition < this.blockEntityTickers.size(); this.tileTickPosition++) { // Paper - Disable tick limiters
++
++        // Paper start - put wall clock limit on tile entity tick
++
++        if (this.tileTickPosition >= blockEntityTickers.size()) {
++            this.tileTickPosition = 0;
++        }
++
++        long start = System.nanoTime();
++        long limitMsToNano = paperConfig.misc.tileEntityMaxTickMs <= 0 ? 0 :
++            java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(paperConfig.misc.tileEntityMaxTickMs);
++
++        // Paper end
++
++        for (; this.tileTickPosition < this.blockEntityTickers.size(); this.tileTickPosition++) { // Paper - Disable tick limiters
 +            TickingBlockEntity tickingBlockEntity = this.blockEntityTickers.get(this.tileTickPosition);
++
++            // Paper start - put wall clock limit on tile entity tick
++
++            if (limitMsToNano != 0 && (tickedEntities & 31) == 0) {
++                if (System.nanoTime() - start >= limitMsToNano) {
++                    break;
++                }
++            }
++
++            // Paper end
++
 +            // Spigot end
              if (tickingBlockEntity.isRemoved()) {
 -                iterator.remove();
