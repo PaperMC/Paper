@@ -273,7 +273,7 @@ public final class CraftItemStack extends ItemStack {
             return;
         }
 
-        EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
+        EnchantmentHelper.updateEnchantments(this.handle, true, mutable -> { // data component api doesn't really support mutable things once already set yet
             mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
         });
         // Paper end
