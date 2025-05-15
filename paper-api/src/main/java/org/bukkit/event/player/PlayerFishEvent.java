@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Thrown when a player is fishing
  *
- * <p>If you want to monitor a fishhook state transitions, you can listen to them using {@link FishHookStateChangeEvent}.</p>
+ * <p>If you want to monitor a fishhooks state transition, you can use {@link FishHookStateChangeEvent}.</p>
  */
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
 

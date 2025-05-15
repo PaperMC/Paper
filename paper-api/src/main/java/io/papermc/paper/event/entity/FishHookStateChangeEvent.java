@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Called just before a {@link FishHook}'s {@link FishHook.HookState} is changed.
  *
- * <p>If you want to monitor a player's fishing state transitions, you can listen to them using {@link PlayerFishEvent}.</p>
+ * <p>If you want to monitor a player's fishing state transition, you can use {@link PlayerFishEvent}.</p>
  */
 @NullMarked
 public final class FishHookStateChangeEvent extends EntityEvent {
