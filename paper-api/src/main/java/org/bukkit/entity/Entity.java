@@ -539,7 +539,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     public boolean eject();
 
-    // Paper start - pick item result
     /**
      * Gets the {@link ItemStack} that would be returned when a
      * player uses the pick block action on this entity.
@@ -548,7 +547,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     ItemStack getPickItem();
-    // Paper end - pick item result
 
     /**
      * Returns the distance this entity has fallen
