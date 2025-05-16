@@ -4,7 +4,6 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -12,6 +11,8 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -22,10 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.entity.EntitySerializationFlag;
+import net.kyori.adventure.key.Key;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.Commands;
@@ -41,7 +43,6 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Player;
@@ -82,6 +83,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
+import oshi.util.tuples.Pair;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -354,6 +356,73 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         return null;
+    }
+
+    @Override
+    public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist) {
+        for (Map.Entry<Key, String> entry : advancements.entrySet()) {
+            Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(PaperAdventure.asVanilla(entry.getKey())) == null, "Advancement %s already exists", entry.getKey());
+        }
+    
+        final List<LoadAdvancementEntry> mappedAdvancements = advancements.entrySet()
+            .stream()
+            .map(entry -> new LoadAdvancementEntry(entry.getKey(), entry.getValue(), PaperAdventure.asVanilla(entry.getKey()), JsonParser.parseString(entry.getValue())))
+            .toList();
+    
+        final List<Advancement> outAdvancements = new ArrayList<>(mappedAdvancements.size());
+        final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
+        mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
+        
+        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
+        final List<AdvancementHolder> advancementHolders = mappedAdvancements.stream()
+            .map(entry -> new Pair<>(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()))
+            .filter(entry -> Objects.nonNull(entry.getA()))
+            .map(entry -> new Pair<>(entry.getB(), new AdvancementHolder(entry.getB(), entry.getA())))
+            .peek(entry -> mapBuilder.put(entry.getA(), entry.getB()))
+            .map(Pair::getB)
+            .toList();
+    
+        MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
+        
+        final net.minecraft.advancements.AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
+        tree.addAll(advancementHolders);
+        
+        for (LoadAdvancementEntry entry : mappedAdvancements) {
+            // recalculate advancement position
+            final net.minecraft.advancements.AdvancementNode node = tree.get(entry.nmsResourceLocation());
+            if (node != null) {
+                final net.minecraft.advancements.AdvancementNode root = node.root();
+                if (root.holder().value().display().isPresent()) {
+                    net.minecraft.advancements.TreeNodePosition.run(root);
+                }
+            }
+    
+            AdvancementHolder nmsAdvancement = MinecraftServer.getServer().getAdvancements().get(entry.nmsResourceLocation);
+            if (nmsAdvancement != null) {
+                if (persist) {
+                    File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + entry.key().namespace() + File.separator + "advancements" + File.separator + entry.key().value() + ".json");
+                    file.getParentFile().mkdirs();
+    
+                    try {
+                        Files.write(entry.rawAdvancement(), file, StandardCharsets.UTF_8);
+                    }
+                    catch (IOException ex) {
+                        Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + entry.key(), ex);
+                    }
+                }
+    
+                outAdvancements.add(nmsAdvancement.toBukkit());
+            }
+        }
+    
+        if (!outAdvancements.isEmpty()) {
+            MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
+                player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
+                player.getAdvancements().flushDirty(player, false);
+            });
+        }
+    
+        return outAdvancements;
     }
 
     @Override
@@ -841,4 +910,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
     }
+    
+    private record LoadAdvancementEntry(Key key, String rawAdvancement, ResourceLocation nmsResourceLocation, JsonElement nmsAdvancement) {}
 }
