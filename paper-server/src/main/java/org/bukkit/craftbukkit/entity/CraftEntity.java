@@ -533,13 +533,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return true;
     }
 
-    // Paper start - pick item result
     @Override
     public ItemStack getPickItem() {
         net.minecraft.world.item.ItemStack stack = this.getHandle().getPickResult();
         return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
     }
-    // Paper end - pick item result
 
     @Override
     public float getFallDistance() {
