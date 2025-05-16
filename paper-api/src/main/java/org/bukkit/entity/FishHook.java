@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.inventory.EquipmentSlot;
+import io.papermc.paper.event.entity.FishHookStateChangeEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -306,6 +307,7 @@ public interface FishHook extends Projectile {
 
     /**
      * Represents a state in which a fishing hook may be.
+     * State transitions can be listened for using {@link FishHookStateChangeEvent}
      */
     public enum HookState {
 
