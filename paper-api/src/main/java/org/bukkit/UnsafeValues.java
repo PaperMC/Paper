@@ -6,7 +6,6 @@ import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -81,7 +80,28 @@ public interface UnsafeValues {
      * @param advancement representation of the advancement
      * @return the loaded advancement or null if an error occurred
      */
-    Advancement loadAdvancement(NamespacedKey key, String advancement);
+    default Advancement loadAdvancement(NamespacedKey key, String advancement) {
+        return loadAdvancement(key, advancement, true);
+    }
+    
+    /**
+     * Load an advancement represented by the specified string into the server.
+     * The advancement format is governed by Minecraft and has no specified
+     * layout.
+     * <br>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * <br>
+     * Loaded advancements will only be stored and persisted across server restarts
+     * and reloads, if the {@code persist} parameter is set to true. 
+     * <br>
+     * Callers should be prepared for {@link Exception} to be thrown.
+     *
+     * @param key the unique advancement key
+     * @param advancement representation of the advancement
+     * @param persist whether to store this advancement in the bukkit datapack for persistence
+     * @return the loaded advancement or null if an error occurred
+     */
+    Advancement loadAdvancement(NamespacedKey key, String advancement, boolean persist);
 
     /**
      * Delete an advancement which was loaded and saved by

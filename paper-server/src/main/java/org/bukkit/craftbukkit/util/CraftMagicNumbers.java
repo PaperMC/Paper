@@ -303,7 +303,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public Advancement loadAdvancement(NamespacedKey key, String advancement) {
+    public Advancement loadAdvancement(NamespacedKey key, String advancement, boolean persist) {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
         ResourceLocation resourceKey = CraftNamespacedKey.toMinecraft(key);
 
@@ -333,13 +333,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
-                File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
-                file.getParentFile().mkdirs();
+                if (persist) {
+                    File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
+                    file.getParentFile().mkdirs();
 
-                try {
-                    Files.write(advancement, file, StandardCharsets.UTF_8);
-                } catch (IOException ex) {
-                    Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
+                    try {
+                        Files.write(advancement, file, StandardCharsets.UTF_8);
+                    } catch (IOException ex) {
+                        Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
+                    }
                 }
 
                 MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
