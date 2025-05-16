@@ -122,12 +122,9 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         END_GATEWAY,
         /**
-         * Indicates the teleportation was caused by a player consuming chorus
-         * fruit
-         * @deprecated in favor of {@link #CONSUMABLE_TELEPORT}
+         * Indicates the teleportation was caused by a player consuming an item with Component {@link ConsumeEffect.TeleportRandomly}
          */
-        @Deprecated(since = "1.21.5", forRemoval = true)
-        CHORUS_FRUIT,
+        CONSUMABLE_TELEPORT,
         /**
          * Indicates the teleportation was caused by a player exiting a vehicle
          */
@@ -143,8 +140,11 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
         UNKNOWN;
 
         /**
-         * Indicates the teleportation was caused by a player consuming an item with Component {@link ConsumeEffect.TeleportRandomly}
+         * Indicates the teleportation was caused by a player consuming chorus
+         * fruit
+         * @deprecated in favor of {@link #CONSUMABLE_TELEPORT}
          */
-        public static TeleportCause CONSUMABLE_TELEPORT = CHORUS_FRUIT;
+        @Deprecated(since = "1.21.5", forRemoval = true)
+        public static final TeleportCause CHORUS_FRUIT = CONSUMABLE_TELEPORT;
     }
 }
