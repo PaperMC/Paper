@@ -546,6 +546,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return item stack result or null
      */
+    @NotNull
     ItemStack getPickItem();
     // Paper end - pick item result
 
