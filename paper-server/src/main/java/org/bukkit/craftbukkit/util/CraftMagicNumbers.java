@@ -15,7 +15,6 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
@@ -369,23 +367,27 @@ public final class CraftMagicNumbers implements UnsafeValues {
             Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(PaperAdventure.asVanilla(entry.getKey())) == null, "Advancement %s already exists", entry.getKey());
         }
     
-        final List<LoadAdvancementEntry> mappedAdvancements = advancements.entrySet()
-            .stream()
-            .map(entry -> new LoadAdvancementEntry(entry.getKey(), entry.getValue(), PaperAdventure.asVanilla(entry.getKey()), JsonParser.parseString(entry.getValue())))
-            .toList();
+        final List<LoadAdvancementEntry> mappedAdvancements = new ArrayList<>(advancements.size());
+        for (final Map.Entry<Key, String> entry : advancements.entrySet()) {
+            mappedAdvancements.add(new LoadAdvancementEntry(entry.getKey(), entry.getValue(), PaperAdventure.asVanilla(entry.getKey()), JsonParser.parseString(entry.getValue())));
+        }
     
         final List<Advancement> outAdvancements = new ArrayList<>(mappedAdvancements.size());
         final ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = ImmutableMap.builder();
         mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
         
         final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-        final List<AdvancementHolder> advancementHolders = mappedAdvancements.stream()
-            .map(entry -> Pair.of(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()))
-            .filter(entry -> Objects.nonNull(entry.key()))
-            .map(entry -> Pair.of(new AdvancementHolder(entry.value(), entry.key()), entry.value()))
-            .peek(entry -> mapBuilder.put(entry.value(), entry.key()))
-            .map(Pair::key)
-            .toList();
+        final List<AdvancementHolder> advancementHolders = new ArrayList<>(mappedAdvancements.size());
+        for (final LoadAdvancementEntry entry : mappedAdvancements) {
+            final net.minecraft.advancements.Advancement advancement = net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new);
+            if (advancement == null) {
+                continue;
+            }
+            
+            final AdvancementHolder holder = new AdvancementHolder(entry.nmsResourceLocation(), advancement);
+            mapBuilder.put(entry.nmsResourceLocation(), holder);
+            advancementHolders.add(holder);
+        }
     
         MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
         
