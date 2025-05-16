@@ -122,7 +122,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         END_GATEWAY,
         /**
-         * Indicates the teleportation was caused by a player consuming an item with Component {@link ConsumeEffect.TeleportRandomly}
+         * Indicates the teleportation was caused by a player consuming an item with a {@link ConsumeEffect.TeleportRandomly} effect
          */
         CONSUMABLE_TELEPORT,
         /**
