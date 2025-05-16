@@ -103,7 +103,7 @@ public interface UnsafeValues {
      * @param persist whether to store this advancement in the bukkit datapack for persistence
      * @return the loaded advancement or null if an error occurred
      */
-    Advancement loadAdvancement(NamespacedKey key, String advancement, boolean persist);
+    Advancement loadAdvancement(Key key, String advancement, boolean persist);
 
     /**
      * Load multiple advancements represented by the specified strings into the server.

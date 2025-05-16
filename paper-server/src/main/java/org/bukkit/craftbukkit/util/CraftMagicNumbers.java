@@ -308,9 +308,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public Advancement loadAdvancement(NamespacedKey key, String advancement, boolean persist) {
-        Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
-        ResourceLocation resourceKey = CraftNamespacedKey.toMinecraft(key);
+    public Advancement loadAdvancement(Key key, String advancement, boolean persist) {
+        ResourceLocation resourceKey = PaperAdventure.asVanilla(key);
+        Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(resourceKey) == null, "Advancement %s already exists", key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
         final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
@@ -335,11 +335,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 }
             }
 
-            Advancement bukkit = Bukkit.getAdvancement(key);
-
-            if (bukkit != null) {
+            AdvancementHolder nmsAdvancement = MinecraftServer.getServer().getAdvancements().get(resourceKey);
+            if (nmsAdvancement != null) {
                 if (persist) {
-                    File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
+                    File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.namespace() + File.separator + "advancements" + File.separator + key.value() + ".json");
                     file.getParentFile().mkdirs();
 
                     try {
@@ -354,7 +353,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     player.getAdvancements().flushDirty(player, false);
                 });
 
-                return bukkit;
+                return nmsAdvancement.toBukkit();
             }
         }
 
