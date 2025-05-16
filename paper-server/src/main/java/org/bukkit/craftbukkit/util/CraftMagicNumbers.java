@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
@@ -14,6 +15,7 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import it.unimi.dsi.fastutil.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +29,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import it.unimi.dsi.fastutil.Pair;
-import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
 import net.kyori.adventure.key.Key;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementNode;
+import net.minecraft.advancements.AdvancementTree;
+import net.minecraft.advancements.TreeNodePosition;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -42,6 +45,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -371,30 +375,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
             .toList();
     
         final List<Advancement> outAdvancements = new ArrayList<>(mappedAdvancements.size());
-        final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
+        final ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = ImmutableMap.builder();
         mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
         
-        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
+        final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
         final List<AdvancementHolder> advancementHolders = mappedAdvancements.stream()
-            .map(entry -> new ObjectObjectImmutablePair<>(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()) {})
+            .map(entry -> Pair.of(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()))
             .filter(entry -> Objects.nonNull(entry.key()))
-            .map(entry -> new ObjectObjectImmutablePair<>(new AdvancementHolder(entry.value(), entry.key()), entry.value()))
+            .map(entry -> Pair.of(new AdvancementHolder(entry.value(), entry.key()), entry.value()))
             .peek(entry -> mapBuilder.put(entry.value(), entry.key()))
             .map(Pair::key)
             .toList();
     
         MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
         
-        final net.minecraft.advancements.AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
+        final AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
         tree.addAll(advancementHolders);
         
         for (LoadAdvancementEntry entry : mappedAdvancements) {
             // recalculate advancement position
-            final net.minecraft.advancements.AdvancementNode node = tree.get(entry.nmsResourceLocation());
+            final AdvancementNode node = tree.get(entry.nmsResourceLocation());
             if (node != null) {
-                final net.minecraft.advancements.AdvancementNode root = node.root();
+                final AdvancementNode root = node.root();
                 if (root.holder().value().display().isPresent()) {
-                    net.minecraft.advancements.TreeNodePosition.run(root);
+                    TreeNodePosition.run(root);
                 }
             }
     
