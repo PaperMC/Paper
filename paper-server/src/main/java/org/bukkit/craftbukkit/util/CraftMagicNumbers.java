@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
+import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
 import net.kyori.adventure.key.Key;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
@@ -83,7 +85,6 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
-import oshi.util.tuples.Pair;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -375,11 +376,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
         
         final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
         final List<AdvancementHolder> advancementHolders = mappedAdvancements.stream()
-            .map(entry -> new Pair<>(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()))
-            .filter(entry -> Objects.nonNull(entry.getA()))
-            .map(entry -> new Pair<>(entry.getB(), new AdvancementHolder(entry.getB(), entry.getA())))
-            .peek(entry -> mapBuilder.put(entry.getA(), entry.getB()))
-            .map(Pair::getB)
+            .map(entry -> new ObjectObjectImmutablePair<>(net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new), entry.nmsResourceLocation()) {})
+            .filter(entry -> Objects.nonNull(entry.key()))
+            .map(entry -> new ObjectObjectImmutablePair<>(new AdvancementHolder(entry.value(), entry.key()), entry.value()))
+            .peek(entry -> mapBuilder.put(entry.value(), entry.key()))
+            .map(Pair::key)
             .toList();
     
         MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
