@@ -537,7 +537,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     // Paper start - pick item result
     @Override
     public ItemStack getPickItem() {
-        return CraftItemStack.asCraftMirror(this.getHandle().getPickResult());
+        net.minecraft.world.item.ItemStack stack = this.getHandle().getPickResult();
+        return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
     }
     // Paper end - pick item result
 
