@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -337,12 +_,21 @@
+                 if (state.canSurvive(level, pos)) {
+                     this.updatePowerStrength(level, pos, state, orientation, false);
+                 } else {
+-                    dropResources(state, level, pos);
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDestroyEvent(this, level, state, pos, null)) return; // Paper - call BlockDestroyEvent for all blocks
+                     level.removeBlock(pos, false);
+                 }
+             }
+         }
+     }
++
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.world.item.ItemStack stack, boolean dropExperience) {
++        Integer expToDrop = level.expToDrop;
++        level.expToDrop = null;
++        return expToDrop == null ? super.getExpDrop(state, level, pos, stack, dropExperience) : expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
+ 
+     private static boolean useExperimentalEvaluator(Level level) {
+         return level.enabledFeatures().contains(FeatureFlags.REDSTONE_EXPERIMENTS);

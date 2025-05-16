@@ -19,3 +19,28 @@
                  level.setBlock(pos, state.setValue(POWERED, true), 2);
                  if (!shouldTurnOn) {
                      level.scheduleTick(pos, this, this.getDelay(state), TickPriority.VERY_HIGH);
+@@ -86,7 +_,7 @@
+             this.checkTickOnNeighbor(level, pos, state);
+         } else {
+             BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+-            dropResources(state, level, pos, blockEntity);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDestroyEvent(this, level, state, pos, blockEntity)) return; // Paper - call BlockDestroyEvent for all blocks
+             level.removeBlock(pos, false);
+ 
+             for (Direction direction : Direction.values()) {
+@@ -94,6 +_,15 @@
+             }
+         }
+     }
++
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.world.item.ItemStack stack, boolean dropExperience) {
++        Integer expToDrop = level.expToDrop;
++        level.expToDrop = null;
++        return expToDrop == null ? super.getExpDrop(state, level, pos, stack, dropExperience) : expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
+ 
+     protected void checkTickOnNeighbor(Level level, BlockPos pos, BlockState state) {
+         if (!this.isLocked(level, pos, state)) {
