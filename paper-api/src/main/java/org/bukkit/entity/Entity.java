@@ -543,7 +543,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the {@link ItemStack} that would be returned when a
      * player uses the pick block action on this entity.
      *
-     * @return item stack result or null
+     * @return item stack result or an empty item stack
      */
     @NotNull
     ItemStack getPickItem();
