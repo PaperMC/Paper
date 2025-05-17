@@ -1961,6 +1961,11 @@ public class CraftEventFactory {
             return;
         }
 
+        // SPIGOT-8041: Do not call event unless entity has been spawned into world
+        if (!entity.inWorld) {
+            return;
+        }
+
         Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
     }
 
