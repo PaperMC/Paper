@@ -551,6 +551,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return ret;
     }
 
+    private static final TagParser<Tag> SNBT_REGISTRY_UNAWARE_PARSER = TagParser.create(NbtOps.INSTANCE);
     @Override
     public @org.jetbrains.annotations.NotNull ItemStack deserializeStack(@org.jetbrains.annotations.NotNull final Map<String, Object> args) {
         final int version = args.getOrDefault("schema_version", 1) instanceof Number val ? val.intValue() : -1;
@@ -581,7 +582,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                         componentMap.forEach((componentKey, componentString) -> {
                             final Tag componentTag;
                             try {
-                                componentTag = TagParser.create(NbtOps.INSTANCE).parseFully(componentString);
+                                componentTag = SNBT_REGISTRY_UNAWARE_PARSER.parseFully(componentString);
                             } catch (final CommandSyntaxException e) {
                                 throw new RuntimeException("Error parsing item stack data components", e);
                             }
