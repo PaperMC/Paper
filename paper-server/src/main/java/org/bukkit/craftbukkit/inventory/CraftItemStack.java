@@ -268,15 +268,13 @@ public final class CraftItemStack extends ItemStack {
     public void addUnsafeEnchantment(Enchantment enchant, int level) {
         Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        // Paper start
         if (this.handle == null) {
             return;
         }
 
         EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
             mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
-        });
-        // Paper end
+        }, true);
     }
 
     @Override
