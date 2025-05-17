@@ -17,7 +17,7 @@
      );
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
-@@ -88,6 +_,11 @@
+@@ -88,6 +_,12 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -26,6 +26,7 @@
 +    public com.mojang.authlib.properties.Property[] spoofedProfile;
 +    public boolean preparing = true;
 +    // Spigot end
++    private final java.util.concurrent.atomic.AtomicBoolean disconnecting = new java.util.concurrent.atomic.AtomicBoolean(false); // Paper - Fix PlayerLoginEvent firing multiple times.
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
@@ -232,14 +233,22 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -432,12 +_,13 @@
+@@ -432,12 +_,20 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
 +        this.preparing = false; // Spigot
          if (this.channel == null) {
              this.delayedDisconnect = disconnectionDetails;
-         }
+-        }
++            return; // Paper - Defer disconnect until channel is available.
++        }
++
++        // Paper start - Fix PlayerLoginEvent firing multiple times.
++        if (!this.disconnecting.compareAndSet(false, true)) {
++            return; // Already disconnecting, ignore further calls.
++        }
++        // Paper end - Fix PlayerLoginEvent firing multiple times.
  
          if (this.isConnected()) {
 -            this.channel.close().awaitUninterruptibly();
@@ -247,6 +256,15 @@
              this.disconnectionDetails = disconnectionDetails;
          }
      }
+@@ -561,7 +_,7 @@
+     }
+ 
+     public boolean isConnected() {
+-        return this.channel != null && this.channel.isOpen();
++        return this.channel != null && this.channel.isOpen() && !this.disconnecting.get(); // Paper - Fix PlayerLoginEvent firing multiple times.
+     }
+ 
+     public boolean isConnecting() {
 @@ -584,6 +_,13 @@
          }
      }
