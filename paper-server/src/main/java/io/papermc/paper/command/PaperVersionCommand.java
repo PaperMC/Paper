@@ -46,7 +46,7 @@ public class PaperVersionCommand {
     private final VersionFetcher versionFetcher = new PaperVersionFetcher();
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
-    private static LiteralCommandNode<CommandSourceStack> create() {
+    public static LiteralCommandNode<CommandSourceStack> create() {
         PaperVersionCommand command = new PaperVersionCommand();
 
         return Commands.literal("version")
@@ -168,6 +168,8 @@ public class PaperVersionCommand {
                Component.newline(),
                versionFetcher.getVersionMessage()
            );
+
+           if (true) throw new IllegalStateException("test");
 
            return new ComputedVersion(
                message.hoverEvent(Component.translatable("chat.copy.click", NamedTextColor.WHITE))
