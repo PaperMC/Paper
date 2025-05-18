@@ -43,6 +43,8 @@ public class PaperVersionCommand {
         Component.text(", ", NamedTextColor.WHITE),
         Component.text(", and ", NamedTextColor.WHITE)
     );
+    private static final Component FAILED_TO_FETCH = Component.text("Could not fetch version information!", NamedTextColor.RED);
+    private static final Component FETCHING = Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC);
 
     private final VersionFetcher versionFetcher = new PaperVersionFetcher();
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
@@ -136,17 +138,17 @@ public class PaperVersionCommand {
     private void sendVersion(final CommandSender sender) {
         final CompletableFuture<ComputedVersion> version = getVersionOrFetch();
         if (!version.isDone()) {
-            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
+            sender.sendMessage(FETCHING);
         }
 
-        version.whenCompleteAsync((computedVersion, throwable) -> {
+        version.whenComplete((computedVersion, throwable) -> {
             if (computedVersion != null) {
                 sender.sendMessage(computedVersion.message);
             } else if (throwable != null) {
-                sender.sendMessage(Component.text("Could not fetch version information!", NamedTextColor.RED));
+                sender.sendMessage(FAILED_TO_FETCH);
                 MinecraftServer.LOGGER.warn("Could not fetch version information!", throwable);
             }
-        }, MinecraftServer.getServer());
+        });
     }
 
     private CompletableFuture<ComputedVersion> getVersionOrFetch() {
