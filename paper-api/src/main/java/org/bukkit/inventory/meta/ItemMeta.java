@@ -1134,7 +1134,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
-     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
+     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     @NotNull
