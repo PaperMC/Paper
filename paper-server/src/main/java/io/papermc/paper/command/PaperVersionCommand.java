@@ -41,7 +41,7 @@ public class PaperVersionCommand {
         .build();
     private static final JoinConfiguration PLAYER_JOIN_CONFIGURATION = JoinConfiguration.separators(
         Component.text(", ", NamedTextColor.WHITE),
-        Component.text(" and ", NamedTextColor.WHITE)
+        Component.text(", and ", NamedTextColor.WHITE)
     );
 
     private final VersionFetcher versionFetcher = new PaperVersionFetcher();
