@@ -534,7 +534,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public ItemStack getPickItem() {
+    public ItemStack getPickItemStack() {
         net.minecraft.world.item.ItemStack stack = this.getHandle().getPickResult();
         return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
     }

@@ -540,13 +540,13 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean eject();
 
     /**
-     * Gets the {@link ItemStack} that would be returned when a
-     * player uses the pick block action on this entity.
+     * Gets the {@link ItemStack} that a player would select / create (in creative mode)
+     * when using the pick block action on this entity.
      *
      * @return item stack result or an empty item stack
      */
     @NotNull
-    ItemStack getPickItem();
+    ItemStack getPickItemStack();
 
     /**
      * Returns the distance this entity has fallen
