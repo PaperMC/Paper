@@ -38,27 +38,29 @@ public class PaperVersionCommand {
         .appendNewline()
         .append(Component.text("Use /plugins to get a list of plugins.").clickEvent(ClickEvent.suggestCommand("/plugins")))
         .build();
+    private static final JoinConfiguration PLAYER_JOIN_CONFIGURATION = JoinConfiguration.separators(
+        Component.text(", ", NamedTextColor.WHITE),
+        Component.text(" and ", NamedTextColor.WHITE)
+    );
 
     private final VersionFetcher versionFetcher = new PaperVersionFetcher();
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
-    public static LiteralCommandNode<CommandSourceStack> create() {
-        return new PaperVersionCommand().build();
-    }
+    private static LiteralCommandNode<CommandSourceStack> create() {
+        PaperVersionCommand command = new PaperVersionCommand();
 
-    private LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("version")
             .requires(source -> source.getSender().hasPermission("bukkit.command.version"))
             .then(Commands.argument("plugin", StringArgumentType.word())
-                .suggests(this::suggestPlugins)
-                .executes(this::pluginVersion))
-            .executes(this::serverVersion)
+                .suggests(command::suggestPlugins)
+                .executes(command::pluginVersion))
+            .executes(command::serverVersion)
             .build();
     }
 
-    private int pluginVersion(CommandContext<CommandSourceStack> context) {
-        CommandSender sender = context.getSource().getSender();
-        String pluginName = context.getArgument("plugin", String.class);
+    private int pluginVersion(final CommandContext<CommandSourceStack> context) {
+        final CommandSender sender = context.getSource().getSender();
+        final String pluginName = context.getArgument("plugin", String.class);
 
         Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
         if (plugin == null) {
@@ -77,9 +79,9 @@ public class PaperVersionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private CompletableFuture<Suggestions> suggestPlugins(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-            String name = plugin.getName();
+    private CompletableFuture<Suggestions> suggestPlugins(final CommandContext<CommandSourceStack> context, final SuggestionsBuilder builder) {
+        for (final Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+            final String name = plugin.getName();
             if (StringUtil.startsWithIgnoreCase(name, builder.getRemainingLowerCase())) {
                 builder.suggest(name);
             }
@@ -88,10 +90,10 @@ public class PaperVersionCommand {
         return CompletableFuture.completedFuture(builder.build());
     }
 
-    private void sendPluginInfo(Plugin plugin, CommandSender sender) {
-        PluginMeta meta = plugin.getPluginMeta();
+    private void sendPluginInfo(final Plugin plugin, final CommandSender sender) {
+        final PluginMeta meta = plugin.getPluginMeta();
 
-        TextComponent.Builder builder = Component.text()
+        final TextComponent.Builder builder = Component.text()
             .append(Component.text(meta.getName()))
             .append(Component.text(" version "))
             .append(Component.text(meta.getVersion(), NamedTextColor.GREEN)
@@ -112,23 +114,17 @@ public class PaperVersionCommand {
 
         if (!meta.getAuthors().isEmpty()) {
             String prefix = meta.getAuthors().size() == 1 ? "Author: " : "Authors: ";
-            builder.appendNewline().append(Component.text(prefix).append(getNameList(meta.getAuthors())));
+            builder.appendNewline().append(Component.text(prefix).append(formatNameList(meta.getAuthors())));
         }
 
         if (!meta.getContributors().isEmpty()) {
-            builder.appendNewline().append(Component.text("Contributors: ").append(getNameList(meta.getContributors())));
+            builder.appendNewline().append(Component.text("Contributors: ").append(formatNameList(meta.getContributors())));
         }
         sender.sendMessage(builder.build());
     }
 
-    private static Component getNameList(List<String> names) {
-        JoinConfiguration configuration = JoinConfiguration.separators(
-            Component.text(", ", NamedTextColor.WHITE),
-            Component.text(" and ", NamedTextColor.WHITE)
-        );
-        return Component.join(configuration,
-            names.stream().map(Component::text).toList()
-        ).color(NamedTextColor.GREEN);
+    private static Component formatNameList(final List<String> names) {
+        return Component.join(PLAYER_JOIN_CONFIGURATION, names.stream().map(Component::text).toList()).color(NamedTextColor.GREEN);
     }
 
     private int serverVersion(CommandContext<CommandSourceStack> context) {
@@ -136,16 +132,19 @@ public class PaperVersionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private void sendVersion(CommandSender sender) {
-        CompletableFuture<ComputedVersion> version = getVersionOrFetch();
+    private void sendVersion(final CommandSender sender) {
+        final CompletableFuture<ComputedVersion> version = getVersionOrFetch();
         if (!version.isDone()) {
             sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
         }
-        if (version.isCompletedExceptionally()) {
-            throw new RuntimeException(version.exceptionNow());
-        }
 
-        version.thenAcceptAsync(computedVersion -> sender.sendMessage(computedVersion.message), MinecraftServer.getServer());
+        version
+            .thenAcceptAsync(computedVersion -> sender.sendMessage(computedVersion.message), MinecraftServer.getServer())
+            .exceptionallyAsync((exception) -> {
+                sender.sendMessage(Component.text("Could not fetch version information!", NamedTextColor.RED));
+                MinecraftServer.LOGGER.warn("Could not fetch version information!", exception);
+                return null;
+            }, MinecraftServer.getServer());
     }
 
     private CompletableFuture<ComputedVersion> getVersionOrFetch() {
@@ -156,12 +155,15 @@ public class PaperVersionCommand {
             }
 
             return this.computedVersion;
+        }).exceptionallyCompose((exception) -> {
+            this.computedVersion = this.fetchVersionMessage();
+            return this.computedVersion;
         });
     }
 
     private CompletableFuture<ComputedVersion> fetchVersionMessage() {
        return CompletableFuture.supplyAsync(() -> {
-           Component message = Component.textOfChildren(
+           final Component message = Component.textOfChildren(
                Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
                Component.newline(),
                versionFetcher.getVersionMessage()
