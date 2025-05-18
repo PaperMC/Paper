@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
@@ -138,13 +139,14 @@ public class PaperVersionCommand {
             sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
         }
 
-        version
-            .thenAcceptAsync(computedVersion -> sender.sendMessage(computedVersion.message), MinecraftServer.getServer())
-            .exceptionallyAsync((exception) -> {
+        version.whenCompleteAsync((computedVersion, throwable) -> {
+            if (computedVersion != null) {
+                sender.sendMessage(computedVersion.message);
+            } else if (throwable != null) {
                 sender.sendMessage(Component.text("Could not fetch version information!", NamedTextColor.RED));
-                MinecraftServer.LOGGER.warn("Could not fetch version information!", exception);
-                return null;
-            }, MinecraftServer.getServer());
+                MinecraftServer.LOGGER.warn("Could not fetch version information!", throwable);
+            }
+        }, MinecraftServer.getServer());
     }
 
     private CompletableFuture<ComputedVersion> getVersionOrFetch() {
@@ -166,7 +168,7 @@ public class PaperVersionCommand {
            final Component message = Component.textOfChildren(
                Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
                Component.newline(),
-               versionFetcher.getVersionMessage()
+               this.versionFetcher.getVersionMessage()
            );
 
            return new ComputedVersion(
