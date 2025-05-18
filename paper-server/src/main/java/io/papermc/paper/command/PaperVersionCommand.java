@@ -48,7 +48,7 @@ public class PaperVersionCommand {
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {
-        PaperVersionCommand command = new PaperVersionCommand();
+        final PaperVersionCommand command = new PaperVersionCommand();
 
         return Commands.literal("version")
             .requires(source -> source.getSender().hasPermission("bukkit.command.version"))
