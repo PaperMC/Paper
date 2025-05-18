@@ -95,22 +95,14 @@ import org.jetbrains.annotations.ApiStatus;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
-    private PaperCombatTrackerWrapper combatTracker;
     private CraftEntityEquipment equipment;
 
     public CraftLivingEntity(final CraftServer server, final net.minecraft.world.entity.LivingEntity entity) {
         super(server, entity);
 
-        this.setCombatTracker(entity.getCombatTracker());
-
         if (entity instanceof Mob || entity instanceof ArmorStand) {
             this.equipment = new CraftEntityEquipment(this);
         }
-    }
-
-    @ApiStatus.Internal
-    public void setCombatTracker(final net.minecraft.world.damagesource.CombatTracker combatTracker) {
-        this.combatTracker = new PaperCombatTrackerWrapper(combatTracker);
     }
 
     @Override
@@ -1174,6 +1166,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public CombatTracker getCombatTracker() {
-        return this.combatTracker;
+        return this.getHandle().getCombatTracker().paperCombatTracker;
     }
 }
