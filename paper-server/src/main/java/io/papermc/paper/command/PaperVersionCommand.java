@@ -61,7 +61,7 @@ public class PaperVersionCommand {
 
     private int pluginVersion(final CommandContext<CommandSourceStack> context) {
         final CommandSender sender = context.getSource().getSender();
-        final String pluginName = context.getArgument("plugin", String.class);
+        final String pluginName = context.getArgument("plugin", String.class).toLowerCase(Locale.ROOT);
 
         Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
         if (plugin == null) {
