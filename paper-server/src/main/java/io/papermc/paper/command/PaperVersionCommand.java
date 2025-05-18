@@ -12,96 +12,113 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.StringUtil;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class PaperVersionCommand {
     public static final String DESCRIPTION = "Gets the version of this server including any plugins in use";
 
-    private static final VersionFetcher versionFetcher = new PaperVersionFetcher();
-    private static final Set<CommandSender> versionWaiters = new HashSet<>();
+    private static final Component NOT_RUNNING = Component.text()
+        .append(Component.text("This server is not running any plugin by that name."))
+        .appendNewline()
+        .append(Component.text("Use /plugins to get a list of plugins.").clickEvent(ClickEvent.suggestCommand("/plugins")))
+        .build();
 
-    private static @Nullable Component versionMessage = null;
-    private static boolean versionTaskStarted = false;
-    private static long lastCheck = 0;
+    private final VersionFetcher versionFetcher = new PaperVersionFetcher();
+    private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {
+        return new PaperVersionCommand().build();
+    }
+
+    private LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("version")
             .requires(source -> source.getSender().hasPermission("bukkit.command.version"))
             .then(Commands.argument("plugin", StringArgumentType.word())
-                .suggests(PaperVersionCommand::suggestPlugins)
-                .executes(PaperVersionCommand::pluginVersion))
-            .executes(PaperVersionCommand::serverVersion)
+                .suggests(this::suggestPlugins)
+                .executes(this::pluginVersion))
+            .executes(this::serverVersion)
             .build();
     }
 
-    private static CompletableFuture<Suggestions> suggestPlugins(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        return CompletableFuture.runAsync(() -> Arrays.stream(Bukkit.getPluginManager().getPlugins())
-                .map(Plugin::getName)
-                .filter(name -> StringUtil.startsWithIgnoreCase(name, builder.getRemainingLowerCase()))
-                .forEach(builder::suggest))
-            .thenApply(ignored -> builder.build());
-    }
-
-    private static int pluginVersion(CommandContext<CommandSourceStack> context) {
+    private int pluginVersion(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
         String pluginName = context.getArgument("plugin", String.class);
-        Optional.ofNullable(Bukkit.getPluginManager().getPlugin(pluginName))
-            .or(() -> Arrays.stream(Bukkit.getPluginManager().getPlugins())
-                .filter(plugin -> plugin.getName().toLowerCase(Locale.ROOT).contains(pluginName))
-                .findAny())
-            .ifPresentOrElse(plugin -> sendPluginInfo(plugin, sender), () -> {
-                sender.sendMessage(Component.text("This server is not running any plugin by that name."));
-                sender.sendMessage(Component.text("Use /plugins to get a list of plugins.")
-                    .clickEvent(ClickEvent.suggestCommand("/plugins")));
-            });
+
+        Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
+        if (plugin == null) {
+            plugin = Arrays.stream(Bukkit.getPluginManager().getPlugins())
+                .filter(checkPlugin -> checkPlugin.getName().toLowerCase(Locale.ROOT).contains(pluginName))
+                .findAny()
+                .orElse(null);
+        }
+
+        if (plugin != null) {
+            this.sendPluginInfo(plugin, sender);
+        } else {
+            sender.sendMessage(NOT_RUNNING);
+        }
+
         return Command.SINGLE_SUCCESS;
     }
 
-    private static void sendPluginInfo(Plugin plugin, CommandSender sender) {
+    private CompletableFuture<Suggestions> suggestPlugins(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+            String name = plugin.getName();
+            if (StringUtil.startsWithIgnoreCase(name, builder.getRemainingLowerCase())) {
+                builder.suggest(name);
+            }
+        }
+
+        return CompletableFuture.completedFuture(builder.build());
+    }
+
+    private void sendPluginInfo(Plugin plugin, CommandSender sender) {
         PluginMeta meta = plugin.getPluginMeta();
 
-        sender.sendMessage(Component.text(meta.getName(), NamedTextColor.GREEN)
-            .append(Component.text(" version ", NamedTextColor.WHITE))
+        TextComponent.Builder builder = Component.text()
+            .append(Component.text(meta.getName()))
+            .append(Component.text(" version "))
             .append(Component.text(meta.getVersion(), NamedTextColor.GREEN)
                 .hoverEvent(Component.translatable("chat.copy.click"))
                 .clickEvent(ClickEvent.copyToClipboard(meta.getVersion()))
-            ));
+            );
+
         if (meta.getDescription() != null) {
-            sender.sendMessage(Component.text(meta.getDescription()));
+            builder
+                .appendNewline()
+                .append(Component.text(meta.getDescription()));
         }
 
         if (meta.getWebsite() != null) {
-            sender.sendMessage(Component.text("Website: ")
-                .append(Component.text(meta.getWebsite(), NamedTextColor.GREEN)
-                    .clickEvent(ClickEvent.openUrl(meta.getWebsite()))));
+            Component websiteComponent = Component.text(meta.getWebsite(), NamedTextColor.GREEN).clickEvent(ClickEvent.openUrl(meta.getWebsite()));
+            builder.appendNewline().append(Component.text("Website: ").append(websiteComponent));
         }
 
         if (!meta.getAuthors().isEmpty()) {
             String prefix = meta.getAuthors().size() == 1 ? "Author: " : "Authors: ";
-            sender.sendMessage(Component.text(prefix).append(getNameList(meta.getAuthors())));
+            builder.appendNewline().append(Component.text(prefix).append(getNameList(meta.getAuthors())));
         }
 
         if (!meta.getContributors().isEmpty()) {
-            sender.sendMessage(Component.text("Contributors: ").append(getNameList(meta.getContributors())));
+            builder.appendNewline().append(Component.text("Contributors: ").append(getNameList(meta.getContributors())));
         }
+        sender.sendMessage(builder.build());
     }
 
     private static Component getNameList(List<String> names) {
@@ -114,41 +131,51 @@ public class PaperVersionCommand {
         ).color(NamedTextColor.GREEN);
     }
 
-
-    private static int serverVersion(CommandContext<CommandSourceStack> context) {
+    private int serverVersion(CommandContext<CommandSourceStack> context) {
         sendVersion(context.getSource().getSender());
         return Command.SINGLE_SUCCESS;
     }
 
-    private static void sendVersion(CommandSender sender) {
-        if (versionMessage != null) {
-            if (System.currentTimeMillis() - lastCheck > versionFetcher.getCacheTime()) {
-                versionMessage = null;
-            } else {
-                sender.sendMessage(versionMessage);
-                return;
-            }
+    private void sendVersion(CommandSender sender) {
+        CompletableFuture<ComputedVersion> version = getVersionOrFetch();
+        if (!version.isDone()) {
+            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
         }
-        versionWaiters.add(sender);
-        sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC));
-        if (versionTaskStarted) return;
-        versionTaskStarted = true;
-        new Thread(PaperVersionCommand::setVersionMessage).start();
+        if (version.isCompletedExceptionally()) {
+            throw new RuntimeException(version.exceptionNow());
+        }
+
+        version.thenAcceptAsync(computedVersion -> sender.sendMessage(computedVersion.message), MinecraftServer.getServer());
     }
 
-    private static void setVersionMessage() {
-        Component message = Component.textOfChildren(
-            Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
-            Component.newline(),
-            versionFetcher.getVersionMessage()
-        );
+    private CompletableFuture<ComputedVersion> getVersionOrFetch() {
+        return this.computedVersion.thenCompose(fetchedVersion -> {
+            // Refetch the version
+            if (System.currentTimeMillis() - fetchedVersion.computedTime() > this.versionFetcher.getCacheTime()) {
+                this.computedVersion = this.fetchVersionMessage();
+            }
 
-        versionMessage = message.hoverEvent(Component.translatable("chat.copy.click", NamedTextColor.WHITE))
-            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)));
+            return this.computedVersion;
+        });
+    }
 
-        versionTaskStarted = false;
-        lastCheck = System.currentTimeMillis();
-        versionWaiters.forEach(sender -> sender.sendMessage(versionMessage));
-        versionWaiters.clear();
+    private CompletableFuture<ComputedVersion> fetchVersionMessage() {
+       return CompletableFuture.supplyAsync(() -> {
+           Component message = Component.textOfChildren(
+               Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
+               Component.newline(),
+               versionFetcher.getVersionMessage()
+           );
+
+           return new ComputedVersion(
+               message.hoverEvent(Component.translatable("chat.copy.click", NamedTextColor.WHITE))
+                   .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message))),
+               System.currentTimeMillis()
+           );
+       });
+    }
+
+    record ComputedVersion(Component message, long computedTime) {
+
     }
 }
