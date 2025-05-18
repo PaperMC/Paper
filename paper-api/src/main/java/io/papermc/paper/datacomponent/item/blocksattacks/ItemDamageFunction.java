@@ -40,14 +40,14 @@ public interface ItemDamageFunction {
     /**
      * Get the fraction of the dealt damage that should be applied to the item, if threshold is passed.
      *
-     * @return the base
+     * @return the factor
      */
     float factor();
 
     /**
      * Get the damage to apply for the item.
      *
-     * @apiNote this doesn't apply enchantments like {@link org.bukkit.enchantments.Enchantment#UNBREAKING}}
+     * @apiNote this doesn't apply enchantments like {@link org.bukkit.enchantments.Enchantment#UNBREAKING}
      * @return the damage to apply
      */
     int damageToApply(float damage);
