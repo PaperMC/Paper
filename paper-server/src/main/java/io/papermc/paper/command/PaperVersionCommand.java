@@ -150,17 +150,15 @@ public class PaperVersionCommand {
     }
 
     private CompletableFuture<ComputedVersion> getVersionOrFetch() {
-        return this.computedVersion.thenCompose(fetchedVersion -> {
-            // Refetch the version
-            if (System.currentTimeMillis() - fetchedVersion.computedTime() > this.versionFetcher.getCacheTime()) {
-                this.computedVersion = this.fetchVersionMessage();
-            }
+        if (!this.computedVersion.isDone()) {
+            return this.computedVersion;
+        }
 
-            return this.computedVersion;
-        }).exceptionallyCompose((exception) -> {
+        if (this.computedVersion.isCompletedExceptionally() || System.currentTimeMillis() - this.computedVersion.resultNow().computedTime() > this.versionFetcher.getCacheTime()) {
             this.computedVersion = this.fetchVersionMessage();
-            return this.computedVersion;
-        });
+        }
+
+        return this.computedVersion;
     }
 
     private CompletableFuture<ComputedVersion> fetchVersionMessage() {
