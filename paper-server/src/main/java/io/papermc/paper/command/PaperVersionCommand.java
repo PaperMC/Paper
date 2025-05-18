@@ -169,8 +169,6 @@ public class PaperVersionCommand {
                versionFetcher.getVersionMessage()
            );
 
-           if (true) throw new IllegalStateException("test");
-
            return new ComputedVersion(
                message.hoverEvent(Component.translatable("chat.copy.click", NamedTextColor.WHITE))
                    .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message))),
