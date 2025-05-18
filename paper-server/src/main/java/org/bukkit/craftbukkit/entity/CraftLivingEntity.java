@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
-import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
-import io.papermc.paper.world.damagesource.FallLocationType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -91,7 +89,6 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.ApiStatus;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
