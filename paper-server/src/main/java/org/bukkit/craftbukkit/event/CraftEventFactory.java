@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event;
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
@@ -51,6 +52,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -2034,5 +2036,23 @@ public class CraftEventFactory {
         }
 
         return event;
+    }
+    // Paper end - add EntityFertilizeEggEvent
+
+    // method used for blocks that don't use the usual Level#destoryBlock method
+    public static boolean callBlockDestroyEvent(net.minecraft.world.level.block.Block block, Level level, net.minecraft.world.level.block.state.BlockState state, BlockPos pos, BlockEntity blockEntity) {
+        com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), level instanceof ServerLevel serverLevel ? block.getExpDrop(state, serverLevel, pos, ItemStack.EMPTY, true) : 0, true);
+        event.setPlayEffect(false);
+        if (!event.callEvent()) {
+            return false;
+        }
+        if (event.playEffect()) {
+            level.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
+        }
+        if (event.willDrop()) {
+            level.expToDrop = event.getExpToDrop();
+            net.minecraft.world.level.block.Block.dropResources(state, level, pos, blockEntity);
+        }
+        return true;
     }
 }

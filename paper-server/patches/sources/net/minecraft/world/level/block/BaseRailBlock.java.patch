@@ -8,3 +8,27 @@
          }
  
          return state;
+@@ -81,13 +_,22 @@
+         if (!level.isClientSide && level.getBlockState(pos).is(this)) {
+             RailShape railShape = state.getValue(this.getShapeProperty());
+             if (shouldBeRemoved(pos, level, railShape)) {
+-                dropResources(state, level, pos);
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDestroyEvent(this, level, state, pos, null)) return; // Paper - call BlockDestroyEvent for all blocks
+                 level.removeBlock(pos, movedByPiston);
+             } else {
+                 this.updateState(state, level, pos, neighborBlock);
+             }
+         }
+     }
++
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.world.item.ItemStack stack, boolean dropExperience) {
++        Integer expToDrop = level.expToDrop;
++        level.expToDrop = null;
++        return expToDrop == null ? super.getExpDrop(state, level, pos, stack, dropExperience) : expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
+ 
+     private static boolean shouldBeRemoved(BlockPos pos, Level level, RailShape shape) {
+         if (!canSupportRigidBlock(level, pos.below())) {
