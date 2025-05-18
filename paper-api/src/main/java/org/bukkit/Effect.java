@@ -1,8 +1,12 @@
 package org.bukkit;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Iterables;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,18 +16,40 @@ import org.jetbrains.annotations.Nullable;
 public enum Effect {
     /**
      * An alternate click sound.
+     *
+     * @deprecated use {@link #DISPENSER_DISPENSE}
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     CLICK2(1000, Type.SOUND),
     /**
      * A click sound.
+     *
+     * @deprecated use {@link #DISPENSER_FAIL}
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     CLICK1(1001, Type.SOUND),
     /**
      * Sound of a bow firing.
+     *
+     * @deprecated use {@link #DISPENSER_PROJECTILE_LAUNCH}
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     BOW_FIRE(1002, Type.SOUND),
     /**
+     * Sound when a dispenser interaction succeeded.
+     */
+    DISPENSER_DISPENSE(1000, Type.SOUND),
+    /**
+     * Sound when a dispenser interaction failed.
+     */
+    DISPENSER_FAIL(1001, Type.SOUND),
+    /**
+     * Sound when a projectile is launched from a dispenser.
+     */
+    DISPENSER_PROJECTILE_LAUNCH(1002, Type.SOUND),
+    /**
      * Sound of a door opening.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_DOOR_OPEN
      */
@@ -31,6 +57,7 @@ public enum Effect {
     DOOR_TOGGLE(1006, Type.SOUND),
     /**
      * Sound of a door opening.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_DOOR_OPEN
      */
@@ -38,6 +65,7 @@ public enum Effect {
     IRON_DOOR_TOGGLE(1005, Type.SOUND),
     /**
      * Sound of a trapdoor opening.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_TRAPDOOR_OPEN
      */
@@ -45,6 +73,7 @@ public enum Effect {
     TRAPDOOR_TOGGLE(1007, Type.SOUND),
     /**
      * Sound of a door opening.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_TRAPDOOR_OPEN
      */
@@ -52,6 +81,7 @@ public enum Effect {
     IRON_TRAPDOOR_TOGGLE(1037, Type.SOUND),
     /**
      * Sound of a door opening.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_FENCE_GATE_OPEN
      */
@@ -66,6 +96,7 @@ public enum Effect {
     DOOR_CLOSE(1012, Type.SOUND),
     /**
      * Sound of a door closing.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_DOOR_CLOSE
      */
@@ -73,6 +104,7 @@ public enum Effect {
     IRON_DOOR_CLOSE(1011, Type.SOUND),
     /**
      * Sound of a trapdoor closing.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_TRAPDOOR_CLOSE
      */
@@ -87,6 +119,7 @@ public enum Effect {
     IRON_TRAPDOOR_CLOSE(1036, Type.SOUND),
     /**
      * Sound of a door closing.
+     *
      * @deprecated no longer exists
      * @see Sound#BLOCK_FENCE_GATE_CLOSE
      */
@@ -94,12 +127,13 @@ public enum Effect {
     FENCE_GATE_CLOSE(1014, Type.SOUND),
     /**
      * Sound of fire being extinguished.
+     * True if the fire is extinguished by the powder snow.
      */
-    EXTINGUISH(1009, Type.SOUND),
+    EXTINGUISH(1009, Type.SOUND, Boolean.class),
     /**
-     * A song from a record. Needs the record {@link Material} as additional info.
+     * A song from a record. Needs the song {@link JukeboxSong} as additional info.
      */
-    RECORD_PLAY(1010, Type.SOUND, Material.class),
+    RECORD_PLAY(1010, Type.SOUND, JukeboxSong.class),
     /**
      * Sound of ghast shrieking.
      */
@@ -129,9 +163,16 @@ public enum Effect {
      */
     SMOKE(2000, Type.VISUAL, BlockFace.class),
     /**
-     * Sound of a block breaking. Needs {@link org.bukkit.block.data.BlockData} as additional info.
+     * Sound of a block breaking. Needs {@link BlockData} as additional info.
+     *
+     * @deprecated use {@link #DESTROY_BLOCK}
      */
-    STEP_SOUND(2001, Type.SOUND, org.bukkit.block.data.BlockData.class, Material.class), // Paper - block data is more correct, but the impl of the mtehods will still work with Material
+    @Deprecated(since = "1.21.5", forRemoval = true)
+    STEP_SOUND(2001, Type.SOUND, BlockData.class, Material.class), // block data is more correct, but the impl of the methods will still work with Material
+    /**
+     * Block breaking. Needs {@link BlockData} as additional info.
+     */
+    DESTROY_BLOCK(2001, Type.VISUAL, BlockData.class),
     /**
      * Visual effect of a splash potion breaking. Needs {@link Color} data value as
      * additional info.
@@ -167,27 +208,30 @@ public enum Effect {
      */
     PORTAL_TRAVEL(1032, Type.SOUND),
     /**
-     * The sound played when launching an endereye
-     * @deprecated No longer exists
+     * The sound played when launching an endereye.
+     *
+     * @deprecated no longer exists
      */
-    @Deprecated(forRemoval = true, since = "1.21") // Paper
+    @Deprecated(since = "1.21", forRemoval = true)
     ENDEREYE_LAUNCH(1003, Type.SOUND),
     /**
-     * The sound played when launching a firework
+     * The sound played when launching a firework.
      */
     FIREWORK_SHOOT(1004, Type.SOUND),
     /**
      * Particles displayed when a villager grows a plant, data
-     * is the number of particles
+     * is the number of particles.
+     *
      * @deprecated partially replaced by {@link #BEE_GROWTH}
      */
-    @Deprecated(forRemoval = true, since = "1.20.5") // Paper
+    @Deprecated(since = "1.20.5", forRemoval = true)
     VILLAGER_PLANT_GROW(2005, Type.VISUAL, Integer.class),
     /**
      * The sound/particles used by the enderdragon's breath
      * attack.
+     * True if the sound is muted.
      */
-    DRAGON_BREATH(2006, Type.VISUAL),
+    DRAGON_BREATH(2006, Type.VISUAL, Boolean.class),
     /**
      * The sound played when an anvil breaks
      */
@@ -340,7 +384,6 @@ public enum Effect {
      * block.
      */
     OXIDISED_COPPER_SCRAPE(3005, Type.VISUAL),
-    // Paper start - add missing effects
     /**
      * The sound of a wither spawning
      */
@@ -380,44 +423,47 @@ public enum Effect {
      */
     SMASH_ATTACK(2013, Type.VISUAL, Integer.class),
 
-    PARTICLES_SCULK_CHARGE(3006, Type.VISUAL, Integer.class),
+    PARTICLES_SCULK_CHARGE(3006, Type.VISUAL, Integer.class), // not worth to implement properly without a new api
 
     PARTICLES_SCULK_SHRIEK(3007, Type.SOUND),
 
     /**
-     * Requires a {@link org.bukkit.block.data.BlockData} param
+     * Requires a {@link BlockData} param
      */
-    PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE(3008, Type.VISUAL, org.bukkit.block.data.BlockData.class),
+    PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE(3008, Type.VISUAL, BlockData.class),
 
     PARTICLES_EGG_CRACK(3009, Type.VISUAL),
 
-    @Deprecated(forRemoval = true, since = "1.20.5")
+    /**
+     * @deprecated no longer exists
+     */
+    @Deprecated(since = "1.20.5", forRemoval = true)
     GUST_DUST(3010, Type.VISUAL),
 
     /**
-     * {@link Boolean} param is true for "ominous" vaults
+     * {@link Boolean} param is true for "ominous" trial spawners.
      */
     TRIAL_SPAWNER_SPAWN(3011, Type.VISUAL, Boolean.class),
 
     /**
-     * {@link Boolean} param is true for "ominous" vaults
+     * {@link Boolean} param is true for "ominous" trial spawners.
      */
     TRIAL_SPAWNER_SPAWN_MOB_AT(3012, Type.VISUAL, Boolean.class),
 
     /**
-     * {@link Integer} param is the number of players
+     * {@link Integer} param is the number of players.
      */
     TRIAL_SPAWNER_DETECT_PLAYER(3013, Type.VISUAL, Integer.class),
 
     TRIAL_SPAWNER_EJECT_ITEM(3014, Type.VISUAL),
 
     /**
-     * {@link Boolean} param is true for "ominous" vaults
+     * {@link Boolean} param is true for "ominous" vaults.
      */
     VAULT_ACTIVATE(3015, Type.VISUAL, Boolean.class),
 
     /**
-     * {@link Boolean} param is true for "ominous" vaults
+     * {@link Boolean} param is true for "ominous" vaults.
      */
     VAULT_DEACTIVATE(3016, Type.VISUAL, Boolean.class),
 
@@ -426,38 +472,37 @@ public enum Effect {
     SPAWN_COBWEB(3018, Type.VISUAL),
 
     /**
-     * {@link Integer} param is the number of players
+     * {@link Integer} param is the number of players.
      */
     TRIAL_SPAWNER_DETECT_PLAYER_OMINOUS(3019, Type.VISUAL, Integer.class),
 
     /**
-     * {@link Boolean} param is true for changing to "ominous"
+     * {@link Boolean} param is true for changing to "ominous".
      */
     TRIAL_SPAWNER_BECOME_OMINOUS(3020, Type.VISUAL, Boolean.class),
 
     /**
-     * {@link Boolean} param is true for "ominous" vaults
+     * {@link Boolean} param is true for "ominous" trial spawners.
      */
     TRIAL_SPAWNER_SPAWN_ITEM(3021, Type.VISUAL, Boolean.class),
 
     SOUND_WITH_CHARGE_SHOT(1051, Type.SOUND),
     ;
-    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
-    // Paper end
+
+    private static final Map<Integer, Effect> BY_ID = new HashMap<>();
 
     private final int id;
     private final Type type;
-    private final java.util.List<Class<?>> data; // Paper - support multiple data types
-    private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
+    private final List<Class<?>> data;
 
-    Effect(int id, /*@NotNull*/ Type type) {
-        this(id, type, (Class<?>[]) null); // Paper - support multiple data types
+    Effect(int id, Type type) {
+        this(id, type, (Class<?>[]) null);
     }
 
-    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?>...data) { // Paper - support multiple data types
+    Effect(int id, Type type, Class<?>... data) {
         this.id = id;
         this.type = type;
-        this.data = data != null ? java.util.List.of(data) : null; // Paper - support multiple data types
+        this.data = data != null ? List.of(data) : null;
     }
 
     /**
@@ -466,7 +511,7 @@ public enum Effect {
      * @return ID of this effect
      * @apiNote Internal Use Only
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     public int getId() {
         return this.id;
     }
@@ -476,7 +521,7 @@ public enum Effect {
      * @deprecated some effects can be both or neither
      */
     @NotNull
-    @Deprecated // Paper - both
+    @Deprecated
     public Type getType() {
         return this.type;
     }
@@ -487,15 +532,13 @@ public enum Effect {
      */
     @Nullable
     public Class<?> getData() {
-        return this.data == null ? null : this.data.get(0); // Paper
+        return this.data == null ? null : this.data.get(0);
     }
 
-    // Paper start - support deprecated data types
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public boolean isApplicable(Object obj) {
-        return this.data != null && com.google.common.collect.Iterables.any(this.data, aClass -> aClass.isAssignableFrom(obj.getClass()));
+        return this.data != null && Iterables.any(this.data, aClass -> aClass.isAssignableFrom(obj.getClass()));
     }
-    // Paper end - support deprecated data types
 
     /**
      * Gets the Effect associated with the given ID.
@@ -504,7 +547,7 @@ public enum Effect {
      * @return Effect with the given ID
      * @apiNote Internal Use Only
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     @Nullable
     public static Effect getById(int id) {
         return BY_ID.get(id);
@@ -512,26 +555,25 @@ public enum Effect {
 
     static {
         for (Effect effect : values()) {
-            if (!isDeprecated(effect)) // Paper
-            BY_ID.put(effect.id, effect);
+            if (!isDeprecated(effect)) {
+                BY_ID.put(effect.id, effect);
+            }
         }
     }
 
-    // Paper start
     private static boolean isDeprecated(Effect effect) {
         try {
             return Effect.class.getDeclaredField(effect.name()).isAnnotationPresent(Deprecated.class);
         } catch (NoSuchFieldException e) {
-            LOGGER.error("Error getting effect enum field {}", effect.name(), e);
             return false;
         }
     }
-    // Paper end
 
     /**
      * Represents the type of an effect.
+     *
      * @deprecated not representative of what Effect does
      */
-    @Deprecated // Paper
+    @Deprecated
     public enum Type { SOUND, VISUAL }
 }
