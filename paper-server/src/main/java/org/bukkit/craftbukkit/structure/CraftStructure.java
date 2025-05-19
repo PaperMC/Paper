@@ -92,10 +92,6 @@ public class CraftStructure implements Structure {
     public void place(RegionAccessor regionAccessor, BlockVector location, PlacementOptions placementOptions) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
-        Collection<BlockTransformer> blockTransformers = placementOptions.blockTransformers();
-        Preconditions.checkState(blockTransformers != null, "BlockTransformers cannot be null");
-        Collection<EntityTransformer> entityTransformers = placementOptions.entityTransformers();
-        Preconditions.checkState(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
         RandomSource randomSource = new RandomSourceWrapper(placementOptions.random());
@@ -114,7 +110,7 @@ public class CraftStructure implements Structure {
 
         TransformerGeneratorAccess access = new TransformerGeneratorAccess();
         access.setDelegate(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
+        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), placementOptions.blockTransformers(), placementOptions.entityTransformers()));
 
         // Strict placement option copied from net.minecraft.server.commands.PlaceCommand#placeTemplate
         this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS | (placementOptions.strict() ? Block.UPDATE_SKIP_ALL_SIDEEFFECTS : 0));

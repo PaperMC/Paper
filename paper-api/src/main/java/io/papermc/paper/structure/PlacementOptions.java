@@ -213,6 +213,7 @@ public class PlacementOptions {
      */
     @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions blockTransformers(Collection<BlockTransformer> blockTransformers) {
+        Preconditions.checkArgument(blockTransformers != null, "BlockTransformers cannot be null");
         this.blockTransformers = List.copyOf(blockTransformers);
         return this;
     }
@@ -235,6 +236,7 @@ public class PlacementOptions {
      */
     @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
+        Preconditions.checkArgument(entityTransformers != null, "EntityTransformers cannot be null");
         this.entityTransformers = List.copyOf(entityTransformers);
         return this;
     }
