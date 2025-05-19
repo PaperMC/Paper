@@ -1,9 +1,9 @@
 package io.papermc.paper.structure;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
@@ -213,7 +213,7 @@ public class PlacementOptions {
      */
     @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions blockTransformers(Collection<BlockTransformer> blockTransformers) {
-        this.blockTransformers = new ArrayList<>(blockTransformers);
+        this.blockTransformers = List.copyOf(blockTransformers);
         return this;
     }
 
@@ -223,7 +223,7 @@ public class PlacementOptions {
      * @return BlockTransformers to apply.
      */
     public @UnmodifiableView Collection<BlockTransformer> blockTransformers() {
-        return new ArrayList<>(blockTransformers);
+        return List.copyOf(blockTransformers);
     }
 
     /**
@@ -235,7 +235,7 @@ public class PlacementOptions {
      */
     @Contract(value = "_ -> this", mutates = "this")
     public PlacementOptions entityTransformers(Collection<EntityTransformer> entityTransformers) {
-        this.entityTransformers = new ArrayList<>(entityTransformers);
+        this.entityTransformers = List.copyOf(entityTransformers);
         return this;
     }
 
@@ -245,7 +245,7 @@ public class PlacementOptions {
      * @return EntityTransformers to apply.
      */
     public @UnmodifiableView Collection<EntityTransformer> entityTransformers() {
-        return new ArrayList<>(entityTransformers);
+        return List.copyOf(entityTransformers);
     }
 
     /**
