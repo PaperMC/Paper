@@ -60,7 +60,7 @@ public class CraftStructure implements Structure {
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+        PlacementOptions placementOptions = PlacementOptions.placementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
             .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
         this.place(location, placementOptions);
     }
@@ -72,7 +72,7 @@ public class CraftStructure implements Structure {
 
     @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+        PlacementOptions placementOptions = PlacementOptions.placementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
             .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
         this.place(regionAccessor, location, placementOptions);
     }
