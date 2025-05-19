@@ -11,7 +11,7 @@ import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.EntityTransformer;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.UnmodifiableView;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -223,7 +223,7 @@ public class PlacementOptions {
      *
      * @return BlockTransformers to apply.
      */
-    public @UnmodifiableView Collection<BlockTransformer> blockTransformers() {
+    public @Unmodifiable Collection<BlockTransformer> blockTransformers() {
         return List.copyOf(blockTransformers);
     }
 
@@ -246,7 +246,7 @@ public class PlacementOptions {
      *
      * @return EntityTransformers to apply.
      */
-    public @UnmodifiableView Collection<EntityTransformer> entityTransformers() {
+    public @Unmodifiable Collection<EntityTransformer> entityTransformers() {
         return List.copyOf(entityTransformers);
     }
 
