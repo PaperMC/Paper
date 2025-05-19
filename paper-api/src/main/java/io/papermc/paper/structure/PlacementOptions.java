@@ -37,7 +37,11 @@ public class PlacementOptions {
      * @param random The randomizer used for setting the structure's
      *               {@link org.bukkit.loot.LootTable LootTables} and integrity.
      */
-    public PlacementOptions(Random random) {
+    public static PlacementOptions placementOptions(Random random) {
+        return new PlacementOptions(random);
+    }
+
+    private PlacementOptions(Random random) {
         this.random = random;
     }
 
