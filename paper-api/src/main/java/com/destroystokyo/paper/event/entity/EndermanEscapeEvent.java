@@ -45,7 +45,7 @@ public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
      * <p>
      * If this escape normally had resulted in damage avoidance such as indirect,
      * the enderman will now take damage. However, this does not change the Enderman's
-     * innate immunities or damage behavior like arrows where the damage never happen.
+     * innate immunities or damage behavior like arrows where the damage never happens.
      */
     @Override
     public void setCancelled(final boolean cancel) {
