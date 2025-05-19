@@ -157,8 +157,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private WorldBorder worldBorder;
     private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
-    private final ChunkGenerator generator;
-    private final BiomeProvider biomeProvider;
+    private final @Nullable ChunkGenerator generator;
+    private final @Nullable BiomeProvider biomeProvider;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
@@ -286,12 +286,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private static final Random rand = new Random();
 
-    public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
+    public CraftWorld(ServerLevel world, @Nullable ChunkGenerator generator, @Nullable BiomeProvider biomeProvider, Environment environment) {
         this.world = world;
-        this.generator = gen;
+        this.generator = generator;
         this.biomeProvider = biomeProvider;
 
-        this.environment = env;
+        this.environment = environment;
         // Paper start - per world spawn limits
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -909,7 +909,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public Environment getEnvironment() {
+    public @NotNull Environment getEnvironment() {
         return this.environment;
     }
 
@@ -924,12 +924,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public ChunkGenerator getGenerator() {
+    public @Nullable ChunkGenerator getGenerator() {
         return this.generator;
     }
 
     @Override
-    public BiomeProvider getBiomeProvider() {
+    public @Nullable BiomeProvider getBiomeProvider() {
         return this.biomeProvider;
     }
 
