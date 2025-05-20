@@ -212,6 +212,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private static final PointersSupplier<Player> POINTERS_SUPPLIER = PointersSupplier.<Player>builder()
         .parent(CraftEntity.POINTERS_SUPPLIER)
         .resolving(Identity.NAME, Player::getName)
+        .resolving(Identity.DISPLAY_NAME, Player::displayName)
         .resolving(Identity.LOCALE, Player::locale)
         .build();
 
