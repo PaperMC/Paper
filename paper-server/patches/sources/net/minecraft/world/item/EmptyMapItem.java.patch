@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/item/EmptyMapItem.java
++++ b/net/minecraft/world/item/EmptyMapItem.java
+@@ -17,10 +_,20 @@
+     public InteractionResult use(Level level, Player player, InteractionHand hand) {
+         ItemStack itemInHand = player.getItemInHand(hand);
+         if (level instanceof ServerLevel serverLevel) {
++
++            org.bukkit.inventory.ItemStack emptyMap = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemInHand); // Paper - PlayerMapFilledEvent
++
+             itemInHand.consume(1, player);
+             player.awardStat(Stats.ITEM_USED.get(this));
+             serverLevel.playSound(null, player, SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, player.getSoundSource(), 1.0F, 1.0F);
+             ItemStack itemStack = MapItem.create(serverLevel, player.getBlockX(), player.getBlockZ(), (byte)0, true, false);
++
++            // Paper Start - PlayerMapFilledEvent
++            org.bukkit.inventory.ItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
++            org.bukkit.event.player.PlayerMapFilledEvent event = new org.bukkit.event.player.PlayerMapFilledEvent((org.bukkit.entity.Player) player.getBukkitEntity(), emptyMap, result);
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++            // Paper End - PlayerMapFilledEvent
++
+             if (itemInHand.isEmpty()) {
+                 return InteractionResult.SUCCESS.heldItemTransformedTo(itemStack);
+             } else {
