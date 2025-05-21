@@ -132,8 +132,8 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 dependencies {
     implementation(project(":paper-api"))
     implementation("ca.spottedleaf:concurrentutil:0.0.3")
-    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation("org.jline:jline-terminal-ffm:3.30.2") // use ffm on java 22+
+    implementation("org.jline:jline-terminal-jni:3.30.2") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi:4.21.0") // Keep in sync with adventureVersion from Paper-API build file
     runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
@@ -144,8 +144,8 @@ dependencies {
       all its classes to check if they are plugins.
       Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    implementation("org.apache.logging.log4j:log4j-core:2.24.1")
-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.24.1") // Needed to generate meta for our Log4j plugins
+    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.24.3") // Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
@@ -153,7 +153,7 @@ dependencies {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.1.118.Final") // Add support for proxy protocol
-    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
+    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.3")
     implementation("org.ow2.asm:asm-commons:9.8")
     implementation("org.spongepowered:configurate-yaml:4.2.0-20250225.064233-199")
     implementation("org.spongepowered:configurate-core:4.2.0-20250225.064233-204") // Pinned dependency of above pinned yaml snapshot.
