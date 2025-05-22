@@ -732,7 +732,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     /**
      * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
      * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
-     * @throws NullPointerException if {{@link #getWorld()}} is {@code null}
+     * @throws NullPointerException if {@link #getWorld()} is {@code null}
      */
     @NotNull
     public Location toHighestLocation() {
