@@ -66,6 +66,7 @@ import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
@@ -3267,13 +3268,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final java.util.Locale locale = this.getHandle().adventure$locale;
         final net.minecraft.world.item.ItemStack item = io.papermc.paper.adventure.PaperAdventure.asItemStack(book, locale);
         final ServerPlayer player = this.getHandle();
-        final ServerGamePacketListenerImpl connection = player.connection;
         final net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
         final int slot = inventory.getNonEquipmentItems().size() + inventory.getSelectedSlot();
         final int stateId = getHandle().containerMenu.getStateId();
-        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item));
-        connection.send(new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND));
-        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelectedItem()));
+        this.getHandle().connection.send(
+            new ClientboundBundlePacket(List.of(
+                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item),
+                new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
+                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelectedItem())
+            ))
+        );
     }
 
     @Override
