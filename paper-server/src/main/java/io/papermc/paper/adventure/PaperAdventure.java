@@ -1,5 +1,6 @@
 package io.papermc.paper.adventure;
 
+import com.google.common.base.Preconditions;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JavaOps;
 import io.netty.util.AttributeKey;
@@ -58,6 +59,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.network.Filterable;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -348,7 +350,16 @@ public final class PaperAdventure {
             Filterable.passThrough(validateField(asPlain(book.title(), locale), WrittenBookContent.TITLE_MAX_LENGTH, "title")),
             asPlain(book.author(), locale),
             0,
-            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate legnth?
+            book.pages().stream().map(c -> {
+                final String flagPage = GsonHelper.toStableString(GsonComponentSerializer.gson().serializeToTree(c));
+                Preconditions.checkArgument(
+                    flagPage.length() <= net.minecraft.world.item.component.WrittenBookContent.PAGE_LENGTH,
+                    "A page has a maximum length of %s but we found one with '%s'.",
+                    net.minecraft.world.item.component.WrittenBookContent.PAGE_LENGTH,
+                    flagPage.length()
+                );
+                return Filterable.passThrough(PaperAdventure.asVanilla(c));
+            }).toList(),
             false
         ));
         return item;
