@@ -8,7 +8,7 @@ import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.configuration.GlobalConfiguration;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -66,7 +66,6 @@ import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
-import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
@@ -3018,17 +3017,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void openBook(ItemStack book) {
-        Preconditions.checkArgument(book != null, "ItemStack cannot be null");
-        Preconditions.checkArgument(book.getType() == Material.WRITTEN_BOOK, "ItemStack Material (%s) must be Material.WRITTEN_BOOK", book.getType());
-
-        ItemStack hand = this.getInventory().getItemInMainHand();
-        this.getInventory().setItemInMainHand(book);
-        this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
-        this.getInventory().setItemInMainHand(hand);
-    }
-
-    @Override
     public void openSign(Sign sign) {
         this.openSign(sign, Side.FRONT);
     }
@@ -3264,20 +3252,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void openBook(ItemStack book) {
+        Preconditions.checkArgument(book != null, "ItemStack cannot be null");
+        Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack Material (%s) must have a WrittenBookContent Component", book.getType());
+
+        ItemStack hand = this.getInventory().getItemInMainHand();
+        this.getInventory().setItemInMainHand(book);
+        this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
+        this.getInventory().setItemInMainHand(hand);
+    }
+
+    @Override
     public void openBook(final net.kyori.adventure.inventory.Book book) {
-        final java.util.Locale locale = this.getHandle().adventure$locale;
-        final net.minecraft.world.item.ItemStack item = io.papermc.paper.adventure.PaperAdventure.asItemStack(book, locale);
-        final ServerPlayer player = this.getHandle();
-        final net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
-        final int slot = inventory.getNonEquipmentItems().size() + inventory.getSelectedSlot();
-        final int stateId = getHandle().containerMenu.getStateId();
-        this.getHandle().connection.send(
-            new ClientboundBundlePacket(List.of(
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item),
-                new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelectedItem())
-            ))
-        );
+        final ItemStack mutatedItem = this.getInventory().getItemInMainHand().clone();
+        mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, io.papermc.paper.datacomponent.item.WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
+
+        this.openBook(mutatedItem);
     }
 
     @Override

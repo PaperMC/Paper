@@ -3422,9 +3422,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void updateCommands();
 
     /**
-     * Open a {@link Material#WRITTEN_BOOK} for a Player
+     * Open a item with {@link io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT} for a Player
      *
-     * @param book The book to open for this player
+     * @param book The item with written content to open for this player
      */
     public void openBook(ItemStack book);
 
