@@ -195,6 +195,7 @@ import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
@@ -3254,7 +3255,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void openBook(ItemStack book) {
-        Preconditions.checkArgument(book != null && !book.isEmpty(), "ItemStack cannot be null or empty");
+        Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack Material (%s) must have a WrittenBookContent Component", book.getType());
 
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
@@ -3271,7 +3272,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void openBook(final net.kyori.adventure.inventory.Book book) {
-        final ItemStack mutatedItem = this.getInventory().getItemInMainHand().clone();
+        ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item for set the data
         mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, io.papermc.paper.datacomponent.item.WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
 
         this.openBook(mutatedItem);
