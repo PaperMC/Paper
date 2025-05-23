@@ -15,21 +15,21 @@ import org.jspecify.annotations.NullMarked;
 public class PlayerMapFilledEvent extends PlayerEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final ItemStack emptyMap;
+    private final ItemStack originalItem;
     private final ItemStack createdMap;
 
     @ApiStatus.Internal
-    public PlayerMapFilledEvent(final @NotNull Player player, final ItemStack emptyMap, final ItemStack createdMap) {
+    public PlayerMapFilledEvent(final @NotNull Player player, final ItemStack originalItem, final ItemStack createdMap) {
         super(player);
-        this.emptyMap = emptyMap;
+        this.originalItem = originalItem;
         this.createdMap = createdMap;
     }
 
     /**
      * Returns a copy of the empty map before it was consumed
      */
-    public ItemStack getEmptyMap() {
-        return this.emptyMap;
+    public ItemStack getOriginalItem() {
+        return this.originalItem;
     }
 
     /**
