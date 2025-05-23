@@ -82,8 +82,8 @@ public final class PaperAdventure {
             if (!language.has(translatable.key()) && (fallback == null || !language.has(fallback))) {
                 if (GlobalTranslator.translator().canTranslate(translatable.key(), Locale.US)) {
                     consumer.accept(GlobalTranslator.render(translatable, Locale.US));
+                    return;
                 }
-                return;
             }
             final @NotNull String translated = language.getOrDefault(translatable.key(), fallback != null ? fallback : translatable.key());
 
