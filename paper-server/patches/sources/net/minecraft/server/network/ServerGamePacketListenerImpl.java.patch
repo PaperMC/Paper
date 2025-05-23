@@ -1462,7 +1462,7 @@
      public void handleChatCommand(ServerboundChatCommandPacket packet) {
          this.tryHandleChat(packet.command(), () -> {
 +            // CraftBukkit start - SPIGOT-7346: Prevent disconnected players from executing commands
-+            if (this.player.hasDisconnected()) {
++            if (this.player.hasDisconnected() || this.player.isRemoved()) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -1482,10 +1482,10 @@
 +
 +        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), prefixedCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
 +        this.cserver.getPluginManager().callEvent(event);
-+
 +        if (event.isCancelled()) {
 +            return;
 +        }
++
 +        command = event.getMessage().substring(1);
 +        // CraftBukkit end
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(command);
@@ -1531,7 +1531,7 @@
          Map<String, PlayerChatMessage> map;
          try {
              map = this.collectSignedArguments(packet, SignableCommand.of(parseResults), lastSeenMessages);
-@@ -1433,11 +_,24 @@
+@@ -1433,11 +_,28 @@
              return;
          }
  
@@ -1542,6 +1542,10 @@
 +    }
 +
 +    private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, ParseResults<CommandSourceStack> parseResults, String command, Map<String, PlayerChatMessage> map) {
++        if (this.player.hasDisconnected() || this.player.isRemoved()) {
++            return;
++        }
++
 +        // Remove signed parts if the command was changed
 +        if (!command.equals(packet.command())) {
 +            parseResults = this.parseCommand(command);
@@ -1565,9 +1569,8 @@
 +    private void tryHandleChat(String message, Runnable handler, boolean sync) { // CraftBukkit
          if (isChatMessageIllegal(message)) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
--        } else if (this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
 +            this.disconnectAsync(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add proper async disconnect
-+        } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+         } else if (this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
          } else {
              this.player.resetLastActionTime();
