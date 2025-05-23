@@ -1395,7 +1395,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(sequence, this.ackBlockChangesUpTo);
-@@ -1356,20 +_,38 @@
+@@ -1356,23 +_,41 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1433,7 +1433,11 @@
 +        // CraftBukkit end
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
-             this.tryHandleChat(packet.message(), () -> {
+-            this.tryHandleChat(packet.message(), () -> {
++            this.tryHandleChat(packet.message(), () -> this.chatMessageChain.append(() -> { // Paper - async chat; make sure signed message decoding happens in order
+                 PlayerChatMessage signedMessage;
+                 try {
+                     signedMessage = this.getSignedMessage(packet, optional.get());
 @@ -1381,25 +_,45 @@
                      return;
                  }
@@ -1450,7 +1454,7 @@
                      this.broadcastChatMessage(playerChatMessage);
                  });
 -            });
-+            }, false); // CraftBukkit - async chat
++            }), false); // Paper - async chat
          }
      }
  
@@ -1487,7 +1491,7 @@
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parseResults)) {
              LOGGER.error(
-@@ -1416,28 +_,57 @@
+@@ -1416,15 +_,37 @@
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
              this.tryHandleChat(packet.command(), () -> {
@@ -1505,46 +1509,51 @@
      }
  
      private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, LastSeenMessages lastSeenMessages) {
-+        // CraftBukkit start
-+        String command = "/" + packet.command();
-+        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
-+            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), command);
-+        } // Paper - Add missing SpigotConfig logCommands check
++        // Paper start - async chat; make sure signed message decoding happens in order
++        final String slashCommand = "/" + packet.command();
++        if (org.spigotmc.SpigotConfig.logCommands) {
++            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), slashCommand);
++        }
 +
-+        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
-+        this.cserver.getPluginManager().callEvent(event);
-+        command = event.getMessage().substring(1);
++        final org.bukkit.event.player.PlayerCommandPreprocessEvent event = new org.bukkit.event.player.PlayerCommandPreprocessEvent(this.getCraftPlayer(), slashCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
++        event.callEvent();
 +
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(packet.command());
  
++        // Decode the signed arguments through the message chain to guarantee correct order with chat, then go back to main.
++        // Always parse the original command to add to the chat chain first, only then can we cancel further processing.
++        final String updatedCommand = event.getMessage().substring(1);
++        this.chatMessageChain.append(() -> this.performSignedChatCommand(packet, lastSeenMessages, parseResults, updatedCommand, event.isCancelled()));
++    }
++
++    private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, LastSeenMessages lastSeenMessages, ParseResults<CommandSourceStack> parseResults, String command, boolean cancelled) {
++        // Paper end - async chat; make sure signed message decoding happens in order
          Map<String, PlayerChatMessage> map;
          try {
-+            // Paper - Always parse the original command to add to the chat chain
              map = this.collectSignedArguments(packet, SignableCommand.of(parseResults), lastSeenMessages);
-         } catch (SignedMessageChain.DecodeException var6) {
-             this.handleMessageDecodeFailure(var6);
+@@ -1433,11 +_,24 @@
              return;
          }
  
-+        // Paper start - Fix cancellation and message changing
-+        if (event.isCancelled()) {
-+            // Only now are we actually good to return
-+            return;
++        // Paper start - async chat; make sure signed message decoding happens in order
++        if (!cancelled) {
++            this.server.execute(() -> this.performSignedChatCommand(packet, parseResults, command, map));
 +        }
++    }
 +
++    private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, ParseResults<CommandSourceStack> parseResults, String command, Map<String, PlayerChatMessage> map) {
 +        // Remove signed parts if the command was changed
 +        if (!command.equals(packet.command())) {
 +            parseResults = this.parseCommand(command);
 +            map = Collections.emptyMap();
 +        }
-+        // Paper end - Fix cancellation and message changing
-+
++        // Paper end - async chat; make sure signed message decoding happens in order
          CommandSigningContext commandSigningContext = new CommandSigningContext.SignedArguments(map);
          parseResults = Commands.mapSource(
              parseResults, commandSourceStack -> commandSourceStack.withSigningContext(commandSigningContext, this.chatMessageChain)
          );
 -        this.server.getCommands().performCommand(parseResults, packet.command());
-+        this.server.getCommands().performCommand(parseResults, command); // CraftBukkit
++        this.server.getCommands().performCommand(parseResults, command); // Paper
      }
  
      private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
