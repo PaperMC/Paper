@@ -3254,7 +3254,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void openBook(ItemStack book) {
-        Preconditions.checkArgument(book != null, "ItemStack cannot be null");
+        Preconditions.checkArgument(book != null && !book.isEmpty(), "ItemStack cannot be null or empty");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack Material (%s) must have a WrittenBookContent Component", book.getType());
 
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
