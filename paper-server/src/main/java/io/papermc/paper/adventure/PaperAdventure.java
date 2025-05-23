@@ -35,6 +35,8 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.translation.GlobalTranslator;
+import net.kyori.adventure.translation.TranslationRegistry;
+import net.kyori.adventure.translation.Translator;
 import net.kyori.adventure.util.Codec;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -77,15 +79,16 @@ public final class PaperAdventure {
     private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
     public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
         .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
-            final Language language = Language.getInstance();
-            final @Nullable String fallback = translatable.fallback();
-            if (!language.has(translatable.key()) && (fallback == null || !language.has(fallback))) {
-                if (GlobalTranslator.translator().canTranslate(translatable.key(), Locale.US)) {
-                    consumer.accept(GlobalTranslator.render(translatable, Locale.US));
+            if (!Language.getInstance().has(translatable.key())) {
+                for (final Translator source : GlobalTranslator.translator().sources()) {
+                    if (source instanceof TranslationRegistry registry && registry.contains(translatable.key())) {
+                        consumer.accept(GlobalTranslator.render(translatable, Locale.US));
+                        return;
+                    }
                 }
-                return;
             }
-            final @NotNull String translated = language.getOrDefault(translatable.key(), fallback != null ? fallback : translatable.key());
+            final @Nullable String fallback = translatable.fallback();
+            final @NotNull String translated = Language.getInstance().getOrDefault(translatable.key(), fallback != null ? fallback : translatable.key());
 
             final Matcher matcher = LOCALIZATION_PATTERN.matcher(translated);
             final List<TranslationArgument> args = translatable.arguments();
