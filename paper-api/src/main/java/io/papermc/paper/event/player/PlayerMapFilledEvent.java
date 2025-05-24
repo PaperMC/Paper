@@ -27,6 +27,8 @@ public class PlayerMapFilledEvent extends PlayerEvent {
 
     /**
      * Returns a copy of the empty map before it was consumed.
+     *
+     * @return cloned original item
      */
     public ItemStack getOriginalItem() {
         return this.originalItem.clone();
@@ -34,6 +36,8 @@ public class PlayerMapFilledEvent extends PlayerEvent {
 
     /**
      * Returns a copy of the filled map which was created.
+     *
+     * @return cloned created map item
      */
     public ItemStack getCreatedMap() {
         return this.createdMap.clone();
