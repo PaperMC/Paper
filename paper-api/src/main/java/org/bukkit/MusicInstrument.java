@@ -60,9 +60,9 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     }
 
     /**
-     * Gets for how long the use duration is for the instrument.
+     * Gets the use duration of this music instrument.
      *
-     * @return the duration.
+     * @return the duration expressed in seconds.
      */
     public abstract float getDuration();
 
@@ -83,7 +83,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     /**
      * Gets the sound for this instrument.
      *
-     * @return a sound
+     * @return the sound
      */
     public abstract Sound getSound();
 
