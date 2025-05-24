@@ -33,7 +33,7 @@ public class PlayerMapFilledEvent extends PlayerEvent {
     }
 
     /**
-     * Returns the filled map which was created.
+     * Returns a copy of the filled map which was created.
      */
     public ItemStack getCreatedMap() {
         return this.createdMap.clone();
