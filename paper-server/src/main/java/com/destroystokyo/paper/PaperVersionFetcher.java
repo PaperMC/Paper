@@ -33,8 +33,8 @@ import static net.kyori.adventure.text.format.TextColor.color;
 @DefaultQualifier(NonNull.class)
 public class PaperVersionFetcher implements VersionFetcher {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    private static final int DISTANCE_ERROR = -1;
-    private static final int DISTANCE_UNKNOWN = -2;
+    public static final int DISTANCE_ERROR = -1;
+    public static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
 
     @Override
@@ -83,7 +83,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         };
     }
 
-    private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+    public static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
         try {
             try (final BufferedReader reader = Resources.asCharSource(
                 URI.create("https://api.papermc.io/v2/projects/paper/versions/" + build.minecraftVersionId()).toURL(),
@@ -107,7 +107,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     // Contributed by Techcable <Techcable@outlook.com> in GH-65
-    private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
+    public static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
         try {
             final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(repo, branch, hash)).toURL().openConnection();
             connection.connect();

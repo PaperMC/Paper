@@ -17,6 +17,7 @@ public class Main {
     public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
     public static boolean useJline = true;
     public static boolean useConsole = true;
+    public static boolean printedWarning = false;
 
     // Paper start - Reset loggers after shutdown
     static {
@@ -225,15 +226,14 @@ public class Main {
                 }
 
                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
                     deadline.add(Calendar.DAY_OF_YEAR, -14);
                     if (buildDate.before(deadline.getTime())) {
-                        // Paper start - This is some stupid bullshit
                         System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***");
-                        // Paper end
+                        System.err.println("*** Check further logs for more details ***");
+                        printedWarning = true;
                     }
                 }
 
