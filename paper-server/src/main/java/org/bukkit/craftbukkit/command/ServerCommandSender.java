@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.command;
 
 import java.util.Set;
 import java.util.UUID;
+import net.kyori.adventure.pointer.PointersSupplier;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
@@ -12,8 +13,12 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public abstract class ServerCommandSender implements CommandSender {
+    private static final PointersSupplier<ServerCommandSender> POINTERS_SUPPLIER = PointersSupplier.<ServerCommandSender>builder()
+        .resolving(net.kyori.adventure.identity.Identity.DISPLAY_NAME, ServerCommandSender::name)
+        .resolving(net.kyori.adventure.permission.PermissionChecker.POINTER, serverCommandSender -> serverCommandSender::permissionValue)
+        .build();
+
     public final PermissibleBase perm;
-    private net.kyori.adventure.pointer.Pointers adventure$pointers;
 
     protected ServerCommandSender() {
         this.perm = new PermissibleBase(this);
@@ -126,13 +131,6 @@ public abstract class ServerCommandSender implements CommandSender {
 
     @Override
     public net.kyori.adventure.pointer.Pointers pointers() {
-        if (this.adventure$pointers == null) {
-            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
-                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
-                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
-                .build();
-        }
-
-        return this.adventure$pointers;
+        return POINTERS_SUPPLIER.view(this);
     }
 }
