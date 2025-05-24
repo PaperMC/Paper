@@ -19,7 +19,7 @@ public class PlayerMapFilledEvent extends PlayerEvent {
     private ItemStack createdMap;
 
     @ApiStatus.Internal
-    public PlayerMapFilledEvent(final @NotNull Player player, final ItemStack originalItem, final ItemStack createdMap) {
+    public PlayerMapFilledEvent(final Player player, final ItemStack originalItem, final ItemStack createdMap) {
         super(player);
         this.originalItem = originalItem;
         this.createdMap = createdMap;
@@ -47,13 +47,11 @@ public class PlayerMapFilledEvent extends PlayerEvent {
         this.createdMap = createdMap.clone();
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
