@@ -41,6 +41,7 @@ public class PlayerMapFilledEvent extends PlayerEvent {
 
     /**
      * Sets the filled map that will be created.
+     *
      * @param createdMap map item
      */
     public void setCreatedMap(final ItemStack createdMap) {
