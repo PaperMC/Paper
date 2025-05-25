@@ -92,7 +92,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                     SIMPLE_LOGGER.error("*** Please download a new build from " + DOWNLOAD_PAGE + " ***");
                 }
                 default -> {
-                    SIMPLE_LOGGER.warn("*** Currently you are " + distance + " builds behind");
+                    SIMPLE_LOGGER.warn("*** Currently you are " + distance + " build(s) behind");
                     SIMPLE_LOGGER.warn("*** It's highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
                 }
             };
