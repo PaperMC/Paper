@@ -1,6 +1,9 @@
 package io.papermc.paper.adventure;
 
+import io.papermc.paper.PaperServerInternalAPIBridge;
 import io.papermc.paper.chat.ChatRenderer;
+import io.papermc.paper.chat.vanilla.ChatTypeRenderResult;
+import io.papermc.paper.chat.vanilla.ChatTypeRenderer;
 import io.papermc.paper.event.player.AbstractChatEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.ChatEvent;
@@ -12,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -21,8 +25,8 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Optionull;
 import net.minecraft.Util;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.OutgoingChatMessage;
@@ -63,7 +67,8 @@ public final class ChatProcessor {
     static final int MESSAGE_CHANGED = 1;
     static final int FORMAT_CHANGED = 2;
     static final int SENDER_CHANGED = 3; // Not used
-    private final BitSet flags = new BitSet(3);
+    static final int USES_CHAT_TYPE_RENDERER = 4;
+    private final BitSet flags = new BitSet(4);
 
     public ChatProcessor(final MinecraftServer server, final ServerPlayer player, final PlayerChatMessage message, final boolean async) {
         this.server = server;
@@ -171,7 +176,11 @@ public final class ChatProcessor {
     private void readModernModifications(final AbstractChatEvent chatEvent, final ChatRenderer originalRenderer) {
         this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.paper$originalMessage));
         if (originalRenderer != chatEvent.renderer()) { // don't set to false if it hasn't changed
-            this.flags.set(FORMAT_CHANGED, true);
+            if (chatEvent.renderer() instanceof PaperVanillaChatRenderer) {
+                this.flags.set(USES_CHAT_TYPE_RENDERER, true);
+            } else {
+                this.flags.set(FORMAT_CHANGED, true);
+            }
         }
     }
 
@@ -190,7 +199,12 @@ public final class ChatProcessor {
         final ChatType.Bound chatType = ChatType.bind(chatTypeKey, this.player.level().registryAccess(), PaperAdventure.asVanilla(displayName(player)));
 
         OutgoingChat outgoingChat = viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy() ? new ServerOutgoingChat() : new ViewersOutgoingChat();
-        if (this.flags.get(FORMAT_CHANGED)) {
+        if (this.flags.get(USES_CHAT_TYPE_RENDERER)) {
+            if (!(renderer instanceof PaperVanillaChatRenderer vanillaChatRenderer)) {
+                throw new IllegalStateException("BUG: This should only be a vanilla renderer");
+            }
+            outgoingChat.sendChatTypeRendered(player, displayName, message, viewers, vanillaChatRenderer, vanillaChatRenderer.viewerUnaware());
+        } else if (this.flags.get(FORMAT_CHANGED)) {
             if (renderer instanceof ChatRenderer.ViewerUnaware unaware) {
                 outgoingChat.sendFormatChangedViewerUnaware(player, PaperAdventure.asVanilla(unaware.render(player, displayName, message)), viewers, chatType);
             } else {
@@ -212,6 +226,8 @@ public final class ChatProcessor {
             this.sendMessageChanged(player, renderedMessage, viewers, chatType);
         }
 
+        void sendChatTypeRendered(CraftPlayer player, Component displayName, Component message, Set<Audience> viewers, PaperVanillaChatRenderer vanillaChatRenderer, boolean viewerUnaware);
+
         void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType);
 
         void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType);
@@ -221,8 +237,14 @@ public final class ChatProcessor {
 
     final class ServerOutgoingChat implements OutgoingChat {
         @Override
+        public void sendChatTypeRendered(final CraftPlayer player, final Component displayName, final Component message, final Set<Audience> viewers, final PaperVanillaChatRenderer vanillaChatRenderer, final boolean viewerUnaware) {
+            ChatContentProvider provider = viewerUnaware ? ChatContentProvider.ofStaticViewerUnaware(vanillaChatRenderer.compute(player, displayName, message, null)) : ChatContentProvider.ofViewerAware((viewer) -> vanillaChatRenderer.compute(player, displayName, message, viewer));
+            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message, ChatProcessor.this.player, provider);
+        }
+
+        @Override
         public void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType) {
-            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message, ChatProcessor.this.player, chatType, viewer -> PaperAdventure.asVanilla(renderer.render(player, displayName, message, viewer)));
+            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message, ChatProcessor.this.player, ChatContentProvider.ofViewerAware((viewer) -> new RenderedResult(chatType, PaperAdventure.asVanilla(renderer.render(player, displayName, message, viewer)))));
         }
 
         @Override
@@ -238,26 +260,35 @@ public final class ChatProcessor {
 
     final class ViewersOutgoingChat implements OutgoingChat {
         @Override
+        public void sendChatTypeRendered(final CraftPlayer player, final Component displayName, final Component message, final Set<Audience> viewers, final PaperVanillaChatRenderer vanillaChatRenderer, final boolean viewerUnaware) {
+            ChatContentProvider provider = viewerUnaware ? ChatContentProvider.ofStaticViewerUnaware(vanillaChatRenderer.compute(player, displayName, message, null)) : ChatContentProvider.ofViewerAware((viewer) -> vanillaChatRenderer.compute(player, displayName, message, viewer));
+            this.broadcastToViewers(viewers, provider);
+        }
+
+        @Override
         public void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType) {
-            this.broadcastToViewers(viewers, chatType, v -> PaperAdventure.asVanilla(renderer.render(player, displayName, message, v)));
+            this.broadcastToViewers(viewers, ChatContentProvider.ofViewerAware((v) -> PaperAdventure.asVanilla(renderer.render(player, displayName, message, v)), chatType));
         }
 
         @Override
         public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
-            this.broadcastToViewers(viewers, chatType, $ -> renderedMessage);
+            this.broadcastToViewers(viewers, ChatContentProvider.ofStaticViewerUnaware(chatType, renderedMessage));
         }
 
         @Override
         public void sendOriginal(CraftPlayer player, Set<Audience> viewers, ChatType.Bound chatType) {
-            this.broadcastToViewers(viewers, chatType, null);
+            this.broadcastToViewers(viewers, ChatContentProvider.ofStaticViewerUnaware(chatType, null));
         }
 
-        private void broadcastToViewers(Collection<Audience> viewers, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
+        private void broadcastToViewers(Collection<Audience> viewers, final ChatContentProvider provider) {
             for (Audience viewer : viewers) {
                 if (acceptsNative(viewer)) {
-                    this.sendNative(viewer, chatType, msgFunction);
+                    this.sendNative(viewer, provider);
                 } else {
-                    final net.minecraft.network.chat.@Nullable Component unsigned = Optionull.map(msgFunction, f -> f.apply(viewer));
+                    final RenderedResult frame = provider.render(viewer);
+                    final ChatType.Bound chatType = frame.bound();
+                    final net.minecraft.network.chat.@Nullable Component unsigned = frame.unsigned();
+
                     final PlayerChatMessage msg = unsigned == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(unsigned);
                     viewer.sendMessage(msg.adventureView(), this.adventure(chatType));
                 }
@@ -303,21 +334,25 @@ public final class ChatProcessor {
             return false;
         }
 
-        private void sendNative(final Audience viewer, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
-            if (viewer instanceof ConsoleCommandSender) {
-                this.sendToServer(chatType, msgFunction);
-            } else if (viewer instanceof CraftPlayer craftPlayer) {
-                craftPlayer.getHandle().sendChatMessage(ChatProcessor.this.outgoing, ChatProcessor.this.player.shouldFilterMessageTo(craftPlayer.getHandle()), chatType, Optionull.map(msgFunction, f -> f.apply(viewer)));
-            } else if (viewer instanceof ForwardingAudience.Single single) {
-                this.sendNative(single.audience(), chatType, msgFunction);
-            } else {
-                throw new IllegalStateException("Should only be a Player or Console or ForwardingAudience.Single pointing to one!");
+        private void sendNative(final Audience viewer, final ChatContentProvider provider) {
+            switch (viewer) {
+                case final ConsoleCommandSender sender -> this.sendToServer(provider);
+                case final CraftPlayer craftPlayer -> {
+                    final RenderedResult frame = provider.render(viewer);
+                    final ChatType.Bound toChatType = frame.bound();
+                    final net.minecraft.network.chat.@Nullable Component messageContent = frame.unsigned();
+
+                    craftPlayer.getHandle().sendChatMessage(ChatProcessor.this.outgoing, ChatProcessor.this.player.shouldFilterMessageTo(craftPlayer.getHandle()), toChatType, messageContent);
+                }
+                case final ForwardingAudience.Single single -> this.sendNative(single.audience(), provider);
+                default -> throw new IllegalStateException("Should only be a Player or Console or ForwardingAudience.Single pointing to one!");
             }
         }
 
-        private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
-            final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
-            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
+        private void sendToServer(final ChatContentProvider chatContentProvider) {
+            final RenderedResult frame = chatContentProvider.render(ChatProcessor.this.server.console);
+            final PlayerChatMessage toConsoleMessage = frame.unsigned() == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(frame.unsigned());
+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), frame.bound(), ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
         }
     }
 
@@ -380,5 +415,114 @@ public final class ChatProcessor {
 
     static boolean canYouHearMe(final HandlerList handlers) {
         return handlers.getRegisteredListeners().length > 0;
+    }
+
+    public record PaperVanillaChatRenderer(ChatTypeRenderer.ViewerAware vanillaChatTypeRenderer, boolean viewerUnaware) implements ChatRenderer {
+
+        /*
+        We wrap the viewer unaware implementation in a viewer aware implementation in order to prevent code complexity.
+        In this case, the viewerUnaware flag on this renderer indicates that optimizations can occur.
+        We just ignore the viewer param as its treated as effectively undefined when viewerUnaware is true.
+         */
+        public static ChatRenderer of(ChatTypeRenderer renderer) {
+            return switch (renderer) {
+                case ChatTypeRenderer.ViewerAware viewerAware -> new PaperVanillaChatRenderer(viewerAware, false);
+                case ChatTypeRenderer.ViewerUnaware viewerUnaware -> new PaperVanillaChatRenderer((source, sourceDisplayName, message, viewer) -> viewerUnaware.render(source, sourceDisplayName, message), true);
+            };
+        }
+
+        // "legacy" compatability renderer
+        @Override
+        public Component render(final Player source, final Component sourceDisplayName, final Component message, final Audience viewer) {
+            ChatType.Bound nms = compute(source, sourceDisplayName, message, viewer).bound();
+            ChatType chatTypeHolder = nms.chatType().value();
+
+            return PaperAdventure.asAdventure(chatTypeHolder.chat().decorate(PaperAdventure.asVanilla(message), nms));
+        }
+
+        private RenderedResult compute(final Player source, final Component sourceDisplayName, final Component message, final Audience viewer) {
+            ChatTypeRenderResult result = vanillaChatTypeRenderer.render(source, sourceDisplayName, message, viewer);
+            return new RenderedResult(toHandle(((CraftPlayer) source).getHandle(), result.boundChat()), PaperAdventure.asVanilla(result.unsignedContent()));
+        }
+
+        public static net.minecraft.network.chat.ChatType.Bound toHandle(ServerPlayer player, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
+            Holder<ChatType> chatTypeHolder = toNmsChatType(player, boundChatType.type());
+
+            return new net.minecraft.network.chat.ChatType.Bound(
+                chatTypeHolder,
+                io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.name()),
+                Optional.ofNullable(io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.target()))
+            );
+        }
+
+        private static Holder<ChatType> toNmsChatType(ServerPlayer player, net.kyori.adventure.chat.ChatType chatType) {
+            net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = player.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
+            if (chatType instanceof PaperServerInternalAPIBridge.PaperInternalChatType paperInternalChatType) {
+                return paperInternalChatType.chatType();
+            }
+
+            return chatTypeRegistry.get(ResourceKey.create(Registries.CHAT_TYPE, PaperAdventure.asVanilla(chatType.key())))
+                .orElseThrow(() -> new IllegalStateException("Expected a registered chat type!"));
+        }
+
+    }
+
+    /*
+    This class is used for providing chat type / unsigned content to users.
+
+    The isViewerUnaware flag indicates that render may be called with an undefined audience, which can be
+    used for slight optimizations.
+     */
+    public interface ChatContentProvider {
+
+        static ChatContentProvider ofViewerAware(Function<Audience, net.minecraft.network.chat.Component> function, ChatType.Bound chatType) {
+            return ofViewerAware((v) -> new RenderedResult(chatType, function.apply(v)));
+        }
+
+        static ChatContentProvider ofViewerAware(Function<Audience, RenderedResult> function) {
+            return new ChatContentProvider() {
+                @Override
+                public RenderedResult render(final Audience audience) {
+                    return function.apply(audience);
+                }
+
+                @Override
+                public boolean isViewerUnaware() {
+                    return false;
+                }
+            };
+        }
+
+        static ChatContentProvider ofStaticViewerUnaware(ChatType.Bound chatType, net.minecraft.network.chat.@Nullable Component unsignedContent) {
+            return ofStaticViewerUnaware(new RenderedResult(chatType, unsignedContent));
+        }
+
+        static ChatContentProvider ofStaticViewerUnaware(RenderedResult result) {
+            record ViewerUnawareStatic(RenderedResult staticFrame) implements ChatContentProvider {
+
+                @Override
+                public RenderedResult render(final Audience audience) {
+                    return this.staticFrame;
+                }
+
+                @Override
+                public boolean isViewerUnaware() {
+                    return true;
+                }
+            }
+
+            return new ViewerUnawareStatic(result);
+        }
+
+        RenderedResult render(Audience audience);
+
+        boolean isViewerUnaware();
+    }
+
+    public record RenderedResult(ChatType.Bound bound, net.minecraft.network.chat.@Nullable Component unsigned) {
+
+        public net.minecraft.network.chat.Component unsignedOrElse(net.minecraft.network.chat.Component component) {
+            return this.unsigned != null ? this.unsigned : component;
+        }
     }
 }

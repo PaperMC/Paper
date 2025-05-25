@@ -1,5 +1,7 @@
 package io.papermc.paper.chat;
 
+import io.papermc.paper.InternalAPIBridge;
+import io.papermc.paper.chat.vanilla.ChatTypeRenderer;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
@@ -67,4 +69,27 @@ public interface ChatRenderer {
         @ApiStatus.OverrideOnly
         Component render(Player source, Component sourceDisplayName, Component message);
     }
+
+    /**
+     * Creates a {@link ChatRenderer} that renders using the vanilla chat renderer that is
+     * viewer aware.
+     *
+     * @param renderer the custom provided {@link ChatTypeRenderer.ViewerAware} implementation
+     * @return a {@link ChatRenderer} that delegates to the given viewer‐aware renderer
+     */
+    static ChatRenderer chatTypeRenderer(final ChatTypeRenderer.ViewerAware renderer) {
+        return InternalAPIBridge.get().createVanillaChatRenderer(renderer);
+    }
+
+    /**
+     * Creates a {@link ChatRenderer} that renders using the vanilla chat renderer that is
+     * viewer unaware.
+     *
+     * @param renderer the custom provided {@link ChatTypeRenderer.ViewerUnaware} implementation
+     * @return a {@link ChatRenderer} that delegates to the given viewer‐unaware renderer
+     */
+    static ChatRenderer chatTypeRendererViewerUnaware(final ChatTypeRenderer.ViewerUnaware renderer) {
+        return InternalAPIBridge.get().createVanillaChatRenderer(renderer);
+    }
+
 }

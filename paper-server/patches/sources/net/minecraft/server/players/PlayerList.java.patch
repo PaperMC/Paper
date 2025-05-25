@@ -1013,45 +1013,51 @@
  
      public void broadcastSystemMessage(Component message, boolean bypassHiddenChat) {
          this.broadcastSystemMessage(message, serverPlayer -> message, bypassHiddenChat);
-@@ -756,20 +_,39 @@
+@@ -756,20 +_,45 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType) {
 -        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, boundChatType);
 +        // Paper start
-+        this.broadcastChatMessage(message, sender, boundChatType, null);
++        this.broadcastChatMessage(message, sender, io.papermc.paper.adventure.ChatProcessor.ChatContentProvider.ofStaticViewerUnaware(boundChatType, null));
 +    }
-+    public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
++    public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, io.papermc.paper.adventure.ChatProcessor.ChatContentProvider chatContentProvider) {
 +        // Paper end
-+        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, boundChatType, unsignedFunction); // Paper
++        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, chatContentProvider); // Paper
      }
  
      private void broadcastChatMessage(
          PlayerChatMessage message, Predicate<ServerPlayer> shouldFilterMessageTo, @Nullable ServerPlayer sender, ChatType.Bound boundChatType
      ) {
 +        // Paper start
-+        this.broadcastChatMessage(message, shouldFilterMessageTo, sender, boundChatType, null);
++        this.broadcastChatMessage(message, shouldFilterMessageTo, sender, io.papermc.paper.adventure.ChatProcessor.ChatContentProvider.ofStaticViewerUnaware(boundChatType, null));
 +    }
-+    public void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldFilterMessageTo, @Nullable ServerPlayer sender, ChatType.Bound boundChatType, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
++    private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldFilterMessageTo, @Nullable ServerPlayer sender, io.papermc.paper.adventure.ChatProcessor.ChatContentProvider chatContentProvider) {
++        io.papermc.paper.adventure.ChatProcessor.RenderedResult consoleChat = chatContentProvider.render(this.server.console);
++        boolean isViewerUnaware = chatContentProvider.isViewerUnaware();
 +        // Paper end
          boolean flag = this.verifyChatTrusted(message);
 -        this.server.logChatMessage(message.decoratedContent(), boundChatType, flag ? null : "Not Secure");
-+        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), boundChatType, flag ? null : "Not Secure"); // Paper
++        this.server.logChatMessage(consoleChat.unsignedOrElse(message.decoratedContent()), consoleChat.bound(), flag ? null : "Not Secure"); // Paper
          OutgoingChatMessage outgoingChatMessage = OutgoingChatMessage.create(message);
          boolean flag1 = false;
  
-+        Packet<?> disguised = sender != null && unsignedFunction == null ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingChatMessage.content(), boundChatType) : null; // Paper - don't send player chat packets from vanished players
++        Packet<?> disguised = sender != null && isViewerUnaware ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingChatMessage.content(), consoleChat.bound()) : null; // Paper - don't send player chat packets from vanished players
          for (ServerPlayer serverPlayer : this.players) {
              boolean flag2 = shouldFilterMessageTo.test(serverPlayer);
 -            serverPlayer.sendChatMessage(outgoingChatMessage, flag2, boundChatType);
 +            // Paper start - don't send player chat packets from vanished players
 +            if (sender != null && !serverPlayer.getBukkitEntity().canSee(sender.getBukkitEntity())) {
-+                serverPlayer.connection.send(unsignedFunction != null
-+                    ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(unsignedFunction.apply(serverPlayer.getBukkitEntity()), boundChatType)
-+                    : disguised);
++                if (isViewerUnaware) {
++                    serverPlayer.connection.send(disguised);
++                } else {
++                    io.papermc.paper.adventure.ChatProcessor.RenderedResult renderedFrame = chatContentProvider.render(serverPlayer.getBukkitEntity());
++                    serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(renderedFrame.unsignedOrElse(outgoingChatMessage.content()), renderedFrame.bound()));
++                }
 +                continue;
 +            }
-+            serverPlayer.sendChatMessage(outgoingChatMessage, flag2, boundChatType, unsignedFunction == null ? null : unsignedFunction.apply(serverPlayer.getBukkitEntity()));
++            io.papermc.paper.adventure.ChatProcessor.RenderedResult playerChat = isViewerUnaware ? consoleChat : chatContentProvider.render(serverPlayer.getBukkitEntity());
++            serverPlayer.sendChatMessage(outgoingChatMessage, flag2, playerChat.bound(), playerChat.unsigned());
 +            // Paper end
              flag1 |= flag2 && message.isFullyFiltered();
          }
