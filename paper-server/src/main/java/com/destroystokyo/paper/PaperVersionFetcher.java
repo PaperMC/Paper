@@ -103,9 +103,14 @@ public class PaperVersionFetcher implements VersionFetcher {
                     if (newVersionAvailable) SIMPLE_LOGGER.error("*** Also note that a new Minecraft version has released (" + newVersion + ")! ***");
                 }
                 default -> {
-                    SIMPLE_LOGGER.warn("*** Currently you are " + distance + " build(s) behind");
-                    SIMPLE_LOGGER.warn("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
-                    if (newVersionAvailable) SIMPLE_LOGGER.warn("*** Also note that a new Minecraft version has released (" + newVersion + ")! ***");
+                    if (newVersionAvailable) {
+                        SIMPLE_LOGGER.error("*** Currently you are " + distance + " build(s) behind");
+                        SIMPLE_LOGGER.error("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
+                        SIMPLE_LOGGER.error("*** Also note that a new Minecraft version has released (" + newVersion + ")! ***");
+                    } else {
+                        SIMPLE_LOGGER.warn("*** Currently you are " + distance + " build(s) behind");
+                        SIMPLE_LOGGER.warn("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
+                    }
                 }
             };
         }
