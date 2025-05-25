@@ -80,7 +80,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case 0 -> {
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You can safely disregard the previous warning", NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You're running the latest version!", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You're running the latest build for your minecraft version!", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("However, it's still recommended you check the downloads page", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("In case a new minecraft version has been released", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
