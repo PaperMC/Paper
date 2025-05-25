@@ -33,9 +33,11 @@ import static net.kyori.adventure.text.format.TextColor.color;
 @DefaultQualifier(NonNull.class)
 public class PaperVersionFetcher implements VersionFetcher {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    public static final int DISTANCE_ERROR = -1;
-    public static final int DISTANCE_UNKNOWN = -2;
+    private static final org.apache.logging.log4j.Logger SIMPLE_LOGGER = org.apache.logging.log4j.LogManager.getRootLogger();
+    private static final int DISTANCE_ERROR = -1;
+    private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
+    public static final String REPOSITORY = "PaperMC/Paper";
 
     @Override
     public long getCacheTime() {
@@ -49,11 +51,52 @@ public class PaperVersionFetcher implements VersionFetcher {
         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
         } else {
-            updateMessage = getUpdateStatusMessage("PaperMC/Paper", build);
+            updateMessage = getUpdateStatusMessage(REPOSITORY, build);
         }
         final @Nullable Component history = this.getHistory();
 
         return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
+    }
+
+    public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
+        final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(SIMPLE_LOGGER.getName());
+        int distance = DISTANCE_ERROR;
+
+        final OptionalInt buildNumber = build.buildNumber();
+        if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
+            SIMPLE_LOGGER.warn("*** You are running a development version without access to version information ***");
+        } else {
+            if (buildNumber.isPresent()) {
+                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
+            } else {
+                final Optional<String> gitBranch = build.gitBranch();
+                final Optional<String> gitCommit = build.gitCommit();
+                if (gitBranch.isPresent() && gitCommit.isPresent()) {
+                    distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
+                }
+            }
+            switch (distance) {
+                case DISTANCE_ERROR -> SIMPLE_LOGGER.error("*** Error obtaining version information! Can't fetch version info ***");
+                case 0 -> {
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You can safely disregard the previous warning", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You're running the latest version!", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("However, it's still recommended you check the downloads page", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("In case a new minecraft version has been released", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
+                }
+                case DISTANCE_UNKNOWN -> SIMPLE_LOGGER.warn("*** You are running an unknown version! Can't fetch version info ***");
+                case 5 -> {
+                    SIMPLE_LOGGER.error("*** You are " + distance + " builds behind!");
+                    SIMPLE_LOGGER.error("*** Please download a new build from " + DOWNLOAD_PAGE + " ***");
+                }
+                default -> {
+                    SIMPLE_LOGGER.warn("*** Currently you are " + distance + " builds behind");
+                    SIMPLE_LOGGER.warn("*** It's highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
+                }
+            };
+        }
     }
 
     private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
@@ -83,7 +126,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         };
     }
 
-    public static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+    private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
         try {
             try (final BufferedReader reader = Resources.asCharSource(
                 URI.create("https://api.papermc.io/v2/projects/paper/versions/" + build.minecraftVersionId()).toURL(),
@@ -107,7 +150,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     // Contributed by Techcable <Techcable@outlook.com> in GH-65
-    public static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
+    private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
         try {
             final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(repo, branch, hash)).toURL().openConnection();
             connection.connect();

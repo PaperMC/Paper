@@ -746,7 +746,7 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -674,6 +_,80 @@
+@@ -674,6 +_,44 @@
              this.statusIcon = this.loadStatusIcon().orElse(null);
              this.status = this.buildServerStatus();
  
@@ -770,49 +770,13 @@
 +            long currentTime;
 +            // Paper end - further improve server tick loop
 +            // Paper start - improve outdated version check
-+            CompletableFuture.runAsync(() -> {
-+                try {
-+                    if (org.bukkit.craftbukkit.Main.printedWarning == true) {
++            if (org.bukkit.craftbukkit.Main.printedWarning) {
++                CompletableFuture.runAsync(() -> {
 +                        final io.papermc.paper.ServerBuildInfo build = io.papermc.paper.ServerBuildInfo.buildInfo();
-+                        final java.util.OptionalInt buildNumber = build.buildNumber();
-+                        final String repo = "PaperMC/Paper";
-+                        int distance = com.destroystokyo.paper.PaperVersionFetcher.DISTANCE_ERROR;
-+
-+                        if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
-+                            LOGGER.warn("*** You are running a development version without access to version information ***");
-+                        } else {
-+                            if (buildNumber.isPresent()) {
-+                                distance = com.destroystokyo.paper.PaperVersionFetcher.fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
-+                            } else {
-+                                final Optional<String> gitBranch = build.gitBranch();
-+                                final Optional<String> gitCommit = build.gitCommit();
-+                                if (gitBranch.isPresent() && gitCommit.isPresent()) {
-+                                    distance = com.destroystokyo.paper.PaperVersionFetcher.fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
-+                                    }
-+                                }
-+
-+                            switch (distance) {
-+                                case com.destroystokyo.paper.PaperVersionFetcher.DISTANCE_ERROR -> LOGGER.error("*** Error obtaining version information! Can't fetch version info ***");
-+                                case 0 -> {
-+                                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*** You can safely disregard the previous warning ***", net.kyori.adventure.text.format.NamedTextColor.GREEN));
-+                                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*** You're running the latest version! ***", net.kyori.adventure.text.format.NamedTextColor.GREEN));
-+                                }
-+                                case com.destroystokyo.paper.PaperVersionFetcher.DISTANCE_UNKNOWN -> LOGGER.warn("*** You are running an unknown version! Can't fetch version info ***");
-+                                case 5 -> {
-+                                    LOGGER.error("*** You are " + distance + " builds behind!");
-+                                    LOGGER.error("*** Please download a new build from https://papermc.io/downloads/paper ***");
-+                                }
-+                                default -> {
-+                                    LOGGER.warn("*** Currently you are " + distance + " builds behind");
-+                                    LOGGER.warn("*** It's highly recommended to download a new build from https://papermc.io/downloads/paper ***");
-+                                }
-+                            }
-+                        };
-+                    }
-+            } catch (Throwable t) {
-+                t.printStackTrace();
++                        final String repo = com.destroystokyo.paper.PaperVersionFetcher.REPOSITORY;
++                        com.destroystokyo.paper.PaperVersionFetcher.getUpdateStatusStartupMessage(repo, build);
++                });
 +            }
-+        });
 +            // Paper end - improve outdated version check
 +            // Paper start - Add onboarding message for initial server start
 +            if (io.papermc.paper.configuration.GlobalConfiguration.isFirstStart) {
