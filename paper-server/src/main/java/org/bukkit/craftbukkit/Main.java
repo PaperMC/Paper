@@ -12,6 +12,9 @@ import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.util.PathConverter;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 
 public class Main {
     public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
@@ -230,9 +233,15 @@ public class Main {
 
                     Calendar deadline = Calendar.getInstance();
                     deadline.add(Calendar.DAY_OF_YEAR, -14);
+
+                    LocalDate localDate = LocalDate.now();
+                    LocalDate buildLocalDate = buildDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                    Long daysSinceLastUpdate = ChronoUnit.DAYS.between(buildLocalDate, localDate);
+
                     if (buildDate.before(deadline.getTime())) {
-                        System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Check further logs for more details ***");
+                        System.err.println("*** It seems you have not updated Paper in a while ***");
+                        System.err.println("*** It has been " + daysSinceLastUpdate + " days since the last update ***");
+                        System.err.println("*** We will perform an automatic update check after the server finishes loading ***");
                         printedWarning = true;
                     }
                 }
