@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import io.papermc.paper.event.world.ExplodeEvent;
 import java.util.List;
 import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
@@ -14,7 +15,9 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity explodes interacting with blocks. The
  * event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
+ * @see ExplodeEvent
  */
+@ApiStatus.Obsolete
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

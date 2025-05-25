@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import io.papermc.paper.event.world.ExplodeEvent;
+import io.papermc.paper.event.world.ExplodeEventSource;
+import io.papermc.paper.util.MCUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -47,10 +50,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.enchantment.EnchantedItemInUse;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -61,6 +66,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
+import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic.Type;
@@ -90,6 +96,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -250,6 +257,7 @@ import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 public class CraftEventFactory {
 
@@ -1898,16 +1906,102 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static EntityExplodeEvent callEntityExplodeEvent(Entity entity, List<Block> blocks, float yield, Explosion.BlockInteraction effect) {
-        EntityExplodeEvent event = new EntityExplodeEvent(entity.getBukkitEntity(), entity.getBukkitEntity().getLocation(), blocks, yield, CraftExplosionResult.toExplosionResult(effect));
-        Bukkit.getPluginManager().callEvent(event);
-        return event;
+    public static List<Block> handleLegacyExplodeEvents(final ServerExplosion explosion, final List<BlockPos> positions) {
+        final ServerLevel level = explosion.level();
+        return callLegacyExplodeEvents(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos) || !level.isEmptyBlock(pos.below())));
     }
 
-    public static BlockExplodeEvent callBlockExplodeEvent(Block block, BlockState state, List<Block> blocks, float yield, Explosion.BlockInteraction effect) {
-        BlockExplodeEvent event = new BlockExplodeEvent(block, state, blocks, yield, CraftExplosionResult.toExplosionResult(effect));
-        Bukkit.getPluginManager().callEvent(event);
-        return event;
+    public static List<Block> callLegacyExplodeEvents(final ServerExplosion explosion, final List<Block> affectedBlocks) {
+        final ServerLevel level = explosion.level();
+        final Entity entity = explosion.getDirectSourceEntity();
+        if (entity != null) {
+            final EntityExplodeEvent event = new EntityExplodeEvent(
+                entity.getBukkitEntity(),
+                entity.getBukkitEntity().getLocation(),
+                affectedBlocks,
+                explosion.yield,
+                CraftExplosionResult.toExplosionResult(explosion.getBlockInteraction())
+            );
+            event.callEvent();
+            explosion.wasCanceled = event.isCancelled();
+            explosion.yield = event.getYield();
+        } else {
+            final Block block = CraftBlock.at(level, BlockPos.containing(explosion.center()));
+            final BlockState state = (explosion.getDamageSource().causingBlockSnapshot() != null) ? explosion.getDamageSource().causingBlockSnapshot() : block.getState();
+            BlockExplodeEvent event = new BlockExplodeEvent(block, state, affectedBlocks, explosion.yield, CraftExplosionResult.toExplosionResult(explosion.getBlockInteraction()));
+            event.callEvent();
+            explosion.wasCanceled = event.isCancelled();
+            explosion.yield = event.getYield();
+        }
+
+        return affectedBlocks;
+    }
+
+    public static ExplodeEvent handleGenericExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
+        final ServerLevel level = explosion.level();
+        return callGenericExplodeEvent(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos) || !level.isEmptyBlock(pos.below())));
+    }
+
+    public static ExplodeEvent callGenericExplodeEvent(ServerExplosion explosion, List<Block> affectedBlocks) {
+        final ExplodeEventSource eventSource = extractExplodeEventSource(explosion);
+        final ExplosionResult explosionResult = CraftExplosionResult.toExplosionResult(explosion.getBlockInteraction());
+        final Vec3 center = explosion.center();
+
+        final ExplodeEvent explodeEvent = new ExplodeEvent(
+            CraftLocation.toBukkit(center, explosion.level().getWorld()),
+            new CraftDamageSource(explosion.getDamageSource()),
+            eventSource,
+            affectedBlocks,
+            explosion.yield,
+            explosion.fire,
+            explosionResult
+        );
+
+        explodeEvent.setCancelled(explosion.wasCanceled);
+        explodeEvent.callEvent();
+        explosion.wasCanceled = explodeEvent.isCancelled();
+        explosion.yield = explodeEvent.getYield();
+
+        return explodeEvent;
+    }
+
+    public record ExplodeEventSourceEnchantmentSourceImpl(
+        org.bukkit.inventory.ItemStack itemStack,
+        @Nullable LivingEntity itemOwner,
+        org.bukkit.entity.Entity affected
+    ) implements ExplodeEventSource.EnchantmentSource {
+
+        public static ExplodeEventSourceEnchantmentSourceImpl from(final Entity affected, final EnchantedItemInUse enchantedItemInUse) {
+            return new ExplodeEventSourceEnchantmentSourceImpl(
+                CraftItemStack.asCraftMirror(enchantedItemInUse.itemStack()), // getter copies
+                enchantedItemInUse.owner().getBukkitLivingEntity(),
+                affected.getBukkitEntity()
+            );
+        }
+
+        @Override
+        public org.bukkit.inventory.ItemStack itemStack() {
+            return this.itemStack.clone();
+        }
+    }
+    private static ExplodeEventSource extractExplodeEventSource(final ServerExplosion explosion) {
+        if (explosion.getDirectSourceEntity() != null) {
+            @NullMarked
+            record EntitySourceImpl(org.bukkit.entity.Entity entity) implements ExplodeEventSource.EntitySource {
+
+            }
+            return new EntitySourceImpl(explosion.getDirectSourceEntity().getBukkitEntity());
+        } else if (explosion.getDamageSource().causingBlockSnapshot() != null) {
+            @NullMarked
+            record BlockSourceImpl(BlockState blockState) implements ExplodeEventSource.BlockSource {
+
+            }
+            return new BlockSourceImpl(explosion.getDamageSource().causingBlockSnapshot());
+        } else if (explosion.optionalEnchantmentSource != null) {
+            return explosion.optionalEnchantmentSource;
+        }
+
+        return ExplodeEventSource.UnknownSource.INSTANCE;
     }
 
     public static ExplosionPrimeEvent callExplosionPrimeEvent(Explosive explosive) {
