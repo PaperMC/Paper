@@ -63,7 +63,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
         final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(SIMPLE_LOGGER.getName());
         int distance = DISTANCE_ERROR;
-        String newVersion = null;
+        @Nullable String newVersion = null;
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
@@ -142,30 +142,34 @@ public class PaperVersionFetcher implements VersionFetcher {
         };
     }
 
-    private static String fetchMinecraftVersionList(final ServerBuildInfo build) {
-        try (BufferedReader reader = Resources.asCharSource(
-            URI.create("https://api.papermc.io/v2/projects/paper").toURL(),
-            StandardCharsets.UTF_8
-        ).openBufferedStream()) {
-            JsonObject json = new Gson().fromJson(reader, JsonObject.class);
-            JsonArray versions = json.getAsJsonArray("versions");
-            List<String> versionList = StreamSupport.stream(versions.spliterator(), false)
-                .map(JsonElement::getAsString)
-                .toList();
+    private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build) {
+        try {
+            try (final BufferedReader reader = Resources.asCharSource(
+                URI.create("https://api.papermc.io/v2/projects/paper").toURL(),
+                StandardCharsets.UTF_8
+            ).openBufferedStream()) {
+                final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+                final JsonArray versions = json.getAsJsonArray("versions");
+                final List<String> versionList = StreamSupport.stream(versions.spliterator(), false)
+                    .map(JsonElement::getAsString)
+                    .toList();
 
-            String latestVersion = versionList.get(versionList.size() - 1);
-            String currentVersion = build.minecraftVersionName();
+                final String latestVersion = versionList.get(versionList.size() - 1);
+                final String currentVersion = build.minecraftVersionName();
 
-            if (latestVersion.equals(currentVersion)) {
-                newVersionAvailable = false;
-                return latestVersion;
-            } else {
-                newVersionAvailable = true;
-                return latestVersion;
+                if (latestVersion.equals(currentVersion)) {
+                    newVersionAvailable = false;
+                    return latestVersion;
+                } else {
+                    newVersionAvailable = true;
+                    return latestVersion;
+                }
+            } catch (final JsonSyntaxException ex) {
+                LOGGER.error("Error parsing json from Paper's downloads API", ex);
+                return null;
             }
-
-        } catch (IOException | JsonSyntaxException e) {
-            SIMPLE_LOGGER.error("Error fetching or parsing Paper's version list", e);
+        } catch (final IOException e) {
+            LOGGER.error("Error while parsing version list", e);
             return null;
         }
     }
