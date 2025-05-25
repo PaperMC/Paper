@@ -431,7 +431,7 @@ public final class ChatProcessor {
             };
         }
 
-        // "legacy" compatability renderer
+        // api compatability renderer
         @Override
         public Component render(final Player source, final Component sourceDisplayName, final Component message, final Audience viewer) {
             ChatType.Bound nms = compute(source, sourceDisplayName, message, viewer).bound();
