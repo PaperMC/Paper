@@ -1395,7 +1395,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(sequence, this.ackBlockChangesUpTo);
-@@ -1356,23 +_,41 @@
+@@ -1356,23 +_,37 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1425,20 +1425,15 @@
  
      @Override
      public void handleChat(ServerboundChatPacket packet) {
-+        // CraftBukkit start - async chat
-+        // SPIGOT-3638
-+        if (this.server.isStopped()) {
-+            return;
-+        }
-+        // CraftBukkit end
++        if (this.server.isStopped()) return; // CraftBukkit - SPIGOT-3638
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
--            this.tryHandleChat(packet.message(), () -> {
-+            this.tryHandleChat(packet.message(), () -> this.chatMessageChain.append(() -> { // Paper - async chat; make sure signed message decoding happens in order
+             this.tryHandleChat(packet.message(), () -> {
++                if (this.player.hasDisconnected()) return; // CraftBukkit
                  PlayerChatMessage signedMessage;
                  try {
                      signedMessage = this.getSignedMessage(packet, optional.get());
-@@ -1381,25 +_,45 @@
+@@ -1381,10 +_,14 @@
                      return;
                  }
  
@@ -1446,18 +1441,18 @@
 -                Component component = this.server.getChatDecorator().decorate(this.player, signedMessage.decoratedContent());
 -                this.chatMessageChain.append(completableFuture, filteredText -> {
 -                    PlayerChatMessage playerChatMessage = signedMessage.withUnsignedContent(component).filter(filteredText.mask());
-+                CompletableFuture<FilteredText> completableFuture = this.filterTextPacket(signedMessage.signedContent()).thenApplyAsync(java.util.function.Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
-+                CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, signedMessage.decoratedContent()); // Paper - Adventure
++                // Paper start - Adventure
++                // Make decoration async too, just message decoding has to stay in order, unfortunately blocked by commands
++                CompletableFuture<FilteredText> completableFuture = this.filterTextPacket(signedMessage.signedContent()).thenApplyAsync(java.util.function.Function.identity(), this.server.chatExecutor);
++                CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, signedMessage.decoratedContent());
 +
-+                this.chatMessageChain.append(CompletableFuture.allOf(completableFuture, componentFuture), ($) -> { // Paper - Adventure
-+                    PlayerChatMessage playerChatMessage = signedMessage.withUnsignedContent(componentFuture.join()).filter(completableFuture.join().mask()); // Paper - Adventure
++                this.chatMessageChain.append(CompletableFuture.allOf(completableFuture, componentFuture), ($) -> {
++                    PlayerChatMessage playerChatMessage = signedMessage.withUnsignedContent(componentFuture.join()).filter(completableFuture.join().mask());
++                    // Paper end - Adventure
                      this.broadcastChatMessage(playerChatMessage);
                  });
--            });
-+            }), false); // Paper - async chat
-         }
-     }
- 
+             });
+@@ -1394,12 +_,31 @@
      @Override
      public void handleChatCommand(ServerboundChatCommandPacket packet) {
          this.tryHandleChat(packet.command(), () -> {
@@ -1468,9 +1463,8 @@
 +            // CraftBukkit end
              this.performUnsignedChatCommand(packet.command());
 -            this.detectRateSpam();
--        });
 +            this.detectRateSpam("/" + packet.command()); // Spigot
-+        }, true); // CraftBukkit - sync commands
+         });
      }
  
      private void performUnsignedChatCommand(String command) {
@@ -1491,25 +1485,20 @@
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parseResults)) {
              LOGGER.error(
-@@ -1416,15 +_,37 @@
+@@ -1416,13 +_,24 @@
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
              this.tryHandleChat(packet.command(), () -> {
-+                // CraftBukkit start - SPIGOT-7346: Prevent disconnected players from executing commands
-+                if (this.player.hasDisconnected()) {
-+                    return;
-+                }
-+                // CraftBukkit end
++                if (this.player.hasDisconnected()) return; // CraftBukkit - SPIGOT-7346: Prevent disconnected players from executing commands
                  this.performSignedChatCommand(packet, optional.get());
 -                this.detectRateSpam();
--            });
 +                this.detectRateSpam("/" + packet.command()); // Spigot
-+            }, true); // CraftBukkit - sync commands
+             });
          }
      }
  
      private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, LastSeenMessages lastSeenMessages) {
-+        // Paper start - async chat; make sure signed message decoding happens in order
++        // Paper start
 +        final String slashCommand = "/" + packet.command();
 +        if (org.spigotmc.SpigotConfig.logCommands) {
 +            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), slashCommand);
@@ -1517,74 +1506,47 @@
 +
 +        final org.bukkit.event.player.PlayerCommandPreprocessEvent event = new org.bukkit.event.player.PlayerCommandPreprocessEvent(this.getCraftPlayer(), slashCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
 +        event.callEvent();
++        // Paper end
 +
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(packet.command());
  
-+        // Decode the signed arguments through the message chain to guarantee correct order with chat, then go back to main.
-+        // Always parse the original command to add to the chat chain first, only then can we cancel further processing.
-+        final String updatedCommand = event.getMessage().substring(1);
-+        this.chatMessageChain.append(() -> this.performSignedChatCommand(packet, lastSeenMessages, parseResults, updatedCommand, event.isCancelled()));
-+    }
-+
-+    private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, LastSeenMessages lastSeenMessages, ParseResults<CommandSourceStack> parseResults, String command, boolean cancelled) {
-+        // Paper end - async chat; make sure signed message decoding happens in order
          Map<String, PlayerChatMessage> map;
-         try {
-             map = this.collectSignedArguments(packet, SignableCommand.of(parseResults), lastSeenMessages);
-@@ -1433,11 +_,28 @@
+@@ -1433,11 +_,25 @@
              return;
          }
  
-+        // Paper start - async chat; make sure signed message decoding happens in order
-+        if (!cancelled) {
-+            this.server.execute(() -> this.performSignedChatCommand(packet, parseResults, command, map));
-+        }
-+    }
-+
-+    private void performSignedChatCommand(ServerboundChatCommandSignedPacket packet, ParseResults<CommandSourceStack> parseResults, String command, Map<String, PlayerChatMessage> map) {
-+        if (this.player.hasDisconnected() || this.player.isRemoved()) {
++        // Paper start
++        // Parsing commands to be on main :cryingandshaking: - if that weren't the case, both this and chat could be pushed off to the chat message chain immediately
++        // Always decode message arguments before cancelling
++        if (event.isCancelled() || this.player.isRemoved()) {
 +            return;
 +        }
 +
-+        // Remove signed parts if the command was changed
-+        if (!command.equals(packet.command())) {
-+            parseResults = this.parseCommand(command);
++        final String updatedCommand = event.getMessage().substring(1);
++        if (!updatedCommand.equals(packet.command())) {
++            // Remove signed parts if the command was changed
++            parseResults = this.parseCommand(updatedCommand);
 +            map = Collections.emptyMap();
 +        }
-+        // Paper end - async chat; make sure signed message decoding happens in order
++        // Paper end
          CommandSigningContext commandSigningContext = new CommandSigningContext.SignedArguments(map);
          parseResults = Commands.mapSource(
              parseResults, commandSourceStack -> commandSourceStack.withSigningContext(commandSigningContext, this.chatMessageChain)
          );
 -        this.server.getCommands().performCommand(parseResults, packet.command());
-+        this.server.getCommands().performCommand(parseResults, command); // Paper
++        this.server.getCommands().performCommand(parseResults, updatedCommand); // Paper
      }
  
      private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
-@@ -1501,14 +_,20 @@
-         return dispatcher.parse(command, this.player.createCommandSourceStack());
-     }
+@@ -1503,7 +_,7 @@
  
--    private void tryHandleChat(String message, Runnable handler) {
-+    private void tryHandleChat(String message, Runnable handler, boolean sync) { // CraftBukkit
+     private void tryHandleChat(String message, Runnable handler) {
          if (isChatMessageIllegal(message)) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
 +            this.disconnectAsync(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add proper async disconnect
          } else if (this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
          } else {
-             this.player.resetLastActionTime();
--            this.server.execute(handler);
-+            // CraftBukkit start
-+            if (sync) {
-+                this.server.execute(handler);
-+            } else {
-+                handler.run();
-+            }
-+            // CraftBukkit end
-         }
-     }
- 
 @@ -1520,7 +_,7 @@
                  var10000 = Optional.of(lastSeenMessages);
              } catch (LastSeenMessagesValidator.ValidationException var5) {
@@ -2619,7 +2581,7 @@
          this.chatMessageChain
              .append(
                  () -> {
-+                    server.executeBlocking(() -> { // Paper - Broadcast chat session update sync
++                    server.executeBlocking(() -> { // Paper - Broadcast chat session update sync, the used broadcast method isn't thread safe
                      this.player.setChatSession(chatSession);
                      this.server
                          .getPlayerList()
