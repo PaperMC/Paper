@@ -83,16 +83,15 @@ public class PaperVersionFetcher implements VersionFetcher {
             switch (distance) {
                 case DISTANCE_ERROR -> SIMPLE_LOGGER.error("*** Error obtaining version information! Cannot fetch version info ***");
                 case 0 -> {
-                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
                     if (newVersionAvailable) {
+                    COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You are running the latest build for your Minecraft version (" + build.minecraftVersionName() + ")", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("However, there is a new Minecraft version available on the downloads page (" + newVersion + ")!", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("It is recommended that you download it as soon as possible (unless it is experimental)", NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
                     COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
                     } else {
-                        COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("You are running the latest version!", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*************************************************************************************", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(net.kyori.adventure.text.Component.text("*** You are running the latest version! ***", NamedTextColor.GREEN));
                         return;
                     }
                 }
