@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Panda;
-import org.bukkit.entity.Panda.Gene;
 
 public class CraftPanda extends CraftAnimals implements Panda {
 
@@ -13,12 +12,7 @@ public class CraftPanda extends CraftAnimals implements Panda {
 
     @Override
     public net.minecraft.world.entity.animal.Panda getHandle() {
-        return (net.minecraft.world.entity.animal.Panda) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPanda";
+        return (net.minecraft.world.entity.animal.Panda) this.entity;
     }
 
     @Override

@@ -14,8 +14,8 @@ import org.bukkit.util.Vector;
 
 public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookShelfBlockEntity> implements ChiseledBookshelf {
 
-    public CraftChiseledBookshelf(World world, ChiseledBookShelfBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftChiseledBookshelf(World world, ChiseledBookShelfBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftChiseledBookshelf(CraftChiseledBookshelf state, Location location) {
@@ -43,7 +43,7 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventoryChiseledBookshelf(this.getTileEntity());
+        return new CraftInventoryChiseledBookshelf(this.getBlockEntity());
     }
 
     @Override

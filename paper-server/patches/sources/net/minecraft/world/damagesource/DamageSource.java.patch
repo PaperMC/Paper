@@ -1,129 +1,95 @@
 --- a/net/minecraft/world/damagesource/DamageSource.java
 +++ b/net/minecraft/world/damagesource/DamageSource.java
-@@ -20,6 +_,107 @@
+@@ -20,6 +_,92 @@
      private final Entity directEntity;
      @Nullable
      private final Vec3 damageSourcePosition;
 +    // CraftBukkit start
 +    @Nullable
-+    private org.bukkit.block.Block directBlock; // The block that caused the damage. damageSourcePosition is not used for all block damages
++    private org.bukkit.event.entity.EntityDamageEvent.DamageCause knownCause; // When the damage event cause is known by the context of the call rather than the damage source data
 +    @Nullable
-+    private org.bukkit.block.BlockState directBlockState; // The block state of the block relevant to this damage source
-+    private boolean sweep = false;
-+    private boolean melting = false;
-+    private boolean poison = false;
++    private Entity eventEntityDamager = null; // Relevant entity set when the game doesn't normally set a causingEntity/directEntity
 +    @Nullable
-+    private Entity customEventDamager = null; // This field is a helper for when causing entity damage is not set by vanilla // Paper - fix DamageSource API
-+
-+    public DamageSource sweep() {
-+        this.sweep = true;
-+        return this;
-+    }
-+
-+    public boolean isSweep() {
-+        return this.sweep;
-+    }
-+
-+    public DamageSource melting() {
-+        this.melting = true;
-+        return this;
-+    }
-+
-+    public boolean isMelting() {
-+        return this.melting;
-+    }
-+
-+    public DamageSource poison() {
-+        this.poison = true;
-+        return this;
-+    }
-+
-+    public boolean isPoison() {
-+        return this.poison;
-+    }
-+
-+    // Paper start - fix DamageSource API
++    private org.bukkit.block.Block eventBlockDamager; // Relevant block set. damageSourcePosition is only used for bad respawn point explosion or custom damage
 +    @Nullable
-+    public Entity getCustomEventDamager() {
-+        return (this.customEventDamager != null) ? this.customEventDamager : this.directEntity;
++    private org.bukkit.block.BlockState fromBlockSnapshot; // Captured block snapshot when the eventBlockDamager is not relevant (e.g. for bad respawn point explosions the block is already removed)
++    private boolean critical; // Supports arrows and sweeping damage
++
++    public DamageSource knownCause(final org.bukkit.event.entity.EntityDamageEvent.DamageCause cause) {
++        final DamageSource damageSource = this.copy();
++        damageSource.knownCause = cause;
++        return damageSource;
 +    }
 +
-+    public DamageSource customEventDamager(Entity entity) {
++    @Nullable
++    public org.bukkit.event.entity.EntityDamageEvent.DamageCause knownCause() {
++        return this.knownCause;
++    }
++
++    @Nullable
++    public Entity eventEntityDamager() {
++        return this.eventEntityDamager;
++    }
++
++    public DamageSource eventEntityDamager(final Entity entity) {
 +        if (this.directEntity != null) {
-+            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
++            throw new IllegalStateException("Cannot set an event damager when a direct entity is already set (report a bug to Paper)");
 +        }
-+        DamageSource damageSource = this.cloneInstance();
-+        damageSource.customEventDamager = entity;
-+        // Paper end - fix DamageSource API
++        final DamageSource damageSource = this.copy();
++        damageSource.eventEntityDamager = entity;
 +        return damageSource;
 +    }
 +
 +    @Nullable
-+    public org.bukkit.block.Block getDirectBlock() {
-+        return this.directBlock;
++    public org.bukkit.block.Block eventBlockDamager() {
++        return this.eventBlockDamager;
 +    }
 +
-+    public DamageSource directBlock(@Nullable net.minecraft.world.level.Level world, @Nullable net.minecraft.core.BlockPos blockPosition) {
-+        if (blockPosition == null || world == null) {
++    public DamageSource eventBlockDamager(final net.minecraft.world.level.LevelAccessor level, final @Nullable net.minecraft.core.BlockPos pos) {
++        if (pos == null) {
 +            return this;
 +        }
-+        return this.directBlock(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockPosition));
-+    }
 +
-+    public DamageSource directBlock(@Nullable org.bukkit.block.Block block) {
-+        if (block == null) {
-+            return this;
-+        }
-+        // Cloning the instance lets us return unique instances of DamageSource without affecting constants defined in DamageSources
-+        DamageSource damageSource = this.cloneInstance();
-+        damageSource.directBlock = block;
++        final DamageSource damageSource = this.copy();
++        damageSource.eventBlockDamager = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +        return damageSource;
 +    }
 +
 +    @Nullable
-+    public org.bukkit.block.BlockState getDirectBlockState() {
-+        return this.directBlockState;
++    public org.bukkit.block.BlockState causingBlockSnapshot() {
++        return this.fromBlockSnapshot;
 +    }
 +
-+    public DamageSource directBlockState(@Nullable org.bukkit.block.BlockState blockState) {
-+        if (blockState == null) {
-+            return this;
++    public DamageSource causingBlockSnapshot(final org.bukkit.block.BlockState blockState) {
++        if (this.eventBlockDamager != null) {
++            throw new IllegalStateException("Cannot set a block snapshot when an event block damager is already set (report a bug to Paper)");
 +        }
-+        // Cloning the instance lets us return unique instances of DamageSource without affecting constants defined in DamageSources
-+        DamageSource damageSource = this.cloneInstance();
-+        damageSource.directBlockState = blockState;
++        final DamageSource damageSource = this.copy();
++        damageSource.fromBlockSnapshot = blockState;
 +        return damageSource;
 +    }
 +
-+    private DamageSource cloneInstance() {
-+        DamageSource damageSource = new DamageSource(this.type, this.directEntity, this.causingEntity, this.damageSourcePosition);
-+        damageSource.directBlock = this.getDirectBlock();
-+        damageSource.directBlockState = this.getDirectBlockState();
-+        damageSource.sweep = this.isSweep();
-+        damageSource.poison = this.isPoison();
-+        damageSource.melting = this.isMelting();
++    public boolean isCritical() {
++        return this.critical;
++    }
++
++    public DamageSource critical() {
++        final DamageSource damageSource = this.copy();
++        damageSource.critical = true;
++        return damageSource;
++    }
++
++    // Cloning the instance lets us return unique instances of DamageSource without affecting constants defined in DamageSources
++    private DamageSource copy() {
++        final DamageSource damageSource = new DamageSource(this.type, this.directEntity, this.causingEntity, this.damageSourcePosition);
++        damageSource.knownCause = this.knownCause;
++        damageSource.eventEntityDamager = this.eventEntityDamager;
++        damageSource.eventBlockDamager = this.eventBlockDamager;
++        damageSource.fromBlockSnapshot = this.fromBlockSnapshot;
++        damageSource.critical = this.critical;
 +        return damageSource;
 +    }
 +    // CraftBukkit end
  
      @Override
      public String toString() {
-@@ -134,4 +_,18 @@
-     public Holder<DamageType> typeHolder() {
-         return this.type;
-     }
-+
-+    // Paper start - add critical damage API
-+    private boolean critical;
-+    public boolean isCritical() {
-+        return this.critical;
-+    }
-+    public DamageSource critical() {
-+        return this.critical(true);
-+    }
-+    public DamageSource critical(boolean critical) {
-+        this.critical = critical;
-+        return this;
-+    }
-+    // Paper end - add critical damage API
- }

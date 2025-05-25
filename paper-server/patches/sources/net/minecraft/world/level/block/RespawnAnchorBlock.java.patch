@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
-@@ -102,11 +_,16 @@
-             if (!level.isClientSide) {
-                 ServerPlayer serverPlayer = (ServerPlayer)player;
-                 if (serverPlayer.getRespawnDimension() != level.dimension() || !pos.equals(serverPlayer.getRespawnPosition())) {
--                    serverPlayer.setRespawnPosition(level.dimension(), pos, 0.0F, false, true);
-+                    if (serverPlayer.setRespawnPosition(level.dimension(), pos, 0.0F, false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
+@@ -103,11 +_,16 @@
+                 ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
+                 ServerPlayer.RespawnConfig respawnConfig1 = new ServerPlayer.RespawnConfig(level.dimension(), pos, 0.0F, false);
+                 if (respawnConfig == null || !respawnConfig.isSamePosition(respawnConfig1)) {
+-                    serverPlayer.setRespawnPosition(respawnConfig1, true);
++                    if (serverPlayer.setRespawnPosition(respawnConfig1, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
                      level.playSound(
                          null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F
                      );
@@ -18,7 +18,7 @@
                  }
              }
  
-@@ -140,6 +_,7 @@
+@@ -141,6 +_,7 @@
      }
  
      private void explode(BlockState state, Level level, final BlockPos pos2) {
@@ -26,12 +26,12 @@
          level.removeBlock(pos2, false);
          boolean flag = Direction.Plane.HORIZONTAL.stream().map(pos2::relative).anyMatch(pos -> isWaterThatWouldFlow(pos, level));
          final boolean flag1 = flag || level.getFluidState(pos2.above()).is(FluidTags.WATER);
-@@ -153,7 +_,7 @@
+@@ -154,7 +_,7 @@
          };
          Vec3 center = pos2.getCenter();
          level.explode(
 -            null, level.damageSources().badRespawnPointExplosion(center), explosionDamageCalculator, center, 5.0F, true, Level.ExplosionInteraction.BLOCK
-+            null, level.damageSources().badRespawnPointExplosion(center, blockState), explosionDamageCalculator, center, 5.0F, true, Level.ExplosionInteraction.BLOCK // CraftBukkit - add state
++            null, level.damageSources().badRespawnPointExplosion(center).causingBlockSnapshot(blockState), explosionDamageCalculator, center, 5.0F, true, Level.ExplosionInteraction.BLOCK // CraftBukkit - add state
          );
      }
  

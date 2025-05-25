@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
 +++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
-@@ -147,6 +_,11 @@
+@@ -143,6 +_,11 @@
                  && projectile.mayBreak(serverLevel)
                  && projectile instanceof ThrownTrident
                  && projectile.getDeltaMovement().length() > 0.6) {
@@ -12,21 +12,21 @@
                  level.destroyBlock(blockPos, true);
              }
          }
-@@ -155,7 +_,7 @@
+@@ -151,7 +_,7 @@
      @Override
-     public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+     public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, double fallDistance) {
          if (state.getValue(TIP_DIRECTION) == Direction.UP && state.getValue(THICKNESS) == DripstoneThickness.TIP) {
--            entity.causeFallDamage(fallDistance + 2.0F, 2.0F, level.damageSources().stalagmite());
-+            entity.causeFallDamage(fallDistance + 2.0F, 2.0F, level.damageSources().stalagmite().directBlock(level, pos)); // CraftBukkit
+-            entity.causeFallDamage(fallDistance + 2.5, 2.0F, level.damageSources().stalagmite());
++            entity.causeFallDamage(fallDistance + 2.5, 2.0F, level.damageSources().stalagmite().eventBlockDamager(level, pos)); // CraftBukkit
          } else {
              super.fallOn(level, state, pos, entity, fallDistance);
          }
-@@ -213,10 +_,11 @@
+@@ -209,10 +_,11 @@
                          if (blockPos != null) {
                              if (fluidAboveStalactite.get().sourceState.is(Blocks.MUD) && fluid == Fluids.WATER) {
                                  BlockState blockState = Blocks.CLAY.defaultBlockState();
 -                                level.setBlockAndUpdate(fluidAboveStalactite.get().pos, blockState);
-+                                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, fluidAboveStalactite.get().pos, blockState)) { // Paper - Call BlockFormEvent
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, fluidAboveStalactite.get().pos, blockState, 3)) { // Paper - Call BlockFormEvent
                                  Block.pushEntitiesUp(fluidAboveStalactite.get().sourceState, blockState, level, fluidAboveStalactite.get().pos);
                                  level.gameEvent(GameEvent.BLOCK_CHANGE, fluidAboveStalactite.get().pos, GameEvent.Context.of(blockState));
                                  level.levelEvent(1504, blockPos, 0);
@@ -34,7 +34,7 @@
                              } else {
                                  BlockPos blockPos1 = findFillableCauldronBelowStalactiteTip(level, blockPos, fluid);
                                  if (blockPos1 != null) {
-@@ -380,17 +_,17 @@
+@@ -364,17 +_,17 @@
          if (isUnmergedTipWithDirection(blockState, direction.getOpposite())) {
              createMergedTips(blockState, server, blockPos);
          } else if (blockState.isAir() || blockState.is(Blocks.WATER)) {
@@ -49,13 +49,13 @@
              .defaultBlockState()
              .setValue(TIP_DIRECTION, direction)
              .setValue(THICKNESS, thickness)
-             .setValue(WATERLOGGED, Boolean.valueOf(level.getFluidState(pos).getType() == Fluids.WATER));
+             .setValue(WATERLOGGED, level.getFluidState(pos).getType() == Fluids.WATER);
 -        level.setBlock(pos, blockState, 3);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, pos, blockState, 3); // CraftBukkit
      }
  
      private static void createMergedTips(BlockState state, LevelAccessor level, BlockPos pos) {
-@@ -404,8 +_,8 @@
+@@ -388,8 +_,8 @@
              blockPos = pos.below();
          }
  

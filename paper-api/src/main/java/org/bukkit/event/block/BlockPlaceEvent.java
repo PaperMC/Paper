@@ -7,28 +7,34 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is placed by a player.
  * <p>
- * If a Block Place event is cancelled, the block will not be placed.
+ * If this event is cancelled, the block will not be placed.
  */
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    protected boolean cancel;
-    protected boolean canBuild;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     protected Block placedAgainst;
-    protected BlockState replacedBlockState;
     protected ItemStack itemInHand;
     protected Player player;
+    protected BlockState replacedBlockState;
+    protected boolean canBuild;
     protected EquipmentSlot hand;
 
-    @Deprecated(since = "1.9")
+    protected boolean cancelled;
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.9", forRemoval = true)
     public BlockPlaceEvent(@NotNull final Block placedBlock, @NotNull final BlockState replacedBlockState, @NotNull final Block placedAgainst, @NotNull final ItemStack itemInHand, @NotNull final Player thePlayer, final boolean canBuild) {
         this(placedBlock, replacedBlockState, placedAgainst, itemInHand, thePlayer, canBuild, EquipmentSlot.HAND);
     }
 
+    @ApiStatus.Internal
     public BlockPlaceEvent(@NotNull final Block placedBlock, @NotNull final BlockState replacedBlockState, @NotNull final Block placedAgainst, @NotNull final ItemStack itemInHand, @NotNull final Player thePlayer, final boolean canBuild, @NotNull final EquipmentSlot hand) {
         super(placedBlock);
         this.placedAgainst = placedAgainst;
@@ -37,17 +43,27 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
         this.replacedBlockState = replacedBlockState;
         this.canBuild = canBuild;
         this.hand = hand;
-        cancel = false;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancel;
+    /**
+     * Gets the block that this block was placed against
+     *
+     * @return Block the block that the new block was placed against
+     */
+    @NotNull
+    public Block getBlockAgainst() {
+        return this.placedAgainst;
     }
 
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+    /**
+     * Gets the item in the player's hand when they placed the block.
+     *
+     * @return The ItemStack for the item in the player's hand when they
+     *     placed the block
+     */
+    @NotNull
+    public ItemStack getItemInHand() {
+        return this.itemInHand;
     }
 
     /**
@@ -57,7 +73,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     /**
@@ -68,7 +84,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public Block getBlockPlaced() {
-        return getBlock();
+        return this.getBlock();
     }
 
     /**
@@ -83,38 +99,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the block that this block was placed against
-     *
-     * @return Block the block that the new block was placed against
-     */
-    @NotNull
-    public Block getBlockAgainst() {
-        return placedAgainst;
-    }
-
-    /**
-     * Gets the item in the player's hand when they placed the block.
-     *
-     * @return The ItemStack for the item in the player's hand when they
-     *     placed the block
-     */
-    @NotNull
-    public ItemStack getItemInHand() {
-        return itemInHand;
-    }
-
-    /**
-     * Gets the hand which placed the block
-     * @return Main or off-hand, depending on which hand was used to place the block
-     */
-    @NotNull
-    public EquipmentSlot getHand() {
-        return this.hand;
-    }
-
-    /**
      * Gets the value whether the player would be allowed to build here.
-     * Defaults to false if the server was going to stop them (such as, the
+     * Defaults to {@code false} if the server was going to stop them (such as, the
      * player is in Spawn). Note that this is an entirely different check
      * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
      * rule like cactus on dirt.
@@ -126,23 +112,42 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Sets the canBuild state of this event. Set to true if you want the
+     * Sets the canBuild state of this event. Set to {@code true} if you want the
      * player to be able to build.
      *
-     * @param canBuild true if you want the player to be able to build
+     * @param canBuild {@code true} if you want the player to be able to build
      */
     public void setBuild(boolean canBuild) {
         this.canBuild = canBuild;
     }
 
+    /**
+     * Gets the hand which placed the block
+     * @return Main or off-hand, depending on which hand was used to place the block
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return this.hand;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
+
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

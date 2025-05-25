@@ -6,7 +6,8 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.inventory.Inventory;
 
-public final class CraftMinecartHopper extends CraftMinecartContainer implements HopperMinecart, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
+public class CraftMinecartHopper extends CraftMinecartContainer implements HopperMinecart, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
+
     private final CraftInventory inventory;
 
     public CraftMinecartHopper(CraftServer server, MinecartHopper entity) {
@@ -15,8 +16,8 @@ public final class CraftMinecartHopper extends CraftMinecartContainer implements
     }
 
     @Override
-    public String toString() {
-        return "CraftMinecartHopper{" + "inventory=" + this.inventory + '}';
+    public net.minecraft.world.entity.vehicle.MinecartHopper getHandle() {
+        return (net.minecraft.world.entity.vehicle.MinecartHopper) this.entity;
     }
 
     @Override
@@ -26,17 +27,12 @@ public final class CraftMinecartHopper extends CraftMinecartContainer implements
 
     @Override
     public boolean isEnabled() {
-        return ((MinecartHopper) this.getHandle()).isEnabled();
+        return this.getHandle().isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        ((MinecartHopper) this.getHandle()).setEnabled(enabled);
-    }
-    // Paper start
-    @Override
-    public net.minecraft.world.entity.vehicle.MinecartHopper getHandle() {
-        return (net.minecraft.world.entity.vehicle.MinecartHopper) super.getHandle();
+        this.getHandle().setEnabled(enabled);
     }
 
     @Override
@@ -48,5 +44,4 @@ public final class CraftMinecartHopper extends CraftMinecartContainer implements
     public void setPickupCooldown(int cooldown) {
         throw new UnsupportedOperationException("Hopper minecarts don't have cooldowns");
     }
-    // Paper end
 }

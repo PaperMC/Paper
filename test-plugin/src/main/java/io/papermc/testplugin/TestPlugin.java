@@ -66,5 +66,4 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         player.sendMessage("Cooldown called for " + event.getType() + " for " + event.getCooldown() + " ticks");
         event.setCancelled(true);
     }
-
 }

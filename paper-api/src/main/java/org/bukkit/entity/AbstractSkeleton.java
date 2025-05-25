@@ -21,7 +21,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * @return Current type
      * @deprecated should check what class instance this is.
      */
-    @Deprecated(since = "1.17")
+    @Deprecated(since = "1.17", forRemoval = true)
     @NotNull
     public Skeleton.SkeletonType getSkeletonType();
 
@@ -29,7 +29,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * @param type type
      * @deprecated Must spawn a new subtype variant
      */
-    @Deprecated(since = "1.17")
+    @Deprecated(since = "1.17", forRemoval = true)
     @Contract("_ -> fail")
     public void setSkeletonType(Skeleton.SkeletonType type);
 

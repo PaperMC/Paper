@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,17 +33,17 @@ public class SpigotConfig {
 
     private static File CONFIG_FILE;
     private static final String HEADER = """
-        This is the main configuration file for Spigot.
+        This is the Spigot configuration file for Paper.
         As you can see, there's tons to configure. Some options may impact gameplay, so use
         with caution, and make sure you know what each option does before configuring.
-        For a reference for any variable inside this file, check out the Spigot wiki at
-        http://www.spigotmc.org/wiki/spigot-configuration/
         
-        If you need help with the configuration or have any questions related to Spigot,
-        join us at the Discord or drop by our forums and leave a post.
+        If you need help with the configuration or have any questions related to Paper,
+        join us in our Discord or check the docs page.
         
-        Discord: https://www.spigotmc.org/go/discord
-        Forums: http://www.spigotmc.org/
+        File Reference: https://docs.papermc.io/paper/reference/spigot-configuration/
+        Docs: https://docs.papermc.io/
+        Discord: https://discord.gg/papermc
+        Website: https://papermc.io/
         """;
     /*========================================================================*/
     public static YamlConfiguration config;
@@ -78,7 +79,7 @@ public class SpigotConfig {
         }
     }
 
-    public static void readConfig(Class<?> clazz, Object instance) { // Paper - package-private -> public
+    public static void readConfig(Class<?> clazz, Object instance) {
         for (Method method : clazz.getDeclaredMethods()) {
             if (Modifier.isPrivate(method.getModifiers())) {
                 if (method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE) {
@@ -242,9 +243,23 @@ public class SpigotConfig {
         SpigotConfig.playerShuffle = SpigotConfig.getInt("settings.player-shuffle", 0);
     }
 
+    public static boolean enableSpamExclusions = false;
     public static List<String> spamExclusions;
     private static void spamExclusions() {
         SpigotConfig.spamExclusions = SpigotConfig.getList("commands.spam-exclusions", List.of("/skill"));
+        Object enabled = SpigotConfig.config.get("commands.enable-spam-exclusions");
+        if (enabled instanceof Boolean value) {
+            SpigotConfig.enableSpamExclusions = value;
+        } else {
+            if (spamExclusions.size() == 1 && Objects.equals(spamExclusions.getFirst(), "/skill")) {
+                SpigotConfig.enableSpamExclusions = false;
+                SpigotConfig.set("commands.enable-spam-exclusions", false);
+            } else {
+                SpigotConfig.enableSpamExclusions = true;
+                SpigotConfig.set("commands.enable-spam-exclusions", true);
+            }
+        }
+
     }
 
     public static boolean silentCommandBlocks;

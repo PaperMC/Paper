@@ -60,7 +60,7 @@ public sealed interface RegistryEntryMeta<M, A extends Keyed> permits RegistryEn
     ) implements ServerSide<M, A> { // TODO remove Keyed
 
         public Craft {
-            Preconditions.checkArgument(!classToPreload.getPackageName().startsWith("net.minecraft"), classToPreload + " should not be in the net.minecraft package as the class-to-preload");
+            Preconditions.checkArgument(!classToPreload.getPackageName().startsWith("net.minecraft"), "%s should not be in the net.minecraft package as the class-to-preload", classToPreload);
         }
     }
 

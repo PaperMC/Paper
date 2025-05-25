@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher; // Paper
 import java.util.regex.Pattern; // Paper
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +29,7 @@ public class FormattedCommandAlias extends Command {
                 if (throwable instanceof IllegalArgumentException) {
                     sender.sendMessage(throwable.getMessage());
                 } else {
-                    sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+                    sender.sendMessage(Component.text("An internal error occurred while attempting to perform this command", NamedTextColor.RED));
                 }
                 return false;
             }

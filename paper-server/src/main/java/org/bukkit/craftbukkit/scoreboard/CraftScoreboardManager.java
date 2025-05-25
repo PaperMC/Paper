@@ -1,10 +1,8 @@
 package org.bukkit.craftbukkit.scoreboard;
 
-import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
@@ -16,7 +14,6 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.ScoreAccess;
 import net.minecraft.world.scores.ScoreHolder;
-import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.WeakCollection;
@@ -28,10 +25,10 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     private final Collection<CraftScoreboard> scoreboards = new WeakCollection<>();
     private final Map<CraftPlayer, CraftScoreboard> playerBoards = new HashMap<>();
 
-    public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
-        this.mainScoreboard = new CraftScoreboard(scoreboardServer);
-        mainScoreboard.registeredGlobally = true; // Paper
-        this.server = minecraftserver;
+    public CraftScoreboardManager(MinecraftServer server, net.minecraft.world.scores.Scoreboard scoreboard) {
+        this.mainScoreboard = new CraftScoreboard(scoreboard);
+        this.mainScoreboard.registeredGlobally = true;
+        this.server = server;
         this.scoreboards.add(this.mainScoreboard);
     }
 
@@ -44,38 +41,27 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     public CraftScoreboard getNewScoreboard() {
         org.spigotmc.AsyncCatcher.catchOp("scoreboard creation"); // Spigot
         CraftScoreboard scoreboard = new CraftScoreboard(new ServerScoreboard(this.server));
-        // Paper start
         if (io.papermc.paper.configuration.GlobalConfiguration.get().scoreboards.trackPluginScoreboards) {
             scoreboard.registeredGlobally = true;
-            scoreboards.add(scoreboard);
+            this.scoreboards.add(scoreboard);
         }
-        // Paper end
         return scoreboard;
     }
 
-    // Paper start
     public void registerScoreboardForVanilla(CraftScoreboard scoreboard) {
         org.spigotmc.AsyncCatcher.catchOp("scoreboard registration");
-        scoreboards.add(scoreboard);
+        this.scoreboards.add(scoreboard);
     }
-    // Paper end
 
-    // CraftBukkit method
     public CraftScoreboard getPlayerBoard(CraftPlayer player) {
         CraftScoreboard board = this.playerBoards.get(player);
         return board == null ? this.getMainScoreboard() : board;
     }
 
-    // CraftBukkit method
-    public void setPlayerBoard(CraftPlayer player, org.bukkit.scoreboard.Scoreboard bukkitScoreboard) {
-        Preconditions.checkArgument(bukkitScoreboard instanceof CraftScoreboard, "Cannot set player scoreboard to an unregistered Scoreboard");
-
-        CraftScoreboard scoreboard = (CraftScoreboard) bukkitScoreboard;
-        net.minecraft.world.scores.Scoreboard oldboard = this.getPlayerBoard(player).getHandle();
-        net.minecraft.world.scores.Scoreboard newboard = scoreboard.getHandle();
-        ServerPlayer entityplayer = player.getHandle();
-
-        if (oldboard == newboard) {
+    public void setPlayerBoard(CraftPlayer player, CraftScoreboard scoreboard) {
+        net.minecraft.world.scores.Scoreboard oldBoard = this.getPlayerBoard(player).getHandle();
+        net.minecraft.world.scores.Scoreboard newBoard = scoreboard.getHandle();
+        if (oldBoard == newBoard) {
             return;
         }
 
@@ -85,25 +71,25 @@ public final class CraftScoreboardManager implements ScoreboardManager {
             this.playerBoards.put(player, scoreboard);
         }
 
+        ServerPlayer serverPlayer = player.getHandle();
+
         // Old objective tracking
         HashSet<Objective> removed = new HashSet<>();
-        for (net.minecraft.world.scores.DisplaySlot slot : net.minecraft.world.scores.DisplaySlot.values()) { // Paper - clear all display slots
-            Objective scoreboardobjective = oldboard.getDisplayObjective(slot); // Paper - clear all display slots
-            if (scoreboardobjective != null && !removed.contains(scoreboardobjective)) {
-                entityplayer.connection.send(new ClientboundSetObjectivePacket(scoreboardobjective, 1));
-                removed.add(scoreboardobjective);
+        for (net.minecraft.world.scores.DisplaySlot displaySlot : net.minecraft.world.scores.DisplaySlot.values()) { // Paper - clear all display slots
+            Objective objective = oldBoard.getDisplayObjective(displaySlot); // Paper - clear all display slots
+            if (objective != null && !removed.contains(objective)) {
+                serverPlayer.connection.send(new ClientboundSetObjectivePacket(objective, 1));
+                removed.add(objective);
             }
         }
 
         // Old team tracking
-        Iterator<?> iterator = oldboard.getPlayerTeams().iterator();
-        while (iterator.hasNext()) {
-            PlayerTeam scoreboardteam = (PlayerTeam) iterator.next();
-            entityplayer.connection.send(ClientboundSetPlayerTeamPacket.createRemovePacket(scoreboardteam));
+        for (final PlayerTeam team : oldBoard.getPlayerTeams()) {
+            serverPlayer.connection.send(ClientboundSetPlayerTeamPacket.createRemovePacket(team));
         }
 
         // The above is the reverse of the below method.
-        this.server.getPlayerList().updateEntireScoreboard((ServerScoreboard) newboard, player.getHandle());
+        this.server.getPlayerList().updateEntireScoreboard((ServerScoreboard) newBoard, player.getHandle());
     }
 
     // CraftBukkit method
@@ -114,8 +100,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     // CraftBukkit method
     public void forAllObjectives(ObjectiveCriteria criteria, ScoreHolder holder, Consumer<ScoreAccess> consumer) {
         for (CraftScoreboard scoreboard : this.scoreboards) {
-            Scoreboard board = scoreboard.board;
-            board.forAllObjectives(criteria, holder, (score) -> consumer.accept(score));
+            scoreboard.getHandle().forAllObjectives(criteria, holder, consumer);
         }
     }
 }

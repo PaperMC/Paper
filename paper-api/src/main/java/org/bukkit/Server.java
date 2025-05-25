@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import io.papermc.paper.configuration.ServerConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -151,8 +152,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * uses. Normal and immediate iterator use without consequences that
      * affect the collection are fully supported. The effects following
      * (non-exhaustive) {@link Entity#teleport(Location) teleportation},
-     * {@link Player#setHealth(double) death}, and {@link Player#kickPlayer(
-     * String) kicking} are undefined. Any use of this collection from
+     * {@link Player#setHealth(double) death}, and {@link Player#kick(
+     * Component) kicking} are undefined. Any use of this collection from
      * asynchronous threads is unsafe.
      * <p>
      * For safe consequential iteration or mimicking the old array behavior,
@@ -387,7 +388,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated use {@link #broadcast(net.kyori.adventure.text.Component)}
      */
     @Deprecated // Paper
-    public int broadcastMessage(@NotNull String message);
+    default int broadcastMessage(@NotNull String message) {
+        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
+    }
 
     // Paper start
     /**
@@ -422,7 +425,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message MiniMessage content
      */
     default void sendRichMessage(final @NotNull String message) {
-        this.sendMessage(MiniMessage.miniMessage().deserialize(message));
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, this));
     }
 
     /**
@@ -435,7 +438,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param resolvers resolvers to use
      */
     default void sendRichMessage(final @NotNull String message, final @NotNull TagResolver... resolvers) {
-        this.sendMessage(MiniMessage.miniMessage().deserialize(message, resolvers));
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, this, resolvers));
     }
 
     /**
@@ -828,9 +831,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
      */
-    // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
-    public MapView getMap(int id);
+    MapView getMap(int id);
 
     /**
      * Create a new map with an automatically assigned ID.
@@ -988,26 +990,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
 
     /**
-     * Adds a recipe to the crafting manager. Recipes added with
-     * this method won't be sent to the client automatically. Use
-     * {@link #updateRecipes()} or {@link #updateResources()} to
-     * update clients to new recipes added.
+     * Adds a recipe to the crafting manager.
+     * Recipes added with this method won't be sent to the client automatically.
      * <p>
-     * Player's still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
+     * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
-     * @return true if the recipe was added, false if it wasn't for some
-     *     reason
+     * @return true if the recipe was added, false if it wasn't for some reason
      * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
-    public boolean addRecipe(@Nullable Recipe recipe);
+    boolean addRecipe(@Nullable Recipe recipe);
 
     // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
+     * @apiNote resendRecipes is ignored for now for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
@@ -1219,7 +1219,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
+     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
+     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
+     * via events or third-party plugin APIs.
      */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     public void setSpawnRadius(int value);
 
     /**
@@ -1229,8 +1233,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated(since = "1.19.3")
-    public boolean shouldSendChatPreviews();
+    @Deprecated(since = "1.19.3", forRemoval = true)
+    default boolean shouldSendChatPreviews() {
+        return false;
+    }
 
     /**
      * Gets whether the server only allow players with Mojang-signed public key
@@ -1263,6 +1269,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean getOnlineMode();
 
     /**
+     * Retrieves the server configuration.
+     *
+     * @return the instance of ServerConfiguration containing the server's configuration details
+     */
+    @NotNull ServerConfiguration getServerConfig();
+
+    /**
      * Gets whether this server allows flying or not.
      *
      * @return true if the server allows flight, false otherwise
@@ -1292,7 +1305,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
      */
     @Deprecated // Paper
-    public int broadcast(@NotNull String message, @NotNull String permission);
+    default int broadcast(@NotNull String message, @NotNull String permission) {
+        return this.broadcast(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), permission);
+    }
+
     // Paper start
     /**
      * Broadcast a message to all players.
@@ -1303,7 +1319,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message the message
      * @return the number of players
      */
-    int broadcast(net.kyori.adventure.text.@NotNull Component message);
+    default int broadcast(net.kyori.adventure.text.@NotNull Component message) {
+        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
+    }
 
     /**
      * Broadcasts the specified message to every user with the given
@@ -2305,24 +2323,56 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Spigot start
     public class Spigot {
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @see #getServerConfig()
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @see #getServerConfig()
+         * @return The server's bukkit config.
+         */
         // Paper start
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
         {
             throw new UnsupportedOperationException( "Not supported yet." );
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @see #getServerConfig()
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @see #getServerConfig()
+         * @return The server's paper config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
         {
@@ -2354,15 +2404,27 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
         /**
          * Restart the server. If the server administrator has not configured restarting, the server will stop.
+         *
+         * @deprecated Use {@link Server#restart()} instead.
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public void restart() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
+    /**
+     * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     @NotNull
     Spigot spigot();
     // Spigot end
+
+    /**
+     * Restarts the server. If the server administrator has not configured restarting, the server will stop.
+     */
+    void restart();
 
     void reloadPermissions(); // Paper
 

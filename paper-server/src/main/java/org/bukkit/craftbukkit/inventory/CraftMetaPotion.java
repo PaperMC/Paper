@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
@@ -54,8 +56,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
     }
 
-    CraftMetaPotion(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaPotion(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        super(tag, extraHandledDcts);
         getOrEmpty(tag, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
             potionContents.potion().ifPresent((potion) -> {
                 this.type = CraftPotionType.minecraftHolderToBukkit(potion);
@@ -63,7 +65,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
             potionContents.customColor().ifPresent((customColor) -> {
                 try {
-                    this.color = customColor; // Paper
+                    this.color = customColor;
                 } catch (IllegalArgumentException ex) {
                     // Invalid colour
                 }
@@ -132,7 +134,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
 
         Optional<Holder<Potion>> defaultPotion = (this.hasBasePotionType()) ? Optional.of(CraftPotionType.bukkitToMinecraftHolder(this.type)) : Optional.empty();
-        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color) : Optional.empty(); // Paper
+        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color) : Optional.empty();
         Optional<String> customName = Optional.ofNullable(this.customName);
 
         List<MobEffectInstance> effectList = new ArrayList<>();
@@ -200,6 +202,19 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             return ImmutableList.copyOf(this.customEffects);
         }
         return ImmutableList.of();
+    }
+
+    @Override
+    @NotNull
+    public List<PotionEffect> getAllEffects() {
+        final ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
+        if (this.hasBasePotionType()) {
+            builder.addAll(this.getBasePotionType().getPotionEffects());
+        }
+        if (this.hasCustomEffects()) {
+            builder.addAll(this.customEffects);
+        }
+        return builder.build();
     }
 
     @Override
@@ -297,12 +312,23 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     @Override
     public Color getColor() {
-        return this.color == null ? null : Color.fromRGB(this.color & 0xFFFFFF); // Paper
+        return this.color == null ? null : Color.fromRGB(this.color & 0x00FFFFFF);
     }
 
     @Override
     public void setColor(Color color) {
-        this.color = color == null ? null : color.asRGB(); // Paper
+        this.color = color == null ? null : color.asRGB();
+    }
+
+    @Override
+    @NotNull
+    public Color computeEffectiveColor() {
+        if (hasColor()) return getColor();
+
+        return Color.fromRGB(
+            PotionContents.getColorOptional(Collections2.transform(getAllEffects(), CraftPotionUtil::fromBukkit))
+                .orElse(PotionContents.BASE_POTION_COLOR) & 0xFFFFFF
+        );
     }
 
     @Override
@@ -345,13 +371,11 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaPotion) {
-            CraftMetaPotion that = (CraftMetaPotion) meta;
-
-            return Objects.equals(this.type, that.type)
-                    && (this.hasCustomEffects() ? that.hasCustomEffects() && this.customEffects.equals(that.customEffects) : !that.hasCustomEffects())
-                    && (this.hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor())
-                    && (this.hasCustomPotionName() ? that.hasCustomPotionName() && this.customName.equals(that.customName) : !that.hasCustomPotionName());
+        if (meta instanceof final CraftMetaPotion other) {
+            return Objects.equals(this.type, other.type)
+                    && (this.hasCustomEffects() ? other.hasCustomEffects() && this.customEffects.equals(other.customEffects) : !other.hasCustomEffects())
+                    && Objects.equals(this.color, other.color)
+                    && Objects.equals(this.customName, other.customName);
         }
         return true;
     }

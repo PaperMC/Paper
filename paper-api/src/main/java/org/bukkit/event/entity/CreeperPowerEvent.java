@@ -4,44 +4,40 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a Creeper is struck by lightning.
  * <p>
- * If a Creeper Power event is cancelled, the Creeper will not be powered.
+ * If this event is cancelled, the Creeper will not be powered.
  */
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean canceled;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final PowerCause cause;
     private LightningStrike bolt;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public CreeperPowerEvent(@NotNull final Creeper creeper, @NotNull final LightningStrike bolt, @NotNull final PowerCause cause) {
         this(creeper, cause);
         this.bolt = bolt;
     }
 
+    @ApiStatus.Internal
     public CreeperPowerEvent(@NotNull final Creeper creeper, @NotNull final PowerCause cause) {
         super(creeper);
         this.cause = cause;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return canceled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        canceled = cancel;
-    }
-
     @NotNull
     @Override
     public Creeper getEntity() {
-        return (Creeper) entity;
+        return (Creeper) this.entity;
     }
 
     /**
@@ -51,7 +47,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
      */
     @Nullable
     public LightningStrike getLightning() {
-        return bolt;
+        return this.bolt;
     }
 
     /**
@@ -61,18 +57,28 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public PowerCause getCause() {
-        return cause;
+        return this.cause;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -83,19 +89,19 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         /**
          * Power change caused by a lightning bolt
          * <p>
-         * Powered state: true
+         * Powered state: {@code true}
          */
         LIGHTNING,
         /**
          * Power change caused by something else (probably a plugin)
          * <p>
-         * Powered state: true
+         * Powered state: {@code true}
          */
         SET_ON,
         /**
          * Power change caused by something else (probably a plugin)
          * <p>
-         * Powered state: false
+         * Powered state: {@code false}
          */
         SET_OFF
     }

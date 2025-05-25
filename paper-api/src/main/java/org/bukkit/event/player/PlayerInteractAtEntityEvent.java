@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,31 +19,35 @@ import org.jetbrains.annotations.NotNull;
  * to listen to this event for that scenario.
  */
 public class PlayerInteractAtEntityEvent extends PlayerInteractEntityEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Vector position;
 
-    public PlayerInteractAtEntityEvent(@NotNull Player who, @NotNull Entity clickedEntity, @NotNull Vector position) {
-        this(who, clickedEntity, position, EquipmentSlot.HAND);
+    @ApiStatus.Internal
+    public PlayerInteractAtEntityEvent(@NotNull Player player, @NotNull Entity clickedEntity, @NotNull Vector position) {
+        this(player, clickedEntity, position, EquipmentSlot.HAND);
     }
 
-    public PlayerInteractAtEntityEvent(@NotNull Player who, @NotNull Entity clickedEntity, @NotNull Vector position, @NotNull EquipmentSlot hand) {
-        super(who, clickedEntity, hand);
+    @ApiStatus.Internal
+    public PlayerInteractAtEntityEvent(@NotNull Player player, @NotNull Entity clickedEntity, @NotNull Vector position, @NotNull EquipmentSlot hand) {
+        super(player, clickedEntity, hand);
         this.position = position;
     }
 
     @NotNull
     public Vector getClickedPosition() {
-        return position.clone();
+        return this.position.clone();
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

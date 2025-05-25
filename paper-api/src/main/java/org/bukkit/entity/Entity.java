@@ -3,10 +3,13 @@ package org.bukkit.entity;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.Sound;
@@ -17,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -33,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
  */
-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
+public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, DataComponentView { // Paper
 
     /**
      * Gets the entity's current position
@@ -294,16 +298,42 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets if the entity has visual fire (it will always appear to be on fire).
      *
+     * @deprecated This method doesn't allow visually extinguishing a burning entity,
+     * use {@link #setVisualFire(TriState)} instead
      * @param fire whether visual fire is enabled
      */
+    @Deprecated
     void setVisualFire(boolean fire);
+
+    /**
+     * Sets if the entity has visual fire (it will always appear to be on fire).
+     * <ul>
+     *     <li>{@link TriState#NOT_SET} – will revert the entity's visual fire to default</li>
+     *     <li>{@link TriState#TRUE} – will make the entity appear to be on fire</li>
+     *     <li>{@link TriState#FALSE} – will make the entity appear to be not on fire</li>
+     * </ul>
+     *
+     * @param fire a TriState value representing the state of the visual fire.
+     */
+    void setVisualFire(@NotNull TriState fire);
 
     /**
      * Gets if the entity has visual fire (it will always appear to be on fire).
      *
+     * @deprecated This method can't properly reflect the three possible states of visual fire,
+     * use {@link #getVisualFire()} instead
      * @return whether visual fire is enabled
      */
+    @Deprecated
     boolean isVisualFire();
+
+    /**
+     * Retrieves the visual fire state of the object.
+     *
+     * @return A TriState indicating the current visual fire state.
+     */
+    @NotNull
+    TriState getVisualFire();
 
     /**
      * Returns the entity's current freeze ticks (amount of ticks the entity has
@@ -337,7 +367,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean isFrozen();
 
-    // Paper start - missing entity api
     /**
      * Sets whether the entity is invisible or not.
      * <p>
@@ -347,14 +376,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param invisible If the entity is invisible
      */
-    void setInvisible(boolean invisible); // Paper - moved up from LivingEntity
+    void setInvisible(boolean invisible);
 
     /**
      * Gets whether the entity is invisible or not.
      *
      * @return Whether the entity is invisible
      */
-    boolean isInvisible(); // Paper - moved up from LivingEntity
+    boolean isInvisible();
 
     /**
      * Sets this entities no physics status.
@@ -369,9 +398,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return true if the entity does not have physics.
      */
     boolean hasNoPhysics();
-    // Paper end - missing entity api
 
-    // Paper start - Freeze Tick Lock API
     /**
      * Gets if the entity currently has its freeze ticks locked
      * to a set amount.
@@ -389,12 +416,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param locked prevent vanilla modification or not
      */
     void lockFreezeTicks(boolean locked);
-    // Paper end - Freeze Tick Lock API
 
     /**
      * Mark the entity's removal.
      *
-     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kickPlayer(String)} in this case instead
+     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kick(net.kyori.adventure.text.Component)} in this case instead
      */
     public void remove();
 
@@ -514,6 +540,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean eject();
 
     /**
+     * Gets the {@link ItemStack} that a player would select / create (in creative mode)
+     * when using the pick block action on this entity.
+     *
+     * @return item stack result or an empty item stack
+     */
+    @NotNull
+    ItemStack getPickItemStack();
+
+    /**
      * Returns the distance this entity has fallen
      *
      * @return The distance.
@@ -533,6 +568,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param event a {@link EntityDamageEvent}
      * @deprecated method is for internal use only and will be removed
      */
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.4", forRemoval = true)
     public void setLastDamageCause(@Nullable EntityDamageEvent event);
 
@@ -580,9 +616,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * If the effect is not applicable to this class of entity, it will not play.
      *
-     * @param type Effect to play.
+     * @param effect Effect to play.
      */
-    public void playEffect(@NotNull EntityEffect type);
+    public void playEffect(@NotNull EntityEffect effect);
 
     /**
      * Get the type of the entity.
@@ -698,6 +734,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     Set<Player> getTrackedBy();
+
+    /**
+     * Checks to see if a player is currently tracking this entity.
+     *
+     * @param player the player to check
+     * @return if the player is currently tracking this entity
+     * @see #getTrackedBy()
+     */
+    boolean isTrackedBy(@NotNull Player player);
 
     /**
      * Sets whether the entity has a team colored (default: white) glow.
@@ -1029,23 +1074,43 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Check if entity is in bubble column
+     *
+     * @deprecated check the block at the position of the entity
      */
-    boolean isInBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInBubbleColumn() {
+        return this.getWorld().getBlockAt(this.getLocation()).getType() == Material.BUBBLE_COLUMN;
+    }
 
     /**
      * Check if entity is in water or rain
+     *
+     * @deprecated use {@link #isInWater()} and {@link #isInRain()}
      */
-    boolean isInWaterOrRain();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRain() {
+        return this.isInWater() || this.isInRain();
+    }
 
     /**
      * Check if entity is in water or bubble column
+     *
+     * @deprecated use {@link #isInWater()}, bubble column is considered as water
      */
-    boolean isInWaterOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrBubbleColumn() {
+        return this.isInWater();
+    }
 
     /**
      * Check if entity is in water or rain or bubble column
+     *
+     * @deprecated bubble column is considered as water, use {@link #isInWater()} and {@link #isInRain()}
      */
-    boolean isInWaterOrRainOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRainOrBubbleColumn() {
+        return this.isInWaterOrRain();
+    }
 
     /**
      * Check if entity is in lava

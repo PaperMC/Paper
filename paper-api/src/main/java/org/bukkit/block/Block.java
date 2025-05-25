@@ -40,7 +40,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return block specific metadata
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     byte getData();
 
     /**
@@ -364,7 +364,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     // Paper start
     /**
      * @see #getState() optionally disables use of snapshot, to operate on real block data
-     * @param useSnapshot if this block is a TE, should we create a fully copy of the TileEntity
+     * @param useSnapshot if this block is a block entity, should we create a full copy of the BlockEntity
      * @return BlockState with the current state of this block
      */
     @NotNull
@@ -509,9 +509,6 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
 
     /**
      * Gets the temperature of this block.
-     * <p>
-     * If the raw biome temperature without adjusting for height effects is
-     * required then please use {@link World#getTemperature(int, int, int)}.
      *
      * @return Temperature of this block
      */
@@ -820,4 +817,11 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
         return this.getBlockData().getDestroySpeed(itemStack, considerEnchants);
     }
     // Paper end - destroy speed API
+
+    /**
+     * Checks if the block can suffocate.
+     *
+     * @return {@code true} if the block can suffocate
+     */
+    boolean isSuffocating();
 }

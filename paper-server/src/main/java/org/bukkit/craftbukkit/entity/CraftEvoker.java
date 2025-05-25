@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.monster.SpellcasterIllager;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Evoker;
@@ -13,12 +13,7 @@ public class CraftEvoker extends CraftSpellcaster implements Evoker {
 
     @Override
     public net.minecraft.world.entity.monster.Evoker getHandle() {
-        return (net.minecraft.world.entity.monster.Evoker) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEvoker";
+        return (net.minecraft.world.entity.monster.Evoker) this.entity;
     }
 
     @Override
@@ -31,16 +26,14 @@ public class CraftEvoker extends CraftSpellcaster implements Evoker {
         this.getHandle().setIsCastingSpell(spell == null ? SpellcasterIllager.IllagerSpell.NONE : SpellcasterIllager.IllagerSpell.byId(spell.ordinal()));
     }
 
-    // Paper start - Add more Evoker API
     @Override
     public org.bukkit.entity.Sheep getWololoTarget() {
-        Sheep sheep = getHandle().getWololoTarget();
+        Sheep sheep = this.getHandle().getWololoTarget();
         return sheep == null ? null : (org.bukkit.entity.Sheep) sheep.getBukkitEntity();
     }
 
     @Override
     public void setWololoTarget(org.bukkit.entity.Sheep sheep) {
-        getHandle().setWololoTarget(sheep == null ? null : ((org.bukkit.craftbukkit.entity.CraftSheep) sheep).getHandle());
+        this.getHandle().setWololoTarget(sheep == null ? null : ((org.bukkit.craftbukkit.entity.CraftSheep) sheep).getHandle());
     }
-    // Paper end - Add more Evoker API
 }

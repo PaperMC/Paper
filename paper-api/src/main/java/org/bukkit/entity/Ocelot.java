@@ -73,7 +73,7 @@ public interface Ocelot extends Animals {
          * @return Type ID.
          * @deprecated Magic value
          */
-        @Deprecated(since = "1.6.2")
+        @Deprecated(since = "1.6.2", forRemoval = true)
         public int getId() {
             return id;
         }
@@ -85,7 +85,7 @@ public interface Ocelot extends Animals {
          * @return Resulting type, or null if not found.
          * @deprecated Magic value
          */
-        @Deprecated(since = "1.6.2")
+        @Deprecated(since = "1.6.2", forRemoval = true)
         @Nullable
         public static Type getType(int id) {
             return (id >= types.length) ? null : types[id];

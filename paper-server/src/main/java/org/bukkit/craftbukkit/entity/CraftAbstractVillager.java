@@ -9,7 +9,7 @@ import org.bukkit.entity.AbstractVillager;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
-public class CraftAbstractVillager extends CraftAgeable implements CraftMerchant, AbstractVillager, InventoryHolder {
+public abstract class CraftAbstractVillager extends CraftAgeable implements CraftMerchant, AbstractVillager, InventoryHolder {
 
     public CraftAbstractVillager(CraftServer server, net.minecraft.world.entity.npc.AbstractVillager entity) {
         super(server, entity);
@@ -26,19 +26,12 @@ public class CraftAbstractVillager extends CraftAgeable implements CraftMerchant
     }
 
     @Override
-    public String toString() {
-        return "CraftAbstractVillager";
-    }
-
-    @Override
     public Inventory getInventory() {
         return new CraftInventory(this.getHandle().getInventory());
     }
 
-    // Paper start - Villager#resetOffers
     @Override
     public void resetOffers() {
         getHandle().resetOffers();
     }
-    // Paper end - Villager#resetOffers
 }

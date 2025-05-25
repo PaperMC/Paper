@@ -33,56 +33,24 @@
          this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
          this.serverLinks = createServerLinks(settings);
      }
-@@ -102,26 +_,95 @@
+@@ -102,6 +_,10 @@
          Thread thread = new Thread("Server console handler") {
              @Override
              public void run() {
--                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
--
-+                // CraftBukkit start
-+                if (!org.bukkit.craftbukkit.Main.useConsole) return;
++                if (!org.bukkit.craftbukkit.Main.useConsole) return; // CraftBukkit
 +                // Paper start - Use TerminalConsoleAppender
 +                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
 +                /*
-+                jline.console.ConsoleReader bufferedreader = DedicatedServer.this.reader;
-+                // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
-+                try {
-+                    System.in.available();
-+                } catch (IOException ex) {
-+                    return;
-+                }
-+                // CraftBukkit end
+                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+ 
                  String string1;
-                 try {
--                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning() && (string1 = bufferedReader.readLine()) != null) {
--                        DedicatedServer.this.handleConsoleInput(string1, DedicatedServer.this.createCommandSourceStack());
-+                    // CraftBukkit start - JLine disabling compatibility
-+                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning()) {
-+                        if (org.bukkit.craftbukkit.Main.useJline) {
-+                            string1 = bufferedreader.readLine(">", null);
-+                        } else {
-+                            string1 = bufferedreader.readLine();
-+                        }
-+
-+                        // SPIGOT-5220: Throttle if EOF (ctrl^d) or stdin is /dev/null
-+                        if (string1 == null) {
-+                            try {
-+                                Thread.sleep(50L);
-+                            } catch (InterruptedException ex) {
-+                                Thread.currentThread().interrupt();
-+                            }
-+                            continue;
-+                        }
-+                        if (string1.trim().length() > 0) { // Trim to filter lines which are just spaces
-+                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
-+                        }
-+                        // CraftBukkit end
+@@ -111,17 +_,41 @@
                      }
                  } catch (IOException var4) {
                      DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)var4);
-                 }
-+                */
-+                // Paper end
+-                }
++                }*/
++                // Paper end - Use TerminalConsoleAppender
              }
          };
 +        // CraftBukkit start - TODO: handle command-line logging arguments
@@ -93,21 +61,7 @@
 +        }
 +        global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
 +
-+        // Paper start - Not needed with TerminalConsoleAppender
 +        final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getRootLogger();
-+        /*
-+        final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
-+        for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
-+            if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-+                logger.removeAppender(appender);
-+            }
-+        }
-+
-+        TerminalConsoleWriterThread writerThread = new TerminalConsoleWriterThread(System.out, this.reader);
-+        this.reader.setCompletionHandler(new TerminalCompletionHandler(writerThread, this.reader.getCompletionHandler()));
-+        writerThread.start();
-+        */
-+        // Paper end - Not needed with TerminalConsoleAppender
 +
 +        System.setOut(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
 +        System.setErr(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
@@ -187,7 +141,7 @@
          InetAddress inetAddress = null;
          if (!this.getLocalIp().isEmpty()) {
              inetAddress = InetAddress.getByName(this.getLocalIp());
-@@ -147,36 +_,62 @@
+@@ -147,36 +_,61 @@
          if (this.getPort() < 0) {
              this.setPort(properties.serverPort);
          }
@@ -210,7 +164,6 @@
          }
  
 +        // CraftBukkit start
-+        // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // Spigot - moved up
 +        this.server.loadPlugins();
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
 +        // CraftBukkit end
@@ -361,7 +314,7 @@
      }
  
      @Override
-@@ -515,14 +_,52 @@
+@@ -515,14 +_,54 @@
  
      @Override
      public String getPluginNames() {
@@ -402,6 +355,8 @@
 +    }
 +
 +    public String runCommand(RconConsoleSource rconConsoleSource, String s) {
++        if (s.isBlank()) return ""; // Paper - Do not process empty rcon commands
++
 +        rconConsoleSource.prepareForCommand();
 +        this.executeBlocking(() -> {
 +            CommandSourceStack wrapper = rconConsoleSource.createCommandSourceStack();

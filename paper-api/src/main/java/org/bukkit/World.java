@@ -1,8 +1,7 @@
 package org.bukkit;
 
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
-import org.bukkit.generator.ChunkGenerator;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -68,7 +67,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setVoidDamageEnabled(boolean enabled);
 
     /**
-     * Gets the damage applied to the player when they are in the void in this world.
+     * Gets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @return amount of damage to apply
@@ -77,7 +76,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     float getVoidDamageAmount();
 
     /**
-     * Sets the damage applied to the player when they are in the void in this world.
+     * Sets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @param voidDamageAmount amount of damage to apply
@@ -102,27 +101,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     // Paper start
     /**
-     * @return The amount of Entities in this world
+     * @return The amount of entities in this world
      */
     int getEntityCount();
 
     /**
-     * @return The amount of Tile Entities in this world
+     * @return The amount of block entities in this world
      */
     int getTileEntityCount();
 
     /**
-     * @return The amount of Tickable Tile Entities in this world
+     * @return The amount of tickable block entities in this world
      */
     int getTickableTileEntityCount();
 
     /**
-     * @return The amount of Chunks in this world
+     * @return The amount of chunks in this world
      */
     int getChunkCount();
 
     /**
-     * @return The amount of Players in this world
+     * @return The amount of players in this world
      */
     int getPlayerCount();
     // Paper end
@@ -475,12 +474,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually regenerated
      *
+     * @throws UnsupportedOperationException not implemented
      * @deprecated regenerating a single chunk is not likely to produce the same
      * chunk as before as terrain decoration may be spread across chunks. It may
      * or may not change blocks in the adjacent chunks as well.
      */
-    @Deprecated(since = "1.13")
-    public boolean regenerateChunk(int x, int z);
+    @Deprecated(since = "1.13", forRemoval = true)
+    default boolean regenerateChunk(int x, int z) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version! This is not a bug.");
+    }
 
     /**
      * Resends the {@link Chunk} to all clients
@@ -490,7 +492,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Whether the chunk was actually refreshed
      *
      */
-    // @Deprecated(since = "1.8") // Paper
     public boolean refreshChunk(int x, int z);
 
     /**
@@ -740,7 +741,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     this method
      * @return true if the tree was created successfully, otherwise false
      * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
-     * @deprecated this method does not handle tile entities (bee nests)
+     * @deprecated this method does not handle block entities (bee nests)
      */
     @Deprecated(since = "1.17.1")
     public boolean generateTree(@NotNull Location loc, @NotNull TreeType type, @NotNull BlockChangeDelegate delegate);
@@ -1119,8 +1120,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * on the main Server Thread.
      *
      * @deprecated Use either the Future or the Consumer based methods
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
@@ -1188,8 +1189,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
@@ -1210,8 +1211,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
@@ -1233,8 +1234,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
      * @param cb Callback to receive the chunk when it is loaded.
@@ -1256,10 +1257,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link Runnable} will always be executed synchronously
      * on the main Server Thread, and when invoked all chunks requested will be loaded.
      *
-     * @param minX Minimum chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param minZ Minimum chunk Z-coordinate of the chunk - floor(world coordinate / 16)
-     * @param maxX Maximum chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param maxZ Maximum chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param minX Minimum Chunk x-coordinate
+     * @param minZ Minimum Chunk z-coordinate
+     * @param maxX Maximum Chunk x-coordinate
+     * @param maxZ Maximum Chunk z-coordinate
      * @param urgent If true, the chunks may be prioritised to be loaded above other chunks in queue
      * @param cb Callback to invoke when all chunks are loaded.
      *           Will be executed synchronously
@@ -1445,8 +1446,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
@@ -1466,8 +1467,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @return Future that will resolve when the chunk is loaded
      */
@@ -1477,14 +1478,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param loc Location to load the corresponding chunk from
@@ -1496,14 +1497,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param loc Location to load the corresponding chunk from
@@ -1516,14 +1517,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param block Block to load the corresponding chunk from
@@ -1535,14 +1536,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param block Block to load the corresponding chunk from
@@ -1555,25 +1556,45 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
-     * and will return the chunk to the callback at a later time.
-     *
+     * and will complete the future at a later time.
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x X Coord
-     * @param z Z Coord
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true, true);
     }
 
+    /**
+     * Requests a {@link Chunk} to be loaded at the given coordinates.
+     * <p>
+     * This method makes no guarantee on how fast the chunk will load,
+     * and will return the chunk to the callback at a later time.
+     * <p>
+     * You should use this method if you need a chunk but do not need it
+     * immediately, and you wish to let the server control the speed
+     * of chunk loads, keeping performance in mind.
+     * <p>
+     * The future will always be executed synchronously
+     * on the main Server Thread.
+     *
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
+     * @param gen Should the chunk generate if it doesn't exist
+     * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
+     *
+     * @return Future that will resolve when the chunk is loaded
+     */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
         java.util.concurrent.CompletableFuture<Chunk> ret = new java.util.concurrent.CompletableFuture<>();
         this.getChunkAtAsync(x, z, gen, urgent, ret::complete);
@@ -1937,6 +1958,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
     // Paper end
+
+    /**
+     * Performs a ray trace that checks for collisions with the specified
+     * targets.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param builderConsumer a consumer to configure the ray trace configuration.
+     *     The received builder is not valid for use outside the consumer
+     * @return the closest ray trace hit result with either a block or an
+     *     entity, or <code>null</code> if there is no hit
+     */
+    @Nullable RayTraceResult rayTrace(@NotNull Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
 
     /**
      * Gets the default spawn {@link Location} of this world
@@ -2373,9 +2408,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public BiomeProvider getBiomeProvider();
 
     /**
-     * Saves world to disk
+     * Saves the world to disk
      */
-    public void save();
+    default void save() {
+        save(false);
+    }
+
+    /**
+     * Saves the world to disk
+     * @param flush Whether to wait for the chunk writer to finish
+     */
+    void save(boolean flush);
 
     /**
      * Gets a list of all applied {@link BlockPopulator}s for this World
@@ -2440,7 +2483,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
-    @Deprecated(since = "1.20.2") // Paper
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull MaterialData data) throws IllegalArgumentException;
 
     /**
@@ -2475,7 +2518,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     Material} are null or {@link Material} is not a block
      * @deprecated Magic value. Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
-    @Deprecated(since = "1.7.5")
+    @Deprecated(since = "1.7.5", forRemoval = true)
     @NotNull
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull Material material, byte data) throws IllegalArgumentException;
 
@@ -2593,9 +2636,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
@@ -2610,9 +2650,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param y Y coordinate of the block
@@ -2772,6 +2809,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param value true if the world should automatically save, otherwise
      *     false
+     * @apiNote This does not disable saving entirely, the world will still be saved on shutdown.<br>
+     * The intended use of this method is to disable the periodical autosave by the game.
      */
     public void setAutoSave(boolean value);
 
@@ -2830,6 +2869,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return True if structures are being generated.
      */
     public boolean canGenerateStructures();
+
+    /**
+     * Checks if the bonus chest is enabled.
+     *
+     * @return {@code true} if the bonus chest is enabled, {@code false} otherwise
+     */
+    boolean hasBonusChest();
 
     /**
      * Gets whether the world is hardcore or not.

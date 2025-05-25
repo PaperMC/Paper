@@ -1,0 +1,26 @@
+--- a/net/minecraft/world/item/MaceItem.java
++++ b/net/minecraft/world/item/MaceItem.java
+@@ -52,7 +_,13 @@
+ 
+     @Override
+     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+-        if (canSmashAttack(attacker)) {
++        // Paper start - Add EntityAttemptSmashAttackEvent
++        final boolean canSmashAttack = canSmashAttack(attacker);
++        io.papermc.paper.event.entity.EntityAttemptSmashAttackEvent event = new io.papermc.paper.event.entity.EntityAttemptSmashAttackEvent(attacker.getBukkitLivingEntity(), target.getBukkitLivingEntity(), stack.asBukkitCopy(), canSmashAttack);
++        event.callEvent();
++        final org.bukkit.event.Event.Result result = event.getResult();
++        if (result == org.bukkit.event.Event.Result.ALLOW || (canSmashAttack && result == org.bukkit.event.Event.Result.DEFAULT)) {
++        // Paper end - Add EntityAttemptSmashAttackEvent
+             ServerLevel serverLevel = (ServerLevel)attacker.level();
+             attacker.setDeltaMovement(attacker.getDeltaMovement().with(Direction.Axis.Y, 0.01F));
+             if (attacker instanceof ServerPlayer serverPlayer) {
+@@ -127,7 +_,7 @@
+             double knockbackPower = getKnockbackPower(attacker, livingEntity, vec3);
+             Vec3 vec31 = vec3.normalize().scale(knockbackPower);
+             if (knockbackPower > 0.0) {
+-                livingEntity.push(vec31.x, 0.7F, vec31.z);
++                livingEntity.push(vec31.x, 0.7F, vec31.z, attacker); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                 if (livingEntity instanceof ServerPlayer serverPlayer) {
+                     serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
+                 }

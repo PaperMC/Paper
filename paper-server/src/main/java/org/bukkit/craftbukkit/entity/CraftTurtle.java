@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Turtle;
 
 public class CraftTurtle extends CraftAnimals implements Turtle {
@@ -11,12 +12,7 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
 
     @Override
     public net.minecraft.world.entity.animal.Turtle getHandle() {
-        return (net.minecraft.world.entity.animal.Turtle) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTurtle";
+        return (net.minecraft.world.entity.animal.Turtle) this.entity;
     }
 
     @Override
@@ -29,30 +25,23 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
         return this.getHandle().isLayingEgg();
     }
 
-    // Paper start
     @Override
     public org.bukkit.Location getHome() {
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getHomePos());
+        return CraftLocation.toBukkit(this.getHandle().homePos, this.getHandle().level());
     }
 
     @Override
     public void setHome(org.bukkit.Location location) {
-        this.getHandle().setHomePos(io.papermc.paper.util.MCUtil.toBlockPosition(location));
+        this.getHandle().homePos = CraftLocation.toBlockPosition(location);
     }
 
     @Override
     public boolean isGoingHome() {
-        return this.getHandle().isGoingHome();
-    }
-
-    @Override
-    public boolean isDigging() {
-        return this.getHandle().isLayingEgg();
+        return this.getHandle().goingHome;
     }
 
     @Override
     public void setHasEgg(boolean hasEgg) {
         this.getHandle().setHasEgg(hasEgg);
     }
-    // Paper end
 }

@@ -1,12 +1,12 @@
 --- a/net/minecraft/world/item/ThrowablePotionItem.java
 +++ b/net/minecraft/world/item/ThrowablePotionItem.java
-@@ -22,11 +_,25 @@
+@@ -23,11 +_,24 @@
      public InteractionResult use(Level level, Player player, InteractionHand hand) {
          ItemStack itemInHand = player.getItemInHand(hand);
          if (level instanceof ServerLevel serverLevel) {
--            Projectile.spawnProjectileFromRotation(ThrownPotion::new, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
+-            Projectile.spawnProjectileFromRotation(this::createPotion, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
 +            // Paper start - PlayerLaunchProjectileEvent
-+            final Projectile.Delayed<ThrownPotion> thrownPotion = Projectile.spawnProjectileFromRotationDelayed(ThrownPotion::new, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
++            final Projectile.Delayed<AbstractThrownPotion> thrownPotion = Projectile.spawnProjectileFromRotationDelayed(this::createPotion, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
 +            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) thrownPotion.projectile().getBukkitEntity());
 +            if (event.callEvent() && thrownPotion.attemptSpawn()) {
 +                if (event.shouldConsume()) {
@@ -14,8 +14,6 @@
 +                } else {
 +                    player.containerMenu.sendAllDataToRemote();
 +                }
-+
-+                player.awardStat(Stats.ITEM_USED.get(this));
 +            } else {
 +                player.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.FAIL;
@@ -23,7 +21,7 @@
 +            // Paper end - PlayerLaunchProjectileEvent
          }
  
--        player.awardStat(Stats.ITEM_USED.get(this));
+         player.awardStat(Stats.ITEM_USED.get(this));
 -        itemInHand.consume(1, player);
 +        // Paper - PlayerLaunchProjectileEvent - move up
          return InteractionResult.SUCCESS;

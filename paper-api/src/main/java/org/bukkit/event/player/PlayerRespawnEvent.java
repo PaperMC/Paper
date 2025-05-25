@@ -1,10 +1,14 @@
 package org.bukkit.event.player;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
+import java.util.Set;
 
 /**
  * Called when a player respawns.
@@ -12,56 +16,29 @@ import org.jetbrains.annotations.NotNull;
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
  */
-public class PlayerRespawnEvent extends PlayerEvent {
-    private static final HandlerList handlers = new HandlerList();
-    private Location respawnLocation;
-    private final boolean isBedSpawn;
-    private final boolean isAnchorSpawn;
-    private final RespawnReason respawnReason;
-    private final java.util.Set<RespawnFlag> respawnFlags; // Paper
+public class PlayerRespawnEvent extends AbstractRespawnEvent {
 
-    @Deprecated(since = "1.16.1")
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.16.1", forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
         this(respawnPlayer, respawnLocation, isBedSpawn, false);
     }
 
-    @Deprecated(since = "1.19.4")
+    @ApiStatus.Internal
+    @Deprecated(since = "1.19.4", forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, false, RespawnReason.PLUGIN);
+        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, RespawnReason.PLUGIN);
     }
 
-    @Deprecated // Paper
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
-        // Paper start
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, respawnReason, com.google.common.collect.ImmutableSet.builder());
-    }
-
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
-        // Paper end
-        super(respawnPlayer);
-        this.respawnLocation = respawnLocation;
-        this.isBedSpawn = isBedSpawn;
-        this.isAnchorSpawn = isAnchorSpawn;
-        this.respawnReason = respawnReason;
-        // Paper start
-        if (this.isBedSpawn) { respawnFlags.add(RespawnFlag.BED_SPAWN); }
-        if (this.isAnchorSpawn) { respawnFlags.add(RespawnFlag.ANCHOR_SPAWN); }
-        this.respawnFlags = respawnFlags.build();
-        // Paper end
+    @ApiStatus.Internal
+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason) {
+        super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
     }
 
     /**
-     * Gets the current respawn location
-     *
-     * @return Location current respawn location
-     */
-    @NotNull
-    public Location getRespawnLocation() {
-        return this.respawnLocation;
-    }
-
-    /**
-     * Sets the new respawn location
+     * Sets the new respawn location.
      *
      * @param respawnLocation new location for the respawn
      */
@@ -72,43 +49,15 @@ public class PlayerRespawnEvent extends PlayerEvent {
         this.respawnLocation = respawnLocation.clone();
     }
 
-    /**
-     * Gets whether the respawn location is the player's bed.
-     *
-     * @return true if the respawn location is the player's bed.
-     */
-    public boolean isBedSpawn() {
-        return this.isBedSpawn;
-    }
-
-    /**
-     * Gets whether the respawn location is the player's respawn anchor.
-     *
-     * @return true if the respawn location is the player's respawn anchor.
-     */
-    public boolean isAnchorSpawn() {
-        return isAnchorSpawn;
-    }
-
-    /**
-     * Gets the reason this respawn event was called.
-     *
-     * @return the reason the event was called.
-     */
-    @NotNull
-    public RespawnReason getRespawnReason() {
-        return respawnReason;
-    }
-
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -127,18 +76,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
         /**
          * When a plugin respawns the player.
          */
-        PLUGIN;
-    }
-
-    // Paper start
-    /**
-     * Get the set of flags that apply to this respawn.
-     *
-     * @return an immutable set of the flags that apply to this respawn
-     */
-    @NotNull
-    public java.util.Set<RespawnFlag> getRespawnFlags() {
-        return respawnFlags;
+        PLUGIN
     }
 
     public enum RespawnFlag {
@@ -153,7 +91,6 @@ public class PlayerRespawnEvent extends PlayerEvent {
         /**
          * Is caused by going to the end portal in the end.
          */
-        END_PORTAL,
+        END_PORTAL
     }
-    // Paper end
 }

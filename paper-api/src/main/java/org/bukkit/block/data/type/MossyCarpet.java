@@ -2,7 +2,6 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * 'bottom' denotes whether this is a bottom block.
  */
-@ApiStatus.Experimental
 public interface MossyCarpet extends BlockData {
 
     /**
@@ -35,7 +33,7 @@ public interface MossyCarpet extends BlockData {
      * @return if face is enabled
      */
     @NotNull
-    Height getHeight(@NotNull BlockFace face);
+    Wall.Height getHeight(@NotNull BlockFace face);
 
     /**
      * Set the height of the specified face.
@@ -43,11 +41,16 @@ public interface MossyCarpet extends BlockData {
      * @param face to set
      * @param height the height
      */
-    void setHeight(@NotNull BlockFace face, @NotNull Height height);
+    void setHeight(@NotNull BlockFace face, @NotNull Wall.Height height);
 
     /**
      * The different heights a face may have.
+     *
+     * @deprecated this property is not specific to the MossyCarpet, use
+     * {@link org.bukkit.block.data.type.Wall.Height} instead. All references
+     * to this enum will be redirected to that enum at runtime.
      */
+    @Deprecated
     public enum Height {
         /**
          * Not present.

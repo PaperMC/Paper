@@ -172,22 +172,6 @@ public interface Panda extends Animals, Sittable {
     }
 
     /**
-     * Sets if this panda is currently sitting.
-     *
-     * @param sitting is currently sitting
-     */
-    @Override
-    void setSitting(boolean sitting);
-
-    /**
-     * Gets if this panda is sitting.
-     *
-     * @return is sitting
-     */
-    @Override
-    boolean isSitting();
-
-    /**
      * Gets this Panda's combined gene.
      * <p>
      * The combined gene can be modified using
@@ -201,6 +185,8 @@ public interface Panda extends Animals, Sittable {
 
     public enum Gene {
 
+        // Start generate - PandaGene
+        // @GeneratedFrom 1.21.5
         NORMAL(false),
         LAZY(false),
         WORRIED(false),
@@ -208,6 +194,7 @@ public interface Panda extends Animals, Sittable {
         BROWN(true),
         WEAK(true),
         AGGRESSIVE(false);
+        // End generate - PandaGene
 
         private final boolean recessive;
 

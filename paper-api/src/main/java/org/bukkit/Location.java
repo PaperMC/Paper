@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 import io.papermc.paper.math.FinePosition;
+import io.papermc.paper.math.Rotation;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Entity;
@@ -412,6 +413,19 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
+     * Adds rotation to this location. Not world-aware.
+     *
+     * @param rotation the rotation to add.
+     * @return the same location
+     * @see Vector
+     */
+    @NotNull
+    @Contract(value = "_ -> this", mutates = "this")
+    public Location addRotation(@NotNull Rotation rotation) {
+        return addRotation(rotation.yaw(), rotation.pitch());
+    }
+
+    /**
      * Subtracts the location by another.
      *
      * @param vec The other location
@@ -478,6 +492,19 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         this.yaw -= yaw;
         this.pitch -= pitch;
         return this;
+    }
+
+    /**
+     * Subtracts rotation from this location.
+     *
+     * @param rotation the rotation to subtract.
+     * @return the same location
+     * @see Vector
+     */
+    @NotNull
+    @Contract(value = "_ -> this", mutates = "this")
+    public Location subtractRotation(@NotNull Rotation rotation) {
+        return subtractRotation(rotation.yaw(), rotation.pitch());
     }
 
     /**
@@ -623,6 +650,20 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
+     * Sets the rotation of this location and returns itself.
+     * <p>
+     * This mutates this object, clone first.
+     *
+     * @param rotation the new rotation.
+     * @return self (not cloned)
+     */
+    @NotNull
+    @Contract(value = "_ -> this", mutates = "this")
+    public Location setRotation(@NotNull Rotation rotation) {
+        return setRotation(rotation.yaw(), rotation.pitch());
+    }
+
+    /**
      * Takes the x/y/z from base and adds the specified x/y/z to it and returns self
      * <p>
      * This mutates this object, clone first.
@@ -691,7 +732,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     /**
      * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
      * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
-     * @throws NullPointerException if {{@link #getWorld()}} is {@code null}
+     * @throws NullPointerException if {@link #getWorld()} is {@code null}
      */
     @NotNull
     public Location toHighestLocation() {

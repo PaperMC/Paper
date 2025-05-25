@@ -8,7 +8,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
@@ -24,6 +23,7 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -142,9 +142,6 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
-
-    @ApiStatus.Internal
-    Biome getCustomBiome();
 
     // Paper start
     @Deprecated(forRemoval = true)
@@ -359,14 +356,17 @@ public interface UnsafeValues {
     // Paper start - spawn egg color visibility
     /**
      * Obtains the underlying color informating for a spawn egg of a given
-     * entity type, or null if the entity passed does not have a spawn egg.
+     * entity type, or {@code null} if the entity passed does not have a spawn egg.
      * Spawn eggs have two colors - the background layer (0), and the
      * foreground layer (1)
-     * @param entityType The entity type to get the color for
-     * @param layer The texture layer to get a color for
-     * @return The color of the layer for the entity's spawn egg
+     *
+     * @param entityType the entity type to get the color for
+     * @param layer the texture layer to get a color for
+     * @return the color of the layer for the entity's spawn egg
+     * @deprecated the color is no longer available to the server
      */
-    @Nullable org.bukkit.Color getSpawnEggLayerColor(org.bukkit.entity.EntityType entityType, int layer);
+    @Deprecated(since = "1.21.4")
+    @Nullable Color getSpawnEggLayerColor(EntityType entityType, int layer);
     // Paper end - spawn egg color visibility
 
     // Paper start - lifecycle event API
@@ -380,4 +380,8 @@ public interface UnsafeValues {
     @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
 
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
+
+    @NotNull Map<String, Object> serializeStack(ItemStack itemStack);
+
+    @NotNull ItemStack deserializeStack(@NotNull Map<String, Object> args);
 }

@@ -1,0 +1,29 @@
+--- a/net/minecraft/world/effect/MobEffectInstance.java
++++ b/net/minecraft/world/effect/MobEffectInstance.java
+@@ -219,7 +_,7 @@
+             return false;
+         } else {
+             int i = this.isInfiniteDuration() ? entity.tickCount : this.duration;
+-            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) {
++            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && new io.papermc.paper.event.entity.EntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(this.effect), this.amplifier).callEvent() && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) { // Paper - Add EntityEffectTickEvent
+                 return false;
+             } else {
+                 this.tickDownDuration();
+@@ -415,7 +_,7 @@
+                     .apply(instance, MobEffectInstance.Details::create)
+             )
+         );
+-        public static final StreamCodec<ByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive(
++        public static final StreamCodec<net.minecraft.network.FriendlyByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive( // Paper - Track codec depth
+             codec -> StreamCodec.composite(
+                 ByteBufCodecs.VAR_INT,
+                 MobEffectInstance.Details::amplifier,
+@@ -427,7 +_,7 @@
+                 MobEffectInstance.Details::showParticles,
+                 ByteBufCodecs.BOOL,
+                 MobEffectInstance.Details::showIcon,
+-                codec.apply(ByteBufCodecs::optional),
++                codec.apply(ByteBufCodecs::increaseDepth).apply(ByteBufCodecs::optional), // Paper - Track codec depth
+                 MobEffectInstance.Details::hiddenEffect,
+                 MobEffectInstance.Details::new
+             )

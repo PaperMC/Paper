@@ -1,0 +1,32 @@
+--- a/com/mojang/brigadier/suggestion/Suggestion.java
++++ b/com/mojang/brigadier/suggestion/Suggestion.java
+@@ -76,13 +_,27 @@
+             '}';
+     }
+ 
++    // Paper start - fix unstable Suggestion comparison
++    private static int compare0(final Suggestion lhs, final Suggestion rhs, final java.util.Comparator<String> textComparator) {
++        if (lhs instanceof final IntegerSuggestion lis && rhs instanceof final IntegerSuggestion ris) {
++            return Integer.compare(lis.getValue(), ris.getValue());
++        } else if (lhs instanceof IntegerSuggestion) {
++            return -1;
++        } else if (rhs instanceof IntegerSuggestion) {
++            return 1;
++        } else {
++            return textComparator.compare(lhs.text, rhs.text);
++        }
++    }
++    // Paper end - fix unstable Suggestion comparison
++
+     @Override
+     public int compareTo(final Suggestion o) {
+-        return text.compareTo(o.text);
++        return compare0(this, o, java.util.Comparator.naturalOrder()); // Paper - fix unstable Suggestion comparison
+     }
+ 
+     public int compareToIgnoreCase(final Suggestion b) {
+-        return text.compareToIgnoreCase(b.text);
++        return compare0(this, b, String.CASE_INSENSITIVE_ORDER); // Paper - fix unstable Suggestion comparison
+     }
+ 
+     public Suggestion expand(final String command, final StringRange range) {

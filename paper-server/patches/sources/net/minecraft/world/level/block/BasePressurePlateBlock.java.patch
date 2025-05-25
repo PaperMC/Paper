@@ -1,25 +1,22 @@
 --- a/net/minecraft/world/level/block/BasePressurePlateBlock.java
 +++ b/net/minecraft/world/level/block/BasePressurePlateBlock.java
-@@ -81,6 +_,7 @@
+@@ -82,6 +_,7 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide) {
              int signalForState = this.getSignalForState(state);
              if (signalForState == 0) {
-@@ -93,6 +_,19 @@
+@@ -94,6 +_,16 @@
          int signalStrength = this.getSignalStrength(level, pos);
          boolean flag = currentSignal > 0;
          boolean flag1 = signalStrength > 0;
-+        
-+        // CraftBukkit start - Interact Pressure Plate
-+        org.bukkit.World bworld = level.getWorld();
-+        org.bukkit.plugin.PluginManager manager = level.getCraftServer().getPluginManager();
 +
++        // CraftBukkit start - Interact Pressure Plate
 +        if (flag != flag1) {
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), currentSignal, signalStrength);
-+            manager.callEvent(eventRedstone);
++            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), currentSignal, signalStrength);
++            eventRedstone.callEvent();
 +
 +            flag1 = eventRedstone.getNewCurrent() > 0;
 +            signalStrength = eventRedstone.getNewCurrent();
@@ -28,7 +25,7 @@
          if (currentSignal != signalStrength) {
              BlockState blockState = this.setSignalForState(state, signalStrength);
              level.setBlock(pos, blockState, 2);
-@@ -145,7 +_,13 @@
+@@ -142,7 +_,13 @@
      }
  
      protected static int getEntityCount(Level level, AABB box, Class<? extends Entity> entityClass) {

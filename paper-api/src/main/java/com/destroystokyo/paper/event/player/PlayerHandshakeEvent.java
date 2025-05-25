@@ -51,32 +51,6 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Determines if this event is cancelled.
-     * <p>
-     * When this event is cancelled, custom handshake logic will not
-     * be processed.
-     *
-     * @return {@code true} if this event is cancelled, {@code false} otherwise
-     */
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    /**
-     * Sets if this event is cancelled.
-     * <p>
-     * When this event is cancelled, custom handshake logic will not
-     * be processed.
-     *
-     * @param cancel {@code true} if this event is cancelled, {@code false} otherwise
-     */
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    /**
      * Gets the original handshake string.
      *
      * @return the original handshake string
@@ -244,6 +218,32 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
     public void setFailMessage(final String failMessage) {
         Preconditions.checkArgument(failMessage != null && !failMessage.isEmpty(), "fail message cannot be null or empty");
         this.failMessage(LegacyComponentSerializer.legacySection().deserialize(failMessage));
+    }
+
+    /**
+     * Determines if this event is cancelled.
+     * <p>
+     * When this event is cancelled, custom handshake logic will not
+     * be processed.
+     *
+     * @return {@code true} if this event is cancelled, {@code false} otherwise
+     */
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    /**
+     * Sets if this event is cancelled.
+     * <p>
+     * When this event is cancelled, custom handshake logic will not
+     * be processed.
+     *
+     * @param cancel {@code true} if this event is cancelled, {@code false} otherwise
+     */
+    @Override
+    public void setCancelled(final boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @Override

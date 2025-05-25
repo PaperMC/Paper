@@ -14,12 +14,7 @@ public class CraftInteraction extends CraftEntity implements Interaction {
 
     @Override
     public net.minecraft.world.entity.Interaction getHandle() {
-        return (net.minecraft.world.entity.Interaction) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftInteraction";
+        return (net.minecraft.world.entity.Interaction) this.entity;
     }
 
     @Override

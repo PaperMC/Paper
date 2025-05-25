@@ -10,6 +10,11 @@ public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
     }
 
     @Override
+    public net.minecraft.world.entity.monster.Slime getHandle() {
+        return (net.minecraft.world.entity.monster.Slime) this.entity;
+    }
+
+    @Override
     public int getSize() {
         return this.getHandle().getSize();
     }
@@ -20,24 +25,12 @@ public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
     }
 
     @Override
-    public net.minecraft.world.entity.monster.Slime getHandle() {
-        return (net.minecraft.world.entity.monster.Slime) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftSlime";
-    }
-
-    // Paper start
-    @Override
     public boolean canWander() {
-        return getHandle().canWander();
+        return this.getHandle().canWander();
     }
 
     @Override
     public void setWander(boolean canWander) {
-        getHandle().setWander(canWander);
+        this.getHandle().setWander(canWander);
     }
-    // Paper end
 }

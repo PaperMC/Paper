@@ -14,7 +14,7 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
 
     @Override
     public ThrownTrident getHandle() {
-        return (ThrownTrident) super.getHandle();
+        return (ThrownTrident) this.entity;
     }
 
     @Override
@@ -27,12 +27,6 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
         this.getHandle().pickupItemStack = CraftItemStack.asNMSCopy(itemStack);
     }
 
-    @Override
-    public String toString() {
-        return "CraftTrident";
-    }
-
-    // Paper start
     @Override
     public boolean hasGlint() {
         return this.getHandle().isFoil();
@@ -63,5 +57,4 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
     public void setHasDealtDamage(boolean hasDealtDamage) {
         this.getHandle().dealtDamage = hasDealtDamage;
     }
-    // Paper end
 }

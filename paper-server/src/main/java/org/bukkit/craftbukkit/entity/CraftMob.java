@@ -12,22 +12,39 @@ import org.bukkit.entity.Mob;
 import org.bukkit.loot.LootTable;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
-    public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
-        super(server, entity);
-         paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
-    }
 
     private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
-    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper - Mob Pathfinding API
+
+    public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
+        super(server, entity);
+        this.paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
+    }
+
+    @Override
+    public net.minecraft.world.entity.Mob getHandle() {
+        return (net.minecraft.world.entity.Mob) this.entity;
+    }
+
+    @Override
+    public void setHandle(net.minecraft.world.entity.Entity entity) {
+        super.setHandle(entity);
+        this.paperPathfinder.setHandle(getHandle());
+    }
+
+    @Override
+    public com.destroystokyo.paper.entity.Pathfinder getPathfinder() {
+        return this.paperPathfinder;
+    }
+
     @Override
     public void setTarget(LivingEntity target) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
 
         net.minecraft.world.entity.Mob entity = this.getHandle();
         if (target == null) {
-            entity.setTarget(null, null, false);
+            entity.setTarget(null, null);
         } else if (target instanceof CraftLivingEntity) {
-            entity.setTarget(((CraftLivingEntity) target).getHandle(), null, false);
+            entity.setTarget(((CraftLivingEntity) target).getHandle(), null);
         }
     }
 
@@ -50,26 +67,8 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public Sound getAmbientSound() {
-        SoundEvent sound = this.getHandle().getAmbientSound0();
+        SoundEvent sound = this.getHandle().getAmbientSound();
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
-    }
-
-    @Override
-    public net.minecraft.world.entity.Mob getHandle() {
-        return (net.minecraft.world.entity.Mob) this.entity;
-    }
-
-    // Paper start - Mob Pathfinding API
-    @Override
-    public void setHandle(net.minecraft.world.entity.Entity entity) {
-        super.setHandle(entity);
-        paperPathfinder.setHandle(getHandle());
-    }
-    // Paper end - Mob Pathfinding API
-
-    @Override
-    public String toString() {
-        return "CraftMob";
     }
 
     @Override
@@ -92,7 +91,6 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
         return this.getHandle().lootTableSeed;
     }
 
-    // Paper start
     @Override
     public boolean isInDaylight() {
         return getHandle().isSunBurnTick();
@@ -155,9 +153,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public void setLeftHanded(boolean leftHanded) {
         getHandle().setLeftHanded(leftHanded);
     }
-    // Paper end
 
-    // Paper start
     @Override
     public boolean isAggressive() {
         return this.getHandle().isAggressive();
@@ -167,16 +163,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public void setAggressive(boolean aggressive) {
         this.getHandle().setAggressive(aggressive);
     }
-    // Paper end
 
-    // Paper start
     @Override
     public int getPossibleExperienceReward() {
         return getHandle().getExperienceReward((net.minecraft.server.level.ServerLevel) this.getHandle().level(), null);
     }
-    // Paper end
 
-    // Paper start - Leashable API
     @Override
     public boolean isLeashed() {
         return io.papermc.paper.entity.PaperLeashable.super.isLeashed();
@@ -191,5 +183,4 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
-    // Paper end - Leashable API
 }

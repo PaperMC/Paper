@@ -1,0 +1,51 @@
+--- a/net/minecraft/network/codec/ByteBufCodecs.java
++++ b/net/minecraft/network/codec/ByteBufCodecs.java
+@@ -389,6 +_,48 @@
+         };
+     }
+ 
++    // Paper start - Track codec depth
++    static <B extends FriendlyByteBuf, V> StreamCodec<B, V> trackDepth(final StreamCodec<B, V> codec) {
++        return new StreamCodec<>() {
++            @Override
++            public V decode(B buffer) {
++                buffer.trackCodecDepth = true;
++                try {
++                    return codec.decode(buffer);
++                } finally {
++                    buffer.trackCodecDepth = false;
++                    buffer.codecDepth = 0;
++                }
++            }
++
++            @Override
++            public void encode(B buffer, V value) {
++                codec.encode(buffer, value);
++            }
++        };
++    }
++
++    static <B extends FriendlyByteBuf, V> StreamCodec<B, V> increaseDepth(final StreamCodec<B, V> codec) {
++        return new StreamCodec<>() {
++            @Override
++            public V decode(B buffer) {
++                if (!buffer.trackCodecDepth) {
++                    return codec.decode(buffer);
++                }
++                if (++buffer.codecDepth > 64) {
++                    throw new DecoderException("Too deep");
++                }
++                return codec.decode(buffer);
++            }
++
++            @Override
++            public void encode(B buffer, V value) {
++                codec.encode(buffer, value);
++            }
++        };
++    }
++    // Paper end - Track codec depth
++
+     static <B extends ByteBuf, V> StreamCodec<B, Optional<V>> optional(final StreamCodec<B, V> codec) {
+         return new StreamCodec<B, Optional<V>>() {
+             @Override

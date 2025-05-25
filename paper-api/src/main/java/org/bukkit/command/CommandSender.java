@@ -147,7 +147,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      * @param message MiniMessage content
      */
     default void sendRichMessage(final @NotNull String message) {
-        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message));
+        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message, this));
     }
 
     /**
@@ -160,7 +160,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      * @param resolvers resolvers to use
      */
     default void sendRichMessage(final @NotNull String message, final net.kyori.adventure.text.minimessage.tag.resolver.@NotNull TagResolver... resolvers) {
-        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message, resolvers));
+        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message, this, resolvers));
     }
 
     /**

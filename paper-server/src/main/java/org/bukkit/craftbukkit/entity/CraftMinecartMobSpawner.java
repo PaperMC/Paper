@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.SimpleWeightedRandomList;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.vehicle.MinecartSpawner;
 import net.minecraft.world.level.SpawnData;
 import org.bukkit.block.spawner.SpawnRule;
@@ -16,9 +16,15 @@ import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 
-final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
-    CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
+public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
+
+    public CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
         super(server, entity);
+    }
+
+    @Override
+    public MinecartSpawner getHandle() {
+        return (MinecartSpawner) this.entity;
     }
 
     @Override
@@ -35,7 +41,7 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     @Override
     public void setSpawnedType(EntityType entityType) {
         if (entityType == null) {
-            this.getHandle().getSpawner().spawnPotentials = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
+            this.getHandle().getSpawner().spawnPotentials = WeightedList.of(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
             this.getHandle().getSpawner().nextSpawnData = new SpawnData();
             return;
         }
@@ -163,17 +169,6 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     }
 
     @Override
-    public MinecartSpawner getHandle() {
-        return (MinecartSpawner) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecartMobSpawner";
-    }
-
-    // Paper start - more spawner API
-    @Override
     public net.minecraft.world.level.BaseSpawner getSpawner() {
         return this.getHandle().getSpawner();
     }
@@ -187,5 +182,4 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     public net.minecraft.core.BlockPos getInternalPosition() {
         return this.getHandle().blockPosition();
     }
-    // Paper end - more spawner API
 }

@@ -3,7 +3,6 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public enum Particle implements Keyed {
@@ -22,7 +21,7 @@ public enum Particle implements Keyed {
     EFFECT("effect"),
     INSTANT_EFFECT("instant_effect"),
     /**
-     * Uses {@link Color} as DataType
+     * Uses {@link Color} as DataType (with alpha support)
      */
     ENTITY_EFFECT("entity_effect", Color.class),
     WITCH("witch"),
@@ -117,16 +116,20 @@ public enum Particle implements Keyed {
     SONIC_BOOM("sonic_boom"),
     SCULK_SOUL("sculk_soul"),
     /**
-     * Use {@link Float} as DataType
+     * Uses {@link Float} as DataType
      */
     SCULK_CHARGE("sculk_charge", Float.class),
     SCULK_CHARGE_POP("sculk_charge_pop"),
     /**
-     * Use {@link Integer} as DataType
+     * Uses {@link Integer} as DataType
      */
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
+    /**
+     * Uses {@link Color} as DataType (with alpha support)
+     */
+    TINTED_LEAVES("tinted_leaves", Color.class),
     EGG_CRACK("egg_crack"),
     DUST_PLUME("dust_plume"),
     WHITE_SMOKE("white_smoke"),
@@ -146,12 +149,11 @@ public enum Particle implements Keyed {
     /**
      * Uses {@link BlockData} as DataType
      */
-    @ApiStatus.Experimental
     BLOCK_CRUMBLE("block_crumble", BlockData.class),
+    FIREFLY("firefly"),
     /**
      * Uses {@link Trail} as DataType
      */
-    @ApiStatus.Experimental
     TRAIL("trail", Trail.class),
     OMINOUS_SPAWNING("ominous_spawning"),
     RAID_OMEN("raid_omen"),
@@ -276,7 +278,6 @@ public enum Particle implements Keyed {
     /**
      * Options which can be applied to trail particles - a location, color and duration.
      */
-    @ApiStatus.Experimental
     public static class Trail {
 
         private final Location target;

@@ -11,6 +11,11 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
     }
 
     @Override
+    public ZombifiedPiglin getHandle() {
+        return (ZombifiedPiglin) this.entity;
+    }
+
+    @Override
     public int getAnger() {
         return this.getHandle().getRemainingPersistentAngerTime();
     }
@@ -28,16 +33,6 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
     @Override
     public boolean isAngry() {
         return this.getAnger() > 0;
-    }
-
-    @Override
-    public ZombifiedPiglin getHandle() {
-        return (ZombifiedPiglin) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPigZombie";
     }
 
     @Override

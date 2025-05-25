@@ -12,12 +12,7 @@ public class CraftSalmon extends io.papermc.paper.entity.PaperSchoolableFish imp
 
     @Override
     public net.minecraft.world.entity.animal.Salmon getHandle() {
-        return (net.minecraft.world.entity.animal.Salmon) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftSalmon";
+        return (net.minecraft.world.entity.animal.Salmon) this.entity;
     }
 
     @Override
@@ -27,7 +22,7 @@ public class CraftSalmon extends io.papermc.paper.entity.PaperSchoolableFish imp
 
     @Override
     public void setVariant(Variant variant) {
-        Preconditions.checkArgument(variant != null, "variant");
+        Preconditions.checkArgument(variant != null, "variant cannot be null");
 
         this.getHandle().setVariant(net.minecraft.world.entity.animal.Salmon.Variant.values()[variant.ordinal()]);
     }

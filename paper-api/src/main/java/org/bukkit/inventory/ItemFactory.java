@@ -210,12 +210,12 @@ public interface ItemFactory {
     @Deprecated(since = "1.19.3") // Paper
     ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
 
-    // Paper start - Adventure
     /**
      * Creates a hover event for the given item.
      *
      * @param item The item
      * @return A hover event
+     * @throws IllegalArgumentException if the {@link ItemStack#getAmount()} is not between 1 and 99
      */
     @NotNull
     net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
@@ -223,12 +223,13 @@ public interface ItemFactory {
     /**
      * Get the formatted display name of the {@link ItemStack}.
      *
+     * @apiNote this component include a {@link net.kyori.adventure.text.event.HoverEvent item hover event}.
+     * When used in chat, make sure to follow the ItemStack rules regarding amount, type, and other properties.
      * @param itemStack the {@link ItemStack}
      * @return display name of the {@link ItemStack}
      */
     @NotNull
     net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
-    // Paper end - Adventure
 
     // Paper start - add getI18NDisplayName
     /**
@@ -327,7 +328,7 @@ public interface ItemFactory {
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
@@ -336,7 +337,7 @@ public interface ItemFactory {
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, int levels, boolean allowTreasure, @NotNull java.util.Random random);
     // Paper end - enchantWithLevels API
     // Paper start - enchantWithLevels with tag specification
     /**
@@ -344,7 +345,7 @@ public interface ItemFactory {
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
@@ -353,6 +354,6 @@ public interface ItemFactory {
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
     // Paper end - enchantWithLevels with tag specification
 }

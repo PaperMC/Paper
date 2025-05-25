@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/entity/animal/SnowGolem.java
 +++ b/net/minecraft/world/entity/animal/SnowGolem.java
-@@ -92,7 +_,7 @@
+@@ -91,7 +_,7 @@
          super.aiStep();
          if (this.level() instanceof ServerLevel serverLevel) {
              if (this.level().getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
 -                this.hurtServer(serverLevel, this.damageSources().onFire(), 1.0F);
-+                this.hurtServer(serverLevel, this.damageSources().melting(), 1.0F); // CraftBukkit - DamageSources.ON_FIRE -> CraftEventFactory.MELTING
++                this.hurtServer(serverLevel, this.damageSources().onFire().knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.MELTING), 1.0F); // CraftBukkit
              }
  
              if (!serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-@@ -107,7 +_,7 @@
+@@ -106,7 +_,7 @@
                  int floor2 = Mth.floor(this.getZ() + (i / 2 % 2 * 2 - 1) * 0.25F);
                  BlockPos blockPos = new BlockPos(floor, floor1, floor2);
                  if (this.level().getBlockState(blockPos).isAir() && blockState.canSurvive(this.level(), blockPos)) {
 -                    this.level().setBlockAndUpdate(blockPos, blockState);
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, this)) continue; // CraftBukkit
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, 3, this)) continue; // CraftBukkit
                      this.level().gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(this, blockState));
                  }
              }
-@@ -135,7 +_,19 @@
+@@ -134,7 +_,19 @@
          ItemStack itemInHand = player.getItemInHand(hand);
          if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
              if (this.level() instanceof ServerLevel serverLevel) {
@@ -39,7 +39,7 @@
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemInHand.hurtAndBreak(1, player, getSlotForHand(hand));
              }
-@@ -148,11 +_,29 @@
+@@ -147,11 +_,29 @@
  
      @Override
      public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears) {

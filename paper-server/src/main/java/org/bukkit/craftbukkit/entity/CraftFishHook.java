@@ -2,12 +2,19 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
+
     private double biteChance = -1;
 
     public CraftFishHook(CraftServer server, FishingHook entity) {
@@ -17,11 +24,6 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public FishingHook getHandle() {
         return (FishingHook) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFishingHook";
     }
 
     @Override
@@ -196,7 +198,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public HookState getState() {
         return HookState.values()[this.getHandle().currentState.ordinal()];
     }
-    // Paper start - More FishHook API
+
     @Override
     public int getWaitTime() {
         return this.getHandle().timeUntilLured;
@@ -233,5 +235,18 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         hook.resetTimeUntilLured();
         hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
     }
-    // Paper end
+
+    @Override
+    public int retrieve(EquipmentSlot slot) {
+        Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
+        final FishingHook fishingHook = getHandle();
+        final Player playerOwner = fishingHook.getPlayerOwner();
+        Preconditions.checkState(playerOwner != null, "Player owner cannot be null");
+
+        final InteractionHand hand = CraftEquipmentSlot.getHand(slot);
+        final ItemStack itemInHand = playerOwner.getItemInHand(hand);
+        Preconditions.checkState(itemInHand.is(Items.FISHING_ROD), "Item in slot is not a FISHING_ROD");
+
+        return fishingHook.retrieve(itemInHand, hand);
+    }
 }

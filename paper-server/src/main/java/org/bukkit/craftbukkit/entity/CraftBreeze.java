@@ -22,9 +22,4 @@ public class CraftBreeze extends CraftMonster implements Breeze {
         net.minecraft.world.entity.LivingEntity entityLivingTarget = (target instanceof CraftLivingEntity craftLivingEntity) ? craftLivingEntity.getHandle() : null;
         this.getHandle().getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, entityLivingTarget); // SPIGOT-7957: We need override memory for set target and trigger attack behaviours
     }
-
-    @Override
-    public String toString() {
-        return "CraftBreeze";
-    }
 }

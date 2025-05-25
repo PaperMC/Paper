@@ -72,7 +72,7 @@ final class CraftServerTickManager implements ServerTickManager {
 
     @Override
     public boolean requestGameToSprint(final int ticks) {
-        return this.manager.requestGameToSprint(ticks);
+        return this.manager.requestGameToSprint(ticks, true);
     }
 
     @Override

@@ -77,7 +77,9 @@ public abstract class PaperDataComponentType<T, NMS> implements DataComponentTyp
         if (adapter == null) {
             throw new IllegalArgumentException("No adapter found for " + key);
         }
-        if (adapter.isValued()) {
+        if (adapter.isUnimplemented()) {
+            return new Unimplemented<>(key, type, adapter);
+        } else if (adapter.isValued()) {
             return new ValuedImpl<>(key, type, adapter);
         } else {
             return new NonValuedImpl<>(key, type, adapter);
@@ -98,6 +100,17 @@ public abstract class PaperDataComponentType<T, NMS> implements DataComponentTyp
     public static final class ValuedImpl<T, NMS> extends PaperDataComponentType<T, NMS> implements Valued<T> {
 
         ValuedImpl(
+            final NamespacedKey key,
+            final net.minecraft.core.component.DataComponentType<NMS> type,
+            final DataComponentAdapter<NMS, T> adapter
+        ) {
+            super(key, type, adapter);
+        }
+    }
+
+    public static final class Unimplemented<T, NMS> extends PaperDataComponentType<T, NMS> {
+
+        public Unimplemented(
             final NamespacedKey key,
             final net.minecraft.core.component.DataComponentType<NMS> type,
             final DataComponentAdapter<NMS, T> adapter
