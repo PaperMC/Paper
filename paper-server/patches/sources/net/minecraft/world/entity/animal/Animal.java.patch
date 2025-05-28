@@ -1,22 +1,14 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/animal/Animal.java b/net/minecraft/world/entity/animal/Animal.java
-index 9e699961d7937e4f52b22f54af9809445692c32e..b851f94d63a049292a3657009d68bc1641222104 100644
 --- a/net/minecraft/world/entity/animal/Animal.java
 +++ b/net/minecraft/world/entity/animal/Animal.java
-@@ -41,6 +41,7 @@ public abstract class Animal extends AgeableMob {
+@@ -42,6 +_,7 @@
      public int inLove = 0;
      @Nullable
-     public UUID loveCause;
+     public EntityReference<ServerPlayer> loveCause;
 +    public @Nullable ItemStack breedItem; // CraftBukkit - Add breedItem variable
  
      protected Animal(EntityType<? extends Animal> entityType, Level level) {
          super(entityType, level);
-@@ -80,9 +81,13 @@ public abstract class Animal extends AgeableMob {
+@@ -81,9 +_,13 @@
      }
  
      @Override
@@ -32,18 +24,18 @@ index 9e699961d7937e4f52b22f54af9809445692c32e..b851f94d63a049292a3657009d68bc16
      }
  
      @Override
-@@ -138,8 +143,9 @@ public abstract class Animal extends AgeableMob {
+@@ -139,8 +_,9 @@
          if (this.isFood(itemInHand)) {
              int age = this.getAge();
-             if (!this.level().isClientSide && age == 0 && this.canFallInLove()) {
+             if (player instanceof ServerPlayer serverPlayer && age == 0 && this.canFallInLove()) {
 +                final ItemStack breedCopy = itemInHand.copy(); // Paper - Fix EntityBreedEvent copying
                  this.usePlayerItem(player, hand, itemInHand);
--                this.setInLove(player);
-+                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+-                this.setInLove(serverPlayer);
++                this.setInLove(serverPlayer, breedCopy); // Paper - Fix EntityBreedEvent copying
                  this.playEatingSound();
                  return InteractionResult.SUCCESS_SERVER;
              }
-@@ -176,8 +182,23 @@ public abstract class Animal extends AgeableMob {
+@@ -177,8 +_,23 @@
          return this.inLove <= 0;
      }
  
@@ -65,10 +57,10 @@ index 9e699961d7937e4f52b22f54af9809445692c32e..b851f94d63a049292a3657009d68bc16
 +        }
 +        this.inLove = entityEnterLoveModeEvent.getTicksInLove();
 +        // CraftBukkit end
-         if (player != null) {
-             this.loveCause = player.getUUID();
+         if (player instanceof ServerPlayer serverPlayer) {
+             this.loveCause = new EntityReference<>(serverPlayer);
          }
-@@ -220,23 +241,45 @@ public abstract class Animal extends AgeableMob {
+@@ -216,23 +_,45 @@
          if (breedOffspring != null) {
              breedOffspring.setBaby(true);
              breedOffspring.snapTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);

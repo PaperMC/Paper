@@ -27,6 +27,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.AbstractGolem;
@@ -1490,10 +1491,28 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
     }
 
-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand hand, boolean dropLeash) {
+    public static boolean handlePlayerUnleashEntityEvent(Leashable leashable, net.minecraft.world.entity.player.@Nullable Player player, @Nullable InteractionHand hand, boolean dropLeash) {
+        if (!(leashable instanceof final Entity entity)) return true;
+        return handlePlayerUnleashEntityEvent(entity, player, hand, dropLeash);
+    }
+
+    public static boolean handlePlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.@Nullable Player player, @Nullable InteractionHand hand, boolean dropLeash) {
+        if (player == null || hand == null) return true;
+
         PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
-        return event;
+        if (event.isCancelled()) return false;
+
+        if (entity instanceof final Leashable leashable) {
+            if (event.isDropLeash()) leashable.dropLeash();
+            else leashable.removeLeash();
+        }
+        return true;
+    }
+
+    public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Leashable leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!(leashed instanceof final Entity leashedEntity) || !(leashHolder instanceof final Entity leasheHolderEntity)) return null;
+        return callPlayerLeashEntityEvent(leashedEntity, leasheHolderEntity, player, hand);
     }
 
     public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(Entity entity, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {

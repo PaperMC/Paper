@@ -1,23 +1,15 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/animal/Fox.java b/net/minecraft/world/entity/animal/Fox.java
-index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e59babb46 100644
 --- a/net/minecraft/world/entity/animal/Fox.java
 +++ b/net/minecraft/world/entity/animal/Fox.java
-@@ -429,7 +429,7 @@ public class Fox extends Animal {
-         compound.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
-         this.setSleeping(compound.getBooleanOr("Sleeping", false));
-         this.setVariant(compound.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
--        this.setSitting(compound.getBooleanOr("Sitting", false));
-+        this.setSitting(compound.getBooleanOr("Sitting", false), false); // Paper - Add EntityToggleSitEvent
-         this.setIsCrouching(compound.getBooleanOr("Crouching", false));
+@@ -430,7 +_,7 @@
+         input.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
+         this.setSleeping(input.getBooleanOr("Sleeping", false));
+         this.setVariant(input.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
+-        this.setSitting(input.getBooleanOr("Sitting", false));
++        this.setSitting(input.getBooleanOr("Sitting", false), false); // Paper - Add EntityToggleSitEvent
+         this.setIsCrouching(input.getBooleanOr("Crouching", false));
          if (this.level() instanceof ServerLevel) {
              this.setTargetGoals();
-@@ -446,6 +446,12 @@ public class Fox extends Animal {
+@@ -447,6 +_,12 @@
      }
  
      public void setSitting(boolean sitting) {
@@ -30,7 +22,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
          this.setFlag(1, sitting);
      }
  
-@@ -505,19 +511,20 @@ public class Fox extends Animal {
+@@ -506,19 +_,20 @@
              itemEntity.setPickUpDelay(40);
              itemEntity.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
@@ -54,7 +46,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
              int count = item.getCount();
              if (count > 1) {
                  this.dropItemStack(item.split(count - 1));
-@@ -528,7 +535,7 @@ public class Fox extends Animal {
+@@ -529,7 +_,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, item.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(entity, item.getCount());
@@ -63,7 +55,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
              this.ticksSinceEaten = 0;
          }
      }
-@@ -623,12 +630,12 @@ public class Fox extends Animal {
+@@ -620,12 +_,12 @@
      }
  
      @Override
@@ -78,10 +70,12 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
      }
  
      void wakeUp() {
-@@ -692,15 +699,33 @@ public class Fox extends Animal {
+@@ -689,15 +_,33 @@
          return this.getTrustedEntities().anyMatch(entityReference -> entityReference.matches(entity));
      }
  
+-    @Override
+-    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +    // Paper start - handle the bitten item separately like vanilla
 +    @Override
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) {
@@ -89,8 +83,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
 +    }
 +    // Paper end
 +
-     @Override
--    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
++    @Override
 +    // Paper start - Cancellable death event
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
          ItemStack itemBySlot = this.getItemBySlot(EquipmentSlot.MAINHAND);
@@ -115,7 +108,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
-@@ -876,6 +901,19 @@ public class Fox extends Animal {
+@@ -873,6 +_,19 @@
                      fox.addTrustedEntity(loveCause1);
                  }
  
@@ -135,7 +128,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
                  if (serverPlayer != null) {
                      serverPlayer.awardStat(Stats.ANIMALS_BRED);
                      CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this.animal, this.partner, fox);
-@@ -885,14 +923,12 @@ public class Fox extends Animal {
+@@ -882,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -153,7 +146,7 @@ index 6174f2ca3d289c11ab2d6103632fc77c36c2d005..5c7572b75afcfa9965fcda5965f6ae2e
                          );
                  }
              }
-@@ -956,6 +992,7 @@ public class Fox extends Animal {
+@@ -953,6 +_,7 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);
              state.setValue(SweetBerryBushBlock.AGE, 1);

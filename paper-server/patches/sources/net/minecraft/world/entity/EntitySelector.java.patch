@@ -1,16 +1,8 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/EntitySelector.java b/net/minecraft/world/entity/EntitySelector.java
-index 68da3831bb0a7aac59607e913e3a3e8ec9c3c64f..bfd58eb04eee606ac0a8071de9bf75f46c35decb 100644
 --- a/net/minecraft/world/entity/EntitySelector.java
 +++ b/net/minecraft/world/entity/EntitySelector.java
-@@ -17,6 +17,22 @@ public final class EntitySelector {
+@@ -17,6 +_,22 @@
      public static final Predicate<Entity> NO_SPECTATORS = entity -> !entity.isSpectator();
-     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = NO_SPECTATORS.and(Entity::canBeCollidedWith);
+     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = NO_SPECTATORS.and(entity -> entity.canBeCollidedWith(null));
      public static final Predicate<Entity> CAN_BE_PICKED = NO_SPECTATORS.and(Entity::isPickable);
 +    // Paper start - Ability to control player's insomnia and phantoms
 +    public static Predicate<Player> IS_INSOMNIAC = (player) -> {
@@ -31,7 +23,7 @@ index 68da3831bb0a7aac59607e913e3a3e8ec9c3c64f..bfd58eb04eee606ac0a8071de9bf75f4
  
      private EntitySelector() {
      }
-@@ -27,18 +43,24 @@ public final class EntitySelector {
+@@ -27,18 +_,24 @@
      }
  
      public static Predicate<Entity> pushableBy(Entity entity) {
@@ -46,12 +38,13 @@ index 68da3831bb0a7aac59607e913e3a3e8ec9c3c64f..bfd58eb04eee606ac0a8071de9bf75f4
          return (Predicate<Entity>)(collisionRule == Team.CollisionRule.NEVER
              ? Predicates.alwaysFalse()
              : NO_SPECTATORS.and(
-                 pushedEntity -> {
--                    if (!pushedEntity.isPushable()) {
+-                entity1 -> {
+-                    if (!entity1.isPushable()) {
++                entity1 -> { final Entity pushedEntity = entity1; // Paper - OBFHELPER
 +                    if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
                          return false;
-                     } else if (!entity.level().isClientSide || pushedEntity instanceof Player player && player.isLocalPlayer()) {
-                         Team team1 = pushedEntity.getTeam();
+                     } else if (!entity.level().isClientSide || entity1 instanceof Player player && player.isLocalPlayer()) {
+                         Team team1 = entity1.getTeam();
                          Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
 -                        if (collisionRule1 == Team.CollisionRule.NEVER) {
 +                        if (collisionRule1 == Team.CollisionRule.NEVER || (pushedEntity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions)) { // Paper - Configurable player collision
