@@ -2,6 +2,7 @@ package io.papermc.paper.pluginremap;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.util.Hashing;
@@ -70,8 +71,8 @@ class RemappedPluginIndex {
         final State state;
         try (final BufferedReader reader = Files.newBufferedReader(this.indexFile)) {
             state = GSON.fromJson(reader, State.class);
-        } catch (final IOException | JsonSyntaxException ex) {
-            throw new UncheckedIOException("Failed to read index file '" + this.indexFile + "'", ex);
+        } catch (final Exception ex) {
+            throw new RuntimeException("Failed to read index file '" + this.indexFile + "'", ex);
         }
 
         // If mappings have changed, delete all cached files and create a new index
