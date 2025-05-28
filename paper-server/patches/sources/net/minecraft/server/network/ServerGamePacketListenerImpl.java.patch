@@ -1485,7 +1485,7 @@
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parseResults)) {
              LOGGER.error(
-@@ -1416,13 +_,24 @@
+@@ -1416,13 +_,21 @@
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
              this.tryHandleChat(packet.command(), () -> {
@@ -1503,22 +1503,24 @@
 +        if (org.spigotmc.SpigotConfig.logCommands) {
 +            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), slashCommand);
 +        }
-+
-+        final org.bukkit.event.player.PlayerCommandPreprocessEvent event = new org.bukkit.event.player.PlayerCommandPreprocessEvent(this.getCraftPlayer(), slashCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
-+        event.callEvent();
 +        // Paper end
 +
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(packet.command());
  
          Map<String, PlayerChatMessage> map;
-@@ -1433,11 +_,25 @@
+@@ -1433,11 +_,30 @@
              return;
          }
  
 +        // Paper start
 +        // Parsing commands to be on main :cryingandshaking: - if that weren't the case, both this and chat could be pushed off to the chat message chain immediately
-+        // Always decode message arguments before cancelling
-+        if (event.isCancelled() || this.player.isRemoved()) {
++        // Always decode message arguments before cancelling, else the chat chain will be broken
++        if (this.player.isRemoved()) {
++            return;
++        }
++
++        final org.bukkit.event.player.PlayerCommandPreprocessEvent event = new org.bukkit.event.player.PlayerCommandPreprocessEvent(this.getCraftPlayer(), slashCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
++        if (!event.callEvent()) {
 +            return;
 +        }
 +
