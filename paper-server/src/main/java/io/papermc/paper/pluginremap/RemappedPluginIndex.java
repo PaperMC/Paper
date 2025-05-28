@@ -2,8 +2,6 @@ package io.papermc.paper.pluginremap;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.util.Hashing;
 import io.papermc.paper.util.MappingEnvironment;
@@ -55,7 +53,7 @@ class RemappedPluginIndex {
             try {
                 Files.createDirectories(this.dir);
             } catch (final IOException ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedIOException(ex);
             }
         }
 
