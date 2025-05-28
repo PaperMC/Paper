@@ -10,15 +10,12 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds various types of lifecycle events for
  * use when creating event handler configurations
  * in {@link LifecycleEventManager}.
  */
-@ApiStatus.Experimental
-@NullMarked
 public final class LifecycleEvents {
 
     /**

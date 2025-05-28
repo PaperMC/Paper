@@ -27,6 +27,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.AbstractGolem;
@@ -881,7 +882,7 @@ public class CraftEventFactory {
     public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean showDeathMessages, boolean keepInventory) {
         CraftPlayer entity = victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(victim.serverLevel(), damageSource.getEntity()), 0, deathMessage, showDeathMessages);
+        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(victim.level(), damageSource.getEntity()), 0, deathMessage, showDeathMessages);
         event.setKeepInventory(keepInventory);
         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
         populateFields(victim, event); // Paper - make cancellable
@@ -1490,10 +1491,56 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
     }
 
-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand hand, boolean dropLeash) {
+    public static boolean handlePlayerUnleashEntityEvent(
+        final Leashable leashable,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final @Nullable InteractionHand hand,
+        final boolean dropLeash,
+        final boolean resendState
+    ) {
+        if (!(leashable instanceof final Entity entity)) return true;
+        return handlePlayerUnleashEntityEvent(entity, player, hand, dropLeash, resendState);
+    }
+
+    public static boolean handlePlayerUnleashEntityEvent(
+        final Entity entity,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final @Nullable InteractionHand hand,
+        final boolean dropLeash,
+        final boolean resendState
+    ) {
+        if (player == null || hand == null) {
+            if (entity instanceof final Leashable leashable) {
+                if (dropLeash) leashable.dropLeash();
+                else leashable.removeLeash();
+            }
+            return true;
+        }
+
         PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
-        return event;
+        if (event.isCancelled()) {
+            if (resendState && entity instanceof final Leashable leashable) {
+                ((ServerPlayer) player).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(entity, leashable.getLeashHolder()));
+            }
+            return false;
+        }
+
+        if (entity instanceof final Leashable leashable) {
+            if (event.isDropLeash()) leashable.dropLeash();
+            else leashable.removeLeash();
+        }
+        return true;
+    }
+
+    public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!(leashed instanceof final Entity leashedEntity)) return false;
+        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+    }
+
+    public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!(leashed instanceof final Entity leashedEntity)) return null;
+        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand);
     }
 
     public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(Entity entity, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {

@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item.blocksattacks;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import net.minecraft.core.HolderSet;
@@ -9,7 +10,7 @@ import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.Positive;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 
 public record PaperDamageReduction(
@@ -44,19 +45,19 @@ public record PaperDamageReduction(
     static final class BuilderImpl implements Builder {
 
         private Optional<HolderSet<net.minecraft.world.damagesource.DamageType>> type = Optional.empty();
-        private float horizontalBlockingAngle = 90f;
-        private float base = 0;
-        private float factor = 0;
+        private float horizontalBlockingAngle = 90.0F;
+        private float base = 0.0F;
+        private float factor = 1.0F;
 
         @Override
         public Builder type(final @Nullable RegistryKeySet<DamageType> type) {
             this.type = Optional.ofNullable(type)
-                .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, net.minecraft.server.MinecraftServer.getServer().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE).lookupProvider, set));
+                .map((set) -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), set));
             return this;
         }
 
         @Override
-        public Builder horizontalBlockingAngle(@Positive final float horizontalBlockingAngle) {
+        public Builder horizontalBlockingAngle(final @Positive float horizontalBlockingAngle) {
             Preconditions.checkArgument(horizontalBlockingAngle > 0, "horizontalBlockingAngle must be positive and not zero, was %s", horizontalBlockingAngle);
             this.horizontalBlockingAngle = horizontalBlockingAngle;
             return this;

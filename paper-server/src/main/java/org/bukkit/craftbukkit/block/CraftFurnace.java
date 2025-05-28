@@ -46,8 +46,8 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     @Override
     public void setBurnTime(short burnTime) {
         this.getSnapshot().litTimeRemaining = burnTime;
-        // SPIGOT-844: Allow lighting and relighting using this API
-        this.data = this.data.setValue(AbstractFurnaceBlock.LIT, burnTime > 0);
+        this.data = this.data.trySetValue(AbstractFurnaceBlock.LIT, burnTime > 0);
+        // only try, block data might have changed to something different that would not allow this property
     }
 
     @Override

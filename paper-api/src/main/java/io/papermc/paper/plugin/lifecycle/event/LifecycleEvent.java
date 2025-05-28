@@ -11,7 +11,6 @@ import org.jetbrains.annotations.ApiStatus;
  * server initialization.
  * @see LifecycleEvents
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface LifecycleEvent {
 }

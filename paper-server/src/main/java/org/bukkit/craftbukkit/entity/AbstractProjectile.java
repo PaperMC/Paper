@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Projectile;
 
@@ -76,7 +79,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     @Override
     public java.util.UUID getOwnerUniqueId() {
-        return this.getHandle().ownerUUID;
+        return Optionull.map(this.getHandle().owner, EntityReference::getUUID);
     }
     // Paper end - More projectile API
 }

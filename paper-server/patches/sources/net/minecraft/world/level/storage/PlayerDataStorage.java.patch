@@ -1,19 +1,19 @@
 --- a/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
-@@ -31,6 +_,7 @@
+@@ -32,6 +_,7 @@
      }
  
      public void save(Player player) {
 +        if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
-         try {
-             CompoundTag compoundTag = player.saveWithoutId(new CompoundTag());
-             Path path = this.playerDir.toPath();
-@@ -40,30 +_,46 @@
+         try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
+             TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, player.registryAccess());
+             player.saveWithoutId(tagValueOutput);
+@@ -43,30 +_,46 @@
              Path path3 = path.resolve(player.getStringUUID() + ".dat_old");
              Util.safeReplaceFile(path2, path1, path3);
-         } catch (Exception var7) {
+         } catch (Exception var11) {
 -            LOGGER.warn("Failed to save player data for {}", player.getName().getString());
-+            LOGGER.warn("Failed to save player data for {}", player.getScoreboardName(), var7); // Paper - Print exception
++            LOGGER.warn("Failed to save player data for {}", player.getScoreboardName(), var11); // Paper - Print exception
          }
      }
  
@@ -64,13 +64,13 @@
              }
          }
  
-@@ -71,16 +_,40 @@
+@@ -74,17 +_,40 @@
      }
  
-     public Optional<CompoundTag> load(Player player) {
+     public Optional<ValueInput> load(Player player, ProblemReporter problemReporter) {
 -        Optional<CompoundTag> optional = this.load(player, ".dat");
 +        // CraftBukkit start
-+        return this.load(player.getName().getString(), player.getStringUUID()).map((tag) -> {
++        return this.load(player.getName().getString(), player.getStringUUID(), problemReporter).map((tag) -> {
 +            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
 +                org.bukkit.craftbukkit.entity.CraftPlayer craftPlayer = serverPlayer.getBukkitEntity();
 +                // Only update first played if it is older than the one we have
@@ -80,12 +80,13 @@
 +                }
 +            }
 +
-+            player.load(tag); // From below
-+            return tag;
++            ValueInput valueInput = TagValueInput.create(problemReporter, player.registryAccess(), tag);
++            player.load(valueInput); // From below
++            return valueInput;
 +        });
 +    }
 +
-+    public Optional<CompoundTag> load(String name, String uuid) {
++    public Optional<CompoundTag> load(String name, String uuid, ProblemReporter problemReporter) {
 +        // CraftBukkit end
 +        Optional<CompoundTag> optional = this.load(name, uuid, ".dat"); // CraftBukkit
          if (optional.isEmpty()) {
@@ -97,9 +98,10 @@
 +        return optional.or(() -> this.load(name, uuid, ".dat_old")).map(compoundTag -> { // CraftBukkit
              int dataVersion = NbtUtils.getDataVersion(compoundTag, -1);
              compoundTag = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, compoundTag, dataVersion);
--            player.load(compoundTag);
-+            // player.load(compoundTag); // CraftBukkit - handled above
-             return compoundTag;
+-            ValueInput valueInput = TagValueInput.create(problemReporter, player.registryAccess(), compoundTag);
+-            player.load(valueInput);
+-            return valueInput;
++            return compoundTag; // CraftBukkit - handled above
          });
      }
 +

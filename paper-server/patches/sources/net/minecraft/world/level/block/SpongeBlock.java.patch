@@ -10,7 +10,7 @@
                  pos,
                  6,
                  65,
-@@ -63,8 +_,10 @@
+@@ -63,16 +_,18 @@
                      if (blockPos.equals(pos)) {
                          return BlockPos.TraversalNodeStatus.ACCEPT;
                      } else {
@@ -23,7 +23,8 @@
                          if (!fluidState.is(FluidTags.WATER)) {
                              return BlockPos.TraversalNodeStatus.SKIP;
                          } else if (blockState.getBlock() instanceof BucketPickup bucketPickup
-@@ -72,7 +_,7 @@
+-                            && !bucketPickup.pickupBlock(null, level, blockPos, blockState).isEmpty()) {
++                            && !bucketPickup.pickupBlock(null, blockList, blockPos, blockState).isEmpty()) { // CraftBukkit
                              return BlockPos.TraversalNodeStatus.ACCEPT;
                          } else {
                              if (blockState.getBlock() instanceof LiquidBlock) {
@@ -32,7 +33,7 @@
                              } else {
                                  if (!blockState.is(Blocks.KELP)
                                      && !blockState.is(Blocks.KELP_PLANT)
-@@ -81,16 +_,55 @@
+@@ -81,16 +_,49 @@
                                      return BlockPos.TraversalNodeStatus.SKIP;
                                  }
  
@@ -42,7 +43,6 @@
 +                                // CraftBukkit start
 +                                // BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(blockPos) : null;
 +                                // dropResources(blockState, level, blockPos, blockEntity);
-+                                // level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 3);
 +                                blockList.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 3);
 +                                // CraftBukkit end
                              }
@@ -66,22 +66,17 @@
 +
 +            for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : snapshots) {
 +                BlockPos blockPos = snapshot.getPosition();
-+                BlockState state = level.getBlockState(blockPos);
-+                FluidState fluid = level.getFluidState(blockPos);
++                BlockState blockState = level.getBlockState(blockPos);
++                FluidState fluidState = level.getFluidState(blockPos);
 +
-+                if (fluid.is(FluidTags.WATER)) {
-+                    if (state.getBlock() instanceof BucketPickup bucketPickup && !bucketPickup.pickupBlock(null, blockList, blockPos, state).isEmpty()) {
-+                        // NOP
-+                    } else if (state.getBlock() instanceof LiquidBlock) {
-+                        // NOP
-+                    } else if (state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT) || state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS)) {
-+                        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(blockPos) : null;
++                if (!fluidState.is(FluidTags.WATER)) {
++                } else if (blockState.getBlock() instanceof BucketPickup bucketPickup && !bucketPickup.pickupBlock(null, level, blockPos, blockState).isEmpty()) {
++                } else if (blockState.getBlock() instanceof LiquidBlock) {
++                } else if (blockState.is(Blocks.KELP) || blockState.is(Blocks.KELP_PLANT) || blockState.is(Blocks.SEAGRASS) || blockState.is(Blocks.TALL_SEAGRASS)) {
++                    BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(blockPos) : null;
 +
-+                        // Paper start - Fix SpongeAbsortEvent handling
-+                        if (snapshot.getHandle().isAir()) {
-+                        dropResources(state, level, blockPos, blockEntity);
-+                        }
-+                        // Paper end - Fix SpongeAbsortEvent handling
++                    if (snapshot.getHandle().isAir()) {
++                        dropResources(blockState, level, blockPos, blockEntity);
 +                    }
 +                }
 +                snapshot.place(snapshot.getFlags());

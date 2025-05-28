@@ -137,6 +137,10 @@ public class LegacyTest {
             Material.RESIN_BRICK, Material.POTTED_OPEN_EYEBLOSSOM, Material.POTTED_CLOSED_EYEBLOSSOM,
             // 1.21.5
             Material.WILDFLOWERS, Material.LEAF_LITTER, Material.TEST_BLOCK, Material.TEST_INSTANCE_BLOCK, Material.BUSH, Material.FIREFLY_BUSH, Material.SHORT_DRY_GRASS, Material.TALL_DRY_GRASS, Material.CACTUS_FLOWER, Material.BLUE_EGG, Material.BROWN_EGG,
+            // 1.21.6
+            Material.BLACK_HARNESS, Material.BLUE_HARNESS, Material.BROWN_HARNESS, Material.CYAN_HARNESS, Material.DRIED_GHAST, Material.GRAY_HARNESS, Material.GREEN_HARNESS, Material.HAPPY_GHAST_SPAWN_EGG, Material.LIGHT_BLUE_HARNESS, Material.LIGHT_GRAY_HARNESS,
+            Material.LIME_HARNESS, Material.MAGENTA_HARNESS, Material.ORANGE_HARNESS, Material.PINK_HARNESS, Material.PURPLE_HARNESS, Material.RED_HARNESS, Material.WHITE_HARNESS, Material.YELLOW_HARNESS,
+            Material.MUSIC_DISC_TEARS,
             //
             Material.LEGACY_AIR, Material.LEGACY_DEAD_BUSH, Material.LEGACY_BURNING_FURNACE, Material.LEGACY_WALL_SIGN, Material.LEGACY_REDSTONE_TORCH_OFF, Material.LEGACY_SKULL, Material.LEGACY_REDSTONE_COMPARATOR_ON, Material.LEGACY_WALL_BANNER, Material.LEGACY_MONSTER_EGG));
 

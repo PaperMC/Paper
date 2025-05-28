@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -69,6 +_,7 @@
+@@ -72,6 +_,7 @@
      public CompoundTag blockData;
      public boolean forceTickAfterTeleportToDuplicate;
      protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
@@ -8,7 +8,7 @@
  
      public FallingBlockEntity(EntityType<? extends FallingBlockEntity> entityType, Level level) {
          super(entityType, level);
-@@ -94,6 +_,7 @@
+@@ -97,6 +_,7 @@
              pos.getZ() + 0.5,
              blockState.hasProperty(BlockStateProperties.WATERLOGGED) ? blockState.setValue(BlockStateProperties.WATERLOGGED, false) : blockState
          );
@@ -16,7 +16,7 @@
          level.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3);
          level.addFreshEntity(fallingBlockEntity);
          return fallingBlockEntity;
-@@ -144,13 +_,22 @@
+@@ -147,13 +_,22 @@
      @Override
      public void tick() {
          if (this.blockState.isAir()) {
@@ -40,7 +40,7 @@
              this.handlePortal();
              if (this.level() instanceof ServerLevel serverLevel && (this.isAlive() || this.forceTickAfterTeleportToDuplicate)) {
                  BlockPos blockPos = this.blockPosition();
-@@ -171,12 +_,12 @@
+@@ -174,12 +_,12 @@
                  }
  
                  if (!this.onGround() && !flag1) {
@@ -55,7 +55,7 @@
                      }
                  } else {
                      BlockState blockState = this.level().getBlockState(blockPos);
-@@ -194,12 +_,18 @@
+@@ -197,12 +_,18 @@
                                      this.blockState = this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
                                  }
  
@@ -75,7 +75,7 @@
                                      if (block instanceof Fallable) {
                                          ((Fallable)block).onLand(this.level(), blockPos, this.blockState, blockState, this);
                                      }
-@@ -220,19 +_,19 @@
+@@ -227,19 +_,19 @@
                                          }
                                      }
                                  } else if (this.dropItem && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
@@ -98,26 +98,26 @@
                              this.callOnBrokenAfterFall(block, blockPos);
                          }
                      }
-@@ -293,6 +_,7 @@
+@@ -299,6 +_,7 @@
          }
  
-         compound.putBoolean("CancelDrop", this.cancelDrop);
-+        if (!this.autoExpire) compound.putBoolean("Paper.AutoExpire", false); // Paper - Expand FallingBlock API
+         output.putBoolean("CancelDrop", this.cancelDrop);
++        if (!this.autoExpire) output.putBoolean("Paper.AutoExpire", false); // Paper - Expand FallingBlock API
      }
  
      @Override
-@@ -305,8 +_,9 @@
-         this.fallDamagePerDistance = compound.getFloatOr("FallHurtAmount", 0.0F);
-         this.fallDamageMax = compound.getIntOr("FallHurtMax", 40);
-         this.dropItem = compound.getBooleanOr("DropItem", true);
--        this.blockData = compound.getCompound("TileEntityData").map(CompoundTag::copy).orElse(null);
-+        this.blockData = compound.getCompound("TileEntityData").map(blockData -> this.level().paperConfig().entities.spawning.filterBadTileEntityNbtFromFallingBlocks && this.blockState.getBlock() instanceof net.minecraft.world.level.block.GameMasterBlock ? null : blockData).map(CompoundTag::copy).orElse(null); // Paper - Filter bad block entity nbt data from falling blocks
-         this.cancelDrop = compound.getBooleanOr("CancelDrop", false);
-+        this.autoExpire = compound.getBooleanOr("Paper.AutoExpire", true); // Paper - Expand FallingBlock API
+@@ -310,8 +_,9 @@
+         this.fallDamagePerDistance = input.getFloatOr("FallHurtAmount", 0.0F);
+         this.fallDamageMax = input.getIntOr("FallHurtMax", 40);
+         this.dropItem = input.getBooleanOr("DropItem", true);
+-        this.blockData = input.read("TileEntityData", CompoundTag.CODEC).orElse(null);
++        this.blockData = input.read("TileEntityData", CompoundTag.CODEC).map(blockData -> this.level().paperConfig().entities.spawning.filterBadTileEntityNbtFromFallingBlocks && this.blockState.getBlock() instanceof net.minecraft.world.level.block.GameMasterBlock ? null : blockData).map(CompoundTag::copy).orElse(null); // Paper - Filter bad block entity nbt data from falling blocks
+         this.cancelDrop = input.getBooleanOr("CancelDrop", false);
++        this.autoExpire = input.getBooleanOr("Paper.AutoExpire", true); // Paper - Expand FallingBlock API
      }
  
      public void setHurtsEntities(float fallDamagePerDistance, int fallDamageMax) {
-@@ -363,7 +_,7 @@
+@@ -368,7 +_,7 @@
          ResourceKey<Level> resourceKey1 = this.level().dimension();
          boolean flag = (resourceKey1 == Level.END || resourceKey == Level.END) && resourceKey1 != resourceKey;
          Entity entity = super.teleport(teleportTransition);

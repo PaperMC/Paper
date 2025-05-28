@@ -20,12 +20,12 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
 
     @Override
     public ItemStack getSaddle() {
-        return this.getItem(HorseInventoryMenu.SLOT_SADDLE); // Paper
+        return this.getItem(HorseInventoryMenu.SLOT_SADDLE);
     }
 
     @Override
     public void setSaddle(ItemStack stack) {
-        this.setItem(HorseInventoryMenu.SLOT_SADDLE, stack); // Paper
+        this.setItem(HorseInventoryMenu.SLOT_SADDLE, stack);
     }
 
     public Container getMainInventory() {
@@ -88,14 +88,17 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
 
     @Override
     public ItemStack getItem(final int index) {
-        if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
-            final net.minecraft.world.item.ItemStack item = this.getArmorInventory().getItem(0);
-            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
-        } else if (index == HorseInventoryMenu.SLOT_SADDLE) {
+        if (index == HorseInventoryMenu.SLOT_SADDLE) {
             final net.minecraft.world.item.ItemStack item = this.getSaddleInventory().getItem(0);
+            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+        } else if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
+            final net.minecraft.world.item.ItemStack item = this.getArmorInventory().getItem(0);
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
             int shiftedIndex = index;
+            if (index > HorseInventoryMenu.SLOT_SADDLE) {
+                shiftedIndex--;
+            }
             if (index > HorseInventoryMenu.SLOT_BODY_ARMOR) {
                 shiftedIndex--;
             }
@@ -107,16 +110,16 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
 
     @Override
     public void setItem(final int index, final ItemStack item) {
-        if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
-            this.getArmorInventory().setItem(0, CraftItemStack.asNMSCopy(item));
-        } else if (index == HorseInventoryMenu.SLOT_SADDLE) {
+        if (index == HorseInventoryMenu.SLOT_SADDLE) {
             this.getSaddleInventory().setItem(0, CraftItemStack.asNMSCopy(item));
+        } else if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
+            this.getArmorInventory().setItem(0, CraftItemStack.asNMSCopy(item));
         } else {
             int shiftedIndex = index;
-            if (index > HorseInventoryMenu.SLOT_BODY_ARMOR) {
+            if (index > HorseInventoryMenu.SLOT_SADDLE) {
                 shiftedIndex--;
             }
-            if (index > HorseInventoryMenu.SLOT_SADDLE) {
+            if (index > HorseInventoryMenu.SLOT_BODY_ARMOR) {
                 shiftedIndex--;
             }
             this.getMainInventory().setItem(shiftedIndex, CraftItemStack.asNMSCopy(item));

@@ -1,10 +1,16 @@
 package org.bukkit;
 
+import net.kyori.adventure.sound.Sound;
+import org.jspecify.annotations.NullMarked;
+
 /**
  * An Enum of categories for sounds.
  */
-public enum SoundCategory implements net.kyori.adventure.sound.Sound.Source.Provider { // Paper - implement Sound.Source.Provider
+@NullMarked
+public enum SoundCategory implements Sound.Source.Provider {
 
+    // Start generate - SoundCategory
+    // @GeneratedFrom 1.21.6-rc1
     MASTER,
     MUSIC,
     RECORDS,
@@ -14,23 +20,24 @@ public enum SoundCategory implements net.kyori.adventure.sound.Sound.Source.Prov
     NEUTRAL,
     PLAYERS,
     AMBIENT,
-    VOICE;
+    VOICE,
+    UI;
+    // End generate - SoundCategory
 
-    // Paper start - implement Sound.Source.Provider
     @Override
-    public net.kyori.adventure.sound.Sound.@org.jetbrains.annotations.NotNull Source soundSource() {
+    public Sound.Source soundSource() {
         return switch (this) {
-            case MASTER -> net.kyori.adventure.sound.Sound.Source.MASTER;
-            case MUSIC -> net.kyori.adventure.sound.Sound.Source.MUSIC;
-            case RECORDS -> net.kyori.adventure.sound.Sound.Source.RECORD;
-            case WEATHER -> net.kyori.adventure.sound.Sound.Source.WEATHER;
-            case BLOCKS -> net.kyori.adventure.sound.Sound.Source.BLOCK;
-            case HOSTILE -> net.kyori.adventure.sound.Sound.Source.HOSTILE;
-            case NEUTRAL -> net.kyori.adventure.sound.Sound.Source.NEUTRAL;
-            case PLAYERS -> net.kyori.adventure.sound.Sound.Source.PLAYER;
-            case AMBIENT -> net.kyori.adventure.sound.Sound.Source.AMBIENT;
-            case VOICE -> net.kyori.adventure.sound.Sound.Source.VOICE;
+            case MASTER -> Sound.Source.MASTER;
+            case MUSIC -> Sound.Source.MUSIC;
+            case RECORDS -> Sound.Source.RECORD;
+            case WEATHER -> Sound.Source.WEATHER;
+            case BLOCKS -> Sound.Source.BLOCK;
+            case HOSTILE -> Sound.Source.HOSTILE;
+            case NEUTRAL -> Sound.Source.NEUTRAL;
+            case PLAYERS -> Sound.Source.PLAYER;
+            case AMBIENT -> Sound.Source.AMBIENT;
+            case VOICE -> Sound.Source.VOICE;
+            case UI -> throw new UnsupportedOperationException("Waiting on adventure release for the UI sound source"); // todo adventure
         };
     }
-    // Paper end
 }

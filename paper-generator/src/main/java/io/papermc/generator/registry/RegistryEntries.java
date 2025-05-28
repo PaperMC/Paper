@@ -11,7 +11,11 @@ import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
+import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
+import io.papermc.paper.registry.data.PigVariantRegistryEntry;
+import io.papermc.paper.registry.data.SoundEventRegistryEntry;
+import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -24,8 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import io.papermc.paper.registry.data.PigVariantRegistryEntry;
-import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -146,7 +148,7 @@ public final class RegistryEntries {
     );
 
     public static final List<RegistryEntry<?>> BUILT_IN = List.of(
-        entry(Registries.GAME_EVENT, net.minecraft.world.level.gameevent.GameEvent.class, GameEvent.class).apiRegistryBuilder(GameEventRegistryEntry.Builder.class, "PaperGameEventRegistryEntry.PaperBuilder"),
+        entry(Registries.GAME_EVENT, net.minecraft.world.level.gameevent.GameEvent.class, GameEvent.class).writableApiRegistryBuilder(GameEventRegistryEntry.Builder.class, "PaperGameEventRegistryEntry.PaperBuilder"),
         entry(Registries.STRUCTURE_TYPE, net.minecraft.world.level.levelgen.structure.StructureType.class, StructureType.class),
         entry(Registries.MOB_EFFECT, MobEffects.class, PotionEffectType.class),
         entry(Registries.BLOCK, Blocks.class, BlockType.class),
@@ -157,7 +159,7 @@ public final class RegistryEntries {
         entry(Registries.MENU, net.minecraft.world.inventory.MenuType.class, MenuType.class),
         entry(Registries.ATTRIBUTE, Attributes.class, Attribute.class).serializationUpdater("ATTRIBUTE_RENAME"),
         entry(Registries.FLUID, Fluids.class, Fluid.class),
-        entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS"),
+        entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of")
     );
 
@@ -166,19 +168,19 @@ public final class RegistryEntries {
         entry(Registries.STRUCTURE, BuiltinStructures.class, Structure.class).delayed(),
         entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).allowDirect().delayed(),
         entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).allowDirect().delayed(),
-        entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).apiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").delayed(),
-        entry(Registries.WOLF_VARIANT, WolfVariants.class, Wolf.Variant.class).apiRegistryBuilder(WolfVariantRegistryEntry.Builder.class, "PaperWolfVariantRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).writableApiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.WOLF_VARIANT, WolfVariants.class, Wolf.Variant.class).writableApiRegistryBuilder(WolfVariantRegistryEntry.Builder.class, "PaperWolfVariantRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_SOUND_VARIANT, WolfSoundVariants.class, Wolf.SoundVariant.class),
-        entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).apiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),
-        entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).delayed(),
-        entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().apiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
-        entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).allowDirect().apiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
+        entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).writableApiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),
+        entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).writableApiRegistryBuilder(JukeboxSongRegistryEntry.Builder.class, "PaperJukeboxSongRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().writableApiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).writableApiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
         entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().delayed(),
-        entry(Registries.CAT_VARIANT, CatVariants.class, Cat.Type.class).apiRegistryBuilder(CatTypeRegistryEntry.Builder.class, "PaperCatTypeRegistryEntry.PaperBuilder").delayed(),
-        entry(Registries.FROG_VARIANT, FrogVariants.class, Frog.Variant.class).apiRegistryBuilder(FrogVariantRegistryEntry.Builder.class, "PaperFrogVariantRegistryEntry.PaperBuilder").delayed(),
-        entry(Registries.CHICKEN_VARIANT, ChickenVariants.class, Chicken.Variant.class).apiRegistryBuilder(ChickenVariantRegistryEntry.Builder.class, "PaperChickenVariantRegistryEntry.PaperBuilder"),
-        entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class).apiRegistryBuilder(CowVariantRegistryEntry.Builder.class, "PaperCowVariantRegistryEntry.PaperBuilder"),
-        entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).apiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder")
+        entry(Registries.CAT_VARIANT, CatVariants.class, Cat.Type.class).writableApiRegistryBuilder(CatTypeRegistryEntry.Builder.class, "PaperCatTypeRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.FROG_VARIANT, FrogVariants.class, Frog.Variant.class).writableApiRegistryBuilder(FrogVariantRegistryEntry.Builder.class, "PaperFrogVariantRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.CHICKEN_VARIANT, ChickenVariants.class, Chicken.Variant.class).writableApiRegistryBuilder(ChickenVariantRegistryEntry.Builder.class, "PaperChickenVariantRegistryEntry.PaperBuilder"),
+        entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class).writableApiRegistryBuilder(CowVariantRegistryEntry.Builder.class, "PaperCowVariantRegistryEntry.PaperBuilder"),
+        entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(

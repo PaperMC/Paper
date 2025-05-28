@@ -1,43 +1,45 @@
 --- a/net/minecraft/world/item/FireworkRocketItem.java
 +++ b/net/minecraft/world/item/FireworkRocketItem.java
-@@ -29,7 +_,7 @@
-             ItemStack itemInHand = context.getItemInHand();
-             Vec3 clickLocation = context.getClickLocation();
-             Direction clickedFace = context.getClickedFace();
--            Projectile.spawnProjectile(
-+            final Projectile.Delayed<FireworkRocketEntity> fireworkRocketEntity = Projectile.spawnProjectileDelayed( // Paper - PlayerLaunchProjectileEvent
-                 new FireworkRocketEntity(
-                     level,
-                     context.getPlayer(),
-@@ -39,9 +_,14 @@
-                     itemInHand
-                 ),
-                 serverLevel,
--                itemInHand
-+                itemInHand, f -> f.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID() // Paper - firework api - assign spawning entity uuid
-             );
--            itemInHand.shrink(1);
-+            // Paper start - PlayerLaunchProjectileEvent
-+            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) context.getPlayer().getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Firework) fireworkRocketEntity.projectile().getBukkitEntity());
-+            if (!event.callEvent() || !fireworkRocketEntity.attemptSpawn()) return InteractionResult.PASS;
-+            if (event.shouldConsume() && !context.getPlayer().hasInfiniteMaterials()) itemInHand.shrink(1);
-+            else context.getPlayer().containerMenu.sendAllDataToRemote();
-+            // Paper end - PlayerLaunchProjectileEvent
-         }
+@@ -35,7 +_,7 @@
+                 ItemStack itemInHand = context.getItemInHand();
+                 Vec3 clickLocation = context.getClickLocation();
+                 Direction clickedFace = context.getClickedFace();
+-                Projectile.spawnProjectile(
++                final Projectile.Delayed<FireworkRocketEntity> fireworkRocketEntity = Projectile.spawnProjectileDelayed( // Paper - PlayerLaunchProjectileEvent
+                     new FireworkRocketEntity(
+                         level,
+                         context.getPlayer(),
+@@ -45,9 +_,14 @@
+                         itemInHand
+                     ),
+                     serverLevel,
+-                    itemInHand
++                    itemInHand, f -> f.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID() // Paper - firework api - assign spawning entity uuid
+                 );
+-                itemInHand.shrink(1);
++                // Paper start - PlayerLaunchProjectileEvent
++                com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) context.getPlayer().getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Firework) fireworkRocketEntity.projectile().getBukkitEntity());
++                if (!event.callEvent() || !fireworkRocketEntity.attemptSpawn()) return InteractionResult.PASS;
++                if (event.shouldConsume() && !context.getPlayer().hasInfiniteMaterials()) itemInHand.shrink(1);
++                else context.getPlayer().containerMenu.sendAllDataToRemote();
++                // Paper end - PlayerLaunchProjectileEvent
+             }
  
-         return InteractionResult.SUCCESS;
-@@ -52,9 +_,21 @@
+             return InteractionResult.SUCCESS;
+@@ -59,13 +_,24 @@
          if (player.isFallFlying()) {
              ItemStack itemInHand = player.getItemInHand(hand);
              if (level instanceof ServerLevel serverLevel) {
--                Projectile.spawnProjectile(new FireworkRocketEntity(level, itemInHand, player), serverLevel, itemInHand);
--                itemInHand.consume(1, player);
--                player.awardStat(Stats.ITEM_USED.get(this));
+-                if (player.dropAllLeashConnections(null)) {
+-                    level.playSound(null, player, SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
 +                // Paper start - PlayerElytraBoostEvent
 +                final Projectile.Delayed<FireworkRocketEntity> delayed = Projectile.spawnProjectileDelayed(new FireworkRocketEntity(level, itemInHand, player), serverLevel, itemInHand, f -> f.spawningEntity = player.getUUID()); // Paper - firework api - assign spawning entity uuid
 +                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Firework) delayed.projectile().getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand));
 +                if (event.callEvent() && delayed.attemptSpawn()) {
 +                    player.awardStat(Stats.ITEM_USED.get(this)); // Moved up from below
++                    if (player.dropAllLeashConnections(null)) {
++                        level.playSound(null, player, SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
++                    }
 +                    if (event.shouldConsume() && !player.hasInfiniteMaterials()) {
 +                        itemInHand.shrink(1); // Moved up from below
 +                    } else {
@@ -45,7 +47,11 @@
 +                    }
 +                } else {
 +                    player.containerMenu.sendAllDataToRemote();
-+                }
+                 }
+-
+-                Projectile.spawnProjectile(new FireworkRocketEntity(level, itemInHand, player), serverLevel, itemInHand);
+-                itemInHand.consume(1, player);
+-                player.awardStat(Stats.ITEM_USED.get(this));
 +                // Moved up consume and changed consume to shrink
 +                // Paper end - PlayerElytraBoostEvent
              }

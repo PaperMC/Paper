@@ -1,19 +1,25 @@
 package org.bukkit.craftbukkit.util;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private CraftStructureTransformer structureTransformer;
 
@@ -60,7 +66,13 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         }
         BlockEntity blockEntity = this.getBlockEntity(position);
         if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
-            blockEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
+            try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+                () -> "TransformerGeneratorAccess@" + position.toShortString(), LOGGER
+            )) {
+                blockEntity.loadWithComponents(TagValueInput.create(
+                    problemReporter, this.registryAccess(), craftEntityState.getSnapshotNBT()
+                ));
+            }
         }
         return result;
     }

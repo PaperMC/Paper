@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit;
 
+import ca.spottedleaf.moonrise.common.list.ReferenceList;
+import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.datafixers.util.Pair;
@@ -12,6 +14,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -40,6 +44,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
@@ -243,7 +248,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public BiomeProvider vanillaBiomeProvider() {
-        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
+        ServerChunkCache serverCache = this.getHandle().chunkSource;
 
         final net.minecraft.world.level.chunk.ChunkGenerator gen = serverCache.getGenerator();
         net.minecraft.world.level.biome.BiomeSource biomeSource;
@@ -421,8 +426,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world); // Paper
-        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
+        ServerChunkCache serverChunkCache = this.getHandle().chunkSource;
+        ReferenceList<Chunk> chunks = new ReferenceList<>(new Chunk[serverChunkCache.fullChunks.size()]);
+
+        for (PrimitiveIterator.OfLong iterator = serverChunkCache.fullChunks.keyIterator(); iterator.hasNext();) {
+            long chunk = iterator.nextLong();
+            chunks.add(new CraftChunk(this.world, CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk)));
+        }
+
+        Chunk[] raw = chunks.getRawDataUnchecked();
+        int size = chunks.size();
+        if (raw.length == size) {
+            // always true when on main
+            return raw;
+        }
+        return Arrays.copyOf(raw, size);
     }
 
     @Override
@@ -631,7 +649,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Set<Chunk> chunks = new HashSet<>();
 
         for (long coord : this.getHandle().getForceLoadedChunks()) {
-            chunks.add(this.getChunkAt(ChunkPos.getX(coord), ChunkPos.getZ(coord)));
+            chunks.add(new CraftChunk(this.getHandle(), ChunkPos.getX(coord), ChunkPos.getZ(coord)));
         }
 
         return Collections.unmodifiableCollection(chunks);
@@ -828,7 +846,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().connection == null) continue;
 
-            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().serverLevel().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
         }
     }
 

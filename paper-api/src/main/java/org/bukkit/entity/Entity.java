@@ -328,7 +328,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isVisualFire();
 
     /**
-     * Retrieves the visual fire state of the object.
+     * Retrieves the visual fire state of the entity.
      *
      * @return A TriState indicating the current visual fire state.
      */

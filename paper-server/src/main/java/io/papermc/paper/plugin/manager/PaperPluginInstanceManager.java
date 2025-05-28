@@ -320,7 +320,6 @@ class PaperPluginInstanceManager {
 
     }
 
-    // TODO: Implement event part in future patch (paper patch move up, this patch is lower)
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         Bukkit.getServer().getLogger().log(Level.SEVERE, msg, ex);
         this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
