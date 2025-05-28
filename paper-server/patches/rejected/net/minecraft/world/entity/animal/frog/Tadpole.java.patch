@@ -1,0 +1,91 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/frog/Tadpole.java b/net/minecraft/world/entity/animal/frog/Tadpole.java
+index 20bd64ee79a22af97e3ea1331fcabb3d2a08f707..ebdfd3fb6c0de48982d392bb2aa415f3676c6056 100644
+--- a/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -63,6 +63,7 @@ public class Tadpole extends AbstractFish {
+         MemoryModuleType.BREED_TARGET,
+         MemoryModuleType.IS_PANICKING
+     );
++    public boolean ageLocked; // Paper
+ 
+     public Tadpole(EntityType<? extends AbstractFish> entityType, Level level) {
+         super(entityType, level);
+@@ -114,7 +115,7 @@ public class Tadpole extends AbstractFish {
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (!this.level().isClientSide) {
++        if (!this.level().isClientSide && !this.ageLocked) { // Paper
+             this.setAge(this.age + 1);
+         }
+     }
+@@ -123,12 +124,14 @@ public class Tadpole extends AbstractFish {
+     public void addAdditionalSaveData(CompoundTag compound) {
+         super.addAdditionalSaveData(compound);
+         compound.putInt("Age", this.age);
++        compound.putBoolean("AgeLocked", this.ageLocked); // Paper
+     }
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag compound) {
+         super.readAdditionalSaveData(compound);
+         this.setAge(compound.getIntOr("Age", 0));
++        this.ageLocked = compound.getBooleanOr("AgeLocked", false); // Paper
+     }
+ 
+     @Nullable
+@@ -178,13 +181,19 @@ public class Tadpole extends AbstractFish {
+     @Override
+     public void saveToBucketTag(ItemStack stack) {
+         Bucketable.saveDefaultDataToBucketTag(this, stack);
+-        CustomData.update(DataComponents.BUCKET_ENTITY_DATA, stack, compoundTag -> compoundTag.putInt("Age", this.getAge()));
++        // Paper start - Save tadpole age
++        CustomData.update(DataComponents.BUCKET_ENTITY_DATA, stack, compoundTag -> {
++            compoundTag.putInt("Age", this.getAge());
++            compoundTag.putBoolean("AgeLocked", this.ageLocked);
++        });
++        // Paper end - Save tadpole age
+     }
+ 
+     @Override
+     public void loadFromBucketTag(CompoundTag tag) {
+         Bucketable.loadDefaultDataFromBucketTag(this, tag);
+         tag.getInt("Age").ifPresent(this::setAge);
++        this.ageLocked = tag.getBooleanOr("AgeLocked", false); // Paper
+     }
+ 
+     @Override
+@@ -216,6 +225,7 @@ public class Tadpole extends AbstractFish {
+     }
+ 
+     private void ageUp(int offset) {
++        if (this.ageLocked) return; // Paper
+         this.setAge(this.age + offset * 20);
+     }
+ 
+@@ -228,12 +238,17 @@ public class Tadpole extends AbstractFish {
+ 
+     private void ageUp() {
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), mob -> {
++            Frog converted = this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), mob -> { // CraftBukkit
+                 mob.finalizeSpawn(serverLevel, this.level().getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CONVERSION, null);
+                 mob.setPersistenceRequired();
+                 mob.fudgePositionAfterSizeChange(this.getDimensions(this.getPose()));
+                 this.playSound(SoundEvents.TADPOLE_GROW_UP, 0.15F, 1.0F);
+-            });
++            // CraftBukkit start
++            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS);
++            if (converted == null) {
++                this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
++            }
++            // CraftBukkit end
+         }
+     }
+ 

@@ -1,0 +1,91 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/Leashable.java b/net/minecraft/world/entity/Leashable.java
+index d658dfeb7d1e154f0153621ff6779b6e2bb1cc4d..24b663e48a88345bb366cc4c9afbabac22c9df85 100644
+--- a/net/minecraft/world/entity/Leashable.java
++++ b/net/minecraft/world/entity/Leashable.java
+@@ -56,6 +56,11 @@ public interface Leashable {
+     }
+ 
+     default void writeLeashData(CompoundTag tag, @Nullable Leashable.LeashData leashData) {
++        // CraftBukkit start - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
++        if (leashData != null && leashData.leashHolder != null && leashData.leashHolder.pluginRemoved) {
++            return;
++        }
++        // CraftBukkit end
+         tag.storeNullable("leash", Leashable.LeashData.CODEC, leashData);
+     }
+ 
+@@ -75,7 +80,9 @@ public interface Leashable {
+             }
+ 
+             if (entity.tickCount > 100) {
++                entity.forceDrops = true; // CraftBukkit
+                 entity.spawnAtLocation(serverLevel, Items.LEAD);
++                entity.forceDrops = false; // CraftBukkit
+                 entity.setLeashData(null);
+             }
+         }
+@@ -99,7 +106,9 @@ public interface Leashable {
+             entity.onLeashRemoved();
+             if (entity.level() instanceof ServerLevel serverLevel) {
+                 if (dropItem) {
++                    entity.forceDrops = true; // CraftBukkit
+                     entity.spawnAtLocation(serverLevel, Items.LEAD);
++                    entity.forceDrops = false; // CraftBukkit
+                 }
+ 
+                 if (broadcastPacket) {
+@@ -117,7 +126,15 @@ public interface Leashable {
+ 
+         if (leashData != null && leashData.leashHolder != null) {
+             if (!entity.isAlive() || !leashData.leashHolder.isAlive()) {
+-                if (level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                // Paper start - Expand EntityUnleashEvent
++                final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(
++                    entity.getBukkitEntity(),
++                    !entity.isAlive() ? org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH : org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.HOLDER_GONE,
++                    level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && !entity.pluginRemoved
++                );
++                event.callEvent();
++                if (event.isDropLeash()) { // CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
++                    // Paper end - Expand EntityUnleashEvent
+                     entity.dropLeash();
+                 } else {
+                     entity.removeLeash();
+@@ -131,7 +148,7 @@ public interface Leashable {
+                     return;
+                 }
+ 
+-                if (f > 10.0) {
++                if (f > entity.level().paperConfig().misc.maxLeashDistance.or(LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
+                     entity.leashTooFarBehaviour();
+                 } else if (f > 6.0) {
+                     entity.elasticRangeLeashBehaviour(leashHolder, f);
+@@ -148,7 +165,21 @@ public interface Leashable {
+     }
+ 
+     default void leashTooFarBehaviour() {
+-        this.dropLeash();
++        // CraftBukkit start
++        boolean dropLeash = true; // Paper
++        if (this instanceof Entity entity) {
++            // Paper start - Expand EntityUnleashEvent
++            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(entity.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++            if (!event.callEvent()) return;
++            dropLeash = event.isDropLeash();
++        }
++        // CraftBukkit end
++        if (dropLeash) {
++            this.dropLeash();
++        } else {
++            this.removeLeash();
++        }
++        // Paper end - Expand EntityUnleashEvent
+     }
+ 
+     default void closeRangeLeashBehaviour(Entity entity) {

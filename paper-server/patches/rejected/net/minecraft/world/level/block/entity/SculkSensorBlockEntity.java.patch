@@ -1,0 +1,50 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+index 431a9a4e6eef97579e3bb58d4c0dbff7e9c410dd..26d2205fe7c1322f52e7d162e1be9dc23349f3b6 100644
+--- a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+@@ -24,6 +24,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+     private final VibrationSystem.Listener vibrationListener;
+     private final VibrationSystem.User vibrationUser;
+     public int lastVibrationFrequency = 0;
++    @Nullable public Integer rangeOverride = null; // Paper - Configurable sculk sensor listener range
+ 
+     protected SculkSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
+         super(type, pos, blockState);
+@@ -46,15 +47,23 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+         this.lastVibrationFrequency = tag.getIntOr("last_vibration_frequency", 0);
+         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
+         this.vibrationData = tag.read("listener", VibrationSystem.Data.CODEC, registryOps).orElseGet(VibrationSystem.Data::new);
++        this.rangeOverride = tag.getInt(PAPER_LISTENER_RANGE_NBT_KEY).orElse(null); // Paper start - Configurable sculk sensor listener range
+     }
+ 
++    protected static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper - Configurable sculk sensor listener range
+     @Override
+     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+         super.saveAdditional(tag, registries);
+         tag.putInt("last_vibration_frequency", this.lastVibrationFrequency);
+         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
+         tag.store("listener", VibrationSystem.Data.CODEC, registryOps, this.vibrationData);
++        this.saveRangeOverride(tag); // Paper - Configurable sculk sensor listener range
+     }
++    // Paper start - Configurable sculk sensor listener range
++    protected void saveRangeOverride(CompoundTag tag) {
++        if (this.rangeOverride != null && this.rangeOverride != VibrationUser.LISTENER_RANGE) tag.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.rangeOverride); // only save if it's different from the default
++    }
++    // Paper end - Configurable sculk sensor listener range
+ 
+     @Override
+     public VibrationSystem.Data getVibrationData() {
+@@ -91,6 +100,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
+ 
+         @Override
+         public int getListenerRadius() {
++            if (SculkSensorBlockEntity.this.rangeOverride != null) return SculkSensorBlockEntity.this.rangeOverride; // Paper - Configurable sculk sensor listener range
+             return 8;
+         }
+ 

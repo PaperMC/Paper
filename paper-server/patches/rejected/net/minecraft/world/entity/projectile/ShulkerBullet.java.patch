@@ -1,0 +1,99 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/projectile/ShulkerBullet.java b/net/minecraft/world/entity/projectile/ShulkerBullet.java
+index 43c36a76e633c34ee1f61d79dd6345af8b9ce8e0..0789b9b6904ae07d80a828ef18632fb3093cc3cc 100644
+--- a/net/minecraft/world/entity/projectile/ShulkerBullet.java
++++ b/net/minecraft/world/entity/projectile/ShulkerBullet.java
+@@ -58,8 +58,22 @@ public class ShulkerBullet extends Projectile {
+         this.finalTarget = finalTarget;
+         this.currentMoveDirection = Direction.UP;
+         this.selectNextMoveDirection(axis);
++        this.projectileSource = shooter.getBukkitLivingEntity(); // CraftBukkit
+     }
+ 
++    // CraftBukkit start
++    @Nullable
++    public Entity getTarget() {
++        return this.finalTarget;
++    }
++
++    public void setTarget(@Nullable Entity finalTarget) {
++        this.finalTarget = finalTarget;
++        this.currentMoveDirection = Direction.UP;
++        this.selectNextMoveDirection(Direction.Axis.X);
++    }
++    // CraftBukkit end
++
+     @Override
+     public SoundSource getSoundSource() {
+         return SoundSource.HOSTILE;
+@@ -180,7 +194,7 @@ public class ShulkerBullet extends Projectile {
+     @Override
+     public void checkDespawn() {
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -226,7 +240,7 @@ public class ShulkerBullet extends Projectile {
+         }
+ 
+         if (hitResult != null && this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(hitResult);
++            this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
+         }
+ 
+         ProjectileUtil.rotateTowardsMovement(this, 0.5F);
+@@ -299,7 +313,7 @@ public class ShulkerBullet extends Projectile {
+             }
+ 
+             if (entity instanceof LivingEntity livingEntity1) {
+-                livingEntity1.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this));
++                livingEntity1.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+             }
+         }
+     }
+@@ -312,14 +326,20 @@ public class ShulkerBullet extends Projectile {
+     }
+ 
+     private void destroy() {
+-        this.discard();
++        // CraftBukkit start - add Bukkit remove cause
++        this.destroy(null);
++    }
++
++    private void destroy(@Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
++        this.discard(cause);
++        // CraftBukkit end
+         this.level().gameEvent(GameEvent.ENTITY_DAMAGE, this.position(), GameEvent.Context.of(this));
+     }
+ 
+     @Override
+     protected void onHit(HitResult result) {
+         super.onHit(result);
+-        this.destroy();
++        this.destroy(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+@@ -334,9 +354,14 @@ public class ShulkerBullet extends Projectile {
+ 
+     @Override
+     public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
++        // CraftBukkit start
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount, false)) {
++            return false;
++        }
++        // CraftBukkit end
+         this.playSound(SoundEvents.SHULKER_BULLET_HURT, 1.0F, 1.0F);
+         level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2, 0.2, 0.2, 0.0);
+-        this.destroy();
++        this.destroy(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         return true;
+     }
+ 

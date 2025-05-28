@@ -1,0 +1,89 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/AreaEffectCloud.java b/net/minecraft/world/entity/AreaEffectCloud.java
+index 7942d6ef5124335259682ad6173f7e53c756f4f9..bf44f6b9c8710e0c9a85d44f6217501abc98a7b1 100644
+--- a/net/minecraft/world/entity/AreaEffectCloud.java
++++ b/net/minecraft/world/entity/AreaEffectCloud.java
+@@ -59,7 +59,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+     public float radiusOnUse = 0.0F;
+     public float radiusPerTick = 0.0F;
+     @Nullable
+-    private LivingEntity owner;
++    private net.minecraft.world.entity.LivingEntity owner;
+     @Nullable
+     public UUID ownerUUID;
+ 
+@@ -193,7 +193,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+ 
+     private void serverTick(ServerLevel level) {
+         if (this.duration != -1 && this.tickCount >= this.waitTime + this.duration) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             boolean isWaiting = this.isWaiting();
+             boolean flag = this.tickCount < this.waitTime;
+@@ -206,7 +206,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                 if (this.radiusPerTick != 0.0F) {
+                     radius += this.radiusPerTick;
+                     if (radius < 0.5F) {
+-                        this.discard();
++                        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                         return;
+                     }
+ 
+@@ -222,6 +222,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                         this.potionContents.forEachEffect(list::add, this.potionDurationScale);
+                         List<LivingEntity> entitiesOfClass = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox());
+                         if (!entitiesOfClass.isEmpty()) {
++                            List<org.bukkit.entity.LivingEntity> entities = new java.util.ArrayList<>(); // CraftBukkit
+                             for (LivingEntity livingEntity : entitiesOfClass) {
+                                 if (!this.victims.containsKey(livingEntity)
+                                     && livingEntity.isAffectedByPotions()
+@@ -230,6 +231,17 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                     double d1 = livingEntity.getZ() - this.getZ();
+                                     double d2 = d * d + d1 * d1;
+                                     if (d2 <= radius * radius) {
++                                        // CraftBukkit start
++                                        entities.add((org.bukkit.entity.LivingEntity) livingEntity.getBukkitEntity());
++                                    }
++                                }
++                            }
++                            org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, entities);
++                            if (!event.isCancelled()) {
++                                for (org.bukkit.entity.LivingEntity entity : event.getAffectedEntities()) {
++                                    if (entity instanceof org.bukkit.craftbukkit.entity.CraftLivingEntity) {
++                                        net.minecraft.world.entity.LivingEntity livingEntity = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle();
++                                        // CraftBukkit end
+                                         this.victims.put(livingEntity, this.tickCount + this.reapplicationDelay);
+ 
+                                         for (MobEffectInstance mobEffectInstance : list) {
+@@ -238,14 +250,14 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                                     .value()
+                                                     .applyInstantenousEffect(level, this, this.getOwner(), livingEntity, mobEffectInstance.getAmplifier(), 0.5);
+                                             } else {
+-                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this);
++                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
+                                             }
+                                         }
+ 
+                                         if (this.radiusOnUse != 0.0F) {
+                                             radius += this.radiusOnUse;
+                                             if (radius < 0.5F) {
+-                                                this.discard();
++                                                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                                 return;
+                                             }
+ 
+@@ -255,7 +267,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                         if (this.durationOnUse != 0 && this.duration != -1) {
+                                             this.duration = this.duration + this.durationOnUse;
+                                             if (this.duration <= 0) {
+-                                                this.discard();
++                                                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                                 return;
+                                             }
+                                         }

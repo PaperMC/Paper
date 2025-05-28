@@ -1,0 +1,70 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/entity/ConduitBlockEntity.java b/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+index 0b5e7dd0987b9892f3cddb02930254fc559b64d0..2f07a23a6151a4dfb28ddc0ab38ec2abefcdd27c 100644
+--- a/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -165,8 +165,20 @@ public class ConduitBlockEntity extends BlockEntity {
+     }
+ 
+     private static void applyEffects(Level level, BlockPos pos, List<BlockPos> positions) {
++        // CraftBukkit start
++        ConduitBlockEntity.applyEffects(level, pos, ConduitBlockEntity.getRange(positions));
++    }
++
++    public static int getRange(List<BlockPos> positions) {
++        // CraftBukkit end
+         int size = positions.size();
+         int i = size / 7 * 16;
++        // CraftBukkit start
++        return i;
++    }
++
++    private static void applyEffects(Level level, BlockPos pos, int i) { // i = effect range in blocks
++        // CraftBukkit end
+         int x = pos.getX();
+         int y = pos.getY();
+         int z = pos.getZ();
+@@ -175,13 +187,19 @@ public class ConduitBlockEntity extends BlockEntity {
+         if (!entitiesOfClass.isEmpty()) {
+             for (Player player : entitiesOfClass) {
+                 if (pos.closerThan(player.blockPosition(), i) && player.isInWaterOrRain()) {
+-                    player.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, 260, 0, true, true));
++                    player.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, 260, 0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONDUIT); // CraftBukkit
+                 }
+             }
+         }
+     }
+ 
+     private static void updateDestroyTarget(Level level, BlockPos pos, BlockState state, List<BlockPos> positions, ConduitBlockEntity blockEntity) {
++        // CraftBukkit start - add "damageTarget" boolean
++        ConduitBlockEntity.updateDestroyTarget(level, pos, state, positions, blockEntity, true);
++    }
++
++    public static void updateDestroyTarget(Level level, BlockPos pos, BlockState state, List<BlockPos> positions, ConduitBlockEntity blockEntity, boolean damageTarget) {
++        // CraftBukkit end
+         LivingEntity livingEntity = blockEntity.destroyTarget;
+         int size = positions.size();
+         if (size < 42) {
+@@ -200,7 +218,8 @@ public class ConduitBlockEntity extends BlockEntity {
+             blockEntity.destroyTarget = null;
+         }
+ 
+-        if (blockEntity.destroyTarget != null) {
++        if (damageTarget && blockEntity.destroyTarget != null) { // CraftBukkit
++            if (blockEntity.destroyTarget.hurtServer((net.minecraft.server.level.ServerLevel) level, level.damageSources().magic().eventBlockDamager(level, pos), 4.0F)) // CraftBukkit
+             level.playSound(
+                 null,
+                 blockEntity.destroyTarget.getX(),
+@@ -211,7 +230,6 @@ public class ConduitBlockEntity extends BlockEntity {
+                 1.0F,
+                 1.0F
+             );
+-            blockEntity.destroyTarget.hurt(level.damageSources().magic(), 4.0F);
+         }
+ 
+         if (livingEntity != blockEntity.destroyTarget) {

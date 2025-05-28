@@ -1,0 +1,57 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+index 343381f8190061e6f42131e36c256fff6fbc85a6..a6f232747df631f6afe440606bea94c588f1a0dd 100644
+--- a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
++++ b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+@@ -122,6 +122,11 @@ public class EntitySelectorParser {
+     }
+ 
+     public static <S> boolean allowSelectors(S suggestionProvider) {
++        // Paper start - Fix EntityArgument permissions
++        if (suggestionProvider instanceof net.minecraft.commands.CommandSourceStack stack) {
++            return stack.bypassSelectorPermissions || stack.hasPermission(2, "minecraft.command.selector");
++        }
++        // Paper end - Fix EntityArgument permissions
+         return suggestionProvider instanceof SharedSuggestionProvider sharedSuggestionProvider && sharedSuggestionProvider.hasPermission(2);
+     }
+ 
+@@ -198,8 +203,10 @@ public class EntitySelectorParser {
+         };
+     }
+ 
+-    protected void parseSelector() throws CommandSyntaxException {
+-        this.usesSelectors = true;
++    // CraftBukkit start
++    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
++        this.usesSelectors = !overridePermissions;
++        // CraftBukkit end
+         this.suggestions = this::suggestSelector;
+         if (!this.reader.canRead()) {
+             throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(this.reader);
+@@ -467,6 +474,12 @@ public class EntitySelectorParser {
+     }
+ 
+     public EntitySelector parse() throws CommandSyntaxException {
++        // CraftBukkit start
++        return this.parse(false);
++    }
++
++    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
++        // CraftBukkit end
+         this.startPosition = this.reader.getCursor();
+         this.suggestions = this::suggestNameOrSelector;
+         if (this.reader.canRead() && this.reader.peek() == '@') {
+@@ -475,7 +488,7 @@ public class EntitySelectorParser {
+             }
+ 
+             this.reader.skip();
+-            this.parseSelector();
++            this.parseSelector(overridePermissions); // CraftBukkit
+         } else {
+             this.parseNameOrUUID();
+         }

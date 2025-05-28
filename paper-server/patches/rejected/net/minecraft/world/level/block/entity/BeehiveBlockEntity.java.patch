@@ -1,0 +1,243 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+index ac4e5cb2eac9e8d7759f836a7e757d3f843d8e54..331eb5416307378162e39e20192ba06a047b70ea 100644
+--- a/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+@@ -79,6 +79,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+     private List<BeehiveBlockEntity.BeeData> stored = Lists.newArrayList();
+     @Nullable
+     public BlockPos savedFlowerPos;
++    public int maxBees = MAX_OCCUPANTS; // CraftBukkit - allow setting max amount of bees a hive can hold
+ 
+     public BeehiveBlockEntity(BlockPos pos, BlockState blockState) {
+         super(BlockEntityType.BEEHIVE, pos, blockState);
+@@ -112,7 +113,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+     }
+ 
+     public boolean isFull() {
+-        return this.stored.size() == 3;
++        return this.stored.size() == this.maxBees; // CraftBukkit
+     }
+ 
+     public void emptyAllLivingFromHive(@Nullable Player player, BlockState state, BeehiveBlockEntity.BeeReleaseStatus releaseStatus) {
+@@ -121,7 +122,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+             for (Entity entity : list) {
+                 if (entity instanceof Bee bee && player.position().distanceToSqr(entity.position()) <= 16.0) {
+                     if (!this.isSedated()) {
+-                        bee.setTarget(player);
++                        bee.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER); // CraftBukkit
+                     } else {
+                         bee.setStayOutOfHiveCountdown(400);
+                     }
+@@ -131,8 +132,14 @@ public class BeehiveBlockEntity extends BlockEntity {
+     }
+ 
+     private List<Entity> releaseAllOccupants(BlockState state, BeehiveBlockEntity.BeeReleaseStatus releaseStatus) {
++        // CraftBukkit start - This allows us to bypass the night/rain/emergency check
++        return this.releaseBees(state, releaseStatus, false);
++    }
++
++    public List<Entity> releaseBees(BlockState state, BeehiveBlockEntity.BeeReleaseStatus releaseStatus, boolean force) {
++        // CraftBukkit end - This allows us to bypass t he night/rain/emergecny check
+         List<Entity> list = Lists.newArrayList();
+-        this.stored.removeIf(data -> releaseOccupant(this.level, this.worldPosition, state, data.toOccupant(), list, releaseStatus, this.savedFlowerPos));
++        this.stored.removeIf(data -> releaseOccupant(this.level, this.worldPosition, state, data.toOccupant(), list, releaseStatus, this.savedFlowerPos, force)); // CraftBukkit - This allows us to bypass t he night/rain/emergecny check
+         if (!list.isEmpty()) {
+             super.setChanged();
+         }
+@@ -145,6 +152,11 @@ public class BeehiveBlockEntity extends BlockEntity {
+         return this.stored.size();
+     }
+ 
++    // Paper start - Add EntityBlockStorage clearEntities
++    public void clearBees() {
++        this.stored.clear();
++    }
++    // Paper end - Add EntityBlockStorage clearEntities
+     public static int getHoneyLevel(BlockState state) {
+         return state.getValue(BeehiveBlock.HONEY_LEVEL);
+     }
+@@ -155,7 +167,16 @@ public class BeehiveBlockEntity extends BlockEntity {
+     }
+ 
+     public void addOccupant(Bee bee) {
+-        if (this.stored.size() < 3) {
++        if (this.stored.size() < this.maxBees) { // CraftBukkit
++            // CraftBukkit start
++            if (this.level != null) {
++                org.bukkit.event.entity.EntityEnterBlockEvent event = new org.bukkit.event.entity.EntityEnterBlockEvent(bee.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.getBlockPos()));
++                if (!event.callEvent()) {
++                    bee.setStayOutOfHiveCountdown(MIN_TICKS_BEFORE_REENTERING_HIVE);
++                    return;
++                }
++            }
++            // CraftBukkit end
+             bee.stopRiding();
+             bee.ejectPassengers();
+             bee.dropLeash();
+@@ -180,7 +201,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+                 this.level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(bee, this.getBlockState()));
+             }
+ 
+-            bee.discard();
++            bee.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
+             super.setChanged();
+         }
+     }
+@@ -198,7 +219,21 @@ public class BeehiveBlockEntity extends BlockEntity {
+         BeehiveBlockEntity.BeeReleaseStatus releaseStatus,
+         @Nullable BlockPos storedFlowerPos
+     ) {
+-        if (Bee.isNightOrRaining(level) && releaseStatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) {
++        // CraftBukkit start
++        return releaseOccupant(level, pos, state, occupant, storedInHives, releaseStatus, storedFlowerPos, false);
++    }
++    private static boolean releaseOccupant(
++        Level level,
++        BlockPos pos,
++        BlockState state,
++        BeehiveBlockEntity.Occupant occupant,
++        @Nullable List<Entity> storedInHives,
++        BeehiveBlockEntity.BeeReleaseStatus releaseStatus,
++        @Nullable BlockPos storedFlowerPos,
++        boolean force
++    ) {
++        if (!force && Bee.isNightOrRaining(level) && releaseStatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) {
++        // CraftBukkit end
+             return false;
+         } else {
+             Direction direction = state.getValue(BeehiveBlock.FACING);
+@@ -209,6 +244,17 @@ public class BeehiveBlockEntity extends BlockEntity {
+             } else {
+                 Entity entity = occupant.createEntity(level, pos);
+                 if (entity != null) {
++                    // CraftBukkit start
++                    if (entity instanceof Bee) {
++                        float bbWidth = entity.getBbWidth();
++                        double d = flag ? 0.0 : 0.55 + bbWidth / 2.0F;
++                        double d1 = pos.getX() + 0.5 + d * direction.getStepX();
++                        double d2 = pos.getY() + 0.5 - entity.getBbHeight() / 2.0F;
++                        double d3 = pos.getZ() + 0.5 + d * direction.getStepZ();
++                        entity.snapTo(d1, d2, d3, entity.getYRot(), entity.getXRot());
++                    }
++                    if (!level.addFreshEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BEEHIVE)) return false; // CraftBukkit - SpawnReason, moved from below
++                    // CraftBukkit end
+                     if (entity instanceof Bee bee) {
+                         if (storedFlowerPos != null && !bee.hasSavedFlowerPos() && level.random.nextFloat() < 0.9F) {
+                             bee.setSavedFlowerPos(storedFlowerPos);
+@@ -224,7 +270,13 @@ public class BeehiveBlockEntity extends BlockEntity {
+                                         i--;
+                                     }
+ 
+-                                    level.setBlockAndUpdate(pos, state.setValue(BeehiveBlock.HONEY_LEVEL, honeyLevel + i));
++                                    // Paper start - Fire EntityChangeBlockEvent in more places
++                                    BlockState newBlockState = state.setValue(BeehiveBlock.HONEY_LEVEL, honeyLevel + i);
++
++                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, newBlockState)) {
++                                        level.setBlockAndUpdate(pos, newBlockState);
++                                    }
++                                    // Paper end - Fire EntityChangeBlockEvent in more places
+                                 }
+                             }
+                         }
+@@ -233,17 +285,19 @@ public class BeehiveBlockEntity extends BlockEntity {
+                             storedInHives.add(bee);
+                         }
+ 
++                        /* CraftBukkit start - move up
+                         float bbWidth = entity.getBbWidth();
+                         double d = flag ? 0.0 : 0.55 + bbWidth / 2.0F;
+                         double d1 = pos.getX() + 0.5 + d * direction.getStepX();
+                         double d2 = pos.getY() + 0.5 - entity.getBbHeight() / 2.0F;
+                         double d3 = pos.getZ() + 0.5 + d * direction.getStepZ();
+                         entity.snapTo(d1, d2, d3, entity.getYRot(), entity.getXRot());
++                        */ // CraftBukkit end
+                     }
+ 
+                     level.playSound(null, pos, SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+                     level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(entity, level.getBlockState(pos)));
+-                    return level.addFreshEntity(entity);
++                    return true; // CraftBukkit - moved up
+                 } else {
+                     return false;
+                 }
+@@ -269,6 +323,11 @@ public class BeehiveBlockEntity extends BlockEntity {
+                     flag = true;
+                     iterator.remove();
+                 }
++                // Paper start - Fix bees aging inside; use exitTickCounter to keep actual bee life
++                else if (level.paperConfig().entities.behavior.cooldownFailedBeehiveReleases) {
++                    beeData.exitTickCounter = beeData.occupant.minTicksInHive / 2;
++                }
++                // Paper end - Fix bees aging inside; use exitTickCounter to keep actual bee life
+             }
+         }
+ 
+@@ -292,9 +351,10 @@ public class BeehiveBlockEntity extends BlockEntity {
+     @Override
+     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+         super.loadAdditional(tag, registries);
+-        this.stored.clear();
++        this.stored = Lists.newArrayList(); // CraftBukkit - SPIGOT-7790: create new copy (may be modified in physics event triggered by honey change)
+         tag.read("bees", BeehiveBlockEntity.Occupant.LIST_CODEC).orElse(List.of()).forEach(this::storeBee);
+         this.savedFlowerPos = tag.read("flower_pos", BlockPos.CODEC).orElse(null);
++        this.maxBees = tag.getIntOr("Bukkit.MaxEntities", MAX_OCCUPANTS); // Paper - persist max bukkit occupants
+     }
+ 
+     @Override
+@@ -302,12 +362,13 @@ public class BeehiveBlockEntity extends BlockEntity {
+         super.saveAdditional(tag, registries);
+         tag.store("bees", BeehiveBlockEntity.Occupant.LIST_CODEC, this.getBees());
+         tag.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
++        tag.putInt("Bukkit.MaxEntities", this.maxBees); // Paper - persist max bukkit occupants
+     }
+ 
+     @Override
+     protected void applyImplicitComponents(DataComponentGetter componentGetter) {
+         super.applyImplicitComponents(componentGetter);
+-        this.stored.clear();
++        this.stored = Lists.newArrayList(); // CraftBukkit - SPIGOT-7790: create new copy (may be modified in physics event triggered by honey change)
+         List<BeehiveBlockEntity.Occupant> list = componentGetter.getOrDefault(DataComponents.BEES, Bees.EMPTY).bees();
+         list.forEach(this::storeBee);
+     }
+@@ -330,15 +391,18 @@ public class BeehiveBlockEntity extends BlockEntity {
+ 
+     static class BeeData {
+         private final BeehiveBlockEntity.Occupant occupant;
++        private int exitTickCounter; // Paper - Fix bees aging inside hives; separate counter for checking if bee should exit to reduce exit attempts
+         private int ticksInHive;
+ 
+         BeeData(BeehiveBlockEntity.Occupant occupant) {
+             this.occupant = occupant;
+             this.ticksInHive = occupant.ticksInHive();
++            this.exitTickCounter = this.ticksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public boolean tick() {
+-            return this.ticksInHive++ > this.occupant.minTicksInHive;
++            this.ticksInHive++; // Paper - Fix bees aging inside hives
++            return this.exitTickCounter++ > this.occupant.minTicksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public BeehiveBlockEntity.Occupant toOccupant() {
+@@ -409,6 +473,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+         }
+ 
+         private static void setBeeReleaseData(int ticksInHive, Bee bee) {
++            if (!bee.ageLocked) { // Paper - Honor ageLock
+             int age = bee.getAge();
+             if (age < 0) {
+                 bee.setAge(Math.min(0, age + ticksInHive));
+@@ -417,6 +482,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+             }
+ 
+             bee.setInLoveTime(Math.max(0, bee.getInLoveTime() - ticksInHive));
++            } // Paper - Honor ageLock
+         }
+     }
+ }

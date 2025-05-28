@@ -1,0 +1,149 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index 3993b90daeff2a5a72816e9cc76dacc830d6af77..4c57990c94721dd0973477669e1dadfab5f16404 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -216,7 +216,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+             .fireImmune()
+             .sized(6.0F, 0.5F)
+             .clientTrackingRange(10)
+-            .updateInterval(Integer.MAX_VALUE)
++            .updateInterval(10) // CraftBukkit - SPIGOT-3729: track area effect clouds
+     );
+     public static final EntityType<Armadillo> ARMADILLO = register(
+         "armadillo", EntityType.Builder.of(Armadillo::new, MobCategory.CREATURE).sized(0.7F, 0.65F).eyeHeight(0.26F).clientTrackingRange(10)
+@@ -1145,6 +1145,22 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+         boolean shouldOffsetY,
+         boolean shouldOffsetYMore
+     ) {
++        // CraftBukkit start
++        return this.spawn(level, spawnedFrom, owner, pos, reason, shouldOffsetY, shouldOffsetYMore, reason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
++    }
++
++    @Nullable
++    public T spawn(
++        ServerLevel level,
++        @Nullable ItemStack spawnedFrom,
++        @Nullable LivingEntity owner,
++        BlockPos pos,
++        EntitySpawnReason reason,
++        boolean shouldOffsetY,
++        boolean shouldOffsetYMore,
++        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
++    ) {
++        // CraftBukkit end
+         Consumer<T> consumer;
+         if (spawnedFrom != null) {
+             consumer = createDefaultStackConfig(level, spawnedFrom, owner);
+@@ -1152,7 +1168,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+             consumer = entity -> {};
+         }
+ 
+-        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
++        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
+     }
+ 
+     public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level level, ItemStack stack, @Nullable LivingEntity owner) {
+@@ -1169,19 +1185,56 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+ 
+     public static <T extends Entity> Consumer<T> appendCustomEntityStackConfig(Consumer<T> consumer, Level level, ItemStack stack, @Nullable LivingEntity owner) {
+         CustomData customData = stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
+-        return !customData.isEmpty() ? consumer.andThen(entity -> updateCustomEntityTag(level, owner, entity, customData)) : consumer;
++        // CraftBukkit start - SPIGOT-5665
++        return !customData.isEmpty() ? consumer.andThen(entity -> {
++            try {
++                updateCustomEntityTag(level, owner, entity, customData);
++            } catch (Throwable t) {
++                EntityType.LOGGER.warn("Error loading spawn egg NBT", t);
++            }
++        }) : consumer;
++        // CraftBukkit end
+     }
+ 
+     @Nullable
+     public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason) {
+-        return this.spawn(level, null, pos, reason, false, false);
++        // CraftBukkit start
++        return this.spawn(level, pos, reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        return this.spawn(level, null, pos, reason, false, false, creatureSpawnReason);
++        // CraftBukkit End
+     }
+ 
+     @Nullable
+     public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore) {
++        // CraftBukkit start
++        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        // CraftBukkit end
++        // Paper start - PreCreatureSpawnEvent
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level),
++            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(this),
++            creatureSpawnReason
++        );
++        if (!event.callEvent()) {
++            return null;
++        }
++        // Paper end - PreCreatureSpawnEvent
+         T entity = this.create(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
+         if (entity != null) {
+-            level.addFreshEntityWithPassengers(entity);
++            // CraftBukkit start
++            level.addFreshEntityWithPassengers(entity, creatureSpawnReason);
++            if (entity.isRemoved()) {
++                return null; // Don't return an entity when CreatureSpawnEvent is canceled
++            }
++            // CraftBukkit end
+             if (entity instanceof Mob mob) {
+                 mob.playAmbientSound();
+             }
+@@ -1237,6 +1290,15 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+                 if (level.isClientSide
+                     || !entity.getType().onlyOpCanSetNbt()
+                     || owner instanceof Player player && server.getPlayerList().isOp(player.getGameProfile())) {
++                    // Paper start - filter out protected tags
++                    if (owner == null || !owner.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
++                        customData = customData.update((compound) -> {
++                            for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                                tag.remove(compound);
++                            }
++                        });
++                    }
++                    // Paper end - filter out protected tags
+                     customData.loadInto(entity);
+                 }
+             }
+@@ -1308,9 +1370,20 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     }
+ 
+     public static Optional<Entity> create(CompoundTag tag, Level level, EntitySpawnReason spawnReason) {
++        // Paper start - Don't fire sync event during generation
++        return create(tag, level, spawnReason, false);
++    }
++
++    public static Optional<Entity> create(CompoundTag tag, Level level, EntitySpawnReason spawnReason, boolean generation) {
++        // Paper end - Don't fire sync event during generation
+         return Util.ifElse(
+             by(tag).map(entityType -> entityType.create(level, spawnReason)),
+-            entity -> entity.load(tag),
++                // Paper start - Don't fire sync event during generation
++                entity -> {
++                    if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
++                    entity.load(tag);
++                },
++                // Paper end - Don't fire sync event during generation
+             () -> LOGGER.warn("Skipping Entity with id {}", tag.getStringOr("id", "[invalid]"))
+         );
+     }

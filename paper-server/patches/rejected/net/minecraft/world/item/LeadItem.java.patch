@@ -1,0 +1,79 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/LeadItem.java b/net/minecraft/world/item/LeadItem.java
+index de70db3b8c8f862dabde9be736f3a64955488c14..8c13ae2da3cf2b0979b501be5e3829da44fea45e 100644
+--- a/net/minecraft/world/item/LeadItem.java
++++ b/net/minecraft/world/item/LeadItem.java
+@@ -28,23 +28,43 @@ public class LeadItem extends Item {
+         if (blockState.is(BlockTags.FENCES)) {
+             Player player = context.getPlayer();
+             if (!level.isClientSide && player != null) {
+-                return bindPlayerMobs(player, level, clickedPos);
++                return bindPlayerMobs(player, level, clickedPos, context.getHand()); // CraftBukkit - Pass hand
+             }
+         }
+ 
+         return InteractionResult.PASS;
+     }
+ 
+-    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos) {
++    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos, net.minecraft.world.InteractionHand interactionHand) { // CraftBukkit - Add InteractionHand
+         LeashFenceKnotEntity leashFenceKnotEntity = null;
+         List<Leashable> list = leashableInArea(level, pos, leashable1 -> leashable1.getLeashHolder() == player);
+ 
+-        for (Leashable leashable : list) {
++        for (java.util.Iterator<Leashable> iterator = list.iterator(); iterator.hasNext();) { // Paper - use iterator to remove
++            Leashable leashable = iterator.next(); // Paper - use iterator to remove
+             if (leashFenceKnotEntity == null) {
+                 leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos);
++                // CraftBukkit start - fire HangingPlaceEvent
++                org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(interactionHand);
++                org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) leashFenceKnotEntity.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, hand);
++                level.getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    leashFenceKnotEntity.discard(null); // CraftBukkit - add Bukkit remove cause
++                    return InteractionResult.PASS;
++                }
++                // CraftBukkit end
+                 leashFenceKnotEntity.playPlacementSound();
+             }
+ 
++            // CraftBukkit start
++            if (leashable instanceof Entity leashed) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, leashFenceKnotEntity, player, interactionHand).isCancelled()) {
++                    iterator.remove();
++                    continue;
++                }
++            }
++            // CraftBukkit end
++
+             leashable.setLeashedTo(leashFenceKnotEntity, true);
+         }
+ 
+@@ -52,10 +72,21 @@ public class LeadItem extends Item {
+             level.gameEvent(GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of(player));
+             return InteractionResult.SUCCESS_SERVER;
+         } else {
++            // CraftBukkit start - remove leash if we do not leash any entity because of the cancelled event
++            if (leashFenceKnotEntity != null) {
++                leashFenceKnotEntity.discard(null);
++            }
++            // CraftBukkit end
+             return InteractionResult.PASS;
+         }
+     }
+ 
++    // CraftBukkit start
++    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
++        return LeadItem.bindPlayerMobs(player, world, pos, net.minecraft.world.InteractionHand.MAIN_HAND);
++    }
++    // CraftBukkit end
++
+     public static List<Leashable> leashableInArea(Level level, BlockPos pos, Predicate<Leashable> predicate) {
+         double d = 7.0;
+         int x = pos.getX();

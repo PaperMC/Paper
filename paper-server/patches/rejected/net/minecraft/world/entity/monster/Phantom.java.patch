@@ -1,0 +1,63 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/monster/Phantom.java b/net/minecraft/world/entity/monster/Phantom.java
+index 0d11c55e826fc4b69ba63585dc28be5147d07031..483b0499f1f70b3aa8862e6cd8e512748492bee0 100644
+--- a/net/minecraft/world/entity/monster/Phantom.java
++++ b/net/minecraft/world/entity/monster/Phantom.java
+@@ -48,6 +48,11 @@ public class Phantom extends FlyingMob implements Enemy {
+     @Nullable
+     public BlockPos anchorPoint;
+     Phantom.AttackPhase attackPhase = Phantom.AttackPhase.CIRCLE;
++    // Paper start
++    @Nullable
++    public java.util.UUID spawningEntity;
++    public boolean shouldBurnInDay = true;
++    // Paper end
+ 
+     public Phantom(EntityType<? extends Phantom> entityType, Level level) {
+         super(entityType, level);
+@@ -142,7 +147,7 @@ public class Phantom extends FlyingMob implements Enemy {
+ 
+     @Override
+     public void aiStep() {
+-        if (this.isAlive() && this.isSunBurnTick()) {
++        if (this.isAlive() && this.shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
+             this.igniteForSeconds(8.0F);
+         }
+ 
+@@ -163,6 +168,10 @@ public class Phantom extends FlyingMob implements Enemy {
+         super.readAdditionalSaveData(compound);
+         this.anchorPoint = compound.read("anchor_pos", BlockPos.CODEC).orElse(null);
+         this.setPhantomSize(compound.getIntOr("size", 0));
++        // Paper start
++        this.spawningEntity = compound.read("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++        this.shouldBurnInDay = compound.getBooleanOr("Paper.ShouldBurnInDay", true);
++        // Paper end
+     }
+ 
+     @Override
+@@ -170,6 +179,10 @@ public class Phantom extends FlyingMob implements Enemy {
+         super.addAdditionalSaveData(compound);
+         compound.storeNullable("anchor_pos", BlockPos.CODEC, this.anchorPoint);
+         compound.putInt("size", this.getPhantomSize());
++        // Paper start
++        compound.storeNullable("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC, this.spawningEntity);
++        compound.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
++        // Paper end
+     }
+ 
+     @Override
+@@ -243,7 +256,8 @@ public class Phantom extends FlyingMob implements Enemy {
+ 
+                     for (Player player : nearbyPlayers) {
+                         if (Phantom.this.canAttack(serverLevel, player, TargetingConditions.DEFAULT)) {
+-                            Phantom.this.setTarget(player);
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(player)) // Paper - Add phantom creative and insomniac controls
++                            Phantom.this.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER); // CraftBukkit - reason
+                             return true;
+                         }
+                     }

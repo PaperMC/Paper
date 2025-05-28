@@ -1,0 +1,48 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/projectile/LargeFireball.java b/net/minecraft/world/entity/projectile/LargeFireball.java
+index 048ba5e45d6e0ee2be135e3ab07766eae8445543..db1b5bce212a5147be82504469f1fa9660812ebc 100644
+--- a/net/minecraft/world/entity/projectile/LargeFireball.java
++++ b/net/minecraft/world/entity/projectile/LargeFireball.java
+@@ -19,11 +19,13 @@ public class LargeFireball extends Fireball {
+ 
+     public LargeFireball(EntityType<? extends LargeFireball> entityType, Level level) {
+         super(entityType, level);
++        this.isIncendiary = (level instanceof ServerLevel serverLevel) && serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
+     }
+ 
+     public LargeFireball(Level level, LivingEntity owner, Vec3 movement, int explosionPower) {
+         super(EntityType.FIREBALL, owner, movement, level);
+         this.explosionPower = explosionPower;
++        this.isIncendiary = (level instanceof ServerLevel serverLevel) && serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
+     }
+ 
+     @Override
+@@ -31,8 +33,13 @@ public class LargeFireball extends Fireball {
+         super.onHit(result);
+         if (this.level() instanceof ServerLevel serverLevel) {
+             boolean _boolean = serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), this.explosionPower, _boolean, Level.ExplosionInteraction.MOB);
+-            this.discard();
++            // CraftBukkit start - fire ExplosionPrimeEvent
++            org.bukkit.event.entity.ExplosionPrimeEvent event = new org.bukkit.event.entity.ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
++            if (event.callEvent()) {
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
++            }
++            // CraftBukkit end - fire ExplosionPrimeEvent
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -57,6 +64,6 @@ public class LargeFireball extends Fireball {
+     @Override
+     public void readAdditionalSaveData(CompoundTag compound) {
+         super.readAdditionalSaveData(compound);
+-        this.explosionPower = compound.getByteOr("ExplosionPower", (byte)1);
++        this.bukkitYield = this.explosionPower = compound.getByteOr("ExplosionPower", (byte)1); // CraftBukkit - set bukkitYield when setting explosionPower
+     }
+ }

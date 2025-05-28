@@ -1,0 +1,29 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java b/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
+index f14ca3e8f1bdcec8f8a00f4ca62bc37223764ff2..549ea1ca4824c39bcd32321f4c404c1ff4203777 100644
+--- a/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
++++ b/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
+@@ -18,11 +18,16 @@ public class ClientboundLoginDisconnectPacket implements Packet<ClientLoginPacke
+     }
+ 
+     private ClientboundLoginDisconnectPacket(FriendlyByteBuf buffer) {
+-        this.reason = Component.Serializer.fromJsonLenient(buffer.readUtf(262144), RegistryAccess.EMPTY);
++        this.reason = Component.Serializer.fromJsonLenient(buffer.readUtf(FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH), RegistryAccess.EMPTY); // Paper - diff on change
+     }
+ 
+     private void write(FriendlyByteBuf buffer) {
+-        buffer.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
++        // Paper start - Adventure
++        // buffer.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
++        // In the login phase, buffer.adventure$locale field is most likely null, but plugins may use internals to set it via the channel attribute
++        java.util.Locale bufLocale = buffer.adventure$locale;
++        buffer.writeJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.localizedCodec(bufLocale == null ? java.util.Locale.US : bufLocale), this.reason, FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH);
++        // Paper end - Adventure
+     }
+ 
+     @Override

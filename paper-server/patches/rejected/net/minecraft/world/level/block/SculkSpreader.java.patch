@@ -1,0 +1,54 @@
+From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/SculkSpreader.java b/net/minecraft/world/level/block/SculkSpreader.java
+index 174592afa95942b2537bd42b0e80ac9028f152f1..416d877c1de1ef57a4f9774767f4d21eb21a33f1 100644
+--- a/net/minecraft/world/level/block/SculkSpreader.java
++++ b/net/minecraft/world/level/block/SculkSpreader.java
+@@ -45,6 +45,7 @@ public class SculkSpreader {
+     private final int chargeDecayRate;
+     private final int additionalDecayRate;
+     private List<SculkSpreader.ChargeCursor> cursors = new ArrayList<>();
++    public net.minecraft.world.level.Level level; // CraftBukkit
+ 
+     public SculkSpreader(
+         boolean isWorldGeneration, TagKey<Block> replaceableBlocks, int growthSpawnCoat, int noGrowthRadius, int chargeDecayRate, int additionalDecayRate
+@@ -100,7 +101,7 @@ public class SculkSpreader {
+ 
+     public void load(CompoundTag tag) {
+         this.cursors.clear();
+-        tag.read("cursors", SculkSpreader.ChargeCursor.CODEC.sizeLimitedListOf(32)).orElse(List.of()).forEach(this::addCursor);
++        tag.read("cursors", SculkSpreader.ChargeCursor.CODEC.sizeLimitedListOf(32)).orElse(List.of()).forEach((cursor) -> this.addCursor(cursor, false));  // Paper - don't fire event for block entity loading
+     }
+ 
+     public void save(CompoundTag tag) {
+@@ -110,13 +111,24 @@ public class SculkSpreader {
+     public void addCursors(BlockPos pos, int charge) {
+         while (charge > 0) {
+             int min = Math.min(charge, 1000);
+-            this.addCursor(new SculkSpreader.ChargeCursor(pos, min));
++            this.addCursor(new SculkSpreader.ChargeCursor(pos, min), true); // Paper - allow firing event for other causes
+             charge -= min;
+         }
+     }
+ 
+-    private void addCursor(SculkSpreader.ChargeCursor cursor) {
++    private void addCursor(SculkSpreader.ChargeCursor cursor, boolean fireEvent) { // Paper - add boolean to conditionally fire SculkBloomEvent
+         if (this.cursors.size() < 32) {
++            // CraftBukkit start
++            if (!this.isWorldGeneration() && fireEvent) { // CraftBukkit - SPIGOT-7475: Don't call event during world generation // Paper - add boolean to conditionally fire SculkBloomEvent
++                org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, cursor.pos);
++                org.bukkit.event.block.SculkBloomEvent event = new org.bukkit.event.block.SculkBloomEvent(bukkitBlock, cursor.getCharge());
++                if (!event.callEvent()) {
++                    return;
++                }
++
++                cursor.charge = event.getCharge();
++            }
++            // CraftBukkit end
+             this.cursors.add(cursor);
+         }
+     }
