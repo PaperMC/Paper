@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -27,30 +_,67 @@
+@@ -29,30 +_,67 @@
  import net.minecraft.util.profiling.Profiler;
  import org.slf4j.Logger;
  
@@ -73,7 +73,7 @@
  
      private void close() {
          if (!this.closed) {
-@@ -61,6 +_,12 @@
+@@ -63,6 +_,12 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails details) {
@@ -86,7 +86,7 @@
          if (this.isSingleplayerOwner()) {
              LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -80,7 +_,7 @@
+@@ -82,7 +_,7 @@
              this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
@@ -95,7 +95,7 @@
          }
      }
  
-@@ -88,30 +_,123 @@
+@@ -90,9 +_,73 @@
      public void handlePong(ServerboundPongPacket packet) {
      }
  
@@ -114,7 +114,7 @@
 +            return;
 +        }
 +
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
 +
 +        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
 +        final byte[] data = discardedPayload.data();
@@ -169,7 +169,8 @@
 +    // Paper end
  
      @Override
-     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+@@ -105,21 +_,50 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
          if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
              LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
@@ -225,7 +226,7 @@
              } else if (this.checkIfClosed(millis)) {
                  this.keepAlivePending = true;
                  this.keepAliveTime = millis;
-@@ -126,7 +_,7 @@
+@@ -134,7 +_,7 @@
      private boolean checkIfClosed(long time) {
          if (this.closed) {
              if (time - this.closedListenerTime >= 15000L) {
@@ -234,10 +235,10 @@
              }
  
              return false;
-@@ -149,6 +_,13 @@
+@@ -157,6 +_,13 @@
      }
  
-     public void send(Packet<?> packet, @Nullable PacketSendListener listener) {
+     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener) {
 +        // CraftBukkit start
 +        if (packet == null || this.processedDisconnect) { // Spigot
 +            return;
@@ -248,7 +249,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -165,19 +_,115 @@
+@@ -173,19 +_,115 @@
          }
      }
  

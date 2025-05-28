@@ -12,11 +12,12 @@
                  FluidState fluidState = level.getFluidState(worldPos);
                  if (!fluidState.isEmpty()) {
                      level.scheduleTick(worldPos, fluidState.getType(), 0);
-@@ -193,6 +_,39 @@
+@@ -193,6 +_,48 @@
          }
      }
  
 +    // CraftBukkit start
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 +    protected boolean placeCraftBlockEntity(ServerLevelAccessor levelAccessor, BlockPos pos, org.bukkit.craftbukkit.block.CraftBlockEntityState<?> craftBlockEntityState, int flags) {
 +        if (levelAccessor instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess && transformerAccess.canTransformBlocks()) {
 +            return transformerAccess.setCraftBlock(pos, craftBlockEntityState, flags);
@@ -25,7 +26,15 @@
 +        boolean result = levelAccessor.setBlock(pos, craftBlockEntityState.getHandle(), flags);
 +        BlockEntity blockEntity = levelAccessor.getBlockEntity(pos);
 +        if (blockEntity != null) {
-+            blockEntity.loadWithComponents(craftBlockEntityState.getSnapshotNBT(), levelAccessor.registryAccess());
++            try (final net.minecraft.util.ProblemReporter.ScopedCollector problemReporter = new net.minecraft.util.ProblemReporter.ScopedCollector(
++                () -> "StructurePieceTranformers@" + pos.toShortString(), LOGGER
++            )) {
++                blockEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
++                    problemReporter,
++                    levelAccessor.registryAccess(),
++                    craftBlockEntityState.getSnapshotNBT()
++                ));
++            }
 +        }
 +        return result;
 +    }

@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42eafb96fa1 100644
+index 2252c7c3e78c1d6dc9b56c0f6f01aec04699f072..235a076f982247552fef6d86d7e1b141eb8c72b5 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -85,7 +85,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -51,10 +51,10 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -423,11 +427,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -419,11 +423,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     public void send(Packet<?> packet, @Nullable PacketSendListener listener, boolean flush) {
+     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
 -        if (this.isConnected()) {
 -            this.flushQueue();
 +        // Paper start - Optimize network: Handle oversized packets better
@@ -67,14 +67,14 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
 +        if (connected && (InnerUtil.canSendImmediate(this, packet)
 +            || (io.papermc.paper.util.MCUtil.isMainThread() && packet.isReady() && this.pendingActions.isEmpty()
 +            && (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())))) {
-             this.sendPacket(packet, listener, flush);
+             this.sendPacket(packet, channelFutureListener, flag);
          } else {
--            this.pendingActions.add(connection -> connection.sendPacket(packet, listener, flush));
+-            this.pendingActions.add(connection -> connection.sendPacket(packet, channelFutureListener, flag));
 +            // Write the packets to the queue, then flush - antixray hooks there already
 +            final java.util.List<Packet<?>> extraPackets = InnerUtil.buildExtraPackets(packet);
 +            final boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 +            if (!hasExtraPackets) {
-+                this.pendingActions.add(new PacketSendAction(packet, listener, flush));
++                this.pendingActions.add(new PacketSendAction(packet, channelFutureListener, flag));
 +            } else {
 +                final java.util.List<PacketSendAction> actions = new java.util.ArrayList<>(1 + extraPackets.size());
 +                actions.add(new PacketSendAction(packet, null, false)); // Delay the future listener until the end of the extra packets
@@ -82,7 +82,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
 +                for (int i = 0, len = extraPackets.size(); i < len;) {
 +                    final Packet<?> extraPacket = extraPackets.get(i);
 +                    final boolean end = ++i == len;
-+                    actions.add(new PacketSendAction(extraPacket, end ? listener : null, end)); // Append listener to the end
++                    actions.add(new PacketSendAction(extraPacket, end ? channelFutureListener : null, end)); // Append listener to the end
 +                }
 +
 +                this.pendingActions.addAll(actions);
@@ -93,7 +93,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
          }
      }
  
-@@ -436,7 +467,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -432,7 +463,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.flushQueue();
              action.accept(this);
          } else {
@@ -102,10 +102,10 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
          }
      }
  
-@@ -450,6 +481,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -446,21 +477,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener sendListener, boolean flush) {
+     private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
 +        // Paper start - Optimize network
 +        final net.minecraft.server.level.ServerPlayer player = this.getPlayer();
 +        if (!this.isConnected()) {
@@ -113,24 +113,29 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
 +            return;
 +        }
 +        try {
++        final ChannelFuture channelFuture;
 +        // Paper end - Optimize network
-         ChannelFuture channelFuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
-         if (sendListener != null) {
-             channelFuture.addListener(future -> {
-@@ -465,14 +504,24 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-             });
-         }
- 
+         if (channelFutureListener != null) {
+-            ChannelFuture channelFuture = flag ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
++            channelFuture = flag ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - Optimize network
+             channelFuture.addListener(channelFutureListener);
+         } else if (flag) {
+-            this.channel.writeAndFlush(packet, this.channel.voidPromise());
++            channelFuture = this.channel.writeAndFlush(packet, this.channel.voidPromise()); // Paper - Optimize network
+         } else {
+-            this.channel.write(packet, this.channel.voidPromise());
++            channelFuture = this.channel.write(packet, this.channel.voidPromise()); // Paper - Optimize network
++        }
++
 +        // Paper start - Optimize network
 +        if (packet.hasFinishListener()) {
 +            channelFuture.addListener((ChannelFutureListener) future -> packet.onPacketDispatchFinish(player, future));
 +        }
-         channelFuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 +        } catch (final Exception e) {
 +            LOGGER.error("NetworkException: {}", player, e);
 +            this.disconnect(Component.translatable("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
 +            packet.onPacketDispatchFinish(player, null);
-+        }
+         }
 +        // Paper end - Optimize network
      }
  
@@ -143,7 +148,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
          }
      }
  
-@@ -484,16 +533,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -472,16 +523,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -206,7 +211,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
  
      private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
      private static int joinAttemptsThisTick; // Paper - Buffer joins to world
-@@ -563,6 +653,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -551,6 +643,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
          this.preparing = false; // Spigot
@@ -214,7 +219,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
          if (this.channel == null) {
              this.delayedDisconnect = disconnectionDetails;
          }
-@@ -751,7 +842,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -739,7 +832,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -223,7 +228,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetListener = this.getPacketListener();
-@@ -762,7 +853,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -750,7 +843,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }
@@ -232,7 +237,7 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
                  // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-@@ -797,4 +888,97 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -785,4 +878,97 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void setBandwidthLogger(LocalSampleLogger bandwithLogger) {
          this.bandwidthDebugMonitor = new BandwidthDebugMonitor(bandwithLogger);
      }
@@ -323,8 +328,8 @@ index 42f44c7cb0bd55ddfacd18acb0e596e7a953870e..2040b9555c430420a8a8697cc131d42e
 +    private static final class PacketSendAction extends WrappedConsumer {
 +        private final Packet<?> packet;
 +
-+        private PacketSendAction(final Packet<?> packet, @Nullable final PacketSendListener packetSendListener, final boolean flush) {
-+            super(connection -> connection.sendPacket(packet, packetSendListener, flush));
++        private PacketSendAction(final Packet<?> packet, @Nullable final ChannelFutureListener channelFutureListener, final boolean flush) {
++            super(connection -> connection.sendPacket(packet, channelFutureListener, flush));
 +            this.packet = packet;
 +        }
 +    }

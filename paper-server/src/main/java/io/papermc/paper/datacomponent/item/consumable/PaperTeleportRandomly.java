@@ -1,8 +1,10 @@
 package io.papermc.paper.datacomponent.item.consumable;
 
+import net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect;
+
 public record PaperTeleportRandomly(
     net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect impl
-) implements ConsumeEffect.TeleportRandomly, PaperConsumableEffectImpl<net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect> {
+) implements ConsumeEffect.TeleportRandomly, PaperConsumableEffect<TeleportRandomlyConsumeEffect> {
     @Override
     public float diameter() {
         return this.impl.diameter();

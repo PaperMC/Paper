@@ -1,62 +1,67 @@
 --- a/net/minecraft/world/entity/ExperienceOrb.java
 +++ b/net/minecraft/world/entity/ExperienceOrb.java
-@@ -41,9 +_,54 @@
+@@ -44,13 +_,59 @@
      @Nullable
      private Player followingPlayer;
      private final InterpolationHandler interpolation = new InterpolationHandler(this);
--
 +    // Paper start
 +    @Nullable
 +    public java.util.UUID sourceEntityId;
 +    @Nullable
 +    public java.util.UUID triggerEntityId;
 +    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
-+
-+    private void loadPaperNBT(CompoundTag tag) {
-+        CompoundTag expData = tag.getCompoundOrEmpty("Paper.ExpData");
-+        if (expData.isEmpty()) {
-+            return;
-+        }
-+
-+        this.sourceEntityId = expData.read("source", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
-+        this.triggerEntityId = expData.read("trigger", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
-+        expData.getString("reason").ifPresent(reason -> {
-+            try {
-+                this.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
-+            } catch (Exception e) {
-+                this.level().getCraftServer().getLogger().warning("Invalid spawnReason set for experience orb: " + e.getMessage() + " - " + reason);
-+            }
+ 
++    private void loadPaperNBT(ValueInput input) {
++        input.read("Paper.ExpData", net.minecraft.nbt.CompoundTag.CODEC).ifPresent(expData -> {
++            this.sourceEntityId = expData.read("source", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++            this.triggerEntityId = expData.read("trigger", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++            expData.getString("reason").ifPresent(reason -> {
++                try {
++                    this.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
++                } catch (Exception e) {
++                    this.level().getCraftServer().getLogger().warning("Invalid spawnReason set for experience orb: " + e.getMessage() + " - " + reason);
++                }
++            });
 +        });
 +    }
-+    private void savePaperNBT(CompoundTag tag) {
-+        CompoundTag expData = new CompoundTag();
++    private void savePaperNBT(ValueOutput output) {
++        net.minecraft.nbt.CompoundTag expData = new net.minecraft.nbt.CompoundTag();
 +        expData.storeNullable("source", net.minecraft.core.UUIDUtil.CODEC, this.sourceEntityId);
 +        expData.storeNullable("trigger", net.minecraft.core.UUIDUtil.CODEC, this.triggerEntityId);
 +        if (this.spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
 +            expData.putString("reason", this.spawnReason.name());
 +        }
-+        tag.put("Paper.ExpData", expData);
++        output.store("Paper.ExpData", net.minecraft.nbt.CompoundTag.CODEC, expData);
 +    }
-+
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
++    // Paper end
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - overload ctor
      public ExperienceOrb(Level level, double x, double y, double z, int value) {
-+        this(level, x, y, z, value, null, null);
+-        this(level, new Vec3(x, y, z), Vec3.ZERO, value);
++    // Paper start - add reasons for orbs
++        this(level, x, y, z, value, null, null, null);
 +    }
-+
-+    public ExperienceOrb(Level level, double x, double y, double z, int value, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId) {
-+        this(level, x, y, z, value, reason, triggerId, null);
-+    }
-+
 +    public ExperienceOrb(Level level, double x, double y, double z, int value, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId, @Nullable Entity sourceId) {
++        this(level, new Vec3(x, y, z), Vec3.ZERO, value, reason, triggerId, sourceId);
++    // Paper end - add reasons for orbs
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - overload ctor
+     public ExperienceOrb(Level level, Vec3 pos, Vec3 direction, int value) {
++    // Paper start - add reasons for orbs
++        this(level, pos, direction, value, null, null, null);
++    }
++    public ExperienceOrb(Level level, Vec3 pos, Vec3 direction, int value, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId, @Nullable Entity sourceId) {
++    // Paper end - add reasons for orbs
          this(EntityType.EXPERIENCE_ORB, level);
++        // Paper start - add reasons for orbs
 +        this.sourceEntityId = sourceId != null ? sourceId.getUUID() : null;
 +        this.triggerEntityId = triggerId != null ? triggerId.getUUID() : null;
 +        this.spawnReason = reason != null ? reason : org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
-+        // Paper end
-         this.setPos(x, y, z);
-         if (!this.level().isClientSide) {
-             this.setYRot((float)(this.random.nextDouble() * 360.0));
-@@ -119,12 +_,13 @@
++        // Paper end - add reasons for orbs
+         this.setPos(pos);
+         if (!level.isClientSide) {
+             this.setYRot(this.random.nextFloat() * 360.0F);
+@@ -147,12 +_,13 @@
  
              this.age++;
              if (this.age >= 6000) {
@@ -71,7 +76,7 @@
          if (this.followingPlayer == null || this.followingPlayer.isSpectator() || this.followingPlayer.distanceToSqr(this) > 64.0) {
              Player nearestPlayer = this.level().getNearestPlayer(this, 8.0);
              if (nearestPlayer != null && !nearestPlayer.isSpectator() && !nearestPlayer.isDeadOrDying()) {
-@@ -134,7 +_,24 @@
+@@ -162,7 +_,24 @@
              }
          }
  
@@ -97,26 +102,21 @@
              Vec3 vec3 = new Vec3(
                  this.followingPlayer.getX() - this.getX(),
                  this.followingPlayer.getY() + this.followingPlayer.getEyeHeight() / 2.0 - this.getY(),
-@@ -161,18 +_,29 @@
+@@ -193,18 +_,24 @@
      }
  
-     public static void award(ServerLevel level, Vec3 pos, int amount) {
-+        // Paper start - add reasons for orbs
-+        award(level, pos, amount, null, null, null);
+     public static void awardWithDirection(ServerLevel level, Vec3 pos, Vec3 direction, int amount) {
++    // Paper start - add reason to orbs
++        awardWithDirection(level, pos, direction, amount, null, null, null);
 +    }
-+
-+    public static void award(ServerLevel level, Vec3 pos, int amount, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId) {
-+        award(level, pos, amount, reason, triggerId, null);
-+    }
-+
-+    public static void award(ServerLevel level, Vec3 pos, int amount, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId, @Nullable Entity sourceId) {
-+        // Paper end - add reasons for orbs
++    public static void awardWithDirection(ServerLevel level, Vec3 pos, Vec3 direction, int amount, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId, @Nullable Entity sourceId) {
++    // Paper end - add reason to orbs
          while (amount > 0) {
              int experienceValue = getExperienceValue(amount);
              amount -= experienceValue;
              if (!tryMergeToExisting(level, pos, experienceValue)) {
--                level.addFreshEntity(new ExperienceOrb(level, pos.x(), pos.y(), pos.z(), experienceValue));
-+                level.addFreshEntity(new ExperienceOrb(level, pos.x(), pos.y(), pos.z(), experienceValue, reason, triggerId, sourceId)); // Paper - add reason
+-                level.addFreshEntity(new ExperienceOrb(level, pos, direction, experienceValue));
++                level.addFreshEntity(new ExperienceOrb(level, pos, direction, experienceValue, reason, triggerId, sourceId)); // Paper - add reason to orbs
              }
          }
      }
@@ -126,10 +126,10 @@
          AABB aabb = AABB.ofSize(pos, 1.0, 1.0, 1.0);
 -        int randomInt = level.getRandom().nextInt(40);
 +        int randomInt = level.getRandom().nextInt(io.papermc.paper.configuration.GlobalConfiguration.get().misc.xpOrbGroupsPerArea.or(ORB_GROUPS_PER_AREA)); // Paper - Configure how many orb groups per area
-         List<ExperienceOrb> entities = level.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), aabb, orb -> canMerge(orb, randomInt, amount));
-         if (!entities.isEmpty()) {
-             ExperienceOrb experienceOrb = entities.get(0);
-@@ -189,13 +_,18 @@
+         List<ExperienceOrb> entities = level.getEntities(
+             EntityTypeTest.forClass(ExperienceOrb.class), aabb, experienceOrb1 -> canMerge(experienceOrb1, randomInt, amount)
+         );
+@@ -223,13 +_,18 @@
      }
  
      private static boolean canMerge(ExperienceOrb orb, int amount, int other) {
@@ -150,7 +150,7 @@
      }
  
      private void setUnderwaterMovement() {
-@@ -220,7 +_,7 @@
+@@ -254,7 +_,7 @@
              this.markHurt();
              this.health = (int)(this.health - amount);
              if (this.health <= 0) {
@@ -159,24 +159,24 @@
              }
  
              return true;
-@@ -231,32 +_,34 @@
-     public void addAdditionalSaveData(CompoundTag compound) {
-         compound.putShort("Health", (short)this.health);
-         compound.putShort("Age", (short)this.age);
--        compound.putShort("Value", (short)this.getValue());
-+        compound.putInt("Value", this.getValue()); // Paper - save as Integer
-         compound.putInt("Count", this.count);
-+        this.savePaperNBT(compound); // Paper
+@@ -265,32 +_,34 @@
+     protected void addAdditionalSaveData(ValueOutput output) {
+         output.putShort("Health", (short)this.health);
+         output.putShort("Age", (short)this.age);
+-        output.putShort("Value", (short)this.getValue());
++        output.putInt("Value", this.getValue()); // Paper - save as Integer
+         output.putInt("Count", this.count);
++        this.savePaperNBT(output); // Paper
      }
  
      @Override
-     public void readAdditionalSaveData(CompoundTag compound) {
-         this.health = compound.getShortOr("Health", (short)5);
-         this.age = compound.getShortOr("Age", (short)0);
--        this.setValue(compound.getShortOr("Value", (short)0));
-+        this.setValue(compound.getIntOr("Value", 0)); // Paper - load as Integer
-         this.count = compound.read("Count", ExtraCodecs.POSITIVE_INT).orElse(1);
-+        this.loadPaperNBT(compound); // Paper
+     protected void readAdditionalSaveData(ValueInput input) {
+         this.health = input.getShortOr("Health", (short)5);
+         this.age = input.getShortOr("Age", (short)0);
+-        this.setValue(input.getShortOr("Value", (short)0));
++        this.setValue(input.getIntOr("Value", 0)); // Paper - load as Integer
+         this.count = input.read("Count", ExtraCodecs.POSITIVE_INT).orElse(1);
++        this.loadPaperNBT(input); // Paper
      }
  
      @Override
@@ -200,9 +200,9 @@
                  }
              }
          }
-@@ -270,9 +_,19 @@
+@@ -304,9 +_,19 @@
              ItemStack itemStack = randomItemWith.get().itemStack();
-             int i = EnchantmentHelper.modifyDurabilityToRepairFromXp(player.serverLevel(), itemStack, value);
+             int i = EnchantmentHelper.modifyDurabilityToRepairFromXp(player.level(), itemStack, value);
              int min = Math.min(i, itemStack.getDamageValue());
 +            // CraftBukkit start
 +            // Paper start - mending event
@@ -221,7 +221,7 @@
                  if (i1 > 0) {
                      return this.repairPlayerItems(player, i1);
                  }
-@@ -318,6 +_,24 @@
+@@ -352,6 +_,24 @@
      }
  
      public static int getExperienceValue(int expValue) {

@@ -46,7 +46,6 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractFish.class, Fish.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractSchoolingFish.class, SchoolableFish.class);
-        bukkitMap.put(net.minecraft.world.entity.FlyingMob.class, Flying.class);
         bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Giant.class, Giant.class);
@@ -131,6 +130,7 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         bukkitMap.put(net.minecraft.world.entity.monster.creaking.Creaking.class, Creaking.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class); // close enough
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
+        bukkitMap.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
         //</editor-fold>
     }
 

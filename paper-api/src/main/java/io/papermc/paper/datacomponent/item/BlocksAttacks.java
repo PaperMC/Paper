@@ -4,13 +4,13 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.registry.tag.TagKey;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.List;
 
 /**
  * Holds block attacks to the holding player like Shield.
@@ -62,24 +62,21 @@ public interface BlocksAttacks {
      *
      * @return a damage type tag key, or null if there is no such tag key
      */
-    @Nullable
-    TagKey<DamageType> bypassedBy();
+    @Nullable TagKey<DamageType> bypassedBy();
 
     /**
      * Gets the key sound to play when an attack is successfully blocked.
      *
      * @return a key of the sound
      */
-    @Nullable
-    Key blockSound();
+    @Nullable Key blockSound();
 
     /**
      * Gets the key sound to play when the item goes on its disabled cooldown due to an attack.
      *
      * @return a key of the sound
      */
-    @Nullable
-    Key disableSound();
+    @Nullable Key disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.

@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/animal/Animal.java
 +++ b/net/minecraft/world/entity/animal/Animal.java
-@@ -41,6 +_,7 @@
+@@ -42,6 +_,7 @@
      public int inLove = 0;
      @Nullable
-     public UUID loveCause;
+     public EntityReference<ServerPlayer> loveCause;
 +    public @Nullable ItemStack breedItem; // CraftBukkit - Add breedItem variable
  
      protected Animal(EntityType<? extends Animal> entityType, Level level) {
          super(entityType, level);
-@@ -80,9 +_,13 @@
+@@ -81,9 +_,13 @@
      }
  
      @Override
@@ -24,18 +24,18 @@
      }
  
      @Override
-@@ -138,8 +_,9 @@
+@@ -139,8 +_,9 @@
          if (this.isFood(itemInHand)) {
              int age = this.getAge();
-             if (!this.level().isClientSide && age == 0 && this.canFallInLove()) {
+             if (player instanceof ServerPlayer serverPlayer && age == 0 && this.canFallInLove()) {
 +                final ItemStack breedCopy = itemInHand.copy(); // Paper - Fix EntityBreedEvent copying
                  this.usePlayerItem(player, hand, itemInHand);
--                this.setInLove(player);
-+                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+-                this.setInLove(serverPlayer);
++                this.setInLove(serverPlayer, breedCopy); // Paper - Fix EntityBreedEvent copying
                  this.playEatingSound();
                  return InteractionResult.SUCCESS_SERVER;
              }
-@@ -176,8 +_,23 @@
+@@ -177,8 +_,23 @@
          return this.inLove <= 0;
      }
  
@@ -57,10 +57,10 @@
 +        }
 +        this.inLove = entityEnterLoveModeEvent.getTicksInLove();
 +        // CraftBukkit end
-         if (player != null) {
-             this.loveCause = player.getUUID();
+         if (player instanceof ServerPlayer serverPlayer) {
+             this.loveCause = new EntityReference<>(serverPlayer);
          }
-@@ -220,23 +_,45 @@
+@@ -216,23 +_,45 @@
          if (breedOffspring != null) {
              breedOffspring.setBaby(true);
              breedOffspring.snapTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
@@ -108,7 +108,7 @@
 -        if (level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -            level.addFreshEntity(new ExperienceOrb(level, this.getX(), this.getY(), this.getZ(), this.getRandom().nextInt(7) + 1));
 +        if (experience > 0 && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - Call EntityBreedEvent
-+            level.addFreshEntity(new ExperienceOrb(level, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, player, baby)); // Paper - Call EntityBreedEvent, add spawn context
++            level.addFreshEntity(new ExperienceOrb(level, this.position(), net.minecraft.world.phys.Vec3.ZERO, experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, player, baby)); // Paper - Call EntityBreedEvent, add spawn context
          }
      }
  

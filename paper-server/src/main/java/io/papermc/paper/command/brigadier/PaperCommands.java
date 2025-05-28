@@ -95,7 +95,7 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
     }
 
     public @Unmodifiable Set<String> registerWithFlagsInternal(final @Nullable PluginMeta pluginMeta, final String namespace, final @Nullable String helpNamespaceOverride, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases, final Set<CommandRegistrationFlag> flags) {
-        final APICommandMeta meta = new APICommandMeta(pluginMeta, description, List.of(), helpNamespaceOverride, flags.contains(CommandRegistrationFlag.SERVER_ONLY));
+        final APICommandMeta meta = new APICommandMeta(pluginMeta, description, List.of(), helpNamespaceOverride);
         final String literal = node.getLiteral();
         final LiteralCommandNode<CommandSourceStack> pluginLiteral = PaperBrigadier.copyLiteral(namespace + ":" + literal, node);
 

@@ -30,7 +30,7 @@ public class ScanOldGeneratedSourceCode {
 
     static {
         Main.bootStrap(false);
-        CURRENT_VERSION = SharedConstants.getCurrentVersion().getId();
+        CURRENT_VERSION = SharedConstants.getCurrentVersion().id();
     }
 
     public static void main(String[] args) throws IOException {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -109,6 +_,53 @@
+@@ -110,6 +_,53 @@
              return 3;
          }
      };
@@ -54,7 +54,7 @@
  
      @Nullable
      static Holder<MobEffect> filterEffect(@Nullable Holder<MobEffect> effect) {
-@@ -166,17 +_,26 @@
+@@ -167,17 +_,26 @@
              blockEntity.lastCheckY++;
          }
  
@@ -83,7 +83,7 @@
  
          if (blockEntity.lastCheckY >= height) {
              blockEntity.lastCheckY = level.getMinY() - 1;
-@@ -227,35 +_,100 @@
+@@ -228,35 +_,100 @@
  
      @Override
      public void setRemoved() {
@@ -202,35 +202,35 @@
  
      public static void playSound(Level level, BlockPos pos, SoundEvent sound) {
          level.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
-@@ -284,7 +_,7 @@
+@@ -285,7 +_,7 @@
  
      @Nullable
-     private static Holder<MobEffect> loadEffect(CompoundTag tag, String key) {
--        return tag.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).filter(VALID_EFFECTS::contains).orElse(null);
-+        return tag.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).orElse(null); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
+     private static Holder<MobEffect> loadEffect(ValueInput input, String key) {
+-        return input.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).filter(VALID_EFFECTS::contains).orElse(null);
++        return input.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).orElse(null); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
      }
  
      @Override
-@@ -292,8 +_,10 @@
-         super.loadAdditional(tag, registries);
-         this.primaryPower = loadEffect(tag, "primary_effect");
-         this.secondaryPower = loadEffect(tag, "secondary_effect");
-+        this.levels = tag.getIntOr("Levels", 0); // CraftBukkit - SPIGOT-5053, use where available
-         this.name = parseCustomNameSafe(tag.get("CustomName"), registries);
-         this.lockKey = LockCode.fromTag(tag, registries);
-+        this.effectRange = tag.getDoubleOr(PAPER_RANGE_TAG, -1); // Paper - Custom beacon ranges
+@@ -293,8 +_,10 @@
+         super.loadAdditional(input);
+         this.primaryPower = loadEffect(input, "primary_effect");
+         this.secondaryPower = loadEffect(input, "secondary_effect");
++        this.levels = input.getIntOr("Levels", 0); // CraftBukkit - SPIGOT-5053, use where available
+         this.name = parseCustomNameSafe(input, "CustomName");
+         this.lockKey = LockCode.fromTag(input);
++        this.effectRange = input.getDoubleOr(PAPER_RANGE_TAG, -1); // Paper - Custom beacon ranges
      }
  
      @Override
-@@ -304,6 +_,7 @@
-         tag.putInt("Levels", this.levels);
-         tag.storeNullable("CustomName", ComponentSerialization.CODEC, registries.createSerializationContext(NbtOps.INSTANCE), this.name);
-         this.lockKey.addToTag(tag, registries);
-+        tag.putDouble(PAPER_RANGE_TAG, this.effectRange); // Paper - Custom beacon ranges
+@@ -305,6 +_,7 @@
+         output.putInt("Levels", this.levels);
+         output.storeNullable("CustomName", ComponentSerialization.CODEC, this.name);
+         this.lockKey.addToTag(output);
++        output.putDouble(PAPER_RANGE_TAG, this.effectRange); // Paper - Custom beacon ranges
      }
  
      public void setCustomName(@Nullable Component name) {
-@@ -319,7 +_,7 @@
+@@ -320,7 +_,7 @@
      @Nullable
      @Override
      public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {

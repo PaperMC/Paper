@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -150,6 +_,11 @@
+@@ -176,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
@@ -12,7 +12,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -251,6 +_,40 @@
+@@ -280,6 +_,42 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -20,6 +20,8 @@
 +        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
 +            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
 +                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
++            } else if (node.getRequirement() instanceof net.minecraft.commands.PermissionSource.Check<CommandSourceStack> check) {
++                check.vanillaNode().set(node);
 +            }
 +        }
 +        // Paper end - Vanilla command permission fixes
@@ -53,7 +55,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -260,15 +_,58 @@
+@@ -289,9 +_,41 @@
          return new ParseResults<>(commandContextBuilder, parseResults.getReader(), parseResults.getExceptions());
      }
  
@@ -89,10 +91,14 @@
 +    }
 +
 +    public void performPrefixedCommand(CommandSourceStack source, String command, String label) {
-         command = command.startsWith("/") ? command.substring(1) : command;
+         command = trimOptionalPrefix(command);
 -        this.performCommand(this.dispatcher.parse(command, source), command);
 +        this.performCommand(this.dispatcher.parse(command, source), command, label);
 +        // CraftBukkit end
+     }
+ 
+     public static String trimOptionalPrefix(String command) {
+@@ -299,9 +_,20 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
@@ -114,7 +120,7 @@
  
          try {
              if (contextChain != null) {
-@@ -280,9 +_,10 @@
+@@ -313,9 +_,10 @@
                  );
              }
          } catch (Exception var12) {
@@ -127,7 +133,7 @@
                  StackTraceElement[] stackTrace = var12.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -308,18 +_,22 @@
+@@ -341,18 +_,22 @@
      }
  
      @Nullable
@@ -153,7 +159,7 @@
                  if (min > 10) {
                      mutableComponent.append(CommonComponents.ELLIPSIS);
                  }
-@@ -331,7 +_,17 @@
+@@ -364,7 +_,17 @@
                  }
  
                  mutableComponent.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -172,13 +178,13 @@
              }
  
              return null;
-@@ -359,26 +_,121 @@
+@@ -392,17 +_,110 @@
      }
  
      public void sendCommands(ServerPlayer player) {
 +        // Paper start - Send empty commands if tab completion is disabled
 +        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
-+            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>()));
++            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>(), COMMAND_NODE_INSPECTOR));
 +            return;
 +        }
 +        // Paper end - Send empty commands if tab completion is disabled
@@ -203,11 +209,11 @@
 +
 +    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
-         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
-         RootCommandNode<SharedSuggestionProvider> rootCommandNode = new RootCommandNode<>();
+         Map<CommandNode<CommandSourceStack>, CommandNode<CommandSourceStack>> map = new HashMap<>();
+         RootCommandNode<CommandSourceStack> rootCommandNode = new RootCommandNode<>();
          map.put(this.dispatcher.getRoot(), rootCommandNode);
--        this.fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
-+        this.fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
+-        fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
++        fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
 +
 +        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
 +        for (CommandNode node : rootCommandNode.getChildren()) {
@@ -216,11 +222,11 @@
 +        // Paper start - Perf: Async command map building
 +        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, false).callEvent(); // Paper - Brigadier API
 +        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
-+           runSync(player, bukkit, rootCommandNode);
++            runSync(player, bukkit, rootCommandNode);
 +        });
 +    }
 +
-+    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootCommandNode) {
++    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<CommandSourceStack> rootCommandNode) {
 +        // Paper end - Perf: Async command map building
 +        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, true).callEvent(); // Paper - Brigadier API
 +        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
@@ -233,28 +239,21 @@
 +            }
 +        }
 +        // CraftBukkit end
-+
-         player.connection.send(new ClientboundCommandsPacket(rootCommandNode));
+         player.connection.send(new ClientboundCommandsPacket(rootCommandNode, COMMAND_NODE_INSPECTOR));
      }
  
-     private void fillUsableCommands(
--        CommandNode<CommandSourceStack> rootCommandSource,
-+        java.util.Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
-         CommandNode<SharedSuggestionProvider> rootSuggestion,
-         CommandSourceStack source,
-         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
-     ) {
--        for (CommandNode<CommandSourceStack> commandNode : rootCommandSource.getChildren()) {
-+        for (CommandNode<CommandSourceStack> commandNode : children) { // Paper - Perf: Async command map building; pass copy of children
+-    private static <S> void fillUsableCommands(CommandNode<S> root, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) {
+-        for (CommandNode<S> commandNode : root.getChildren()) {
++    private static <S> void fillUsableCommands(java.util.Collection<CommandNode<S>> children, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) { // Paper - Perf: Async command map building; pass copy of children
++        for (CommandNode<S> commandNode : children) {  // Paper - Perf: Async command map building; pass copy of children
 +            // Paper start - Brigadier API
 +            if (commandNode.clientNode != null) {
 +                commandNode = commandNode.clientNode;
 +            }
 +            // Paper end - Brigadier API
 +            if (!org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
-+            if (commandNode.wrappedCached != null && commandNode.wrappedCached.apiCommandMeta != null && commandNode.wrappedCached.apiCommandMeta.serverSideOnly()) continue; // Paper
              if (commandNode.canUse(source)) {
-                 ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
+                 ArgumentBuilder<S, ?> argumentBuilder = commandNode.createBuilder();
 +                // Paper start
 +                /*
 +                Because of how commands can be yeeted right left and center due to bad bukkit practices
@@ -271,41 +270,34 @@
 +                - Do this :)
 +                 */
 +                // Is there an invalid command redirect?
-+                if (argumentBuilder.getRedirect() != null && commandNodeToSuggestionNode.get(argumentBuilder.getRedirect()) == null) {
++                if (argumentBuilder.getRedirect() != null && output.get(argumentBuilder.getRedirect()) == null) {
 +                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
 +
-+                    final CommandNode<SharedSuggestionProvider> redirect = argumentBuilder.getRedirect();
++                    final CommandNode<S> redirect = argumentBuilder.getRedirect();
 +                    // Diff copied from LiteralCommand#createBuilder
-+                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<SharedSuggestionProvider> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<S> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
 +                    builder.requires(redirect.getRequirement());
 +                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
 +                    if (redirect.getCommand() != null) {
 +                        builder.executes(redirect.getCommand());
 +                    }
 +                    // Diff copied from LiteralCommand#createBuilder
-+                    for (final CommandNode<SharedSuggestionProvider> child : redirect.getChildren()) {
++                    for (final CommandNode<S> child : redirect.getChildren()) {
 +                        builder.then(child);
 +                    }
 +
 +                    argumentBuilder = builder;
 +                }
 +                // Paper end
-                 argumentBuilder.requires(suggestions -> true);
--                if (argumentBuilder.getCommand() != null) {
--                    argumentBuilder.executes(commandContext -> 0);
--                }
-+                // Paper - don't replace Command instance on suggestion node
-+                // we want the exact command instance to be used for equality checks
-+                // when assigning serialization ids to each command node
- 
-                 if (argumentBuilder instanceof RequiredArgumentBuilder requiredArgumentBuilder
-                     && requiredArgumentBuilder.getSuggestionsProvider() != null) {
-@@ -393,7 +_,7 @@
-                 commandNodeToSuggestionNode.put(commandNode, commandNode1);
-                 rootSuggestion.addChild(commandNode1);
+                 if (argumentBuilder.getRedirect() != null) {
+                     argumentBuilder.redirect(output.get(argumentBuilder.getRedirect()));
+                 }
+@@ -411,7 +_,7 @@
+                 output.put(commandNode, commandNode1);
+                 current.addChild(commandNode1);
                  if (!commandNode.getChildren().isEmpty()) {
--                    this.fillUsableCommands(commandNode, commandNode1, source, commandNodeToSuggestionNode);
-+                    this.fillUsableCommands(commandNode.getChildren(), commandNode1, source, commandNodeToSuggestionNode); // Paper - Perf: Async command map building; pass copy of children
+-                    fillUsableCommands(commandNode, commandNode1, source, output);
++                    fillUsableCommands(commandNode.getChildren(), commandNode1, source, output); // Paper - Perf: Async command map building; pass copy of children
                  }
              }
          }

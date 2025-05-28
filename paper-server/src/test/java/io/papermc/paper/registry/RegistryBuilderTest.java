@@ -6,7 +6,6 @@ import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import java.util.Map;
 import java.util.stream.Stream;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.support.RegistryHelper;
@@ -32,7 +31,7 @@ class RegistryBuilderTest {
     <M, T extends Keyed> void testEquality(final RegistryEntryMeta.Buildable<M, T, ?> registryEntry) { // TODO remove Keyed
         final Registry<M> registry = RegistryHelper.getRegistry().lookupOrThrow(registryEntry.mcKey());
         for (final Map.Entry<ResourceKey<M>, M> entry : registry.entrySet()) {
-            final M built = registryEntry.builderFiller().fill(new Conversions(new RegistryOps.HolderLookupAdapter(RegistryHelper.getRegistry())), entry.getValue()).build();
+            final M built = registryEntry.builderFiller().fill(Conversions.global(), entry.getValue()).build();
             assertEquals(entry.getValue(), built);
         }
     }

@@ -1,61 +1,29 @@
 --- a/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
 +++ b/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
-@@ -81,6 +_,15 @@
+@@ -82,7 +_,7 @@
+             boolean flag = false;
  
-             for (Leashable leashable : list) {
-                 if (leashable.getLeashHolder() == player) {
-+                    // CraftBukkit start
-+                    if (leashable instanceof Entity leashed) {
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, this, player, hand).isCancelled()) {
-+                            ((net.minecraft.server.level.ServerPlayer) player).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(leashed, leashable.getLeashHolder()));
-+                            flag = true; // Also set true when the event is cancelled otherwise it tries to unleash the entities
-+                            continue;
-+                        }
-+                    }
-+                    // CraftBukkit end
+             for (Leashable leashable : Leashable.leashableLeashedTo(player)) {
+-                if (leashable.canHaveALeashAttachedTo(this)) {
++                if (leashable.canHaveALeashAttachedTo(this) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, this, player, hand)) { // Paper - leash event
                      leashable.setLeashedTo(this, true);
                      flag = true;
                  }
-@@ -88,14 +_,39 @@
- 
+@@ -91,7 +_,7 @@
              boolean flag1 = false;
-             if (!flag) {
--                this.discard();
--                if (player.getAbilities().instabuild) {
-+                // CraftBukkit start - Move below
-+                // this.discard();
-+                boolean die = true;
-+                // CraftBukkit end
-+                if (true || player.getAbilities().instabuild) { // CraftBukkit - Process for non-creative as well
-                     for (Leashable leashable1 : list) {
-                         if (leashable1.isLeashed() && leashable1.getLeashHolder() == this) {
--                            leashable1.removeLeash();
-+                            // CraftBukkit start
-+                            boolean dropLeash = !player.hasInfiniteMaterials();
-+                            if (leashable1 instanceof Entity leashed) {
-+                                // Paper start - Expand EntityUnleashEvent
-+                                org.bukkit.event.player.PlayerUnleashEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerUnleashEntityEvent(leashed, player, hand, dropLeash);
-+                                dropLeash = event.isDropLeash();
-+                                if (event.isCancelled()) {
-+                                    // Paper end - Expand EntityUnleashEvent
-+                                    die = false;
-+                                    continue;
-+                                }
-+                            }
-+                            if (!dropLeash) { // Paper - Expand EntityUnleashEvent
-+                                leashable1.removeLeash();
-+                            } else {
-+                                leashable1.dropLeash();
-+                            }
-+                            // CraftBukkit end
-                             flag1 = true;
-                         }
+             if (!flag && !player.isSecondaryUseActive()) {
+                 for (Leashable leashable1 : Leashable.leashableLeashedTo(this)) {
+-                    if (leashable1.canHaveALeashAttachedTo(player)) {
++                    if (leashable1.canHaveALeashAttachedTo(player) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable1, player, player, hand)) { // Paper - leash event
+                         leashable1.setLeashedTo(player, true);
+                         flag1 = true;
                      }
-+                    // CraftBukkit start
-+                    if (die) {
-+                        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
-+                    }
-+                    // CraftBukkit end
-                 }
-             }
+@@ -111,7 +_,7 @@
+     @Override
+     public void notifyLeasheeRemoved(Leashable leashHolder) {
+         if (Leashable.leashableLeashedTo(this).isEmpty()) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+         }
+     }
  

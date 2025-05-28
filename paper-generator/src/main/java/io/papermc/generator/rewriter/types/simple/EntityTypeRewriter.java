@@ -44,6 +44,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         .put("LeashKnot", "LeashHitch")
         .put("LightningBolt", "LightningStrike")
         .put("Tnt", "TNTPrimed")
+        .put("Minecart", "RideableMinecart")
         .put("ChestMinecart", "StorageMinecart")
         .put("CommandBlockMinecart", "CommandMinecart")
         .put("TntMinecart", "ExplosiveMinecart")

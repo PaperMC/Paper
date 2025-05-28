@@ -7,7 +7,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.Objects;
@@ -61,17 +60,17 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         }
 
         @Override
-        public @NotNull NamespacedKey getKey() {
+        public NamespacedKey getKey() {
             return LEGACY_CUSTOM_KEY;
         }
 
         @Override
-        public int compareTo(@NotNull final Biome other) {
+        public int compareTo(final Biome other) {
             return this.ordinal - other.ordinal();
         }
 
         @Override
-        public @NotNull String name() {
+        public String name() {
             return "CUSTOM";
         }
 

@@ -36,7 +36,7 @@ public class MobGoalHelper {
 
         //<editor-fold defaultstate="collapsed" desc="bukkitMap Entities">
         // Start generate - MobGoalHelper#bukkitMap
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.6-rc1
         bukkitMap.put(net.minecraft.world.entity.Mob.class, Mob.class);
         bukkitMap.put(net.minecraft.world.entity.AgeableMob.class, Ageable.class);
         bukkitMap.put(net.minecraft.world.entity.ambient.AmbientCreature.class, Ambient.class);
@@ -59,7 +59,6 @@ public class MobGoalHelper {
         bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractFish.class, Fish.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractSchoolingFish.class, SchoolableFish.class);
-        bukkitMap.put(net.minecraft.world.entity.FlyingMob.class, Flying.class);
         bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Giant.class, Giant.class);
@@ -144,6 +143,7 @@ public class MobGoalHelper {
         bukkitMap.put(net.minecraft.world.entity.monster.creaking.Creaking.class, Creaking.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
+        bukkitMap.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
         // End generate - MobGoalHelper#bukkitMap
         //</editor-fold>
     }

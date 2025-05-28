@@ -48,7 +48,7 @@ public class PaperPatternSourceSetRewriter extends SourceSetRewriterImpl<Pattern
                 COMMENT_MARKER_FORMAT.formatted("Start", pattern),
                 COMMENT_MARKER_FORMAT.formatted("End", pattern)
             )
-            .generatedComment(Annotations.annotationStyle(GeneratedFrom.class) + " " + SharedConstants.getCurrentVersion().getId())
+            .generatedComment(Annotations.annotationStyle(GeneratedFrom.class) + " " + SharedConstants.getCurrentVersion().id())
             .targetClass(targetClass);
     }
 

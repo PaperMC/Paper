@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Optional;
+import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
@@ -332,7 +333,7 @@ public final class CraftItemFactory implements ItemFactory {
             Optional.of(
                 io.papermc.paper.registry.set.PaperRegistrySets.convertToNms(
                     Registries.ENCHANTMENT,
-                    net.minecraft.server.MinecraftServer.getServer().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE).lookupProvider,
+                    Conversions.global().lookup(),
                     keySet
                 )
             ),

@@ -12,6 +12,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
+import net.minecraft.world.level.block.AbstractBannerBlock;
+import net.minecraft.world.level.block.AbstractSkullBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import org.bukkit.Bukkit;
@@ -174,9 +176,8 @@ public class ItemMetaTest {
             if (block != null) {
                 ItemStack stack = CraftItemStack.asNewCraftStack(Item.byBlock(block));
 
-                // Command blocks aren't unit testable atm
-                if (stack.getType() == Material.COMMAND_BLOCK || stack.getType() == Material.CHAIN_COMMAND_BLOCK || stack.getType() == Material.REPEATING_COMMAND_BLOCK) {
-                    return;
+                if (block instanceof AbstractSkullBlock || block instanceof AbstractBannerBlock) {
+                    continue; // those blocks have a special meta
                 }
 
                 ItemMeta meta = stack.getItemMeta();

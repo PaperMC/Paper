@@ -72,7 +72,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getBodyPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().bodyPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getBodyPose());
     }
 
     @Override
@@ -82,7 +82,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getLeftArmPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().leftArmPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getLeftArmPose());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getRightArmPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().rightArmPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getRightArmPose());
     }
 
     @Override
@@ -102,7 +102,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getLeftLegPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().leftLegPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getLeftLegPose());
     }
 
     @Override
@@ -112,7 +112,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getRightLegPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().rightLegPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getRightLegPose());
     }
 
     @Override
@@ -122,7 +122,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public EulerAngle getHeadPose() {
-        return CraftArmorStand.fromNMS(this.getHandle().headPose);
+        return CraftArmorStand.fromNMS(this.getHandle().getHeadPose());
     }
 
     @Override
@@ -293,7 +293,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getBodyRotations() {
-        return fromNMSRotations(this.getHandle().bodyPose);
+        return fromNMSRotations(this.getHandle().getBodyPose());
     }
 
     @Override
@@ -303,7 +303,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getLeftArmRotations() {
-        return fromNMSRotations(this.getHandle().leftArmPose);
+        return fromNMSRotations(this.getHandle().getLeftArmPose());
     }
 
     @Override
@@ -313,7 +313,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getRightArmRotations() {
-        return fromNMSRotations(this.getHandle().rightArmPose);
+        return fromNMSRotations(this.getHandle().getRightArmPose());
     }
 
     @Override
@@ -323,7 +323,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getLeftLegRotations() {
-        return fromNMSRotations(this.getHandle().leftLegPose);
+        return fromNMSRotations(this.getHandle().getLeftLegPose());
     }
 
     @Override
@@ -333,7 +333,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getRightLegRotations() {
-        return fromNMSRotations(this.getHandle().rightLegPose);
+        return fromNMSRotations(this.getHandle().getRightLegPose());
     }
 
     @Override
@@ -343,7 +343,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public io.papermc.paper.math.Rotations getHeadRotations() {
-        return fromNMSRotations(this.getHandle().headPose);
+        return fromNMSRotations(this.getHandle().getHeadPose());
     }
 
     @Override

@@ -5,10 +5,8 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 @ApiStatus.Internal
-@NullMarked
 interface LifecycleEventTypeProvider {
 
     Optional<LifecycleEventTypeProvider> INSTANCE = ServiceLoader.load(LifecycleEventTypeProvider.class)

@@ -8,13 +8,13 @@ import io.papermc.paper.datacomponent.item.blocksattacks.PaperDamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.PaperItemDamageFunction;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.tag.TagKey;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -65,7 +65,7 @@ public record PaperBlocksAttacks(
 
         private float blockDelaySeconds;
         private float disableCooldownScale = 1.0F;
-        private List<DamageReduction> damageReductions = new ArrayList<>();
+        private List<DamageReduction> damageReductions = new ObjectArrayList<>();
         private ItemDamageFunction itemDamage = new PaperItemDamageFunction(net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT);
         private @Nullable TagKey<DamageType> bypassedBy;
         private @Nullable Key blockSound;
@@ -87,8 +87,13 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder addDamageReduction(final DamageReduction reduction) {
-            Preconditions.checkArgument(reduction.horizontalBlockingAngle() >= 0, "horizontalBlockingAngle must be non-negative, was %s", reduction.horizontalBlockingAngle());
             this.damageReductions.add(reduction);
+            return this;
+        }
+
+        @Override
+        public Builder damageReductions(final List<DamageReduction> reductions) {
+            this.damageReductions = new ObjectArrayList<>(reductions);
             return this;
         }
 
@@ -105,20 +110,14 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public Builder blockSound(@Nullable final Key sound) {
+        public Builder blockSound(final @Nullable Key sound) {
             this.blockSound = sound;
             return this;
         }
 
         @Override
-        public Builder disableSound(@Nullable final Key sound) {
+        public Builder disableSound(final @Nullable Key sound) {
             this.disableSound = sound;
-            return this;
-        }
-
-        @Override
-        public Builder damageReductions(final List<DamageReduction> reductions) {
-            this.damageReductions = new ArrayList<>(reductions);
             return this;
         }
 
@@ -128,7 +127,7 @@ public record PaperBlocksAttacks(
                 this.blockDelaySeconds,
                 this.disableCooldownScale,
                 this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).getHandle()).toList(),
-                ((PaperItemDamageFunction) itemDamage).getHandle(),
+                ((PaperItemDamageFunction) this.itemDamage).getHandle(),
                 Optional.ofNullable(this.bypassedBy).map(PaperRegistries::toNms),
                 Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
                 Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)

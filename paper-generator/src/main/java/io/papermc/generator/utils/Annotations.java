@@ -35,7 +35,7 @@ public final class Annotations {
     public static final AnnotationSpec NULL_MARKED = AnnotationSpec.builder(NullMarked.class).build();
     public static final AnnotationSpec OVERRIDE = AnnotationSpec.builder(Override.class).build();
     public static final AnnotationSpec GENERATED_FROM = AnnotationSpec.builder(GeneratedFrom.class)
-        .addMember("value", "$S", SharedConstants.getCurrentVersion().getId())
+        .addMember("value", "$S", SharedConstants.getCurrentVersion().id())
         .build();
     public static final Iterable<AnnotationSpec> CLASS_HEADER = List.of(
         suppressWarnings("unused", "SpellCheckingInspection"),
