@@ -1,31 +1,23 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/LayeredCauldronBlock.java b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-index 81c06eb72424cdb8c80337b531ce33fd4f17b785..0dce5f44bf809317ad42d246d1a9555594b272ee 100644
 --- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -62,35 +62,67 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+@@ -79,39 +_,67 @@
  
      @Override
      protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (level instanceof ServerLevel serverLevel && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
--            entity.clearFire();
--            if (entity.mayInteract(serverLevel, pos)) {
--                this.handleEntityOnFireInside(state, level, pos);
-+            // CraftBukkit start - moved down
-+            // entity.clearFire();
-+            if ((entity instanceof net.minecraft.world.entity.player.Player || serverLevel.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(serverLevel, pos)) { // Paper - Fixes MC-248588
-+                if (this.handleEntityOnFireInside(state, level, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
-+                    entity.clearFire();
-+                }
-+            // CraftBukkit end
-             }
+         if (level instanceof ServerLevel serverLevel) {
+             BlockPos blockPos = pos.immutable();
+             effectApplier.runBefore(InsideBlockEffectType.EXTINGUISH, entity1 -> {
+-                if (entity1.isOnFire() && entity1.mayInteract(serverLevel, blockPos)) {
+-                    this.handleEntityOnFireInside(state, level, blockPos);
++                if (entity1.isOnFire() && (entity instanceof net.minecraft.world.entity.player.Player || serverLevel.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity1.mayInteract(serverLevel, blockPos)) { // Paper - Fixes MC-248588
++                    this.handleEntityOnFireInside(state, level, blockPos, entity); // Paper - Track entity
+                 }
+             });
          }
+ 
+-        effectApplier.apply(InsideBlockEffectType.EXTINGUISH);
++        effectApplier.apply(InsideBlockEffectType.EXTINGUISH); // TODO: THE EVENT ???????????????????????????????????
      }
  
 -    private void handleEntityOnFireInside(BlockState state, Level level, BlockPos pos) {
@@ -50,14 +42,15 @@ index 81c06eb72424cdb8c80337b531ce33fd4f17b785..0dce5f44bf809317ad42d246d1a95555
          BlockState blockState = i == 0 ? Blocks.CAULDRON.defaultBlockState() : state.setValue(LEVEL, i);
 -        level.setBlockAndUpdate(pos, blockState);
 -        level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
+-    }
 +        return changeLevel(level, pos, blockState, entity, reason); // Paper
 +    }
 +    // CraftBukkit start
 +    // Paper start - Call CauldronLevelChangeEvent
 +    public static boolean changeLevel(Level level, BlockPos pos, BlockState newBlock, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
 +        return changeLevel(level, pos, newBlock, entity, reason, true);
-     }
- 
++    }
++
 +    public static boolean changeLevel(Level level, BlockPos pos, BlockState newBlock, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
 +        // Paper end - Call CauldronLevelChangeEvent
 +        org.bukkit.craftbukkit.block.CraftBlockState newState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos);
@@ -75,7 +68,7 @@ index 81c06eb72424cdb8c80337b531ce33fd4f17b785..0dce5f44bf809317ad42d246d1a95555
 +        return true;
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void handlePrecipitation(BlockState state, Level level, BlockPos pos, Biome.Precipitation precipitation) {
          if (CauldronBlock.shouldHandlePrecipitation(level, precipitation) && state.getValue(LEVEL) != 3 && precipitation == this.precipitationType) {
@@ -86,7 +79,7 @@ index 81c06eb72424cdb8c80337b531ce33fd4f17b785..0dce5f44bf809317ad42d246d1a95555
          }
      }
  
-@@ -108,8 +140,11 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+@@ -129,8 +_,11 @@
      protected void receiveStalactiteDrip(BlockState state, Level level, BlockPos pos, Fluid fluid) {
          if (!this.isFull(state)) {
              BlockState blockState = state.setValue(LEVEL, state.getValue(LEVEL) + 1);
