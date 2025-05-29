@@ -1,14 +1,6 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/commands/Commands.java b/net/minecraft/commands/Commands.java
-index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535e853d127 100644
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -150,6 +150,11 @@ public class Commands {
+@@ -176,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
@@ -20,7 +12,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -251,6 +256,40 @@ public class Commands {
+@@ -280,6 +_,40 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -61,7 +53,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -260,15 +299,58 @@ public class Commands {
+@@ -289,9 +_,41 @@
          return new ParseResults<>(commandContextBuilder, parseResults.getReader(), parseResults.getExceptions());
      }
  
@@ -97,10 +89,14 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +    }
 +
 +    public void performPrefixedCommand(CommandSourceStack source, String command, String label) {
-         command = command.startsWith("/") ? command.substring(1) : command;
+         command = trimOptionalPrefix(command);
 -        this.performCommand(this.dispatcher.parse(command, source), command);
 +        this.performCommand(this.dispatcher.parse(command, source), command, label);
 +        // CraftBukkit end
+     }
+ 
+     public static String trimOptionalPrefix(String command) {
+@@ -299,9 +_,20 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
@@ -122,7 +118,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
  
          try {
              if (contextChain != null) {
-@@ -280,9 +362,10 @@ public class Commands {
+@@ -313,9 +_,10 @@
                  );
              }
          } catch (Exception var12) {
@@ -135,7 +131,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
                  StackTraceElement[] stackTrace = var12.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -308,18 +391,22 @@ public class Commands {
+@@ -341,18 +_,22 @@
      }
  
      @Nullable
@@ -161,7 +157,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
                  if (min > 10) {
                      mutableComponent.append(CommonComponents.ELLIPSIS);
                  }
-@@ -331,7 +418,17 @@ public class Commands {
+@@ -364,7 +_,17 @@
                  }
  
                  mutableComponent.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -180,13 +176,13 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
              }
  
              return null;
-@@ -359,26 +456,121 @@ public class Commands {
+@@ -392,17 +_,111 @@
      }
  
      public void sendCommands(ServerPlayer player) {
 +        // Paper start - Send empty commands if tab completion is disabled
 +        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
-+            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>()));
++            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>(), COMMAND_NODE_INSPECTOR));
 +            return;
 +        }
 +        // Paper end - Send empty commands if tab completion is disabled
@@ -211,11 +207,11 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +
 +    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
-         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
-         RootCommandNode<SharedSuggestionProvider> rootCommandNode = new RootCommandNode<>();
+         Map<CommandNode<CommandSourceStack>, CommandNode<CommandSourceStack>> map = new HashMap<>();
+         RootCommandNode<CommandSourceStack> rootCommandNode = new RootCommandNode<>();
          map.put(this.dispatcher.getRoot(), rootCommandNode);
--        this.fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
-+        this.fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
+-        fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
++        fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
 +
 +        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
 +        for (CommandNode node : rootCommandNode.getChildren()) {
@@ -224,11 +220,11 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +        // Paper start - Perf: Async command map building
 +        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, false).callEvent(); // Paper - Brigadier API
 +        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
-+           runSync(player, bukkit, rootCommandNode);
++            runSync(player, bukkit, rootCommandNode);
 +        });
 +    }
 +
-+    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootCommandNode) {
++    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<CommandSourceStack> rootCommandNode) {
 +        // Paper end - Perf: Async command map building
 +        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, true).callEvent(); // Paper - Brigadier API
 +        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
@@ -241,19 +237,13 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +            }
 +        }
 +        // CraftBukkit end
-+
-         player.connection.send(new ClientboundCommandsPacket(rootCommandNode));
+         player.connection.send(new ClientboundCommandsPacket(rootCommandNode, COMMAND_NODE_INSPECTOR));
      }
  
-     private void fillUsableCommands(
--        CommandNode<CommandSourceStack> rootCommandSource,
-+        java.util.Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
-         CommandNode<SharedSuggestionProvider> rootSuggestion,
-         CommandSourceStack source,
-         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
-     ) {
--        for (CommandNode<CommandSourceStack> commandNode : rootCommandSource.getChildren()) {
-+        for (CommandNode<CommandSourceStack> commandNode : children) { // Paper - Perf: Async command map building; pass copy of children
+-    private static <S> void fillUsableCommands(CommandNode<S> root, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) {
+-        for (CommandNode<S> commandNode : root.getChildren()) {
++    private static <S> void fillUsableCommands(java.util.Collection<CommandNode<S>> children, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) { // Paper - Perf: Async command map building; pass copy of children
++        for (CommandNode<S> commandNode : children) {  // Paper - Perf: Async command map building; pass copy of children
 +            // Paper start - Brigadier API
 +            if (commandNode.clientNode != null) {
 +                commandNode = commandNode.clientNode;
@@ -262,10 +252,7 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +            if (!org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
 +            if (commandNode.wrappedCached != null && commandNode.wrappedCached.apiCommandMeta != null && commandNode.wrappedCached.apiCommandMeta.serverSideOnly()) continue; // Paper
              if (commandNode.canUse(source)) {
-                 ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
--                argumentBuilder.requires(suggestions -> true);
--                if (argumentBuilder.getCommand() != null) {
--                    argumentBuilder.executes(commandContext -> 0);
+                 ArgumentBuilder<S, ?> argumentBuilder = commandNode.createBuilder();
 +                // Paper start
 +                /*
 +                Because of how commands can be yeeted right left and center due to bad bukkit practices
@@ -282,38 +269,34 @@ index fe4da263cd7c62805239fff40fd2b51655f829d5..1927163db5d44383b69f41e4b9855535
 +                - Do this :)
 +                 */
 +                // Is there an invalid command redirect?
-+                if (argumentBuilder.getRedirect() != null && commandNodeToSuggestionNode.get(argumentBuilder.getRedirect()) == null) {
++                if (argumentBuilder.getRedirect() != null && output.get(argumentBuilder.getRedirect()) == null) {
 +                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
 +
-+                    final CommandNode<SharedSuggestionProvider> redirect = argumentBuilder.getRedirect();
++                    final CommandNode<S> redirect = argumentBuilder.getRedirect();
 +                    // Diff copied from LiteralCommand#createBuilder
-+                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<SharedSuggestionProvider> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<S> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
 +                    builder.requires(redirect.getRequirement());
 +                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
 +                    if (redirect.getCommand() != null) {
 +                        builder.executes(redirect.getCommand());
 +                    }
 +                    // Diff copied from LiteralCommand#createBuilder
-+                    for (final CommandNode<SharedSuggestionProvider> child : redirect.getChildren()) {
++                    for (final CommandNode<S> child : redirect.getChildren()) {
 +                        builder.then(child);
 +                    }
 +
 +                    argumentBuilder = builder;
-                 }
++                }
 +                // Paper end
-+                argumentBuilder.requires(suggestions -> true);
-+                // Paper - don't replace Command instance on suggestion node
-+                // we want the exact command instance to be used for equality checks
-+                // when assigning serialization ids to each command node
- 
-                 if (argumentBuilder instanceof RequiredArgumentBuilder requiredArgumentBuilder
-                     && requiredArgumentBuilder.getSuggestionsProvider() != null) {
-@@ -393,7 +585,7 @@ public class Commands {
-                 commandNodeToSuggestionNode.put(commandNode, commandNode1);
-                 rootSuggestion.addChild(commandNode1);
+                 if (argumentBuilder.getRedirect() != null) {
+                     argumentBuilder.redirect(output.get(argumentBuilder.getRedirect()));
+                 }
+@@ -411,7 +_,7 @@
+                 output.put(commandNode, commandNode1);
+                 current.addChild(commandNode1);
                  if (!commandNode.getChildren().isEmpty()) {
--                    this.fillUsableCommands(commandNode, commandNode1, source, commandNodeToSuggestionNode);
-+                    this.fillUsableCommands(commandNode.getChildren(), commandNode1, source, commandNodeToSuggestionNode); // Paper - Perf: Async command map building; pass copy of children
+-                    fillUsableCommands(commandNode, commandNode1, source, output);
++                    fillUsableCommands(commandNode.getChildren(), commandNode1, source, output); // Paper - Perf: Async command map building; pass copy of children
                  }
              }
          }

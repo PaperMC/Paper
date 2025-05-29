@@ -1,15 +1,7 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08dbc6a690 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -83,6 +83,14 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
- import net.minecraft.world.phys.AABB;
+@@ -82,6 +_,14 @@
+ import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.ticks.ContainerSingleItem;
  
 +// CraftBukkit start
@@ -23,7 +15,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
-@@ -112,6 +120,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -115,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      public GoalSelector goalSelector;
@@ -31,15 +23,15 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -126,6 +135,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -129,6 +_,7 @@
      private Leashable.LeashData leashData;
-     private BlockPos restrictCenter = BlockPos.ZERO;
-     private float restrictRadius = -1.0F;
+     private BlockPos homePosition = BlockPos.ZERO;
+     private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
  
      protected Mob(EntityType<? extends Mob> entityType, Level level) {
          super(entityType, level);
-@@ -142,6 +152,12 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -145,6 +_,12 @@
          }
      }
  
@@ -52,7 +44,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
      protected void registerGoals() {
      }
  
-@@ -222,7 +238,39 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -225,7 +_,39 @@
      }
  
      public void setTarget(@Nullable LivingEntity target) {
@@ -92,40 +84,40 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
      }
  
      @Override
-@@ -358,13 +406,22 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -365,13 +_,22 @@
          if (this.isNoAi()) {
-             compound.putBoolean("NoAI", this.isNoAi());
+             output.putBoolean("NoAI", this.isNoAi());
          }
 +        compound.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
      }
  
      @Override
-     public void readAdditionalSaveData(CompoundTag compound) {
-         super.readAdditionalSaveData(compound);
--        this.setCanPickUpLoot(compound.getBooleanOr("CanPickUpLoot", false));
--        this.persistenceRequired = compound.getBooleanOr("PersistenceRequired", false);
+     protected void readAdditionalSaveData(ValueInput input) {
+         super.readAdditionalSaveData(input);
+-        this.setCanPickUpLoot(input.getBooleanOr("CanPickUpLoot", false));
+-        this.persistenceRequired = input.getBooleanOr("PersistenceRequired", false);
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
-+        boolean canPickUpLoot = compound.getBooleanOr("CanPickUpLoot", false);
-+        if (isLevelAtLeast(compound, 1) || canPickUpLoot) {
++        boolean canPickUpLoot = input.getBooleanOr("CanPickUpLoot", false);
++        if (isLevelAtLeast(input, 1) || canPickUpLoot) {
 +            this.setCanPickUpLoot(canPickUpLoot);
 +        }
-+        boolean persistenceRequired = compound.getBooleanOr("PersistenceRequired", false);
-+        if (isLevelAtLeast(compound, 1) || persistenceRequired) {
++        boolean persistenceRequired = input.getBooleanOr("PersistenceRequired", false);
++        if (isLevelAtLeast(input, 1) || persistenceRequired) {
 +            this.persistenceRequired = persistenceRequired;
 +        }
 +        // CraftBukkit end
-         RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-         this.dropChances = compound.read("drop_chances", DropChances.CODEC, registryOps).orElse(DropChances.DEFAULT);
-         this.readLeashData(compound);
-@@ -372,6 +429,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
-         this.lootTable = compound.read("DeathLootTable", LootTable.KEY_CODEC);
-         this.lootTableSeed = compound.getLongOr("DeathLootTableSeed", 0L);
-         this.setNoAi(compound.getBooleanOr("NoAI", false));
-+        this.aware = compound.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
+         this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
+         this.readLeashData(input);
+         this.homeRadius = input.getIntOr("home_radius", -1);
+@@ -383,6 +_,7 @@
+         this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
+         this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
+         this.setNoAi(input.getBooleanOr("NoAI", false));
++        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
      }
  
      @Override
-@@ -433,6 +491,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -446,6 +_,11 @@
                      && !itemEntity.getItem().isEmpty()
                      && !itemEntity.hasPickUpDelay()
                      && this.wantsToPickUp(serverLevel, itemEntity.getItem())) {
@@ -137,7 +129,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                      this.pickUpItem(serverLevel, itemEntity);
                  }
              }
-@@ -447,18 +510,24 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -460,18 +_,24 @@
  
      protected void pickUpItem(ServerLevel level, ItemEntity entity) {
          ItemStack item = entity.getItem();
@@ -164,7 +156,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
          EquipmentSlot equipmentSlotForItem = this.getEquipmentSlotForItem(stack);
          if (!this.isEquippableInSlot(stack, equipmentSlotForItem)) {
              return ItemStack.EMPTY;
-@@ -471,10 +540,18 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -484,10 +_,18 @@
                  canReplaceCurrentItem = itemBySlot.isEmpty();
              }
  
@@ -184,7 +176,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                  }
  
                  ItemStack itemStack = equipmentSlotForItem.limit(stack);
-@@ -591,22 +668,29 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -608,22 +_,29 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -200,12 +192,6 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
 -                if (d > i && this.removeWhenFarAway(d)) {
 -                    this.discard();
 -                }
--
--                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
--                int i1 = noDespawnDistance * noDespawnDistance;
--                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d > i1 && this.removeWhenFarAway(d)) {
--                    this.discard();
--                } else if (d < i1) {
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
 +                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
@@ -218,7 +204,12 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
 +                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
 +                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +                 }
-+
+ 
+-                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
+-                int i1 = noDespawnDistance * noDespawnDistance;
+-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d > i1 && this.removeWhenFarAway(d)) {
+-                    this.discard();
+-                } else if (d < i1) {
 +                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
 +                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
 +                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
@@ -228,7 +219,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                      this.noActionTime = 0;
                  }
              }
-@@ -618,6 +702,15 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -635,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
          this.noActionTime++;
@@ -244,7 +235,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("sensing");
          this.sensing.tick();
-@@ -793,14 +886,69 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -814,14 +_,69 @@
              public boolean stillValid(Player player) {
                  return player.getVehicle() == Mob.this || player.canInteractWithEntity(Mob.this, 4.0);
              }
@@ -314,7 +305,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
              ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
              float f = this.dropChances.byEquipment(equipmentSlot);
              if (f != 0.0F) {
-@@ -820,7 +968,13 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -841,7 +_,13 @@
                      }
  
                      this.spawnAtLocation(level, itemBySlot);
@@ -328,7 +319,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                  }
              }
          }
-@@ -844,7 +998,9 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -865,7 +_,9 @@
                      set.add(equipmentSlot);
                  } else if (this.dropChances.isPreserved(equipmentSlot)) {
                      this.setItemSlot(equipmentSlot, ItemStack.EMPTY);
@@ -338,7 +329,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                  }
              }
          }
-@@ -1122,6 +1278,21 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -1147,6 +_,21 @@
      public <T extends Mob> T convertTo(
          EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
      ) {
@@ -360,7 +351,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1130,13 +1301,23 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -1155,13 +_,23 @@
                  return null;
              } else {
                  conversionParams.type().convert(this, mob, conversionParams);
@@ -387,7 +378,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
                  }
  
                  return mob;
-@@ -1146,7 +1327,18 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -1171,7 +_,18 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion) {
@@ -407,7 +398,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
      }
  
      @Nullable
-@@ -1182,7 +1374,17 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -1213,7 +_,17 @@
      public boolean startRiding(Entity entity, boolean force) {
          boolean flag = super.startRiding(entity, force);
          if (flag && this.isLeashed()) {
@@ -426,7 +417,7 @@ index 5d5d2ad050e47c52eda5aa1a772a72a77bfe1858..8f5c377540f83911c8d245fb00569f08
          }
  
          return flag;
-@@ -1270,7 +1472,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -1296,7 +_,7 @@
              float knockback = this.getKnockback(source, damageSource);
              if (knockback > 0.0F && source instanceof LivingEntity livingEntity) {
                  livingEntity.knockback(

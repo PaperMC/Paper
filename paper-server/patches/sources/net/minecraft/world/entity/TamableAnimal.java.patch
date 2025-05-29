@@ -1,42 +1,15 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/TamableAnimal.java b/net/minecraft/world/entity/TamableAnimal.java
-index 925db6260a57d4a54294ef2d8d9a3c903ee04518..1cdebee93d6c7e08c1923beed426d17310208be8 100644
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
-@@ -77,7 +77,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -75,7 +_,7 @@
          }
  
-         this.orderedToSit = compound.getBooleanOr("Sitting", false);
+         this.orderedToSit = input.getBooleanOr("Sitting", false);
 -        this.setInSittingPose(this.orderedToSit);
 +        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
      }
  
      @Override
-@@ -88,8 +88,16 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
-     @Override
-     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
-         if (this.isInSittingPose()) {
--            if (distance > 10.0F) {
--                this.dropLeash();
-+            if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
-+                // Paper start - Expand EntityUnleashEvent
-+                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
-+                if (!event.callEvent()) return false;
-+                if (event.isDropLeash()) {
-+                    this.dropLeash();
-+                } else {
-+                    this.removeLeash();
-+                }
-+                // Paper end - Expand EntityUnleashEvent
-             }
- 
-             return false;
-@@ -148,6 +156,13 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -133,6 +_,13 @@
      }
  
      public void setInSittingPose(boolean sitting) {
@@ -50,7 +23,7 @@ index 925db6260a57d4a54294ef2d8d9a3c903ee04518..1cdebee93d6c7e08c1923beed426d173
          byte b = this.entityData.get(DATA_FLAGS_ID);
          if (sitting) {
              this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
-@@ -230,7 +245,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -215,7 +_,12 @@
          if (this.level() instanceof ServerLevel serverLevel
              && serverLevel.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
              && this.getOwner() instanceof ServerPlayer serverPlayer) {
@@ -64,7 +37,7 @@ index 925db6260a57d4a54294ef2d8d9a3c903ee04518..1cdebee93d6c7e08c1923beed426d173
          }
  
          super.die(cause);
-@@ -273,7 +293,14 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -258,7 +_,14 @@
          if (!this.canTeleportTo(new BlockPos(x, y, z))) {
              return false;
          } else {
