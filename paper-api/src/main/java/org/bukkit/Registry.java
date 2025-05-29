@@ -496,6 +496,22 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     Tag<T> getTag(TagKey<T> key);
 
     /**
+     * Gets the named registry set (tag) for the given key and resolves it with this registry.
+     *
+     * @param key the key to get the tag for
+     * @return the resolved values
+     * @throws NoSuchElementException        if no tag with the given key is found
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #getTag(TagKey)
+     * @see Tag#resolve(Registry)
+     */
+    @ApiStatus.Experimental
+    default Collection<T> getTagAndResolve(TagKey<T> key) {
+        Tag<T> tag = getTag(key);
+        return tag.resolve(this);
+    }
+
+    /**
      * Gets all the tags in this registry.
      *
      * @return a stream of all tags in this registry
