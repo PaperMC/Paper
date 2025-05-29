@@ -15,6 +15,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.block.entity.FuelValues;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -153,6 +154,18 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     @Override
     public boolean isFuel() {
         return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.getHandle()));
+    }
+
+    @Override
+    public int getBurnDuration() {
+        FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
+        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
+        
+        if (!fuelValues.isFuel(stack)) {
+            return 0;
+        }
+        
+        return fuelValues.burnDuration(stack);
     }
 
     @Override
