@@ -157,7 +157,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     }
 
     @Override
-    public int burnDuration() {
+    public int getBurnDuration() {
         FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
         net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
         

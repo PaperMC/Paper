@@ -2983,7 +2983,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Checks if this item type can be used as fuel in a Furnace
      *
      * @return true if this item type can be used as fuel.
-     * @see #burnDuration() 
+     * @see #getBurnDuration() 
      */
     boolean isFuel();
 
@@ -2993,7 +2993,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the burn duration, in ticks or 0 if the item is not fuel
      * @see #isFuel()
      */
-    int burnDuration();
+    int getBurnDuration();
 
     /**
      * Checks whether this item type is compostable (can be inserted into a
