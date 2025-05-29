@@ -574,6 +574,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public int shieldBlockingDelay = 5;
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
+        public boolean dragonSpawnAttemptPerformanceImprovements = true;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
