@@ -17,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.sound.Sound;
@@ -57,13 +56,10 @@ import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.network.Filterable;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.WrittenBookContent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
@@ -341,28 +337,6 @@ public final class PaperAdventure {
         } else {
             bar.removeFlag(flag);
         }
-    }
-
-    // Book
-
-    public static ItemStack asItemStack(final Book book, final Locale locale) {
-        final ItemStack item = new ItemStack(net.minecraft.world.item.Items.WRITTEN_BOOK, 1);
-        item.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(
-            Filterable.passThrough(validateField(asPlain(book.title(), locale), WrittenBookContent.TITLE_MAX_LENGTH, "title")),
-            asPlain(book.author(), locale),
-            0,
-            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate legnth?
-            false
-        ));
-        return item;
-    }
-
-    private static String validateField(final String content, final int length, final String name) {
-        final int actual = content.length();
-        if (actual > length) {
-            throw new IllegalArgumentException("Field '" + name + "' has a maximum length of " + length + " but was passed '" + content + "', which was " + actual + " characters long.");
-        }
-        return content;
     }
 
     // Sounds
