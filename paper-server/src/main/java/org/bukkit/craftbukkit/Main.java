@@ -12,11 +12,15 @@ import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.util.PathConverter;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 
 public class Main {
     public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
     public static boolean useJline = true;
     public static boolean useConsole = true;
+    public static boolean printedWarning = false;
 
     // Paper start - Reset loggers after shutdown
     static {
@@ -225,15 +229,20 @@ public class Main {
                 }
 
                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
                     deadline.add(Calendar.DAY_OF_YEAR, -14);
+
+                    LocalDate localDate = LocalDate.now();
+                    LocalDate buildLocalDate = buildDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                    Long daysSinceLastUpdate = ChronoUnit.DAYS.between(buildLocalDate, localDate);
+
                     if (buildDate.before(deadline.getTime())) {
-                        // Paper start - This is some stupid bullshit
-                        System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***");
-                        // Paper end
+                        System.err.println("*** It seems you have not updated Paper in a while ***");
+                        System.err.println("*** It has been " + daysSinceLastUpdate + " days since the last update ***");
+                        System.err.println("*** We will perform an automatic update check after the server finishes loading ***");
+                        printedWarning = true;
                     }
                 }
 
