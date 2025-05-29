@@ -68,7 +68,7 @@ import org.spongepowered.configurate.serialize.SerializationException;
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class WorldConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): add option to disable try-dragon-spawn performance improvement
+    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 
     private final transient SpigotWorldConfig spigotConfig;
     private final transient ResourceLocation worldKey;
