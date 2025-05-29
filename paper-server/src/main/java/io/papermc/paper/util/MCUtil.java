@@ -22,7 +22,9 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
@@ -148,6 +150,20 @@ public final class MCUtil {
 
     public static double distanceSq(double x1, double y1, double z1, double x2, double y2, double z2) {
         return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
+    }
+
+    /**
+     * Converts a NMS World/Vector to Bukkit Location
+     */
+    public static Location toLocation(Level world, Vec3 pos) {
+        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z());
+    }
+
+    /**
+     * Converts a NMS World/Vector to Bukkit Location
+     */
+    public static Location toLocation(Level world, Vec3 pos, float yaw, float pitch) {
+        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z(), yaw, pitch);
     }
 
     public static BlockPos toBlockPos(Position pos) {
