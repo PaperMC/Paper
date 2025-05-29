@@ -1510,9 +1510,14 @@ public class CraftEventFactory {
         return true;
     }
 
-    public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Leashable leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
-        if (!(leashed instanceof final Entity leashedEntity) || !(leashHolder instanceof final Entity leasheHolderEntity)) return null;
-        return callPlayerLeashEntityEvent(leashedEntity, leasheHolderEntity, player, hand);
+    public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!(leashed instanceof final Entity leashedEntity)) return false;
+        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+    }
+
+    public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
+        if (!(leashed instanceof final Entity leashedEntity)) return null;
+        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand);
     }
 
     public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(Entity entity, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {

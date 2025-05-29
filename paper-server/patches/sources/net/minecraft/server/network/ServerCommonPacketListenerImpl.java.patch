@@ -1,14 +1,6 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef29586198356e2d2600 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -27,31 +27,68 @@ import net.minecraft.util.VisibleForDebug;
+@@ -29,30 +_,67 @@
  import net.minecraft.util.profiling.Profiler;
  import org.slf4j.Logger;
  
@@ -47,12 +39,13 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
          this.keepAliveTime = Util.getMillis();
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
+-    }
 +        // CraftBukkit start - add fields and methods
 +        this.player = player;
 +        this.player.transferCookieConnection = this;
 +        this.cserver = server.server;
-     }
- 
++    }
++
 +    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
 +        return this.player.getBukkitEntity();
 +    }
@@ -77,11 +70,10 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +        this.disconnect(reason, cause); // Paper - kick event causes
 +    }
 +    // CraftBukkit end
-+
+ 
      private void close() {
          if (!this.closed) {
-             this.closedListenerTime = Util.getMillis();
-@@ -61,6 +98,12 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -63,6 +_,12 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails details) {
@@ -94,7 +86,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
          if (this.isSingleplayerOwner()) {
              LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -80,7 +123,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -82,7 +_,7 @@
              this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
@@ -103,7 +95,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
          }
      }
  
-@@ -88,30 +131,123 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -90,9 +_,73 @@
      public void handlePong(ServerboundPongPacket packet) {
      }
  
@@ -112,6 +104,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+-    }
 +        // Paper start
 +        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
 +            this.player.clientBrandName = brand;
@@ -172,17 +165,19 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +
 +    public final boolean isDisconnected() {
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
-     }
++    }
 +    // Paper end
  
      @Override
-     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+@@ -105,21 +_,50 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
          if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
              LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
 -            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+-        }
 +            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"), org.bukkit.event.player.PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION); // Paper - kick event cause
-         }
++        }
 +        // Paper start - adventure pack callbacks
 +        // call the callbacks before the previously-existing event so the event has final say
 +        final net.kyori.adventure.resource.ResourcePackCallback callback;
@@ -231,7 +226,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
              } else if (this.checkIfClosed(millis)) {
                  this.keepAlivePending = true;
                  this.keepAliveTime = millis;
-@@ -126,7 +262,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -134,7 +_,7 @@
      private boolean checkIfClosed(long time) {
          if (this.closed) {
              if (time - this.closedListenerTime >= 15000L) {
@@ -240,10 +235,10 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
              }
  
              return false;
-@@ -149,6 +285,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -157,6 +_,13 @@
      }
  
-     public void send(Packet<?> packet, @Nullable PacketSendListener listener) {
+     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener) {
 +        // CraftBukkit start
 +        if (packet == null || this.processedDisconnect) { // Spigot
 +            return;
@@ -254,7 +249,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -165,19 +308,115 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -173,19 +_,115 @@
          }
      }
  
@@ -271,6 +266,9 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - kick event causes
      public void disconnect(Component reason) {
 -        this.disconnect(new DisconnectionDetails(reason));
+-    }
+-
+-    public void disconnect(DisconnectionDetails disconnectionDetails) {
 +        // Paper start - kick event causes
 +        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
 +    }
@@ -327,9 +325,8 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +
 +        // Send the possibly modified leave message
 +        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionDetails.report(), disconnectionDetails.bugReportLink()), event.leaveMessage()); // Paper - Adventure & use kick event leave message
-     }
- 
--    public void disconnect(DisconnectionDetails disconnectionDetails) {
++    }
++
 +    private void disconnect0(DisconnectionDetails disconnectionDetails, @Nullable net.kyori.adventure.text.Component leaveMessage) { // Paper - use kick event leave message
 +        // CraftBukkit end
 +        this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
@@ -338,9 +335,11 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
                  new ClientboundDisconnectPacket(disconnectionDetails.reason()),
                  PacketSendListener.thenRun(() -> this.connection.disconnect(disconnectionDetails))
              );
-+        this.onDisconnect(disconnectionDetails, leaveMessage); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
-         this.connection.setReadOnly();
+-        this.connection.setReadOnly();
 -        this.server.executeBlocking(this.connection::handleDisconnection);
+-    }
++        this.onDisconnect(disconnectionDetails, leaveMessage); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
++        this.connection.setReadOnly();
 +        // CraftBukkit - Don't wait
 +        this.server.scheduleOnMain(this.connection::handleDisconnection); // Paper
 +    }
@@ -368,7 +367,7 @@ index aa2c3c670063f980fce003c1b7df926df8c61f12..186393485396cfe9b1baef2958619835
 +                ServerCommonPacketListenerImpl.this.connection.enableAutoRead();
 +            }
 +        });
-     }
++    }
 +    // Paper end - add proper async disconnect
  
      protected boolean isSingleplayerOwner() {
