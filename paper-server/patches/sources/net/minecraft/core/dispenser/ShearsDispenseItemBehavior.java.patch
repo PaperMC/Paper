@@ -1,14 +1,6 @@
-From 09671551669244ef4f259d8b27547e463d6795d4 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-index 51206597d13d8c2d539268b92c076377f2d1573d..c1bd6d91cf9828ccc7275efe0f5c959c0f457c13 100644
 --- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -20,9 +20,30 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+@@ -20,9 +_,30 @@
      @Override
      protected ItemStack execute(BlockSource blockSource, ItemStack item) {
          ServerLevel serverLevel = blockSource.level();
@@ -35,29 +27,31 @@ index 51206597d13d8c2d539268b92c076377f2d1573d..c1bd6d91cf9828ccc7275efe0f5c959c
 +        // CraftBukkit end
          if (!serverLevel.isClientSide()) {
              BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
--            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearLivingEntity(serverLevel, blockPos, item));
-+            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearLivingEntity(serverLevel, blockPos, item, bukkitBlock, craftItem)); // CraftBukkit
+-            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearEntity(serverLevel, blockPos, item));
++            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearEntity(serverLevel, blockPos, item, bukkitBlock, craftItem)); // CraftBukkit
              if (this.isSuccess()) {
                  item.hurtAndBreak(1, serverLevel, null, item1 -> {});
              }
-@@ -50,10 +71,18 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+@@ -50,13 +_,21 @@
          return false;
      }
  
--    private static boolean tryShearLivingEntity(ServerLevel level, BlockPos pos, ItemStack stack) {
-+    private static boolean tryShearLivingEntity(ServerLevel level, BlockPos pos, ItemStack stack, org.bukkit.block.Block bukkitBlock, org.bukkit.craftbukkit.inventory.CraftItemStack craftItem) { // CraftBukkit - add args
-         for (LivingEntity livingEntity : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos), EntitySelector.NO_SPECTATORS)) {
-             if (livingEntity instanceof Shearable shearable && shearable.readyForShearing()) {
--                shearable.shear(level, SoundSource.BLOCKS, stack);
+-    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack stack) {
++    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack stack, org.bukkit.block.Block bukkitBlock, org.bukkit.craftbukkit.inventory.CraftItemStack craftItem) { // CraftBukkit - add args
+         for (Entity entity : level.getEntitiesOfClass(Entity.class, new AABB(pos), EntitySelector.NO_SPECTATORS)) {
+             if (entity.shearOffAllLeashConnections(null)) {
+                 return true;
+             }
+ 
+             if (entity instanceof Shearable shearable && shearable.readyForShearing()) {
 +                // CraftBukkit start
 +                // Paper start - Add drops to shear events
-+                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(livingEntity, bukkitBlock, craftItem, shearable.generateDefaultDrops(level, stack));
++                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(entity, bukkitBlock, craftItem, shearable.generateDefaultDrops(level, stack));
 +                if (event.isCancelled()) {
 +                    // Paper end - Add drops to shear events
 +                    continue;
 +                }
 +                // CraftBukkit end
-+                shearable.shear(level, SoundSource.BLOCKS, stack, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops())); // Paper - Add drops to shear events
+                 shearable.shear(level, SoundSource.BLOCKS, stack);
                  level.gameEvent(null, GameEvent.SHEAR, pos);
                  return true;
-             }
