@@ -120,6 +120,8 @@ import net.minecraft.world.level.border.BorderChangeListener;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -2351,9 +2353,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end - getLastPlayed replacement API
 
-    public void readExtraData(CompoundTag tag) {
+    public void readExtraData(ValueInput tag) {
         this.hasPlayedBefore = true;
-        tag.getCompound("bukkit").ifPresent(data -> {
+        tag.child("bukkit").ifPresent(data -> {
             this.firstPlayed = data.getLongOr("firstPlayed", 0);
             this.lastPlayed = data.getLongOr("lastPlayed", 0);
 
@@ -2366,14 +2368,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         });
     }
 
-    public void setExtraData(CompoundTag tag) {
+    public void setExtraData(ValueOutput tag) {
         this.lastSaveTime = System.currentTimeMillis(); // Paper
 
-        if (!tag.contains("bukkit")) {
-            tag.put("bukkit", new CompoundTag());
-        }
-
-        CompoundTag data = tag.getCompoundOrEmpty("bukkit");
+        ValueOutput data = tag.child("bukkit");
         ServerPlayer handle = this.getHandle();
         data.putInt("newExp", handle.newExp);
         data.putInt("newTotalExp", handle.newTotalExp);
@@ -2385,11 +2383,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.putString("lastKnownName", handle.getScoreboardName());
 
         // Paper start - persist for use in offline save data
-        if (!tag.contains("Paper")) {
-            tag.put("Paper", new CompoundTag());
-        }
-
-        CompoundTag paper = tag.getCompoundOrEmpty("Paper");
+        ValueOutput paper = tag.child("Paper");
         paper.putLong("LastLogin", handle.loginTime);
         paper.putLong("LastSeen", System.currentTimeMillis());
         // Paper end

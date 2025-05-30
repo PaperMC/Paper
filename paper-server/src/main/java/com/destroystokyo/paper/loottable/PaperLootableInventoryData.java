@@ -1,5 +1,7 @@
 package com.destroystokyo.paper.loottable;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.configuration.WorldConfiguration;
 import io.papermc.paper.configuration.type.DurationOrDisabled;
 import java.util.HashMap;
@@ -14,6 +16,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.entity.Player;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -164,31 +168,24 @@ public class PaperLootableInventoryData {
     private static final String NUM_REFILLS = "numRefills";
     private static final String LOOTED_PLAYERS = "lootedPlayers";
 
-    public void loadNbt(final CompoundTag base) {
-        final Optional<CompoundTag> compOpt = base.getCompound(ROOT);
+    public void loadNbt(final ValueInput base) {
+        final Optional<ValueInput> compOpt = base.child(ROOT);
         if (compOpt.isEmpty()) {
             return;
         }
-        CompoundTag comp = compOpt.get();
+        final ValueInput comp = compOpt.get();
         this.lastFill = comp.getLongOr(LAST_FILL, -1);
         this.nextRefill = comp.getLongOr(NEXT_REFILL, -1);
         this.numRefills = comp.getIntOr(NUM_REFILLS, 0);
-        final ListTag list = comp.getListOrEmpty(LOOTED_PLAYERS);
-        final int size = list.size();
-        if (size > 0) {
-            this.lootedPlayers = new HashMap<>(list.size());
-        }
-        for (int i = 0; i < size; i++) {
-            list.getCompound(i).ifPresent(tag -> {
-                tag.read("UUID", UUIDUtil.CODEC).ifPresent(uuid -> {
-                    this.lootedPlayers.put(uuid, tag.getLongOr("Time", 0));
-                });
-            });
+        final ValueInput.TypedInputList<SerializedLootedPlayerEntry> list = comp.listOrEmpty(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
+        if (!list.isEmpty()) {
+            this.lootedPlayers = new HashMap<>();
+            list.forEach(serializedLootedPlayerEntry -> lootedPlayers.put(serializedLootedPlayerEntry.uuid, serializedLootedPlayerEntry.time));
         }
     }
 
-    public void saveNbt(final CompoundTag base) {
-        final CompoundTag comp = new CompoundTag();
+    public void saveNbt(final ValueOutput base) {
+        final ValueOutput comp = base.child(ROOT);
         if (this.nextRefill != -1) {
             comp.putLong(NEXT_REFILL, this.nextRefill);
         }
@@ -199,18 +196,14 @@ public class PaperLootableInventoryData {
             comp.putInt(NUM_REFILLS, this.numRefills);
         }
         if (this.lootedPlayers != null && !this.lootedPlayers.isEmpty()) {
-            final ListTag list = new ListTag();
+            final ValueOutput.TypedOutputList<SerializedLootedPlayerEntry> list = comp.list(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
             for (final Map.Entry<UUID, Long> entry : this.lootedPlayers.entrySet()) {
-                final CompoundTag cmp = new CompoundTag();
-                cmp.store("UUID", UUIDUtil.CODEC, entry.getKey());
-                cmp.putLong("Time", entry.getValue());
-                list.add(cmp);
+                list.add(new SerializedLootedPlayerEntry(entry.getKey(), entry.getValue()));
             }
-            comp.put(LOOTED_PLAYERS, list);
         }
 
-        if (!comp.isEmpty()) {
-            base.put(ROOT, comp);
+        if (comp.isEmpty()) {
+            base.discard(ROOT);
         }
     }
 
@@ -241,5 +234,15 @@ public class PaperLootableInventoryData {
 
     @Nullable Long getLastLooted(final UUID player) {
         return this.lootedPlayers != null ? this.lootedPlayers.get(player) : null;
+    }
+
+    record SerializedLootedPlayerEntry(UUID uuid, long time) {
+        public static final Codec<SerializedLootedPlayerEntry> CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                    UUIDUtil.CODEC.fieldOf("UUID").forGetter(SerializedLootedPlayerEntry::uuid),
+                    Codec.LONG.optionalFieldOf("Time", 0L).forGetter(SerializedLootedPlayerEntry::time)
+                )
+                .apply(instance, SerializedLootedPlayerEntry::new)
+        );
     }
 }
