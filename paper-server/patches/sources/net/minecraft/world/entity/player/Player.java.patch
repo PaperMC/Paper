@@ -526,22 +526,22 @@
  
 -    private void respawnEntityOnShoulder(CompoundTag entityCompound) {
 +    private boolean respawnEntityOnShoulder(CompoundTag entityCompound) { // CraftBukkit void->boolean
-+        // Paper start - release entity api - return entity - overload
++    // Paper start - release entity api - return entity - overload
 +        return this.respawnEntityOnShoulder0(entityCompound) != null;
 +    }
 +    @Nullable
 +    private Entity respawnEntityOnShoulder0(CompoundTag entityCompound) { // CraftBukkit void->boolean
-+        // Paper end - release entity api - return entity - overload
++    // Paper end - release entity api - return entity - overload
          if (this.level() instanceof ServerLevel serverLevel && !entityCompound.isEmpty()) {
              try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
 -                EntityType.create(
-+                return EntityType.create(
++                return EntityType.create( // Paper - release entity api
                          TagValueInput.create(scopedCollector.forChild(() -> ".shoulder"), serverLevel.registryAccess(), entityCompound),
                          serverLevel,
                          EntitySpawnReason.LOAD
                      )
 -                    .ifPresent(entity -> {
-+                    .map(entity -> { // Paper
++                    .map(entity -> { // Paper - release entity api
                          if (entity instanceof TamableAnimal tamableAnimal) {
                              tamableAnimal.setOwner(this);
                          }
@@ -549,7 +549,7 @@
                          entity.setPos(this.getX(), this.getY() + 0.7F, this.getZ());
 -                        serverLevel.addWithUUID(entity);
 -                    });
-+                        return serverLevel.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY) ? entity : null; // Paper
++                        return serverLevel.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY) ? entity : null; // Paper - spawn reason
 +                    }).orElse(null); // Paper - release entity api - return entity
              }
          }
