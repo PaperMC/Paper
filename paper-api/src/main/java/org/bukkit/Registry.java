@@ -491,6 +491,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
+     * @see #getTagValues(TagKey) 
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
@@ -506,7 +507,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Tag#resolve(Registry)
      */
     @ApiStatus.Experimental
-    default Collection<T> getTagAndResolve(TagKey<T> key) {
+    default Collection<T> getTagValues(TagKey<T> key) {
         Tag<T> tag = getTag(key);
         return tag.resolve(this);
     }
