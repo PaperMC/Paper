@@ -153,7 +153,7 @@ public enum CraftStatistic {
     }
 
     private static net.minecraft.stats.Stat getBlockTypeStatistic(org.bukkit.Statistic stat, BlockType blockType) {
-        Preconditions.checkArgument(blockType != null, "Statistic cannot be null");
+        Preconditions.checkArgument(blockType != null, "BlockType cannot be null");
         try {
             if (stat == Statistic.MINE_BLOCK) {
                 return Stats.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraftNew(blockType));
@@ -270,11 +270,11 @@ public enum CraftStatistic {
         Preconditions.checkArgument(material != null, "Material cannot be null");
         net.minecraft.stats.Stat nmsStatistic;
         if (statistic.getType() == Type.BLOCK) {
-            Preconditions.checkArgument(material.isBlock(), "Material must be a block");
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
             BlockType blockType = material.asBlockType();
             nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
         } else if (statistic.getType() == Type.ITEM) {
-            Preconditions.checkArgument(material.isItem(), "Material must be an item");
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
             ItemType itemType = material.asItemType();
             nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
         } else {
@@ -300,11 +300,11 @@ public enum CraftStatistic {
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
         net.minecraft.stats.Stat nmsStatistic;
         if (statistic.getType() == Type.BLOCK) {
-            Preconditions.checkArgument(material.isBlock(), "Material must be a block");
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
             BlockType blockType = material.asBlockType();
             nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
         } else if (statistic.getType() == Type.ITEM) {
-            Preconditions.checkArgument(material.isItem(), "Material must be an item");
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
             ItemType itemType = material.asItemType();
             nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
         } else {
