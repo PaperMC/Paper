@@ -383,8 +383,12 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     }
 
     @Override
-    public void updateDemand() { getHandle().updateDemand(); }
+    public void updateDemand() {
+        getHandle().updateDemand();
+    }
 
     @Override
-    public void restock() { getHandle().restock(); }
+    public void restock() {
+        getHandle().restock();
+    }
 }
