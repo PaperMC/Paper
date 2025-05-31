@@ -177,7 +177,9 @@ public record PaperEquippable(
                     this.dispensable,
                     this.swappable,
                     this.damageOnHurt,
-                    this.equipOnInteract
+                    this.equipOnInteract,
+                    false, // TODO
+                    Holder.direct(SoundEvents.GOAT_SCREAMING_DEATH) // TODO
                 )
             );
         }

@@ -207,7 +207,7 @@
          }
  
 +        // CraftBukkit start
-+        input.getDouble("Bukkit.MaxHealth").ifPresent(maxHealth -> {
++        input.read("Bukkit.MaxHealth", com.mojang.serialization.Codec.DOUBLE).ifPresent(maxHealth -> {
 +            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
 +        });
 +        // CraftBukkit end
@@ -944,7 +944,7 @@
 +    protected void dropExperience(ServerLevel level, @Nullable Entity entity) {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
-+            ExperienceOrb.award(level, this.position(), this.expToDrop, this instanceof ServerPlayer ? org.bukkit.entity.ExperienceOrb.SpawnReason.PLAYER_DEATH : org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, entity, this); // Paper
++            ExperienceOrb.awardWithDirection(level, this.position(), net.minecraft.world.phys.Vec3.ZERO, this.expToDrop, this instanceof ServerPlayer ? org.bukkit.entity.ExperienceOrb.SpawnReason.PLAYER_DEATH : org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, entity, this); // Paper
 +            this.expToDrop = 0;
 +        }
 +        // CraftBukkit end
@@ -1564,7 +1564,7 @@
  
      public void onItemPickup(ItemEntity itemEntity) {
 -        Entity owner = itemEntity.getOwner();
-+        Entity owner = itemEntity.thrower != null ? this.level().getGlobalPlayerByUUID(itemEntity.thrower) : null; // Paper - check global player list where appropriate
++        Entity owner = itemEntity.thrower != null ? itemEntity.thrower.getEntity(this.level()::getGlobalPlayerByUUID, Entity.class) : null; // Paper - check global player list where appropriate
          if (owner instanceof ServerPlayer) {
              CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer)owner, itemEntity.getItem(), this);
          }

@@ -74,7 +74,8 @@ public final class CraftEquippableComponent implements EquippableComponent {
                 (dispensable != null) ? dispensable : true,
                 (swappable != null) ? swappable : true,
                 (damageOnHurt != null) ? damageOnHurt : true,
-                (equipOnInteract != null) ? equipOnInteract : false
+                (equipOnInteract != null) ? equipOnInteract : false,
+                false, null // TODO - 1.21.5
         );
     }
 

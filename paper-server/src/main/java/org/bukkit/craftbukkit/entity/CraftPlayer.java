@@ -1562,7 +1562,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final ServerPlayer.RespawnConfig respawnConfig = this.getHandle().getRespawnConfig();
         if (respawnConfig == null) return null;
 
-        final ServerLevel world = this.getHandle().server.getLevel(respawnConfig.dimension());
+        final ServerLevel world = this.getHandle().getServer().getLevel(respawnConfig.dimension());
         if (world == null) return null;
 
         if (!loadLocationAndValidate) {
@@ -1887,7 +1887,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
 
             final int possibleDurabilityFromXp = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDurabilityToRepairFromXp(
-                handle.serverLevel(), itemstack, amount
+                handle.level(), itemstack, amount
             );
             int i = Math.min(possibleDurabilityFromXp, itemstack.getDamageValue());
             final int consumedExperience = i > 0 ? i * amount / possibleDurabilityFromXp : possibleDurabilityFromXp; // Paper - taken from ExperienceOrb#repairPlayerItems + prevent division by 0
@@ -2236,11 +2236,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         ServerGamePacketListenerImpl connection = handle.connection;
 
         // Respawn the player then update their position and selected slot
-        ServerLevel level = handle.serverLevel();
+        ServerLevel level = handle.level();
         connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(level), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
         handle.onUpdateAbilities();
         connection.internalTeleport(net.minecraft.world.entity.PositionMoveRotation.of(this.getHandle()), java.util.Collections.emptySet());
-        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
+        net.minecraft.server.players.PlayerList playerList = handle.getServer().getPlayerList();
         playerList.sendPlayerPermissionLevel(handle, false);
         playerList.sendLevelInfo(handle, level);
         playerList.sendAllPlayerInfo(handle);
@@ -3010,7 +3010,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void updateCommands() {
         if (this.getHandle().connection == null) return;
 
-        this.getHandle().server.getCommands().sendCommands(this.getHandle());
+        this.getHandle().getServer().getCommands().sendCommands(this.getHandle());
     }
 
     @Override
