@@ -3,6 +3,7 @@ package io.papermc.paper.registry.set;
 import io.papermc.paper.registry.TypedKey;
 import java.util.Collection;
 import java.util.Iterator;
+import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
@@ -33,6 +34,7 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * @param registry the registry to resolve the values from (must match {@link #registryKey()})
      * @return the resolved values
      * @see RegistryKeySet#values()
+     * @see Registry#getTagValues(TagKey) 
      */
     @Unmodifiable Collection<T> resolve(final Registry<T> registry);
 
