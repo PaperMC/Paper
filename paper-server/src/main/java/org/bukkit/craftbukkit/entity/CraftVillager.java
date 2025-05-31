@@ -11,6 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
@@ -380,4 +381,10 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void clearReputations() {
         getHandle().getGossips().gossips.clear();
     }
+
+    @Override
+    public void updateDemand() { getHandle().updateDemand(); }
+
+    @Override
+    public void restock() { getHandle().restock(); }
 }

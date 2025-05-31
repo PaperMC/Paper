@@ -391,4 +391,15 @@ public interface Villager extends AbstractVillager {
      * reputation regardless of its impact and the player associated.
      */
     public void clearReputations();
+
+    /**
+     * Updates the demand for Villager offers.
+     * This is used to calculate price changes for regularly traded offers.
+     */
+    public void updateDemand();
+
+    /**
+     * Restocks all offers for the Villager.
+     */
+    public void restock();
 }
