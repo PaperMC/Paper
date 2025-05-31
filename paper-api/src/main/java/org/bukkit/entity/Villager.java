@@ -394,12 +394,18 @@ public interface Villager extends AbstractVillager {
 
     /**
      * Updates the demand for Villager offers.
-     * This is used to calculate price changes for regularly traded offers.
+     * Demand can rise and fall based on how often offers are traded.
+     * They can fall when an item is not traded for a while, or rise when the item is resupplied next.
+     * Demand is used to calculate the price of items in the Villager's offers.
+     * <br>
+     * <b>Note: Demand is stored per item and not per Villager.</b>
      */
     public void updateDemand();
 
     /**
-     * Restocks all offers for the Villager.
+     * Resets uses of all offers for the Villager. This also internally calls {@link #updateDemand()}.
+     * Calling this will trigger a {@link org.bukkit.event.entity.VillagerReplenishTradeEvent} for each offer that is restocked.
+     * Demand is still updated even if all events are canceled.
      */
     public void restock();
 }
