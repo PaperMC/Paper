@@ -119,23 +119,17 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
             return null;
         }
 
-        final EntityReference<net.minecraft.world.entity.LivingEntity> entityReference = conduit.destroyTarget;
-        if (entityReference == null) return null;
-
-        final net.minecraft.world.entity.LivingEntity resolvedTarget = entityReference.getEntity(this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class);
-        return resolvedTarget == null ? null : resolvedTarget.getBukkitLivingEntity();
+        final net.minecraft.world.entity.LivingEntity nmsEntity = EntityReference.get(conduit.destroyTarget, this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class);
+        return nmsEntity == null ? null : nmsEntity.getBukkitLivingEntity();
     }
 
     @Override
     public boolean hasTarget() {
         ConduitBlockEntity conduit = (ConduitBlockEntity) this.getBlockEntityFromWorld();
-        return conduit != null
-            && conduit.destroyTarget != null
-            && Optionull.mapOrDefault(
-            conduit.destroyTarget.getEntity(this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class),
-            net.minecraft.world.entity.LivingEntity::isAlive,
-            false
-        );
+        if (conduit == null) return false;
+
+        final net.minecraft.world.entity.LivingEntity destroyTarget = EntityReference.get(conduit.destroyTarget, this.getWorldHandle().getMinecraftWorld(), net.minecraft.world.entity.LivingEntity.class);
+        return destroyTarget != null && destroyTarget.isAlive();
     }
 
     @Override

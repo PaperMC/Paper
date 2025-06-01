@@ -8,6 +8,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.vehicle.MinecartSpawner;
 import net.minecraft.world.level.SpawnData;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftServer;
@@ -34,7 +35,9 @@ public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMin
             return null;
         }
 
-        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
+        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(
+            TagValueInput.createGlobalDiscarding(spawnData.getEntityToSpawn())
+        );
         return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
     }
 

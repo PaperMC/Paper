@@ -59,7 +59,6 @@ public class MobGoalHelper {
         bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractFish.class, Fish.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AbstractSchoolingFish.class, SchoolableFish.class);
-        bukkitMap.put(net.minecraft.world.entity.FlyingMob.class, Flying.class);
         bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Giant.class, Giant.class);

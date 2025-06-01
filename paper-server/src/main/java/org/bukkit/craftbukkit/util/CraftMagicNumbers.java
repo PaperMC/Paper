@@ -50,6 +50,7 @@ import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -281,7 +282,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public int getDataVersion() {
-        return SharedConstants.getCurrentVersion().dataVersion().getVersion();
+        return SharedConstants.getCurrentVersion().dataVersion().version();
     }
 
     @Override
@@ -726,8 +727,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
             // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
             compound.remove("UUID");
         }
-        net.minecraft.world.entity.Entity nmsEntity = net.minecraft.world.entity.EntityType.create(compound, world, net.minecraft.world.entity.EntitySpawnReason.LOAD)
-            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
+        net.minecraft.world.entity.Entity nmsEntity = net.minecraft.world.entity.EntityType.create(
+            TagValueInput.createDiscarding(world.registryAccess(), compound),
+            world,
+            net.minecraft.world.entity.EntitySpawnReason.LOAD
+        ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
         compound.getList("Passengers").ifPresent(passengers -> {
             for (final Tag tag : passengers) {
                 if (!(tag instanceof final CompoundTag serializedPassenger)) {

@@ -2,6 +2,9 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -11,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.mojang.serialization.JsonOps;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ChatVersion;
 import net.md_5.bungee.chat.VersionedComponentSerializer;
@@ -18,6 +22,7 @@ import com.mojang.serialization.JavaOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -28,6 +33,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class CraftChatMessage {
 
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final Map<Character, ChatFormatting> formatMap;
 
     static {
@@ -223,7 +229,11 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(Component component) {
-        return Component.Serializer.toJson(component, CraftRegistry.getMinecraftRegistry());
+        return GSON.toJson(
+            ComponentSerialization.CODEC
+                .encodeStart(JsonOps.INSTANCE, component)
+                .getOrThrow(JsonParseException::new)
+        );
     }
 
     public static String toJSONOrNull(Component component) {
@@ -234,7 +244,10 @@ public final class CraftChatMessage {
     public static Component fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return Component.Serializer.fromJson(jsonMessage, CraftRegistry.getMinecraftRegistry());
+        final JsonElement jsonElement = GSON.fromJson(jsonMessage, JsonElement.class);
+        return jsonElement == null ? null : ComponentSerialization.CODEC.parse(
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), jsonElement
+        ).getOrThrow(JsonParseException::new);
     }
 
     public static Component fromJSONOrNull(String jsonMessage) {
