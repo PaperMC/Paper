@@ -15,19 +15,20 @@ Adds villagers as separate config
 
 diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae69f36157e
+index 0000000000000000000000000000000000000000..ae2bb9a73106febfe5f0d090abd4252bbb5fd27e
 --- /dev/null
 +++ b/io/papermc/paper/entity/activation/ActivationRange.java
-@@ -0,0 +1,318 @@
+@@ -0,0 +1,334 @@
 +package io.papermc.paper.entity.activation;
 +
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.entity.ExperienceOrb;
-+import net.minecraft.world.entity.FlyingMob;
 +import net.minecraft.world.entity.LightningBolt;
 +import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.Marker;
 +import net.minecraft.world.entity.Mob;
 +import net.minecraft.world.entity.ai.Brain;
 +import net.minecraft.world.entity.animal.Animal;
@@ -38,6 +39,7 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.entity.boss.wither.WitherBoss;
++import net.minecraft.world.entity.item.FallingBlockEntity;
 +import net.minecraft.world.entity.item.ItemEntity;
 +import net.minecraft.world.entity.item.PrimedTnt;
 +import net.minecraft.world.entity.monster.Creeper;
@@ -51,9 +53,13 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +import net.minecraft.world.entity.projectile.ThrowableProjectile;
 +import net.minecraft.world.entity.projectile.ThrownTrident;
 +import net.minecraft.world.entity.schedule.Activity;
++import net.minecraft.world.entity.vehicle.AbstractBoat;
++import net.minecraft.world.entity.vehicle.AbstractMinecart;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.phys.AABB;
 +import org.spigotmc.SpigotWorldConfig;
++import java.util.List;
++import java.util.Set;
 +
 +public final class ActivationRange {
 +
@@ -121,9 +127,9 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +            || entity instanceof AbstractHurtingProjectile
 +            || entity instanceof LightningBolt
 +            || entity instanceof PrimedTnt
-+            || entity instanceof net.minecraft.world.entity.item.FallingBlockEntity
-+            || entity instanceof net.minecraft.world.entity.vehicle.AbstractMinecart
-+            || entity instanceof net.minecraft.world.entity.vehicle.AbstractBoat
++            || entity instanceof FallingBlockEntity
++            || entity instanceof AbstractMinecart
++            || entity instanceof AbstractBoat
 +            || entity instanceof EndCrystal
 +            || entity instanceof FireworkRocketEntity
 +            || entity instanceof ThrownTrident;
@@ -172,10 +178,10 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +            ActivationType.FLYING_MONSTER.boundingBox = player.getBoundingBox().inflate(flyingActivationRange, worldHeight, flyingActivationRange);
 +            ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate(villagerActivationRange, worldHeight, villagerActivationRange);
 +
-+            final java.util.List<Entity> entities = world.getEntities((Entity) null, ActivationRange.maxBB, e -> true);
++            final List<Entity> entities = world.getEntities((Entity) null, ActivationRange.maxBB, e -> true);
 +            final boolean tickMarkers = world.paperConfig().entities.markers.tick;
 +            for (final Entity entity : entities) {
-+                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
++                if (!tickMarkers && entity instanceof Marker) {
 +                    continue;
 +                }
 +
@@ -228,7 +234,7 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +            return 100;
 +        }
 +        if (!(entity instanceof final AbstractArrow arrow)) {
-+            if ((!entity.onGround() && !(entity instanceof FlyingMob))) {
++            if ((!entity.onGround() && !isEntityThatFlies(entity))) {
 +                return 10;
 +            }
 +        } else if (!arrow.isInGround()) {
@@ -335,6 +341,16 @@ index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae6
 +        }
 +        // removed the original's dumb tick skipping for active entities
 +        return isActive;
++    }
++
++    private static Set<EntityType<?>> ENTITIES_THAT_FLY = Set.of(
++        EntityType.GHAST,
++        EntityType.HAPPY_GHAST,
++        EntityType.PHANTOM
++    );
++
++    private static boolean isEntityThatFlies(final Entity entity) {
++        return ENTITIES_THAT_FLY.contains(entity.getType());
 +    }
 +}
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
