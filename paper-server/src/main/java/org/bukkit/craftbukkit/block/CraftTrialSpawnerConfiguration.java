@@ -16,7 +16,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.SpawnData;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
-import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerData;
+import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -56,12 +57,14 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public EntityType getSpawnedType() {
-       if (this.spawnPotentialsDefinition.isEmpty()) {
-           return null;
-       }
+        if (this.spawnPotentialsDefinition.isEmpty()) {
+            return null;
+        }
 
-       Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(this.spawnPotentialsDefinition.unwrap().get(0).value().getEntityToSpawn());
-       return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(TagValueInput.createGlobalDiscarding(
+            this.spawnPotentialsDefinition.unwrap().getFirst().value().getEntityToSpawn()
+        ));
+        return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
     }
 
     @Override
@@ -74,7 +77,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
 
         SpawnData data = new SpawnData();
-        data.getEntityToSpawn().putString(Entity.ID_TAG, BuiltInRegistries.ENTITY_TYPE.getKey(CraftEntityType.bukkitToMinecraft(entityType)).toString());
+        data.getEntityToSpawn().putString(Entity.TAG_ID, BuiltInRegistries.ENTITY_TYPE.getKey(CraftEntityType.bukkitToMinecraft(entityType)).toString());
         this.getTrialData().nextSpawnData = Optional.of(data);
         this.spawnPotentialsDefinition = WeightedList.of(data);
     }
@@ -121,7 +124,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public int getDelay() {
-      return this.ticksBetweenSpawn;
+        return this.ticksBetweenSpawn;
     }
 
     @Override
@@ -287,16 +290,16 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public int getRequiredPlayerRange() {
-      return this.snapshot.trialSpawner.getRequiredPlayerRange();
+        return this.snapshot.trialSpawner.getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.snapshot.trialSpawner.requiredPlayerRange = requiredPlayerRange;
+        this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.overrideRequiredPlayerRange(requiredPlayerRange);
     }
 
-    private TrialSpawnerData getTrialData() {
-        return this.snapshot.getTrialSpawner().getData();
+    private TrialSpawnerStateData getTrialData() {
+        return this.snapshot.getTrialSpawner().getStateData();
     }
 
     protected TrialSpawnerConfig toMinecraft() {
