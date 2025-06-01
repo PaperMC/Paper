@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.entity.EntityFactory;
 import org.bukkit.entity.EntitySnapshot;
 
@@ -30,7 +31,7 @@ public class CraftEntityFactory implements EntityFactory {
             throw new IllegalArgumentException("Could not parse Entity: " + input, e);
         }
 
-        EntityType<?> type = EntityType.by(tag).orElse(null);
+        EntityType<?> type = EntityType.by(TagValueInput.createGlobalDiscarding(tag)).orElse(null);
         if (type == null) {
             throw new IllegalArgumentException("Could not parse Entity: " + input);
         }

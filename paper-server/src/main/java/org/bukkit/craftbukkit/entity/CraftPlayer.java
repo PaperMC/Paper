@@ -106,6 +106,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -1532,7 +1533,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void loadData() {
-        this.server.getHandle().playerIo.load(this.getHandle());
+        this.server.getHandle().playerIo.load(this.getHandle(), ProblemReporter.DISCARDING);
     }
 
     @Override

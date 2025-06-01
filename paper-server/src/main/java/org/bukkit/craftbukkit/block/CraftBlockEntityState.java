@@ -11,6 +11,8 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.TileState;
@@ -97,14 +99,14 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     // Loads the specified data into the snapshot BlockEntity.
     public void loadData(CompoundTag tag) {
-        this.snapshot.loadWithComponents(tag, this.getRegistryAccess());
+        this.snapshot.loadWithComponents(TagValueInput.createDiscarding(this.getRegistryAccess(), tag));
         this.load(this.snapshot);
     }
 
     // copies the BlockEntity-specific data, retains the position
     private void copyData(T from, T to) {
         CompoundTag tag = from.saveWithFullMetadata(this.getRegistryAccess());
-        to.loadWithComponents(tag, this.getRegistryAccess());
+        to.loadWithComponents(TagValueInput.createDiscarding(this.getRegistryAccess(), tag));
     }
 
     // gets the wrapped BlockEntity
@@ -143,13 +145,13 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     // Paper start - properly save blockentity itemstacks
     public CompoundTag getSnapshotCustomNbtOnly() {
         this.applyTo(this.snapshot);
-        final CompoundTag nbt = this.snapshot.saveCustomOnly(this.getRegistryAccess());
-        this.snapshot.removeComponentsFromTag(nbt);
-        if (!nbt.isEmpty()) {
+        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(this.snapshot.saveCustomOnly(this.getRegistryAccess()), this.getRegistryAccess());
+        this.snapshot.removeComponentsFromTag(output);
+        if (!output.isEmpty()) {
             // have to include the "id" if it's going to have block entity data
-            this.snapshot.saveId(nbt);
+            this.snapshot.saveId(output);
         }
-        return nbt;
+        return output.buildResult();
     }
     // Paper end
 

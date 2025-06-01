@@ -30,6 +30,9 @@ import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.EntityEffect;
@@ -979,12 +982,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public String getAsString() {
-        CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassenger(tag, false, true, true)) {
+        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(this.getHandle().registryAccess());
+        if (!this.getHandle().saveAsPassenger(output, false, true, true)) {
             return null;
         }
 
-        return tag.toString();
+        return output.buildResult().toString();
     }
 
     @Override
@@ -1012,32 +1015,29 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     private Entity copy(net.minecraft.world.level.Level level) {
-        CompoundTag compoundTag = new CompoundTag();
-        this.getHandle().saveAsPassenger(compoundTag, false, true, true);
+        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(level.registryAccess());
+        this.getHandle().saveAsPassenger(output, false, true, true);
 
-        return net.minecraft.world.entity.EntityType.loadEntityRecursive(compoundTag, level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
+        return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
     }
 
-    public void storeBukkitValues(CompoundTag c) {
+    public void storeBukkitValues(ValueOutput c) {
         if (!this.persistentDataContainer.isEmpty()) {
-            c.put("BukkitValues", this.persistentDataContainer.toTagCompound());
+            c.store("BukkitValues", CompoundTag.CODEC, this.persistentDataContainer.toTagCompound());
         }
     }
 
-    public void readBukkitValues(CompoundTag c) {
-        Tag base = c.get("BukkitValues");
-        if (base instanceof CompoundTag) {
-            this.persistentDataContainer.putAll((CompoundTag) base);
-        }
+    public void readBukkitValues(ValueInput c) {
+        c.read("BukkitValues", CompoundTag.CODEC).ifPresent(this.persistentDataContainer::putAll);
     }
 
     protected CompoundTag save() {
-        CompoundTag tag = new CompoundTag();
+        final TagValueOutput tagValueOutput = TagValueOutput.createDiscardingWithContext(this.getHandle().registryAccess());
 
-        tag.putString(Entity.ID_TAG, this.getHandle().getEncodeId()); // todo NPE?
-        this.getHandle().saveWithoutId(tag);
+        tagValueOutput.putString(Entity.TAG_ID, this.getHandle().getEncodeId()); // todo NPE?
+        this.getHandle().saveWithoutId(tagValueOutput);
 
-        return tag;
+        return tagValueOutput.buildResult();
     }
 
     // re-sends the spawn entity packet to updated values which cannot be updated otherwise

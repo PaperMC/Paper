@@ -17,6 +17,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -271,7 +272,9 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         if (!state.getBlockData().matches(getHandle().getBlockState(pos).createCraftBlockData())) {
             throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).createCraftBlockData().getAsString(false));
         }
-        getHandle().getBlockEntity(pos).loadWithComponents(((org.bukkit.craftbukkit.block.CraftBlockEntityState<?>) state).getSnapshotNBT(), this.getHandle().registryAccess());
+        getHandle().getBlockEntity(pos).loadWithComponents(TagValueInput.createDiscarding(
+                this.getHandle().registryAccess(), ((org.bukkit.craftbukkit.block.CraftBlockEntityState<?>) state).getSnapshotNBT()
+        ));
     }
 
     @Override

@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
@@ -60,7 +61,9 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         }
         BlockEntity blockEntity = this.getBlockEntity(position);
         if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
-            blockEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
+            blockEntity.loadWithComponents(TagValueInput.createDiscarding(
+                this.registryAccess(), craftEntityState.getSnapshotNBT()
+            ));
         }
         return result;
     }

@@ -22,7 +22,7 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
 
     @Override
     public Location getTargetLocation() {
-        return new Location(this.getWorld(), this.getHandle().tx, this.getHandle().ty, this.getHandle().tz, this.getHandle().getYRot(), this.getHandle().getXRot());
+        return CraftLocation.toBukkit(this.getHandle().target, this.getWorld(), this.getHandle().getYRot(), this.getHandle().getXRot());
     }
 
     @Override
@@ -35,7 +35,7 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
     public void setTargetLocation(Location location, boolean update) {
         // Paper end - Change EnderEye target without changing other things
         Preconditions.checkArgument(this.getWorld().equals(location.getWorld()), "Cannot target EnderSignal across worlds");
-        this.getHandle().signalTo(CraftLocation.toBlockPosition(location), update); // Paper - Change EnderEye target without changing other things
+        this.getHandle().signalTo(CraftLocation.toVec3(location), update); // Paper - Change EnderEye target without changing other things
     }
 
     @Override

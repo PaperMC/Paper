@@ -50,6 +50,7 @@ import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -280,7 +281,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public int getDataVersion() {
-        return SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+        return SharedConstants.getCurrentVersion().dataVersion().getVersion();
     }
 
     @Override
@@ -492,8 +493,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public byte[] serializeItem(ItemStack item) {
         Preconditions.checkNotNull(item, "null cannot be serialized");
         Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
+        Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialised");
 
-        return serializeNbtToBytes((CompoundTag) (item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(MinecraftServer.getServer().registryAccess()));
+        return serializeNbtToBytes(
+            (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+                MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE),
+                CraftItemStack.unwrap(item)
+            ).getOrThrow()
+        );
     }
 
     @Override
@@ -511,7 +518,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
         if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
             return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
         }
-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), compound).orElseThrow());
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
+            MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE), compound
+        ).getOrThrow());
     }
 
     @Override
@@ -519,7 +528,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         if (itemStack.isEmpty()) {
             return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, this.getDataVersion(), "schema_version", 1);
         }
-        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
+        final CompoundTag tag = (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+            CraftItemStack.asNMSCopy(itemStack)
+        ).getOrThrow();
         NbtUtils.addCurrentDataVersion(tag);
 
         final Map<String, Object> ret = new LinkedHashMap<>();
@@ -677,21 +689,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         });
 
-        CompoundTag compound = new CompoundTag();
+        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(nmsEntity.registryAccess());
         if (serializePassangers) {
-            if (!nmsEntity.saveAsPassenger(compound, true, includeNonSaveable, forceSerialization)) {
+            if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
                 throw new IllegalArgumentException("Couldn't serialize entity");
             }
         } else {
             List<net.minecraft.world.entity.Entity> pass = new ArrayList<>(nmsEntity.getPassengers());
             nmsEntity.passengers = com.google.common.collect.ImmutableList.of();
-            boolean serialized = nmsEntity.saveAsPassenger(compound, true, includeNonSaveable, forceSerialization);
+            boolean serialized = nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization);
             nmsEntity.passengers = com.google.common.collect.ImmutableList.copyOf(pass);
             if (!serialized) {
                 throw new IllegalArgumentException("Couldn't serialize entity");
             }
         }
-        return serializeNbtToBytes(compound);
+        return serializeNbtToBytes(output.buildResult());
     }
 
     @Override
@@ -768,7 +780,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public int getProtocolVersion() {
-        return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
+        return net.minecraft.SharedConstants.getCurrentVersion().protocolVersion();
     }
 
     @Override
