@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.TNT;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftTnt extends CraftBlockData implements TNT {
     private static final BooleanProperty UNSTABLE = TntBlock.UNSTABLE;
 

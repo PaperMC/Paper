@@ -14,7 +14,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Tripwire;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftTripWire extends CraftBlockData implements Tripwire {
     private static final BooleanProperty ATTACHED = TripWireBlock.ATTACHED;
 
@@ -23,10 +23,10 @@ public class CraftTripWire extends CraftBlockData implements Tripwire {
     private static final BooleanProperty POWERED = TripWireBlock.POWERED;
 
     private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
-        BlockFace.WEST, TripWireBlock.WEST,
-        BlockFace.EAST, TripWireBlock.EAST,
+        BlockFace.SOUTH, TripWireBlock.SOUTH,
         BlockFace.NORTH, TripWireBlock.NORTH,
-        BlockFace.SOUTH, TripWireBlock.SOUTH
+        BlockFace.WEST, TripWireBlock.WEST,
+        BlockFace.EAST, TripWireBlock.EAST
     );
 
     public CraftTripWire(BlockState state) {

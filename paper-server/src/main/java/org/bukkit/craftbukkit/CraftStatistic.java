@@ -21,7 +21,7 @@ import org.bukkit.entity.EntityType;
 
 public enum CraftStatistic {
     // Start generate - CraftStatisticCustom
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     ANIMALS_BRED(Stats.ANIMALS_BRED),
     AVIATE_ONE_CM(Stats.AVIATE_ONE_CM),
     BELL_RING(Stats.BELL_RING),
@@ -46,6 +46,7 @@ public enum CraftStatistic {
     CAULDRON_FILLED(Stats.FILL_CAULDRON),
     FISH_CAUGHT(Stats.FISH_CAUGHT),
     FLY_ONE_CM(Stats.FLY_ONE_CM),
+    HAPPY_GHAST_ONE_CM(Stats.HAPPY_GHAST_ONE_CM),
     HORSE_ONE_CM(Stats.HORSE_ONE_CM),
     DISPENSER_INSPECTED(Stats.INSPECT_DISPENSER),
     DROPPER_INSPECTED(Stats.INSPECT_DROPPER),
@@ -99,7 +100,7 @@ public enum CraftStatistic {
     WALK_UNDER_WATER_ONE_CM(Stats.WALK_UNDER_WATER_ONE_CM),
     // End generate - CraftStatisticCustom
     // Start generate - CraftStatisticType
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     BREAK_ITEM(ResourceLocation.withDefaultNamespace("broken")),
     CRAFT_ITEM(ResourceLocation.withDefaultNamespace("crafted")),
     DROP(ResourceLocation.withDefaultNamespace("dropped")),

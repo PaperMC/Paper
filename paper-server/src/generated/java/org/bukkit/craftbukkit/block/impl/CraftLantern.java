@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.Lantern;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftLantern extends CraftBlockData implements Lantern {
     private static final BooleanProperty HANGING = LanternBlock.HANGING;
 

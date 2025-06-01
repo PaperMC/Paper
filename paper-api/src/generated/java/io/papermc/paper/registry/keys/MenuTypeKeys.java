@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public final class MenuTypeKeys {
     /**
      * {@code minecraft:anvil}

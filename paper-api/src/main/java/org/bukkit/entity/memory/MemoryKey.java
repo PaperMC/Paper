@@ -47,7 +47,7 @@ public final class MemoryKey<T> implements Keyed {
     private static final Map<NamespacedKey, MemoryKey<?>> MEMORY_KEYS = new HashMap<>();
 
     // Start generate - MemoryKey
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     public static final MemoryKey<Boolean> ADMIRING_DISABLED = new MemoryKey<>(NamespacedKey.minecraft("admiring_disabled"), Boolean.class);
 
     public static final MemoryKey<Boolean> ADMIRING_ITEM = new MemoryKey<>(NamespacedKey.minecraft("admiring_item"), Boolean.class);

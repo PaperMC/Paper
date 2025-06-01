@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public final class BlockTypeKeys {
     /**
      * {@code minecraft:acacia_button}
@@ -2474,6 +2474,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> DRAGON_WALL_HEAD = create(key("dragon_wall_head"));
+
+    /**
+     * {@code minecraft:dried_ghast}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> DRIED_GHAST = create(key("dried_ghast"));
 
     /**
      * {@code minecraft:dried_kelp_block}

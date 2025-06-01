@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.properties.StructureMode;
 import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftStructureBlock extends CraftBlockData implements StructureBlock {
     private static final EnumProperty<StructureMode> MODE = net.minecraft.world.level.block.StructureBlock.MODE;
 

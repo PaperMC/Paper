@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     public static final Tag<DamageType> ALWAYS_HURTS_ENDER_DRAGONS = getTag("always_hurts_ender_dragons");
 
     public static final Tag<DamageType> ALWAYS_KILLS_ARMOR_STANDS = getTag("always_kills_armor_stands");

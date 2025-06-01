@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Bell;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftBell extends CraftBlockData implements Bell {
     private static final EnumProperty<BellAttachType> ATTACHMENT = BellBlock.ATTACHMENT;
 

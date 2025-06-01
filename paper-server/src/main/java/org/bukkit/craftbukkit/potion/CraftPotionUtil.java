@@ -15,7 +15,7 @@ public class CraftPotionUtil {
 
     private static final BiMap<PotionType, PotionType> upgradeable = ImmutableBiMap.<PotionType, PotionType>builder()
             // Start generate - CraftPotionUtil#upgradeable
-            // @GeneratedFrom 1.21.5
+            // @GeneratedFrom 1.21.6-pre1
             .put(PotionType.HARMING, PotionType.STRONG_HARMING)
             .put(PotionType.HEALING, PotionType.STRONG_HEALING)
             .put(PotionType.LEAPING, PotionType.STRONG_LEAPING)
@@ -29,7 +29,7 @@ public class CraftPotionUtil {
             .build();
     private static final BiMap<PotionType, PotionType> extendable = ImmutableBiMap.<PotionType, PotionType>builder()
             // Start generate - CraftPotionUtil#extendable
-            // @GeneratedFrom 1.21.5
+            // @GeneratedFrom 1.21.6-pre1
             .put(PotionType.FIRE_RESISTANCE, PotionType.LONG_FIRE_RESISTANCE)
             .put(PotionType.INVISIBILITY, PotionType.LONG_INVISIBILITY)
             .put(PotionType.LEAPING, PotionType.LONG_LEAPING)

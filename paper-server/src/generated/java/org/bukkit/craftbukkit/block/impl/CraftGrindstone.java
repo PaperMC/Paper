@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Grindstone;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftGrindstone extends CraftBlockData implements Grindstone {
     private static final EnumProperty<AttachFace> FACE = GrindstoneBlock.FACE;
 

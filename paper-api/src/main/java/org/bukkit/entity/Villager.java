@@ -172,7 +172,7 @@ public interface Villager extends AbstractVillager {
     interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - VillagerType
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.6-pre1
         Type DESERT = getType("desert");
 
         Type JUNGLE = getType("jungle");
@@ -224,7 +224,7 @@ public interface Villager extends AbstractVillager {
     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
         // Start generate - VillagerProfession
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.6-pre1
         /**
          * Armorer profession. Wears a black apron. Armorers primarily trade for
          * iron armor, chainmail armor, and sometimes diamond armor.

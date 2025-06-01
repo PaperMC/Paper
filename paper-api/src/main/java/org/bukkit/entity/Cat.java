@@ -55,7 +55,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
     interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - CatType
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.6-pre1
         Type ALL_BLACK = getType("all_black");
 
         Type BLACK = getType("black");

@@ -11,7 +11,7 @@ import org.bukkit.Axis;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftHay extends CraftBlockData implements Orientable {
     private static final EnumProperty<Direction.Axis> AXIS = HayBlock.AXIS;
 

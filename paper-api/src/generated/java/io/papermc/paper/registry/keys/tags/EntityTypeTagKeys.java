@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 @ApiStatus.Experimental
 public final class EntityTypeTagKeys {
     /**
@@ -84,6 +84,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CAN_BREATHE_UNDER_WATER = create(key("can_breathe_under_water"));
 
     /**
+     * {@code #minecraft:can_equip_harness}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_EQUIP_HARNESS = create(key("can_equip_harness"));
+
+    /**
      * {@code #minecraft:can_equip_saddle}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -124,6 +131,13 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> FALL_DAMAGE_IMMUNE = create(key("fall_damage_immune"));
+
+    /**
+     * {@code #minecraft:followable_friendly_mobs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> FOLLOWABLE_FRIENDLY_MOBS = create(key("followable_friendly_mobs"));
 
     /**
      * {@code #minecraft:freeze_hurts_extra_types}

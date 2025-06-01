@@ -21,6 +21,7 @@ import org.bukkit.entity.Fish;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.Guardian;
+import org.bukkit.entity.HappyGhast;
 import org.bukkit.entity.Illager;
 import org.bukkit.entity.Illusioner;
 import org.bukkit.entity.IronGolem;
@@ -67,7 +68,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
 
@@ -157,8 +158,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Creature> STROLL_THROUGH_VILLAGE = create("stroll_through_village", Creature.class);
 
-    GoalKey<Creature> TEMPT = create("tempt", Creature.class);
-
     GoalKey<Creature> TRY_FIND_WATER = create("try_find_water", Creature.class);
 
     GoalKey<Creature> WATER_AVOIDING_RANDOM_FLYING = create("water_avoiding_random_flying", Creature.class);
@@ -231,13 +230,11 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Fox> STALK_PREY = create("stalk_prey", Fox.class);
 
-    GoalKey<Ghast> GHAST_LOOK = create("ghast_look", Ghast.class);
-
     GoalKey<Ghast> GHAST_SHOOT_FIREBALL = create("ghast_shoot_fireball", Ghast.class);
 
-    GoalKey<Ghast> RANDOM_FLOAT_AROUND = create("random_float_around", Ghast.class);
-
     GoalKey<Guardian> GUARDIAN_ATTACK = create("guardian_attack", Guardian.class);
+
+    GoalKey<HappyGhast> HAPPY_GHAST_FLOAT = create("happy_ghast_float", HappyGhast.class);
 
     GoalKey<Illager> HOLD_GROUND_ATTACK = create("hold_ground_attack", Illager.class);
 
@@ -269,6 +266,10 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Mob> FOLLOW_MOB = create("follow_mob", Mob.class);
 
+    GoalKey<Mob> FOR_NON_PATHFINDERS = create("for_non_pathfinders", Mob.class);
+
+    GoalKey<Mob> GHAST_LOOK = create("ghast_look", Mob.class);
+
     GoalKey<Mob> INTERACT = create("interact", Mob.class);
 
     GoalKey<Mob> LEAP_AT = create("leap_at", Mob.class);
@@ -281,9 +282,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Mob> OPEN_DOOR = create("open_door", Mob.class);
 
+    GoalKey<Mob> RANDOM_FLOAT_AROUND = create("random_float_around", Mob.class);
+
     GoalKey<Mob> RANDOM_LOOK_AROUND = create("random_look_around", Mob.class);
 
     GoalKey<Mob> RESET_UNIVERSAL_ANGER = create("reset_universal_anger", Mob.class);
+
+    GoalKey<Mob> TEMPT = create("tempt", Mob.class);
 
     GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
 

@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.BubbleColumn;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftBubbleColumn extends CraftBlockData implements BubbleColumn {
     private static final BooleanProperty DRAG_DOWN = BubbleColumnBlock.DRAG_DOWN;
 

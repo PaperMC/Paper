@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftSlab extends CraftBlockData implements Slab {
     private static final EnumProperty<SlabType> TYPE = SlabBlock.TYPE;
 

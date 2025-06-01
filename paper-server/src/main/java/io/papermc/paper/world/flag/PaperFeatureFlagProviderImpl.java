@@ -21,7 +21,7 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
 
     public static final BiMap<FeatureFlag, net.minecraft.world.flag.FeatureFlag> FLAGS = ImmutableBiMap.of(
         // Start generate - PaperFeatureFlagProviderImpl#FLAGS
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.6-pre1
         FeatureFlag.MINECART_IMPROVEMENTS, FeatureFlags.MINECART_IMPROVEMENTS,
         FeatureFlag.REDSTONE_EXPERIMENTS, FeatureFlags.REDSTONE_EXPERIMENTS,
         FeatureFlag.TRADE_REBALANCE, FeatureFlags.TRADE_REBALANCE,

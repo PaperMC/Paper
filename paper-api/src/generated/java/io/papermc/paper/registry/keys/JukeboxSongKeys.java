@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public final class JukeboxSongKeys {
     /**
      * {@code minecraft:11}
@@ -143,6 +143,13 @@ public final class JukeboxSongKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<JukeboxSong> STRAD = create(key("strad"));
+
+    /**
+     * {@code minecraft:tears}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<JukeboxSong> TEARS = create(key("tears"));
 
     /**
      * {@code minecraft:wait}

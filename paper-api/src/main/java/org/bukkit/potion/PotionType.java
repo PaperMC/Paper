@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - feature flag API
     // Start generate - PotionType
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     AWKWARD("awkward"),
     FIRE_RESISTANCE("fire_resistance"),
     HARMING("harming"),

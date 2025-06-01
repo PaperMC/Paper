@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Lectern;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftLectern extends CraftBlockData implements Lectern {
     private static final EnumProperty<Direction> FACING = LecternBlock.FACING;
 

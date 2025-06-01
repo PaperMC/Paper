@@ -305,6 +305,11 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      */
     public static final GameRule<Integer> SPAWN_CHUNK_RADIUS = new GameRule<>("spawnChunkRadius", Integer.class);
 
+    /**
+     * Configures if the world uses the locator bar.
+     */
+    public static final GameRule<Boolean> USE_LOCATOR_BAR = new GameRule<>("useLocatorBar", Boolean.class);
+
     // All GameRules instantiated above this for organizational purposes
     private final String name;
     private final Class<T> type;

@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.EndPortalFrame;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftEndPortalFrame extends CraftBlockData implements EndPortalFrame {
     private static final BooleanProperty HAS_EYE = EndPortalFrameBlock.HAS_EYE;
 

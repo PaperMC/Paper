@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 import org.bukkit.block.data.Rail;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftRail extends CraftBlockData implements Rail {
     private static final EnumProperty<RailShape> SHAPE = RailBlock.SHAPE;
 

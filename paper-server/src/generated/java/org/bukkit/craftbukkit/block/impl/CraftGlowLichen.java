@@ -15,7 +15,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlowLichen;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftGlowLichen extends CraftBlockData implements GlowLichen {
     private static final BooleanProperty WATERLOGGED = GlowLichenBlock.WATERLOGGED;
 

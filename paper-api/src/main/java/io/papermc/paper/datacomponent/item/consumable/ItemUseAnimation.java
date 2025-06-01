@@ -5,7 +5,7 @@ package io.papermc.paper.datacomponent.item.consumable;
  */
 public enum ItemUseAnimation {
     // Start generate - ItemUseAnimation
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.6-pre1
     NONE,
     EAT,
     DRINK,

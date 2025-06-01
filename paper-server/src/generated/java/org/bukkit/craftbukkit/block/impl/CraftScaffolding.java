@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Scaffolding;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftScaffolding extends CraftBlockData implements Scaffolding {
     private static final BooleanProperty BOTTOM = ScaffoldingBlock.BOTTOM;
 

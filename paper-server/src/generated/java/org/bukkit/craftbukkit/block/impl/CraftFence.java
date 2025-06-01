@@ -15,7 +15,7 @@ import org.bukkit.block.data.type.Fence;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 public class CraftFence extends CraftBlockData implements Fence {
     private static final BooleanProperty WATERLOGGED = FenceBlock.WATERLOGGED;
 

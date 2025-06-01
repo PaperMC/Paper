@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6-pre1")
 @ApiStatus.Experimental
 public final class BlockTypeTagKeys {
     /**
@@ -581,6 +581,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> GUARDED_BY_PIGLINS = create(key("guarded_by_piglins"));
 
     /**
+     * {@code #minecraft:happy_ghast_avoids}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> HAPPY_GHAST_AVOIDS = create(key("happy_ghast_avoids"));
+
+    /**
      * {@code #minecraft:hoglin_repellents}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -910,13 +917,6 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> PLANKS = create(key("planks"));
 
     /**
-     * {@code #minecraft:plays_ambient_desert_block_sounds}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = create(key("plays_ambient_desert_block_sounds"));
-
-    /**
      * {@code #minecraft:polar_bears_spawnable_on_alternate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1202,6 +1202,27 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> TRAPDOORS = create(key("trapdoors"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_desert_dry_vegetation_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS = create(key("triggers_ambient_desert_dry_vegetation_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_desert_sand_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_SAND_BLOCK_SOUNDS = create(key("triggers_ambient_desert_sand_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_dried_ghast_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DRIED_GHAST_BLOCK_SOUNDS = create(key("triggers_ambient_dried_ghast_block_sounds"));
 
     /**
      * {@code #minecraft:underwater_bonemeals}
