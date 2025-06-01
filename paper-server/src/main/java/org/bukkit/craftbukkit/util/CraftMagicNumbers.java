@@ -520,7 +520,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
         }
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
-            MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE), compound
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
         ).getOrThrow());
     }
 

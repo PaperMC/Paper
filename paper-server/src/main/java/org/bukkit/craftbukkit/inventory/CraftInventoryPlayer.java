@@ -71,8 +71,8 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     @Override
     public void setItem(int index, ItemStack item) {
         // Paper start - Validate setItem index
-        if (index < 0 || index > 40) {
-            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 40");
+        if (index < 0 || index > 42) {
+            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 42");
         }
         // Paper end - Validate setItem index
         super.setItem(index, item);
@@ -123,11 +123,8 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
         switch (slot) {
             case HAND -> this.setItemInMainHand(item);
-            case OFF_HAND, FEET, LEGS, CHEST, HEAD ->
+            case OFF_HAND, FEET, LEGS, CHEST, HEAD, BODY, SADDLE ->
                 this.getInventory().equipment.set(CraftEquipmentSlot.getNMS(slot), CraftItemStack.asNMSCopy(item));
-            case BODY -> throw new IllegalArgumentException("BODY is not valid for players!"); // Paper end
-            default ->
-                throw new IllegalArgumentException("Could not set slot " + slot + " - not a valid slot for PlayerInventory");
         }
     }
 
@@ -142,10 +139,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
         return switch (slot) {
             case HAND -> this.getItemInMainHand();
-            case OFF_HAND, FEET, LEGS, CHEST, HEAD -> CraftItemStack.asCraftMirror(this.getInventory().equipment.get(CraftEquipmentSlot.getNMS(slot)));
-            case BODY -> throw new IllegalArgumentException("BODY is not valid for players!");
-            default ->
-                throw new IllegalArgumentException("Could not get slot " + slot + " - not a valid slot for PlayerInventory");
+            case OFF_HAND, FEET, LEGS, CHEST, HEAD, BODY, SADDLE -> CraftItemStack.asCraftMirror(this.getInventory().equipment.get(CraftEquipmentSlot.getNMS(slot)));
         };
     }
 
@@ -253,12 +247,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getExtraContents() {
-        return this.asCraftMirror(List.of(this.getInventory().equipment.get(net.minecraft.world.entity.EquipmentSlot.OFFHAND)));
+        return this.asCraftMirror(this.getInventory().getExtraContent());
     }
 
     @Override
     public void setExtraContents(ItemStack[] items) {
-        this.setSlots(items, this.getInventory().getNonEquipmentItems().size() + this.getInventory().getArmorContents().size(), 1);
+        this.setSlots(items, this.getInventory().getNonEquipmentItems().size() + this.getInventory().getArmorContents().size(), 3);
     }
 
     @Override

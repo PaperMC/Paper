@@ -60,6 +60,7 @@ import org.bukkit.block.data.type.DaylightDetector;
 import org.bukkit.block.data.type.DecoratedPot;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.block.data.type.DriedGhast;
 import org.bukkit.block.data.type.Dripleaf;
 import org.bukkit.block.data.type.EndPortalFrame;
 import org.bukkit.block.data.type.EnderChest;
@@ -960,7 +961,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     DRAGON_EGG(-1),
     DRAGON_HEAD(-1, Skull.class),
     DRAGON_WALL_HEAD(-1, WallSkull.class),
-    DRIED_GHAST(-1, Directional.class),
+    DRIED_GHAST(-1, DriedGhast.class),
     DRIED_KELP_BLOCK(-1),
     DRIPSTONE_BLOCK(-1),
     DROPPER(-1, Dispenser.class),

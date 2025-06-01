@@ -308,7 +308,7 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
     /**
      * Configures if the world uses the locator bar.
      */
-    public static final GameRule<Boolean> USE_LOCATOR_BAR = new GameRule<>("useLocatorBar", Boolean.class);
+    public static final GameRule<Boolean> LOCATOR_BAR = new GameRule<>("locatorBar", Boolean.class);
 
     // All GameRules instantiated above this for organizational purposes
     private final String name;
