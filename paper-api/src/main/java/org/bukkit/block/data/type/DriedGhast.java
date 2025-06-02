@@ -18,7 +18,7 @@ public interface DriedGhast extends Directional, Waterlogged {
     /**
      * Sets the hydration level of this dried ghast.
      *
-     * @return the hydration level, reaching from 0 to {@link #getMaximumHydration()}
+     * @param hydration the hydration level, reaching from 0 to {@link #getMaximumHydration()}
      */
     void setHydration(final int hydration);
 
