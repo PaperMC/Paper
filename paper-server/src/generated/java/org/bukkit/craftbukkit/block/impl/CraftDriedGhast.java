@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DriedGhast;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre1")
+@GeneratedFrom("1.21.6-pre2")
 public class CraftDriedGhast extends CraftBlockData implements DriedGhast {
     private static final EnumProperty<Direction> FACING = DriedGhastBlock.FACING;
 
@@ -42,14 +42,17 @@ public class CraftDriedGhast extends CraftBlockData implements DriedGhast {
         return this.getValues(FACING, BlockFace.class);
     }
 
+    @Override
     public int getHydration() {
         return this.get(HYDRATION_LEVEL);
     }
 
+    @Override
     public void setHydration(final int hydration) {
         this.set(HYDRATION_LEVEL, hydration);
     }
 
+    @Override
     public int getMaximumHydration() {
         return HYDRATION_LEVEL.max;
     }
