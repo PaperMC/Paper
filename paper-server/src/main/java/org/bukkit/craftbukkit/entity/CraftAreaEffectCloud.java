@@ -233,7 +233,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void setOwnerUniqueId(final java.util.UUID ownerUuid) {
-        this.getHandle().owner = new EntityReference<>(ownerUuid);
+        this.getHandle().owner = ownerUuid == null ? null : new EntityReference<>(ownerUuid);
     }
     // Paper end
 }

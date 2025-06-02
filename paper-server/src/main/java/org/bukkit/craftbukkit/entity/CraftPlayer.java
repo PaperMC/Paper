@@ -2354,9 +2354,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end - getLastPlayed replacement API
 
-    public void readExtraData(ValueInput tag) {
+    public void readExtraData(ValueInput input) {
         this.hasPlayedBefore = true;
-        tag.child("bukkit").ifPresent(data -> {
+        input.child("bukkit").ifPresent(data -> {
             this.firstPlayed = data.getLongOr("firstPlayed", 0);
             this.lastPlayed = data.getLongOr("lastPlayed", 0);
 
@@ -2369,10 +2369,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         });
     }
 
-    public void setExtraData(ValueOutput tag) {
+    public void setExtraData(ValueOutput output) {
         this.lastSaveTime = System.currentTimeMillis(); // Paper
 
-        ValueOutput data = tag.child("bukkit");
+        ValueOutput data = output.child("bukkit");
         ServerPlayer handle = this.getHandle();
         data.putInt("newExp", handle.newExp);
         data.putInt("newTotalExp", handle.newTotalExp);
@@ -2384,7 +2384,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.putString("lastKnownName", handle.getScoreboardName());
 
         // Paper start - persist for use in offline save data
-        ValueOutput paper = tag.child("Paper");
+        ValueOutput paper = output.child("Paper");
         paper.putLong("LastLogin", handle.loginTime);
         paper.putLong("LastSeen", System.currentTimeMillis());
         // Paper end

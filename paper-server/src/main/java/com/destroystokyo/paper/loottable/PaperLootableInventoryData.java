@@ -168,42 +168,38 @@ public class PaperLootableInventoryData {
     private static final String NUM_REFILLS = "numRefills";
     private static final String LOOTED_PLAYERS = "lootedPlayers";
 
-    public void loadNbt(final ValueInput base) {
-        final Optional<ValueInput> compOpt = base.child(ROOT);
-        if (compOpt.isEmpty()) {
-            return;
-        }
-        final ValueInput comp = compOpt.get();
-        this.lastFill = comp.getLongOr(LAST_FILL, -1);
-        this.nextRefill = comp.getLongOr(NEXT_REFILL, -1);
-        this.numRefills = comp.getIntOr(NUM_REFILLS, 0);
-        final ValueInput.TypedInputList<SerializedLootedPlayerEntry> list = comp.listOrEmpty(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
+    public void loadNbt(final ValueInput input) {
+        final ValueInput data = input.childOrEmpty(ROOT);
+        this.lastFill = data.getLongOr(LAST_FILL, -1);
+        this.nextRefill = data.getLongOr(NEXT_REFILL, -1);
+        this.numRefills = data.getIntOr(NUM_REFILLS, 0);
+        final ValueInput.TypedInputList<SerializedLootedPlayerEntry> list = data.listOrEmpty(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
         if (!list.isEmpty()) {
             this.lootedPlayers = new HashMap<>();
             list.forEach(serializedLootedPlayerEntry -> lootedPlayers.put(serializedLootedPlayerEntry.uuid, serializedLootedPlayerEntry.time));
         }
     }
 
-    public void saveNbt(final ValueOutput base) {
-        final ValueOutput comp = base.child(ROOT);
+    public void saveNbt(final ValueOutput output) {
+        final ValueOutput data = output.child(ROOT);
         if (this.nextRefill != -1) {
-            comp.putLong(NEXT_REFILL, this.nextRefill);
+            data.putLong(NEXT_REFILL, this.nextRefill);
         }
         if (this.lastFill != -1) {
-            comp.putLong(LAST_FILL, this.lastFill);
+            data.putLong(LAST_FILL, this.lastFill);
         }
         if (this.numRefills != 0) {
-            comp.putInt(NUM_REFILLS, this.numRefills);
+            data.putInt(NUM_REFILLS, this.numRefills);
         }
         if (this.lootedPlayers != null && !this.lootedPlayers.isEmpty()) {
-            final ValueOutput.TypedOutputList<SerializedLootedPlayerEntry> list = comp.list(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
+            final ValueOutput.TypedOutputList<SerializedLootedPlayerEntry> list = data.list(LOOTED_PLAYERS, SerializedLootedPlayerEntry.CODEC);
             for (final Map.Entry<UUID, Long> entry : this.lootedPlayers.entrySet()) {
                 list.add(new SerializedLootedPlayerEntry(entry.getKey(), entry.getValue()));
             }
         }
 
-        if (comp.isEmpty()) {
-            base.discard(ROOT);
+        if (data.isEmpty()) {
+            output.discard(ROOT);
         }
     }
 

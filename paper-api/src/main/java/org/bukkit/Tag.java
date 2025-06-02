@@ -882,6 +882,11 @@ public interface Tag<T extends Keyed> extends Keyed {
     @Deprecated(since = "1.21.5", forRemoval = true)
     Tag<Material> DEAD_BUSH_MAY_PLACE_ON = DRY_VEGETATION_MAY_PLACE_ON;
     /**
+     * @deprecated replaced by {@link #TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS}
+     */
+    @Deprecated(since = "1.21.6", forRemoval = true)
+    Tag<Material> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS;
+    /**
      * Vanilla block tag representing all blocks that are replaceable by
      * dripstone.
      *

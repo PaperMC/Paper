@@ -493,8 +493,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public byte[] serializeItem(ItemStack item) {
         Preconditions.checkNotNull(item, "null cannot be serialized");
-        Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
-        Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialised");
+        Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialized");
 
         return serializeNbtToBytes(
             (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(

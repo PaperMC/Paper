@@ -62,24 +62,21 @@ public interface BlocksAttacks {
      *
      * @return a damage type tag key, or null if there is no such tag key
      */
-    @Nullable
-    TagKey<DamageType> bypassedBy();
+    @Nullable TagKey<DamageType> bypassedBy();
 
     /**
      * Gets the key sound to play when an attack is successfully blocked.
      *
      * @return a key of the sound
      */
-    @Nullable
-    Key blockSound();
+    @Nullable Key blockSound();
 
     /**
      * Gets the key sound to play when the item goes on its disabled cooldown due to an attack.
      *
      * @return a key of the sound
      */
-    @Nullable
-    Key disableSound();
+    @Nullable Key disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.

@@ -1021,14 +1021,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
     }
 
-    public void storeBukkitValues(ValueOutput c) {
+    public void storeBukkitValues(ValueOutput output) {
         if (!this.persistentDataContainer.isEmpty()) {
-            c.store("BukkitValues", CompoundTag.CODEC, this.persistentDataContainer.toTagCompound());
+            output.store("BukkitValues", CompoundTag.CODEC, this.persistentDataContainer.toTagCompound());
         }
     }
 
-    public void readBukkitValues(ValueInput c) {
-        c.read("BukkitValues", CompoundTag.CODEC).ifPresent(this.persistentDataContainer::putAll);
+    public void readBukkitValues(ValueInput input) {
+        input.read("BukkitValues", CompoundTag.CODEC).ifPresent(this.persistentDataContainer::putAll);
     }
 
     protected CompoundTag save() {
