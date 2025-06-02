@@ -3258,16 +3258,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack Material (%s) must have a WrittenBookContent Component", book.getType());
 
-        final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
-        final int slot = this.getHandle().getInventory().getNonEquipmentItems().size() + this.getHandle().getInventory().getSelectedSlot();
-        final int stateId = getHandle().containerMenu.getStateId();
-        this.getHandle().connection.send(new ClientboundBundlePacket(
-            List.of(
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, CraftItemStack.unwrap(book)),
-                new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, selectedItem)
-            )
-        ));
+        ItemStack hand = this.getInventory().getItemInMainHand();
+        this.getInventory().setItemInMainHand(book);
+        this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
+        this.getInventory().setItemInMainHand(hand);
     }
 
     @Override
@@ -3275,7 +3269,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item for set the data
         mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, io.papermc.paper.datacomponent.item.WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
 
-        this.openBook(mutatedItem);
+        final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
+        final int slot = this.getHandle().getInventory().getNonEquipmentItems().size() + this.getHandle().getInventory().getSelectedSlot();
+        final int stateId = getHandle().containerMenu.getStateId();
+        this.getHandle().connection.send(new ClientboundBundlePacket(
+            List.of(
+                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, CraftItemStack.unwrap(mutatedItem)),
+                new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
+                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, selectedItem)
+            )
+        ));
     }
 
     @Override
