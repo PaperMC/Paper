@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -68,12 +69,14 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
+import net.minecraft.network.protocol.game.ClientboundOpenBookPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket;
@@ -104,6 +107,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -3256,27 +3260,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void openBook(ItemStack book) {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
-        Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack Material (%s) must have a WrittenBookContent Component", book.getType());
+        Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack (%s) must have a WrittenBookContent Component", book.getType());
 
         ItemStack hand = this.getInventory().getItemInMainHand();
         this.getInventory().setItemInMainHand(book);
-        this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
+        this.getHandle().openItemGui(CraftItemStack.asNMSCopy(book), InteractionHand.MAIN_HAND);
         this.getInventory().setItemInMainHand(hand);
     }
 
     @Override
     public void openBook(final net.kyori.adventure.inventory.Book book) {
         ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item for set the data
-        mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, io.papermc.paper.datacomponent.item.WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
+        mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
 
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
         final int slot = this.getHandle().getInventory().getNonEquipmentItems().size() + this.getHandle().getInventory().getSelectedSlot();
         final int stateId = getHandle().containerMenu.getStateId();
         this.getHandle().connection.send(new ClientboundBundlePacket(
             List.of(
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, CraftItemStack.unwrap(mutatedItem)),
-                new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
-                new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, selectedItem)
+                new ClientboundContainerSetSlotPacket(0, stateId, slot, CraftItemStack.unwrap(mutatedItem)),
+                new ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
+                new ClientboundContainerSetSlotPacket(0, stateId, slot, selectedItem)
             )
         ));
     }
