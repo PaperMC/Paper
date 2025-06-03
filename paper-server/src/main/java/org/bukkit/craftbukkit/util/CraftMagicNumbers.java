@@ -4,12 +4,12 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.registry.RegistryKey;
@@ -41,7 +41,7 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Player;
@@ -84,9 +84,13 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.potion.PotionType;
+import org.slf4j.Logger;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
     public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
 
@@ -689,21 +693,25 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         });
 
-        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(nmsEntity.registryAccess());
-        if (serializePassangers) {
-            if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
-                throw new IllegalArgumentException("Couldn't serialize entity");
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
+        )) {
+            final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, nmsEntity.registryAccess());
+            if (serializePassangers) {
+                if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
+                    throw new IllegalArgumentException("Couldn't serialize entity");
+                }
+            } else {
+                List<net.minecraft.world.entity.Entity> pass = new ArrayList<>(nmsEntity.getPassengers());
+                nmsEntity.passengers = com.google.common.collect.ImmutableList.of();
+                boolean serialized = nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization);
+                nmsEntity.passengers = com.google.common.collect.ImmutableList.copyOf(pass);
+                if (!serialized) {
+                    throw new IllegalArgumentException("Couldn't serialize entity");
+                }
             }
-        } else {
-            List<net.minecraft.world.entity.Entity> pass = new ArrayList<>(nmsEntity.getPassengers());
-            nmsEntity.passengers = com.google.common.collect.ImmutableList.of();
-            boolean serialized = nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization);
-            nmsEntity.passengers = com.google.common.collect.ImmutableList.copyOf(pass);
-            if (!serialized) {
-                throw new IllegalArgumentException("Couldn't serialize entity");
-            }
+            return serializeNbtToBytes(output.buildResult());
         }
-        return serializeNbtToBytes(output.buildResult());
     }
 
     @Override
@@ -726,11 +734,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
             // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
             compound.remove("UUID");
         }
-        net.minecraft.world.entity.Entity nmsEntity = net.minecraft.world.entity.EntityType.create(
-            TagValueInput.createDiscarding(world.registryAccess(), compound),
-            world,
-            net.minecraft.world.entity.EntitySpawnReason.LOAD
-        ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
+
+        final net.minecraft.world.entity.Entity nmsEntity;
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "deserialiseEntity", LOGGER
+        )) {
+            nmsEntity = net.minecraft.world.entity.EntityType.create(
+                TagValueInput.create(problemReporter, world.registryAccess(), compound),
+                world,
+                net.minecraft.world.entity.EntitySpawnReason.LOAD
+            ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
+        }
+
         compound.getList("Passengers").ifPresent(passengers -> {
             for (final Tag tag : passengers) {
                 if (!(tag instanceof final CompoundTag serializedPassenger)) {

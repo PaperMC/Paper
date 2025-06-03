@@ -7,9 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.random.Weighted;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.Entity;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -27,8 +30,12 @@ import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.loot.LootTable;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
+import org.slf4j.Logger;
 
 public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private final TrialSpawnerBlockEntity snapshot;
 
     private int spawnRange;
@@ -61,10 +68,17 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             return null;
         }
 
-        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(TagValueInput.createGlobalDiscarding(
-            this.spawnPotentialsDefinition.unwrap().getFirst().value().getEntityToSpawn()
-        ));
-        return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "TrialSpawnerConfiguration@" + snapshot.getBlockPos().toShortString(), LOGGER
+        )) {
+            Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(
+                TagValueInput.createGlobal(
+                    problemReporter,
+                    this.spawnPotentialsDefinition.unwrap().getFirst().value().getEntityToSpawn()
+                )
+            );
+            return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        }
     }
 
     @Override

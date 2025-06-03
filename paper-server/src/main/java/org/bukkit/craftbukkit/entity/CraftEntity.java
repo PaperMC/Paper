@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.HashSet;
@@ -15,7 +16,6 @@ import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.boss.EnderDragonPart;
@@ -76,8 +77,12 @@ import org.bukkit.util.Vector;
 import net.md_5.bungee.api.chat.BaseComponent; // Spigot
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private static PermissibleBase perm;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
@@ -982,12 +987,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public String getAsString() {
-        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(this.getHandle().registryAccess());
-        if (!this.getHandle().saveAsPassenger(output, false, true, true)) {
-            return null;
-        }
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "Entity#toString", LOGGER
+        )) {
+            final TagValueOutput output = TagValueOutput.createWithContext(
+                problemReporter,
+                this.getHandle().registryAccess()
+            );
+            if (!this.getHandle().saveAsPassenger(output, false, true, true)) {
+                return null;
+            }
 
-        return output.buildResult().toString();
+            return output.buildResult().toString();
+        }
     }
 
     @Override
@@ -1015,10 +1027,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     private Entity copy(net.minecraft.world.level.Level level) {
-        final TagValueOutput output = TagValueOutput.createDiscardingWithContext(level.registryAccess());
-        this.getHandle().saveAsPassenger(output, false, true, true);
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "Entity#copy", LOGGER
+        )) {
+            final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, level.registryAccess());
+            this.getHandle().saveAsPassenger(output, false, true, true);
 
-        return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
+            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
+        }
     }
 
     public void storeBukkitValues(ValueOutput output) {
@@ -1032,12 +1048,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     protected CompoundTag save() {
-        final TagValueOutput tagValueOutput = TagValueOutput.createDiscardingWithContext(this.getHandle().registryAccess());
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "Entity#save", LOGGER
+        )) {
+            final TagValueOutput tagValueOutput = TagValueOutput.createWithContext(
+                problemReporter,
+                this.getHandle().registryAccess()
+            );
 
-        tagValueOutput.putString(Entity.TAG_ID, this.getHandle().getEncodeId()); // todo NPE?
-        this.getHandle().saveWithoutId(tagValueOutput);
+            tagValueOutput.putString(Entity.TAG_ID, this.getHandle().getEncodeId()); // todo NPE?
+            this.getHandle().saveWithoutId(tagValueOutput);
 
-        return tagValueOutput.buildResult();
+            return tagValueOutput.buildResult();
+        }
     }
 
     // re-sends the spawn entity packet to updated values which cannot be updated otherwise
