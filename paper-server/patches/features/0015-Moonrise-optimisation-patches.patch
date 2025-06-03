@@ -1013,7 +1013,7 @@ index 0000000000000000000000000000000000000000..866f38eb0f379ffbe2888023a7d1c290
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java b/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3f5a3f04283a130b4e48e6b78732758335629e7
+index 0000000000000000000000000000000000000000..02d596647ab78afb056eefe14ffa0ef2f27867f6
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
 @@ -0,0 +1,38 @@
@@ -1034,7 +1034,7 @@ index 0000000000000000000000000000000000000000..f3f5a3f04283a130b4e48e6b78732758
 +    private static final int DEFAULT_ENTITY_CHUNK_DATA_VERSION = -1;
 +
 +    private static int getCurrentVersion() {
-+        return SharedConstants.getCurrentVersion().getDataVersion().getVersion();
++        return SharedConstants.getCurrentVersion().dataVersion().version();
 +    }
 +
 +    private static int getDataVersion(final CompoundTag data, final int dfl) {
@@ -5309,7 +5309,7 @@ index 0000000000000000000000000000000000000000..89b956b8fdf1a0d862a843104511005e
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/PoiChunk.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/PoiChunk.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b5eedee7b5876c0981520ec1548f70a935a501f
+index 0000000000000000000000000000000000000000..5adbeecd61ab80fd86546f22f0867f27af5a7662
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/PoiChunk.java
 @@ -0,0 +1,204 @@
@@ -5434,7 +5434,7 @@ index 0000000000000000000000000000000000000000..8b5eedee7b5876c0981520ec1548f70a
 +        final CompoundTag sections = new CompoundTag();
 +        ret.put("Sections", sections);
 +
-+        ret.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
++        ret.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
 +
 +        final ServerLevel world = this.world;
 +        final int chunkX = this.chunkX;
@@ -5559,7 +5559,7 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..02a9ef1694c796584c29430d27f0a09047368835
+index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6fdbbcae49
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 @@ -0,0 +1,1089 @@
@@ -5712,7 +5712,7 @@ index 0000000000000000000000000000000000000000..02a9ef1694c796584c29430d27f0a090
 +    }
 +
 +    public static int getAPITickViewDistance(final ServerPlayer player) {
-+        final ServerLevel level = player.serverLevel();
++        final ServerLevel level = player.level();
 +        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (data == null) {
 +            return ((ChunkSystemServerLevel)level).moonrise$getPlayerChunkLoader().getAPITickDistance();
@@ -5721,7 +5721,7 @@ index 0000000000000000000000000000000000000000..02a9ef1694c796584c29430d27f0a090
 +    }
 +
 +    public static int getAPIViewDistance(final ServerPlayer player) {
-+        final ServerLevel level = player.serverLevel();
++        final ServerLevel level = player.level();
 +        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (data == null) {
 +            return ((ChunkSystemServerLevel)level).moonrise$getPlayerChunkLoader().getAPIViewDistance();
@@ -5731,7 +5731,7 @@ index 0000000000000000000000000000000000000000..02a9ef1694c796584c29430d27f0a090
 +    }
 +
 +    public static int getAPISendViewDistance(final ServerPlayer player) {
-+        final ServerLevel level = player.serverLevel();
++        final ServerLevel level = player.level();
 +        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (data == null) {
 +            return ((ChunkSystemServerLevel)level).moonrise$getPlayerChunkLoader().getAPISendViewDistance();
@@ -16359,7 +16359,7 @@ index 0000000000000000000000000000000000000000..1414f25ef770b0fe73ea618a450ade2f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a97a2a8492f3858e3b622d26768b4d819c9b47a7
+index 0000000000000000000000000000000000000000..9f8fb5d96d7a9776a5b809c4bd474b404b452145
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 @@ -0,0 +1,2185 @@
@@ -18456,7 +18456,7 @@ index 0000000000000000000000000000000000000000..a97a2a8492f3858e3b622d26768b4d81
 +                continue;
 +            }
 +
-+            if ((entity == null && otherEntity.canBeCollidedWith()) || (entity != null && entity.canCollideWith(otherEntity))) {
++            if ((entity == null && otherEntity.canBeCollidedWith(null)) || (entity != null && entity.canCollideWith(otherEntity))) {
 +                if (checkOnly) {
 +                    return true;
 +                } else {
@@ -29623,7 +29623,7 @@ index 9f34fc4278860dd7bcfa1fd79b15e588b0cc3973..a7ebd624652cb6f0edc735bf6b9760e7
  
      public ClipContext(Vec3 from, Vec3 to, ClipContext.Block block, ClipContext.Fluid fluid, Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 300f3ed58109219d97846082941b860585f66fed..892a7c1eb1b321ca6d5ca709142e7feae1220815 100644
+index 300f3ed58109219d97846082941b860585f66fed..67f47982e238430b7adaa93f5e730b5e87eac741 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
@@ -29735,7 +29735,7 @@ index 300f3ed58109219d97846082941b860585f66fed..892a7c1eb1b321ca6d5ca709142e7fea
 +                continue;
 +            }
 +
-+            if ((entity == null && otherEntity.canBeCollidedWith()) || (entity != null && entity.canCollideWith(otherEntity))) {
++            if ((entity == null && otherEntity.canBeCollidedWith(null)) || (entity != null && entity.canCollideWith(otherEntity))) {
 +                ret.add(Shapes.create(otherEntity.getBoundingBox()));
              }
          }
