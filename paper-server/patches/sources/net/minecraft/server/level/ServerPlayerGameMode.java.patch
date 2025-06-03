@@ -367,8 +367,72 @@
                  return InteractionResult.CONSUME;
              } else {
                  return InteractionResult.PASS;
-@@ -362,7 +_,7 @@
+@@ -347,22 +_,69 @@
+             boolean flag1 = player.isSecondaryUseActive() && flag;
+             ItemStack itemStack = stack.copy();
+             if (!flag1) {
+-                InteractionResult interactionResult = blockState.useItemOn(player.getItemInHand(hand), level, player, hand, hitResult);
++                // Paper start - Block use events
++                org.bukkit.block.Block bukkitBlock = level.getWorld().getBlockAt(blockPos.getX(), blockPos.getY(), blockPos.getZ());
++                org.bukkit.inventory.EquipmentSlot bukkitHand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
++
++                ItemStack itemInHand = player.getItemInHand(hand);
++
++                io.papermc.paper.event.block.BlockPreUseEvent preUseEvent = new io.papermc.paper.event.block.BlockPreUseEvent(
++                    bukkitBlock, player.getBukkitEntity(), itemInHand.getBukkitStack(), bukkitHand
++                );
++                preUseEvent.callEvent();
++
++                InteractionResult interactionResult = switch (preUseEvent.getResultOverride()) {
++                    case SUCCESS -> InteractionResult.SUCCESS;
++                    case FAIL -> InteractionResult.FAIL;
++                    case PASS -> InteractionResult.PASS;
++                    case TRY_WITH_EMPTY_HAND -> InteractionResult.TRY_WITH_EMPTY_HAND;
++                    case null -> blockState.useItemOn(itemInHand, level, player, hand, hitResult);
++                };
++                InteractionResult interactionResult1 = null;
++
++                try {
+                 if (interactionResult.consumesAction()) {
+                     CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(player, blockPos, itemStack);
+                     return interactionResult;
                  }
+ 
+                 if (interactionResult instanceof InteractionResult.TryEmptyHandInteraction && hand == InteractionHand.MAIN_HAND) {
+-                    InteractionResult interactionResult1 = blockState.useWithoutItem(level, player, hitResult);
++                    io.papermc.paper.event.block.BlockPreUseEvent preUseEvent1 = new io.papermc.paper.event.block.BlockPreUseEvent(
++                        bukkitBlock, player.getBukkitEntity(), null, bukkitHand
++                    );
++                    preUseEvent1.callEvent();
++
++                    interactionResult1 = switch (preUseEvent1.getResultOverride()) {
++                        case SUCCESS -> InteractionResult.SUCCESS;
++                        case FAIL -> InteractionResult.FAIL;
++                        case PASS -> InteractionResult.PASS;
++                        case TRY_WITH_EMPTY_HAND -> InteractionResult.TRY_WITH_EMPTY_HAND;
++                        case null -> blockState.useWithoutItem(level, player, hitResult);
++                    };
++
+                     if (interactionResult1.consumesAction()) {
+                         CriteriaTriggers.DEFAULT_BLOCK_USE.trigger(player, blockPos);
+                         return interactionResult1;
+                     }
+                 }
++                } finally {
++                    boolean usedItem = interactionResult1 == null;
++
++                    io.papermc.paper.event.block.BlockUseResult result = switch (!usedItem ? interactionResult1 : interactionResult) {
++                        case net.minecraft.world.InteractionResult.Success ignored -> io.papermc.paper.event.block.BlockUseResult.SUCCESS;
++                        case net.minecraft.world.InteractionResult.Pass ignored -> io.papermc.paper.event.block.BlockUseResult.PASS;
++                        case net.minecraft.world.InteractionResult.Fail ignored -> io.papermc.paper.event.block.BlockUseResult.FAIL;
++                        case net.minecraft.world.InteractionResult.TryEmptyHandInteraction ignored -> io.papermc.paper.event.block.BlockUseResult.TRY_WITH_EMPTY_HAND;
++                    };
++
++                    new io.papermc.paper.event.block.BlockUsedEvent(
++                        bukkitBlock, player.getBukkitEntity(), usedItem ? itemInHand.getBukkitStack() : null, bukkitHand, result
++                    ).callEvent();
++                }
++                // Paper end - Block use events
              }
  
 -            if (!stack.isEmpty() && !player.getCooldowns().isOnCooldown(stack)) {
