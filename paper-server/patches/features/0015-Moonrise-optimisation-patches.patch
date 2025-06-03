@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index a013f00e981e4411de9cbc65eb7694a15774be10..90366380685ecca4135c57f6b497f58af8045f00 100644
+index 0ced5a8990b9fa2bdda90eac0a1c7ab27effe0e9..8506fc08bc2a2933e8f4f3a3e636913fa96c3d84 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -308,32 +308,24 @@ index a013f00e981e4411de9cbc65eb7694a15774be10..90366380685ecca4135c57f6b497f58a
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.boss.EnderDragonPart;
  import net.minecraft.world.level.BlockGetter;
-@@ -147,8 +148,8 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
-     }
+@@ -150,7 +151,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
  
      @Override
--    public long[] getCounterTypesUncached(final net.minecraft.server.level.TicketType type) {
+     public long[] getCounterTypesUncached(final net.minecraft.server.level.TicketType type) {
 -        return new long[0];
-+    public long[] getCounterTypesUncached(final TicketType type) {
-+        return type == TicketType.FORCED ? new long[] { ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketType.COUNTER_TYPE_FORCED } : it.unimi.dsi.fastutil.longs.LongArrays.EMPTY_ARRAY;
++        return type == TicketType.FORCED ? new long[] { ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketType.COUNTER_TYPE_FORCED } : it.unimi.dsi.fastutil.longs.LongArrays.EMPTY_ARRAY; // Paper - rewrite chunk system
      }
  
      @Override
-@@ -239,6 +240,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
-         net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(
-             world,
-             net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, world.registryAccess(), chunk.getEntities())
-+            , chunk.getPos() // Paper - rewrite chunk system - add ChunkPos param
-         );
+@@ -239,7 +240,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+     @Override
+     public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
+         try (final net.minecraft.util.ProblemReporter.ScopedCollector scopedCollector = new net.minecraft.util.ProblemReporter.ScopedCollector(chunk.problemPath(), LOGGER)) {
+-            net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(world, net.minecraft.world.level.storage.TagValueInput.create(scopedCollector, world.registryAccess(), chunk.getEntities()));
++            net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(world, net.minecraft.world.level.storage.TagValueInput.create(scopedCollector, world.registryAccess(), chunk.getEntities()), chunk.getPos()); // Paper - rewrite chunk system - add ChunkPos param
+         }
      }
  
-@@ -246,4 +248,4 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
-     public int modifyEntityTrackingRange(final Entity entity, final int currentRange) {
-         return org.spigotmc.TrackingRange.getEntityTrackingRange(entity, currentRange);
-     }
--}
-\ No newline at end of file
-+}
 diff --git a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
 index ce81e9f4f1e80be3b4f0cbdd95609990f9006534..975a2e4ea1f84e81fa3526395b43cb8157a06243 100644
 --- a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
@@ -1057,15 +1049,16 @@ index 0000000000000000000000000000000000000000..02d596647ab78afb056eefe14ffa0ef2
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/entity/ChunkSystemEntity.java b/ca/spottedleaf/moonrise/patches/chunk_system/entity/ChunkSystemEntity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c7da23900228aab3a5673eb5adfada5091140319
+index 0000000000000000000000000000000000000000..1d2498e33b9cd5a22cb348a213be3d75281b6d24
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/entity/ChunkSystemEntity.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.entity;
 +
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData;
 +import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.animal.HappyGhast;
 +import net.minecraft.world.entity.monster.Shulker;
 +import net.minecraft.world.entity.vehicle.AbstractMinecart;
 +import net.minecraft.world.entity.vehicle.Boat;
@@ -1076,7 +1069,7 @@ index 0000000000000000000000000000000000000000..c7da23900228aab3a5673eb5adfada50
 +
 +    // for mods to override
 +    public default boolean moonrise$isHardCollidingUncached() {
-+        return this instanceof Boat || this instanceof AbstractMinecart || this instanceof Shulker || ((Entity)this).canBeCollidedWith();
++        return this instanceof Boat || this instanceof AbstractMinecart || this instanceof Shulker || this instanceof HappyGhast || ((Entity)this).canBeCollidedWith(null);
 +    }
 +
 +    public FullChunkStatus moonrise$getChunkStatus();
@@ -3305,10 +3298,10 @@ index 0000000000000000000000000000000000000000..59cbbf65c9df5c680b803f6dd6436a35
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cdc7efdf56
+index 0000000000000000000000000000000000000000..c380487a97f626163e1f13d87231d64ce2ea4b24
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
-@@ -0,0 +1,569 @@
+@@ -0,0 +1,591 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
@@ -3316,6 +3309,7 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData;
 +import ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity;
 +import com.google.common.collect.ImmutableList;
++import com.mojang.logging.LogUtils;
 +import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 +import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import net.minecraft.nbt.CompoundTag;
@@ -3325,6 +3319,7 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.util.Mth;
++import net.minecraft.util.ProblemReporter;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntitySpawnReason;
 +import net.minecraft.world.entity.EntityType;
@@ -3332,9 +3327,14 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
++import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.storage.EntityStorage;
 +import net.minecraft.world.level.entity.Visibility;
++import net.minecraft.world.level.storage.TagValueInput;
++import net.minecraft.world.level.storage.TagValueOutput;
++import net.minecraft.world.level.storage.ValueInput;
 +import net.minecraft.world.phys.AABB;
++import org.slf4j.Logger;
 +import java.util.ArrayList;
 +import java.util.Arrays;
 +import java.util.Iterator;
@@ -3342,6 +3342,8 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +import java.util.function.Predicate;
 +
 +public final class ChunkEntitySlices {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
 +
 +    public final int minSection;
 +    public final int maxSection;
@@ -3385,9 +3387,12 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +        this.chunkData = chunkData;
 +    }
 +
-+    public static List<Entity> readEntities(final ServerLevel world, final CompoundTag compoundTag) {
-+        // TODO check this and below on update for format changes
-+        return EntityType.loadEntitiesRecursive(compoundTag.getListOrEmpty("Entities"), world, EntitySpawnReason.LOAD).collect(ImmutableList.toImmutableList());
++    public static List<Entity> readEntities(final ServerLevel world, final ChunkPos pos, final CompoundTag compoundTag) {
++        try (final ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
++            ValueInput valueinput = TagValueInput.create(scopedCollector, world.registryAccess(), compoundTag);
++            // TODO check this and below on update for format changes
++            return EntityType.loadEntitiesRecursive(valueinput.childrenListOrEmpty("Entities"), world, EntitySpawnReason.LOAD).collect(ImmutableList.toImmutableList());
++        }
 +    }
 +
 +    // Paper start - rewrite chunk system
@@ -3415,12 +3420,22 @@ index 0000000000000000000000000000000000000000..1c82dcd38f789707e15e8cbec72ef9cd
 +        }
 +
 +        final ListTag entitiesTag = new ListTag();
-+        for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x, chunkPos.z, entities)) {
-+            CompoundTag compoundTag = new CompoundTag();
-+            if (entity.save(compoundTag)) {
-+                entitiesTag.add(compoundTag);
++        try (final ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(chunkPos), LOGGER)) {
++            for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x, chunkPos.z, entities)) {
++                final TagValueOutput savedEntity = TagValueOutput.createWithContext(
++                    scopedCollector.forChild(entity.problemPath()), entity.registryAccess()
++                );
++
++                try {
++                    if (entity.save(savedEntity)) {
++                        entitiesTag.add(savedEntity.buildResult());
++                    }
++                } catch (final Exception ex) {
++                    LOGGER.error("Entity type " + entity.getType() + " failed to serialize", ex);
++                }
 +            }
 +        }
++
 +        final CompoundTag ret = NbtUtils.addCurrentDataVersion(new CompoundTag());
 +        ret.put("Entities", entitiesTag);
 +        ret.store("Position", ChunkPos.CODEC, chunkPos);
@@ -9414,10 +9429,10 @@ index 0000000000000000000000000000000000000000..8f8268924ac92fca5df8a11e08031fa8
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4a5fa25ed368fc4662c30934da2963ef446d782
+index 0000000000000000000000000000000000000000..2cc0e7c72d2b2e562452138f2b41fd1dcaf0570a
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1997 @@
+@@ -0,0 +1,1999 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.CallbackCompletable;
@@ -9537,9 +9552,11 @@ index 0000000000000000000000000000000000000000..e4a5fa25ed368fc4662c30934da2963e
 +
 +        if (!transientChunk) {
 +            if (entityChunk != null) {
-+                final List<Entity> entities = ChunkEntitySlices.readEntities(this.world, entityChunk);
++                final ChunkPos pos = new ChunkPos(this.chunkX, this.chunkZ);
 +
-+                ((ChunkSystemServerLevel)this.world).moonrise$getEntityLookup().addEntityChunkEntities(entities, new ChunkPos(this.chunkX, this.chunkZ));
++                final List<Entity> entities = ChunkEntitySlices.readEntities(this.world, pos, entityChunk);
++
++                ((ChunkSystemServerLevel)this.world).moonrise$getEntityLookup().addEntityChunkEntities(entities, pos);
 +            }
 +        }
 +
@@ -16359,7 +16376,7 @@ index 0000000000000000000000000000000000000000..1414f25ef770b0fe73ea618a450ade2f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9f8fb5d96d7a9776a5b809c4bd474b404b452145
+index 0000000000000000000000000000000000000000..01cd38bba2deb6cf65c82b4e4ec352a2998fd339
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 @@ -0,0 +1,2185 @@
@@ -18456,7 +18473,7 @@ index 0000000000000000000000000000000000000000..9f8fb5d96d7a9776a5b809c4bd474b40
 +                continue;
 +            }
 +
-+            if ((entity == null && otherEntity.canBeCollidedWith(null)) || (entity != null && entity.canCollideWith(otherEntity))) {
++            if ((entity == null && otherEntity.canBeCollidedWith(entity)) || (entity != null && entity.canCollideWith(otherEntity))) {
 +                if (checkOnly) {
 +                    return true;
 +                } else {
@@ -26824,7 +26841,7 @@ index 283f240511898e416b83ec4dcccd4901889b80bb..3d5a8163a7dd78a195b77c4aaebdee2d
          if (!passengers.equals(this.lastPassengers)) {
              List<UUID> list = this.mountedOrDismounted(passengers).map(Entity::getUUID).toList();
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..4ff31ae3af6840fbce2f76f5db075d0a2e9535d8 100644
+index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..f9c96bbdc54e68b9216b7f8662bfae03012d2866 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -168,7 +168,7 @@ import net.minecraft.world.ticks.LevelTicks;
@@ -27508,18 +27525,16 @@ index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..4ff31ae3af6840fbce2f76f5db075d0a
      }
  
      public void startTickingChunk(LevelChunk chunk) {
-@@ -2165,8 +2465,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         List<ChunkPos> list = ChunkPos.rangeClosed(chunkPos, i).toList();
+@@ -2166,7 +2466,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          this.chunkSource.addTicketWithRadius(TicketType.UNKNOWN, chunkPos, i);
          list.forEach(chunkPos1 -> this.getChunk(chunkPos1.x, chunkPos1.z));
-+        if (true) return; // Paper - rewrite chunk system
          this.server.managedBlock(() -> {
 -            this.entityManager.processPendingLoads();
-+            // Paper - rewrite chunk system
++            //this.entityManager.processPendingLoads(); // Paper - rewrite chunk system
  
              for (ChunkPos chunkPos1 : list) {
                  if (!this.areEntitiesLoaded(chunkPos1.toLong())) {
-@@ -2181,28 +2482,38 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2181,28 +2481,38 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      @Override
      public void close() throws IOException {
          super.close();
@@ -27564,7 +27579,7 @@ index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..4ff31ae3af6840fbce2f76f5db075d0a
      }
  
      public boolean anyPlayerCloseEnoughForSpawning(BlockPos pos) {
-@@ -2214,7 +2525,10 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2214,7 +2524,10 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      }
  
      public boolean canSpawnEntitiesInChunk(ChunkPos chunkPos) {
@@ -27576,7 +27591,7 @@ index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..4ff31ae3af6840fbce2f76f5db075d0a
      }
  
      @Override
-@@ -2269,7 +2583,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2269,7 +2582,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
@@ -29623,7 +29638,7 @@ index 9f34fc4278860dd7bcfa1fd79b15e588b0cc3973..a7ebd624652cb6f0edc735bf6b9760e7
  
      public ClipContext(Vec3 from, Vec3 to, ClipContext.Block block, ClipContext.Fluid fluid, Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 300f3ed58109219d97846082941b860585f66fed..67f47982e238430b7adaa93f5e730b5e87eac741 100644
+index 300f3ed58109219d97846082941b860585f66fed..9175a7e4e6076626cb46144c5858c2f2474f1858 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
@@ -29735,7 +29750,7 @@ index 300f3ed58109219d97846082941b860585f66fed..67f47982e238430b7adaa93f5e730b5e
 +                continue;
 +            }
 +
-+            if ((entity == null && otherEntity.canBeCollidedWith(null)) || (entity != null && entity.canCollideWith(otherEntity))) {
++            if ((entity == null && otherEntity.canBeCollidedWith(entity)) || (entity != null && entity.canCollideWith(otherEntity))) {
 +                ret.add(Shapes.create(otherEntity.getBoundingBox()));
              }
          }
@@ -31110,7 +31125,7 @@ index 8afaded394fcbf5d7ad4c51ea49642ce93cd5198..e5ccfb8cbfafed7bb0a1d888b5bc98a9
          }
  
 diff --git a/net/minecraft/world/level/TicketStorage.java b/net/minecraft/world/level/TicketStorage.java
-index ac9d453df4bfa3cc50f1909e0d425e5ba98e6d75..9c48dcc2a5fe11ae177ede4b53c5b31e1eb95765 100644
+index ac9d453df4bfa3cc50f1909e0d425e5ba98e6d75..669d347d90de6b083d56e995c7e3b022b54dd838 100644
 --- a/net/minecraft/world/level/TicketStorage.java
 +++ b/net/minecraft/world/level/TicketStorage.java
 @@ -29,7 +29,7 @@ import net.minecraft.world.level.saveddata.SavedData;
@@ -31344,10 +31359,9 @@ index ac9d453df4bfa3cc50f1909e0d425e5ba98e6d75..9c48dcc2a5fe11ae177ede4b53c5b31e
  
      public void deactivateTicketsOnClosing() {
 -        this.removeTicketIf((_long, ticket) -> ticket.getType() != TicketType.UNKNOWN && ticket.getType() != TicketType.CHUNK_LOAD && ticket.getType() != TicketType.FUTURE_AWAIT, this.deactivatedTickets);
-+        // Paper - rewrite chunk system
-     }
- 
-     public void removeTicketIf(BiPredicate<Long, Ticket> biPredicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> map) {
+-    }
+-
+-    public void removeTicketIf(BiPredicate<Long, Ticket> biPredicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> map) {
 -        ObjectIterator<Entry<List<Ticket>>> objectIterator = this.tickets.long2ObjectEntrySet().fastIterator();
 -        boolean flag = false;
 -
@@ -31396,10 +31410,13 @@ index ac9d453df4bfa3cc50f1909e0d425e5ba98e6d75..9c48dcc2a5fe11ae177ede4b53c5b31e
 -                }
 -            }
 -        }
--
++        // Paper - rewrite chunk system
++    }
+ 
 -        if (flag) {
 -            this.updateForcedChunks();
 -        }
++    public void removeTicketIf(Predicate<Ticket> predicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> tickets) {
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
