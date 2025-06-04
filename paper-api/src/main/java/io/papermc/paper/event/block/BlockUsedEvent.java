@@ -34,12 +34,12 @@ public class BlockUsedEvent extends BlockEvent {
     private final BlockUseResult result;
 
     @ApiStatus.Internal
-    public BlockUsedEvent(final Block block, final Player player, final @Nullable ItemStack item, final EquipmentSlot hand, final BlockUseResult resultOverride) {
+    public BlockUsedEvent(final Block block, final Player player, final @Nullable ItemStack item, final EquipmentSlot hand, final BlockUseResult result) {
         super(block);
         this.player = player;
         this.item = item;
         this.hand = hand;
-        this.result = resultOverride;
+        this.result = result;
     }
 
     /**
