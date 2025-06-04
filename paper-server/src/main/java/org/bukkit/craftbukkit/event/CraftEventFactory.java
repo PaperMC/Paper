@@ -1491,12 +1491,24 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
     }
 
-    public static boolean handlePlayerUnleashEntityEvent(Leashable leashable, net.minecraft.world.entity.player.@Nullable Player player, @Nullable InteractionHand hand, boolean dropLeash) {
+    public static boolean handlePlayerUnleashEntityEvent(
+        final Leashable leashable,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final @Nullable InteractionHand hand,
+        final boolean dropLeash,
+        final boolean resendState
+    ) {
         if (!(leashable instanceof final Entity entity)) return true;
-        return handlePlayerUnleashEntityEvent(entity, player, hand, dropLeash);
+        return handlePlayerUnleashEntityEvent(entity, player, hand, dropLeash, resendState);
     }
 
-    public static boolean handlePlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.@Nullable Player player, @Nullable InteractionHand hand, boolean dropLeash) {
+    public static boolean handlePlayerUnleashEntityEvent(
+        final Entity entity,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final @Nullable InteractionHand hand,
+        final boolean dropLeash,
+        final boolean resendState
+    ) {
         if (player == null || hand == null) {
             if (entity instanceof final Leashable leashable) {
                 if (dropLeash) leashable.dropLeash();
@@ -1507,7 +1519,12 @@ public class CraftEventFactory {
 
         PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
-        if (event.isCancelled()) return false;
+        if (event.isCancelled()) {
+            if (resendState && entity instanceof final Leashable leashable) {
+                ((ServerPlayer) player).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(entity, leashable.getLeashHolder()));
+            }
+            return false;
+        }
 
         if (entity instanceof final Leashable leashable) {
             if (event.isDropLeash()) leashable.dropLeash();
