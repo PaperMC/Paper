@@ -29,6 +29,7 @@ paperweight {
     }
 
     spigot {
+        enabled = false
         buildDataRef = "702e1a0a5072b2c4082371d5228cb30525687efc"
         packageVersion = "v1_21_R4" // also needs to be updated in MappingEnvironment
     }
