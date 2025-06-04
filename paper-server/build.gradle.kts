@@ -230,6 +230,11 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
+// Bump compile tasks to 1GB memory to avoid OOMs
+tasks.withType<JavaCompile>().configureEach {
+    options.forkOptions.memoryMaximumSize = "1G"
+}
+
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
