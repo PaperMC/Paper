@@ -77,6 +77,8 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         // Paper end - Validate setItem index
         super.setItem(index, item);
         if (this.getHolder() == null) return;
+
+        if (index > 40) return; // Do not send update packets for saddle or body slots as the player menu does not contain these.
         ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
         if (player.connection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()
