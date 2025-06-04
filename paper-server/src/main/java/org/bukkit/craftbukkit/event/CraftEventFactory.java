@@ -1497,7 +1497,13 @@ public class CraftEventFactory {
     }
 
     public static boolean handlePlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.@Nullable Player player, @Nullable InteractionHand hand, boolean dropLeash) {
-        if (player == null || hand == null) return true;
+        if (player == null || hand == null) {
+            if (entity instanceof final Leashable leashable) {
+                if (dropLeash) leashable.dropLeash();
+                else leashable.removeLeash();
+            }
+            return true;
+        }
 
         PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
