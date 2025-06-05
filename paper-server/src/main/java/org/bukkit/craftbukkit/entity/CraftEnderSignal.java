@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
 import net.minecraft.world.entity.projectile.EyeOfEnder;
 import net.minecraft.world.item.Items;
 import org.bukkit.Location;
@@ -22,7 +23,7 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
 
     @Override
     public Location getTargetLocation() {
-        return CraftLocation.toBukkit(this.getHandle().target, this.getWorld(), this.getHandle().getYRot(), this.getHandle().getXRot());
+        return Optionull.map(this.getHandle().target, target -> CraftLocation.toBukkit(target, this.getWorld(), this.getHandle().getYRot(), this.getHandle().getXRot()));
     }
 
     @Override

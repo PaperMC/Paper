@@ -478,7 +478,7 @@ public enum EntityEffect {
      */
     BREAK_EQUIPMENT_SADDLE(68, LivingEntity.class),
     /**
-     * Ravanager roars.
+     * Ravager roars.
      */
     RAVAGER_ROARED(69, Ravager.class),
     ;
