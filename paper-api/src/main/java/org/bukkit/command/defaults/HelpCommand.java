@@ -25,6 +25,7 @@ import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(forRemoval = true)
 public class HelpCommand extends BukkitCommand {
     public HelpCommand() {
         super("help");
