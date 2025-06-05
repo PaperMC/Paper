@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.EnderChest;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre2")
+@GeneratedFrom("1.21.6-pre3")
 public class CraftEnderChest extends CraftBlockData implements EnderChest {
     private static final EnumProperty<Direction> FACING = EnderChestBlock.FACING;
 

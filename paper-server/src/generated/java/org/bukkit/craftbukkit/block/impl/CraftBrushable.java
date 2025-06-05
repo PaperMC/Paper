@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.Brushable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre2")
+@GeneratedFrom("1.21.6-pre3")
 public class CraftBrushable extends CraftBlockData implements Brushable {
     private static final IntegerProperty DUSTED = BlockStateProperties.DUSTED;
 

@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.CaveVines;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre2")
+@GeneratedFrom("1.21.6-pre3")
 public class CraftCaveVines extends CraftBlockData implements CaveVines {
     private static final IntegerProperty AGE = CaveVinesBlock.AGE;
 

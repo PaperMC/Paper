@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6-pre2")
+@GeneratedFrom("1.21.6-pre3")
 public final class TrimMaterialKeys {
     /**
      * {@code minecraft:amethyst}

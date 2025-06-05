@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 public interface TrimMaterial extends Keyed, Translatable {
 
     // Start generate - TrimMaterial
-    // @GeneratedFrom 1.21.6-pre2
+    // @GeneratedFrom 1.21.6-pre3
     TrimMaterial AMETHYST = getTrimMaterial("amethyst");
 
     TrimMaterial COPPER = getTrimMaterial("copper");

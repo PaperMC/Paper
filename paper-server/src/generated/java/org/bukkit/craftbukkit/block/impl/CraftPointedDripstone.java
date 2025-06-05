@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.PointedDripstone;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre2")
+@GeneratedFrom("1.21.6-pre3")
 public class CraftPointedDripstone extends CraftBlockData implements PointedDripstone {
     private static final EnumProperty<DripstoneThickness> THICKNESS = PointedDripstoneBlock.THICKNESS;
 
