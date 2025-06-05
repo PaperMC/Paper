@@ -1046,7 +1046,7 @@
              itemInHand.hurtAndBreak(1, player, hand);
              return InteractionResult.SUCCESS;
          } else if (this instanceof Mob mob
-@@ -2116,11 +_,14 @@
+@@ -2116,11 +_,13 @@
              if (this.isAlive() && this instanceof Leashable leashable2) {
                  if (leashable2.getLeashHolder() == player) {
                      if (!this.level().isClientSide()) {
@@ -1056,25 +1056,23 @@
 -                            leashable2.dropLeash();
 +                        // Paper start - EntityUnleashEvent
 +                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerUnleashEntityEvent(
-+                            leashable2, player, hand, !player.hasInfiniteMaterials()
++                            leashable2, player, hand, !player.hasInfiniteMaterials(), true
 +                        )) {
-+                            ((ServerPlayer) player).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(this, leashable2.getLeashHolder()));
 +                            return InteractionResult.PASS;
                          }
 +                        // Paper end - EntityUnleashEvent
  
                          this.gameEvent(GameEvent.ENTITY_INTERACT, player);
                          this.playSound(SoundEvents.LEAD_UNTIED);
-@@ -2133,9 +_,24 @@
+@@ -2133,9 +_,23 @@
                  if (itemInHand1.is(Items.LEAD) && !(leashable2.getLeashHolder() instanceof Player)) {
                      if (!this.level().isClientSide() && leashable2.canHaveALeashAttachedTo(player)) {
                          if (leashable2.isLeashed()) {
 -                            leashable2.dropLeash();
 +                            // Paper start - EntityUnleashEvent
 +                            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerUnleashEntityEvent(
-+                                leashable2, player, hand, true
++                                leashable2, player, hand, true, true
 +                            )) {
-+                                ((ServerPlayer) player).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(this, leashable2.getLeashHolder()));
 +                                return InteractionResult.PASS;
 +                            }
 +                            // Paper end - EntityUnleashEvent
@@ -1105,7 +1103,7 @@
          if (flag && this.level() instanceof ServerLevel serverLevel) {
              serverLevel.playSound(null, this.blockPosition(), SoundEvents.SHEARS_SNIP, player != null ? player.getSoundSource() : this.getSoundSource());
          }
-@@ -2159,15 +_,36 @@
+@@ -2159,15 +_,38 @@
      }
  
      public boolean dropAllLeashConnections(@Nullable Player player) {
@@ -1125,6 +1123,7 @@
 +                this,
 +                player,
 +                interactionHand,
++                true,
 +                true
 +            );
 +            // Paper end - EntityUnleashEvent
@@ -1139,6 +1138,7 @@
 +                leashable1,
 +                player,
 +                interactionHand,
++                true,
 +                true
 +            );
 +            // leashable1.dropLeash(); // Paper - EntityUnleashEvent - moved into handlePlayerUnleashEntityEvent
