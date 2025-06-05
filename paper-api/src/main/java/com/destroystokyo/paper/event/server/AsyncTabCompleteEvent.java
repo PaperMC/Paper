@@ -119,7 +119,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
      * or current player names will not be called.
      * <p>
-     * The passed collection will be cloned to a new {@code List}. You must call {{@link #getCompletions()}} to mutate from here
+     * The passed collection will be cloned to a new {@code List}. You must call {@link #getCompletions()} to mutate from here
      *
      * @param completions the new completions
      */

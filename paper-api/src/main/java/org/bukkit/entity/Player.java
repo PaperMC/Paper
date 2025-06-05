@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Position;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -52,7 +53,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -293,7 +293,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * set in the client, the {@link CompletableFuture} will complete with a
      * null value.
      */
-    CompletableFuture<byte[]> retrieveCookie(NamespacedKey key);
+    CompletableFuture<byte @Nullable []> retrieveCookie(NamespacedKey key);
 
     /**
      * Stores a cookie in this player's client.
@@ -1178,7 +1178,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1204,7 +1204,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1231,7 +1231,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
 
     /**
      * Send a TileState change. This fakes a TileState change for a user at
@@ -2836,7 +2836,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
      *     long.
      */
-    public void addResourcePack(UUID id, String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+    public void addResourcePack(UUID id, String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     /**
      * Request that the player's client remove a resource pack sent by the
@@ -3448,6 +3448,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param side The side to edit
      */
     public void openSign(Sign sign, Side side);
+
+    /**
+     * Open a sign for editing by the player.
+     * <p>
+     * The sign must only be placed locally for the player, which can be done with {@link #sendBlockChange(Location, BlockData)} and {@link #sendBlockUpdate(Location, TileState)}.
+     * A side-effect of this is that normal events, like {@link org.bukkit.event.block.SignChangeEvent} will not be called (unless there is an actual sign in the world).
+     * Additionally, the client may enforce distance limits to the opened position.
+     * </p>
+     *
+     * @param block The block where the client has a sign placed
+     * @param side The side to edit
+     * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
+     */
+    @ApiStatus.Experimental
+    void openVirtualSign(Position block, Side side);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in

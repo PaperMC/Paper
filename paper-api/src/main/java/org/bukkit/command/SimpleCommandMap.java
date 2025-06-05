@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -14,32 +13,26 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.HelpCommand;
-import org.bukkit.command.defaults.PluginsCommand;
 import org.bukkit.command.defaults.ReloadCommand;
-import org.bukkit.command.defaults.VersionCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class SimpleCommandMap implements CommandMap {
-    protected final Map<String, Command> knownCommands; // Paper
+    protected final Map<String, Command> knownCommands;
     private final Server server;
 
-    // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     public SimpleCommandMap(@NotNull final Server server, Map<String, Command> backing) {
         this.knownCommands = backing;
-    // Paper end
         this.server = server;
         setDefaultCommands();
     }
 
     private void setDefaultCommands() {
-        register("bukkit", new VersionCommand("version"));
         register("bukkit", new ReloadCommand("reload"));
-        //register("bukkit", new PluginsCommand("plugins")); // Paper
-        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
+        register("bukkit", new co.aikar.timings.TimingsCommand("timings"));
     }
 
     public void setFallbackCommands() {

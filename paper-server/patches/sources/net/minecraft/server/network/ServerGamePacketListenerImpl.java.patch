@@ -523,7 +523,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = packet.getCommandBlock(this.player.level());
-@@ -661,7 +_,7 @@
+@@ -661,11 +_,11 @@
                  boolean flag = this.player.hasInfiniteMaterials() && packet.includeData();
                  ItemStack cloneItemStack = blockState.getCloneItemStack(serverLevel, blockPos, flag);
                  if (!cloneItemStack.isEmpty()) {
@@ -532,7 +532,23 @@
                          addBlockDataToItem(blockState, serverLevel, blockPos, cloneItemStack);
                      }
  
-@@ -698,18 +_,29 @@
+-                    this.tryPickItem(cloneItemStack);
++                    this.tryPickItem(cloneItemStack, blockPos, null, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+                 }
+             }
+         }
+@@ -689,27 +_,40 @@
+         if (entityOrPart != null && this.player.canInteractWithEntity(entityOrPart, 3.0)) {
+             ItemStack pickResult = entityOrPart.getPickResult();
+             if (pickResult != null && !pickResult.isEmpty()) {
+-                this.tryPickItem(pickResult);
++                this.tryPickItem(pickResult, null, entityOrPart, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
+             }
+         }
+     }
+ 
+-    private void tryPickItem(ItemStack stack) {
++    private void tryPickItem(ItemStack stack, @Nullable BlockPos blockPos, @Nullable Entity entity, boolean includeData) { // Paper - Extend PlayerPickItemEvent API
          if (stack.isItemEnabled(this.player.level().enabledFeatures())) {
              Inventory inventory = this.player.getInventory();
              int i = inventory.findSlotMatchingItem(stack);
@@ -540,7 +556,9 @@
 +            final int sourceSlot = i;
 +            final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
 +            final org.bukkit.entity.Player bukkitPlayer = this.player.getBukkitEntity();
-+            final io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(bukkitPlayer, targetSlot, sourceSlot);
++            final io.papermc.paper.event.player.PlayerPickItemEvent event = entity != null
++                ? new io.papermc.paper.event.player.PlayerPickEntityEvent(bukkitPlayer, entity.getBukkitEntity(), includeData, targetSlot, sourceSlot)
++                : new io.papermc.paper.event.player.PlayerPickBlockEvent(bukkitPlayer, org.bukkit.craftbukkit.block.CraftBlock.at(this.player.level(), blockPos), includeData, targetSlot, sourceSlot);
 +            if (!event.callEvent()) {
 +                return;
 +            }
@@ -2468,7 +2486,7 @@
              } else if (flag && flag2) {
                  if (this.dropSpamThrottler.isUnderThreshold()) {
                      this.dropSpamThrottler.increment();
-@@ -1895,11 +_,24 @@
+@@ -1895,15 +_,38 @@
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
@@ -2494,6 +2512,20 @@
          this.player.resetLastActionTime();
          ServerLevel serverLevel = this.player.serverLevel();
          BlockPos pos = packet.getPos();
+         if (serverLevel.hasChunkAt(pos)) {
++            // Paper start - Add API for client-side signs
++            if (!new io.papermc.paper.event.packet.UncheckedSignChangeEvent(
++                this.player.getBukkitEntity(),
++                io.papermc.paper.util.MCUtil.toPosition(pos),
++                packet.isFrontText() ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
++                filteredText.stream().<net.kyori.adventure.text.Component>map(line -> net.kyori.adventure.text.Component.text(line.raw())).toList())
++                .callEvent()) {
++                return;
++            }
++            // Paper end - Add API for client-side signs
+             if (!(serverLevel.getBlockEntity(pos) instanceof SignBlockEntity signBlockEntity)) {
+                 return;
+             }
 @@ -1915,14 +_,32 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {

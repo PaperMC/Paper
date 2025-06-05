@@ -6,6 +6,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import net.minecraft.Optionull;
 import net.minecraft.Util;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.entity.LivingEntity;
@@ -75,7 +76,7 @@ public record PaperCombatTrackerWrapper(
     @Override
     public FallLocationType calculateFallLocationType() {
         final FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.handle().mob);
-        return fallLocation == null ? FallLocationType.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
+        return Optionull.map(fallLocation, PaperCombatTrackerWrapper::minecraftToPaper);
     }
 
     private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {
