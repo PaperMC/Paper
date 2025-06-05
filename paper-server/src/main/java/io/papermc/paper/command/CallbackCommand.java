@@ -7,6 +7,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import java.util.UUID;
 
+@Deprecated(forRemoval = true)
 @DefaultQualifier(NonNull.class)
 public class CallbackCommand extends Command {
 
