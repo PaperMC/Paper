@@ -34,6 +34,7 @@ public final class PaperCommands {
 
     public static void registerCommands() {
         // Paper commands go here
+        registerInternalCommand(PaperMSPTCommand.create(), "paper", PaperMSPTCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
     }
 
