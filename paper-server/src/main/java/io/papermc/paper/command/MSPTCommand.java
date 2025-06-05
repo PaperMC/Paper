@@ -21,6 +21,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
+@Deprecated(forRemoval = true)
 @DefaultQualifier(NonNull.class)
 public final class MSPTCommand extends Command {
     private static final DecimalFormat DF = new DecimalFormat("########0.0");
