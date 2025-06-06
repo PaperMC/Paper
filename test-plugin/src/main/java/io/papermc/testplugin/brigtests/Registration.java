@@ -57,43 +57,18 @@ public final class Registration {
             commands.register(Commands.literal("open_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
-                        Dialog.multiAction()
+                        Dialog.dialogList()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
-                            .bodyElements(
-                                BodyElement.plainText()
-                                    .component(Component.text("Here are some cool links.")),
-                                BodyElement.plainText()
-                                    .component(Component.text("Click on an option!"))
-                            )
-                            .buttons(List.of(
-                                ButtonElement.button()
-                                    .label(Component.text("Minecraft"))
-                                    .action(
-                                        ActionElement.openURL(URI.create("https://minecraft.net"))
-                                    ),
-                                ButtonElement.button()
-                                    .label(Component.text("PaperMC"))
-                                    .action(
-                                        ActionElement.openURL(URI.create("https://papermc.io"))
-                                    ),
-                                ButtonElement.button()
-                                    .label(Component.text("Run /help"))
-                                    .action(
-                                        ActionElement.runCommand("/help")
-                                    ),
-                                ButtonElement.button()
-                                    .label(Component.text("Copy a string to clipboard"))
-                                    .action(
-                                        ActionElement.copyToClipboard("this is now copied to clipboard hip hip hooray!")
-                                    ),
-                                ButtonElement.button()
-                                    .label(Component.text("Open another dialog"))
-                                    .action(
-                                        ActionElement.showDialog(
-                                            Dialog.notice()
-                                                .title(Component.text("You just opened this dialog!"))
-                                        )
-                                    )
+                            .dialogs(List.of(
+                                Dialog.notice()
+                                    .title(Component.text("Dialog a!"))
+                                    .externalTitle(Component.text("1")),
+                                Dialog.notice()
+                                    .title(Component.text("Dialog b!"))
+                                    .externalTitle(Component.text("2!")),
+                                Dialog.notice()
+                                    .title(Component.text("Dialog c!"))
+                                    .externalTitle(Component.text("3..."))
                             ))
                     );
                 }

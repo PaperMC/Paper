@@ -78,10 +78,27 @@ public interface Dialog<D extends Dialog<D>> {
     }
 
     interface ServerLinks<B extends ServerLinks<B>> extends Dialog<B> {
+        ButtonElement exitAction();
+        B exitAction(ButtonElement buttonElement);
 
+        int columns();
+        B columns(int columns);
+
+        int buttonWidth();
+        B buttonWidth(int width);
     }
 
     interface DialogList<B extends DialogList<B>> extends Dialog<B> {
+        List<Dialog<?>> dialogs();
+        B dialogs(List<Dialog<?>> dialogs);
 
+        ButtonElement exitAction();
+        B exitAction(ButtonElement buttonElement);
+
+        int columns();
+        B columns(int columns);
+
+        int buttonWidth();
+        B buttonWidth(int width);
     }
 }
