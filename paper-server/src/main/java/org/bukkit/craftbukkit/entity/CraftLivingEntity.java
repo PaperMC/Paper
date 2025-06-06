@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.Optionull;
@@ -905,7 +906,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public <T> T getMemory(MemoryKey<T> memoryKey) {
-        return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
+        final Optional<?> memory = this.getHandle().getBrain().getMemoryInternal(CraftMemoryKey.bukkitToMinecraft(memoryKey));
+        return memory != null ? (T) memory.map(CraftMemoryMapper::fromNms).orElse(null) : null;
     }
 
     @Override
