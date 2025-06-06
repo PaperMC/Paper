@@ -47,6 +47,11 @@ public interface ActionElement {
             .id(id);
     }
 
+    static DynamicRunCommand dynamicRunCommand(String template) {
+        return DialogBridge.BRIDGE.dynamicRunCommand()
+            .command(template);
+    }
+
     static DynamicCustom dynamicCustom(Key id) {
         return DialogBridge.BRIDGE.dynamicCustom()
             .id(id);
@@ -60,6 +65,11 @@ public interface ActionElement {
     interface RunCommand extends ActionElement {
         String command();
         RunCommand command(String command);
+    }
+
+    interface DynamicRunCommand extends ActionElement {
+        String command();
+        DynamicRunCommand command(String command);
     }
 
     interface SuggestCommand extends ActionElement {

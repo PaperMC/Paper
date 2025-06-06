@@ -55,23 +55,23 @@ public final class Registration {
         final LifecycleEventManager<Plugin> lifecycleManager = plugin.getLifecycleManager();
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
-            commands.register(Commands.literal("say_dialog").executes(ctx -> {
+            commands.register(Commands.literal("setblock_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
                         Dialog.notice()
-                            .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
+                            .title(Component.text("Set Block"))
                             .inputElements(
-                                InputElement.text("name", Component.text("Name:")),
-                                InputElement.text("message", Component.text("Message:"))
+                                InputElement.text("x", Component.text("X:")),
+                                InputElement.text("y", Component.text("Y:")),
+                                InputElement.text("z", Component.text("Z:")),
+                                InputElement.text("state", Component.text("Block State:"))
                             )
                             .button(
                                 ButtonElement.button()
                                     .width(150)
                                     .label(Component.text("Click me!"))
                                     .action(
-                                        ActionElement.dynamicCustom(
-                                            Key.key("paper", "say_message")
-                                        )
+                                        ActionElement.dynamicRunCommand("setblock $(x) $(y) $(z) $(state)")
                                     )
                             )
                     );

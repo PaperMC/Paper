@@ -5,6 +5,7 @@ import io.papermc.paper.dialog.actions.PaperChangePageAction;
 import io.papermc.paper.dialog.actions.PaperCopyToClipboardAction;
 import io.papermc.paper.dialog.actions.PaperCustomAction;
 import io.papermc.paper.dialog.actions.PaperDynamicCustomAction;
+import io.papermc.paper.dialog.actions.PaperDynamicRunCommandAction;
 import io.papermc.paper.dialog.actions.PaperInputData;
 import io.papermc.paper.dialog.actions.PaperShowDialogAction;
 import io.papermc.paper.dialog.actions.PaperOpenURLAction;
@@ -123,6 +124,11 @@ public class DialogBridgeImpl implements DialogBridge {
     @Override
     public ActionElement.Custom custom() {
         return new PaperCustomAction();
+    }
+
+    @Override
+    public ActionElement.DynamicRunCommand dynamicRunCommand() {
+        return new PaperDynamicRunCommandAction();
     }
 
     @Override
