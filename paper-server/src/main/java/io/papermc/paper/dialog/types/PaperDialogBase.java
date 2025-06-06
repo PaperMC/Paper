@@ -2,6 +2,7 @@ package io.papermc.paper.dialog.types;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.dialog.BodyElement;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.body.BodyElementConversion;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.dialog.CommonDialogData;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class PaperDialogBase<B extends PaperDialogBase<B>> {
+public abstract class PaperDialogBase<B extends PaperDialogBase<B>> implements Dialog<B> {
     public Component title = Component.empty();
     public Component externalTitle = null;
     public List<BodyElementConversion> dialogBodyList = new ArrayList<>();
@@ -42,5 +43,42 @@ public class PaperDialogBase<B extends PaperDialogBase<B>> {
             this.dialogBodyList.stream().map(BodyElementConversion::dialogBody).toList(),
             this.inputControls
         );
+    }
+
+    @Override
+    public Component title() {
+        return this.title;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public B title(final Component component) {
+        this.title = component;
+        return (B) this;
+    }
+
+
+    @Override
+    public Component externalTitle() {
+        return this.externalTitle;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public B externalTitle(final Component component) {
+        this.externalTitle = component;
+        return (B) this;
+    }
+
+    @Override
+    public boolean canCloseWithEscape() {
+        return this.canCloseWithEscape;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public B canCloseWithEscape(final boolean flag) {
+        this.canCloseWithEscape = flag;
+        return (B) this;
     }
 }

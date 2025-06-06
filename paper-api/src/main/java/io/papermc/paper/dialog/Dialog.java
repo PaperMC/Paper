@@ -12,33 +12,60 @@ public interface Dialog<D extends Dialog<D>> {
     Component title();
     D title(Component component);
 
+    Component externalTitle();
+    D externalTitle(Component component);
+
     List<BodyElement> bodyElements();
     D bodyElements(List<BodyElement> elements);
     default D bodyElements(BodyElement... elements) {
         return this.bodyElements(List.of(elements));
     }
 
-    static Dialog.Notice notice() {
+    // TODO: inputs
+
+    boolean canCloseWithEscape();
+    D canCloseWithEscape(boolean flag);
+
+    // note: `pause` flag is irrelevant since Paper runs on multi-player
+    // remove this comment later
+
+    static Dialog.Notice<?> notice() {
         return DialogBridge.BRIDGE.noticeDialog();
     }
 
-    interface Notice extends Dialog<Notice> {
+    static Dialog.Confirmation<?> confirmation() {
+        return DialogBridge.BRIDGE.confirmation();
+    }
+
+    static Dialog.MultiAction<?> multiAction() {
+        return DialogBridge.BRIDGE.multiAction();
+    }
+
+    static Dialog.ServerLinks<?> serverLinks() {
+        return DialogBridge.BRIDGE.serverLinks();
+    }
+
+    static Dialog.DialogList<?> dialogList() {
+        return DialogBridge.BRIDGE.dialogList();
+    }
+
+    interface Notice<B extends Notice<B>> extends Dialog<B> {
 
     }
 
-    interface Confirmation extends Dialog<Confirmation> {
+    interface Confirmation<B extends Confirmation<B>> extends Dialog<B> {
 
     }
 
-    interface MultiAction extends Dialog<MultiAction> {
+    interface MultiAction<B extends MultiAction<B>> extends Dialog<B> {
 
     }
 
-    interface ServerLinks extends Dialog<ServerLinks> {
+    interface ServerLinks<B extends ServerLinks<B>> extends Dialog<B> {
 
     }
 
-    interface DialogList extends Dialog<DialogList> {
+    interface DialogList<B extends DialogList<B>> extends Dialog<B> {
 
     }
 }

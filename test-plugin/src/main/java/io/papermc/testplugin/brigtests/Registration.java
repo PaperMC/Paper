@@ -53,7 +53,7 @@ public final class Registration {
             commands.register(Commands.literal("open_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
-                        Dialog.notice()
+                        Dialog.confirmation()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
                             .bodyElements(List.of(
                                 BodyElement.plainText()

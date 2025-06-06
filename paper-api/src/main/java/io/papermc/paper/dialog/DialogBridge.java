@@ -5,7 +5,12 @@ import java.util.ServiceLoader;
 public interface DialogBridge {
     DialogBridge BRIDGE = ServiceLoader.load(DialogBridge.class).findFirst().orElseThrow();
 
-    Dialog.Notice noticeDialog();
+    Dialog.Notice<?> noticeDialog();
+    Dialog.Confirmation<?> confirmation();
+    Dialog.MultiAction<?> multiAction();
+    Dialog.ServerLinks<?> serverLinks();
+    Dialog.DialogList<?> dialogList();
+
     BodyElement.PlainText plainText();
     BodyElement.Item itemElement();
 }
