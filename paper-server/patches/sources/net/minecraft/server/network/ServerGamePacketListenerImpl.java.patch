@@ -2610,7 +2610,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,17 @@
+@@ -2078,4 +_,46 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2627,4 +2627,33 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
++
++    // Paper start - Listen to click actions in dialogs
++    @Override
++    public void handleCustomClickAction(final net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket packet) {
++        super.handleCustomClickAction(packet);
++
++        switch (packet.payload().orElse(null)) {
++            case net.minecraft.nbt.StringTag(String value) -> {
++                var event = new io.papermc.paper.event.dialog.CustomClickActionEvent(
++                    this.getCraftPlayer(),
++                    PaperAdventure.asAdventure(packet.id()),
++                    value
++                );
++                event.callEvent();
++            }
++            case null -> {
++                var event = new io.papermc.paper.event.dialog.CustomClickActionEvent(
++                    this.getCraftPlayer(),
++                    PaperAdventure.asAdventure(packet.id()),
++                    null
++                );
++                event.callEvent();
++            }
++            default -> {
++                // do nothing
++            }
++        }
++    }
++    // Paper end
  }

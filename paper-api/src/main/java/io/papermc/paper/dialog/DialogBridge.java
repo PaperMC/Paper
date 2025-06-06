@@ -27,4 +27,5 @@ public interface DialogBridge {
     ActionElement.ChangePage changePage();
     ActionElement.CopyToClipboard copyToClipboard();
     ActionElement.ShowDialog showDialog();
+    ActionElement.Custom custom();
 }

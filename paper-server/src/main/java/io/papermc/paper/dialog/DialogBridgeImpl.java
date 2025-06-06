@@ -3,6 +3,7 @@ package io.papermc.paper.dialog;
 import io.papermc.paper.dialog.actions.PaperButtonElement;
 import io.papermc.paper.dialog.actions.PaperChangePageAction;
 import io.papermc.paper.dialog.actions.PaperCopyToClipboardAction;
+import io.papermc.paper.dialog.actions.PaperCustomAction;
 import io.papermc.paper.dialog.actions.PaperShowDialogAction;
 import io.papermc.paper.dialog.actions.PaperOpenURLAction;
 import io.papermc.paper.dialog.actions.PaperRunCommandAction;
@@ -114,5 +115,10 @@ public class DialogBridgeImpl implements DialogBridge {
     @Override
     public ActionElement.ShowDialog showDialog() {
         return new PaperShowDialogAction();
+    }
+
+    @Override
+    public ActionElement.Custom custom() {
+        return new PaperCustomAction();
     }
 }

@@ -14,24 +14,32 @@ public interface InputElement<E extends InputElement<E>> {
     Component label();
     E label(Component component);
 
-    static Text<?> text() {
-        return DialogBridge.BRIDGE.text();
+    static Text<?> text(String key, Component label) {
+        return DialogBridge.BRIDGE.text()
+            .key(key)
+            .label(label);
     }
 
-    static Checkbox<?> checkbox() {
-        return DialogBridge.BRIDGE.checkbox();
+    static Checkbox<?> checkbox(String key, Component label) {
+        return DialogBridge.BRIDGE.checkbox()
+            .key(key)
+            .label(label);
     }
 
-    static SingleOption<?> singleOption() {
-        return DialogBridge.BRIDGE.singleOption();
+    static SingleOption<?> singleOption(String key, Component label) {
+        return DialogBridge.BRIDGE.singleOption()
+            .key(key)
+            .label(label);
     }
 
     static Option option() {
         return DialogBridge.BRIDGE.option();
     }
 
-    static NumberSlider<?> numberSlider() {
-        return DialogBridge.BRIDGE.numberSlider();
+    static NumberSlider<?> numberSlider(String key, Component label) {
+        return DialogBridge.BRIDGE.numberSlider()
+            .key(key)
+            .label(label);
     }
 
     interface Text<B extends Text<B>> extends InputElement<B> {

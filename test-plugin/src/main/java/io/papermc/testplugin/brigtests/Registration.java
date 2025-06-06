@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -57,19 +58,22 @@ public final class Registration {
             commands.register(Commands.literal("open_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
-                        Dialog.dialogList()
+                        Dialog.notice()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
-                            .dialogs(List.of(
-                                Dialog.notice()
-                                    .title(Component.text("Dialog a!"))
-                                    .externalTitle(Component.text("1")),
-                                Dialog.notice()
-                                    .title(Component.text("Dialog b!"))
-                                    .externalTitle(Component.text("2!")),
-                                Dialog.notice()
-                                    .title(Component.text("Dialog c!"))
-                                    .externalTitle(Component.text("3..."))
-                            ))
+                            .inputElements(
+                                InputElement.text("text_input", Component.text("Text:"))
+                            )
+                            .button(
+                                ButtonElement.button()
+                                    .width(150)
+                                    .label(Component.text("Click me!"))
+                                    .action(
+                                        ActionElement.custom(
+                                            Key.key("paper", "my_event"),
+                                            "my payload"
+                                        )
+                                    )
+                            )
                     );
                 }
                 return Command.SINGLE_SUCCESS;

@@ -1,5 +1,6 @@
 package io.papermc.paper.dialog;
 
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
 import java.net.URI;
 
@@ -35,6 +36,17 @@ public interface ActionElement {
             .dialog(dialog);
     }
 
+    static Custom custom(Key id, String payload) {
+        return DialogBridge.BRIDGE.custom()
+            .id(id)
+            .payload(payload);
+    }
+
+    static Custom custom(Key id) {
+        return DialogBridge.BRIDGE.custom()
+            .id(id);
+    }
+
     interface OpenURL extends ActionElement {
         URI url();
         OpenURL url(URI url);
@@ -63,5 +75,13 @@ public interface ActionElement {
     interface ShowDialog extends ActionElement {
         Dialog<?> dialog();
         ShowDialog dialog(Dialog<?> dialog);
+    }
+
+    interface Custom extends ActionElement {
+        Key id();
+        Custom id(Key key);
+
+        String payload();
+        Custom payload(String payload);
     }
 }
