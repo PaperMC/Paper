@@ -61,17 +61,14 @@ public final class Registration {
                         Dialog.notice()
                             .title(Component.text("Set Block"))
                             .inputElements(
-                                InputElement.text("x", Component.text("X:")),
-                                InputElement.text("y", Component.text("Y:")),
-                                InputElement.text("z", Component.text("Z:")),
-                                InputElement.text("state", Component.text("Block State:"))
+                                InputElement.text("x", Component.text("X:"))
                             )
                             .button(
                                 ButtonElement.button()
                                     .width(150)
                                     .label(Component.text("Click me!"))
                                     .action(
-                                        ActionElement.dynamicRunCommand("setblock $(x) $(y) $(z) $(state)")
+                                        ActionElement.dynamicCustom(Key.key("ahhhhh"))
                                     )
                             )
                     );
