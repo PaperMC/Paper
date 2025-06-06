@@ -13,4 +13,10 @@ public interface DialogBridge {
 
     BodyElement.PlainText plainText();
     BodyElement.Item itemElement();
+
+    InputElement.Text<?> text();
+    InputElement.Checkbox<?> checkbox();
+    InputElement.Option option();
+    InputElement.SingleOption<?> singleOption();
+    InputElement.NumberSlider<?> numberSlider();
 }

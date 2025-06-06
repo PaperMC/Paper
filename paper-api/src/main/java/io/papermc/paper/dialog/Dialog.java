@@ -21,7 +21,11 @@ public interface Dialog<D extends Dialog<D>> {
         return this.bodyElements(List.of(elements));
     }
 
-    // TODO: inputs
+    List<? extends InputElement<?>> inputElements();
+    D inputElements(List<InputElement<?>> elements);
+    default D inputElements(InputElement<?>... elements) {
+        return this.inputElements(List.of(elements));
+    }
 
     boolean canCloseWithEscape();
     D canCloseWithEscape(boolean flag);

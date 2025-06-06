@@ -13,6 +13,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.dialog.BodyElement;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.InputElement;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -55,7 +56,7 @@ public final class Registration {
                     p.openDialog(
                         Dialog.confirmation()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
-                            .bodyElements(List.of(
+                            .bodyElements(
                                 BodyElement.plainText()
                                     .component(Component.text("This is a text element.")),
                                 BodyElement.item()
@@ -67,7 +68,29 @@ public final class Registration {
                                             .build());
                                         return is;
                                     })
-                            ))
+                            )
+                            .inputElements(
+                                InputElement.text()
+                                    .key("text_key")
+                                    .label(Component.text("Input text here: ")),
+                                InputElement.checkbox()
+                                    .key("checkbox_key")
+                                    .label(Component.text("Is this value true?")),
+                                InputElement.singleOption()
+                                    .key("options_key")
+                                    .label(Component.text("Favorite letter"))
+                                    .options(
+                                        InputElement.option().id("a").display(Component.text("a")),
+                                        InputElement.option().id("b").display(Component.text("b")),
+                                        InputElement.option().id("c").display(Component.text("c"))
+                                    ),
+                                InputElement.numberSlider()
+                                    .start(0.0f)
+                                    .end(100.0f)
+                                    .key("slider_key")
+                                    .label(Component.text("Favorite number"))
+                                    .step(1)
+                            )
                     );
                 }
                 return Command.SINGLE_SUCCESS;
