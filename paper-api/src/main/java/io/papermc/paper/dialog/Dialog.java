@@ -3,8 +3,6 @@ package io.papermc.paper.dialog;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @ApiStatus.Experimental
@@ -21,7 +19,7 @@ public interface Dialog<D extends Dialog<D>> {
     }
 
     static Dialog.Notice notice() {
-        return DialogBuilderBridge.BRIDGE.noticeDialog();
+        return DialogBridge.BRIDGE.noticeDialog();
     }
 
     interface Notice extends Dialog<Notice> {

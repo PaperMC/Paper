@@ -4,7 +4,7 @@ import io.papermc.paper.dialog.body.PaperItemElement;
 import io.papermc.paper.dialog.body.PaperPlainText;
 import io.papermc.paper.dialog.types.PaperNoticeDialog;
 
-public class DialogBuilderBridgeImpl implements DialogBuilderBridge {
+public class DialogBridgeImpl implements DialogBridge {
     @Override
     public Dialog.Notice noticeDialog() {
         return new PaperNoticeDialog();

@@ -6,11 +6,11 @@ import java.util.function.Supplier;
 
 public interface BodyElement {
     static PlainText plainText() {
-        return DialogBuilderBridge.BRIDGE.plainText();
+        return DialogBridge.BRIDGE.plainText();
     }
 
     static Item item() {
-        return DialogBuilderBridge.BRIDGE.itemElement();
+        return DialogBridge.BRIDGE.itemElement();
     }
 
     interface PlainText extends BodyElement {
