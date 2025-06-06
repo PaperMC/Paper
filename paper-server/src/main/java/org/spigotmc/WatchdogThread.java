@@ -109,7 +109,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                 logger.log(Level.SEVERE, "------------------------------");
                 logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):"); // Paper
                 FeatureHooks.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - log detailed tick information
-                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE), logger);
+                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.threadId(), Integer.MAX_VALUE), logger);
                 logger.log(Level.SEVERE, "------------------------------");
 
                 // Paper start - Only print full dump on long timeouts
