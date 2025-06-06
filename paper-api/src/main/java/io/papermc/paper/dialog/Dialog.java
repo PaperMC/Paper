@@ -11,6 +11,10 @@ public interface Dialog<D extends Dialog<D>> {
     Component title();
     D title(Component component);
 
+    static Dialog.Notice notice() {
+        return DialogBuilderBridge.BRIDGE.noticeDialog();
+    }
+
     interface Notice extends Dialog<Notice> {
 
     }

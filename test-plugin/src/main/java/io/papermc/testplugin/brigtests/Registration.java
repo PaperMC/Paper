@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -20,10 +21,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +45,16 @@ public final class Registration {
         final LifecycleEventManager<Plugin> lifecycleManager = plugin.getLifecycleManager();
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
+            commands.register(Commands.literal("open_dialog").executes(ctx -> {
+                if(ctx.getSource().getSender() instanceof Player p) {
+                    p.openDialog(
+                        Dialog.notice()
+                            .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
+                    );
+                }
+                return Command.SINGLE_SUCCESS;
+            }).build());
+
             commands.register(Commands.literal("ench")
                 .then(
                     Commands.argument("name", ArgumentTypes.resource(RegistryKey.ENCHANTMENT))
