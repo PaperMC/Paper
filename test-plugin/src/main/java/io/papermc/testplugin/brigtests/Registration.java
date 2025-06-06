@@ -8,6 +8,10 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemLore;
+import io.papermc.paper.dialog.BodyElement;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -27,6 +31,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +55,19 @@ public final class Registration {
                     p.openDialog(
                         Dialog.notice()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
+                            .bodyElements(List.of(
+                                BodyElement.plainText()
+                                    .component(Component.text("This is a text element.")),
+                                BodyElement.item()
+                                    .item(() -> {
+                                        var is = ItemStack.of(Material.DIAMOND_SWORD);
+                                        is.setData(DataComponentTypes.ITEM_NAME, Component.text("Dialog Item"));
+                                        is.setData(DataComponentTypes.LORE, ItemLore.lore()
+                                            .addLine(Component.text("This item has lore!"))
+                                            .build());
+                                        return is;
+                                    })
+                            ))
                     );
                 }
                 return Command.SINGLE_SUCCESS;
