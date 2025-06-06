@@ -35,7 +35,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.translation.GlobalTranslator;
-import net.kyori.adventure.translation.TranslationRegistry;
+import net.kyori.adventure.translation.TranslationStore;
 import net.kyori.adventure.translation.Translator;
 import net.kyori.adventure.util.Codec;
 import net.minecraft.ChatFormatting;
@@ -81,7 +81,7 @@ public final class PaperAdventure {
         .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
             if (!Language.getInstance().has(translatable.key())) {
                 for (final Translator source : GlobalTranslator.translator().sources()) {
-                    if (source instanceof TranslationRegistry registry && registry.contains(translatable.key())) {
+                    if (source instanceof TranslationStore<?> store && store.contains(translatable.key())) {
                         consumer.accept(GlobalTranslator.render(translatable, Locale.US));
                         return;
                     }
