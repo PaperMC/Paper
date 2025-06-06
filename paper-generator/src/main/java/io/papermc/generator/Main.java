@@ -48,7 +48,7 @@ public class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"--sourceset"}, required = true)
     Path sourceSet;
 
-    @CommandLine.Option(names = {"-cp", "--classpath"}, split = ":", required = true)
+    @CommandLine.Option(names = {"-cp", "--classpath"}, split = "[;:]", required = true)
     Set<Path> classpath;
 
     @CommandLine.Option(names = {"--rewrite"})
