@@ -19,4 +19,12 @@ public interface DialogBridge {
     InputElement.Option option();
     InputElement.SingleOption<?> singleOption();
     InputElement.NumberSlider<?> numberSlider();
+
+    ButtonElement button();
+    ActionElement.OpenURL openURL();
+    ActionElement.RunCommand runCommand();
+    ActionElement.SuggestCommand suggestCommand();
+    ActionElement.ChangePage changePage();
+    ActionElement.CopyToClipboard copyToClipboard();
+    ActionElement.ShowDialog showDialog();
 }

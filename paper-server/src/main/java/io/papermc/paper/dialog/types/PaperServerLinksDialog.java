@@ -8,15 +8,14 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.Optional;
 
-public class PaperServerLinksDialog extends PaperDialogBase<PaperServerLinksDialog> implements Dialog.ServerLinks<PaperServerLinksDialog> {
+public class PaperServerLinksDialog extends PaperDialogBase<PaperServerLinksDialog> implements Dialog.ServerLinks<PaperServerLinksDialog>, DialogElementConversion<PaperServerLinksDialog> {
     @Override
-    public void openFor(final Player player) {
-        var dialog = new MultiActionDialog(
+    public net.minecraft.server.dialog.Dialog getMcDialog() {
+        return new MultiActionDialog(
             this.commonDialogData(),
             List.of(),
             Optional.empty(),
             2
         );
-        ((CraftPlayer) player).getHandle().openDialog(Holder.direct(dialog));
     }
 }

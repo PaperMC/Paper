@@ -11,7 +11,9 @@ import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolve
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
+import io.papermc.paper.dialog.ActionElement;
 import io.papermc.paper.dialog.BodyElement;
+import io.papermc.paper.dialog.ButtonElement;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.InputElement;
 import io.papermc.paper.math.FinePosition;
@@ -22,6 +24,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.testplugin.brigtests.example.ExampleAdminCommand;
 import io.papermc.testplugin.brigtests.example.MaterialArgumentType;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,43 +57,44 @@ public final class Registration {
             commands.register(Commands.literal("open_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
-                        Dialog.confirmation()
+                        Dialog.multiAction()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
                             .bodyElements(
                                 BodyElement.plainText()
-                                    .component(Component.text("This is a text element.")),
-                                BodyElement.item()
-                                    .item(() -> {
-                                        var is = ItemStack.of(Material.DIAMOND_SWORD);
-                                        is.setData(DataComponentTypes.ITEM_NAME, Component.text("Dialog Item"));
-                                        is.setData(DataComponentTypes.LORE, ItemLore.lore()
-                                            .addLine(Component.text("This item has lore!"))
-                                            .build());
-                                        return is;
-                                    })
+                                    .component(Component.text("Here are some cool links.")),
+                                BodyElement.plainText()
+                                    .component(Component.text("Click on an option!"))
                             )
-                            .inputElements(
-                                InputElement.text()
-                                    .key("text_key")
-                                    .label(Component.text("Input text here: ")),
-                                InputElement.checkbox()
-                                    .key("checkbox_key")
-                                    .label(Component.text("Is this value true?")),
-                                InputElement.singleOption()
-                                    .key("options_key")
-                                    .label(Component.text("Favorite letter"))
-                                    .options(
-                                        InputElement.option().id("a").display(Component.text("a")),
-                                        InputElement.option().id("b").display(Component.text("b")),
-                                        InputElement.option().id("c").display(Component.text("c"))
+                            .buttons(List.of(
+                                ButtonElement.button()
+                                    .label(Component.text("Minecraft"))
+                                    .action(
+                                        ActionElement.openURL(URI.create("https://minecraft.net"))
                                     ),
-                                InputElement.numberSlider()
-                                    .start(0.0f)
-                                    .end(100.0f)
-                                    .key("slider_key")
-                                    .label(Component.text("Favorite number"))
-                                    .step(1)
-                            )
+                                ButtonElement.button()
+                                    .label(Component.text("PaperMC"))
+                                    .action(
+                                        ActionElement.openURL(URI.create("https://papermc.io"))
+                                    ),
+                                ButtonElement.button()
+                                    .label(Component.text("Run /help"))
+                                    .action(
+                                        ActionElement.runCommand("/help")
+                                    ),
+                                ButtonElement.button()
+                                    .label(Component.text("Copy a string to clipboard"))
+                                    .action(
+                                        ActionElement.copyToClipboard("this is now copied to clipboard hip hip hooray!")
+                                    ),
+                                ButtonElement.button()
+                                    .label(Component.text("Open another dialog"))
+                                    .action(
+                                        ActionElement.showDialog(
+                                            Dialog.notice()
+                                                .title(Component.text("You just opened this dialog!"))
+                                        )
+                                    )
+                            ))
                     );
                 }
                 return Command.SINGLE_SUCCESS;

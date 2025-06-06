@@ -1,5 +1,12 @@
 package io.papermc.paper.dialog;
 
+import io.papermc.paper.dialog.actions.PaperButtonElement;
+import io.papermc.paper.dialog.actions.PaperChangePageAction;
+import io.papermc.paper.dialog.actions.PaperCopyToClipboardAction;
+import io.papermc.paper.dialog.actions.PaperShowDialogAction;
+import io.papermc.paper.dialog.actions.PaperOpenURLAction;
+import io.papermc.paper.dialog.actions.PaperRunCommandAction;
+import io.papermc.paper.dialog.actions.PaperSuggestCommandAction;
 import io.papermc.paper.dialog.body.PaperItemElement;
 import io.papermc.paper.dialog.body.PaperPlainText;
 import io.papermc.paper.dialog.inputs.PaperBooleanInput;
@@ -12,7 +19,6 @@ import io.papermc.paper.dialog.types.PaperMultiActionDialog;
 import io.papermc.paper.dialog.types.PaperNoticeDialog;
 import io.papermc.paper.dialog.types.PaperServerLinksDialog;
 import net.kyori.adventure.text.Component;
-import net.minecraft.server.dialog.DialogListDialog;
 
 public class DialogBridgeImpl implements DialogBridge {
     @Override
@@ -73,5 +79,40 @@ public class DialogBridgeImpl implements DialogBridge {
     @Override
     public InputElement.NumberSlider<?> numberSlider() {
         return new PaperNumberSliderInput();
+    }
+
+    @Override
+    public ButtonElement button() {
+        return new PaperButtonElement();
+    }
+
+    @Override
+    public ActionElement.OpenURL openURL() {
+        return new PaperOpenURLAction();
+    }
+
+    @Override
+    public ActionElement.RunCommand runCommand() {
+        return new PaperRunCommandAction();
+    }
+
+    @Override
+    public ActionElement.SuggestCommand suggestCommand() {
+        return new PaperSuggestCommandAction();
+    }
+
+    @Override
+    public ActionElement.ChangePage changePage() {
+        return new PaperChangePageAction();
+    }
+
+    @Override
+    public ActionElement.CopyToClipboard copyToClipboard() {
+        return new PaperCopyToClipboardAction();
+    }
+
+    @Override
+    public ActionElement.ShowDialog showDialog() {
+        return new PaperShowDialogAction();
     }
 }

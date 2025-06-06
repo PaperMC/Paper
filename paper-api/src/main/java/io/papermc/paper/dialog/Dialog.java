@@ -54,15 +54,27 @@ public interface Dialog<D extends Dialog<D>> {
     }
 
     interface Notice<B extends Notice<B>> extends Dialog<B> {
-
+        ButtonElement button();
+        B button(ButtonElement button);
     }
 
     interface Confirmation<B extends Confirmation<B>> extends Dialog<B> {
+        ButtonElement yes();
+        B yes(ButtonElement button);
 
+        ButtonElement no();
+        B no(ButtonElement button);
     }
 
     interface MultiAction<B extends MultiAction<B>> extends Dialog<B> {
+        List<ButtonElement> buttons();
+        B buttons(List<ButtonElement> buttonElements);
 
+        int columns();
+        B columns(int columns);
+
+        ButtonElement exitButton();
+        B exitButton(ButtonElement buttonElement);
     }
 
     interface ServerLinks<B extends ServerLinks<B>> extends Dialog<B> {
