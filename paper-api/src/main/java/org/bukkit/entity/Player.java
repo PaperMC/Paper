@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
@@ -3426,7 +3427,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param book The book to open for this player
      */
+
     public void openBook(ItemStack book);
+
+    /**
+     * Open a {@link Dialog} for a Player.
+     *
+     * @param dialog The dialog to open for this player.
+     * @param <D> The type of the dialog to open for this player.
+     */
+    public <D extends Dialog<D>> void openDialog(Dialog<D> dialog);
 
     /**
      * Open a Sign for editing by the Player.

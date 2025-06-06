@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.GlobalConfiguration;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -208,6 +209,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -3023,6 +3025,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getInventory().setItemInMainHand(book);
         this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
         this.getInventory().setItemInMainHand(hand);
+    }
+
+    @Override
+    public <D extends Dialog<D>> void openDialog(final @NotNull Dialog<D> dialog) {
+        dialog.openFor(this);
     }
 
     @Override
