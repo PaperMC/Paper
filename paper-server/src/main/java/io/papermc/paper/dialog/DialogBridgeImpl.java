@@ -4,6 +4,8 @@ import io.papermc.paper.dialog.actions.PaperButtonElement;
 import io.papermc.paper.dialog.actions.PaperChangePageAction;
 import io.papermc.paper.dialog.actions.PaperCopyToClipboardAction;
 import io.papermc.paper.dialog.actions.PaperCustomAction;
+import io.papermc.paper.dialog.actions.PaperDynamicCustomAction;
+import io.papermc.paper.dialog.actions.PaperInputData;
 import io.papermc.paper.dialog.actions.PaperShowDialogAction;
 import io.papermc.paper.dialog.actions.PaperOpenURLAction;
 import io.papermc.paper.dialog.actions.PaperRunCommandAction;
@@ -20,6 +22,7 @@ import io.papermc.paper.dialog.types.PaperMultiActionDialog;
 import io.papermc.paper.dialog.types.PaperNoticeDialog;
 import io.papermc.paper.dialog.types.PaperServerLinksDialog;
 import net.kyori.adventure.text.Component;
+import net.minecraft.nbt.CompoundTag;
 
 public class DialogBridgeImpl implements DialogBridge {
     @Override
@@ -120,5 +123,15 @@ public class DialogBridgeImpl implements DialogBridge {
     @Override
     public ActionElement.Custom custom() {
         return new PaperCustomAction();
+    }
+
+    @Override
+    public ActionElement.DynamicCustom dynamicCustom() {
+        return new PaperDynamicCustomAction();
+    }
+
+    @Override
+    public InputData inputData() {
+        return new PaperInputData(new CompoundTag());
     }
 }

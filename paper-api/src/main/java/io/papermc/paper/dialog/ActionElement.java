@@ -47,6 +47,11 @@ public interface ActionElement {
             .id(id);
     }
 
+    static DynamicCustom dynamicCustom(Key id) {
+        return DialogBridge.BRIDGE.dynamicCustom()
+            .id(id);
+    }
+
     interface OpenURL extends ActionElement {
         URI url();
         OpenURL url(URI url);
@@ -83,5 +88,10 @@ public interface ActionElement {
 
         String payload();
         Custom payload(String payload);
+    }
+
+    interface DynamicCustom extends ActionElement {
+        Key id();
+        DynamicCustom id(Key key);
     }
 }

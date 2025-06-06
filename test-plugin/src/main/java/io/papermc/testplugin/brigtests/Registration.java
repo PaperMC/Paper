@@ -55,22 +55,22 @@ public final class Registration {
         final LifecycleEventManager<Plugin> lifecycleManager = plugin.getLifecycleManager();
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
-            commands.register(Commands.literal("open_dialog").executes(ctx -> {
+            commands.register(Commands.literal("say_dialog").executes(ctx -> {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
                         Dialog.notice()
                             .title(Component.text("This is a dialog! Hi " + p.getName() + "!"))
                             .inputElements(
-                                InputElement.text("text_input", Component.text("Text:"))
+                                InputElement.text("name", Component.text("Name:")),
+                                InputElement.text("message", Component.text("Message:"))
                             )
                             .button(
                                 ButtonElement.button()
                                     .width(150)
                                     .label(Component.text("Click me!"))
                                     .action(
-                                        ActionElement.custom(
-                                            Key.key("paper", "my_event"),
-                                            "my payload"
+                                        ActionElement.dynamicCustom(
+                                            Key.key("paper", "say_message")
                                         )
                                     )
                             )

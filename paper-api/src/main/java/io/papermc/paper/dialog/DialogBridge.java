@@ -28,4 +28,7 @@ public interface DialogBridge {
     ActionElement.CopyToClipboard copyToClipboard();
     ActionElement.ShowDialog showDialog();
     ActionElement.Custom custom();
+    ActionElement.DynamicCustom dynamicCustom();
+
+    InputData inputData();
 }
