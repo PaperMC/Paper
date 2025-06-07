@@ -1,7 +1,12 @@
 package io.papermc.paper;
 
+import io.papermc.paper.chat.ChatRenderer;
+import io.papermc.paper.chat.ChatTypeParameter;
+import io.papermc.paper.chat.vanilla.ChatTypeRenderer;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
@@ -10,6 +15,7 @@ import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.List;
 
 /**
  * Static bridge to the server internals.
@@ -73,5 +79,9 @@ public interface InternalAPIBridge {
      * @return combat entry
      */
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
+
+    ChatType createAdventureChatType(String format, String narration, Style style, List<ChatTypeParameter> parameters);
+
+    ChatRenderer createVanillaChatRenderer(ChatTypeRenderer renderer);
 }
 
