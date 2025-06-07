@@ -1,6 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
+import io.papermc.paper.command.brigadier.argument.operation.Operation;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -8,6 +9,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -75,6 +77,12 @@ interface VanillaArgumentProvider {
     ArgumentType<SignedMessageResolver> signedMessage();
 
     ArgumentType<DisplaySlot> scoreboardDisplaySlot();
+    
+    ArgumentType<ScoreHolderResolver> scoreHolder();
+    
+    ArgumentType<ScoreHolderResolver> scoreHolders();
+    
+    ArgumentType<Operation> operation();
 
     ArgumentType<NamespacedKey> namespacedKey();
 
