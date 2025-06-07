@@ -12,12 +12,9 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @ApiStatus.Internal
-@NullMarked
-record RegistryKeySetImpl<T extends @Nullable Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
+record RegistryKeySetImpl<T extends Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
 
     static <T extends Keyed> RegistryKeySet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
         final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);

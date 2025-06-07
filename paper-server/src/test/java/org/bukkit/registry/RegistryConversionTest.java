@@ -270,7 +270,7 @@ public class RegistryConversionTest {
                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
     }
 
-    static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(RegistryKey.TRIM_MATERIAL, RegistryKey.TRIM_PATTERN, RegistryKey.INSTRUMENT, RegistryKey.BANNER_PATTERN, RegistryKey.SOUND_EVENT); // Paper
+    static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(RegistryKey.TRIM_MATERIAL, RegistryKey.TRIM_PATTERN, RegistryKey.INSTRUMENT, RegistryKey.BANNER_PATTERN, RegistryKey.SOUND_EVENT, RegistryKey.DIALOG); // Paper
 
     /**
      * Minecraft registry can return a default key / value

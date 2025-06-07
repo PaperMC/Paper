@@ -1,6 +1,7 @@
 package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -215,7 +216,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.PigVariantKeys
      */
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
-
+    /**
+     * Data-driven registry for dialogs.
+     * @see io.papermc.paper.registry.keys.DialogKeys
+     */
+    RegistryKey<Dialog> DIALOG = create("dialog");
 
 
     /* ******************* *

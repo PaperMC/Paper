@@ -21,7 +21,7 @@ public class CraftJukeboxSong extends HolderableBase<net.minecraft.world.item.Ju
     }
 
     public static Holder<net.minecraft.world.item.JukeboxSong> bukkitToMinecraftHolder(JukeboxSong bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.JUKEBOX_SONG);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public CraftJukeboxSong(final Holder<net.minecraft.world.item.JukeboxSong> holder) {

@@ -26,7 +26,7 @@ public final class CraftMapCursor {
         }
 
         public static Holder<MapDecorationType> bukkitToMinecraftHolder(MapCursor.Type bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.MAP_DECORATION_TYPE);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public CraftType(final Holder<MapDecorationType> holder) {

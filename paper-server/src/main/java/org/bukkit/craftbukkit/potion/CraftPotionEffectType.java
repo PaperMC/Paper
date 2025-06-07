@@ -38,7 +38,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
     }
 
     public static Holder<MobEffect> bukkitToMinecraftHolder(PotionEffectType bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.MOB_EFFECT);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     private final Holder<MobEffect> holder;

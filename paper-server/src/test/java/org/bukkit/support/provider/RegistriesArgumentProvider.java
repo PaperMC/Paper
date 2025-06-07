@@ -1,6 +1,8 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;
@@ -115,6 +117,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
+        register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
