@@ -29,8 +29,8 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
     Optional<ENTRY> optionalEntry();
 
     /**
-     * A holder that references a registry entry by key, but does not have the entry itself.
-     * This is used for entries that are not yet loaded.
+     * A holder that references a registry value by key, but does not have the entry itself.
+     * This is used for entries that are only referenced by key and may not yet have any value associated with them.
      *
      * @param <API> the registry's type
      * @param <ENTRY> the type of the registry entry
@@ -38,9 +38,9 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
     sealed interface Reference<API, ENTRY> extends RegistryHolder<API, ENTRY> permits ReferenceRegistryHolderImpl {
 
         /**
-         * The key of the referenced entry.
+         * The key of the referenced value.
          *
-         * @return the key of the entry
+         * @return the key of the value
          */
         TypedKey<API> key();
 
@@ -56,8 +56,7 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
     }
 
     /**
-     * A holder that contains an inlined registry entry, which is an entry that is already loaded
-     * and does not have a key.
+     * A holder that contains an inlined registry entry, an anonymous value (does not have a key).
      *
      * @param <API> the registry's type
      * @param <ENTRY> the type of the registry entry
