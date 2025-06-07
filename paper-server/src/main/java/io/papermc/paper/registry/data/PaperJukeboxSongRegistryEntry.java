@@ -5,7 +5,8 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.util.Either;
+import io.papermc.paper.registry.holder.PaperRegistryHolders;
+import io.papermc.paper.registry.holder.RegistryHolder;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
@@ -45,11 +46,11 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
     }
 
     @Override
-    public Either<TypedKey<Sound>, SoundEventRegistryEntry> soundEvent() {
+    public RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent() {
         final Holder<SoundEvent> current = asConfigured(this.soundEvent, "soundEvent");
         return current.unwrap().map(
-            l -> Either.left(PaperRegistries.fromNms(l)),
-            r -> Either.right(new PaperSoundEventRegistryEntry(this.conversions, r))
+            l -> PaperRegistryHolders.create(PaperRegistries.fromNms(l)),
+            r -> PaperRegistryHolders.create(new PaperSoundEventRegistryEntry(this.conversions, r))
         );
     }
 

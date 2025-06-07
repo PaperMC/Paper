@@ -3,7 +3,7 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
-import io.papermc.paper.util.Either;
+import io.papermc.paper.registry.holder.RegistryHolder;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.JukeboxSong;
@@ -26,7 +26,7 @@ public interface JukeboxSongRegistryEntry {
      * @return the sound event
      */
     @Contract(pure = true)
-    Either<TypedKey<Sound>, SoundEventRegistryEntry> soundEvent();
+    RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent();
 
     /**
      * Gets the description for this song.
