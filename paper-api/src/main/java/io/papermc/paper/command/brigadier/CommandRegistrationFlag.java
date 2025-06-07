@@ -17,7 +17,8 @@ public enum CommandRegistrationFlag {
     @Deprecated(since = "1.21.4")
     FLATTEN_ALIASES,
     /**
-     * Prevents this command from being sent to the client.
+     * @deprecated Removed as it causes a warning to appear on the client now.
      */
+    @Deprecated(since = "1.21.6", forRemoval = true)
     SERVER_ONLY
 }
