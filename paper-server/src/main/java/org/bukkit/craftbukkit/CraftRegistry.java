@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
@@ -205,7 +206,8 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             return cached;
         }
 
-        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(CraftNamespacedKey.toMinecraft(namespacedKey));
+        // Important to use the ResourceKey<?> "get" method below because it will work before registry is frozen
+        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         final Holder.Reference<M> holder;
         if (holderOptional.isPresent()) {
             holder = holderOptional.get();
@@ -215,12 +217,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             // to create something to fill the API constant fields, so we create a dummy reference holder.
             holder = Holder.Reference.createStandAlone(this.invalidHolderOwner, MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         } else {
-            holder = null;
-        }
-        final B bukkit = this.createBukkit(holder);
-        if (bukkit == null) {
             return null;
         }
+        final B bukkit = this.createBukkit(holder);
 
         this.cache.put(namespacedKey, bukkit);
 
@@ -250,15 +249,15 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     public B createBukkit(Holder<M> minecraft) {
-        if (minecraft == null) {
-            return null;
-        }
-
         return this.minecraftToBukkit.createBukkit(minecraft);
     }
 
     public boolean supportsDirectHolders() {
         return this.minecraftToBukkit.supportsDirectHolders();
+    }
+
+    public boolean constructorUsesHolder() {
+        return this.minecraftToBukkit.constructorUsesHolder();
     }
 
     @Override

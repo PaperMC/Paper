@@ -5,7 +5,7 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Event object for {@link RegistryEventProvider#freeze()}. This
@@ -15,8 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> registry entry type
  * @param <B> registry entry builder type
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 
@@ -33,8 +31,21 @@ public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends Re
      * custom datapack.
      *
      * @param tagKey the tag key
-     * @return the tag
      * @param <V> the tag value type
+     * @return the tag
+     * @deprecated Use {@link #retriever()}
      */
-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+    @Deprecated(forRemoval = true)
+    default <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+        return this.retriever().getOrCreateTag(tagKey);
+    }
+
+    /**
+     * Gets the registry retriever, which can be used to retrieve or create
+     * entries in the registry.
+     *
+     * @return the registry retriever
+     */
+    @Contract(pure = true)
+    RegistryRetriever retriever();
 }
