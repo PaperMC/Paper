@@ -86,6 +86,11 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         return this.world.getMinecraftWorld();
     }
 
+    @Override
+    public ServerLevel getLevel() {
+        return this.getMinecraftWorld();
+    }
+
     public void refreshTiles() {
         for (CraftBlockState snapshot : this.blocks.values()) {
             if (snapshot instanceof CraftBlockEntityState) {
