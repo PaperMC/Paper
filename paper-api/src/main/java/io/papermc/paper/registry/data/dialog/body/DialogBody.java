@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 public sealed interface DialogBody permits DialogBody.ItemBody, DialogBody.PlainMessageBody {
 
-    static ItemBody itemBody(
+    static ItemBody item(
         final ItemStack item,
         final @Nullable PlainMessageBody description,
         final boolean showDecorations,
@@ -17,7 +17,7 @@ public sealed interface DialogBody permits DialogBody.ItemBody, DialogBody.Plain
         return new ItemBodyImpl(item, description, showDecorations, showTooltip, width, height);
     }
 
-    static PlainMessageBody plainMessageBody(final Component contents, final int width) {
+    static PlainMessageBody plainMessage(final Component contents, final int width) {
         return new PlainMessageBodyImpl(contents, width);
     }
 

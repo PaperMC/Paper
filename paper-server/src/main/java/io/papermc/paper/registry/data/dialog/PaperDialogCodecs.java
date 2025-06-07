@@ -75,9 +75,9 @@ public final class PaperDialogCodecs {
     private static final MapCodec<DialogBody.PlainMessageBody> PLAIN_MESSAGE_BODY_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             AdventureCodecs.COMPONENT_CODEC.fieldOf("contents").forGetter(DialogBody.PlainMessageBody::contents),
             Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(DialogBody.PlainMessageBody::width)
-        ).apply(instance, DialogBody::plainMessageBody)
+        ).apply(instance, DialogBody::plainMessage)
     );
-    private static final Codec<DialogBody.PlainMessageBody> SIMPLE_PLAIN_MESSAGE_BODY_CODEC = Codec.withAlternative(PLAIN_MESSAGE_BODY_CODEC.codec(), AdventureCodecs.COMPONENT_CODEC, component -> DialogBody.plainMessageBody(component, PlainMessage.DEFAULT_WIDTH));
+    private static final Codec<DialogBody.PlainMessageBody> SIMPLE_PLAIN_MESSAGE_BODY_CODEC = Codec.withAlternative(PLAIN_MESSAGE_BODY_CODEC.codec(), AdventureCodecs.COMPONENT_CODEC, component -> DialogBody.plainMessage(component, PlainMessage.DEFAULT_WIDTH));
     private static final MapCodec<DialogBody.ItemBody> ITEM_BODY_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ItemStack.STRICT_CODEC.xmap(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy).fieldOf("item").forGetter(DialogBody.ItemBody::item),
             SIMPLE_PLAIN_MESSAGE_BODY_CODEC.optionalFieldOf("description").forGetter(body -> Optional.ofNullable(body.description())),
@@ -85,7 +85,7 @@ public final class PaperDialogCodecs {
             Codec.BOOL.optionalFieldOf("show_tooltip", true).forGetter(DialogBody.ItemBody::showTooltip),
             Dialog.WIDTH_CODEC.optionalFieldOf("width", 16).forGetter(DialogBody.ItemBody::width),
             Dialog.WIDTH_CODEC.optionalFieldOf("height", 16).forGetter(DialogBody.ItemBody::height)
-        ).apply(instance, (itemStack, plainMessageBody, showDecorations, showTooltip, width, height) -> DialogBody.itemBody(itemStack, plainMessageBody.orElse(null), showDecorations, showTooltip, width, height))
+        ).apply(instance, (itemStack, plainMessageBody, showDecorations, showTooltip, width, height) -> DialogBody.item(itemStack, plainMessageBody.orElse(null), showDecorations, showTooltip, width, height))
     );
     private static final Registry<MapCodec<? extends DialogBody>> DIALOG_BODY_TYPES = Util.make(() -> {
         final MappedRegistry<MapCodec<? extends DialogBody>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_body_type")), Lifecycle.experimental());
@@ -106,7 +106,7 @@ public final class PaperDialogCodecs {
             Codec.BOOL.optionalFieldOf("initial", false).forGetter(BooleanDialogInputType::initial),
             Codec.STRING.optionalFieldOf("on_true", "true").forGetter(BooleanDialogInputType::onTrue),
             Codec.STRING.optionalFieldOf("on_false", "false").forGetter(BooleanDialogInputType::onFalse)
-        ).apply(instance, DialogInputType::booleanInputType)
+        ).apply(instance, DialogInputType::bool)
     );
     private static final MapCodec<NumberRangeDialogInputType> NUMBER_RANGE_INPUT_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(NumberRangeDialogInputType::width),
@@ -116,7 +116,7 @@ public final class PaperDialogCodecs {
             Codec.FLOAT.fieldOf("end").forGetter(NumberRangeDialogInputType::end),
             Codec.FLOAT.optionalFieldOf("initial").forGetter(type -> Optional.ofNullable(type.initial())),
             ExtraCodecs.POSITIVE_FLOAT.optionalFieldOf("step").forGetter(type -> Optional.ofNullable(type.step()))
-        ).apply(instance, (width, label, labelFormat, start, end, initial, step) -> DialogInputType.numberRangeInputType(width, label, labelFormat, start, end, initial.orElse(null), step.orElse(null)))
+        ).apply(instance, (width, label, labelFormat, start, end, initial, step) -> DialogInputType.numberRange(width, label, labelFormat, start, end, initial.orElse(null), step.orElse(null)))
     );
     private static final Codec<SingleOptionDialogInputType.OptionEntry> SINGLE_OPTION_DIALOG_INPUT_ENTRY_FULL_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("id").forGetter(SingleOptionDialogInputType.OptionEntry::id),
@@ -132,7 +132,7 @@ public final class PaperDialogCodecs {
             ExtraCodecs.nonEmptyList(SINGLE_OPTION_DIALOG_INPUT_ENTRY_CODEC.listOf()).fieldOf("options").forGetter(SingleOptionDialogInputType::entries),
             AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(SingleOptionDialogInputType::label),
             Codec.BOOL.optionalFieldOf("label_visible", true).forGetter(SingleOptionDialogInputType::labelVisible)
-        ).apply(instance, DialogInputType::singleOptionInputType)
+        ).apply(instance, DialogInputType::singleOption)
     );
     private static final Codec<TextDialogInputType.MultilineOptions> TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_lines").forGetter(options -> Optional.ofNullable(options.maxLines())),
@@ -147,7 +147,7 @@ public final class PaperDialogCodecs {
             ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_length", 32).forGetter(TextDialogInputType::maxLength),
             TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC.optionalFieldOf("multiline").forGetter(inputType -> Optional.ofNullable(inputType.multiline()))
         ).apply(instance, (width, label, labelVisible, initial, maxLength, multilineOptions) ->
-            DialogInputType.textInputType(width, label, labelVisible, initial, maxLength, multilineOptions.orElse(null))
+            DialogInputType.text(width, label, labelVisible, initial, maxLength, multilineOptions.orElse(null))
         )
     );
     private static final Registry<MapCodec<? extends DialogInputType>> DIALOG_INPUT_TYPES = Util.make(() -> {
