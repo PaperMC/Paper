@@ -1,6 +1,7 @@
 package io.papermc.paper.util;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.HolderableBase;
 import java.util.Locale;
 import net.minecraft.core.Holder;
 import org.bukkit.Keyed;
@@ -12,14 +13,13 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 @Deprecated
 @NullMarked
-public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Holderable<M>, OldEnum<A>, Keyed {
+public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M> implements Holderable<M>, OldEnum<A>, Keyed {
 
-    private final Holder<M> holder;
     private final int ordinal;
     private final @Nullable String name;
 
     protected OldEnumHolderable(final Holder<M> holder, final int ordinal) {
-        this.holder = holder;
+        super(holder);
         this.ordinal = ordinal;
         if (holder instanceof final Holder.Reference<M> reference) {
             // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
@@ -34,11 +34,6 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Hold
         } else {
             this.name = null;
         }
-    }
-
-    @Override
-    public Holder<M> getHolder() {
-        return this.holder;
     }
 
     @Override
@@ -64,21 +59,6 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Hold
 
     private void checkIsReference() {
         Preconditions.checkState(this.holder.kind() == Holder.Kind.REFERENCE, "Cannot call method for this registry item, because it is not registered.");
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return MCUtil.fromResourceKey(this.holder.unwrapKey().orElseThrow(() -> new IllegalStateException("Cannot get key for this registry item, because it is not registered.")));
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return this.implEquals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.implHashCode();
     }
 
     @Override

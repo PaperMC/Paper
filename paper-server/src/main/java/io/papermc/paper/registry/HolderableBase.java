@@ -12,9 +12,15 @@ public abstract class HolderableBase<M> implements Holderable<M> {
         this.holder = holder;
     }
 
+    // methods below are overridden to make final
     @Override
     public final Holder<M> getHolder() {
         return this.holder;
+    }
+
+    @Override
+    public final M getHandle() {
+        return Holderable.super.getHandle();
     }
 
     @Override
@@ -28,7 +34,7 @@ public abstract class HolderableBase<M> implements Holderable<M> {
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         return Holderable.super.implToString();
     }
 
