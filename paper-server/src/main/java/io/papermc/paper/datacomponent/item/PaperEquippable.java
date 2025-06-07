@@ -83,6 +83,16 @@ public record PaperEquippable(
     }
 
     @Override
+    public boolean canBeSheared() {
+        return this.impl.canBeSheared();
+    }
+
+    @Override
+    public Key shearSound() {
+        return PaperAdventure.asAdventure(this.impl.equipSound().value().location());
+    }
+
+    @Override
     public Builder toBuilder() {
         return new BuilderImpl(this.slot())
             .equipSound(this.equipSound())
@@ -92,7 +102,9 @@ public record PaperEquippable(
             .dispensable(this.dispensable())
             .swappable(this.swappable())
             .damageOnHurt(this.damageOnHurt())
-            .equipOnInteract(this.equipOnInteract());
+            .equipOnInteract(this.equipOnInteract())
+            .shearSound(this.shearSound())
+            .canBeSheared(this.canBeSheared());
     }
 
 
@@ -107,6 +119,8 @@ public record PaperEquippable(
         private boolean swappable = true;
         private boolean damageOnHurt = true;
         private boolean equipOnInteract;
+        private boolean canBeSheared = false;
+        private Holder<SoundEvent> shearSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEARS_SNIP);
 
         BuilderImpl(final EquipmentSlot equipmentSlot) {
             this.equipmentSlot = CraftEquipmentSlot.getNMS(equipmentSlot);
@@ -166,6 +180,18 @@ public record PaperEquippable(
         }
 
         @Override
+        public Builder canBeSheared(final boolean canBeSheared) {
+            this.canBeSheared = canBeSheared;
+            return this;
+        }
+
+        @Override
+        public Builder shearSound(final Key shearSound) {
+            this.shearSound = PaperAdventure.resolveSound(shearSound);
+            return this;
+        }
+
+        @Override
         public Equippable build() {
             return new PaperEquippable(
                 new net.minecraft.world.item.equipment.Equippable(
@@ -178,8 +204,8 @@ public record PaperEquippable(
                     this.swappable,
                     this.damageOnHurt,
                     this.equipOnInteract,
-                    false, // TODO
-                    Holder.direct(SoundEvents.GOAT_SCREAMING_DEATH) // TODO
+                    this.canBeSheared,
+                    this.shearSound
                 )
             );
         }
