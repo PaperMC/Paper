@@ -1,5 +1,6 @@
 package io.papermc.paper.adventure;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -13,7 +14,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.function.Supplier;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.EntityNBTComponent;
@@ -34,9 +37,11 @@ import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.util.Index;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.contents.KeybindContents;
@@ -85,7 +90,7 @@ public final class AdventureCodecs {
         }
     });
 
-    static final Codec<Key> KEY_CODEC = Codec.STRING.comapFlatMap(s -> {
+    public static final Codec<Key> KEY_CODEC = Codec.STRING.comapFlatMap(s -> {
         return Key.parseable(s) ? DataResult.success(Key.key(s)) : DataResult.error(() -> "Cannot convert " + s + " to adventure Key");
     }, Key::asString);
 
@@ -117,16 +122,17 @@ public final class AdventureCodecs {
     static final ClickEventType SUGGEST_COMMAND_CLICK_EVENT_TYPE = new ClickEventType(SUGGEST_COMMAND_CODEC, "suggest_command");
     static final ClickEventType CHANGE_PAGE_CLICK_EVENT_TYPE = new ClickEventType(CHANGE_PAGE_CODEC, "change_page");
     static final ClickEventType COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE = new ClickEventType(COPY_TO_CLIPBOARD_CODEC, "copy_to_clipboard");
-    static final Codec<ClickEventType> CLICK_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE});
+    public static final Supplier<ClickEventType[]> CLICK_EVENT_TYPES = () -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE};
+    static final Codec<ClickEventType> CLICK_EVENT_TYPE_CODEC = StringRepresentable.fromValues(CLICK_EVENT_TYPES);
 
-    record ClickEventType(MapCodec<ClickEvent> codec, String id) implements StringRepresentable {
+    public record ClickEventType(MapCodec<ClickEvent> codec, String id) implements StringRepresentable {
         @Override
         public String getSerializedName() {
             return this.id;
         }
     }
 
-    private static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE = he -> {
+    public static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE = he -> {
         if (he.action() == ClickEvent.Action.OPEN_URL) {
             return OPEN_URL_CLICK_EVENT_TYPE;
         } else if (he.action() == ClickEvent.Action.OPEN_FILE) {
@@ -430,6 +436,19 @@ public final class AdventureCodecs {
             component = component.append(components.get(i));
         }
         return component;
+    }
+
+    public static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_COMPOUND_CODEC = CompoundTag.CODEC.flatComapMap(PaperAdventure::asBinaryTagHolder, api -> {
+        try {
+            return DataResult.success((CompoundTag) api.get(PaperAdventure.NBT_CODEC));
+        } catch (CommandSyntaxException e) {
+            return DataResult.error(e::getMessage);
+        }
+    });
+
+    public static <T> Codec<T> indexCodec(final Index<String, T> index) {
+        return Codec.of(Codec.STRING.comap(index::keyOrThrow), Codec.STRING.map(index::valueOrThrow));
+
     }
 
     private AdventureCodecs() {

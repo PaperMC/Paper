@@ -1,6 +1,8 @@
 package io.papermc.paper.registry.data;
 
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
@@ -19,4 +21,6 @@ public interface InlinedRegistryBuilderProvider {
     }
 
     Art createPaintingVariant(Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value);
+
+    Dialog createDialog(Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value);
 }

@@ -1,9 +1,11 @@
 package io.papermc.paper.registry.data.util;
 
 import com.google.common.base.Preconditions;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JavaOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
+import io.papermc.paper.registry.data.dialog.PaperDialogs;
 import java.util.Optional;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import net.kyori.adventure.text.Component;
@@ -37,10 +39,20 @@ public class Conversions {
 
     private final RegistryOps.RegistryInfoLookup lookup;
     private final WrapperAwareSerializer serializer;
+    private final RegistryOps<Object> javaOps;
 
     public Conversions(final RegistryOps.RegistryInfoLookup lookup) {
         this.lookup = lookup;
         this.serializer = new WrapperAwareSerializer(() -> RegistryOps.create(JavaOps.INSTANCE, lookup));
+        this.javaOps = RegistryOps.create(JavaOps.INSTANCE, lookup);
+    }
+
+    public <OUT, IN> OUT convert(final IN in, final Codec<OUT> outCodec, final Codec<IN> inCodec) {
+        final Object obj = inCodec.encodeStart(this.javaOps, in)
+            .getOrThrow(s -> new RuntimeException("Failed to encode input: " + in + "; " + s));
+        return outCodec.decode(this.javaOps, obj)
+            .getOrThrow(s -> new RuntimeException("Failed to decode to output: " + obj + "; " + s))
+            .getFirst();
     }
 
     public RegistryOps.RegistryInfoLookup lookup() {

@@ -1,10 +1,12 @@
 package io.papermc.paper.registry.data;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.PaperRegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import java.util.function.Consumer;
@@ -30,5 +32,10 @@ public final class InlinedRegistryBuilderProviderImpl implements InlinedRegistry
     @Override
     public Art createPaintingVariant(final Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value) {
         return create(Registries.PAINTING_VARIANT, value::accept);
+    }
+
+    @Override
+    public Dialog createDialog(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
+        return create(Registries.DIALOG, value::accept);
     }
 }
