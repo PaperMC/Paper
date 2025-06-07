@@ -380,4 +380,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void clearReputations() {
         getHandle().getGossips().gossips.clear();
     }
+
+    @Override
+    public void updateDemand() {
+        getHandle().updateDemand();
+    }
+
+    @Override
+    public void restock() {
+        getHandle().restock();
+    }
 }
