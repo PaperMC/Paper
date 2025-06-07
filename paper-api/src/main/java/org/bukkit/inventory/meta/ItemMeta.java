@@ -5,6 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemAdventurePredicate;
 import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -1086,12 +1089,12 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     @NotNull
     ItemMeta clone();
 
-    // Paper start - Add an API for can-place-on/can-break adventure mode predicates
     /**
      * Gets set of materials what given item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @return Set of materials
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanDestroy();
@@ -1100,7 +1103,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets set of materials what given item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @param canDestroy Set of materials
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanDestroy(Set<org.bukkit.Material> canDestroy);
@@ -1109,7 +1113,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets set of materials where given item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @return Set of materials
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanPlaceOn();
@@ -1118,7 +1123,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets set of materials where given item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @param canPlaceOn Set of materials
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanPlaceOn(Set<org.bukkit.Material> canPlaceOn);
@@ -1127,7 +1133,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     @NotNull
@@ -1137,7 +1144,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @param canDestroy Collection of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setDestroyableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canDestroy);
@@ -1146,7 +1154,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the collection of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.6")
@@ -1156,7 +1165,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the set of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
      *
      * @param canPlaceOn Collection of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setPlaceableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canPlaceOn);
@@ -1165,7 +1175,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks for the existence of any keys that the item can be placed on
      *
      * @return true if this item has placeable keys
-     * @deprecated this API is unsupported and will be replaced
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#hasData(DataComponentType)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasPlaceableKeys();
@@ -1174,9 +1185,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks for the existence of any keys that the item can destroy
      *
      * @return true if this item has destroyable keys
-     * @deprecated this API is unsupported and will be replaced
+     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
+     * Please use {@link ItemStack#hasData(DataComponentType)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasDestroyableKeys();
-    // Paper end - Add an API for can-place-on/can-break adventure mode predicates
 }

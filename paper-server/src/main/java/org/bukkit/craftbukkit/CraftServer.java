@@ -12,6 +12,8 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.configuration.PaperServerConfiguration;
+import io.papermc.paper.configuration.ServerConfiguration;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -313,6 +315,7 @@ public final class CraftServer implements Server {
     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher();
     private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer;
     public final io.papermc.paper.SparksFly spark;
+    private final ServerConfiguration serverConfig = new PaperServerConfiguration();
 
     // Paper start - Folia region threading API
     private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
@@ -1867,6 +1870,11 @@ public final class CraftServer implements Server {
     @Override
     public boolean getOnlineMode() {
         return this.console.usesAuthentication();
+    }
+
+    @Override
+    public @NotNull ServerConfiguration getServerConfig() {
+        return serverConfig;
     }
 
     @Override

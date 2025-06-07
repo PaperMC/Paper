@@ -87,7 +87,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
     /**
      * Set the completions offered, overriding any already set.
      * <br>
-     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
+     * The passed collection will be cloned to a new List. You must call {@link #getCompletions()} to mutate from here
      *
      * @param completions the new completions
      */

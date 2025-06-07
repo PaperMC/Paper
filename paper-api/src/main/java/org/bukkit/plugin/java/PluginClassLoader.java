@@ -206,7 +206,16 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
 
         if (result == null) {
             String path = name.replace('.', '/').concat(".class");
-            JarEntry entry = jar.getJarEntry(path);
+            // Add details to zip file errors - help debug classloading
+            JarEntry entry;
+            try {
+                entry = jar.getJarEntry(path);
+            } catch (IllegalStateException zipFileClosed) {
+                if (plugin == null) {
+                    throw zipFileClosed;
+                }
+                throw new IllegalStateException("The plugin classloader for " + plugin.getName() + " has thrown a zip file error.", zipFileClosed);
+            }
 
             if (entry != null) {
                 byte[] classBytes;

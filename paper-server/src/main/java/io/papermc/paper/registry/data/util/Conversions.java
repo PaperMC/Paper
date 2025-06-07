@@ -2,10 +2,12 @@ package io.papermc.paper.registry.data.util;
 
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.JavaOps;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.PaperRegistryBuilderFactory;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
@@ -32,7 +34,6 @@ public class Conversions {
         return globalInstance;
     }
 
-
     private final RegistryOps.RegistryInfoLookup lookup;
     private final WrapperAwareSerializer serializer;
 
@@ -57,6 +58,20 @@ public class Conversions {
 
     public Component asAdventure(final net.minecraft.network.chat.@Nullable Component vanilla) {
         return vanilla == null ? Component.empty() : this.serializer.deserialize(vanilla);
+    }
+
+    public ClientTextureAsset asBukkit(final net.minecraft.core.@Nullable ClientAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : ClientTextureAsset.clientTextureAsset(
+            PaperAdventure.asAdventure(clientTextureAsset.id()),
+            PaperAdventure.asAdventure(clientTextureAsset.texturePath())
+        );
+    }
+
+    public net.minecraft.core.ClientAsset asVanilla(final @Nullable ClientTextureAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : new net.minecraft.core.ClientAsset(
+            PaperAdventure.asVanilla(clientTextureAsset.identifier()),
+            PaperAdventure.asVanilla(clientTextureAsset.texturePath())
+        );
     }
 
     private static <M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> RegistryEntryMeta.Buildable<M, A, B> getDirectHolderBuildableMeta(final ResourceKey<? extends Registry<M>> registryKey) {

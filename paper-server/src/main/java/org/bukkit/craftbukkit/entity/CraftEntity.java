@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -57,6 +58,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -395,13 +397,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    @Deprecated
     public void setVisualFire(boolean fire) {
-        this.getHandle().hasVisualFire = fire;
+        setVisualFire(fire ? TriState.TRUE : TriState.NOT_SET);
+    }
+
+    @Override
+    public void setVisualFire(final TriState fire) {
+        Preconditions.checkArgument(fire != null, "TriState cannot be null");
+        this.getHandle().visualFire = fire;
     }
 
     @Override
     public boolean isVisualFire() {
-        return this.getHandle().hasVisualFire;
+        return getVisualFire().toBooleanOrElse(false);
+    }
+
+    @Override
+    public TriState getVisualFire() {
+        return this.getHandle().visualFire;
     }
 
     @Override
@@ -517,6 +531,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         this.getHandle().ejectPassengers();
         return true;
+    }
+
+    @Override
+    public ItemStack getPickItemStack() {
+        net.minecraft.world.item.ItemStack stack = this.getHandle().getPickResult();
+        return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
     }
 
     @Override

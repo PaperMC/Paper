@@ -17,7 +17,7 @@ public class PluginVanillaCommandWrapper extends VanillaCommandWrapper implement
     private final List<String> aliases;
 
     public PluginVanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand, Plugin plugin) {
-        super(name, description, usageMessage, aliases, vanillaCommand);
+        super(name, description, usageMessage, aliases, vanillaCommand, null);
         this.plugin = plugin;
         this.aliases = aliases;
     }

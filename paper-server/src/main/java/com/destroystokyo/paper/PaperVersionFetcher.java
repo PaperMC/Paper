@@ -43,7 +43,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     @Override
-    public Component getVersionMessage(final String serverVersion) {
+    public Component getVersionMessage() {
         final Component updateMessage;
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
