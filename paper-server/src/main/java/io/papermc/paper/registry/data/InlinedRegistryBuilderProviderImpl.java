@@ -26,9 +26,4 @@ public final class InlinedRegistryBuilderProviderImpl implements InlinedRegistry
         value.accept(builderFactory);
         return buildableMeta.registryTypeMapper().createBukkit(Holder.direct(builderFactory.requireBuilder().build()));
     }
-
-    @Override
-    public Art createPaintingVariant(final Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value) {
-        return create(Registries.PAINTING_VARIANT, value::accept);
-    }
 }

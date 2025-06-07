@@ -24,17 +24,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface Art extends OldEnum<Art>, Keyed {
 
-    /**
-     * Create an inlined painting variant.
-     *
-     * @param value a consumer for the builder factory
-     * @return the created painting variant
-     */
-    @ApiStatus.Experimental
-    static @NotNull Art create(final @NotNull Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().createPaintingVariant(value);
-    }
-
     // Start generate - Art
     // @GeneratedFrom 1.21.6-pre3
     Art ALBAN = getArt("alban");
