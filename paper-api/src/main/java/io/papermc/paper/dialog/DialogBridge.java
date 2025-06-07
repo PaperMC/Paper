@@ -12,6 +12,7 @@ public interface DialogBridge {
     Dialog.DialogList<?> dialogList();
 
     BodyElement.PlainText plainText();
+    InputElement.Text.MultiLine multiLine();
     BodyElement.Item itemElement();
 
     InputElement.Text<?> text();

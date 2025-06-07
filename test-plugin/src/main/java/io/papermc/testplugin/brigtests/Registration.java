@@ -42,10 +42,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class Registration {
-    
+
     private Registration() {
     }
-    
+
     public static void registerViaOnEnable(final JavaPlugin plugin) {
         registerLegacyCommands(plugin);
         registerViaLifecycleEvents(plugin);
@@ -59,9 +59,13 @@ public final class Registration {
                 if(ctx.getSource().getSender() instanceof Player p) {
                     p.openDialog(
                         Dialog.notice()
-                            .title(Component.text("Set Block"))
+                            .title(Component.text("Window"))
                             .inputElements(
-                                InputElement.text("x", Component.text("X:"))
+                                InputElement.text("code", Component.text("Script:"))
+                                    .multiLine(
+                                        InputElement.multiLine()
+                                            .height(512)
+                                    )
                             )
                             .button(
                                 ButtonElement.button()

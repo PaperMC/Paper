@@ -42,6 +42,10 @@ public interface InputElement<E extends InputElement<E>> {
             .label(label);
     }
 
+    static Text.MultiLine multiLine() {
+        return DialogBridge.BRIDGE.multiLine();
+    }
+
     interface Text<B extends Text<B>> extends InputElement<B> {
         int width();
         B width(int width);
@@ -55,7 +59,16 @@ public interface InputElement<E extends InputElement<E>> {
         int maxLength();
         B maxLength(int maxLength);
 
-        // TODO: handle multi-line text box
+        MultiLine multiLine();
+        B multiLine(MultiLine config);
+
+        interface MultiLine {
+            Optional<Integer> maxLines();
+            MultiLine maxLines(int maxLines);
+
+            Optional<Integer> height();
+            MultiLine height(int height);
+        }
     }
 
     interface Checkbox<B extends Checkbox<B>> extends InputElement<B> {

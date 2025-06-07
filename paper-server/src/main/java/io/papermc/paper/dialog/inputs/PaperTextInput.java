@@ -5,12 +5,14 @@ import io.papermc.paper.dialog.InputElement;
 import net.minecraft.server.dialog.Input;
 import net.minecraft.server.dialog.input.TextInput;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 public class PaperTextInput extends PaperInputElementBase<PaperTextInput> implements InputElement.Text<PaperTextInput> {
     int width = 200;
     boolean labelVisible = true;
     String initialValue = "";
     int maxLength = 32;
+    MultiLine multiLine;
 
     @Override
     public int width() {
@@ -57,6 +59,17 @@ public class PaperTextInput extends PaperInputElementBase<PaperTextInput> implem
     }
 
     @Override
+    public MultiLine multiLine() {
+        return this.multiLine;
+    }
+
+    @Override
+    public PaperTextInput multiLine(final MultiLine config) {
+        this.multiLine = config;
+        return this;
+    }
+
+    @Override
     public Input input() {
         return new Input(
             this.key,
@@ -66,8 +79,24 @@ public class PaperTextInput extends PaperInputElementBase<PaperTextInput> implem
                 this.labelVisible,
                 this.initialValue,
                 this.maxLength,
-                Optional.empty()
+                Optional.ofNullable(this.multiLine)
+                    .map(x -> new TextInput.MultilineOptions(
+                        x.maxLines(),
+                        x.height()
+                    ))
             )
         );
+    }
+
+    public record PaperMultiLine(Optional<Integer> maxLines, Optional<Integer> height) implements MultiLine {
+        @Override
+        public MultiLine maxLines(final int maxLines) {
+            return new PaperMultiLine(Optional.of(maxLines), height);
+        }
+
+        @Override
+        public MultiLine height(final int height) {
+            return new PaperMultiLine(maxLines, Optional.of(height));
+        }
     }
 }

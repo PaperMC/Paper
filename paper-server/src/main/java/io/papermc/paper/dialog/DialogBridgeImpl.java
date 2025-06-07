@@ -24,6 +24,7 @@ import io.papermc.paper.dialog.types.PaperNoticeDialog;
 import io.papermc.paper.dialog.types.PaperServerLinksDialog;
 import net.kyori.adventure.text.Component;
 import net.minecraft.nbt.CompoundTag;
+import java.util.Optional;
 
 public class DialogBridgeImpl implements DialogBridge {
     @Override
@@ -54,6 +55,11 @@ public class DialogBridgeImpl implements DialogBridge {
     @Override
     public BodyElement.PlainText plainText() {
         return new PaperPlainText();
+    }
+
+    @Override
+    public InputElement.Text.MultiLine multiLine() {
+        return new PaperTextInput.PaperMultiLine(Optional.empty(), Optional.empty());
     }
 
     @Override
