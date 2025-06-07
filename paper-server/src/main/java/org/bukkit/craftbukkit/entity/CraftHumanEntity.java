@@ -468,7 +468,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         // Now open the window
-        MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
+        MenuType<?> windowType = container.getType();
         // we can open these now, delegate for now
         if (windowType == MenuType.MERCHANT) {
             CraftMenus.openMerchantMenu(player, (MerchantMenu) container);
