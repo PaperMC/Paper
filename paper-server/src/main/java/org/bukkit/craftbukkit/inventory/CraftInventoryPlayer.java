@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
@@ -78,9 +79,18 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         super.setItem(index, item);
         if (this.getHolder() == null) return;
 
-        if (index > 40) return; // Do not send update packets for saddle or body slots as the player menu does not contain these.
         ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
         if (player.connection == null) return;
+        // Of course, these are not part of the player inventory "menu" because these slots are not accessible.
+        // However they are technically part of the player inventory.
+        // This is a poor representation by this API, but basically instead send a player inventory update packet.
+        // This will allow updates to the player inventory rather than through the menu.
+        // TODO: This could be something worth cleaning up in the future.
+        if (index > 40) {
+            player.connection.send(new ClientboundSetPlayerInventoryPacket(index, CraftItemStack.asNMSCopy(item)));
+            return;
+        }
+
         // PacketPlayOutSetSlot places the items differently than setItem()
         //
         // Between, and including, index 9 (the first index outside of the hotbar) and index 35 (the last index before
