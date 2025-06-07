@@ -63,7 +63,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
                 builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(entry.apiRegistryBuilderImpl()).resolve(this.classResolver))).append("::new");
                 if (entry.modificationApiSupport() == RegistryEntry.RegistryModificationApiSupport.NONE) {
                     builder.append(", ");
-                    builder.append(this.importCollector.getShortName(this.classNamedView.findFirst("RegistryEntryMeta.RegistryModificationApiSupport"))).append(".NONE");
+                    builder.append(Types.REGISTRY_MODIFICATION_API_SUPPORT.dottedNestedName()).append(".NONE");
                 }
                 builder.append(')');
             } else {

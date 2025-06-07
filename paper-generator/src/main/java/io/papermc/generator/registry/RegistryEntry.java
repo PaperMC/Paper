@@ -161,7 +161,7 @@ public final class RegistryEntry<T> {
     }
 
     public boolean allowCustomKeys() {
-        return this.apiRegistryBuilder != null || RegistryEntries.DATA_DRIVEN.contains(this);
+        return (this.apiRegistryBuilder != null && this.modificationApiSupport.canAdd()) || RegistryEntries.DATA_DRIVEN.contains(this);
     }
 
     private <TO> Map<ResourceKey<T>, TO> getFields(Map<ResourceKey<T>, TO> map, Function<Field, @Nullable TO> transform) {
@@ -227,5 +227,9 @@ public final class RegistryEntry<T> {
         ADDABLE,
         MODIFIABLE,
         WRITABLE;
+
+        public boolean canAdd() {
+            return this != MODIFIABLE && this != NONE;
+        }
     }
 }
