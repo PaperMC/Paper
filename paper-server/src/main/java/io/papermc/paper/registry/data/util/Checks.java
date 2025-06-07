@@ -40,6 +40,13 @@ public final class Checks {
         return value;
     }
 
+    public static float asArgumentMinExclusive(final float value, final String field, final float min) {
+        if (value <= min) {
+            throw new IllegalArgumentException("argument " + field + " must be (" + min + ",+inf)");
+        }
+        return value;
+    }
+
     private Checks() {
     }
 }

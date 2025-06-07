@@ -20,6 +20,8 @@ public final class Types {
 
     public static final ClassNamed PAPER_REGISTRIES = ClassNamed.of("io.papermc.paper.registry", "PaperRegistries");
 
+    public static final ClassNamed REGISTRY_MODIFICATION_API_SUPPORT = ClassNamed.of("io.papermc.paper.registry.entry", "RegistryEntryMeta", "RegistryModificationApiSupport");
+
     public static final ClassNamed PAPER_FEATURE_FLAG_PROVIDER_IMPL = ClassNamed.of("io.papermc.paper.world.flag", "PaperFeatureFlagProviderImpl");
 
     public static final ClassNamed PAPER_SIMPLE_REGISTRY = ClassNamed.of("io.papermc.paper.registry", "PaperSimpleRegistry");

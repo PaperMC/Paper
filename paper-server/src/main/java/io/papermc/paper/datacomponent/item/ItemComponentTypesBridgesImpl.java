@@ -3,13 +3,13 @@ package io.papermc.paper.datacomponent.item;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.JukeboxSong;
@@ -203,7 +203,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public Repairable repairable(final RegistryKeySet<ItemType> types) {
         return new PaperRepairable(new net.minecraft.world.item.enchantment.Repairable(
-            PaperRegistrySets.convertToNms(Registries.ITEM, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), types)
+            PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), types)
         ));
     }
 
