@@ -7,10 +7,7 @@ dependencies {
 tasks.processResources {
     var apiVersion = rootProject.providers.gradleProperty("mcVersion").get()
     // Bukkit api versioning does not support suffixed versions
-    val possibleSuffix = apiVersion.indexOf('-')
-    if (possibleSuffix != -1) {
-        apiVersion = apiVersion.substring(0, possibleSuffix);
-    }
+    apiVersion = apiVersion.substringBefore('-')
 
     val props = mapOf(
         "version" to project.version,

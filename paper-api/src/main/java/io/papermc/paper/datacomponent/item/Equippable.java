@@ -107,7 +107,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     /**
      * Checks if the item can be sheared off an entity.
      *
-     * @return true if can be sheared of an entity, false otherwise
+     * @return true if can be sheared off an entity, false otherwise
      */
     @Contract(pure = true)
     boolean canBeSheared();
