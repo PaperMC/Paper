@@ -1056,7 +1056,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 this.getHandle().registryAccess()
             );
 
-            tagValueOutput.putString(Entity.TAG_ID, this.getHandle().getEncodeId()); // todo NPE?
+            tagValueOutput.putString(Entity.TAG_ID, this.getHandle().getEncodeId(true));
             this.getHandle().saveWithoutId(tagValueOutput);
 
             return tagValueOutput.buildResult();
