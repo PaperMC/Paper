@@ -122,7 +122,7 @@ public final class PaperRegistries {
             start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).build().delayed(),
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new, true).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).build().delayed(),
             start(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT).craft(Cat.Type.class, CraftCat.CraftType::new).writable(PaperCatTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT).craft(Frog.Variant.class, CraftFrog.CraftVariant::new).writable(PaperFrogVariantRegistryEntry.PaperBuilder::new).delayed(),

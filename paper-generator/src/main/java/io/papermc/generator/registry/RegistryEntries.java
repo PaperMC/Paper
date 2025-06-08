@@ -172,7 +172,7 @@ public final class RegistryEntries {
         entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).apiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),
         entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).delayed(),
         entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().apiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
-        entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).allowDirect().apiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
+        entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).apiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
         entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().delayed(),
         entry(Registries.CAT_VARIANT, CatVariants.class, Cat.Type.class).apiRegistryBuilder(CatTypeRegistryEntry.Builder.class, "PaperCatTypeRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.FROG_VARIANT, FrogVariants.class, Frog.Variant.class).apiRegistryBuilder(FrogVariantRegistryEntry.Builder.class, "PaperFrogVariantRegistryEntry.PaperBuilder").delayed(),
