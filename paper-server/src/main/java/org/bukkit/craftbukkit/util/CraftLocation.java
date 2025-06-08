@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
@@ -52,7 +54,8 @@ public final class CraftLocation {
     }
 
     public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
-        return CraftLocation.toBukkit(globalPos.pos(), net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()));
+        ServerLevel level = MinecraftServer.getServer().getLevel(globalPos.dimension());
+        return level != null ? CraftLocation.toBukkit(globalPos.pos(), level) : CraftLocation.toBukkit(globalPos.pos());
     }
 
     public static Vec3 toVec3(Location loc) {
