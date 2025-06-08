@@ -19,34 +19,30 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 
 public class BlockStateListPopulator extends DummyGeneratorAccess {
+
     private final LevelAccessor world;
-    private final Map<BlockPos, net.minecraft.world.level.block.state.BlockState> dataMap = new HashMap<>();
+    private final Map<BlockPos, CapturedBlock> dataMap = new LinkedHashMap<>();
     private final Map<BlockPos, BlockEntity> entityMap = new HashMap<>();
-    private final LinkedHashMap<BlockPos, CraftBlockState> blocks;
+
+    private List<CraftBlockState> blocks;
 
     public BlockStateListPopulator(LevelAccessor world) {
-        this(world, new LinkedHashMap<>());
-    }
-
-    private BlockStateListPopulator(LevelAccessor world, LinkedHashMap<BlockPos, CraftBlockState> blocks) {
         this.world = world;
-        this.blocks = blocks;
     }
 
     @Override
     public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) {
-        net.minecraft.world.level.block.state.BlockState state = this.dataMap.get(pos);
-        return (state != null) ? state : this.world.getBlockState(pos);
+        CapturedBlock block = this.dataMap.get(pos);
+        return (block != null) ? block.state() : this.world.getBlockState(pos);
     }
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
-        net.minecraft.world.level.block.state.BlockState state = this.dataMap.get(pos);
-        return (state != null) ? state.getFluidState() : this.world.getFluidState(pos);
+        CapturedBlock block = this.dataMap.get(pos);
+        return (block != null) ? block.state().getFluidState() : this.world.getFluidState(pos);
     }
 
     @Override
@@ -63,21 +59,23 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, int recursionLeft) {
         pos = pos.immutable();
         // remove first to keep insertion order
-        this.blocks.remove(pos);
+        this.dataMap.remove(pos);
 
-        this.dataMap.put(pos, state);
-        if (state.hasBlockEntity()) {
-            this.entityMap.put(pos, ((EntityBlock) state.getBlock()).newBlockEntity(pos, state));
+        this.dataMap.put(pos, new CapturedBlock(state, flags));
+        if (state.getBlock() instanceof EntityBlock entityBlock) {
+            // based on LevelChunk#setBlockState
+            BlockEntity currentBlockEntity = this.getBlockEntity(pos);
+            final BlockEntity newBlockEntity;
+            if (currentBlockEntity != null && currentBlockEntity.isValidBlockState(state)) {
+                newBlockEntity = currentBlockEntity; // previous block entity is still valid for this block state
+                currentBlockEntity.setBlockState(state);
+            } else {
+                newBlockEntity = entityBlock.newBlockEntity(pos, state); // create a new one when the block change
+            }
+            this.entityMap.put(pos, newBlockEntity);
         } else {
             this.entityMap.put(pos, null);
         }
-
-        // use 'this' to ensure that the block state is the correct TileState
-        CraftBlockState snapshot = (CraftBlockState) CraftBlock.at(this, pos).getState();
-        snapshot.setFlags(flags);
-        // set world handle to ensure that updated calls are done to the world and not to this populator
-        snapshot.setWorldHandle(this.world);
-        this.blocks.put(pos, snapshot);
         return true;
     }
 
@@ -86,11 +84,19 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         return this.world.getMinecraftWorld();
     }
 
-    public void refreshTiles() {
-        for (CraftBlockState snapshot : this.blocks.values()) {
-            if (snapshot instanceof CraftBlockEntityState) {
-                ((CraftBlockEntityState<?>) snapshot).refreshSnapshot();
-            }
+    @Override
+    public ServerLevel getLevel() {
+        return this.getMinecraftWorld();
+    }
+
+    private void iterateSnapshots(Consumer<CraftBlockState> callback) {
+        for (Map.Entry<BlockPos, CapturedBlock> entry : this.dataMap.entrySet()) {
+            // use 'this' to ensure that the block state is the correct TileState
+            CraftBlockState snapshot = (CraftBlockState) CraftBlock.at(this, entry.getKey()).getState();
+            snapshot.setFlags(entry.getValue().flags());
+            // set world handle to ensure that updated calls are done to the world and not to this populator
+            snapshot.setWorldHandle(this.world);
+            callback.accept(snapshot);
         }
     }
 
@@ -107,16 +113,21 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     public void placeSomeBlocks(Consumer<? super CraftBlockState> beforeRun, Predicate<? super BlockState> filter) {
-        for (CraftBlockState state : this.blocks.values()) {
-            if (filter.test(state)) {
-                beforeRun.accept(state);
-                state.place(state.getFlags());
+        for (CraftBlockState snapshot : this.getSnapshotBlocks()) {
+            if (filter.test(snapshot)) {
+                beforeRun.accept(snapshot);
+                snapshot.place(snapshot.getFlags());
             }
         }
     }
 
     public List<CraftBlockState> getSnapshotBlocks() {
-        return new ArrayList<>(this.blocks.values());
+        if (this.blocks == null) {
+            List<CraftBlockState> blocks = new ArrayList<>();
+            this.iterateSnapshots(blocks::add);
+            this.blocks = blocks;
+        }
+        return blocks;
     }
 
     // For tree generation

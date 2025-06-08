@@ -74,10 +74,6 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         this.loadData(state.getSnapshotNBT());
     }
 
-    public void refreshSnapshot() {
-        this.load(this.blockEntity);
-    }
-
     private RegistryAccess getRegistryAccess() {
         LevelAccessor worldHandle = this.getWorldHandle();
         return (worldHandle != null) ? worldHandle.registryAccess() : CraftRegistry.getMinecraftRegistry();
