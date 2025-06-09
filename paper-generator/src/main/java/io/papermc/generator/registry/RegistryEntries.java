@@ -155,7 +155,7 @@ public final class RegistryEntries {
         entry(Registries.VILLAGER_TYPE, VillagerType.class, Villager.Type.class),
         entry(Registries.MAP_DECORATION_TYPE, MapDecorationTypes.class, MapCursor.Type.class),
         entry(Registries.MENU, net.minecraft.world.inventory.MenuType.class, MenuType.class),
-        entry(Registries.ATTRIBUTE, Attributes.class, Attribute.class),
+        entry(Registries.ATTRIBUTE, Attributes.class, Attribute.class).serializationUpdater("ATTRIBUTE_RENAME"),
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS"),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of")
