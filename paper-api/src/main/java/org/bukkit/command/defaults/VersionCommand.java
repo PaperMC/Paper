@@ -32,6 +32,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
+@Deprecated(forRemoval = true)
 public class VersionCommand extends BukkitCommand {
     private VersionFetcher versionFetcher; // Paper - version command 2.0
     private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration

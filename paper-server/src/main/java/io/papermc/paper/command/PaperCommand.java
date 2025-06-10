@@ -1,7 +1,15 @@
 package io.papermc.paper.command;
 
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.command.subcommands.*;
+import io.papermc.paper.command.subcommands.DumpItemCommand;
+import io.papermc.paper.command.subcommands.DumpListenersCommand;
+import io.papermc.paper.command.subcommands.DumpPluginsCommand;
+import io.papermc.paper.command.subcommands.EntityCommand;
+import io.papermc.paper.command.subcommands.HeapDumpCommand;
+import io.papermc.paper.command.subcommands.MobcapsCommand;
+import io.papermc.paper.command.subcommands.ReloadCommand;
+import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
+import io.papermc.paper.command.subcommands.VersionCommand;
 import it.unimi.dsi.fastutil.Pair;
 import java.util.ArrayList;
 import java.util.Arrays;

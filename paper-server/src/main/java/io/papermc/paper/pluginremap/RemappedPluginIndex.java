@@ -8,6 +8,7 @@ import io.papermc.paper.util.MappingEnvironment;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,32 +53,35 @@ class RemappedPluginIndex {
             try {
                 Files.createDirectories(this.dir);
             } catch (final IOException ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedIOException(ex);
             }
         }
 
         this.indexFile = dir.resolve(INDEX_FILE_NAME);
         if (Files.isRegularFile(this.indexFile)) {
-            try {
-                this.state = this.readIndex();
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
+            this.state = this.readIndex();
         } else {
             this.state = new State();
         }
     }
 
-    private State readIndex() throws IOException {
+    private State readIndex() {
         final State state;
         try (final BufferedReader reader = Files.newBufferedReader(this.indexFile)) {
             state = GSON.fromJson(reader, State.class);
+        } catch (final Exception ex) {
+            throw new RuntimeException("Failed to read index file '" + this.indexFile + "'", ex);
         }
 
         // If mappings have changed, delete all cached files and create a new index
         if (!state.mappingsHash.equals(MappingEnvironment.mappingsHash())) {
             for (final String fileName : state.hashes.values()) {
-                Files.deleteIfExists(this.dir.resolve(fileName));
+                final Path path = this.dir.resolve(fileName);
+                try  {
+                    Files.deleteIfExists(path);
+                } catch (final IOException ex) {
+                    throw new UncheckedIOException("Failed to delete no longer needed file '" + path + "'", ex);
+                }
             }
             return new State();
         }
@@ -111,10 +115,11 @@ class RemappedPluginIndex {
             }
 
             iterator.remove();
+            final Path filePath = this.dir.resolve(fileName);
             try {
-                Files.deleteIfExists(this.dir.resolve(fileName));
+                Files.deleteIfExists(filePath);
             } catch (final IOException ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedIOException("Failed to delete no longer needed file '" + filePath + "'", ex);
             }
         }
 

@@ -2486,7 +2486,7 @@
              } else if (flag && flag2) {
                  if (this.dropSpamThrottler.isUnderThreshold()) {
                      this.dropSpamThrottler.increment();
-@@ -1895,11 +_,24 @@
+@@ -1895,15 +_,38 @@
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
@@ -2512,6 +2512,20 @@
          this.player.resetLastActionTime();
          ServerLevel serverLevel = this.player.serverLevel();
          BlockPos pos = packet.getPos();
+         if (serverLevel.hasChunkAt(pos)) {
++            // Paper start - Add API for client-side signs
++            if (!new io.papermc.paper.event.packet.UncheckedSignChangeEvent(
++                this.player.getBukkitEntity(),
++                io.papermc.paper.util.MCUtil.toPosition(pos),
++                packet.isFrontText() ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
++                filteredText.stream().<net.kyori.adventure.text.Component>map(line -> net.kyori.adventure.text.Component.text(line.raw())).toList())
++                .callEvent()) {
++                return;
++            }
++            // Paper end - Add API for client-side signs
+             if (!(serverLevel.getBlockEntity(pos) instanceof SignBlockEntity signBlockEntity)) {
+                 return;
+             }
 @@ -1915,14 +_,32 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {

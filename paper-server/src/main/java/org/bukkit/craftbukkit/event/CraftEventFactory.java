@@ -1961,6 +1961,9 @@ public class CraftEventFactory {
             return;
         }
 
+        // Do not call during generation.
+        if (entity.generation) return;
+
         Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
     }
 
