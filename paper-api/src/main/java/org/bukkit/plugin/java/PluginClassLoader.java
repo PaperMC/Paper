@@ -5,7 +5,9 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.SecurityException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -90,10 +92,17 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         Constructor<? extends JavaPlugin> pluginConstructor;
         try {
             pluginConstructor = pluginClass.getDeclaredConstructor();
-            // Support non-public constructors
-            pluginConstructor.setAccessible(true);
         } catch (NoSuchMethodException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must have a no-args constructor", ex);
+        }
+
+        try {
+            // Support non-public constructors
+            pluginConstructor.setAccessible(true);
+        } catch (InaccessibleObjectException ex) {
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
+        } catch (SecurityException ex) {
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
         }
 
         try {
