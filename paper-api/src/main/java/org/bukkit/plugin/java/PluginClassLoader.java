@@ -309,10 +309,10 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
     public String toString() {
         JavaPlugin currPlugin = plugin != null ? plugin : pluginInit;
         return "PluginClassLoader{" +
-            "plugin=" + currPlugin +
-            ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
-            ", url=" + file +
-            '}';
+                   "plugin=" + currPlugin +
+                   ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
+                   ", url=" + file +
+                   '}';
     }
 
     void setClass(@NotNull final String name, @NotNull final Class<?> clazz) {
