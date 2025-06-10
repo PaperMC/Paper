@@ -90,6 +90,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         Constructor<? extends JavaPlugin> pluginConstructor;
         try {
             pluginConstructor = pluginClass.getDeclaredConstructor();
+            pluginConstructor.setAccessible(true);
         } catch (NoSuchMethodException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must have a public no-args constructor", ex);
         }
@@ -97,7 +98,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         try {
             plugin = pluginConstructor.newInstance();
         } catch (IllegalAccessException ex) {
-            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor must be public", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
         } catch (InstantiationException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must not be abstract", ex);
         } catch (IllegalArgumentException ex) {
