@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6-pre3")
+@GeneratedFrom("1.21.6-pre4")
 public final class CatVariantKeys {
     /**
      * {@code minecraft:all_black}
