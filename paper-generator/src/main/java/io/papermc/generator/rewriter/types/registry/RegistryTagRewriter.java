@@ -57,7 +57,7 @@ public class RegistryTagRewriter<T> extends SearchReplaceRewriter {
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
         Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
-        Iterator<? extends TagKey<T>> keyIterator = registry.listTagIds().sorted(Formatting.alphabeticKeyOrder(reference -> reference.location().getPath())).iterator();
+        Iterator<? extends TagKey<T>> keyIterator = registry.listTagIds().sorted(Formatting.TAG_ORDER).iterator();
 
         while (keyIterator.hasNext()) {
             TagKey<T> tagKey = keyIterator.next();

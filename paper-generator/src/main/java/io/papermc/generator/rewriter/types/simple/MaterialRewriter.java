@@ -30,7 +30,7 @@ public class MaterialRewriter {
         @Override
         protected Iterable<Holder.Reference<Block>> getValues() {
             return BuiltInRegistries.BLOCK.listElements().filter(reference -> !reference.value().equals(net.minecraft.world.level.block.Blocks.AIR))
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override
@@ -86,7 +86,7 @@ public class MaterialRewriter {
         @Override
         protected Iterable<Holder.Reference<Item>> getValues() {
             return BuiltInRegistries.ITEM.listElements().filter(reference -> BuiltInRegistries.BLOCK.getOptional(reference.key().location()).isEmpty() || reference.value().equals(net.minecraft.world.item.Items.AIR))
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override

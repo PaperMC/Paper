@@ -131,7 +131,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     MANGROVE_BOAT("mangrove_boat", MangroveBoat.class, -1),
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
     MARKER("marker", Marker.class, -1),
-    MINECART("minecart", Minecart.class, 42),
+    MINECART("minecart", RideableMinecart.class, 42),
     MOOSHROOM("mooshroom", MushroomCow.class, 96),
     MULE("mule", Mule.class, 32),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
