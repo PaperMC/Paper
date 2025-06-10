@@ -5,7 +5,6 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.SecurityException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
@@ -99,11 +98,9 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         try {
             // Support non-public constructors
             pluginConstructor.setAccessible(true);
-        } catch (InaccessibleObjectException ex) {
+        } catch (InaccessibleObjectException | SecurityException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
-        } catch (SecurityException ex) {
-            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
-        }
+        } 
 
         try {
             plugin = pluginConstructor.newInstance();
@@ -312,10 +309,10 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
     public String toString() {
         JavaPlugin currPlugin = plugin != null ? plugin : pluginInit;
         return "PluginClassLoader{" +
-                   "plugin=" + currPlugin +
-                   ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
-                   ", url=" + file +
-                   '}';
+            "plugin=" + currPlugin +
+            ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
+            ", url=" + file +
+            '}';
     }
 
     void setClass(@NotNull final String name, @NotNull final Class<?> clazz) {
@@ -339,3 +336,4 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
 
     // Paper end
 }
+
