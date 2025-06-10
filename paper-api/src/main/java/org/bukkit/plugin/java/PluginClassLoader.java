@@ -90,7 +90,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         Constructor<? extends JavaPlugin> pluginConstructor;
         try {
             pluginConstructor = pluginClass.getDeclaredConstructor();
-            pluginConstructor.setAccessible(true);
         } catch (NoSuchMethodException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must have a public no-args constructor", ex);
         }
@@ -98,7 +97,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         try {
             plugin = pluginConstructor.newInstance();
         } catch (IllegalAccessException ex) {
-            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor must be public", ex);
         } catch (InstantiationException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must not be abstract", ex);
         } catch (IllegalArgumentException ex) {
@@ -302,10 +301,10 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
     public String toString() {
         JavaPlugin currPlugin = plugin != null ? plugin : pluginInit;
         return "PluginClassLoader{" +
-                   "plugin=" + currPlugin +
-                   ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
-                   ", url=" + file +
-                   '}';
+            "plugin=" + currPlugin +
+            ", pluginEnabled=" + (currPlugin == null ? "uninitialized" : currPlugin.isEnabled()) +
+            ", url=" + file +
+            '}';
     }
 
     void setClass(@NotNull final String name, @NotNull final Class<?> clazz) {

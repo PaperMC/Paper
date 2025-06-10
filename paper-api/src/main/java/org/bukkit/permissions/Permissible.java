@@ -50,54 +50,6 @@ public interface Permissible extends ServerOperator {
      */
     public boolean hasPermission(@NotNull Permission perm);
 
-    // Paper start
-    /**
-     * Checks if this Permissible has any of the specified permissions.
-     * <p>
-     * If a permission override is not set on any of these objects, the default value
-     * of the permission will be returned
-     *
-     * @param names Permissions to get
-     * @throws IllegalArgumentException If a null array is passed in.
-     * @return Value of the permission
-     */
-    public default boolean hasAnyPermission(@NotNull String... names) {
-        if (names == null) {
-            throw new IllegalArgumentException("Permissions cannot be null");
-        }
-
-        for (String name : names) {
-            if (this.hasPermission(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if this Permissible has any of the specified permissions.
-     * <p>
-     * If a permission override is not set on any of these objects, the default value
-     * of the permission will be returned
-     *
-     * @param perms Permissions to get
-     * @throws IllegalArgumentException If a null array is passed in.
-     * @return Value of the permission
-     */
-    public default boolean hasAnyPermission(@NotNull Permission... perms) {
-        if (perms == null) {
-            throw new IllegalArgumentException("Permissions cannot be null");
-        }
-
-        for (Permission perm : perms) {
-            if (this.hasPermission(perm)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    // Paper end
-
     /**
      * Adds a new {@link PermissionAttachment} with a single permission by
      * name and value
