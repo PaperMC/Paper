@@ -13,8 +13,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.util.StringUtil;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.intellij.lang.annotations.Pattern;
+import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperResolvableProfile(
     net.minecraft.world.item.component.ResolvableProfile impl

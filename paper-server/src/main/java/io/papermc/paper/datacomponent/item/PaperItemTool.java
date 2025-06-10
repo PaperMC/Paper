@@ -14,8 +14,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperItemTool(
     net.minecraft.world.item.component.Tool impl

@@ -20,7 +20,7 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperEquippable(
     net.minecraft.world.item.equipment.Equippable impl

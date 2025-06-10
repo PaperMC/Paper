@@ -8,7 +8,6 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
-import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;

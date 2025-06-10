@@ -13,10 +13,8 @@ import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-@ApiStatus.Internal
 @NullMarked
 public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 

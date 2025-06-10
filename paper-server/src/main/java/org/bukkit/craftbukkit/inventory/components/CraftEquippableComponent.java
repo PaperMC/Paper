@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -75,7 +76,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
                 (swappable != null) ? swappable : true,
                 (damageOnHurt != null) ? damageOnHurt : true,
                 (equipOnInteract != null) ? equipOnInteract : false,
-                false, null // TODO - 1.21.5
+                false, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEARS_SNIP) // TODO - 1.21.6
         );
     }
 

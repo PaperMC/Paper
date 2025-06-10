@@ -10,7 +10,7 @@ import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.Positive;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 
 public record PaperDamageReduction(

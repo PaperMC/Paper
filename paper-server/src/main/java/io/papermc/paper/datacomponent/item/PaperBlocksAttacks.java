@@ -14,7 +14,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl

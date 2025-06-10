@@ -25,6 +25,7 @@ public record PaperItemAdventurePredicate(
     public net.minecraft.world.item.AdventureModePredicate getHandle() {
         return this.impl;
     }
+
     @Override
     public List<BlockPredicate> predicates() {
         return convert(this.impl);

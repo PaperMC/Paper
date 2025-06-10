@@ -274,7 +274,6 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         return page > 0 && page <= this.getPageCount();
     }
 
-    // TODO Expose this attribute in Bukkit?
     public boolean isResolved() {
         return this.resolved;
     }

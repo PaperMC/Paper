@@ -171,11 +171,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public UseRemainder useRemainder(final ItemStack itemStack) {
-        Preconditions.checkArgument(itemStack != null, "Item cannot be null");
-        Preconditions.checkArgument(!itemStack.isEmpty(), "Remaining item cannot be empty!");
+    public UseRemainder useRemainder(final ItemStack stack) {
+        Preconditions.checkArgument(stack != null, "Item cannot be null");
+        Preconditions.checkArgument(!stack.isEmpty(), "Remaining item cannot be empty!");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(itemStack))
+            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(stack))
         );
     }
 
