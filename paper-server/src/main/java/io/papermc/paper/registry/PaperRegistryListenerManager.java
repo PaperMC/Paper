@@ -61,7 +61,7 @@ public class PaperRegistryListenerManager {
      * For {@link Registry#register(Registry, ResourceKey, Object)}
      */
     public <M> M registerWithListeners(final Registry<M> registry, final ResourceKey<M> key, final M nms) {
-        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, PaperRegistryListenerManager::registerWithInstance, BuiltInRegistries.BUILT_IN_CONVERSIONS);
+        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, PaperRegistryListenerManager::registerWithInstance, BuiltInRegistries.STATIC_ACCESS_CONVERSIONS);
     }
 
     /**
@@ -75,7 +75,7 @@ public class PaperRegistryListenerManager {
      * For {@link Registry#registerForHolder(Registry, ResourceKey, Object)}
      */
     public <M> Holder.Reference<M> registerForHolderWithListeners(final Registry<M> registry, final ResourceKey<M> key, final M nms) {
-        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, WritableRegistry::register, BuiltInRegistries.BUILT_IN_CONVERSIONS);
+        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, WritableRegistry::register, BuiltInRegistries.STATIC_ACCESS_CONVERSIONS);
     }
 
     public <M> void registerWithListeners(
