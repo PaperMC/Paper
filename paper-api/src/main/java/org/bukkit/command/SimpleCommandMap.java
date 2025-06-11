@@ -12,7 +12,6 @@ import java.util.Map;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.defaults.BukkitCommand;
-import org.bukkit.command.defaults.HelpCommand;
 import org.bukkit.command.defaults.ReloadCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
@@ -34,9 +33,10 @@ public class SimpleCommandMap implements CommandMap {
         register("bukkit", new ReloadCommand("reload"));
         register("bukkit", new co.aikar.timings.TimingsCommand("timings"));
     }
-
+    
+    // Should we keep this method? There are probably plugins out there that call this method
+    @Deprecated(forRemoval = true)
     public void setFallbackCommands() {
-        register("bukkit", new HelpCommand());
     }
 
     /**
