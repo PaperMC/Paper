@@ -1,8 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
-import java.util.List;
 import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
+import java.util.List;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.EquipmentSlotGroup;

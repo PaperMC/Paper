@@ -8,7 +8,7 @@ import java.util.ServiceLoader;
 
 @NullMarked
 @ApiStatus.Internal
-public interface AttributeModifierDisplayBridge {
+interface AttributeModifierDisplayBridge {
 
     Optional<AttributeModifierDisplayBridge> BRIDGE = ServiceLoader.load(AttributeModifierDisplayBridge.class).findFirst();
 
