@@ -89,7 +89,7 @@ public record PaperEquippable(
 
     @Override
     public Key shearSound() {
-        return PaperAdventure.asAdventure(this.impl.equipSound().value().location());
+        return PaperAdventure.asAdventure(this.impl.shearingSound().value().location());
     }
 
     @Override

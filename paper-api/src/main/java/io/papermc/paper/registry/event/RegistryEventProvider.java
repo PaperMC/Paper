@@ -48,7 +48,7 @@ public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
      * @deprecated use {@link #compose()} instead.
      */
     @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.21.6", forRemoval = true)
     default LifecycleEventType.Prioritizable<BootstrapContext, ? super RegistryFreezeEvent<T, B>> freeze() {
         return this.compose();
     }

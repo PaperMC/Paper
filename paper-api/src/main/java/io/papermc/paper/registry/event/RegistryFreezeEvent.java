@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
  * @deprecated renamed to {@link RegistryComposeEvent}
  */
 @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
-@Deprecated(forRemoval = true)
+@Deprecated(since = "1.21.6", forRemoval = true)
 @NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryComposeEvent<T, B> {

@@ -110,10 +110,10 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
 
     @Override
     public void setItem(final int index, final ItemStack item) {
-        if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
-            this.getArmorInventory().setItem(0, CraftItemStack.asNMSCopy(item));
-        } else if (index == HorseInventoryMenu.SLOT_SADDLE) {
+        if (index == HorseInventoryMenu.SLOT_SADDLE) {
             this.getSaddleInventory().setItem(0, CraftItemStack.asNMSCopy(item));
+        } else if (index == HorseInventoryMenu.SLOT_BODY_ARMOR) {
+            this.getArmorInventory().setItem(0, CraftItemStack.asNMSCopy(item));
         } else {
             int shiftedIndex = index;
             if (index > HorseInventoryMenu.SLOT_SADDLE) {
