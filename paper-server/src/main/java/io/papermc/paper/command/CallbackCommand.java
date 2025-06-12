@@ -14,6 +14,7 @@ public class CallbackCommand extends Command {
         super(name);
         this.description = "ClickEvent callback";
         this.usageMessage = "/callback <uuid>";
+        this.setPermission("bukkit.command.callback");
     }
 
     @Override
