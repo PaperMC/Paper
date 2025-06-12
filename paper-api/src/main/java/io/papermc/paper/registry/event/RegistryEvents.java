@@ -29,7 +29,7 @@ import org.jspecify.annotations.NullMarked;
 import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 
 /**
- * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryFreezeEvent}
+ * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryComposeEvent}
  * handlers for each applicable registry.
  */
 @ApiStatus.Experimental

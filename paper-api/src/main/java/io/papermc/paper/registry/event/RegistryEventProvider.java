@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
  * Supported events are:
  * <ul>
  *     <li>{@link RegistryEntryAddEvent} (via {@link #entryAdd()})</li>
- *     <li>{@link RegistryFreezeEvent} (via {@link #freeze()})</li>
+ *     <li>{@link RegistryComposeEvent} (via {@link #compose()})</li>
  * </ul>
  *
  * @param <T> registry entry type
@@ -45,8 +45,24 @@ public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
      * to register a handler for {@link RegistryFreezeEvent}.
      *
      * @return the registry freeze event type
+     * @deprecated use {@link #compose()} instead.
      */
-    LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
+    @Deprecated(forRemoval = true)
+    default LifecycleEventType.Prioritizable<BootstrapContext, ? super RegistryFreezeEvent<T, B>> freeze() {
+        return this.compose();
+    }
+
+    /**
+     * Gets the event type for {@link RegistryComposeEvent} which is fired after
+     * a registry is loaded of expected elements. It allows for the registration of new objects.
+     * <p>
+     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
+     * to register a handler for {@link RegistryComposeEvent}.
+     *
+     * @return the registry freeze event type
+     */
+    LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> compose();
 
     /**
      * Gets the registry key associated with this event type provider.
