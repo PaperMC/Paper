@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-pre4")
+@GeneratedFrom("1.21.6-rc1")
 public class CraftPressurePlate extends CraftBlockData implements Powerable {
     private static final BooleanProperty POWERED = PressurePlateBlock.POWERED;
 
