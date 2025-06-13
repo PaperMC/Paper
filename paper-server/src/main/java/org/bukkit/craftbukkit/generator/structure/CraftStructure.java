@@ -1,15 +1,14 @@
 package org.bukkit.craftbukkit.generator.structure;
 
-import com.google.common.base.Suppliers;
-import java.util.function.Supplier;
+import io.papermc.paper.util.Holderable;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 
-public class CraftStructure extends Structure implements Handleable<net.minecraft.world.level.levelgen.structure.Structure> {
+public class CraftStructure extends Structure implements Holderable<net.minecraft.world.level.levelgen.structure.Structure> {
 
     public static Structure minecraftToBukkit(net.minecraft.world.level.levelgen.structure.Structure minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.STRUCTURE);
@@ -19,28 +18,39 @@ public class CraftStructure extends Structure implements Handleable<net.minecraf
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    private final NamespacedKey key;
-    private final net.minecraft.world.level.levelgen.structure.Structure structure;
-    private final Supplier<StructureType> structureType;
+    private final Holder<net.minecraft.world.level.levelgen.structure.Structure> holder;
 
-    public CraftStructure(NamespacedKey key, net.minecraft.world.level.levelgen.structure.Structure structure) {
-        this.key = key;
-        this.structure = structure;
-        this.structureType = Suppliers.memoize(() -> CraftStructureType.minecraftToBukkit(structure.type()));
+    public CraftStructure(Holder<net.minecraft.world.level.levelgen.structure.Structure> holder) {
+        this.holder = holder;
     }
 
     @Override
-    public net.minecraft.world.level.levelgen.structure.Structure getHandle() {
-        return this.structure;
+    public Holder<net.minecraft.world.level.levelgen.structure.Structure> getHolder() {
+        return this.holder;
     }
 
     @Override
     public StructureType getStructureType() {
-        return this.structureType.get();
+        return CraftStructureType.minecraftToBukkit(this.getHandle().type());
     }
 
     @Override
     public NamespacedKey getKey() {
-        return this.key;
+        return Holderable.super.getKey();
+    }
+
+    @Override
+    public int hashCode() {
+        return Holderable.super.implHashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return Holderable.super.implEquals(obj);
+    }
+
+    @Override
+    public String toString() {
+        return Holderable.super.implToString();
     }
 }
