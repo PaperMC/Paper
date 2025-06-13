@@ -1,6 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -66,6 +67,8 @@ interface VanillaArgumentProvider {
     ArgumentType<EnumSet<Axis>> swizzle();
 
     ArgumentType<BlockState> blockState();
+
+    ArgumentType<BlockPredicate> blockPredicate();
 
     ArgumentType<ItemStack> itemStack();
 
