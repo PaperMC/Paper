@@ -4,6 +4,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.ScoreHolder;
 import net.minecraft.world.scores.Scoreboard;
@@ -17,9 +19,6 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     private final Scoreboard board;
@@ -114,7 +113,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     
     @Override
     public @NotNull ImmutableSet<Score> getScores(final org.bukkit.scoreboard.@NotNull ScoreHolder holder) {
-        return this.getScores(((CraftScoreHolder) holder).getHandle());
+        return this.getScores(((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     private ImmutableSet<Score> getScores(ScoreHolder entry) {
@@ -129,7 +128,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
 
     @Override
     public void resetScores(final org.bukkit.scoreboard.@NotNull ScoreHolder scoreHolder) {
-        this.resetScores(((CraftScoreHolder) scoreHolder).getHandle());
+        this.resetScores(((CraftScoreHolder) scoreHolder).asNmsScoreHolder());
     }
 
     private void resetScores(ScoreHolder entry) {
@@ -199,7 +198,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     @Override
     @NotNull
     public Set<org.bukkit.scoreboard.ScoreHolder> getHolders() {
-        return this.getHandle().getTrackedPlayers().stream().map(CraftScoreHolder::new).collect(Collectors.toUnmodifiableSet());
+        return this.getHandle().getTrackedPlayers().stream().map(CraftScoreHolder::fromNms).collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -229,13 +228,13 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     @Override
     public @NotNull Set<Score> getScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
         Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
-        return this.getScores(((CraftScoreHolder) holder).getHandle());
+        return this.getScores(((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     @Override
     public void resetScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
         Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
-        this.resetScores(((CraftScoreHolder) holder).getHandle());
+        this.resetScores(((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     public Scoreboard getHandle() {

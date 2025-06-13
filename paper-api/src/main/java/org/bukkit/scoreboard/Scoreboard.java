@@ -224,19 +224,6 @@ public interface Scoreboard {
     Objective getObjective(@NotNull DisplaySlot slot);
 
     /**
-     * Gets all scores for a player on this Scoreboard
-     *
-     * @param player the player whose scores are being retrieved
-     * @return immutable set of all scores tracked for the player
-     * @see #getScores(String)
-     */
-    // @Deprecated(since = "1.7.8") // Paper
-    @NotNull
-    default Set<Score> getScores(@NotNull OfflinePlayer player) {
-        return getScores(ScoreHolder.of(player));
-    }
-
-    /**
      * Gets all scores for an entry on this Scoreboard
      *
      * @param entry the entry whose scores are being retrieved
@@ -248,24 +235,13 @@ public interface Scoreboard {
     }
 
     /**
-     * Gets all scores for a ScoreHolder on this Scoreboard
+     * Gets all scores for a {@link ScoreHolder} on this Scoreboard
      *
      * @param holder the ScoreHolder whose scores are being retrieved
      * @return immutable set of all scores tracked for the entry
      */
     @NotNull
     ImmutableSet<Score> getScores(@NotNull ScoreHolder holder);
-
-    /**
-     * Removes all scores for a player on this Scoreboard
-     *
-     * @param player the player to drop all current scores for
-     * @see #resetScores(String)
-     */
-    // @Deprecated(since = "1.7.8") // Paper
-    default void resetScores(@NotNull OfflinePlayer player) {
-        resetScores(ScoreHolder.of(player));
-    }
 
     /**
      * Removes all scores for an entry on this Scoreboard
@@ -275,7 +251,13 @@ public interface Scoreboard {
     default void resetScores(@NotNull String entry) {
         resetScores(ScoreHolder.of(entry));
     }
-    
+
+    /**
+     * Removes all scores for a {@link ScoreHolder} on this Scoreboard
+     *
+     * @param holder the holder to drop all current scores for
+     * @see #resetScores(String)
+     */
     void resetScores(@NotNull ScoreHolder holder);
 
     /**

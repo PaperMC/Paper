@@ -39,7 +39,7 @@ public class OperationImpl implements Operation {
 
     @Override
     public void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, org.bukkit.scoreboard.ScoreHolder targetHolder, org.bukkit.scoreboard.ScoreHolder sourceHolder) throws CommandSyntaxException {
-        apply(scoreboard, targetObjective, sourceObjective, ((CraftScoreHolder) targetHolder).getHandle(), ((CraftScoreHolder) sourceHolder).getHandle());
+        apply(scoreboard, targetObjective, sourceObjective, ((CraftScoreHolder) targetHolder).asNmsScoreHolder(), ((CraftScoreHolder) sourceHolder).asNmsScoreHolder());
     }
 
     private void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, ScoreHolder targetScoreHolder, ScoreHolder sourceScoreHolder) throws CommandSyntaxException {

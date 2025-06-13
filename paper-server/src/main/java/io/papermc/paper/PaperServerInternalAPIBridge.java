@@ -6,14 +6,12 @@ import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import net.minecraft.Optionull;
 import net.minecraft.world.damagesource.FallLocation;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
-import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
@@ -78,11 +76,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public ScoreHolder scoreHolderOf(final String entry) {
-        return new CraftScoreHolder(CraftScoreboard.getScoreHolder(entry));
-    }
-
-    @Override
-    public ScoreHolder scoreHolderOf(final OfflinePlayer player) {
-        return new CraftScoreHolder(CraftScoreboard.getScoreHolder(player));
+        return new CraftScoreHolder.CraftStringScoreHolder(entry);
     }
 }

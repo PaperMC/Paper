@@ -2,29 +2,42 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
+import net.minecraft.world.entity.Entity;
 import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftScoreHolder implements ScoreHolder {
+public interface CraftScoreHolder extends ScoreHolder {
 
-    private final net.minecraft.world.scores.ScoreHolder handle;
-
-    public CraftScoreHolder(net.minecraft.world.scores.ScoreHolder nmsScoreHolder) {
-        this.handle = nmsScoreHolder;
+    @Override
+    default String getScoreboardName() {
+        return asNmsScoreHolder().getScoreboardName();
     }
 
     @Override
-    public String getScoreboardName() {
-        return handle.getScoreboardName();
+    default Component getScoreDisplayName() {
+        return PaperAdventure.asAdventure(asNmsScoreHolder().getDisplayName());
     }
 
-    @Override
-    public Component getDisplayName() {
-        return PaperAdventure.asAdventure(handle.getDisplayName());
+    net.minecraft.world.scores.ScoreHolder asNmsScoreHolder();
+
+    static CraftScoreHolder fromNms(net.minecraft.world.scores.ScoreHolder nmsHolder) {
+        return switch (nmsHolder) {
+            case Entity nmsEntity -> nmsEntity.getBukkitEntity();
+            default -> new CraftStringScoreHolder(nmsHolder.getScoreboardName());
+        };
     }
 
-    public net.minecraft.world.scores.ScoreHolder getHandle() {
-        return handle;
+    class CraftStringScoreHolder implements StringScoreHolder, CraftScoreHolder {
+        private final String name;
+
+        public CraftStringScoreHolder(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public net.minecraft.world.scores.ScoreHolder asNmsScoreHolder() {
+            return () -> this.name;
+        }
     }
 }

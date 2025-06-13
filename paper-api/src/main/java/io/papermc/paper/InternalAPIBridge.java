@@ -83,13 +83,5 @@ public interface InternalAPIBridge {
      * @return a wrapping ScoreHolder
      */
     ScoreHolder scoreHolderOf(String entry);
-
-    /**
-     * Creates a wrapping score holder
-     * 
-     * @param player The player to wrap
-     * @return a wrapping ScoreHolder
-     */
-    ScoreHolder scoreHolderOf(OfflinePlayer player);
 }
 

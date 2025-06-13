@@ -120,6 +120,7 @@ import net.minecraft.world.level.border.BorderChangeListener;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -238,6 +239,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public ServerPlayer getHandle() {
         return (ServerPlayer) this.entity;
+    }
+
+    @Override
+    public ScoreHolder asNmsScoreHolder() {
+        return this.entity;
     }
 
     @Override

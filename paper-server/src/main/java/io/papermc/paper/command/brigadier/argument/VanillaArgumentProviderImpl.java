@@ -441,7 +441,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         private ScoreHolderWrapperArgumentType(final ArgumentType<ScoreHolderArgument.Result> nmsBase) {
             super(nmsBase, result -> sourceStack -> result.getNames((CommandSourceStack) sourceStack, Collections::emptyList)
                 .stream()
-                .map(CraftScoreHolder::new)
+                .map(CraftScoreHolder::fromNms)
                 .map(craft -> (org.bukkit.scoreboard.ScoreHolder) craft)
                 .toList());
         }
