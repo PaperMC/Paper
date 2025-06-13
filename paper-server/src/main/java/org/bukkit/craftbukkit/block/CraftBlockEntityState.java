@@ -202,15 +202,14 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     @Override
     public boolean place(int flags) {
-        if (super.place(flags)) {
-            this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
-                this.applyTo((T) blockEntity);
-                blockEntity.setChanged();
-            });
-            return true;
-        }
+        boolean result = super.place(flags);
 
-        return false;
+        this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
+            this.applyTo((T) blockEntity);
+            blockEntity.setChanged();
+        });
+
+        return result;
     }
 
     @Override
