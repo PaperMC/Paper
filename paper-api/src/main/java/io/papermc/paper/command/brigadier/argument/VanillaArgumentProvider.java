@@ -14,6 +14,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSele
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -22,6 +23,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -60,6 +62,8 @@ interface VanillaArgumentProvider {
     ArgumentType<RotationResolver> rotation();
     
     ArgumentType<AngleResolver> angle();
+
+    ArgumentType<EnumSet<Axis>> swizzle();
 
     ArgumentType<BlockState> blockState();
 
