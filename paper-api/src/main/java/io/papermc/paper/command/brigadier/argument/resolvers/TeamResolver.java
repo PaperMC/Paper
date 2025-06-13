@@ -4,11 +4,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import org.bukkit.Bukkit;
-import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A resolver that's capable of resolving
@@ -18,6 +18,7 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
+@NullMarked
 public interface TeamResolver {
 
     /**

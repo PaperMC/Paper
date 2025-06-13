@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A resolver that's capable of resolving
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
+@NullMarked
 public interface ObjectiveResolver {
 
     /**
