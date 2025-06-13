@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
@@ -128,6 +129,15 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<RotationResolver> rotation() {
         return provider().rotation();
+    }
+
+    /**
+     * An angle argument.
+     * 
+     * @return angle argument
+     */
+    public static ArgumentType<AngleResolver> angle() {
+        return provider().angle();
     }
 
     /**
