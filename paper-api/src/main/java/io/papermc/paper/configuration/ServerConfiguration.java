@@ -21,4 +21,13 @@ public interface ServerConfiguration {
      * @return whether the server is in online mode or behind a proxy configured for online mode
      */
     boolean isProxyOnlineMode();
+
+    /**
+     * Gets whether the server is configured to work behind a proxy.
+     * <p>
+     * This returns true if either Velocity or BungeeCord is enabled.
+     *
+     * @return whether the server is configured to work behind a proxy
+     */
+    boolean isProxyEnabled();
 }
