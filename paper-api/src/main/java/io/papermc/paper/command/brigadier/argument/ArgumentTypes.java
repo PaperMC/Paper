@@ -14,12 +14,14 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSele
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import java.util.EnumSet;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -133,11 +135,21 @@ public final class ArgumentTypes {
 
     /**
      * An angle argument.
-     * 
+     *
      * @return angle argument
      */
     public static ArgumentType<AngleResolver> angle() {
         return provider().angle();
+    }
+
+    /**
+     * A swizzle argument.
+     *
+     * @return swizzle argument
+     * @see org.bukkit.Axis
+     */
+    public static ArgumentType<EnumSet<Axis>> swizzle() {
+        return provider().swizzle();
     }
 
     /**

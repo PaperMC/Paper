@@ -32,6 +32,7 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -68,10 +69,12 @@ import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
+import net.minecraft.commands.arguments.coordinates.SwizzleArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -80,6 +83,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Keyed;
@@ -177,6 +181,21 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<AngleResolver> angle() {
         return this.wrap(AngleArgument.angle(), (result) -> sourceStack -> result.getAngle((CommandSourceStack) sourceStack));
+    }
+
+    @Override
+    public ArgumentType<EnumSet<Axis>> swizzle() {
+        return this.wrap(SwizzleArgument.swizzle(), result -> {
+            EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
+            for (final Direction.Axis nmsAxis : result) {
+                bukkitAxes.add(switch (nmsAxis) {
+                    case X -> Axis.X;
+                    case Y -> Axis.Y;
+                    case Z -> Axis.Z;
+                });
+            }
+            return bukkitAxes;
+        });
     }
 
     @Override
