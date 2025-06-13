@@ -1,9 +1,7 @@
 package io.papermc.paper.command.brigadier.argument.operation;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.ScoreHolder;
-import org.bukkit.scoreboard.Scoreboard;
+import it.unimi.dsi.fastutil.ints.IntIntPair;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -34,24 +32,26 @@ public interface Operation {
      *
      * @param left left side of the expression
      * @param right right side of the expression
-     * @return result of the operation
+     * @return result of this operation
      */
-    int apply(int left, int right) throws CommandSyntaxException;
+    IntIntPair apply(int left, int right) throws CommandSyntaxException;
 
     /**
-     * Applies this operation to a pair of {@link ScoreHolder}s, retrieving their
-     * values from a {@link Scoreboard} and their respective {@link Objective}s.
+     * Applies this operation to a pair of integers.
      * <p>
      * Arithmetic between two integers always follows this pattern: 
-     * <pre>return left &lt;operator&gt; right;</pre>
+     * <pre>
+     * return left &lt;operator&gt; right
+     * </pre>
      * On certain operators, such as division, the order matters.
      * {@code 20 %= 10} yields a different result than{@code 10 %= 20}.
      *
-     * @param scoreboard      scoreboard to edit the score of
-     * @param sourceObjective objective to retrieve the score from
-     * @param targetObjective objective to edit the score of
-     * @param targetHolder    target of the operation
-     * @param sourceHolder    source of the operation
+     * @param left left side of the expression
+     * @param right right side of the expression
+     * @return the left side of the result of this operation
+     * @see #apply(int, int) 
      */
-    void apply(Scoreboard scoreboard, Objective targetObjective, Objective sourceObjective, ScoreHolder targetHolder, ScoreHolder sourceHolder) throws CommandSyntaxException;
+    default int applyLeftSide(int left, int right) throws CommandSyntaxException {
+        return apply(left, right).leftInt();
+    }
 }

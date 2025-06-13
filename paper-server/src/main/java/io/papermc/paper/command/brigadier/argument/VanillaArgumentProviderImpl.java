@@ -246,7 +246,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<Operation> operation() {
-        return this.wrap(OperationArgument.operation(), OperationImpl::fromVanilla);
+        return this.wrap(OperationArgument.operation(), OperationImpl::new);
     }
 
     @Override
