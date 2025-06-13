@@ -27,6 +27,7 @@ import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
@@ -67,6 +68,8 @@ interface VanillaArgumentProvider {
     ArgumentType<AngleResolver> angle();
     
     ArgumentType<EnumSet<Axis>> swizzle();
+    
+    ArgumentType<Particle> particle();
 
     ArgumentType<BlockState> blockState();
 

@@ -25,6 +25,7 @@ import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
@@ -165,6 +166,15 @@ public final class ArgumentTypes {
         return provider().swizzle();
     }
 
+    /**
+     * A particle argument.
+     * 
+     * @return particle argument
+     */
+    public static ArgumentType<Particle> particle() {
+        return provider().particle();
+    }
+    
     /**
      * A blockstate argument which will provide rich parsing for specifying
      * the specific block variant and then the block entity NBT if applicable.

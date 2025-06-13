@@ -55,6 +55,7 @@ import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
+import net.minecraft.commands.arguments.ParticleArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
@@ -89,11 +90,13 @@ import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftHeightMap;
+import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
@@ -206,6 +209,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             }
             return bukkitAxes;
         });
+    }
+
+    @Override
+    public ArgumentType<Particle> particle() {
+        return this.wrap(ParticleArgument.particle(PaperCommands.INSTANCE.getBuildContext()), result -> CraftParticle.minecraftToBukkit(result, null));
     }
 
     @Override
