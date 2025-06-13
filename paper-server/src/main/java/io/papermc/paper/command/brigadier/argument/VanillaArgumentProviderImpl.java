@@ -22,10 +22,12 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.Vec2FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.math.Rotation;
+import io.papermc.paper.math.Vec2FinePositionImpl;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -72,6 +74,7 @@ import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
 import net.minecraft.commands.arguments.coordinates.SwizzleArgument;
+import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
@@ -178,6 +181,15 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
 
             return MCUtil.toPosition(vec3);
+        });
+    }
+
+    @Override
+    public ArgumentType<Vec2FinePositionResolver> vec2FinePosition(final boolean centerIntegers) {
+        return this.wrap(Vec2Argument.vec2(centerIntegers), result -> source -> {
+            final Vec3 vec3 = result.getPosition((CommandSourceStack) source);
+            
+            return new Vec2FinePositionImpl(vec3.x, vec3.z);
         });
     }
 

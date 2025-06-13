@@ -10,6 +10,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.Vec2FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -132,6 +133,26 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
         return provider().finePosition(centerIntegers);
+    }
+
+    /**
+     * A fine position argument.
+     *
+     * @return fine position argument
+     * @see #vec2FinePosition(boolean) to center whole numbers
+     */
+    public static ArgumentType<Vec2FinePositionResolver> vec2FinePosition() {
+        return vec2FinePosition(false);
+    }
+
+    /**
+     * A fine position argument.
+     *
+     * @param centerIntegers if whole numbers should be centered (+0.5)
+     * @return fine position argument
+     */
+    public static ArgumentType<Vec2FinePositionResolver> vec2FinePosition(final boolean centerIntegers) {
+        return provider().vec2FinePosition(centerIntegers);
     }
 
     /**
