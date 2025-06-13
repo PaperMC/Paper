@@ -7,9 +7,11 @@ import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ObjectiveResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.TeamResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -30,6 +32,8 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -320,6 +324,24 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<Operation> operation() {
         return provider().operation();
+    }
+
+    /**
+     * An objective argument.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<ObjectiveResolver> objective() {
+        return provider().objective();
+    }
+
+    /**
+     * A team argument.
+     * 
+     * @return argument
+     */
+    public static ArgumentType<TeamResolver> team() {
+        return provider().team();
     }
 
     /**

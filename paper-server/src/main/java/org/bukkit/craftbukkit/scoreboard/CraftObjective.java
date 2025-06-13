@@ -15,7 +15,7 @@ public final class CraftObjective extends CraftScoreboardComponent implements Ob
     private final net.minecraft.world.scores.Objective objective;
     private final CraftCriteria criteria;
 
-    CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
+    public CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);

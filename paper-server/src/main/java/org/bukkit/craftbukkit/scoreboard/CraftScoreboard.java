@@ -24,7 +24,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     private final Scoreboard board;
     public boolean registeredGlobally = false; // Paper - Lazily track plugin scoreboards by default
 
-    CraftScoreboard(Scoreboard board) {
+    public CraftScoreboard(Scoreboard board) {
         this.board = board;
     }
 

@@ -21,9 +21,11 @@ import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ObjectiveResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.TeamResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -55,6 +57,7 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.MessageArgument;
+import net.minecraft.commands.arguments.ObjectiveArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.OperationArgument;
 import net.minecraft.commands.arguments.RangeArgument;
@@ -64,6 +67,7 @@ import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.ScoreHolderArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
+import net.minecraft.commands.arguments.TeamArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.TimeArgument;
@@ -98,12 +102,17 @@ import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
+import org.bukkit.craftbukkit.scoreboard.CraftObjective;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
+import org.bukkit.craftbukkit.scoreboard.CraftTeam;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -247,6 +256,31 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<Operation> operation() {
         return this.wrap(OperationArgument.operation(), OperationImpl::new);
+    }
+
+    @Override
+    public ArgumentType<ObjectiveResolver> objective() {
+        return this.wrap(ObjectiveArgument.objective(), (name) -> new ObjectiveResolver() {
+            @Override
+            public Objective resolve(final Scoreboard scoreboard, final io.papermc.paper.command.brigadier.CommandSourceStack sourceStack) throws CommandSyntaxException {
+                CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
+                return new CraftObjective(craftScoreboard, ObjectiveArgument.getObjective(craftScoreboard.getHandle(), name));
+            }
+
+            @Override
+            public Objective resolveWritable(final Scoreboard scoreboard, final io.papermc.paper.command.brigadier.CommandSourceStack sourceStack) throws CommandSyntaxException {
+                CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
+                return new CraftObjective(craftScoreboard, ObjectiveArgument.getWritableObjective(craftScoreboard.getHandle(), name));
+            }
+        });
+    }
+
+    @Override
+    public ArgumentType<TeamResolver> team() {
+        return this.wrap(TeamArgument.team(), name -> (scoreboard, source) -> {
+            CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
+            return new CraftTeam(craftScoreboard, TeamArgument.getTeam(craftScoreboard.getHandle(), name));
+        });
     }
 
     @Override
@@ -425,8 +459,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
                 try {
                     entitySelectorParser.parse();
-                }
-                catch (CommandSyntaxException var5) {
+                } catch (CommandSyntaxException var5) {
                     // Ignored
                 }
 
