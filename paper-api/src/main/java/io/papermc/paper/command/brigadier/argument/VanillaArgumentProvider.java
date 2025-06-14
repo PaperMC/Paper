@@ -7,10 +7,11 @@ import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
-import io.papermc.paper.command.brigadier.argument.resolvers.Vec2FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -58,10 +59,12 @@ interface VanillaArgumentProvider {
     ArgumentType<PlayerProfileListResolver> playerProfiles();
 
     ArgumentType<BlockPositionResolver> blockPosition();
+    
+    ArgumentType<ColumnBlockPositionResolver> columnBlockPosition();
 
     ArgumentType<FinePositionResolver> finePosition(boolean centerIntegers);
     
-    ArgumentType<Vec2FinePositionResolver> vec2FinePosition(boolean centerIntegers);
+    ArgumentType<ColumnFinePositionResolver> columnFinePosition(boolean centerIntegers);
 
     ArgumentType<RotationResolver> rotation();
     

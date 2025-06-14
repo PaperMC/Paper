@@ -167,6 +167,28 @@ public interface Position {
     }
 
     /**
+     * Creates a column position at the coordinates
+     *
+     * @param x x coordinate
+     * @param z z coordinate
+     * @return a column position with those coords
+     */
+    @Contract(value = "_ ,_ -> new", pure = true)
+    static ColumnBlockPosition columnBlock(final int x, final int z) {
+        return new ColumnBlockPositionImpl(x, z);
+    }
+
+    /**
+     * Creates a column position from the location.
+     *
+     * @param location location to copy the position of
+     * @return new column position at that location
+     */
+    static ColumnBlockPosition columnBlock(final Location location) {
+        return new ColumnBlockPositionImpl(location.getBlockX(), location.getBlockZ());
+    }
+
+    /**
      * Creates a position at the coordinates
      *
      * @param x x coord
@@ -188,5 +210,27 @@ public interface Position {
     @Contract(value = "_ -> new", pure = true)
     static FinePosition fine(final Location location) {
         return new FinePositionImpl(location.getX(), location.getY(), location.getZ());
+    }
+
+    /**
+     * Creates a fine column position at the coordinates
+     *
+     * @param x x coordinate
+     * @param z z coordinate
+     * @return a position with those coords
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static ColumnFinePosition columnFine(final double x, final double z) {
+        return new ColumnFinePositionImpl(x, z);
+    }
+
+    /**
+     * Creates a fine column position from the location.
+     *
+     * @param location location to copy the position of
+     * @return new finel column position at that location
+     */
+    static ColumnFinePosition columnFine(final Location location) {
+        return new ColumnFinePositionImpl(location.getX(), location.getZ());
     }
 }
