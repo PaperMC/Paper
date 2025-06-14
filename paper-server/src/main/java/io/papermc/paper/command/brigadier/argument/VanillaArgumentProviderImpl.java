@@ -12,17 +12,22 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.math.Rotation;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
@@ -31,6 +36,7 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +47,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.AngleArgument;
 import net.minecraft.commands.arguments.ColorArgument;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -51,6 +58,7 @@ import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
+import net.minecraft.commands.arguments.ParticleArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
@@ -61,36 +69,47 @@ import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.TimeArgument;
 import net.minecraft.commands.arguments.UuidArgument;
+import net.minecraft.commands.arguments.blocks.BlockPredicateArgument;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
+import net.minecraft.commands.arguments.coordinates.SwizzleArgument;
+import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftHeightMap;
+import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
@@ -153,11 +172,36 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
+    public ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
+        return this.wrap(ColumnPosArgument.columnPos(), result -> source -> {
+            final BlockPos pos = result.getBlockPos((CommandSourceStack) source);
+
+            return Position.columnBlock(pos.getX(), pos.getZ());
+        });
+    }
+
+    @Override
+    public ArgumentType<BlockPredicate> blockPredicate() {
+        return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
+            result -> block -> result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), true))
+        );
+    }
+
+    @Override
     public ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
         return this.wrap(Vec3Argument.vec3(centerIntegers), (result) -> sourceStack -> {
             final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
 
             return MCUtil.toPosition(vec3);
+        });
+    }
+
+    @Override
+    public ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
+        return this.wrap(Vec2Argument.vec2(centerIntegers), result -> source -> {
+            final Vec3 vec3 = result.getPosition((CommandSourceStack) source);
+
+            return Position.columnFine(vec3.x(), vec3.z());
         });
     }
 
@@ -168,6 +212,31 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
             return Rotation.rotation(vec2.y, vec2.x);
         });
+    }
+
+    @Override
+    public ArgumentType<AngleResolver> angle() {
+        return this.wrap(AngleArgument.angle(), (result) -> sourceStack -> result.getAngle((CommandSourceStack) sourceStack));
+    }
+
+    @Override
+    public ArgumentType<EnumSet<Axis>> swizzle() {
+        return this.wrap(SwizzleArgument.swizzle(), result -> {
+            EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
+            for (final Direction.Axis nmsAxis : result) {
+                bukkitAxes.add(switch (nmsAxis) {
+                    case X -> Axis.X;
+                    case Y -> Axis.Y;
+                    case Z -> Axis.Z;
+                });
+            }
+            return bukkitAxes;
+        });
+    }
+
+    @Override
+    public ArgumentType<Particle> particle() {
+        return this.wrap(ParticleArgument.particle(PaperCommands.INSTANCE.getBuildContext()), result -> CraftParticle.minecraftToBukkit(result, null));
     }
 
     @Override

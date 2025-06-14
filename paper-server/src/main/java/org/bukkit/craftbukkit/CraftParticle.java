@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.destroystokyo.paper.ParticleBuilder;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.Vibration;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -37,6 +39,9 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 public abstract class CraftParticle<D> implements Keyed {
 
@@ -53,11 +58,56 @@ public abstract class CraftParticle<D> implements Keyed {
         return bukkit;
     }
 
+    @NonNull
+    public static Particle minecraftToBukkit(@NonNull ParticleOptions minecraft, @Nullable World world) {
+        Particle particle = minecraftToBukkit(minecraft.getType());
+        ParticleBuilder builder = particle.builder();
+
+        switch (minecraft) {
+            case BlockParticleOption option -> builder.data(option.getState().createCraftBlockData());
+            case ColorParticleOption option -> builder.color(option.getColor());
+            case DustColorTransitionOptions options -> builder.colorTransition(options.getFromColorInt(), options.getToColorInt());
+            case DustParticleOptions options -> builder.data(new Particle.DustOptions(Color.fromRGB(options.getColorInt()), options.getScale()));
+            case ItemParticleOption option -> builder.data(CraftItemStack.asCraftMirror(option.getItem()));
+            case SculkChargeParticleOptions options -> builder.data(options.roll());
+            case ShriekParticleOption option -> builder.data(option.getDelay());
+            case TrailParticleOption option ->
+                builder.data(new Particle.Trail(CraftLocation.toBukkit(option.target()), Color.fromRGB(option.color()), option.duration()));
+            case VibrationParticleOption option -> {
+                Vibration.Destination destination = switch (option.getDestination()) {
+                    case BlockPositionSource blockPos ->
+                        // The #getPosition method here does not use its parameter,
+                        // and it will always be present, therefore, we can ignore the warnings.
+                        //noinspection DataFlowIssue, OptionalGetWithoutIsPresent
+                        new Vibration.Destination.BlockDestination(CraftLocation.toBukkit(blockPos.getPosition(null).get()));
+                    case EntityPositionSource entity -> {
+                        if (world == null) {
+                            throw new UnsupportedOperationException("");
+                        } else {
+                            org.bukkit.entity.Entity bukkitEntity = entity.getEntity(((CraftWorld) world).getHandle())
+                                .map(Entity::getBukkitEntity)
+                                .orElseThrow(() -> new IllegalStateException("Couldn't resolve entity of entity source " + entity + "(ParticleOptions: " + minecraft + ")"));
+
+                            yield new Vibration.Destination.EntityDestination(bukkitEntity);
+                        }
+                    }
+                    default -> throw new UnsupportedOperationException(option.getDestination() + " does not match any known position source.");
+                };
+
+                builder.data(new Vibration(destination, option.getArrivalInTicks()));
+            }
+            default -> {
+            }
+        }
+
+        return builder.particle();
+    }
+
     public static net.minecraft.core.particles.ParticleType<?> bukkitToMinecraft(Particle bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
         return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE)
-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+            .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
     }
 
     public static <D> ParticleOptions createParticleParam(Particle particle, D data) {
