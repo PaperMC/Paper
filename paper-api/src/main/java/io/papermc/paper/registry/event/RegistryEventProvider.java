@@ -44,10 +44,11 @@ public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
      * @return the registry freeze event type
      * @deprecated use {@link #compose()} instead.
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
     @Deprecated(since = "1.21.6", forRemoval = true)
-    default LifecycleEventType.Prioritizable<BootstrapContext, ? super RegistryFreezeEvent<T, B>> freeze() {
-        return this.compose();
+    default LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze() {
+        return (LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T,B>>) (LifecycleEventType.Prioritizable) this.compose();
     }
 
     /**
