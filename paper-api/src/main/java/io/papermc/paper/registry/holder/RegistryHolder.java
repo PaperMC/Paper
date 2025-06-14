@@ -20,7 +20,8 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
      * @param <API> the registry's type
      * @param <ENTRY> the type of the registry entry
      */
-    sealed interface Reference<API, ENTRY> extends RegistryHolder<API, ENTRY> permits ReferenceRegistryHolderImpl {
+    @ApiStatus.NonExtendable
+    non-sealed interface Reference<API, ENTRY> extends RegistryHolder<API, ENTRY> {
 
         /**
          * The key of the referenced value.
@@ -36,7 +37,8 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
      * @param <API> the registry's type
      * @param <ENTRY> the type of the registry entry
      */
-    sealed interface Inlined<API, ENTRY> extends RegistryHolder<API, ENTRY> permits InlinedRegistryHolderImpl {
+    @ApiStatus.NonExtendable
+    non-sealed interface Inlined<API, ENTRY> extends RegistryHolder<API, ENTRY> {
 
         /**
          * The inlined entry.

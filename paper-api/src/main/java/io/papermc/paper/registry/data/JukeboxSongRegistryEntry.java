@@ -58,7 +58,7 @@ public interface JukeboxSongRegistryEntry {
      * The following values are required for each builder:
      * <ul>
      *     <li>
-     *         {@link #soundEvent(TypedKey)} or {@link #soundEvent(Consumer)}
+     *         {@link #soundEvent(TypedKey)}, {@link #soundEvent(Consumer)} or {@link #soundEvent(RegistryHolder)}
      *     </li>
      *     <li>{@link #description(Component)}</li>
      *     <li>{@link #lengthInSeconds(float)}</li>
@@ -72,7 +72,7 @@ public interface JukeboxSongRegistryEntry {
         /**
          * Sets the sound event for this song to a sound event present
          * in the {@link io.papermc.paper.registry.RegistryKey#SOUND_EVENT} registry.
-         * <p>This will override {@link #soundEvent(Consumer)}</p>
+         * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
          * @return this builder
@@ -83,7 +83,7 @@ public interface JukeboxSongRegistryEntry {
 
         /**
          * Sets the sound event for this song to a new sound event.
-         * <p>This will override {@link #soundEvent(TypedKey)}</p>
+         * <p>This will override both {@link #soundEvent(TypedKey)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
          * @return this builder
@@ -91,6 +91,18 @@ public interface JukeboxSongRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder soundEvent(Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent);
+
+        /**
+         * Sets the sound event for this song.
+         * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(TypedKey)}</p>
+         *
+         * @param soundEvent the sound event
+         * @return this builder
+         * @see #soundEvent(TypedKey)
+         * @see #soundEvent(Consumer)
+         */
+        @Contract( value = "_ -> this", mutates = "this")
+        Builder soundEvent(RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent);
 
         /**
          * Sets the description for this song.

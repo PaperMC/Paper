@@ -48,10 +48,7 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
     @Override
     public RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent() {
         final Holder<SoundEvent> current = asConfigured(this.soundEvent, "soundEvent");
-        return current.unwrap().map(
-            l -> PaperRegistryHolders.create(PaperRegistries.fromNms(l)),
-            r -> PaperRegistryHolders.create(new PaperSoundEventRegistryEntry(this.conversions, r))
-        );
+        return PaperRegistryHolders.create(current, e -> new PaperSoundEventRegistryEntry(this.conversions, e));
     }
 
     @Override
@@ -84,6 +81,12 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
         @Override
         public JukeboxSongRegistryEntry.Builder soundEvent(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent) {
             this.soundEvent = this.conversions.createHolderFromBuilder(Registries.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
+            return this;
+        }
+
+        @Override
+        public Builder soundEvent(final RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent) {
+            this.soundEvent = PaperRegistryHolders.convert(soundEvent, this.conversions);
             return this;
         }
 
