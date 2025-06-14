@@ -29,8 +29,6 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        java: [21]
       fail-fast: true
     steps:
       - if: ${{ github.event_name == 'push' }}
@@ -43,10 +41,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: JDK ${{ matrix.java }}
+      - name: JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 21
           distribution: 'zulu'
 
       - name: Setup Gradle
@@ -102,7 +100,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results (${{ matrix.java }})
+          name: Test Results
           path: |
             **/build/test-results/test/TEST-*.xml
 
@@ -116,6 +114,13 @@ jobs:
         with:
           name: paper-${{ fromJSON(steps.determine.outputs.result).pr }}
           path: paper-server/build/libs/paper-paperclip-*-mojmap.jar
+
+      - name: Publish Artifacts
+        if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
+        uses: jpenilla/action-pr-publishing/upload@a7524cd666e8f214d7d51a57862642d47a536b28
+        with:
+          # TODO fallback for failing javadoc
+          publishing-task: ":paper-api:publishAllPublicationsTo_githubPackages_PRsRepository publishDevBundlePublicationTo_githubPackages_PRsRepository -PpublishDevBundle -x javadoc"
   event_file:
     name: "Event File"
     # Only run on PRs if the source branch is on someone else's repo
