@@ -1,8 +1,10 @@
 package io.papermc.paper.registry.event;
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.tag.Tag;
+import io.papermc.paper.registry.tag.TagKey;
+import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event object for {@link RegistryEventProvider#freeze()}. This
@@ -15,7 +17,21 @@ import org.jspecify.annotations.NullMarked;
  */
 @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
 @Deprecated(since = "1.21.6", forRemoval = true)
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryComposeEvent<T, B> {
+
+    /**
+     * Gets or creates a tag for the given tag key. This tag
+     * is then required to be filled either from the built-in or
+     * custom datapack.
+     *
+     * @param tagKey the tag key
+     * @param <V> the tag value type
+     * @return the tag
+     * @deprecated Use {@link #retriever()}
+     */
+    @Deprecated(forRemoval = true)
+    default <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+        return this.retriever().getOrCreateTag(tagKey);
+    }
 }

@@ -15,13 +15,7 @@ import org.bukkit.Keyed;
 public record RegistryComposeEventImpl<T, B extends RegistryBuilder<T>>(
     RegistryKey<T> registryKey,
     WritableRegistry<T, B> registry,
-    Conversions conversions
+    Conversions conversions,
+    RegistryRetriever retriever
 ) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent {
-
-    @Override
-    public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
-        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
-        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
-        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
-    }
 }

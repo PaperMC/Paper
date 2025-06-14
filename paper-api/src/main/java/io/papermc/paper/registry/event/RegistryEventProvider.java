@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Provider for registry events for a specific registry.
@@ -21,8 +20,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> registry entry type
  * @param <B> registry entry builder type
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
 

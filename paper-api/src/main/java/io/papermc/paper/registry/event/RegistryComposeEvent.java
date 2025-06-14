@@ -1,11 +1,8 @@
 package io.papermc.paper.registry.event;
 
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.tag.Tag;
-import io.papermc.paper.registry.tag.TagKey;
-import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Event object for {@link RegistryEventProvider#compose()}. This
@@ -16,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <B> registry entry builder type
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 
@@ -28,13 +24,11 @@ public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends R
     WritableRegistry<T, B> registry();
 
     /**
-     * Gets or creates a tag for the given tag key. This tag
-     * is then required to be filled either from the built-in or
-     * custom datapack.
+     * Gets the registry retriever, which can be used to retrieve or create
+     * entries in the registry.
      *
-     * @param tagKey the tag key
-     * @return the tag
-     * @param <V> the tag value type
+     * @return the registry retriever
      */
-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+    @Contract(pure = true)
+    RegistryRetriever retriever();
 }
