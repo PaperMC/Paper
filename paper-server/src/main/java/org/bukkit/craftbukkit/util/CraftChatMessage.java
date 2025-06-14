@@ -231,7 +231,7 @@ public final class CraftChatMessage {
     public static String toJSON(Component component) {
         return GSON.toJson(
             ComponentSerialization.CODEC
-                .encodeStart(JsonOps.INSTANCE, component)
+                .encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), component)
                 .getOrThrow(JsonParseException::new)
         );
     }
