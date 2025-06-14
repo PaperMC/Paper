@@ -1473,7 +1473,7 @@
          try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
              TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, entity.registryAccess());
              entity.saveWithoutId(tagValueOutput);
-@@ -2864,7 +_,56 @@
+@@ -2864,7 +_,65 @@
  
      @Nullable
      public Entity teleport(TeleportTransition teleportTransition) {
@@ -1507,18 +1507,27 @@
 +                velocity = Vec3.ZERO;
 +            }
 +            if (this.portalProcess != null) { // if in a portal
-+                org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = this.getBukkitEntity();
++                org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
++                org.bukkit.util.Vector before = bukkitEntity.getVelocity();
++                org.bukkit.util.Vector after = org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity);
 +                org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(
 +                    bukkitEntity,
 +                    bukkitEntity.getLocation(), to.clone(),
-+                    bukkitEntity.getVelocity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity)
++                    before, after
 +                );
 +                event.callEvent();
 +
 +                // Only change the target if actually needed, since we reset relative flags
-+                if (!event.isCancelled() && event.getTo() != null && (!event.getTo().equals(event.getFrom()) || !event.getAfter().equals(event.getBefore()))) { // todo this looks broken
-+                    to = event.getTo().clone();
-+                    velocity = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getAfter());
++                if (event.isCancelled() || !to.equals(event.getTo()) || !after.equals(event.getAfter())) {
++                    if (event.isCancelled() || event.getTo() == null) {
++                        org.bukkit.World toWorld = to.getWorld();
++                        to = event.getFrom().clone();
++                        to.setWorld(toWorld); // cancelling doesn't cancel the teleport just the position/velocity (old quirk)
++                        velocity = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getBefore());
++                    } else {
++                        to = event.getTo().clone();
++                        velocity = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getAfter());
++                    }
 +                    teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), velocity, to.getYaw(), to.getPitch(), teleportTransition.missingRespawnBlock(), teleportTransition.asPassenger(), Set.of(), teleportTransition.postTeleportTransition(), teleportTransition.cause());
 +                }
 +            }
