@@ -24,10 +24,6 @@ paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
     gitFilePatches = false
 
-    updatingMinecraft {
-        oldPaperCommit = "a033e3b9ef78cfe85be807ac3fd1dd956274d4db"
-    }
-
     spigot {
         enabled = false
         buildDataRef = "702e1a0a5072b2c4082371d5228cb30525687efc"
