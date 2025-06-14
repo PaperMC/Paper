@@ -19,15 +19,16 @@ import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
-import io.papermc.paper.command.brigadier.argument.resolvers.Vec2FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.math.Rotation;
-import io.papermc.paper.math.Vec2FinePositionImpl;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -72,6 +73,7 @@ import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.commands.arguments.blocks.BlockPredicateArgument;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
 import net.minecraft.commands.arguments.coordinates.SwizzleArgument;
 import net.minecraft.commands.arguments.coordinates.Vec2Argument;
@@ -169,6 +171,15 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
+    public ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
+        return this.wrap(ColumnPosArgument.columnPos(), result -> source -> {
+            final BlockPos pos = result.getBlockPos((CommandSourceStack) source);
+
+            return Position.columnBlock(pos.getX(), pos.getZ());
+        });
+    }
+
+    @Override
     public ArgumentType<BlockPredicate> blockPredicate() {
         return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
             result -> block -> result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), true))
@@ -185,11 +196,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
-    public ArgumentType<Vec2FinePositionResolver> vec2FinePosition(final boolean centerIntegers) {
+    public ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
         return this.wrap(Vec2Argument.vec2(centerIntegers), result -> source -> {
             final Vec3 vec3 = result.getPosition((CommandSourceStack) source);
-            
-            return new Vec2FinePositionImpl(vec3.x, vec3.z);
+
+            return Position.columnFine(vec3.x(), vec3.z());
         });
     }
 
