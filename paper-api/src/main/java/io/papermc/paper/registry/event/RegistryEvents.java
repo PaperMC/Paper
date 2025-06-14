@@ -25,8 +25,6 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Wolf;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 
@@ -34,8 +32,6 @@ import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
  * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryComposeEvent}
  * handlers for each applicable registry.
  */
-@ApiStatus.Experimental
-@NullMarked
 public final class RegistryEvents {
 
     // Start generate - RegistryEvents
