@@ -1,7 +1,6 @@
 package io.papermc.paper.registry.holder;
 
 import io.papermc.paper.registry.TypedKey;
-import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -13,20 +12,6 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @ApiStatus.Experimental
 public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Reference, RegistryHolder.Inlined {
-
-    /**
-     * Get an optional for the key of the holder. Will not have a key if the holder is an inlined value.
-     *
-     * @return an optional of the key, or empty if the holder is an inlined value
-     */
-    Optional<TypedKey<API>> optionalKey();
-
-    /**
-     * Get an optional for the entry of the holder. Will not have an entry if the holder is a reference.
-     *
-     * @return an optional of the entry, or empty if the holder is a reference
-     */
-    Optional<ENTRY> optionalEntry();
 
     /**
      * A holder that references a registry value by key, but does not have the entry itself.
@@ -43,16 +28,6 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
          * @return the key of the value
          */
         TypedKey<API> key();
-
-        @Override
-        default Optional<TypedKey<API>> optionalKey() {
-            return Optional.of(this.key());
-        }
-
-        @Override
-        default Optional<ENTRY> optionalEntry() {
-            return Optional.empty();
-        }
     }
 
     /**
@@ -69,15 +44,5 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
          * @return the inlined entry
          */
         ENTRY entry();
-
-        @Override
-        default Optional<TypedKey<API>> optionalKey() {
-            return Optional.empty();
-        }
-
-        @Override
-        default Optional<ENTRY> optionalEntry() {
-            return Optional.of(this.entry());
-        }
     }
 }
