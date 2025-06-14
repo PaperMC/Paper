@@ -2,7 +2,6 @@ package io.papermc.paper.registry.event;
 
 import io.papermc.paper.registry.RegistryBuilder;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event object for {@link RegistryEventProvider#freeze()}. This
@@ -15,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  */
 @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
 @Deprecated(since = "1.21.6", forRemoval = true)
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryComposeEvent<T, B> {
 }

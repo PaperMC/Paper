@@ -5,7 +5,6 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event object for {@link RegistryEventProvider#compose()}. This
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <B> registry entry builder type
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 
@@ -36,5 +34,5 @@ public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends R
      * @return the tag
      * @param <V> the tag value type
      */
-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey); // TODO remove Keyed
 }

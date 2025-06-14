@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.util.MCUtil;
@@ -10,7 +11,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import net.kyori.adventure.util.TriState;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -85,7 +85,7 @@ public record PaperItemTool(
         @Override
         public Builder addRule(final Rule rule) {
             this.rules.add(new net.minecraft.world.item.component.Tool.Rule(
-                PaperRegistrySets.convertToNms(Registries.BLOCK, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), rule.blocks()),
+                PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.global().lookup(), rule.blocks()),
                 Optional.ofNullable(rule.speed()),
                 Optional.ofNullable(rule.correctForDrops().toBoolean())
             ));
