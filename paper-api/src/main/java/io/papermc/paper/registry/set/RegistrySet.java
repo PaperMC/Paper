@@ -28,20 +28,19 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet {
 
-    // TODO uncomment when direct holder sets need to be exposed to the API
-    // /**
-    //  * Creates a {@link RegistryValueSet} from anonymous values.
-    //  * <p>All values provided <b>must not</b> have keys in the given registry.</p>
-    //  *
-    //  * @param registryKey the registry key for the type of these values
-    //  * @param values the values
-    //  * @return a new registry set
-    //  * @param <T> the type of the values
-    //  */
-    // @Contract(value = "_, _ -> new", pure = true)
-    // static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
-    //     return RegistryValueSetImpl.create(registryKey, values);
-    // }
+    /**
+     * Creates a {@link RegistryValueSet} from anonymous values.
+     * <p>All values provided <b>must not</b> have keys in the given registry.</p>
+     *
+     * @param registryKey the registry key for the type of these values
+     * @param values the values
+     * @return a new registry set
+     * @param <T> the type of the values
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
+        return RegistryValueSetImpl.create(registryKey, values);
+    }
 
     /**
      * Creates a {@link RegistryKeySet} from registry-backed values.
