@@ -4,7 +4,7 @@ import io.papermc.paper.registry.RegistryBuilderFactory;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
-import org.bukkit.Art;
+import org.bukkit.MusicInstrument;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -18,4 +18,5 @@ public interface InlinedRegistryBuilderProvider {
         return Holder.INSTANCE.orElseThrow();
     }
 
+    MusicInstrument createInstrument(Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value);
 }
