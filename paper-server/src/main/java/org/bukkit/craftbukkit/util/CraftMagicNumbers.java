@@ -266,22 +266,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     /**
-     * This string should be changed if the NMS mappings do.
-     *
-     * It has no meaning and should only be used as an equality check. Plugins
-     * which are sensitive to the NMS mappings may read it and refuse to load if
-     * it cannot be found or is different to the expected value.
-     *
-     * Remember: NMS is not supported API and may break at any time for any
-     * reason irrespective of this. There is often supported API to do the same
-     * thing as many common NMS usages. If not, you are encouraged to open a
-     * feature and/or pull request for consideration, or use a well abstracted
-     * third-party API such as ProtocolLib.
-     *
-     * @return string
+     * @deprecated in favor of {@link io.papermc.paper.ServerBuildInfo#minecraftVersionId()}
+     * Paper has used Mojang mappings since 1.20.5, and this method no longer returns a useful value.
      */
+    @Deprecated(forRemoval = true, since = "1.21.6")
     public String getMappingsVersion() {
-        return "7ecad754373a5fbc43d381d7450c53a5";
+        throw new UnsupportedOperationException("Use ServerBuildInfo#minecraftVersionId instead.");
     }
 
     @Override
