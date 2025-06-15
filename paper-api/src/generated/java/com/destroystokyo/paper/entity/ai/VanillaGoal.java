@@ -158,6 +158,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Creature> STROLL_THROUGH_VILLAGE = create("stroll_through_village", Creature.class);
 
+    GoalKey<Creature> TEMPT = create("tempt", Creature.class);
+
     GoalKey<Creature> TRY_FIND_WATER = create("try_find_water", Creature.class);
 
     GoalKey<Creature> WATER_AVOIDING_RANDOM_FLYING = create("water_avoiding_random_flying", Creature.class);
@@ -287,8 +289,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Mob> RANDOM_LOOK_AROUND = create("random_look_around", Mob.class);
 
     GoalKey<Mob> RESET_UNIVERSAL_ANGER = create("reset_universal_anger", Mob.class);
-
-    GoalKey<Mob> TEMPT = create("tempt", Mob.class);
 
     GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
 

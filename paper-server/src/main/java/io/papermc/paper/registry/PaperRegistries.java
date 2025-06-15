@@ -20,6 +20,10 @@ import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.PaperCustomStatistic;
+import io.papermc.paper.statistic.PaperStatisticType;
+import io.papermc.paper.statistic.StatisticType;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -112,6 +116,8 @@ public final class PaperRegistries {
             start(Registries.FLUID, RegistryKey.FLUID).craft(Fluid.class, CraftFluid::new).build(),
             start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new, true).create(PaperSoundEventRegistryEntry.PaperBuilder::new, RegistryEntryMeta.RegistryModificationApiSupport.NONE),
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
+            start(Registries.CUSTOM_STAT, RegistryKey.CUSTOM_STAT).craft(CustomStatistic.class, PaperCustomStatistic::new).build(),
+            start(Registries.STAT_TYPE, RegistryKey.STAT_TYPE).craft(StatisticType.class, PaperStatisticType::create).build(),
 
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),

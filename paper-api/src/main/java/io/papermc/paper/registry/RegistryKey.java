@@ -2,6 +2,8 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.StatisticType;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -127,6 +129,16 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
+    /**
+     * Built-in registry for custom statistics.
+     * @see io.papermc.paper.registry.keys.CustomStatisticKeys
+     */
+    RegistryKey<CustomStatistic> CUSTOM_STAT = create("custom_stat");
+    /**
+     * Built-in registry for statistic types.
+     * @see io.papermc.paper.registry.keys.StatisticTypeKeys
+     */
+    RegistryKey<StatisticType<?>> STAT_TYPE = create("stat_type");
 
 
 
