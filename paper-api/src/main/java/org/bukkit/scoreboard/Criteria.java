@@ -244,7 +244,7 @@ public interface Criteria {
      * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
-    @Deprecated(since = "1.21.4") // Paper
+    @Deprecated(since = "1.21.6")
     public static Criteria statistic(@NotNull Statistic statistic, @NotNull Material material) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(material != null, "material must not be null");
@@ -303,7 +303,7 @@ public interface Criteria {
      * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
-    @Deprecated(since = "1.21.4") // Paper
+    @Deprecated(since = "1.21.6") // Paper
     public static Criteria statistic(@NotNull Statistic statistic, @NotNull EntityType entityType) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(entityType != null, "entityType must not be null");
@@ -338,7 +338,7 @@ public interface Criteria {
      * @deprecated Use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
-    @Deprecated(since = "1.21.4") // Paper
+    @Deprecated(since = "1.21.6")
     public static Criteria statistic(@NotNull Statistic statistic) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         return Bukkit.getScoreboardCriteria(org.bukkit.Bukkit.getUnsafe().getStatisticCriteriaKey(statistic)); // Paper

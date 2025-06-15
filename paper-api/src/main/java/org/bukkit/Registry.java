@@ -226,7 +226,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Statistic
      * @deprecated use {@link #CUSTOM_STAT} and {@link #STAT_TYPE}
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.21.6")
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
     /**
      * Server structures.

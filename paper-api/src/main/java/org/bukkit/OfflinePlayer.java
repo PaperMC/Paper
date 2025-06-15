@@ -395,7 +395,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -410,7 +410,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -424,7 +424,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException;
 
     /**
@@ -438,7 +438,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException;
 
     /**
@@ -452,7 +452,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, int newValue) throws IllegalArgumentException;
 
     /**
@@ -465,7 +465,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -482,7 +482,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -499,7 +499,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -514,7 +514,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -530,7 +530,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException;
 
     /**
@@ -546,7 +546,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException;
 
     /**
@@ -562,7 +562,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, Material material, int newValue) throws IllegalArgumentException;
 
     /**
@@ -579,7 +579,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -596,7 +596,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -611,7 +611,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -627,7 +627,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) throws IllegalArgumentException;
 
     /**
@@ -643,7 +643,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, EntityType entityType, int amount);
 
     /**
@@ -659,7 +659,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.4")
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, EntityType entityType, int newValue);
 
     /**

@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -19,6 +20,7 @@ public class PlayerRequestStatisticsEvent extends PlayerEvent implements Cancell
     private final Object2IntMap<Statistic<?>> statisticMap;
     private boolean cancelled;
 
+    @ApiStatus.Internal
     public PlayerRequestStatisticsEvent(final Player who, final Object2IntMap<Statistic<?>> statisticMap) {
         super(who);
         this.statisticMap = statisticMap;

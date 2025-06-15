@@ -1,8 +1,9 @@
 package io.papermc.paper.statistic;
 
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.translation.Translatable;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -97,7 +98,7 @@ public interface CustomStatistic extends Keyed, Translatable {
         return StatisticType.CUSTOM.of(this);
     }
 
-    private static CustomStatistic get(final String key) {
-        return Registry.CUSTOM_STAT.getOrThrow(NamespacedKey.minecraft(key));
+    private static CustomStatistic get(@KeyPattern.Value final String key) {
+        return Registry.CUSTOM_STAT.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }
