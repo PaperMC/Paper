@@ -2,15 +2,25 @@ package org.bukkit;
 
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable {
+
+    @ApiStatus.Experimental
+    public static MusicInstrument create(final Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createInstrument(value);
+    }
 
     // Start generate - MusicInstrument
     // @GeneratedFrom 1.21.6-rc1
