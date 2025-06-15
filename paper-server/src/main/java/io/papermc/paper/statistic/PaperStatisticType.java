@@ -2,6 +2,7 @@ package io.papermc.paper.statistic;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
@@ -21,9 +22,8 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.entity.EntityType;
 import org.jspecify.annotations.NonNull;
 
-public class PaperStatisticType<S extends @NonNull Keyed, M> implements StatisticType<S>, Holderable<StatType<M>> {
+public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableBase<StatType<M>> implements StatisticType<S> {
 
-    private final Holder<StatType<M>> holder;
     private final Supplier<RegistryKey<S>> registryKey;
     private final Map<S, Statistic<S>> statCacheMap;
     private final Predicate<S> typeCheck;
@@ -33,7 +33,7 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> implements Statisti
     }
 
     private PaperStatisticType(final Holder<StatType<M>> holder, final Predicate<S> typeCheck) {
-        this.holder = holder;
+        super(holder);
         this.registryKey = Suppliers.memoize(() -> PaperRegistries.registryFromNms(this.getHandle().getRegistry().key()));
         this.statCacheMap = new IdentityHashMap<>(); // identity cause keys are registry objects
         this.typeCheck = typeCheck;
@@ -62,11 +62,6 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> implements Statisti
     }
 
     @Override
-    public Holder<StatType<M>> getHolder() {
-        return this.holder;
-    }
-
-    @Override
     public Statistic<S> of(final S value) {
         if (!this.typeCheck.test(value)) {
             throw new IllegalArgumentException(value + " is not valid for stat type " + this.getKey());
@@ -86,28 +81,8 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> implements Statisti
     }
 
     @Override
-    public NamespacedKey getKey() {
-        return Holderable.super.getKey();
-    }
-
-    @Override
     public String translationKey() {
         Preconditions.checkArgument(this != StatisticType.CUSTOM, this.key() + " does not have a translation key, see CustomStatistic#translationKey()");
         return "stat_type." + this.getKey().toString().replace(':', '.');
-    }
-
-    @Override
-    public int hashCode() {
-        return Holderable.super.implHashCode();
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return Holderable.super.implEquals(obj);
-    }
-
-    @Override
-    public String toString() {
-        return Holderable.super.implToString();
     }
 }

@@ -30,68 +30,68 @@ public final class StatisticTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> BROKEN = create(key("broken"));
+    public static final TypedKey<StatisticType<?>> BROKEN = create(key("broken"));
 
     /**
      * {@code minecraft:crafted}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> CRAFTED = create(key("crafted"));
+    public static final TypedKey<StatisticType<?>> CRAFTED = create(key("crafted"));
 
     /**
      * {@code minecraft:custom}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> CUSTOM = create(key("custom"));
+    public static final TypedKey<StatisticType<?>> CUSTOM = create(key("custom"));
 
     /**
      * {@code minecraft:dropped}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> DROPPED = create(key("dropped"));
+    public static final TypedKey<StatisticType<?>> DROPPED = create(key("dropped"));
 
     /**
      * {@code minecraft:killed}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> KILLED = create(key("killed"));
+    public static final TypedKey<StatisticType<?>> KILLED = create(key("killed"));
 
     /**
      * {@code minecraft:killed_by}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> KILLED_BY = create(key("killed_by"));
+    public static final TypedKey<StatisticType<?>> KILLED_BY = create(key("killed_by"));
 
     /**
      * {@code minecraft:mined}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> MINED = create(key("mined"));
+    public static final TypedKey<StatisticType<?>> MINED = create(key("mined"));
 
     /**
      * {@code minecraft:picked_up}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> PICKED_UP = create(key("picked_up"));
+    public static final TypedKey<StatisticType<?>> PICKED_UP = create(key("picked_up"));
 
     /**
      * {@code minecraft:used}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<StatisticType> USED = create(key("used"));
+    public static final TypedKey<StatisticType<?>> USED = create(key("used"));
 
     private StatisticTypeKeys() {
     }
 
-    private static TypedKey<StatisticType> create(final Key key) {
+    private static TypedKey<StatisticType<?>> create(final Key key) {
         return TypedKey.create(RegistryKey.STAT_TYPE, key);
     }
 }

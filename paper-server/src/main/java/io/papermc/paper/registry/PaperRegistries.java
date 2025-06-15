@@ -119,7 +119,6 @@ public final class PaperRegistries {
             start(Registries.CUSTOM_STAT, RegistryKey.CUSTOM_STAT).craft(CustomStatistic.class, PaperCustomStatistic::new).build(),
             start(Registries.STAT_TYPE, RegistryKey.STAT_TYPE).craft(StatisticType.class, PaperStatisticType::create).build(),
 
-
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
             start(Registries.STRUCTURE, RegistryKey.STRUCTURE).craft(Structure.class, CraftStructure::new).build().delayed(),

@@ -167,7 +167,7 @@ public final class RegistryEntries {
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
         entry(Registries.CUSTOM_STAT, Stats.class, CustomStatistic.class, "Paper"),
-        entry(Registries.STAT_TYPE, Stats.class, StatisticType.class, "Paper")
+        entry(Registries.STAT_TYPE, Stats.class, StatisticType.class, "Paper").genericArgCount(1).apiAccessName("create")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
