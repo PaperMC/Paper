@@ -2296,6 +2296,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public boolean isForceDefaultGameMode() {
+        return this.console.getProperties().forceGameMode;
+    }
+
+    @Override
     public ConsoleCommandSender getConsoleSender() {
         return this.console.console;
     }
