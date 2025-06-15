@@ -1528,7 +1528,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
      */
-    boolean isForceDefaultGameMode();
+    boolean forcesDefaultGameMode();
     
     /**
      * Gets a {@link ConsoleCommandSender} that may be used as an input source

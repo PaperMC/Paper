@@ -2296,7 +2296,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean isForceDefaultGameMode() {
+    public boolean forcesDefaultGameMode() {
         return this.console.getProperties().forceGameMode;
     }
 

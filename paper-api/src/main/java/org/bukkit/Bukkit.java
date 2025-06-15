@@ -1736,8 +1736,8 @@ public final class Bukkit {
      *
      * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
      */
-    public static boolean isForceDefaultGameMode() {
-        return server.isForceDefaultGameMode();
+    public static boolean forcesDefaultGameMode() {
+        return server.forcesDefaultGameMode();
     }
 
     /**
