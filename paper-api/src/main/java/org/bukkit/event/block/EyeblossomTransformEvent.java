@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -16,7 +17,6 @@ import org.jspecify.annotations.NullMarked;
  * <li>Eyeblossom closing during the day.
  * </ul>
  * <p>
- * If this event is cancelled, the block will not transform.
  */
 @NullMarked
 public class EyeblossomTransformEvent extends BlockEvent implements Cancellable {
@@ -32,6 +32,7 @@ public class EyeblossomTransformEvent extends BlockEvent implements Cancellable 
      * @param block the block being transformed
      * @param newState the new state of the block after transformation
      */
+    @ApiStatus.Internal
     public EyeblossomTransformEvent(final Block block,final BlockState newState) {
         super(Preconditions.checkNotNull(block, "block"));
         this.newState = Preconditions.checkNotNull(newState, "newState");

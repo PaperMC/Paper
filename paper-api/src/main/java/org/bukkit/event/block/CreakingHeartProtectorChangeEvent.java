@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
@@ -17,14 +18,10 @@ import org.jspecify.annotations.NullMarked;
  *   <li>Protector is about to be removed (due to death, distance, or other reasons).
  * </ul>
  * <p>
- * If this event is cancelled, the spawn or removal of the protector will not occur.
  */
 @NullMarked
 public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Cancellable {
-    /**
-     * The type of action being performed on the protector.
-     */
-    
+
     private static final HandlerList HANDLER_LIST = new HandlerList();
     
     public boolean spawn = false;
@@ -39,6 +36,7 @@ public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Can
      * @param protector the protector entity (may be null for REMOVE if not available)
      * @param spawn the indicator of whether the mob is spawned or not
      */
+    @ApiStatus.Internal
     public CreakingHeartProtectorChangeEvent(Block block, @Nullable LivingEntity protector, boolean spawn) {
         super(block);
         this.protector = protector;
@@ -51,15 +49,16 @@ public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Can
      * @return the protector entity, or null if not available
      */
     @Nullable
-    public LivingEntity getProtector() { return protector; }
+    public LivingEntity getProtector() {
+        return protector;
+    }
 
     /**
-     * Gets the boolean for the mob being spawned or not.
-     * True for "is spawned" and false for "not spawned".
+     * Get whether the protector is being spawned.
      *
-     * @return the boolean
+     * @return whether the protector is being spawned
      */
-    public boolean getIsSpawned() {
+    public boolean isSpawned() {
         return spawn;
     }
 

@@ -5,7 +5,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.data.type.CreakingHeart.State;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import com.google.common.base.Preconditions;
@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
  * <li>Creaking Heart becoming UPROOTED when requirements are not met.
  * </ul>
  * <p>
- * If this event is cancelled, the block will not change states.
  */
 @NullMarked
 public class CreakingHeartTransformEvent extends BlockEvent implements Cancellable {
@@ -40,6 +39,7 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      * @param newState the new state of the block after transformation
      * @param oldState the previous state of the block before transformation
      */
+    @ApiStatus.Internal
     public CreakingHeartTransformEvent(
         Block block,
         BlockState oldState,
@@ -73,20 +73,20 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
     }
 
     /**
-     * Gets the previous logical state of the Creaking Heart.
+     * Gets the previous logical state of the creaking heart.
      *
      * @return the old logical state
      */
-    public State getoldCreakingHeartState() { 
+    public State getOldCreakingHeartState() { 
         return this.oldCreakingHeartState; 
     }
 
     /**
-     * Gets the new logical state of the Creaking Heart.
+     * Gets the new logical state of the creaking heart.
      *
      * @return the new logical state
      */
-    public State getnewCreakingHeartState() { 
+    public State getNewCreakingHeartState() { 
         return this.newCreakingHeartState; 
     }
 
