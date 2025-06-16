@@ -14,15 +14,26 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.NonExtendable
 public interface StatisticType<S> extends Keyed, Translatable {
 
+    // Start generate - StatisticType
+    // @GeneratedFrom 1.21.6-rc1
     StatisticType<BlockType> BLOCK_MINED = get("mined");
-    StatisticType<ItemType> ITEM_CRAFTED = get("crafted");
-    StatisticType<ItemType> ITEM_USED = get("used");
-    StatisticType<ItemType> ITEM_BROKEN = get("broken");
-    StatisticType<ItemType> ITEM_PICKED_UP = get("picked_up");
-    StatisticType<ItemType> ITEM_DROPPED = get("dropped");
-    StatisticType<EntityType> ENTITY_KILLED = get("killed");
-    StatisticType<EntityType> ENTITY_KILLED_BY = get("killed_by");
+
     StatisticType<CustomStatistic> CUSTOM = get("custom");
+
+    StatisticType<EntityType> ENTITY_KILLED = get("killed");
+
+    StatisticType<EntityType> ENTITY_KILLED_BY = get("killed_by");
+
+    StatisticType<ItemType> ITEM_BROKEN = get("broken");
+
+    StatisticType<ItemType> ITEM_CRAFTED = get("crafted");
+
+    StatisticType<ItemType> ITEM_DROPPED = get("dropped");
+
+    StatisticType<ItemType> ITEM_PICKED_UP = get("picked_up");
+
+    StatisticType<ItemType> ITEM_USED = get("used");
+    // End generate - StatisticType
 
     @SuppressWarnings("unchecked")
     private static <S> StatisticType<S> get(@KeyPattern.Value final String key) {
@@ -50,6 +61,7 @@ public interface StatisticType<S> extends Keyed, Translatable {
      * <p>
      * {@link StatisticType#CUSTOM} does <b>NOT</b> have a
      * translation key.
+     *
      * @throws IllegalArgumentException if used with {@link StatisticType#CUSTOM}
      * @see CustomStatistic#translationKey()
      */

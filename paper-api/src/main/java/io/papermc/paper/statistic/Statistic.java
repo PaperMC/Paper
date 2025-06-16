@@ -20,7 +20,7 @@ public interface Statistic<S> extends Criteria {
     S value();
 
     /**
-     * Get the stat type.
+     * Gets the stat type.
      *
      * @return the stat type
      */
