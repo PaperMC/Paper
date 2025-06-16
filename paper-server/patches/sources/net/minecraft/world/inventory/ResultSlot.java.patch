@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/inventory/ResultSlot.java
 +++ b/net/minecraft/world/inventory/ResultSlot.java
+@@ -14,6 +_,7 @@
+     private final CraftingContainer craftSlots;
+     private final Player player;
+     private int removeCount;
++    public @org.jetbrains.annotations.Nullable java.util.List<org.bukkit.inventory.ItemStack> craftRemainders; // Paper - Feature: set by CraftEvent when replacing remainders
+ 
+     public ResultSlot(Player player, CraftingContainer craftSlots, Container container, int slot, int xPosition, int yPosition) {
+         super(container, slot, xPosition, yPosition);
 @@ -72,7 +_,7 @@
      private NonNullList<ItemStack> getRemainingItems(CraftingInput input, Level level) {
          return level instanceof ServerLevel serverLevel
@@ -9,3 +17,18 @@
                  .map(recipe -> recipe.value().getRemainingItems(input))
                  .orElseGet(() -> copyAllInputItems(input))
              : CraftingRecipe.defaultCraftingReminder(input);
+@@ -92,6 +_,14 @@
+                 int i2 = i1 + left + (i + top) * this.craftSlots.getWidth();
+                 ItemStack item = this.craftSlots.getItem(i2);
+                 ItemStack itemStack = remainingItems.get(i1 + i * craftingInput.width());
++                // Paper start - Change Remainder
++                org.bukkit.inventory.ItemStack override = craftRemainders.get(i2);
++                if (override != null) {
++                    itemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(override);
++                } else {
++                    itemStack = remainingItems.get(i1 + i * craftingInput.width());
++                }
++                // Paper end - Change Remainder
+                 if (!item.isEmpty()) {
+                     this.craftSlots.removeItem(i2, 1);
+                     item = this.craftSlots.getItem(i2);
