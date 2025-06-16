@@ -6,7 +6,6 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.typewriter.preset.model.EnumValue;
 import java.util.Optional;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;

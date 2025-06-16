@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public enum SoundCategory implements Sound.Source.Provider {
 
+    // Start generate - SoundCategory
+    // @GeneratedFrom 1.21.6-rc1
     MASTER,
     MUSIC,
     RECORDS,
@@ -20,6 +22,7 @@ public enum SoundCategory implements Sound.Source.Provider {
     AMBIENT,
     VOICE,
     UI;
+    // End generate - SoundCategory
 
     @Override
     public Sound.Source soundSource() {

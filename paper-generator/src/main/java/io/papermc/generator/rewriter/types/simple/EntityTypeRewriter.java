@@ -165,7 +165,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
     private String toBukkitClass(Holder.Reference<EntityType<?>> reference) {
         Class<? extends Entity> internalClass = ENTITY_GENERIC_TYPES.get(reference.key());
         if (Mob.class.isAssignableFrom(internalClass)) {
-            return this.importCollector.getShortName(MobGoalNames.bukkitMap.get((Class<? extends Mob>) internalClass));
+            return this.importCollector.getShortName(MobGoalNames.BUKKIT_BRIDGE.get((Class<? extends Mob>) internalClass));
         }
 
         String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, reference.key().location().getPath()); // use the key instead of the internal class name since name match a bit more
