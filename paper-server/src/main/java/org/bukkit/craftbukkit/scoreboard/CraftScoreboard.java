@@ -44,10 +44,8 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
         Preconditions.checkArgument(this.getHandle().getObjective(name) == null, "An objective of name '%s' already exists", name);
         // Paper start - lazily track plugin scoreboards
-        // Paper start - stats API
         final Optional<ObjectiveCriteria> nmsCriteria = ObjectiveCriteria.byName(criteria.getName());
         if (nmsCriteria.isPresent() && nmsCriteria.get() != ObjectiveCriteria.DUMMY && !this.registeredGlobally) {
-            // Paper end - stats API
             net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
             this.registeredGlobally = true;
         }

@@ -1,35 +1,30 @@
 package io.papermc.paper.statistic;
 
 import com.google.common.base.Preconditions;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.Util;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.stats.Stat;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 
 public final class PaperStatistics {
 
-    public static final Set<CustomStatistic> IGNORED_STATS_FOR_EVENT = Set.of(
-        CustomStatistic.FALL_ONE_CM,
-        CustomStatistic.BOAT_ONE_CM,
-        CustomStatistic.CLIMB_ONE_CM,
-        CustomStatistic.WALK_ON_WATER_ONE_CM,
-        CustomStatistic.WALK_UNDER_WATER_ONE_CM,
-        CustomStatistic.FLY_ONE_CM,
-        CustomStatistic.HORSE_ONE_CM,
-        CustomStatistic.MINECART_ONE_CM,
-        CustomStatistic.PIG_ONE_CM,
-        CustomStatistic.PLAY_TIME,
-        CustomStatistic.SWIM_ONE_CM,
-        CustomStatistic.WALK_ONE_CM,
-        CustomStatistic.SPRINT_ONE_CM,
-        CustomStatistic.CROUCH_ONE_CM,
-        CustomStatistic.TIME_SINCE_DEATH,
-        CustomStatistic.SNEAK_TIME,
-        CustomStatistic.TOTAL_WORLD_TIME,
-        CustomStatistic.TIME_SINCE_REST,
-        CustomStatistic.AVIATE_ONE_CM,
-        CustomStatistic.STRIDER_ONE_CM
-    );
+    public static final Set<NamespacedKey> IGNORED_STATS_FOR_EVENT = Util.make(new HashSet<>(), set -> {
+        set.add(CustomStatistic.TIME_SINCE_DEATH.getKey());
+        set.add(CustomStatistic.TIME_SINCE_REST.getKey());
+        set.add(CustomStatistic.SNEAK_TIME.getKey());
+        set.add(CustomStatistic.TOTAL_WORLD_TIME.getKey());
+        set.add(CustomStatistic.PLAY_TIME.getKey());
+
+        Registry.CUSTOM_STAT.keyStream().forEach(key -> {
+            if (key.getKey().endsWith("_one_cm")) {
+                set.add(key);
+            }
+        });
+    });
 
     private PaperStatistics() {
     }

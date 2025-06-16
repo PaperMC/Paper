@@ -21,13 +21,9 @@ public class PlayerRequestStatisticsEvent extends PlayerEvent implements Cancell
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerRequestStatisticsEvent(final Player who, final Object2IntMap<Statistic<?>> statisticMap) {
-        super(who);
+    public PlayerRequestStatisticsEvent(final Player player, final Object2IntMap<Statistic<?>> statisticMap) {
+        super(player);
         this.statisticMap = statisticMap;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
     }
 
     /**
@@ -51,6 +47,10 @@ public class PlayerRequestStatisticsEvent extends PlayerEvent implements Cancell
 
     @Override
     public HandlerList getHandlers() {
+        return HANDLER_LIST;
+    }
+
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 }
