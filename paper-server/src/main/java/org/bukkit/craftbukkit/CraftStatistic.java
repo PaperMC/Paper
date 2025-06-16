@@ -21,7 +21,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemType;
 
-@Deprecated(forRemoval = true) // Paper
+@Deprecated(forRemoval = true)
 public enum CraftStatistic {
     // Start generate - CraftStatisticCustom
     ANIMALS_BRED(Stats.ANIMALS_BRED),

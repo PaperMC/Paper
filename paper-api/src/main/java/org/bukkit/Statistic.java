@@ -6,14 +6,16 @@ import io.papermc.paper.statistic.StatisticType;
 import java.util.Locale;
 import java.util.Objects;
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a countable statistic, which is tracked by the server.
+ *
  * @deprecated use {@link io.papermc.paper.statistic.StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
-@Deprecated(since = "1.21.6") // Paper
+@Deprecated(since = "1.21.6")
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
     ANIMALS_BRED,
@@ -164,7 +166,7 @@ public enum Statistic implements Keyed {
      *
      * @deprecated use {@link io.papermc.paper.statistic.StatisticType}
      */
-    @Deprecated(since = "1.21.6") // Paper
+    @Deprecated(since = "1.21.6")
     public enum Type {
         /**
          * Statistics of this type do not require a qualifier.
@@ -186,9 +188,9 @@ public enum Statistic implements Keyed {
          */
         ENTITY;
     }
-    // Paper start - add legacy conversion methods
+
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
         if (stat.type() == StatisticType.CUSTOM && stat.value() instanceof final CustomStatistic customStatistic) {
             if (customStatistic == CustomStatistic.PLAY_TIME) { // special case cause upstream is wrong
@@ -217,7 +219,7 @@ public enum Statistic implements Keyed {
     }
 
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public io.papermc.paper.statistic.Statistic<?> toModern(@Nullable EntityType entityType, @Nullable Material material) {
         Preconditions.checkArgument(entityType == null || material == null, "No stat has an entity type and material value at the same time");
         Preconditions.checkArgument(this.type != Type.UNTYPED || (entityType == null && material == null), "no value needed for untyped stats");
@@ -248,5 +250,4 @@ public enum Statistic implements Keyed {
             };
         };
     }
-    // Paper end
 }
