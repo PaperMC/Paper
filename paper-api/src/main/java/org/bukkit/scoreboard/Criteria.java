@@ -303,7 +303,7 @@ public interface Criteria {
      * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
-    @Deprecated(since = "1.21.6") // Paper
+    @Deprecated(since = "1.21.6")
     public static Criteria statistic(@NotNull Statistic statistic, @NotNull EntityType entityType) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(entityType != null, "entityType must not be null");

@@ -386,7 +386,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.server.getHandle().getPlayerStats(this.getUniqueId(), this.getName());
     }
 
-    // Paper start
     @Override
     public void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount) {
         if (this.isOnline()) {
@@ -427,7 +426,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             return io.papermc.paper.statistic.PaperStatistics.getFormattedValue(getStatisticManager(), statistic);
         }
     }
-    // Paper end
+
     @Override
     public void incrementStatistic(Statistic statistic) {
         if (this.isOnline()) {

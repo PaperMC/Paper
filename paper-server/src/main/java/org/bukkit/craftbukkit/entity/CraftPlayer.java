@@ -1588,7 +1588,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         return bukkitRecipeKeys.build();
     }
 
-    // Paper start
     @Override
     public void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount) {
         io.papermc.paper.statistic.PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount);
@@ -1608,7 +1607,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public String getFormattedValue(io.papermc.paper.statistic.Statistic<?> statistic) {
         return io.papermc.paper.statistic.PaperStatistics.getFormattedValue(this.getHandle().getStats(), statistic);
     }
-    // Paper end
+
     @Override
     public void incrementStatistic(Statistic statistic) {
         CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, this.getHandle());

@@ -67,6 +67,10 @@ public final class RegistryEntry<T> {
         return this.registryKeyField.name();
     }
 
+    public Class<T> elementClass() {
+        return this.elementClass;
+    }
+
     public Class<? extends Keyed> apiClass() {
         return this.apiClass;
     }
