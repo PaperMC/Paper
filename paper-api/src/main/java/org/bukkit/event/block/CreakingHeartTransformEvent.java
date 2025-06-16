@@ -1,12 +1,14 @@
 package org.bukkit.event.block;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.type.CreakingHeart.State;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.NotNull;
-import org.bukkit.block.CreakingHeartState;
+
+import org.jspecify.annotations.NullMarked;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Called when a Creaking Heart block changes its state (e.g., AWAKE, DORMANT, UPROOTED) due to world conditions.
@@ -20,14 +22,15 @@ import org.bukkit.block.CreakingHeartState;
  * <p>
  * If this event is cancelled, the block will not change states.
  */
+@NullMarked
 public class CreakingHeartTransformEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final BlockState oldState;
     private final BlockState newState;
-    private final CreakingHeartState oldLogicalState;
-    private final CreakingHeartState newLogicalState;
+    private final State oldCreakingHeartState;
+    private final State newCreakingHeartState;
     private boolean cancelled;
 
     /**
@@ -38,17 +41,17 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      * @param oldState the previous state of the block before transformation
      */
     public CreakingHeartTransformEvent(
-        @NotNull Block block,
-        @NotNull BlockState oldState,
-        @NotNull BlockState newState,
-        @NotNull CreakingHeartState oldLogicalState,
-        @NotNull CreakingHeartState newLogicalState
+        Block block,
+        BlockState oldState,
+        BlockState newState,
+        State oldCreakingHeartState,
+        State newCreakingHeartState
     ) {
         super(Preconditions.checkNotNull(block, "block cannot be null"));
         this.oldState = Preconditions.checkNotNull(oldState, "oldState cannot be null");
         this.newState = Preconditions.checkNotNull(newState, "newState cannot be null");
-        this.oldLogicalState = Preconditions.checkNotNull(oldLogicalState, "oldLogicalState cannot be null");
-        this.newLogicalState = Preconditions.checkNotNull(newLogicalState, "newLogicalState cannot be null");
+        this.oldCreakingHeartState = Preconditions.checkNotNull(oldCreakingHeartState, "oldCreakingHeartState cannot be null");
+        this.newCreakingHeartState = Preconditions.checkNotNull(newCreakingHeartState, "newCreakingHeartState cannot be null");
     }
 
     /**
@@ -56,7 +59,6 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      *
      * @return the new block state for this event's block
      */
-    @NotNull
     public BlockState getNewState() {
         return this.newState;
     }
@@ -66,7 +68,6 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      *
      * @return the old block state for this event's block
      */
-    @NotNull
     public BlockState getOldState() {
         return this.oldState;
     }
@@ -76,9 +77,8 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      *
      * @return the old logical state
      */
-    @NotNull
-    public CreakingHeartState getOldLogicalState() { 
-        return this.oldLogicalState; 
+    public State getoldCreakingHeartState() { 
+        return this.oldCreakingHeartState; 
     }
 
     /**
@@ -86,9 +86,8 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
      *
      * @return the new logical state
      */
-    @NotNull
-    public CreakingHeartState getNewLogicalState() { 
-        return this.newLogicalState; 
+    public State getnewCreakingHeartState() { 
+        return this.newCreakingHeartState; 
     }
 
     @Override
@@ -102,12 +101,10 @@ public class CreakingHeartTransformEvent extends BlockEvent implements Cancellab
     }
 
     @Override
-    @NotNull
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

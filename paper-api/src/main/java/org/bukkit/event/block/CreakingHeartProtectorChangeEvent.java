@@ -4,8 +4,9 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+
 
 /**
  * Called when the Creaking Heart block attempts to spawn or remove its protector (Creaking mob).
@@ -18,15 +19,15 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * If this event is cancelled, the spawn or removal of the protector will not occur.
  */
+@NullMarked
 public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Cancellable {
     /**
      * The type of action being performed on the protector.
      */
-    public enum Action { SPAWN, REMOVE }
-
+    
     private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Action action;
+    
+    public boolean spawn = false;
     @Nullable
     private final LivingEntity protector;
     private boolean cancelled;
@@ -36,12 +37,12 @@ public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Can
      *
      * @param block the Creaking Heart block involved in this event
      * @param protector the protector entity (may be null for REMOVE if not available)
-     * @param action the action being performed (SPAWN or REMOVE)
+     * @param spawn the indicator of whether the mob is spawned or not
      */
-    public CreakingHeartProtectorChangeEvent(@NotNull Block block, @Nullable LivingEntity protector, @NotNull Action action) {
+    public CreakingHeartProtectorChangeEvent(Block block, @Nullable LivingEntity protector, boolean spawn) {
         super(block);
         this.protector = protector;
-        this.action = action;
+        this.spawn = spawn;
     }
 
     /**
@@ -53,14 +54,14 @@ public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Can
     public LivingEntity getProtector() { return protector; }
 
     /**
-     * Gets the action being performed (SPAWN or REMOVE).
+     * Gets the boolean for the mob being spawned or not.
+     * True for "is spawned" and false for "not spawned".
      *
-     * @return the action
+     * @return the boolean
      */
-    @NotNull
-    public Action getAction() {
-        return action;
- }
+    public boolean getIsSpawned() {
+        return spawn;
+    }
 
     @Override
     public boolean isCancelled() {
@@ -72,13 +73,11 @@ public class CreakingHeartProtectorChangeEvent extends BlockEvent implements Can
         this.cancelled = cancel; 
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST; 
     }
 
-    @NotNull
     public static HandlerList getHandlerList() { 
         return HANDLER_LIST; 
     }
