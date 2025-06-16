@@ -1577,7 +1577,7 @@ public class CraftEventFactory {
     public static Cancellable handleStatisticsIncrease(final net.minecraft.world.entity.player.Player entityHuman, final Stat<?> statistic, final int current, final int newValue) {
         final Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
         final Statistic<?> stat = PaperStatistics.getPaperStatistic(statistic);
-        if (stat.value() instanceof final CustomStatistic customStatistic && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic)) {
+        if (stat.value() instanceof final CustomStatistic customStatistic && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic.getKey())) {
             // Do not process event for these - too spammy
             return null;
         }
