@@ -26,8 +26,8 @@ paperweight {
 
     spigot {
         enabled = false
-        buildDataRef = "702e1a0a5072b2c4082371d5228cb30525687efc"
-        packageVersion = "v1_21_R4" // also needs to be updated in MappingEnvironment
+        buildDataRef = "281ac0de7a76d808753ede97d11b034bc801b63d"
+        packageVersion = "v1_21_R5"
     }
 
     reobfPackagesToFix.addAll(
