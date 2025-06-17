@@ -17,10 +17,10 @@ predicates.
 
 diff --git a/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java b/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9440106fa179b4b32c8e515eaf8b498c1d3bb4c
+index 0000000000000000000000000000000000000000..5f5cdfc538ba9aa6666c019df6706015234d7bae
 --- /dev/null
 +++ b/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,91 @@
 +package io.papermc.paper.entity.temptation;
 +
 +import java.util.ArrayList;
@@ -28,6 +28,7 @@ index 0000000000000000000000000000000000000000..a9440106fa179b4b32c8e515eaf8b498
 +import java.util.List;
 +import java.util.function.Predicate;
 +import net.minecraft.tags.ItemTags;
++import net.minecraft.world.entity.animal.HappyGhast;
 +import net.minecraft.world.entity.animal.armadillo.ArmadilloAi;
 +import net.minecraft.world.entity.animal.axolotl.AxolotlAi;
 +import net.minecraft.world.entity.animal.camel.CamelAi;
@@ -63,6 +64,7 @@ index 0000000000000000000000000000000000000000..a9440106fa179b4b32c8e515eaf8b498
 +    public static final TemptationPredicate CAMEL_TEMPTATIONS = register(CamelAi.getTemptations());
 +    public static final TemptationPredicate ARMADILLO_TEMPTATIONS = register(ArmadilloAi.getTemptations());
 +    public static final TemptationPredicate SNIFFER_TEMPTATIONS = register(SnifferAi.getTemptations());
++    public static final TemptationPredicate HAPPY_GHAST_TEMPTATIONS = register(HappyGhast.IS_FOOD);
 +
 +    public record TemptationPredicate(int index, Predicate<ItemStack> predicate) implements Predicate<ItemStack> {
 +
@@ -111,10 +113,10 @@ index 0000000000000000000000000000000000000000..a9440106fa179b4b32c8e515eaf8b498
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index d50d2928ad9f8b34a14621b1fe5c188547e04bd1..0e89fa316ebdb0c647349148d125151f03a9a0b6 100644
+index dda8d38ef61672cc714d9e5a475f9b0412ed5ff9..5c62933c0e4f4e02d73ce1575c3f601ba00b9007 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -785,6 +785,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -789,6 +789,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
  
              io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
@@ -122,7 +124,7 @@ index d50d2928ad9f8b34a14621b1fe5c188547e04bd1..0e89fa316ebdb0c647349148d125151f
              this.entityTickList
                  .forEach(
                      entity -> {
-@@ -2743,4 +2744,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2797,4 +2798,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          this.lagCompensationTick = (System.nanoTime() - MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
      }
      // Paper end - lag compensation
@@ -135,28 +137,34 @@ index d50d2928ad9f8b34a14621b1fe5c188547e04bd1..0e89fa316ebdb0c647349148d125151f
 +    // Paper end - optimise temptation lookups
  }
 diff --git a/net/minecraft/world/entity/ai/goal/TemptGoal.java b/net/minecraft/world/entity/ai/goal/TemptGoal.java
-index 438d6347778a94b4fe430320b268a2d67afa209a..bd1ecdf4872519c9c180137ac563345c717c4ddd 100644
+index dae935cc68e2e571d50e56ac8913c099a11cf771..fbc4a84c139b656a6852d73bbebf7e6e839b67ea 100644
 --- a/net/minecraft/world/entity/ai/goal/TemptGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/TemptGoal.java
-@@ -26,14 +26,16 @@ public class TemptGoal extends Goal {
-     private boolean isRunning;
+@@ -30,6 +30,7 @@ public class TemptGoal extends Goal {
      private final Predicate<ItemStack> items;
      private final boolean canScare;
+     private final double stopDistance;
 +    private final int globalTemptationLookupIndex; // Paper - optimise temptation checks
  
      public TemptGoal(PathfinderMob mob, double speedModifier, Predicate<ItemStack> items, boolean canScare) {
+         this((Mob)mob, speedModifier, items, canScare, 2.5);
+@@ -40,13 +41,14 @@ public class TemptGoal extends Goal {
+     }
+ 
+     TemptGoal(Mob mob, double speedModifier, Predicate<ItemStack> items, boolean canScare, double stopDistance) {
 +        this.globalTemptationLookupIndex = io.papermc.paper.entity.temptation.GlobalTemptationLookup.indexFor(items); // Paper - optimise temptation checks
          this.mob = mob;
          this.speedModifier = speedModifier;
          this.items = items;
          this.canScare = canScare;
+         this.stopDistance = stopDistance;
          this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 -        this.targetingConditions = TEMPT_TARGETING.copy().selector((entity, level) -> this.shouldFollow(entity));
 +        this.targetingConditions = globalTemptationLookupIndex >= 0 ? TEMPT_TARGETING.copy() : TEMPT_TARGETING.copy().selector((entity, level) -> this.shouldFollow(entity)); // Paper - optimise temptation checks - skip selector if we have a lookup index.
      }
  
      @Override
-@@ -42,8 +44,41 @@ public class TemptGoal extends Goal {
+@@ -55,8 +57,41 @@ public class TemptGoal extends Goal {
              this.calmDown--;
              return false;
          } else {
@@ -199,12 +207,12 @@ index 438d6347778a94b4fe430320b268a2d67afa209a..bd1ecdf4872519c9c180137ac563345c
              if (this.player != null) {
                  org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
 diff --git a/net/minecraft/world/entity/ai/sensing/SensorType.java b/net/minecraft/world/entity/ai/sensing/SensorType.java
-index 6dfa1aa301c28c98c850038185efb49ae8df1102..f4fdac0978afa86e8ec9bc8bd26b1acb8d548da5 100644
+index 817bcaa1c09d9bd0b9856d06a8969ef583de6778..884398702e7810490743bbe74aa42fac9c661147 100644
 --- a/net/minecraft/world/entity/ai/sensing/SensorType.java
 +++ b/net/minecraft/world/entity/ai/sensing/SensorType.java
-@@ -37,17 +37,17 @@ public class SensorType<U extends Sensor<?>> {
-     public static final SensorType<HoglinSpecificSensor> HOGLIN_SPECIFIC_SENSOR = register("hoglin_specific_sensor", HoglinSpecificSensor::new);
+@@ -39,18 +39,18 @@ public class SensorType<U extends Sensor<?>> {
      public static final SensorType<AdultSensor> NEAREST_ADULT = register("nearest_adult", AdultSensor::new);
+     public static final SensorType<AdultSensor> NEAREST_ADULT_ANY_TYPE = register("nearest_adult_any_type", AdultSensorAnyType::new);
      public static final SensorType<AxolotlAttackablesSensor> AXOLOTL_ATTACKABLES = register("axolotl_attackables", AxolotlAttackablesSensor::new);
 -    public static final SensorType<TemptingSensor> AXOLOTL_TEMPTATIONS = register("axolotl_temptations", () -> new TemptingSensor(AxolotlAi.getTemptations()));
 -    public static final SensorType<TemptingSensor> GOAT_TEMPTATIONS = register("goat_temptations", () -> new TemptingSensor(GoatAi.getTemptations()));
@@ -218,6 +226,8 @@ index 6dfa1aa301c28c98c850038185efb49ae8df1102..f4fdac0978afa86e8ec9bc8bd26b1acb
 -        "armadillo_temptations", () -> new TemptingSensor(ArmadilloAi.getTemptations())
 +        "armadillo_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.ARMADILLO_TEMPTATIONS) // Paper - optimise temptation lookups
      );
+-    public static final SensorType<TemptingSensor> HAPPY_GHAST_TEMPTATIONS = register("happy_ghast_temptations", () -> new TemptingSensor(HappyGhast.IS_FOOD));
++    public static final SensorType<TemptingSensor> HAPPY_GHAST_TEMPTATIONS = register("happy_ghast_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.HAPPY_GHAST_TEMPTATIONS)); // Paper - optimise temptation lookups
      public static final SensorType<FrogAttackablesSensor> FROG_ATTACKABLES = register("frog_attackables", FrogAttackablesSensor::new);
      public static final SensorType<IsInWaterSensor> IS_IN_WATER = register("is_in_water", IsInWaterSensor::new);
      public static final SensorType<WardenEntitySensor> WARDEN_ENTITY_SENSOR = register("warden_entity_sensor", WardenEntitySensor::new);
@@ -309,10 +319,10 @@ index dd8ea03ba823996a5c97562e357650ab34d0e32e..ddf3e1f22baba86aa0e073c3000d1663
          this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
          this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
 diff --git a/net/minecraft/world/entity/animal/Bee.java b/net/minecraft/world/entity/animal/Bee.java
-index edca2fa21e600fa1e7ef91af673adaae7d4c86c4..d146ab630ff5b83219c815571044795708f78f6c 100644
+index d40954f03c865bfbc5beb308bbcf7b7c9ac48eb9..2c710ea32c7d25d8d36cf65bd2aae42ca63b48e3 100644
 --- a/net/minecraft/world/entity/animal/Bee.java
 +++ b/net/minecraft/world/entity/animal/Bee.java
-@@ -190,7 +190,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+@@ -191,7 +191,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
          this.goalSelector.addGoal(0, new Bee.BeeAttackGoal(this, 1.4F, true));
          this.goalSelector.addGoal(1, new Bee.BeeEnterHiveGoal());
          this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
@@ -322,10 +332,10 @@ index edca2fa21e600fa1e7ef91af673adaae7d4c86c4..d146ab630ff5b83219c8155710447957
          this.goalSelector.addGoal(3, new Bee.ValidateFlowerGoal());
          this.beePollinateGoal = new Bee.BeePollinateGoal();
 diff --git a/net/minecraft/world/entity/animal/Cat.java b/net/minecraft/world/entity/animal/Cat.java
-index 9c60140ef1ae9973ce39643c5253ddb0eac1c97b..b8f35c68f177bf378c2094222382a497c2382550 100644
+index 7d20de1741e5e9219dea84fe5692f31c05fa82a2..fd7c046d53e94dd998eb2c4cd1bd990d8c916769 100644
 --- a/net/minecraft/world/entity/animal/Cat.java
 +++ b/net/minecraft/world/entity/animal/Cat.java
-@@ -93,7 +93,7 @@ public class Cat extends TamableAnimal {
+@@ -94,7 +94,7 @@ public class Cat extends TamableAnimal {
  
      @Override
      protected void registerGoals() {
@@ -335,10 +345,10 @@ index 9c60140ef1ae9973ce39643c5253ddb0eac1c97b..b8f35c68f177bf378c2094222382a497
          this.goalSelector.addGoal(1, new TamableAnimal.TamableAnimalPanicGoal(1.5));
          this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
 diff --git a/net/minecraft/world/entity/animal/Chicken.java b/net/minecraft/world/entity/animal/Chicken.java
-index 351c29ffe842cc1406c36361520057ab046ca649..38719127afda30f294b7b940b8e180f8c28a8c79 100644
+index da408c313d898413dee928e9c80501ddf56d75e8..4bbe3ad0e3174057d55b17883960b9a04e77f96e 100644
 --- a/net/minecraft/world/entity/animal/Chicken.java
 +++ b/net/minecraft/world/entity/animal/Chicken.java
-@@ -76,7 +76,7 @@ public class Chicken extends Animal {
+@@ -77,7 +77,7 @@ public class Chicken extends Animal {
          this.goalSelector.addGoal(0, new FloatGoal(this));
          this.goalSelector.addGoal(1, new PanicGoal(this, 1.4));
          this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
@@ -348,10 +358,10 @@ index 351c29ffe842cc1406c36361520057ab046ca649..38719127afda30f294b7b940b8e180f8
          this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
          this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
 diff --git a/net/minecraft/world/entity/animal/Ocelot.java b/net/minecraft/world/entity/animal/Ocelot.java
-index 9e86a42f04d06c3dcd241f16ab876b0c8422fd81..09efc12ce9ab656a29b6cb8ef20ac24adc32714a 100644
+index e8b184f2e1a98e565a50ce6ae6cab248d5a6e89b..caf38167d781f7e26f468a1f64465b10cdfc2354 100644
 --- a/net/minecraft/world/entity/animal/Ocelot.java
 +++ b/net/minecraft/world/entity/animal/Ocelot.java
-@@ -92,7 +92,7 @@ public class Ocelot extends Animal {
+@@ -93,7 +93,7 @@ public class Ocelot extends Animal {
  
      @Override
      protected void registerGoals() {
@@ -361,10 +371,10 @@ index 9e86a42f04d06c3dcd241f16ab876b0c8422fd81..09efc12ce9ab656a29b6cb8ef20ac24a
          this.goalSelector.addGoal(3, this.temptGoal);
          this.goalSelector.addGoal(7, new LeapAtTargetGoal(this, 0.3F));
 diff --git a/net/minecraft/world/entity/animal/Panda.java b/net/minecraft/world/entity/animal/Panda.java
-index ecd85f3e33f80084b9ee06c9ff1f57b73399be50..2870c45ad5be4669790edd584b0f0aa26c78d35e 100644
+index 44c12820b9b39acc5220db8b8d29a31c0e57526e..4f35ea76ab62ede9110759da22daeaa3dd745e45 100644
 --- a/net/minecraft/world/entity/animal/Panda.java
 +++ b/net/minecraft/world/entity/animal/Panda.java
-@@ -262,7 +262,7 @@ public class Panda extends Animal {
+@@ -263,7 +263,7 @@ public class Panda extends Animal {
          this.goalSelector.addGoal(2, new Panda.PandaPanicGoal(this, 2.0));
          this.goalSelector.addGoal(2, new Panda.PandaBreedGoal(this, 1.0));
          this.goalSelector.addGoal(3, new Panda.PandaAttackGoal(this, 1.2F, true));
@@ -374,10 +384,10 @@ index ecd85f3e33f80084b9ee06c9ff1f57b73399be50..2870c45ad5be4669790edd584b0f0aa2
          this.goalSelector.addGoal(6, new Panda.PandaAvoidGoal<>(this, Monster.class, 4.0F, 2.0, 2.0));
          this.goalSelector.addGoal(7, new Panda.PandaSitGoal());
 diff --git a/net/minecraft/world/entity/animal/Pig.java b/net/minecraft/world/entity/animal/Pig.java
-index ec2074741b52cf8f1ac3c0276bcfc9b8806b71bf..2423f6d1ee1dd438f91d33dba272324faefb8eea 100644
+index 155a51233895955d01c2ee73416e2daefc4dfd0f..90be30fc8d37597178d110957ebb89a56d7b196c 100644
 --- a/net/minecraft/world/entity/animal/Pig.java
 +++ b/net/minecraft/world/entity/animal/Pig.java
-@@ -70,8 +70,8 @@ public class Pig extends Animal implements ItemSteerable {
+@@ -71,8 +71,8 @@ public class Pig extends Animal implements ItemSteerable {
          this.goalSelector.addGoal(0, new FloatGoal(this));
          this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
          this.goalSelector.addGoal(3, new BreedGoal(this, 1.0));
@@ -389,10 +399,10 @@ index ec2074741b52cf8f1ac3c0276bcfc9b8806b71bf..2423f6d1ee1dd438f91d33dba272324f
          this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0));
          this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
 diff --git a/net/minecraft/world/entity/animal/Rabbit.java b/net/minecraft/world/entity/animal/Rabbit.java
-index cc7d990f271af1371aa62e8a2ee2ee1bfffb621a..b7a59e9aedca34f23ece57b99d1db725f4bf502e 100644
+index ac99590dad689f2cfffb9b9e2465f6a252d41e9c..60b25d5af72880b9de6a302dcce576ba88aa5fd6 100644
 --- a/net/minecraft/world/entity/animal/Rabbit.java
 +++ b/net/minecraft/world/entity/animal/Rabbit.java
-@@ -104,7 +104,7 @@ public class Rabbit extends Animal {
+@@ -105,7 +105,7 @@ public class Rabbit extends Animal {
          this.goalSelector.addGoal(1, new ClimbOnTopOfPowderSnowGoal(this, this.level()));
          this.goalSelector.addGoal(1, new Rabbit.RabbitPanicGoal(this, 2.2));
          this.goalSelector.addGoal(2, new BreedGoal(this, 0.8));
@@ -402,10 +412,10 @@ index cc7d990f271af1371aa62e8a2ee2ee1bfffb621a..b7a59e9aedca34f23ece57b99d1db725
          this.goalSelector.addGoal(4, new Rabbit.RabbitAvoidEntityGoal<>(this, Wolf.class, 10.0F, 2.2, 2.2));
          this.goalSelector.addGoal(4, new Rabbit.RabbitAvoidEntityGoal<>(this, Monster.class, 4.0F, 2.2, 2.2));
 diff --git a/net/minecraft/world/entity/animal/Turtle.java b/net/minecraft/world/entity/animal/Turtle.java
-index d24ddf8a585395c0f7b1cd5a61aaea0516636d93..6ac7fd41bcbdbf68113b9d9fb9a49fba9e0245e9 100644
+index 8738424b92726f45de2c166a063d46e1071e8b29..f30a07673cdd0e79532950cccc9b2bf48becb314 100644
 --- a/net/minecraft/world/entity/animal/Turtle.java
 +++ b/net/minecraft/world/entity/animal/Turtle.java
-@@ -147,7 +147,7 @@ public class Turtle extends Animal {
+@@ -148,7 +148,7 @@ public class Turtle extends Animal {
          this.goalSelector.addGoal(0, new Turtle.TurtlePanicGoal(this, 1.2));
          this.goalSelector.addGoal(1, new Turtle.TurtleBreedGoal(this, 1.0));
          this.goalSelector.addGoal(1, new Turtle.TurtleLayEggGoal(this, 1.0));
@@ -415,10 +425,10 @@ index d24ddf8a585395c0f7b1cd5a61aaea0516636d93..6ac7fd41bcbdbf68113b9d9fb9a49fba
          this.goalSelector.addGoal(4, new Turtle.TurtleGoHomeGoal(this, 1.0));
          this.goalSelector.addGoal(7, new Turtle.TurtleTravelGoal(this, 1.0));
 diff --git a/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index 7c473eea481f5e055cc70512027726f41f0c6f67..8e166379494972491db94c5779bb7a0879a30ef3 100644
+index 31ed5d7cfbda1a1f98ebfc89f5cbc65332cabdae..3e5ed602358613dd1bfd70b4cffa846ee17a4104 100644
 --- a/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-@@ -147,7 +147,7 @@ public abstract class AbstractHorse extends Animal implements HasCustomInventory
+@@ -148,7 +148,7 @@ public abstract class AbstractHorse extends Animal implements HasCustomInventory
  
      protected void addBehaviourGoals() {
          this.goalSelector.addGoal(0, new FloatGoal(this));
@@ -428,10 +438,10 @@ index 7c473eea481f5e055cc70512027726f41f0c6f67..8e166379494972491db94c5779bb7a08
  
      @Override
 diff --git a/net/minecraft/world/entity/animal/horse/Llama.java b/net/minecraft/world/entity/animal/horse/Llama.java
-index 6916adb865ff8fea498d3a61c2b5560472a223f4..e95a300972f9e8c426b622fdd4953694c9d0409d 100644
+index 1e2b629641e5fa1040307461dbbf03ad2d75ba00..a658e36067119004f2c1a0b2c84e4744c530cda0 100644
 --- a/net/minecraft/world/entity/animal/horse/Llama.java
 +++ b/net/minecraft/world/entity/animal/horse/Llama.java
-@@ -128,7 +128,7 @@ public class Llama extends AbstractChestedHorse implements RangedAttackMob {
+@@ -129,7 +129,7 @@ public class Llama extends AbstractChestedHorse implements RangedAttackMob {
          this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.25, 40, 20.0F));
          this.goalSelector.addGoal(3, new PanicGoal(this, 1.2));
          this.goalSelector.addGoal(4, new BreedGoal(this, 1.0));
@@ -441,10 +451,10 @@ index 6916adb865ff8fea498d3a61c2b5560472a223f4..e95a300972f9e8c426b622fdd4953694
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.7));
          this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
 diff --git a/net/minecraft/world/entity/animal/sheep/Sheep.java b/net/minecraft/world/entity/animal/sheep/Sheep.java
-index bb51adb44cbff3e7feaa80421f5f1a01c119aa00..d553e2e73399685bdd520ebbcb242e031632e7e2 100644
+index 4e4887cd2c6d6d22966395d68ed59da090f609a3..706eced22b3fb7ff67716a31f170784ef434811c 100644
 --- a/net/minecraft/world/entity/animal/sheep/Sheep.java
 +++ b/net/minecraft/world/entity/animal/sheep/Sheep.java
-@@ -90,7 +90,7 @@ public class Sheep extends Animal implements Shearable {
+@@ -68,7 +68,7 @@ public class Sheep extends Animal implements Shearable {
          this.goalSelector.addGoal(0, new FloatGoal(this));
          this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
          this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
