@@ -97,6 +97,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
                 this.getMinecraftWorld().getWorld(), entry.getKey(), block.state(), block.blockEntity()
             );
             snapshot.setFlags(block.flags());
+            snapshot.setWorldHandle(this.level);
             callback.accept(snapshot);
         }
     }
