@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
     private final ViewerUnaware unaware;
-    private @Nullable Component message;
 
     ViewerUnawareImpl(final ViewerUnaware unaware) {
         this.unaware = unaware;
@@ -24,10 +23,7 @@ sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnawa
 
     @Override
     public Component render(final Player source, final Component sourceDisplayName, final Component message) {
-        if (this.message == null) {
-            this.message = this.unaware.render(source, sourceDisplayName, message);
-        }
-        return this.message;
+        return this.unaware.render(source, sourceDisplayName, message);
     }
 
     static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
