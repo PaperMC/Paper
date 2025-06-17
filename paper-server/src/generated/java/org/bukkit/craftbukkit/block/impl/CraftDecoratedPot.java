@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DecoratedPot;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6-rc1")
+@GeneratedFrom("1.21.6")
 public class CraftDecoratedPot extends CraftBlockData implements DecoratedPot {
     private static final BooleanProperty CRACKED = DecoratedPotBlock.CRACKED;
 
