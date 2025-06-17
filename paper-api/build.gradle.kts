@@ -184,7 +184,7 @@ tasks.withType<Javadoc> {
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
-        "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
+        // "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/", // TODO: Broken
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")
