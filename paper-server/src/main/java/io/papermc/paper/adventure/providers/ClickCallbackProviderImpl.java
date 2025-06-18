@@ -1,11 +1,15 @@
 package io.papermc.paper.adventure.providers;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Queue;
@@ -13,17 +17,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("UnstableApiUsage") // permitted provider
 public class ClickCallbackProviderImpl implements ClickCallback.Provider {
+    private static final Key CLICK_CALLBACK_KEY = Key.key("paper", "click_callback");
+    public static final ResourceLocation CLICK_CALLBACK_RESOURCE_LOCATION = PaperAdventure.asVanilla(CLICK_CALLBACK_KEY);
 
     public static final CallbackManager CALLBACK_MANAGER = new CallbackManager();
 
     @Override
     public @NotNull ClickEvent create(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
-        return ClickEvent.runCommand("/paper:callback " + CALLBACK_MANAGER.addCallback(callback, options));
+        return ClickEvent.custom(CLICK_CALLBACK_KEY, BinaryTagHolder.binaryTagHolder(CALLBACK_MANAGER.addCallback(callback, options).toString()));
     }
 
     public static final class CallbackManager {
 
-        private final Map<UUID, StoredCallback> callbacks = new HashMap<>();
+        private final Map<String , StoredCallback> callbacks = new HashMap<>();
         private final Queue<StoredCallback> queue = new ConcurrentLinkedQueue<>();
 
         private CallbackManager() {
@@ -44,11 +50,11 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             // Add entries from queue
             StoredCallback callback;
             while ((callback = this.queue.poll()) != null) {
-                this.callbacks.put(callback.id(), callback);
+                this.callbacks.put(callback.id().toString(), callback);
             }
         }
 
-        public void runCallback(final @NotNull Audience audience, final UUID id) {
+        public void runCallback(final @NotNull Audience audience, final String id) {
             final StoredCallback callback = this.callbacks.get(id);
             if (callback != null && callback.valid()) { //TODO Message if expired/invalid?
                 callback.takeUse();
