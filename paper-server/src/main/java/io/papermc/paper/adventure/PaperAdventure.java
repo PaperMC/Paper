@@ -376,6 +376,7 @@ public final class PaperAdventure {
             case PLAYER -> SoundSource.PLAYERS;
             case AMBIENT -> SoundSource.AMBIENT;
             case VOICE -> SoundSource.VOICE;
+            case UI -> SoundSource.UI;
         };
     }
 

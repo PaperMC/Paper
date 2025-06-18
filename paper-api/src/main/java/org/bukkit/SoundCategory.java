@@ -37,7 +37,7 @@ public enum SoundCategory implements Sound.Source.Provider {
             case PLAYERS -> Sound.Source.PLAYER;
             case AMBIENT -> Sound.Source.AMBIENT;
             case VOICE -> Sound.Source.VOICE;
-            case UI -> throw new UnsupportedOperationException("Waiting on adventure release for the UI sound source"); // todo adventure
+            case UI -> Sound.Source.UI;
         };
     }
 }
