@@ -18,20 +18,20 @@ import java.util.List;
 public class CraftItemEvent extends InventoryClickEvent {
 
     private final Recipe recipe;
-    private final List<ItemStack> craftRemainders;
+    private final ItemStack[] craftRemainders;
 
     @ApiStatus.Internal
     public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action) {
         super(view, type, slot, click, action);
         this.recipe = recipe;
-        this.craftRemainders = new ArrayList<>(Collections.nCopies(getInventory().getMatrix().length, null));
+        this.craftRemainders = new ItemStack[getInventory().getMatrix().length];
     }
 
     @ApiStatus.Internal
     public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action, int key) {
         super(view, type, slot, click, action, key);
         this.recipe = recipe;
-        this.craftRemainders = new ArrayList<>(Collections.nCopies(getInventory().getMatrix().length, null));
+        this.craftRemainders = new ItemStack[getInventory().getMatrix().length];
     }
 
     @NotNull
@@ -49,10 +49,10 @@ public class CraftItemEvent extends InventoryClickEvent {
     }
 
     /**
-     * @return A list of nullable ItemStacks. The size is the same as the crafting grid's matrix.
+     * @return An array of nullable ItemStacks. The size is the same as the crafting grid's matrix.
      * @apiNote Elements are nullable, meaning only non-null elements actually override the remainder
      */
-    public @NotNull List<@Nullable ItemStack> getCraftRemainders() {
+    public @Nullable ItemStack @NotNull [] getCraftRemainders() {
         return this.craftRemainders;
     }
 }
