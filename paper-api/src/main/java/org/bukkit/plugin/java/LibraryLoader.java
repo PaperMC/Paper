@@ -47,6 +47,20 @@ public class LibraryLoader {
     public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
     public static java.util.function.Function<List<java.nio.file.Path>, List<java.nio.file.Path>> REMAPPER; // Paper - remap libraries
 
+    // TODO: Consider moving this and adding per plugin support for defining repositories
+    private static List<RemoteRepository> getRepositories() {
+        String central = System.getenv("PAPER_DEFAULT_CENTRAL_REPOSITORY");
+        if (central == null) {
+            central = System.getProperty("org.bukkit.plugin.java.LibraryLoader.centralURL");
+        }
+        if (central == null) {
+            central = "https://repo.maven.apache.org/maven2";
+        }
+
+        return Arrays.asList(new RemoteRepository.Builder("central", "default", central).build());
+
+    }
+
     public LibraryLoader(@NotNull Logger logger) {
         this.logger = logger;
 
@@ -73,7 +87,7 @@ public class LibraryLoader {
         session.setSystemProperties(System.getProperties());
         session.setReadOnly();
 
-        this.repositories = repository.newResolutionRepositories(session, Arrays.asList(new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2").build()));
+        this.repositories = repository.newResolutionRepositories(session, getRepositories());
     }
 
     @Nullable
