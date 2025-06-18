@@ -18,5 +18,4 @@ public interface InlinedRegistryBuilderProvider {
         return Holder.INSTANCE.orElseThrow();
     }
 
-    Art createPaintingVariant(Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value);
 }

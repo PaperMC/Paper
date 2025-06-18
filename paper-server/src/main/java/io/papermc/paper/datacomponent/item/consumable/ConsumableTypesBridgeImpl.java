@@ -3,20 +3,18 @@ package io.papermc.paper.datacomponent.item.consumable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.key.Key;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-@ApiStatus.Internal
 @NullMarked
 public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 
@@ -35,7 +33,7 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
     public ConsumeEffect.RemoveStatusEffects removeStatusEffects(final RegistryKeySet<PotionEffectType> effectTypes) {
         return new PaperRemoveStatusEffects(
             new net.minecraft.world.item.consume_effects.RemoveStatusEffectsConsumeEffect(
-                PaperRegistrySets.convertToNms(Registries.MOB_EFFECT, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), effectTypes)
+                PaperRegistrySets.convertToNms(Registries.MOB_EFFECT, Conversions.global().lookup(), effectTypes)
             )
         );
     }

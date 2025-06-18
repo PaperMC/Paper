@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-@@ -1,0 +_,241 @@
+@@ -1,0 +_,250 @@
 +package ca.spottedleaf.moonrise.paper;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
@@ -32,6 +32,8 @@
 +import java.util.function.Predicate;
 +
 +public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHooks {
++
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 +
 +    @Override
 +    public String getBrand() {
@@ -150,6 +152,11 @@
 +    }
 +
 +    @Override
++    public long[] getCounterTypesUncached(final net.minecraft.server.level.TicketType type) {
++        return new long[0];
++    }
++
++    @Override
 +    public boolean configFixMC224294() {
 +        return true;
 +    }
@@ -234,7 +241,9 @@
 +
 +    @Override
 +    public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
-+        net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(world, chunk.getEntities());
++        try (final net.minecraft.util.ProblemReporter.ScopedCollector scopedCollector = new net.minecraft.util.ProblemReporter.ScopedCollector(chunk.problemPath(), LOGGER)) {
++            net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(world, net.minecraft.world.level.storage.TagValueInput.create(scopedCollector, world.registryAccess(), chunk.getEntities()));
++        }
 +    }
 +
 +    @Override

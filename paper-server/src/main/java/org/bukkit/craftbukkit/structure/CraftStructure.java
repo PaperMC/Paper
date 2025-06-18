@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -19,6 +21,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockRotProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
@@ -39,8 +42,11 @@ import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.EntityTransformer;
+import org.slf4j.Logger;
 
 public class CraftStructure implements Structure {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private final StructureTemplate structure;
     private final RegistryAccess registry;
@@ -121,7 +127,7 @@ public class CraftStructure implements Structure {
         Preconditions.checkArgument(size != null, "BlockVector size cannot be null");
         Preconditions.checkArgument(size.getBlockX() >= 1 && size.getBlockY() >= 1 && size.getBlockZ() >= 1, "Size must be at least 1x1x1 but was %sx%sx%s", size.getBlockX(), size.getBlockY(), size.getBlockZ());
 
-        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, Blocks.STRUCTURE_VOID);
+        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, List.of(Blocks.STRUCTURE_VOID));
     }
 
     @Override
@@ -133,10 +139,18 @@ public class CraftStructure implements Structure {
     public List<Entity> getEntities() {
         List<Entity> entities = new ArrayList<>();
         for (StructureTemplate.StructureEntityInfo entity : this.structure.entityInfoList) {
-            EntityType.create(entity.nbt, ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle(), EntitySpawnReason.STRUCTURE).ifPresent(dummyEntity -> {
-                dummyEntity.setPos(entity.pos.x, entity.pos.y, entity.pos.z);
-                entities.add(dummyEntity.getBukkitEntity());
-            });
+            try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+                () -> "entity@" + entity.pos, LOGGER
+            )) {
+                EntityType.create(
+                    TagValueInput.createGlobal(problemReporter, entity.nbt),
+                    ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle(),
+                    EntitySpawnReason.STRUCTURE
+                ).ifPresent(dummyEntity -> {
+                    dummyEntity.setPos(entity.pos.x, entity.pos.y, entity.pos.z);
+                    entities.add(dummyEntity.getBukkitEntity());
+                });
+            }
         }
         return Collections.unmodifiableList(entities);
     }

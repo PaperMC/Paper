@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/LeadItem.java
 +++ b/net/minecraft/world/item/LeadItem.java
-@@ -28,23 +_,43 @@
+@@ -26,24 +_,43 @@
          if (blockState.is(BlockTags.FENCES)) {
              Player player = context.getPlayer();
              if (!level.isClientSide && player != null) {
@@ -15,7 +15,8 @@
 -    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos) {
 +    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos, net.minecraft.world.InteractionHand interactionHand) { // CraftBukkit - Add InteractionHand
          LeashFenceKnotEntity leashFenceKnotEntity = null;
-         List<Leashable> list = leashableInArea(level, pos, leashable1 -> leashable1.getLeashHolder() == player);
+         List<Leashable> list = Leashable.leashableInArea(level, Vec3.atCenterOf(pos), leashable1 -> leashable1.getLeashHolder() == player);
+         boolean flag = false;
  
 -        for (Leashable leashable : list) {
 +        for (java.util.Iterator<Leashable> iterator = list.iterator(); iterator.hasNext();) { // Paper - use iterator to remove
@@ -36,18 +37,17 @@
              }
  
 +            // CraftBukkit start
-+            if (leashable instanceof Entity leashed) {
++            if (leashable instanceof net.minecraft.world.entity.Entity leashed) {
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, leashFenceKnotEntity, player, interactionHand).isCancelled()) {
 +                    iterator.remove();
 +                    continue;
 +                }
 +            }
 +            // CraftBukkit end
-+
-             leashable.setLeashedTo(leashFenceKnotEntity, true);
-         }
- 
-@@ -52,9 +_,20 @@
+             if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity)) {
+                 leashable.setLeashedTo(leashFenceKnotEntity, true);
+                 flag = true;
+@@ -54,7 +_,18 @@
              level.gameEvent(GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of(player));
              return InteractionResult.SUCCESS_SERVER;
          } else {
@@ -65,6 +65,4 @@
 +        return LeadItem.bindPlayerMobs(player, world, pos, net.minecraft.world.InteractionHand.MAIN_HAND);
 +    }
 +    // CraftBukkit end
- 
-     public static List<Leashable> leashableInArea(Level level, BlockPos pos, Predicate<Leashable> predicate) {
-         double d = 7.0;
+ }

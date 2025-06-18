@@ -7,7 +7,7 @@ Optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/net/minecraft/world/entity/ai/goal/Goal.java b/net/minecraft/world/entity/ai/goal/Goal.java
-index d4f8387254a65b25fc808932a069298d0f8da091..5f5bf0e710ecff09a571091e5a923332be70cb74 100644
+index a66c86066ca2eda10f0ef62e5197a765a994f250..f54bbe2e65b18f214266769c7a64144baafa9a58 100644
 --- a/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/net/minecraft/world/entity/ai/goal/Goal.java
 @@ -7,7 +7,15 @@ import net.minecraft.world.entity.Entity;
@@ -69,10 +69,10 @@ index d4f8387254a65b25fc808932a069298d0f8da091..5f5bf0e710ecff09a571091e5a923332
      // Paper end - Mob Goal API
  
 diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b44817dd8 100644
+index 674966c580220a4e0c83a628c763aaea8bfd0b1c..859b859d29b637200cf7c9a0bd52d9f712413e3d 100644
 --- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -24,7 +24,8 @@ public class GoalSelector {
+@@ -23,7 +23,8 @@ public class GoalSelector {
      };
      private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
      private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
@@ -82,7 +82,7 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b
      private int curRate; // Paper - EAR 2
  
      public void addGoal(int priority, Goal goal) {
-@@ -62,18 +63,18 @@ public class GoalSelector {
+@@ -60,18 +61,18 @@ public class GoalSelector {
          this.availableGoals.removeIf(wrappedGoal1 -> wrappedGoal1.getGoal() == goal);
      }
  
@@ -110,7 +110,7 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b
              if (!flag.getOrDefault(flag1, NO_GOAL).canBeReplacedBy(goal)) {
                  return false;
              }
-@@ -87,7 +88,7 @@ public class GoalSelector {
+@@ -85,7 +86,7 @@ public class GoalSelector {
          profilerFiller.push("goalCleanup");
  
          for (WrappedGoal wrappedGoal : this.availableGoals) {
@@ -119,7 +119,7 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b
                  wrappedGoal.stop();
              }
          }
-@@ -97,11 +98,14 @@ public class GoalSelector {
+@@ -95,11 +96,14 @@ public class GoalSelector {
          profilerFiller.push("goalUpdate");
  
          for (WrappedGoal wrappedGoalx : this.availableGoals) {
@@ -139,7 +139,7 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b
                      WrappedGoal wrappedGoal1 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
                      wrappedGoal1.stop();
                      this.lockedFlags.put(flag, wrappedGoalx);
-@@ -133,11 +137,11 @@ public class GoalSelector {
+@@ -131,11 +135,11 @@ public class GoalSelector {
      }
  
      public void disableControlFlag(Goal.Flag flag) {

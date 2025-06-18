@@ -4,10 +4,12 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.vehicle.MinecartSpawner;
 import net.minecraft.world.level.SpawnData;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftServer;
@@ -34,8 +36,14 @@ public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMin
             return null;
         }
 
-        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
-        return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "getSpawnedType@" + this.getUniqueId(), LOGGER
+        )) {
+            Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(
+                TagValueInput.create(problemReporter, getHandle().registryAccess(), spawnData.getEntityToSpawn())
+            );
+            return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        }
     }
 
     @Override

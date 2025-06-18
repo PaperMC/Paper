@@ -40,10 +40,7 @@ public final class CapturedBlockState extends CraftBlockState {
     @Override
     public boolean place(int flags) {
         boolean result = super.place(flags);
-
-        if (result) {
-            this.addBees();
-        }
+        this.addBees();
 
         return result;
     }

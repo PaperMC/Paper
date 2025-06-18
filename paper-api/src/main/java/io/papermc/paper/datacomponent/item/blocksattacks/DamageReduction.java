@@ -30,16 +30,14 @@ public interface DamageReduction {
      *
      * @return the set of damage type
      */
-    @Nullable
-    RegistryKeySet<DamageType> type();
+    @Nullable RegistryKeySet<DamageType> type();
 
     /**
      * Get the maximum angle between the users facing direction and the direction of the incoming attack to be blocked.
      *
      * @return the angle
      */
-    @Positive
-    float horizontalBlockingAngle();
+    @Positive float horizontalBlockingAngle();
 
     /**
      * Get the constant amount of damage to be blocked.

@@ -852,6 +852,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param radius X Radius
      * @return the collection of entities near location. This will always be a non-null collection.
      */
@@ -861,6 +862,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @return the collection of living entities near location. This will always be a non-null collection.
@@ -871,6 +873,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xRadius X Radius
      * @param yRadius Y Radius
      * @param zRadius Z radius
@@ -882,6 +885,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param radius Radius
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection.
@@ -892,6 +896,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @param predicate a predicate used to filter results
@@ -903,6 +908,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xRadius X Radius
      * @param yRadius Y Radius
      * @param zRadius Z radius
@@ -915,6 +921,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param radius X/Y/Z Radius
      * @return the collection of players near location. This will always be a non-null collection.
      */
@@ -924,6 +931,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @return the collection of players near location. This will always be a non-null collection.
@@ -934,6 +942,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xRadius X Radius
      * @param yRadius Y Radius
      * @param zRadius Z Radius
@@ -945,6 +954,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param radius X/Y/Z Radius
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
@@ -955,6 +965,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @param predicate a predicate used to filter results
@@ -966,6 +977,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param xRadius X Radius
      * @param yRadius Y Radius
      * @param zRadius Z Radius
@@ -978,6 +990,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param radius X/Y/Z radius to search within
      * @param <T> the entity type
@@ -989,6 +1002,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
+     *
      * @param clazz Type to filter by
      * @param xzRadius X/Z radius to search within
      * @param yRadius Y radius to search within
@@ -1001,6 +1015,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -1014,6 +1029,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param radius X/Y/Z radius to search within
      * @param predicate a predicate used to filter results
@@ -1026,6 +1042,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
+     *
      * @param clazz Type to filter by
      * @param xzRadius X/Z radius to search within
      * @param yRadius Y radius to search within
@@ -1039,6 +1056,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -1047,7 +1065,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends Entity> clazz, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
+    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
         final World world = this.getWorld();
         if (world == null) {
             throw new IllegalArgumentException("Location has no world");

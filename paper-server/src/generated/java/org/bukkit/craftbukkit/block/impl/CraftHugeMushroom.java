@@ -14,15 +14,15 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6")
 public class CraftHugeMushroom extends CraftBlockData implements MultipleFacing {
     private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
         BlockFace.DOWN, HugeMushroomBlock.DOWN,
-        BlockFace.UP, HugeMushroomBlock.UP,
+        BlockFace.EAST, HugeMushroomBlock.EAST,
         BlockFace.NORTH, HugeMushroomBlock.NORTH,
         BlockFace.SOUTH, HugeMushroomBlock.SOUTH,
-        BlockFace.WEST, HugeMushroomBlock.WEST,
-        BlockFace.EAST, HugeMushroomBlock.EAST
+        BlockFace.UP, HugeMushroomBlock.UP,
+        BlockFace.WEST, HugeMushroomBlock.WEST
     );
 
     public CraftHugeMushroom(BlockState state) {

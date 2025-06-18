@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-@@ -79,6 +_,7 @@
+@@ -82,6 +_,7 @@
      private List<BeehiveBlockEntity.BeeData> stored = Lists.newArrayList();
      @Nullable
      public BlockPos savedFlowerPos;
@@ -8,7 +8,7 @@
  
      public BeehiveBlockEntity(BlockPos pos, BlockState blockState) {
          super(BlockEntityType.BEEHIVE, pos, blockState);
-@@ -112,7 +_,7 @@
+@@ -115,7 +_,7 @@
      }
  
      public boolean isFull() {
@@ -17,7 +17,7 @@
      }
  
      public void emptyAllLivingFromHive(@Nullable Player player, BlockState state, BeehiveBlockEntity.BeeReleaseStatus releaseStatus) {
-@@ -121,7 +_,7 @@
+@@ -124,7 +_,7 @@
              for (Entity entity : list) {
                  if (entity instanceof Bee bee && player.position().distanceToSqr(entity.position()) <= 16.0) {
                      if (!this.isSedated()) {
@@ -26,7 +26,7 @@
                      } else {
                          bee.setStayOutOfHiveCountdown(400);
                      }
-@@ -131,8 +_,14 @@
+@@ -134,8 +_,14 @@
      }
  
      private List<Entity> releaseAllOccupants(BlockState state, BeehiveBlockEntity.BeeReleaseStatus releaseStatus) {
@@ -42,7 +42,7 @@
          if (!list.isEmpty()) {
              super.setChanged();
          }
-@@ -145,6 +_,11 @@
+@@ -148,6 +_,11 @@
          return this.stored.size();
      }
  
@@ -54,7 +54,7 @@
      public static int getHoneyLevel(BlockState state) {
          return state.getValue(BeehiveBlock.HONEY_LEVEL);
      }
-@@ -155,7 +_,16 @@
+@@ -158,7 +_,16 @@
      }
  
      public void addOccupant(Bee bee) {
@@ -72,7 +72,7 @@
              bee.stopRiding();
              bee.ejectPassengers();
              bee.dropLeash();
-@@ -180,7 +_,7 @@
+@@ -183,7 +_,7 @@
                  this.level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(bee, this.getBlockState()));
              }
  
@@ -81,7 +81,7 @@
              super.setChanged();
          }
      }
-@@ -198,7 +_,21 @@
+@@ -201,7 +_,21 @@
          BeehiveBlockEntity.BeeReleaseStatus releaseStatus,
          @Nullable BlockPos storedFlowerPos
      ) {
@@ -104,7 +104,7 @@
              return false;
          } else {
              Direction direction = state.getValue(BeehiveBlock.FACING);
-@@ -209,6 +_,17 @@
+@@ -212,6 +_,17 @@
              } else {
                  Entity entity = occupant.createEntity(level, pos);
                  if (entity != null) {
@@ -122,7 +122,7 @@
                      if (entity instanceof Bee bee) {
                          if (storedFlowerPos != null && !bee.hasSavedFlowerPos() && level.random.nextFloat() < 0.9F) {
                              bee.setSavedFlowerPos(storedFlowerPos);
-@@ -224,7 +_,13 @@
+@@ -227,7 +_,13 @@
                                          i--;
                                      }
  
@@ -137,7 +137,7 @@
                                  }
                              }
                          }
-@@ -233,17 +_,19 @@
+@@ -236,17 +_,19 @@
                              storedInHives.add(bee);
                          }
  
@@ -158,7 +158,7 @@
                  } else {
                      return false;
                  }
-@@ -269,6 +_,11 @@
+@@ -272,6 +_,11 @@
                      flag = true;
                      iterator.remove();
                  }
@@ -170,23 +170,23 @@
              }
          }
  
-@@ -292,9 +_,10 @@
+@@ -295,9 +_,10 @@
      @Override
-     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-         super.loadAdditional(tag, registries);
+     protected void loadAdditional(ValueInput input) {
+         super.loadAdditional(input);
 -        this.stored.clear();
 +        this.stored = Lists.newArrayList(); // CraftBukkit - SPIGOT-7790: create new copy (may be modified in physics event triggered by honey change)
-         tag.read("bees", BeehiveBlockEntity.Occupant.LIST_CODEC).orElse(List.of()).forEach(this::storeBee);
-         this.savedFlowerPos = tag.read("flower_pos", BlockPos.CODEC).orElse(null);
-+        this.maxBees = tag.getIntOr("Bukkit.MaxEntities", MAX_OCCUPANTS); // Paper - persist max bukkit occupants
+         input.read("bees", BeehiveBlockEntity.Occupant.LIST_CODEC).orElse(List.of()).forEach(this::storeBee);
+         this.savedFlowerPos = input.read("flower_pos", BlockPos.CODEC).orElse(null);
++        this.maxBees = input.getIntOr("Bukkit.MaxEntities", MAX_OCCUPANTS); // Paper - persist max bukkit occupants
      }
  
      @Override
-@@ -302,12 +_,13 @@
-         super.saveAdditional(tag, registries);
-         tag.store("bees", BeehiveBlockEntity.Occupant.LIST_CODEC, this.getBees());
-         tag.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
-+        tag.putInt("Bukkit.MaxEntities", this.maxBees); // Paper - persist max bukkit occupants
+@@ -305,12 +_,13 @@
+         super.saveAdditional(output);
+         output.store("bees", BeehiveBlockEntity.Occupant.LIST_CODEC, this.getBees());
+         output.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
++        output.putInt("Bukkit.MaxEntities", this.maxBees); // Paper - persist max bukkit occupants
      }
  
      @Override
@@ -197,7 +197,7 @@
          List<BeehiveBlockEntity.Occupant> list = componentGetter.getOrDefault(DataComponents.BEES, Bees.EMPTY).bees();
          list.forEach(this::storeBee);
      }
-@@ -330,15 +_,18 @@
+@@ -333,15 +_,18 @@
  
      static class BeeData {
          private final BeehiveBlockEntity.Occupant occupant;
@@ -217,7 +217,7 @@
          }
  
          public BeehiveBlockEntity.Occupant toOccupant() {
-@@ -409,6 +_,7 @@
+@@ -418,6 +_,7 @@
          }
  
          private static void setBeeReleaseData(int ticksInHive, Bee bee) {
@@ -225,7 +225,7 @@
              int age = bee.getAge();
              if (age < 0) {
                  bee.setAge(Math.min(0, age + ticksInHive));
-@@ -417,6 +_,7 @@
+@@ -426,6 +_,7 @@
              }
  
              bee.setInLoveTime(Math.max(0, bee.getInLoveTime() - ticksInHive));

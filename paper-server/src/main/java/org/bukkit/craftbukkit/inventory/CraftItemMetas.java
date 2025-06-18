@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
 import java.util.function.BiFunction;
 import net.minecraft.world.item.BannerItem;
+import net.minecraft.world.item.BedItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
@@ -247,7 +248,8 @@ public final class CraftItemMetas {
                 || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
                 || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT
                 || itemType == ItemType.CREAKING_HEART || itemType == ItemType.TEST_BLOCK
-                || itemType == ItemType.TEST_INSTANCE_BLOCK) {
+                || itemType == ItemType.TEST_INSTANCE_BLOCK || itemHandle instanceof BedItem
+                || itemType == ItemType.CONDUIT) {
             return CraftItemMetas.asType(CraftItemMetas.BLOCK_STATE_META_DATA);
         }
         if (itemType == ItemType.SHIELD) {

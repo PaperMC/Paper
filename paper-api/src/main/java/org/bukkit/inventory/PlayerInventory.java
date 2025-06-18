@@ -74,12 +74,15 @@ public interface PlayerInventory extends Inventory {
      * Index 40 refers to the off hand (shield) item slot. Though you can set off hand with this method using this index,
      * you are encouraged to use the provided method for this slot.
      * <p>
-     * If you attempt to use this method with an index less than 0 or greater than 40, an ArrayIndexOutOfBounds
+     * Index 41 refers to the body item slot and 42 is the saddle item slot. Note that these are not visible in the player
+     * inventory menu.
+     * <p>
+     * If you attempt to use this method with an index less than 0 or greater than 42, an ArrayIndexOutOfBounds
      * exception will be thrown.
      *
      * @param index The index where to put the ItemStack
      * @param item The ItemStack to set
-     * @throws ArrayIndexOutOfBoundsException when index &lt; 0 || index &gt; 40
+     * @throws ArrayIndexOutOfBoundsException when index &lt; 0 || index &gt; 42
      * @see #setBoots(ItemStack)
      * @see #setChestplate(ItemStack)
      * @see #setHelmet(ItemStack)

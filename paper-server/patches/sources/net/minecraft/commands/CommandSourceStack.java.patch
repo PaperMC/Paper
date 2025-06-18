@@ -1,24 +1,23 @@
 --- a/net/minecraft/commands/CommandSourceStack.java
 +++ b/net/minecraft/commands/CommandSourceStack.java
-@@ -45,7 +_,7 @@
+@@ -47,7 +_,7 @@
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
  
--public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
+-public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, PermissionSource, SharedSuggestionProvider {
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, PermissionSource, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
-@@ -63,6 +_,8 @@
+@@ -65,6 +_,7 @@
      private final Vec2 rotation;
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
-+    public java.util.Map<Thread, com.mojang.brigadier.tree.CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
 +    public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
      public CommandSourceStack(
          CommandSource source,
-@@ -188,6 +_,30 @@
+@@ -190,6 +_,30 @@
              );
      }
  
@@ -49,19 +48,7 @@
      public CommandSourceStack withRotation(Vec2 rotation) {
          return this.rotation.equals(rotation)
              ? this
-@@ -391,9 +_,44 @@
- 
-     @Override
-     public boolean hasPermission(int level) {
-+        // CraftBukkit start
-+        // Paper start - Thread Safe Vanilla Command permission checking
-+        com.mojang.brigadier.tree.CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
-+        if (currentCommand != null) {
-+            return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
-+            // Paper end - Thread Safe Vanilla Command permission checking
-+        }
-+        // CraftBukkit end
-+
+@@ -396,6 +_,32 @@
          return this.permissionLevel >= level;
      }
  
@@ -94,7 +81,7 @@
      public Vec3 getPosition() {
          return this.worldPosition;
      }
-@@ -498,20 +_,25 @@
+@@ -500,20 +_,25 @@
          Component component = Component.translatable("chat.type.admin", this.getDisplayName(), message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
          if (this.server.getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK)) {
              for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
@@ -123,7 +110,7 @@
          }
      }
  
-@@ -522,7 +_,7 @@
+@@ -524,7 +_,7 @@
  
      @Override
      public Collection<String> getOnlinePlayerNames() {
@@ -132,7 +119,7 @@
      }
  
      @Override
-@@ -597,4 +_,16 @@
+@@ -604,4 +_,16 @@
      public boolean isSilent() {
          return this.silent;
      }

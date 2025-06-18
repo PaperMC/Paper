@@ -1,7 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
-import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffects;
+import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffect;
 import io.papermc.paper.util.MCUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public record PaperDeathProtection(
 
     @Override
     public @Unmodifiable List<ConsumeEffect> deathEffects() {
-        return MCUtil.transformUnmodifiable(this.impl.deathEffects(), PaperConsumableEffects::fromNms);
+        return MCUtil.transformUnmodifiable(this.impl.deathEffects(), PaperConsumableEffect::fromNms);
     }
 
     static final class BuilderImpl implements Builder {
@@ -28,14 +28,14 @@ public record PaperDeathProtection(
 
         @Override
         public Builder addEffect(final ConsumeEffect effect) {
-            this.effects.add(PaperConsumableEffects.toNms(effect));
+            this.effects.add(PaperConsumableEffect.toNms(effect));
             return this;
         }
 
         @Override
         public Builder addEffects(final List<ConsumeEffect> effects) {
             for (final ConsumeEffect effect : effects) {
-                this.effects.add(PaperConsumableEffects.toNms(effect));
+                this.effects.add(PaperConsumableEffect.toNms(effect));
             }
             return this;
         }

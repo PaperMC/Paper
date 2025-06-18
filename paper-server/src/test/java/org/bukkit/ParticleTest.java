@@ -193,7 +193,7 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testVibration(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        Vibration vibration = new Vibration(new Location(null, 3, 1, 4), new Vibration.Destination.BlockDestination(new Location(null, 1, 5, 9)), 265);
+        Vibration vibration = new Vibration(new Vibration.Destination.BlockDestination(new Location(null, 1, 5, 9)), 265);
         VibrationParticleOption param = this.createAndTest(bukkit, minecraft, vibration, VibrationParticleOption.class);
 
         assertEquals(265, param.getArrivalInTicks(), String.format("""

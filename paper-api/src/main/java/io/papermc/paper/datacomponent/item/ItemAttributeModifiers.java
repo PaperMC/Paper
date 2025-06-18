@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
 import java.util.List;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -55,13 +56,21 @@ public interface ItemAttributeModifiers {
         AttributeModifier modifier();
 
         /**
-         * Gets the slot group for this attribute.
+         * Gets the slot group for the paired attribute.
          *
          * @return the slot group
          */
         default EquipmentSlotGroup getGroup() {
             return this.modifier().getSlotGroup();
         }
+
+        /**
+         * The display behavior for the attribute modifier.
+         *
+         * @return the display behavior
+         */
+        @Contract(pure = true)
+        AttributeModifierDisplay display();
     }
 
     /**
@@ -74,24 +83,55 @@ public interface ItemAttributeModifiers {
         /**
          * Adds a modifier to this builder.
          *
-         * @param attribute attribute
-         * @param modifier  modifier
+         * @param attribute the attribute
+         * @param modifier  the modifier
          * @return the builder for chaining
          * @see #modifiers()
          */
         @Contract(value = "_, _ -> this", mutates = "this")
-        Builder addModifier(Attribute attribute, AttributeModifier modifier);
+        default Builder addModifier(Attribute attribute, AttributeModifier modifier) {
+            return this.addModifier(attribute, modifier, modifier.getSlotGroup());
+        }
 
         /**
          * Adds a modifier to this builder.
          *
-         * @param attribute          attribute
-         * @param modifier           modifier
+         * @param attribute          the attribute
+         * @param modifier           the modifier
          * @param equipmentSlotGroup the slot group this modifier applies to (overrides any slot group in the modifier)
          * @return the builder for chaining
          * @see #modifiers()
          */
         @Contract(value = "_, _, _ -> this", mutates = "this")
-        Builder addModifier(Attribute attribute, AttributeModifier modifier, EquipmentSlotGroup equipmentSlotGroup);
+        default Builder addModifier(Attribute attribute, AttributeModifier modifier, EquipmentSlotGroup equipmentSlotGroup) {
+            return this.addModifier(attribute, modifier, equipmentSlotGroup, AttributeModifierDisplay.reset());
+        }
+
+        /**
+         * Adds a modifier to this builder.
+         *
+         * @param attribute          the attribute
+         * @param modifier           the modifier
+         * @param display            the modifier display behavior
+         * @return the builder for chaining
+         * @see #modifiers()
+         */
+        @Contract(value = "_, _, _ -> this", mutates = "this")
+        default Builder addModifier(Attribute attribute, AttributeModifier modifier, AttributeModifierDisplay display) {
+            return this.addModifier(attribute, modifier, modifier.getSlotGroup(), display);
+        }
+
+        /**
+         * Adds a modifier to this builder.
+         *
+         * @param attribute          the attribute
+         * @param modifier           the modifier
+         * @param equipmentSlotGroup the slot group this modifier applies to (overrides any slot group in the modifier)
+         * @param display            the modifier display behavior
+         * @return the builder for chaining
+         * @see #modifiers()
+         */
+        @Contract(value = "_, _, _, _ -> this", mutates = "this")
+        Builder addModifier(Attribute attribute, AttributeModifier modifier, EquipmentSlotGroup equipmentSlotGroup, AttributeModifierDisplay display);
     }
 }

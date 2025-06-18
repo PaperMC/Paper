@@ -1,17 +1,17 @@
 package com.destroystokyo.paper.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import net.minecraft.world.level.pathfinder.Node;
+import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.world.level.pathfinder.Node;
-import net.minecraft.world.level.pathfinder.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinder {
 
@@ -23,7 +23,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
 
     @Override
     public Mob getEntity() {
-        return (Mob) entity.getBukkitEntity();
+        return (Mob) this.entity.getBukkitEntity();
     }
 
     public void setHandle(net.minecraft.world.entity.Mob entity) {

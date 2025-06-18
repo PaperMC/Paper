@@ -52,20 +52,20 @@
      private boolean isLit() {
          return this.litTimeRemaining > 0;
 @@ -125,6 +_,7 @@
-         this.litTotalTime = tag.getShortOr("lit_total_time", (short)0);
+         this.litTotalTime = input.getShortOr("lit_total_time", (short)0);
          this.recipesUsed.clear();
-         this.recipesUsed.putAll(tag.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
-+        this.cookSpeedMultiplier = tag.getDoubleOr("Paper.CookSpeedMultiplier", 1); // Paper - cook speed multiplier API
+         this.recipesUsed.putAll(input.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
++        this.cookSpeedMultiplier = input.getDoubleOr("Paper.CookSpeedMultiplier", 1); // Paper - cook speed multiplier API
      }
  
      @Override
 @@ -134,6 +_,7 @@
-         tag.putShort("cooking_total_time", (short)this.cookingTotalTime);
-         tag.putShort("lit_time_remaining", (short)this.litTimeRemaining);
-         tag.putShort("lit_total_time", (short)this.litTotalTime);
-+        tag.putDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
-         ContainerHelper.saveAllItems(tag, this.items, registries);
-         tag.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
+         output.putShort("cooking_total_time", (short)this.cookingTotalTime);
+         output.putShort("lit_time_remaining", (short)this.litTimeRemaining);
+         output.putShort("lit_total_time", (short)this.litTotalTime);
++        output.putDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
+         ContainerHelper.saveAllItems(output, this.items);
+         output.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
      }
 @@ -160,11 +_,22 @@
  
@@ -210,9 +210,9 @@
      }
  
 -    public void awardUsedRecipesAndPopExperience(ServerPlayer player) {
--        List<RecipeHolder<?>> recipesToAwardAndPopExperience = this.getRecipesToAwardAndPopExperience(player.serverLevel(), player.position());
+-        List<RecipeHolder<?>> recipesToAwardAndPopExperience = this.getRecipesToAwardAndPopExperience(player.level(), player.position());
 +    public void awardUsedRecipesAndPopExperience(ServerPlayer player, ItemStack itemstack, int amount) { // CraftBukkit
-+        List<RecipeHolder<?>> recipesToAwardAndPopExperience = this.getRecipesToAwardAndPopExperience(player.serverLevel(), player.position(), this.worldPosition, player, itemstack, amount); // CraftBukkit - overload for exp spawn events
++        List<RecipeHolder<?>> recipesToAwardAndPopExperience = this.getRecipesToAwardAndPopExperience(player.level(), player.position(), this.worldPosition, player, itemstack, amount); // CraftBukkit - overload for exp spawn events
          player.awardRecipes(recipesToAwardAndPopExperience);
  
          for (RecipeHolder<?> recipeHolder : recipesToAwardAndPopExperience) {
@@ -268,7 +268,7 @@
 +        floor = event.getExpToDrop();
 +        // CraftBukkit end
 +
-+        ExperienceOrb.award(level, popVec, floor, org.bukkit.entity.ExperienceOrb.SpawnReason.FURNACE, serverPlayer); // Paper
++        ExperienceOrb.awardWithDirection(level, popVec, net.minecraft.world.phys.Vec3.ZERO, floor, org.bukkit.entity.ExperienceOrb.SpawnReason.FURNACE, serverPlayer, null); // Paper
      }
  
      @Override

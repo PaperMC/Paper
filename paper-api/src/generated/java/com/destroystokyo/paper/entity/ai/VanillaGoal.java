@@ -21,6 +21,7 @@ import org.bukkit.entity.Fish;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.Guardian;
+import org.bukkit.entity.HappyGhast;
 import org.bukkit.entity.Illager;
 import org.bukkit.entity.Illusioner;
 import org.bukkit.entity.IronGolem;
@@ -67,17 +68,17 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
-    GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
+    GoalKey<AbstractHorse> HORSE_RANDOM_STAND = create("horse_random_stand", AbstractHorse.class);
 
-    GoalKey<AbstractHorse> RUN_AROUND_LIKE_CRAZY = create("run_around_like_crazy", AbstractHorse.class);
+    GoalKey<AbstractHorse> HORSE_RUN_AROUND_LIKE_CRAZY = create("horse_run_around_like_crazy", AbstractHorse.class);
 
-    GoalKey<AbstractSkeleton> ABSTRACT_SKELETON_MELEE = create("abstract_skeleton_melee", AbstractSkeleton.class);
+    GoalKey<AbstractSkeleton> SKELETON_MELEE = create("skeleton_melee", AbstractSkeleton.class);
 
-    GoalKey<AbstractVillager> LOOK_AT_TRADING_PLAYER = create("look_at_trading_player", AbstractVillager.class);
+    GoalKey<AbstractVillager> VILLAGER_LOOK_AT_TRADING_PLAYER = create("villager_look_at_trading_player", AbstractVillager.class);
 
-    GoalKey<AbstractVillager> TRADE_WITH_PLAYER = create("trade_with_player", AbstractVillager.class);
+    GoalKey<AbstractVillager> VILLAGER_TRADE_WITH_PLAYER = create("villager_trade_with_player", AbstractVillager.class);
 
     GoalKey<Animals> BREED = create("breed", Animals.class);
 
@@ -101,11 +102,11 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Bee> BEE_POLLINATE = create("bee_pollinate", Bee.class);
 
+    GoalKey<Bee> BEE_VALIDATE_FLOWER = create("bee_validate_flower", Bee.class);
+
+    GoalKey<Bee> BEE_VALIDATE_HIVE = create("bee_validate_hive", Bee.class);
+
     GoalKey<Bee> BEE_WANDER = create("bee_wander", Bee.class);
-
-    GoalKey<Bee> VALIDATE_FLOWER = create("validate_flower", Bee.class);
-
-    GoalKey<Bee> VALIDATE_HIVE = create("validate_hive", Bee.class);
 
     GoalKey<Blaze> BLAZE_ATTACK = create("blaze_attack", Blaze.class);
 
@@ -165,15 +166,15 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Creature> WATER_AVOIDING_RANDOM_STROLL = create("water_avoiding_random_stroll", Creature.class);
 
-    GoalKey<Creeper> SWELL = create("swell", Creeper.class);
+    GoalKey<Creeper> CREEPER_SWELL = create("creeper_swell", Creeper.class);
 
     GoalKey<Dolphin> DOLPHIN_JUMP = create("dolphin_jump", Dolphin.class);
+
+    GoalKey<Dolphin> DOLPHIN_PLAY_WITH_ITEMS = create("dolphin_play_with_items", Dolphin.class);
 
     GoalKey<Dolphin> DOLPHIN_SWIM_TO_TREASURE = create("dolphin_swim_to_treasure", Dolphin.class);
 
     GoalKey<Dolphin> DOLPHIN_SWIM_WITH_PLAYER = create("dolphin_swim_with_player", Dolphin.class);
-
-    GoalKey<Dolphin> PLAY_WITH_ITEMS = create("play_with_items", Dolphin.class);
 
     GoalKey<Drowned> DROWNED_ATTACK = create("drowned_attack", Drowned.class);
 
@@ -199,13 +200,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Fish> FISH_SWIM = create("fish_swim", Fish.class);
 
-    GoalKey<Fox> DEFEND_TRUSTED = create("defend_trusted", Fox.class);
-
-    GoalKey<Fox> FACEPLANT = create("faceplant", Fox.class);
-
     GoalKey<Fox> FOX_BREED = create("fox_breed", Fox.class);
 
+    GoalKey<Fox> FOX_DEFEND_TRUSTED = create("fox_defend_trusted", Fox.class);
+
     GoalKey<Fox> FOX_EAT_BERRIES = create("fox_eat_berries", Fox.class);
+
+    GoalKey<Fox> FOX_FACEPLANT = create("fox_faceplant", Fox.class);
 
     GoalKey<Fox> FOX_FLOAT = create("fox_float", Fox.class);
 
@@ -217,29 +218,27 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Fox> FOX_PANIC = create("fox_panic", Fox.class);
 
+    GoalKey<Fox> FOX_PERCH_AND_SEARCH = create("fox_perch_and_search", Fox.class);
+
     GoalKey<Fox> FOX_POUNCE = create("fox_pounce", Fox.class);
 
     GoalKey<Fox> FOX_SEARCH_FOR_ITEMS = create("fox_search_for_items", Fox.class);
 
+    GoalKey<Fox> FOX_SEEK_SHELTER = create("fox_seek_shelter", Fox.class);
+
+    GoalKey<Fox> FOX_SLEEP = create("fox_sleep", Fox.class);
+
+    GoalKey<Fox> FOX_STALK_PREY = create("fox_stalk_prey", Fox.class);
+
     GoalKey<Fox> FOX_STROLL_THROUGH_VILLAGE = create("fox_stroll_through_village", Fox.class);
-
-    GoalKey<Fox> PERCH_AND_SEARCH = create("perch_and_search", Fox.class);
-
-    GoalKey<Fox> SEEK_SHELTER = create("seek_shelter", Fox.class);
-
-    GoalKey<Fox> SLEEP = create("sleep", Fox.class);
-
-    GoalKey<Fox> STALK_PREY = create("stalk_prey", Fox.class);
-
-    GoalKey<Ghast> GHAST_LOOK = create("ghast_look", Ghast.class);
 
     GoalKey<Ghast> GHAST_SHOOT_FIREBALL = create("ghast_shoot_fireball", Ghast.class);
 
-    GoalKey<Ghast> RANDOM_FLOAT_AROUND = create("random_float_around", Ghast.class);
-
     GoalKey<Guardian> GUARDIAN_ATTACK = create("guardian_attack", Guardian.class);
 
-    GoalKey<Illager> HOLD_GROUND_ATTACK = create("hold_ground_attack", Illager.class);
+    GoalKey<HappyGhast> HAPPY_GHAST_FLOAT = create("happy_ghast_float", HappyGhast.class);
+
+    GoalKey<Illager> ILLAGER_HOLD_GROUND_ATTACK = create("illager_hold_ground_attack", Illager.class);
 
     GoalKey<Illager> RAIDER_OPEN_DOOR = create("raider_open_door", Illager.class);
 
@@ -247,9 +246,9 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Illusioner> ILLUSIONER_MIRROR_SPELL = create("illusioner_mirror_spell", Illusioner.class);
 
-    GoalKey<IronGolem> DEFEND_VILLAGE = create("defend_village", IronGolem.class);
+    GoalKey<IronGolem> IRON_GOLEM_DEFEND_VILLAGE = create("iron_golem_defend_village", IronGolem.class);
 
-    GoalKey<IronGolem> OFFER_FLOWER = create("offer_flower", IronGolem.class);
+    GoalKey<IronGolem> IRON_GOLEM_OFFER_FLOWER = create("iron_golem_offer_flower", IronGolem.class);
 
     GoalKey<Llama> LLAMA_ATTACK_WOLF = create("llama_attack_wolf", Llama.class);
 
@@ -269,6 +268,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Mob> FOLLOW_MOB = create("follow_mob", Mob.class);
 
+    GoalKey<Mob> GHAST_LOOK = create("ghast_look", Mob.class);
+
     GoalKey<Mob> INTERACT = create("interact", Mob.class);
 
     GoalKey<Mob> LEAP_AT = create("leap_at", Mob.class);
@@ -281,9 +282,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Mob> OPEN_DOOR = create("open_door", Mob.class);
 
+    GoalKey<Mob> RANDOM_FLOAT_AROUND = create("random_float_around", Mob.class);
+
     GoalKey<Mob> RANDOM_LOOK_AROUND = create("random_look_around", Mob.class);
 
     GoalKey<Mob> RESET_UNIVERSAL_ANGER = create("reset_universal_anger", Mob.class);
+
+    GoalKey<Mob> TEMPT_FOR_NON_PATHFINDERS = create("tempt_for_non_pathfinders", Mob.class);
 
     GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
 
@@ -317,7 +322,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Panda> PANDA_SNEEZE = create("panda_sneeze", Panda.class);
 
-    GoalKey<Parrot> LAND_ON_OWNERS_SHOULDER = create("land_on_owners_shoulder", Parrot.class);
+    GoalKey<Parrot> PARROT_LAND_ON_OWNERS_SHOULDER = create("parrot_land_on_owners_shoulder", Parrot.class);
 
     GoalKey<Phantom> PHANTOM_ATTACK_PLAYER = create("phantom_attack_player", Phantom.class);
 
@@ -339,27 +344,27 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Rabbit> RABBIT_PANIC = create("rabbit_panic", Rabbit.class);
 
-    GoalKey<Rabbit> RAID_GARDEN = create("raid_garden", Rabbit.class);
-
-    GoalKey<Raider> LONG_DISTANCE_PATROL = create("long_distance_patrol", Raider.class);
-
-    GoalKey<Raider> NEAREST_ATTACKABLE_WITCH = create("nearest_attackable_witch", Raider.class);
-
-    GoalKey<Raider> NEAREST_HEALABLE_RAIDER = create("nearest_healable_raider", Raider.class);
-
-    GoalKey<Raider> OBTAIN_RAID_LEADER_BANNER = create("obtain_raid_leader_banner", Raider.class);
-
-    GoalKey<Raider> PATHFIND_TO_RAID = create("pathfind_to_raid", Raider.class);
+    GoalKey<Rabbit> RABBIT_RAID_GARDEN = create("rabbit_raid_garden", Rabbit.class);
 
     GoalKey<Raider> RAIDER_CELEBRATION = create("raider_celebration", Raider.class);
 
+    GoalKey<Raider> RAIDER_LONG_DISTANCE_PATROL = create("raider_long_distance_patrol", Raider.class);
+
     GoalKey<Raider> RAIDER_MOVE_THROUGH_VILLAGE = create("raider_move_through_village", Raider.class);
+
+    GoalKey<Raider> RAIDER_NEAREST_ATTACKABLE_WITCH = create("raider_nearest_attackable_witch", Raider.class);
+
+    GoalKey<Raider> RAIDER_NEAREST_HEALABLE_RAIDER = create("raider_nearest_healable_raider", Raider.class);
+
+    GoalKey<Raider> RAIDER_OBTAIN_RAID_LEADER_BANNER = create("raider_obtain_raid_leader_banner", Raider.class);
+
+    GoalKey<Raider> RAIDER_PATHFIND_TO_RAID = create("raider_pathfind_to_raid", Raider.class);
 
     GoalKey<RangedEntity> DROWNED_TRIDENT_ATTACK = create("drowned_trident_attack", RangedEntity.class);
 
     GoalKey<RangedEntity> RANGED_ATTACK = create("ranged_attack", RangedEntity.class);
 
-    GoalKey<SchoolableFish> FOLLOW_FLOCK_LEADER = create("follow_flock_leader", SchoolableFish.class);
+    GoalKey<SchoolableFish> SCHOOLABLE_FISH_FOLLOW_FLOCK_LEADER = create("schoolable_fish_follow_flock_leader", SchoolableFish.class);
 
     GoalKey<Shulker> SHULKER_ATTACK = create("shulker_attack", Shulker.class);
 
@@ -373,7 +378,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Silverfish> SILVERFISH_WAKE_UP_FRIENDS = create("silverfish_wake_up_friends", Silverfish.class);
 
-    GoalKey<SkeletonHorse> SKELETON_TRAP = create("skeleton_trap", SkeletonHorse.class);
+    GoalKey<SkeletonHorse> SKELETON_HORSE_SKELETON_TRAP = create("skeleton_horse_skeleton_trap", SkeletonHorse.class);
 
     GoalKey<Slime> SLIME_ATTACK = create("slime_attack", Slime.class);
 
@@ -429,13 +434,13 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Vindicator> VINDICATOR_JOHNNY_ATTACK = create("vindicator_johnny_attack", Vindicator.class);
 
-    GoalKey<WanderingTrader> WANDER_TO_POSITION = create("wander_to_position", WanderingTrader.class);
+    GoalKey<WanderingTrader> WANDERING_TRADER_WANDER_TO_POSITION = create("wandering_trader_wander_to_position", WanderingTrader.class);
 
     GoalKey<Wither> WITHER_DO_NOTHING = create("wither_do_nothing", Wither.class);
 
-    GoalKey<Wolf> BEG = create("beg", Wolf.class);
-
     GoalKey<Wolf> WOLF_AVOID_ENTITY = create("wolf_avoid_entity", Wolf.class);
+
+    GoalKey<Wolf> WOLF_BEG = create("wolf_beg", Wolf.class);
 
     GoalKey<Zombie> ZOMBIE_ATTACK = create("zombie_attack", Zombie.class);
 

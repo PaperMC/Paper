@@ -90,7 +90,7 @@ interface ItemComponentTypesBridge {
 
     MapId mapId(int id);
 
-    UseRemainder useRemainder(ItemStack itemStack);
+    UseRemainder useRemainder(ItemStack stack);
 
     Consumable.Builder consumable();
 

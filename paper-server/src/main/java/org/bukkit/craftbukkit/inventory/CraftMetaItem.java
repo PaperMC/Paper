@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DynamicOps;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,8 +38,6 @@ import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -131,6 +130,7 @@ import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.tag.DamageTypeTags;
+import org.slf4j.Logger;
 
 /**
  * Children must include the following:
@@ -157,6 +157,8 @@ import org.bukkit.tag.DamageTypeTags;
 @DelegateDeserialization(SerializableMeta.class)
 // Important: ItemMeta needs to be the first interface see #applicableTo(Material)
 class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+
+    static final Logger LOGGER = LogUtils.getLogger();
 
     static class ItemMetaKey {
 
@@ -750,7 +752,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 CompoundTag internalTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
                 this.deserializeInternal(internalTag, map);
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read internal tag from object", ex);
             }
         }
 
@@ -779,7 +781,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read unhandled tag for item", ex);
             }
         }
 
@@ -809,7 +811,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             try {
                 this.customTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read custom tag for item", ex);
             }
         }
     }
@@ -2238,7 +2240,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed(internal, buf);
                 builder.put("internal", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write internal tag for item", ex);
             }
         }
 
@@ -2258,7 +2260,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed((CompoundTag) unhandled, buf);
                 builder.put("unhandled", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write unhandled tag for item", ex);
             }
         }
 
@@ -2293,7 +2295,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed(this.customTag, buf);
                 builder.put("custom", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write custom tag for item", ex);
             }
         }
 

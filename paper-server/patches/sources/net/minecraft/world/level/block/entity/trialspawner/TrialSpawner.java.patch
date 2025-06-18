@@ -1,22 +1,22 @@
 --- a/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
 +++ b/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
-@@ -238,7 +_,14 @@
-                             nextSpawnData.getEquipment().ifPresent(mob::equip);
-                         }
+@@ -214,7 +_,14 @@
+                 nextSpawnData.getEquipment().ifPresent(mob::equip);
+             }
  
--                        if (!level.tryAddFreshEntityWithPassengers(entity)) {
-+                        // Paper start - TrialSpawnerSpawnEvent + SpawnReason
-+                        entity.spawnedViaMobSpawner = true; // Mark entity as spawned via spawner
-+                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER; // Paper - Entity#getEntitySpawnReason
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
-+                            return Optional.empty();
-+                        }
-+                        if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
-+                        // Paper end - TrialSpawnerSpawnEvent + SpawnReason
-                             return Optional.empty();
-                         } else {
-                             TrialSpawner.FlameParticle flameParticle = this.isOminous ? TrialSpawner.FlameParticle.OMINOUS : TrialSpawner.FlameParticle.NORMAL;
-@@ -258,6 +_,19 @@
+-            if (!level.tryAddFreshEntityWithPassengers(entity)) {
++            // Paper start - TrialSpawnerSpawnEvent + SpawnReason
++            entity.spawnedViaMobSpawner = true; // Mark entity as spawned via spawner
++            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER; // Paper - Entity#getEntitySpawnReason
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
++                return Optional.empty();
++            }
++            if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
++                // Paper end - TrialSpawnerSpawnEvent + SpawnReason
+                 return Optional.empty();
+             }
+ 
+@@ -233,6 +_,19 @@
          LootParams lootParams = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
          ObjectArrayList<ItemStack> randomItems = lootTable1.getRandomItems(lootParams);
          if (!randomItems.isEmpty()) {
@@ -36,3 +36,39 @@
              for (ItemStack itemStack : randomItems) {
                  DefaultDispenseItemBehavior.spawnItem(level, itemStack, 2, Direction.UP, Vec3.atBottomCenterOf(pos).relative(Direction.UP, 1.2));
              }
+@@ -402,6 +_,35 @@
+                 this.requiredPlayerRange
+             );
+         }
++
++        // Paper start - trial spawner API - withers
++        public TrialSpawner.FullConfig overrideTargetCooldownLength(final int targetCooldownLength) {
++            return new TrialSpawner.FullConfig(
++                this.normal,
++                this.ominous,
++                targetCooldownLength,
++                this.requiredPlayerRange
++            );
++        }
++
++        public TrialSpawner.FullConfig overrideRequiredPlayerRange(final int requiredPlayerRange) {
++            return new TrialSpawner.FullConfig(
++                this.normal,
++                this.ominous,
++                this.targetCooldownLength,
++                requiredPlayerRange
++            );
++        }
++
++        public TrialSpawner.FullConfig overrideConfigs(final Holder<TrialSpawnerConfig> normal, final Holder<TrialSpawnerConfig> ominous) {
++            return new TrialSpawner.FullConfig(
++                normal,
++                ominous,
++                this.targetCooldownLength,
++                this.requiredPlayerRange
++            );
++        }
++        // Paper end - trial spawner API - withers
+     }
+ 
+     public interface StateAccessor {

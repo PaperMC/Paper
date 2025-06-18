@@ -317,7 +317,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
         .endsWith("_SPAWN_EGG")
-        .ensureSize("SPAWN_EGGS", 81).lock();
+        .ensureSize("SPAWN_EGGS", 82).lock();
 
     /**
      * Covers all colors of stained glass.

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/AgeableMob.java
 +++ b/net/minecraft/world/entity/AgeableMob.java
-@@ -22,6 +_,7 @@
+@@ -23,6 +_,7 @@
      protected int age = 0;
      protected int forcedAge = 0;
      protected int forcedAgeTimer;
@@ -8,40 +8,31 @@
  
      protected AgeableMob(EntityType<? extends AgeableMob> entityType, Level level) {
          super(entityType, level);
-@@ -68,13 +_,15 @@
+@@ -69,6 +_,7 @@
      }
  
      public void ageUp(int amount, boolean forced) {
 +        if (this.ageLocked) return; // Paper - Honor ageLock
          int age = this.getAge();
-+        int previousAge = age; // Paper - Decompile fix: lvt reassignment lost
+         int previousAge = age;
          age += amount * 20;
-         if (age > 0) {
-             age = 0;
-         }
- 
--        int i1 = age - age;
-+        int i1 = age - previousAge; // Paper - Decompile fix
-         this.setAge(age);
-         if (forced) {
-             this.forcedAge += i1;
-@@ -106,6 +_,7 @@
-         super.addAdditionalSaveData(compound);
-         compound.putInt("Age", this.getAge());
-         compound.putInt("ForcedAge", this.forcedAge);
-+        compound.putBoolean("AgeLocked", this.ageLocked); // CraftBukkit
+@@ -108,6 +_,7 @@
+         super.addAdditionalSaveData(output);
+         output.putInt("Age", this.getAge());
+         output.putInt("ForcedAge", this.forcedAge);
++        output.putBoolean("AgeLocked", this.ageLocked); // CraftBukkit
      }
  
      @Override
-@@ -113,6 +_,7 @@
-         super.readAdditionalSaveData(compound);
-         this.setAge(compound.getIntOr("Age", 0));
-         this.forcedAge = compound.getIntOr("ForcedAge", 0);
-+        this.ageLocked = compound.getBooleanOr("AgeLocked", false); // CraftBukkit
+@@ -115,6 +_,7 @@
+         super.readAdditionalSaveData(input);
+         this.setAge(input.getIntOr("Age", 0));
+         this.forcedAge = input.getIntOr("ForcedAge", 0);
++        this.ageLocked = input.getBooleanOr("AgeLocked", false); // CraftBukkit
      }
  
      @Override
-@@ -127,7 +_,7 @@
+@@ -129,7 +_,7 @@
      @Override
      public void aiStep() {
          super.aiStep();

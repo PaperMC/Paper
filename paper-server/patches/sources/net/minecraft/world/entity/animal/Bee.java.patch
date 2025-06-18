@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Bee.java
 +++ b/net/minecraft/world/entity/animal/Bee.java
-@@ -145,10 +_,26 @@
+@@ -146,10 +_,26 @@
      Bee.BeeGoToHiveGoal goToHiveGoal;
      private Bee.BeeGoToKnownFlowerGoal goToKnownFlowerGoal;
      private int underWaterTicks;
@@ -28,26 +28,26 @@
          this.lookControl = new Bee.BeeLookControl(this);
          this.setPathfindingMalus(PathType.DANGER_FIRE, -1.0F);
          this.setPathfindingMalus(PathType.WATER, -1.0F);
-@@ -195,9 +_,18 @@
+@@ -196,9 +_,18 @@
  
      @Override
-     public void addAdditionalSaveData(CompoundTag compound) {
+     protected void addAdditionalSaveData(ValueOutput output) {
 +        // CraftBukkit start - selectively save data
-+        this.addAdditionalSaveData(compound, true);
++        this.addAdditionalSaveData(output, true);
 +    }
 +
 +    @Override
-+    public void addAdditionalSaveData(CompoundTag compound, boolean saveAll) {
++    public void addAdditionalSaveData(ValueOutput output, boolean saveAll) {
 +        // CraftBukkit end
-         super.addAdditionalSaveData(compound);
+         super.addAdditionalSaveData(output);
 +        if (saveAll) { // Paper
-         compound.storeNullable("hive_pos", BlockPos.CODEC, this.hivePos);
-         compound.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
+         output.storeNullable("hive_pos", BlockPos.CODEC, this.hivePos);
+         output.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
 +        } // Paper
-         compound.putBoolean("HasNectar", this.hasNectar());
-         compound.putBoolean("HasStung", this.hasStung());
-         compound.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
-@@ -235,7 +_,7 @@
+         output.putBoolean("HasNectar", this.hasNectar());
+         output.putBoolean("HasStung", this.hasStung());
+         output.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
+@@ -236,7 +_,7 @@
                  }
  
                  if (i > 0) {
@@ -56,7 +56,7 @@
                  }
              }
  
-@@ -490,7 +_,11 @@
+@@ -491,7 +_,11 @@
          if (this.hivePos == null) {
              return null;
          } else {
@@ -69,7 +69,7 @@
          }
      }
  
-@@ -523,6 +_,7 @@
+@@ -524,6 +_,7 @@
      }
  
      public void setRolling(boolean isRolling) {
@@ -77,7 +77,7 @@
          this.setFlag(2, isRolling);
      }
  
-@@ -579,7 +_,7 @@
+@@ -580,7 +_,7 @@
              if (beeInteractionEffect != null) {
                  this.usePlayerItem(player, hand, itemInHand);
                  if (!this.level().isClientSide) {
@@ -86,7 +86,7 @@
                  }
  
                  return InteractionResult.SUCCESS;
-@@ -648,8 +_,9 @@
+@@ -649,8 +_,9 @@
          if (this.isInvulnerableTo(level, damageSource)) {
              return false;
          } else {
@@ -97,25 +97,7 @@
          }
      }
  
-@@ -770,7 +_,7 @@
-     @VisibleForDebug
-     public class BeeGoToHiveGoal extends Bee.BaseBeeGoal {
-         public static final int MAX_TRAVELLING_TICKS = 2400;
--        int travellingTicks = Bee.this.level().random.nextInt(10);
-+        int travellingTicks = Bee.this.random.nextInt(10); // CraftBukkit - SPIGOT-7495: Give Bees another chance and let them use their own random, avoid concurrency issues
-         private static final int MAX_BLACKLISTED_TARGETS = 3;
-         final List<BlockPos> blacklistedTargets = Lists.newArrayList();
-         @Nullable
-@@ -886,7 +_,7 @@
- 
-     public class BeeGoToKnownFlowerGoal extends Bee.BaseBeeGoal {
-         private static final int MAX_TRAVELLING_TICKS = 2400;
--        int travellingTicks = Bee.this.level().random.nextInt(10);
-+        int travellingTicks = Bee.this.random.nextInt(10); // CraftBukkit - SPIGOT-7495: Give Bees another chance and let them use their own random, avoid concurrency issues
- 
-         BeeGoToKnownFlowerGoal() {
-             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
-@@ -983,7 +_,7 @@
+@@ -981,7 +_,7 @@
                              }
                          }
  
@@ -124,7 +106,7 @@
                              Bee.this.level().levelEvent(2011, blockPos, 15);
                              Bee.this.level().setBlockAndUpdate(blockPos, blockState1);
                              Bee.this.incrementNumCropsGrownSincePollination();
-@@ -1007,7 +_,7 @@
+@@ -1005,7 +_,7 @@
          @Override
          protected void alertOther(Mob mob, LivingEntity target) {
              if (mob instanceof Bee && this.mob.hasLineOfSight(target)) {
@@ -133,7 +115,7 @@
              }
          }
      }
-@@ -1165,7 +_,7 @@
+@@ -1163,7 +_,7 @@
                      Bee.this.dropFlower();
                      this.pollinating = false;
                      Bee.this.remainingCooldownBeforeLocatingNewFlower = 200;

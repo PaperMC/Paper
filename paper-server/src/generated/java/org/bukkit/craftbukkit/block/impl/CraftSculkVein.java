@@ -15,17 +15,17 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.6")
 public class CraftSculkVein extends CraftBlockData implements SculkVein {
     private static final BooleanProperty WATERLOGGED = SculkVeinBlock.WATERLOGGED;
 
     private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
         BlockFace.DOWN, BlockStateProperties.DOWN,
-        BlockFace.UP, BlockStateProperties.UP,
+        BlockFace.EAST, BlockStateProperties.EAST,
         BlockFace.NORTH, BlockStateProperties.NORTH,
         BlockFace.SOUTH, BlockStateProperties.SOUTH,
-        BlockFace.WEST, BlockStateProperties.WEST,
-        BlockFace.EAST, BlockStateProperties.EAST
+        BlockFace.UP, BlockStateProperties.UP,
+        BlockFace.WEST, BlockStateProperties.WEST
     );
 
     public CraftSculkVein(BlockState state) {
