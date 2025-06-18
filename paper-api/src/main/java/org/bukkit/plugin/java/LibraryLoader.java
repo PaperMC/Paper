@@ -1,12 +1,12 @@
 // CHECKSTYLE:OFF
 package org.bukkit.plugin.java;
 
+import io.papermc.paper.plugin.loader.library.impl.MavenLibraryResolver;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +49,10 @@ public class LibraryLoader
     public static java.util.function.BiFunction<URL[], ClassLoader, URLClassLoader> LIBRARY_LOADER_FACTORY; // Paper - rewrite reflection in libraries
     public static java.util.function.Function<List<java.nio.file.Path>, List<java.nio.file.Path>> REMAPPER; // Paper - remap libraries
 
+    private static List<RemoteRepository> getRepositories() {
+        return List.of(new RemoteRepository.Builder("central", "default", MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR).build());
+    }
+
     public LibraryLoader(@NotNull Logger logger)
     {
         this.logger = logger;
@@ -78,7 +82,7 @@ public class LibraryLoader
         session.setSystemProperties( System.getProperties() );
         session.setReadOnly();
 
-        this.repositories = repository.newResolutionRepositories( session, Arrays.asList( new RemoteRepository.Builder( "central", "default", "https://repo.maven.apache.org/maven2" ).build() ) );
+        this.repositories = repository.newResolutionRepositories( session, getRepositories() );
     }
 
     @Nullable

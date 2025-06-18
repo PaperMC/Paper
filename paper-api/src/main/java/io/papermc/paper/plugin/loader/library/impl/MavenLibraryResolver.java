@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * MavenLibraryResolver resolver = new MavenLibraryResolver();
  * resolver.addDependency(new Dependency(new DefaultArtifact("org.jooq:jooq:3.17.7"), null));
  * resolver.addRepository(new RemoteRepository.Builder(
- *     "central", "default", "https://repo1.maven.org/maven2/"
+ *     "central", "default", MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR
  * ).build());
  * }</pre>
  * <p>
@@ -50,6 +50,21 @@ import org.slf4j.LoggerFactory;
 @NullMarked
 public class MavenLibraryResolver implements ClassPathLibrary {
 
+    /**
+     * The default Maven Central mirror, configurable through the {@code PAPER_DEFAULT_CENTRAL_REPOSITORY} environment
+     * variable. Use this instead of Maven Central directly when you do not have your own mirror, as using
+     * Maven Central as a CDN is against the Maven Central Terms of Service, and you will cause users to hit
+     * rate limits.
+     *
+     * <p>This repository is also used by the legacy {@link org.bukkit.plugin.java.LibraryLoader}.</p>
+     */
+    public static final String MAVEN_CENTRAL_DEFAULT_MIRROR = getDefaultMavenCentralMirror();
+    private static final List<String> MAVEN_CENTRAL_URLS = List.of(
+        "https://repo1.maven.org/maven2",
+        "http://repo1.maven.org/maven2",
+        "https://repo.maven.apache.org/maven2",
+        "http://repo.maven.apache.org/maven2"
+    );
     private static final Logger LOGGER = LoggerFactory.getLogger("MavenLibraryResolver");
 
     private final RepositorySystem repository;
@@ -105,6 +120,12 @@ public class MavenLibraryResolver implements ClassPathLibrary {
      * dependencies from
      */
     public void addRepository(final RemoteRepository remoteRepository) {
+        if (MAVEN_CENTRAL_URLS.stream().anyMatch(remoteRepository.getUrl()::startsWith)) {
+            LOGGER.warn(
+                "Use of Maven Central as a CDN is against the Maven Central Terms of Service. Use MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR instead.",
+                new RuntimeException("Plugin used Maven Central for library resolution")
+            );
+        }
         this.repositories.add(remoteRepository);
     }
 
@@ -129,5 +150,16 @@ public class MavenLibraryResolver implements ClassPathLibrary {
             final File file = artifact.getArtifact().getFile();
             store.addLibrary(file.toPath());
         }
+    }
+
+    private static String getDefaultMavenCentralMirror() {
+        String central = System.getenv("PAPER_DEFAULT_CENTRAL_REPOSITORY");
+        if (central == null) {
+            central = System.getProperty("org.bukkit.plugin.java.LibraryLoader.centralURL");
+        }
+        if (central == null) {
+            central = "https://maven-central.storage-download.googleapis.com/maven2";
+        }
+        return central;
     }
 }
