@@ -59,9 +59,12 @@ public class MavenLibraryResolver implements ClassPathLibrary {
      * <p>This repository is also used by the legacy {@link org.bukkit.plugin.java.LibraryLoader}.</p>
      */
     public static final String MAVEN_CENTRAL_DEFAULT_MIRROR = getDefaultMavenCentralMirror();
-    private static final String MAVEN_CENTRAL_HOSTNAME_PATH = "repo.maven.apache.org/maven2";
-    private static final String MAVEN_CENTRAL_URL_HTTPS = "https://" + MAVEN_CENTRAL_HOSTNAME_PATH;
-    private static final String MAVEN_CENTRAL_URL_HTTP = "http://" + MAVEN_CENTRAL_HOSTNAME_PATH;
+    private static final List<String> MAVEN_CENTRAL_URLS = List.of(
+        "https://repo1.maven.org/maven2",
+        "http://repo1.maven.org/maven2",
+        "https://repo.maven.apache.org/maven2",
+        "http://repo.maven.apache.org/maven2"
+    );
     private static final Logger LOGGER = LoggerFactory.getLogger("MavenLibraryResolver");
 
     private final RepositorySystem repository;
@@ -117,7 +120,7 @@ public class MavenLibraryResolver implements ClassPathLibrary {
      * dependencies from
      */
     public void addRepository(final RemoteRepository remoteRepository) {
-        if (remoteRepository.getUrl().startsWith(MAVEN_CENTRAL_URL_HTTPS) || remoteRepository.getUrl().startsWith(MAVEN_CENTRAL_URL_HTTP)) {
+        if (MAVEN_CENTRAL_URLS.stream().anyMatch(remoteRepository.getUrl()::startsWith)) {
             LOGGER.warn(
                 "Use of Maven Central as a CDN is against the Maven Central Terms of Service. Use MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR instead.",
                 new RuntimeException("Plugin used Maven Central for library resolution")
