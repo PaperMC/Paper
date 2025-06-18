@@ -35,21 +35,22 @@ public class CustomTagsTest {
         assertTrue(tag.isLocked(), "Tag " + tag.key() + " is not locked");
     }
 
-    public static Stream<BaseTag<?, ?>> tags() {
-        return Stream.concat(collectTags(MaterialTags.class), collectTags(EntityTags.class));
+    public static Set<BaseTag<?, ?>> tags() {
+        Set<BaseTag<?, ?>> tags = new HashSet<>();
+        collectTags(tags, MaterialTags.class);
+        collectTags(tags, EntityTags.class);
+        return tags;
     }
 
-    private static Stream<BaseTag<?, ?>> collectTags(Class<?> clazz) {
-        Set<BaseTag<?, ?>> tags = new HashSet<>();
+    private static void collectTags(Set<BaseTag<?, ?>> into, Class<?> clazz) {
         try {
             for (Field field : clazz.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && BaseTag.class.isAssignableFrom(field.getType())) {
-                    tags.add((BaseTag<?, ?>) field.get(null));
+                    into.add((BaseTag<?, ?>) field.get(null));
                 }
             }
         } catch (ReflectiveOperationException ex) {
-            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
-        return tags.stream();
     }
 }
