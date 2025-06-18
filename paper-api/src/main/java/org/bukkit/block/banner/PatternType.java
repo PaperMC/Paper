@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public interface PatternType extends OldEnum<PatternType>, Keyed {
 
     // Start generate - PatternType
-    // @GeneratedFrom 1.21.6-rc1
+    // @GeneratedFrom 1.21.6
     PatternType BASE = getType("base");
 
     PatternType BORDER = getType("border");
