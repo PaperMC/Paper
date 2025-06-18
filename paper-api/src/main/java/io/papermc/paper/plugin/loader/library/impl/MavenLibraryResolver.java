@@ -50,6 +50,18 @@ import org.slf4j.LoggerFactory;
 @NullMarked
 public class MavenLibraryResolver implements ClassPathLibrary {
 
+    /**
+     * The default Maven Central mirror, configurable through the {@code PAPER_DEFAULT_CENTRAL_REPOSITORY} environment
+     * variable. Use this instead of Maven Central directly when you do not have your own mirror, as using
+     * Maven Central as a CDN is against the Maven Central Terms of Service, and you will cause users to hit
+     * rate limits.
+     *
+     * <p>This repository is also used by the legacy {@link org.bukkit.plugin.java.LibraryLoader}.</p>
+     */
+    public static final String MAVEN_CENTRAL_DEFAULT_MIRROR = getDefaultMavenCentralMirror();
+    private static final String MAVEN_CENTRAL_HOSTNAME_PATH = "repo.maven.apache.org/maven2";
+    private static final String MAVEN_CENTRAL_URL_HTTPS = "https://" + MAVEN_CENTRAL_HOSTNAME_PATH;
+    private static final String MAVEN_CENTRAL_URL_HTTP = "http://" + MAVEN_CENTRAL_HOSTNAME_PATH;
     private static final Logger LOGGER = LoggerFactory.getLogger("MavenLibraryResolver");
 
     private final RepositorySystem repository;
@@ -105,6 +117,12 @@ public class MavenLibraryResolver implements ClassPathLibrary {
      * dependencies from
      */
     public void addRepository(final RemoteRepository remoteRepository) {
+        if (remoteRepository.getUrl().startsWith(MAVEN_CENTRAL_URL_HTTPS) || remoteRepository.getUrl().startsWith(MAVEN_CENTRAL_URL_HTTP)) {
+            LOGGER.warn(
+                "Use of Maven Central as a CDN is against the Maven Central Terms of Service. Use MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR instead.",
+                new RuntimeException("Plugin used Maven Central for library resolution")
+            );
+        }
         this.repositories.add(remoteRepository);
     }
 
@@ -129,5 +147,16 @@ public class MavenLibraryResolver implements ClassPathLibrary {
             final File file = artifact.getArtifact().getFile();
             store.addLibrary(file.toPath());
         }
+    }
+
+    private static String getDefaultMavenCentralMirror() {
+        String central = System.getenv("PAPER_DEFAULT_CENTRAL_REPOSITORY");
+        if (central == null) {
+            central = System.getProperty("org.bukkit.plugin.java.LibraryLoader.centralURL");
+        }
+        if (central == null) {
+            central = "https://maven-central.storage-download.googleapis.com/maven2";
+        }
+        return central;
     }
 }
