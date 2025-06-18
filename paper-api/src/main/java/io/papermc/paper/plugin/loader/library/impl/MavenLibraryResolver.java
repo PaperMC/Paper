@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * MavenLibraryResolver resolver = new MavenLibraryResolver();
  * resolver.addDependency(new Dependency(new DefaultArtifact("org.jooq:jooq:3.17.7"), null));
  * resolver.addRepository(new RemoteRepository.Builder(
- *     "central", "default", "https://repo1.maven.org/maven2/"
+ *     "central", "default", MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR
  * ).build());
  * }</pre>
  * <p>
