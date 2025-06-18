@@ -4,7 +4,7 @@
      private final CraftingContainer craftSlots;
      private final Player player;
      private int removeCount;
-+    public @org.jetbrains.annotations.Nullable org.bukkit.inventory.ItemStack @org.jetbrains.annotations.Nullable [] craftRemainders; // Paper - Feature: set by CraftEvent when replacing remainders
++    public @org.jetbrains.annotations.Nullable org.bukkit.event.inventory.CraftItemEvent lastEvent; // Paper - Feature: set when CraftItemEvent was called before
  
      public ResultSlot(Player player, CraftingContainer craftSlots, Container container, int slot, int xPosition, int yPosition) {
          super(container, slot, xPosition, yPosition);
@@ -17,11 +17,19 @@
                  .map(recipe -> recipe.value().getRemainingItems(input))
                  .orElseGet(() -> copyAllInputItems(input))
              : CraftingRecipe.defaultCraftingReminder(input);
-@@ -92,6 +_,14 @@
+@@ -86,12 +_,21 @@
+         int left = positionedCraftInput.left();
+         int top = positionedCraftInput.top();
+         NonNullList<ItemStack> remainingItems = this.getRemainingItems(craftingInput, player.level());
++        org.bukkit.inventory.ItemStack[] craftRemainders = lastEvent.getCraftRemainders(); // Paper - caching remainder array
+ 
+         for (int i = 0; i < craftingInput.height(); i++) {
+             for (int i1 = 0; i1 < craftingInput.width(); i1++) {
                  int i2 = i1 + left + (i + top) * this.craftSlots.getWidth();
                  ItemStack item = this.craftSlots.getItem(i2);
-                 ItemStack itemStack = remainingItems.get(i1 + i * craftingInput.width());
+-                ItemStack itemStack = remainingItems.get(i1 + i * craftingInput.width());
 +                // Paper start - Change Remainder
++                ItemStack itemStack;
 +                org.bukkit.inventory.ItemStack override = craftRemainders[i2];
 +                if (override != null) {
 +                    itemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(override);
