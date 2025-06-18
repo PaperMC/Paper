@@ -22986,7 +22986,7 @@ index 0000000000000000000000000000000000000000..f1f72a051083b61273202cb4e67ecb11
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda670a6811b 100644
+index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155cd6125aa 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -23012,7 +23012,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda6
      }
  
      public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -59,18 +65,19 @@ public final class FeatureHooks {
+@@ -59,111 +65,58 @@ public final class FeatureHooks {
      }
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -23025,6 +23025,9 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda6
      public static Set<Chunk> getSentChunks(final ServerPlayer player) {
 -        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
 +        // Paper start - rewrite chunk system
++        if (player.moonrise$getChunkLoader() == null) {
++            return ObjectSets.EMPTY_SET;
++        }
 +        final LongOpenHashSet rawChunkKeys = player.moonrise$getChunkLoader().getSentChunksRaw();
 +        final ObjectSet<org.bukkit.Chunk> chunks = new ObjectOpenHashSet<>(rawChunkKeys.size());
          final World world = player.level().getWorld();
@@ -23040,7 +23043,11 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda6
          return ObjectSets.unmodifiable(chunks);
      }
  
-@@ -79,91 +86,32 @@ public final class FeatureHooks {
+     public static boolean isChunkSent(final ServerPlayer player, final long chunkKey) {
+-        return player.getChunkTrackingView().contains(new ChunkPos(chunkKey));
++        // Paper start - rewrite chunk system
++        return player.moonrise$getChunkLoader() != null && player.moonrise$getChunkLoader().getSentChunksRaw().contains(chunkKey);
++        // Paper end - rewrite chunk system
      }
  
      public static boolean isSpiderCollidingWithWorldBorder(final Spider spider) {
@@ -23138,7 +23145,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda6
  
              org.bukkit.Chunk chunk = null;
              for (net.minecraft.server.level.Ticket ticket : tickets) {
-@@ -183,15 +131,15 @@ public final class FeatureHooks {
+@@ -183,15 +136,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -23157,7 +23164,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..a42a773503ca0e0dc36dd44440b3eda6
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -209,35 +157,31 @@ public final class FeatureHooks {
+@@ -209,35 +162,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
