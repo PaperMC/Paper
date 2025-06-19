@@ -5574,10 +5574,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6fdbbcae49
+index 0000000000000000000000000000000000000000..b097b4dd7d63f36d0efed3358fbd87432c88d892
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1089 @@
+@@ -0,0 +1,1092 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -5625,9 +5625,6 @@ index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6f
 +import java.util.function.Function;
 +
 +public final class RegionizedPlayerChunkLoader {
-+
-+    public static final TicketType PLAYER_TICKET         = ChunkSystemTicketType.create("chunk_system:player_ticket", Long::compareTo);
-+    public static final TicketType PLAYER_TICKET_DELAYED = ChunkSystemTicketType.create("chunk_system:player_ticket_delayed", Long::compareTo, 5L * 20L);
 +
 +    public static final int GENERATED_TICKET_LEVEL = ChunkHolderManager.FULL_LOADED_TICKET_LEVEL;
 +    public static final int LOADED_TICKET_LEVEL = ChunkTaskScheduler.getTicketLevel(ChunkStatus.EMPTY);
@@ -5904,6 +5901,9 @@ index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6f
 +        private final ServerPlayer player;
 +        private final ServerLevel world;
 +
++        private static final TicketType PLAYER_TICKET = ChunkSystemTicketType.create("chunk_system:player_ticket", Long::compareTo);
++        private final TicketType PLAYER_TICKET_DELAYED;
++
 +        private int lastChunkX = Integer.MIN_VALUE;
 +        private int lastChunkZ = Integer.MIN_VALUE;
 +
@@ -5975,6 +5975,9 @@ index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6f
 +        public PlayerChunkLoaderData(final ServerLevel world, final ServerPlayer player) {
 +            this.world = world;
 +            this.player = player;
++
++            // A duration of 0 or lower would cause the ticket to never unload.
++            PLAYER_TICKET_DELAYED = ChunkSystemTicketType.create("chunk_system:player_ticket_delayed", Long::compareTo, Math.max(1, world.paperConfig().chunks.delayChunkUnloadsBy.ticks()));
 +        }
 +
 +        private void flushDelayedTicketOps() {
