@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.StreamSupport;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -34,8 +35,7 @@ import static net.kyori.adventure.text.format.TextColor.color;
 @DefaultQualifier(NonNull.class)
 public class PaperVersionFetcher implements VersionFetcher {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    private static final org.apache.logging.log4j.Logger SIMPLE_LOGGER = org.apache.logging.log4j.LogManager.getRootLogger();
-    private static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(SIMPLE_LOGGER.getName());
+    private static final ComponentLogger COMPONENT_LOGGER = ComponentLogger.logger(org.apache.logging.log4j.LogManager.getRootLogger().getName());
     private static final int DISTANCE_ERROR = -1;
     private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
@@ -67,7 +67,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
-            SIMPLE_LOGGER.warn("*** You are running a development version without access to version information ***");
+            COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
         } else {
             if (buildNumber.isPresent()) {
                 distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
@@ -82,7 +82,7 @@ public class PaperVersionFetcher implements VersionFetcher {
             }
 
             switch (distance) {
-                case DISTANCE_ERROR -> SIMPLE_LOGGER.error("*** Error obtaining version information! Cannot fetch version info ***");
+                case DISTANCE_ERROR -> COMPONENT_LOGGER.error(text("*** Error obtaining version information! Cannot fetch version info ***"));
                 case 0 -> {
                     if (!newVersionAvailable) {
                         COMPONENT_LOGGER.info(text("*** You are running the latest version! ***", NamedTextColor.GREEN));
@@ -95,22 +95,22 @@ public class PaperVersionFetcher implements VersionFetcher {
                         COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
                     }
                 }
-                case DISTANCE_UNKNOWN -> SIMPLE_LOGGER.warn("*** You are running an unknown version! Cannot fetch version info ***");
+                case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 case 5 -> {
-                    SIMPLE_LOGGER.error("*** You are " + distance + " builds behind! ***");
-                    SIMPLE_LOGGER.error("*** Please download a new build from " + DOWNLOAD_PAGE + " ***");
+                    COMPONENT_LOGGER.error(text("*** You are " + distance + " builds behind! ***"));
+                    COMPONENT_LOGGER.error(text("*** Please download a new build from " + DOWNLOAD_PAGE + " ***"));
                     if (newVersionAvailable) {
-                        SIMPLE_LOGGER.error("*** Also note that a new Minecraft version has been released (" + newVersion + ")! ***");
+                        COMPONENT_LOGGER.error(text("*** Also note that a new Minecraft version has been released (" + newVersion + ")! ***"));
                     }
                 }
                 default -> {
                     if (!newVersionAvailable) {
-                        SIMPLE_LOGGER.warn("*** Currently you are " + distance + " build(s) behind ***");
-                        SIMPLE_LOGGER.warn("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
+                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
                     } else {
-                        SIMPLE_LOGGER.error("*** Currently you are " + distance + " build(s) behind ***");
-                        SIMPLE_LOGGER.error("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***");
-                        SIMPLE_LOGGER.error("*** Also note that a new Minecraft version has been released (" + newVersion + ")! ***");
+                        COMPONENT_LOGGER.error(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.error(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
+                        COMPONENT_LOGGER.error(text("*** Also note that a new Minecraft version has been released (" + newVersion + ")! ***"));
                     }
                 }
             };
