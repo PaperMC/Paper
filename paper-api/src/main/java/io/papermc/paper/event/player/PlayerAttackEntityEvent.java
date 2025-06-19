@@ -39,7 +39,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @return entity that was attacked
      */
-    public Entity getAttacked() {
+    public @NotNull Entity getAttacked() {
         return this.attacked;
     }
 
@@ -70,7 +70,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @return type of the attack
      */
-    public PlayerAttackType getType() {
+    public @NotNull PlayerAttackType getType() {
         return this.type;
     }
 
@@ -79,7 +79,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @param type type of the attack
      */
-    public void setType(final PlayerAttackType type) {
+    public void setType(final @NotNull PlayerAttackType type) {
         this.type = type;
     }
 
@@ -98,7 +98,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
         return HANDLER_LIST;
     }
 
-    public static HandlerList getHandlerList() {
+    public static @NotNull HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 
