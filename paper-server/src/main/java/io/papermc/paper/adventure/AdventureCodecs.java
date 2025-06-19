@@ -1,5 +1,6 @@
 package io.papermc.paper.adventure;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -38,6 +39,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -66,8 +69,17 @@ import static net.kyori.adventure.text.TranslationArgument.numeric;
 
 @DefaultQualifier(NonNull.class)
 public final class AdventureCodecs {
-    static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_CODEC = // todo: someone smart impl this, i actually have no idea what im doing here
-
+    public static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_COMPOUND_CODEC = CompoundTag.CODEC.flatComapMap(PaperAdventure::asBinaryTagHolder, api -> {
+        try {
+            final Tag tag = api.get(PaperAdventure.NBT_CODEC);
+            if (!(tag instanceof final CompoundTag compoundTag)) {
+                return DataResult.error(() -> "Expected a CompoundTag, but got " + tag.getClass().getSimpleName());
+            }
+            return DataResult.success(compoundTag);
+        } catch (CommandSyntaxException e) {
+            return DataResult.error(e::getMessage);
+        }
+    });
     public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component", AdventureCodecs::createCodec);
     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_COMPONENT_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(COMPONENT_CODEC);
 
@@ -122,7 +134,7 @@ public final class AdventureCodecs {
     ).apply(instance, ClickEvent::copyToClipboard));
     static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(
         KEY_CODEC.fieldOf("id").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).key()),
-        BINARY_TAG_HOLDER_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
+        BINARY_TAG_HOLDER_COMPOUND_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
     ).apply(instance, ClickEvent::custom));
 
     static final ClickEventType OPEN_URL_CLICK_EVENT_TYPE = new ClickEventType(OPEN_URL_CODEC, "open_url");
