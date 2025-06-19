@@ -14,7 +14,7 @@ import org.jetbrains.annotations.ApiStatus;
 public interface CustomStatistic extends Keyed, Translatable {
 
     // Start generate - CustomStatistic
-    // @GeneratedFrom 1.21.6-rc1
+    // @GeneratedFrom 1.21.6
     CustomStatistic ANIMALS_BRED = get("animals_bred");
 
     CustomStatistic AVIATE_ONE_CM = get("aviate_one_cm");

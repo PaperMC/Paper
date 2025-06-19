@@ -15,7 +15,7 @@ import org.jetbrains.annotations.ApiStatus;
 public interface StatisticType<S> extends Keyed, Translatable {
 
     // Start generate - StatisticType
-    // @GeneratedFrom 1.21.6-rc1
+    // @GeneratedFrom 1.21.6
     StatisticType<BlockType> BLOCK_MINED = get("mined");
 
     StatisticType<CustomStatistic> CUSTOM = get("custom");
