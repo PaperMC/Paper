@@ -94,22 +94,23 @@ public class PaperVersionFetcher implements VersionFetcher {
                     }
                 }
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
-                case 5 -> {
-                    if (!newVersionAvailable) {
-                        COMPONENT_LOGGER.error(text("*** You are " + distance + " builds behind! ***"));
-                        COMPONENT_LOGGER.error(text("*** Please download a new build from " + DOWNLOAD_PAGE + " ***"));
-                    } else {
-                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
-                        COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
-                    }
-                }
                 default -> {
-                    if (!newVersionAvailable) {
-                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
-                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
+                    if (distance >= 5) {
+                        if (!newVersionAvailable) {
+                            COMPONENT_LOGGER.error(text("*** You are " + distance + " builds behind! ***"));
+                            COMPONENT_LOGGER.error(text("*** Please download a new build from " + DOWNLOAD_PAGE + " ***"));
+                        } else {
+                            COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
+                            COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
+                        }
                     } else {
-                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
-                        COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
+                        if (!newVersionAvailable) {
+                            COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
+                            COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
+                        } else {
+                            COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
+                            COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
+                        }
                     }
                 }
             };
