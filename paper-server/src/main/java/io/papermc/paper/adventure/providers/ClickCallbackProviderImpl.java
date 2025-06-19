@@ -1,25 +1,19 @@
 package io.papermc.paper.adventure.providers;
 
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("UnstableApiUsage") // permitted provider
 public class ClickCallbackProviderImpl implements ClickCallback.Provider {

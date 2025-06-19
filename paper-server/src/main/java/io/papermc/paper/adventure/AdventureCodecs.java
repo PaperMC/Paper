@@ -69,13 +69,10 @@ import static net.kyori.adventure.text.TranslationArgument.numeric;
 
 @DefaultQualifier(NonNull.class)
 public final class AdventureCodecs {
-    public static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_COMPOUND_CODEC = CompoundTag.CODEC.flatComapMap(PaperAdventure::asBinaryTagHolder, api -> {
+    public static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_CODEC = ExtraCodecs.NBT.flatComapMap(tag -> BinaryTagHolder.encode(tag, PaperAdventure.NBT_CODEC), api -> {
         try {
             final Tag tag = api.get(PaperAdventure.NBT_CODEC);
-            if (!(tag instanceof final CompoundTag compoundTag)) {
-                return DataResult.error(() -> "Expected a CompoundTag, but got " + tag.getClass().getSimpleName());
-            }
-            return DataResult.success(compoundTag);
+            return DataResult.success(tag);
         } catch (CommandSyntaxException e) {
             return DataResult.error(e::getMessage);
         }
@@ -134,7 +131,7 @@ public final class AdventureCodecs {
     ).apply(instance, ClickEvent::copyToClipboard));
     static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(
         KEY_CODEC.fieldOf("id").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).key()),
-        BINARY_TAG_HOLDER_COMPOUND_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
+        BINARY_TAG_HOLDER_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
     ).apply(instance, ClickEvent::custom));
 
     static final ClickEventType OPEN_URL_CLICK_EVENT_TYPE = new ClickEventType(OPEN_URL_CODEC, "open_url");
