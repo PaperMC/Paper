@@ -3,15 +3,10 @@ package org.bukkit.craftbukkit;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.time.ZoneId;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.util.PathConverter;
@@ -22,7 +17,6 @@ public class Main {
     public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
     public static boolean useJline = true;
     public static boolean useConsole = true;
-    public static boolean printedWarning = false;
 
     // Paper start - Reset loggers after shutdown
     static {
@@ -227,24 +221,6 @@ public class Main {
                     Main.useConsole = false;
                     useJline = false; // Paper
                     System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
-                }
-
-                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor());
-
-                    Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -14);
-
-                    LocalDate localDate = LocalDate.now();
-                    LocalDate buildLocalDate = buildDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-                    Long daysSinceLastUpdate = ChronoUnit.DAYS.between(buildLocalDate, localDate);
-
-                    if (buildDate.before(deadline.getTime())) {
-                        System.err.println("*** It seems you have not updated Paper in a while ***");
-                        System.err.println("*** It has been " + daysSinceLastUpdate + " days since the last update ***");
-                        System.err.println("*** We will perform an automatic update check after the server finishes loading ***");
-                        printedWarning = true;
-                    }
                 }
 
                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
