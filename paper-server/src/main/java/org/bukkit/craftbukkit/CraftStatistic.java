@@ -14,10 +14,12 @@ import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.Statistic.Type;
+import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemType;
 
 public enum CraftStatistic {
     // Start generate - CraftStatisticCustom
@@ -151,25 +153,35 @@ public enum CraftStatistic {
         return nms;
     }
 
-    public static net.minecraft.stats.Stat getMaterialStatistic(org.bukkit.Statistic stat, Material material) {
+    private static net.minecraft.stats.Stat getBlockTypeStatistic(org.bukkit.Statistic stat, BlockType blockType) {
+        Preconditions.checkArgument(blockType != null, "BlockType cannot be null");
         try {
             if (stat == Statistic.MINE_BLOCK) {
-                return Stats.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraft(material));
+                return Stats.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraftNew(blockType));
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
+        return null;
+    }
+
+    private static net.minecraft.stats.Stat getItemTypeStatistic(org.bukkit.Statistic stat, ItemType itemType) {
+        Preconditions.checkArgument(itemType != null, "ItemType cannot be null");
+        try {
             if (stat == Statistic.CRAFT_ITEM) {
-                return Stats.ITEM_CRAFTED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_CRAFTED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.USE_ITEM) {
-                return Stats.ITEM_USED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_USED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.BREAK_ITEM) {
-                return Stats.ITEM_BROKEN.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_BROKEN.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.PICKUP) {
-                return Stats.ITEM_PICKED_UP.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_PICKED_UP.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.DROP) {
-                return Stats.ITEM_DROPPED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_DROPPED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
@@ -257,8 +269,18 @@ public enum CraftStatistic {
     public static int getStatistic(ServerStatsCounter manager, Statistic statistic, Material material) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
-        Preconditions.checkArgument(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
-        net.minecraft.stats.Stat nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        net.minecraft.stats.Stat nmsStatistic;
+        if (statistic.getType() == Type.BLOCK) {
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
+            BlockType blockType = material.asBlockType();
+            nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
+        } else if (statistic.getType() == Type.ITEM) {
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
+            ItemType itemType = material.asItemType();
+            nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
+        } else {
+            throw new IllegalArgumentException("This statistic does not take a Material parameter");
+        }
         Preconditions.checkArgument(nmsStatistic != null, "The supplied Material %s does not have a corresponding statistic", material);
         return manager.getValue(nmsStatistic);
     }
@@ -277,8 +299,18 @@ public enum CraftStatistic {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
-        Preconditions.checkArgument(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
-        net.minecraft.stats.Stat nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        net.minecraft.stats.Stat nmsStatistic;
+        if (statistic.getType() == Type.BLOCK) {
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
+            BlockType blockType = material.asBlockType();
+            nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
+        } else if (statistic.getType() == Type.ITEM) {
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
+            ItemType itemType = material.asItemType();
+            nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
+        } else {
+            throw new IllegalArgumentException("This statistic does not take a Material parameter");
+        }
         Preconditions.checkArgument(nmsStatistic != null, "The supplied Material %s does not have a corresponding statistic", material);
         manager.setValue(null, nmsStatistic, newValue);
 
