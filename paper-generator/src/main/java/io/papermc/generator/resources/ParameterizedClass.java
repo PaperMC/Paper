@@ -11,6 +11,7 @@ import io.papermc.generator.utils.SourceCodecs;
 import io.papermc.typewriter.ClassNamed;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import net.minecraft.util.ExtraCodecs;
 
 public record ParameterizedClass(ClassNamed klass, List<ParameterizedClass> arguments) {
@@ -40,13 +41,24 @@ public record ParameterizedClass(ClassNamed klass, List<ParameterizedClass> argu
         ClassName rawType = Types.typed(this.klass);
         if (!this.arguments.isEmpty()) {
             List<TypeName> convertedArgs = new ArrayList<>(this.arguments.size());
-            for (ParameterizedClass arg : this.arguments) {
-                convertedArgs.add(arg.getType());
+            for (ParameterizedClass argument : this.arguments) {
+                convertedArgs.add(argument.getType());
             }
 
             return ParameterizedTypeName.get(rawType, convertedArgs.toArray(TypeName[]::new));
         }
 
         return rawType;
+    }
+
+    public void appendType(StringBuilder builder, Function<ClassNamed, String> imported) {
+        builder.append(imported.apply(this.klass));
+        if (!this.arguments.isEmpty()) {
+            builder.append("<");
+            for (ParameterizedClass argument : this.arguments) {
+                argument.appendType(builder, imported);
+            }
+            builder.append(">");
+        }
     }
 }

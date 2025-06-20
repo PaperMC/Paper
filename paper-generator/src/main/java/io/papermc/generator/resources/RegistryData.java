@@ -11,8 +11,10 @@ import io.papermc.generator.types.Types;
 import io.papermc.generator.utils.SourceCodecs;
 import io.papermc.typewriter.ClassNamed;
 import java.lang.constant.ConstantDescs;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 
@@ -84,6 +86,28 @@ public record RegistryData(
                     return ParameterizedTypeName.get(rawType, wildcards);
                 }
                 return rawType;
+            }
+
+            public void appendType(StringBuilder builder, Function<ClassNamed, String> imported) {
+                builder.append(imported.apply(this.name));
+                int size = this.wildcards.size();
+                if (size != 0) {
+                    builder.append("<");
+                    Iterator<ParameterizedClass> iterator = this.wildcards.iterator();
+                    while (iterator.hasNext()) {
+                        ParameterizedClass wildcard = iterator.next();
+                        if (wildcard.arguments().isEmpty() && wildcard.klass().canonicalName().equals(Object.class.getCanonicalName())) {
+                            builder.append("?");
+                        } else {
+                            builder.append("? extends ");
+                            wildcard.appendType(builder, imported);
+                        }
+                        if (iterator.hasNext()) {
+                            builder.append(", ");
+                        }
+                    }
+                    builder.append(">");
+                }
             }
 
             public enum Type implements StringRepresentable {
