@@ -22,6 +22,12 @@ public final class ReflectionRemapper {
     private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
         Opcodes.ASM9,
         chain -> chain.then(new BaseReflectionRules(PAPER_REFLECTION_HOLDER).rules())
+            .then(
+                io.papermc.asm.rules.RewriteRule.forOwnerClass(Class.class, rf -> {
+                    rf.plainStaticRewrite(java.lang.constant.ClassDesc.of(PAPER_REFLECTION_HOLDER), b -> b
+                        .match("forName").desc("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;", "(Ljava/lang/Module;Ljava/lang/String;)Ljava/lang/Class;"));
+                })
+            )
             .then(DefineClassRule.create(PAPER_REFLECTION_HOLDER_DESC, true)),
         ClassInfoProvider.basic()
     );
