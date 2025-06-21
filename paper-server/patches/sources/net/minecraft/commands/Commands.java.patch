@@ -55,71 +55,20 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -289,9 +_,41 @@
-         return new ParseResults<>(commandContextBuilder, parseResults.getReader(), parseResults.getExceptions());
-     }
- 
-+    // CraftBukkit start
-+    public void dispatchServerCommand(CommandSourceStack sender, String command) {
-+        com.google.common.base.Joiner joiner = com.google.common.base.Joiner.on(" ");
-+        if (command.startsWith("/")) {
-+            command = command.substring(1);
-+        }
-+
-+        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(sender.getBukkitSender(), command);
-+        org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        command = event.getCommand();
-+
-+        String[] args = command.split(" ");
-+        if (args.length == 0) return; // Paper - empty commands shall not be dispatched
-+
-+        // Paper - Fix permission levels for command blocks
-+
-+        // Handle vanilla commands; // Paper - handled in CommandNode/CommandDispatcher
-+
-+        String newCommand = joiner.join(args);
-+        this.performPrefixedCommand(sender, newCommand, newCommand);
-+    }
-+    // CraftBukkit end
-+
-     public void performPrefixedCommand(CommandSourceStack source, String command) {
-+        // CraftBukkit start
-+        this.performPrefixedCommand(source, command, command);
-+    }
-+
-+    public void performPrefixedCommand(CommandSourceStack source, String command, String label) {
-         command = trimOptionalPrefix(command);
--        this.performCommand(this.dispatcher.parse(command, source), command);
-+        this.performCommand(this.dispatcher.parse(command, source), command, label);
-+        // CraftBukkit end
-     }
- 
-     public static String trimOptionalPrefix(String command) {
-@@ -299,9 +_,20 @@
+@@ -299,6 +_,13 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
-+        // CraftBukkit start
-+        this.performCommand(parseResults, command, command);
++        // Paper start
++        this.performCommand(parseResults, command, false);
 +    }
 +
-+    public void performCommand(ParseResults<CommandSourceStack> parseResults, String command, String label) {
-+        // CraftBukkit end
-+        // Paper start
-+        this.performCommand(parseResults, command, label, false);
-+    }
-+    public void performCommand(ParseResults<CommandSourceStack> parseResults, String command, String label, boolean throwCommandError) {
++    public void performCommand(ParseResults<CommandSourceStack> parseResults, String command, boolean throwCommandError) {
++        org.spigotmc.AsyncCatcher.catchOp("Cannot perform command async");
 +        // Paper end
          CommandSourceStack commandSourceStack = parseResults.getContext().getSource();
          Profiler.get().push(() -> "/" + command);
--        ContextChain<CommandSourceStack> contextChain = finishParsing(parseResults, command, commandSourceStack);
-+        ContextChain contextChain = this.finishParsing(parseResults, command, commandSourceStack, label); // CraftBukkit // Paper - Add UnknownCommandEvent
- 
-         try {
-             if (contextChain != null) {
+         ContextChain<CommandSourceStack> contextChain = finishParsing(parseResults, command, commandSourceStack);
 @@ -313,9 +_,10 @@
                  );
              }
@@ -133,12 +82,12 @@
                  StackTraceElement[] stackTrace = var12.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -341,18 +_,22 @@
+@@ -341,13 +_,17 @@
      }
  
      @Nullable
 -    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-+    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source, String label) { // CraftBukkit // Paper - Add UnknownCommandEvent
++    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
          try {
              validateParseResults(parseResults);
              return ContextChain.tryFlatten(parseResults.getContext().build(command))
@@ -153,12 +102,6 @@
              if (var7.getInput() != null && var7.getCursor() >= 0) {
                  int min = Math.min(var7.getInput().length(), var7.getCursor());
                  MutableComponent mutableComponent = Component.empty()
-                     .withStyle(ChatFormatting.GRAY)
--                    .withStyle(style -> style.withClickEvent(new ClickEvent.SuggestCommand("/" + command)));
-+                    .withStyle(style -> style.withClickEvent(new ClickEvent.SuggestCommand("/" + label))); // CraftBukkit // Paper
-                 if (min > 10) {
-                     mutableComponent.append(CommonComponents.ELLIPSIS);
-                 }
 @@ -364,7 +_,17 @@
                  }
  

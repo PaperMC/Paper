@@ -50,7 +50,7 @@ public class VanillaCommandWrapper extends BukkitCommand { // Paper
         if (!this.testPermission(sender)) return true;
 
         CommandSourceStack source = VanillaCommandWrapper.getListener(sender);
-        this.commands().performPrefixedCommand(source, this.toDispatcher(args, this.getName()), this.toDispatcher(args, commandLabel)); // Paper
+        this.commands().performPrefixedCommand(source, this.toDispatcher(args, this.getName()));
         return true;
     }
 
