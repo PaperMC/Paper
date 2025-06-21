@@ -2,10 +2,12 @@ package io.papermc.paper.pluginremap.reflect;
 
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
+import io.papermc.asm.rules.RewriteRule;
 import io.papermc.paper.util.MappingEnvironment;
 import io.papermc.reflectionrewriter.BaseReflectionRules;
 import io.papermc.reflectionrewriter.DefineClassRule;
 import io.papermc.reflectionrewriter.proxygenerator.ProxyGenerator;
+import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -22,6 +24,12 @@ public final class ReflectionRemapper {
     private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
         Opcodes.ASM9,
         chain -> chain.then(new BaseReflectionRules(PAPER_REFLECTION_HOLDER).rules())
+            .then(
+                RewriteRule.forOwnerClass(Class.class, rf -> {
+                    rf.plainStaticRewrite(ClassDesc.of(PAPER_REFLECTION_HOLDER), b -> b
+                        .match("forName").desc("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;", "(Ljava/lang/Module;Ljava/lang/String;)Ljava/lang/Class;"));
+                })
+            )
             .then(DefineClassRule.create(PAPER_REFLECTION_HOLDER_DESC, true)),
         ClassInfoProvider.basic()
     );
