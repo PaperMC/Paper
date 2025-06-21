@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -13,6 +14,7 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -83,6 +85,22 @@ public interface Commands extends Registrar {
      */
     static <T> RequiredArgumentBuilder<CommandSourceStack, T> argument(final String name, final ArgumentType<T> argumentType) {
         return RequiredArgumentBuilder.argument(name, argumentType);
+    }
+
+    /**
+     * Creates a restricted {@link Predicate} that wraps the given predicate.
+     * <p>
+     * A restricted predicate prevents execution in unattended contexts, such as from
+     * chat click events. A warning is shown on the client before executing the command.
+     * <p>
+     * This is used by vanilla to prevent invocation of sensitive commands (like op) from
+     * players without their knowledge.
+     *
+     * @param predicate the original predicate to wrap
+     * @return a new predicate with restricted execution behavior
+     */
+    static Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
+        return InternalAPIBridge.get().restricted(predicate);
     }
 
     /**

@@ -20,6 +20,7 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.bukkit.command.Command;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -96,7 +97,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
     public Command put(String key, Command value) {
         Command old = this.get(key);
         this.getDispatcher().getRoot().removeCommand(key); // Override previous command
-        if (value instanceof PluginVanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
+        if (value instanceof VanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
             // Don't break when some plugin tries to remove and add back a plugin command registered with modern API...
             this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
         } else {
