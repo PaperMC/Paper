@@ -60,7 +60,6 @@ public interface BlockState extends Metadatable {
      * @return a copy of the block state
      */
     @NotNull
-    @ApiStatus.Experimental
     BlockState copy();
 
     /**
@@ -70,7 +69,6 @@ public interface BlockState extends Metadatable {
      * @return the new block state
      */
     @NotNull
-    @ApiStatus.Experimental
     BlockState copy(@NotNull Location location);
 
     /**

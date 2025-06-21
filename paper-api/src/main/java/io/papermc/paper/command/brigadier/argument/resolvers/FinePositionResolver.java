@@ -11,7 +11,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#finePosition()
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#finePosition(boolean)
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface FinePositionResolver extends ArgumentResolver<FinePosition> {
 }
