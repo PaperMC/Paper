@@ -54,11 +54,11 @@ public record ParameterizedClass(ClassNamed klass, List<ParameterizedClass> argu
     public void appendType(StringBuilder builder, Function<ClassNamed, String> imported) {
         builder.append(imported.apply(this.klass));
         if (!this.arguments.isEmpty()) {
-            builder.append("<");
+            builder.append('<');
             for (ParameterizedClass argument : this.arguments) {
                 argument.appendType(builder, imported);
             }
-            builder.append(">");
+            builder.append('>');
         }
     }
 }

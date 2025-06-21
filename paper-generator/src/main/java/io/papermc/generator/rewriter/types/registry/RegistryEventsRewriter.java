@@ -24,7 +24,7 @@ public class RegistryEventsRewriter extends SearchReplaceRewriter {
                 builder.append(metadata.indent());
                 builder.append("%s %s %s ".formatted(PUBLIC, STATIC, FINAL));
                 builder.append(Types.REGISTRY_EVENT_PROVIDER.simpleName());
-                builder.append("<");
+                builder.append('<');
                 data.api().klass().appendType(builder, name -> this.importCollector.getShortName(name));
                 builder.append(", ").append(this.importCollector.getShortName(b.api()));
                 builder.append('>');

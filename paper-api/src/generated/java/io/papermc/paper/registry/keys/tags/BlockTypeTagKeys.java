@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -25,7 +24,6 @@ import org.jspecify.annotations.NullMarked;
 })
 @NullMarked
 @GeneratedFrom("1.21.6")
-@ApiStatus.Experimental
 public final class BlockTypeTagKeys {
     /**
      * {@code #minecraft:acacia_logs}
@@ -1394,7 +1392,6 @@ public final class BlockTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<BlockType> create(final Key key) {
         return TagKey.create(RegistryKey.BLOCK, key);
     }

@@ -54,7 +54,6 @@ public class GeneratedTagKeyType<T> extends SimpleGenerator implements RegistryI
             .addCode("return $T.create($T.$L, $N);", Types.TAG_KEY, Types.REGISTRY_KEY, this.entry.registryKeyField(), keyParam)
             .returns(returnType);
         if (publicCreateKeyMethod) {
-            create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
             create.addJavadoc(Javadocs.CREATED_TAG_KEY_JAVADOC, Types.typed(this.entry.data().api().klass().name()), this.entry.getRegistryKey().location().toString());
         }
         return create;
@@ -96,8 +95,6 @@ public class GeneratedTagKeyType<T> extends SimpleGenerator implements RegistryI
         if (allExperimental.get()) {
             typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
             createMethod.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
-        } else {
-            typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         }
         return typeBuilder.addMethod(createMethod.build()).build();
     }

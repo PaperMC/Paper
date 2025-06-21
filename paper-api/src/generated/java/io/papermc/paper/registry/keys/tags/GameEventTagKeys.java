@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -25,7 +24,6 @@ import org.jspecify.annotations.NullMarked;
 })
 @NullMarked
 @GeneratedFrom("1.21.6")
-@ApiStatus.Experimental
 public final class GameEventTagKeys {
     /**
      * {@code #minecraft:allay_can_listen}
@@ -71,7 +69,6 @@ public final class GameEventTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<GameEvent> create(final Key key) {
         return TagKey.create(RegistryKey.GAME_EVENT, key);
     }

@@ -92,12 +92,12 @@ public record RegistryData(
                 builder.append(imported.apply(this.name));
                 int size = this.wildcards.size();
                 if (size != 0) {
-                    builder.append("<");
+                    builder.append('<');
                     Iterator<ParameterizedClass> iterator = this.wildcards.iterator();
                     while (iterator.hasNext()) {
                         ParameterizedClass wildcard = iterator.next();
                         if (wildcard.arguments().isEmpty() && wildcard.klass().canonicalName().equals(Object.class.getCanonicalName())) {
-                            builder.append("?");
+                            builder.append('?');
                         } else {
                             builder.append("? extends ");
                             wildcard.appendType(builder, imported);
@@ -106,7 +106,7 @@ public record RegistryData(
                             builder.append(", ");
                         }
                     }
-                    builder.append(">");
+                    builder.append('>');
                 }
             }
 
