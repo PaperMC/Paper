@@ -4,7 +4,7 @@ import net.minecraft.stats.Stat;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
 import org.bukkit.scoreboard.RenderType;
 
-public record PaperStatistic<S, M>(Stat<M> handle, S value, M nmsValue, StatisticType<S> type) implements Statistic<S> {
+public record PaperStatistic<S, M>(Stat<M> handle, S owner, M nmsValue, StatisticType<S> type) implements Statistic<S> {
 
     @Override
     public String getName() {
