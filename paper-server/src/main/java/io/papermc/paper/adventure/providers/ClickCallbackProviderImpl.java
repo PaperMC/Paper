@@ -65,8 +65,14 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         private int remainingUses;
 
         private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final UUID id) {
+            long lifetimeValue;
             this.callback = callback;
-            this.lifetime = options.lifetime().toNanos();
+            try {
+                lifetimeValue = options.lifetime().toNanos();
+            } catch (final ArithmeticException ex) {
+                lifetimeValue = Long.MAX_VALUE;
+            }
+            this.lifetime = lifetimeValue;
             this.remainingUses = options.uses();
             this.id = id;
         }
@@ -82,6 +88,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
 
         public boolean expired() {
+            if (this.lifetime == Long.MAX_VALUE) return false;
             return System.nanoTime() - this.startedAt >= this.lifetime;
         }
 
