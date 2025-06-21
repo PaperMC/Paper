@@ -3,10 +3,14 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import java.util.List;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Cat;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -38,6 +42,11 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
         return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
+    }
+
     public static final class PaperBuilder extends PaperCatTypeRegistryEntry implements Builder, PaperRegistryBuilder<CatVariant, Cat.Type> {
 
         public PaperBuilder(final Conversions conversions, final @Nullable CatVariant internal) {
@@ -47,6 +56,12 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
             this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 
