@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -91,13 +92,20 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         try {
             pluginConstructor = pluginClass.getDeclaredConstructor();
         } catch (NoSuchMethodException ex) {
-            throw new InvalidPluginException("main class `" + description.getMain() + "' must have a public no-args constructor", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' must have a no-args constructor", ex);
+        }
+
+        try {
+            // Support non-public constructors
+            pluginConstructor.setAccessible(true);
+        } catch (InaccessibleObjectException | SecurityException ex) {
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
         }
 
         try {
             plugin = pluginConstructor.newInstance();
         } catch (IllegalAccessException ex) {
-            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor must be public", ex);
+            throw new InvalidPluginException("main class `" + description.getMain() + "' constructor inaccessible", ex);
         } catch (InstantiationException ex) {
             throw new InvalidPluginException("main class `" + description.getMain() + "' must not be abstract", ex);
         } catch (IllegalArgumentException ex) {
