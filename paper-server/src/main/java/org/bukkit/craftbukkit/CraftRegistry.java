@@ -105,7 +105,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return ((Handleable<M>) bukkit).getHandle();
     }
 
-    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<net.minecraft.core.Registry<M>> registryKey) {
+    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<? extends net.minecraft.core.Registry<M>> registryKey) {
         Preconditions.checkArgument(bukkit != null);
         // Paper start - support direct Holder
         if (bukkit instanceof io.papermc.paper.util.Holderable<?>) {
