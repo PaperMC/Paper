@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 6f65564f6a6e99d6549de9a23a031b1f4a8a9798..cba09766b9e0c47573aa562872cbe4cfbda4e99a 100644
+index b6730b785e4adf4e1371b34161c7968d84760e02..749f396840439cfb67ff2a6a1946772fcbe4d181 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -4907,10 +4907,10 @@ index 0000000000000000000000000000000000000000..2d24d03bbdb5ee0d862cbfff2219f58a
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/client/ClientEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/client/ClientEntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a038215156a163b0b1cbc870ada5b4ac85ed1335
+index 0000000000000000000000000000000000000000..cf929c61d244e3408a7f9cfc0914d140a6c444db
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/client/ClientEntityLookup.java
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,128 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity.client;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
@@ -4958,8 +4958,7 @@ index 0000000000000000000000000000000000000000..a038215156a163b0b1cbc870ada5b4ac
 +        final boolean ticking = this.tickingChunks.contains(CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +
 +        final ChunkEntitySlices ret = new ChunkEntitySlices(
-+                this.world, chunkX, chunkZ,
-+                ticking ? FullChunkStatus.ENTITY_TICKING : FullChunkStatus.FULL, null,
++            this.world, chunkX, chunkZ, ticking ? FullChunkStatus.ENTITY_TICKING : FullChunkStatus.FULL, null,
 +            WorldUtil.getMinSection(this.world), WorldUtil.getMaxSection(this.world)
 +        );
 +
@@ -5162,10 +5161,10 @@ index 0000000000000000000000000000000000000000..2ff58cf753c60913ee73aae015182e9c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9cdf8e618
+index 0000000000000000000000000000000000000000..5f2deeb5cc01d8bbeb7449bd4e59c466b3dfdf57
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,166 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
@@ -5175,9 +5174,14 @@ index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup;
++import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
++import ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketType;
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.server.level.TicketType;
 +import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.projectile.ThrownEnderpearl;
 +import net.minecraft.world.level.entity.LevelCallback;
 +
 +public final class ServerEntityLookup extends EntityLookup {
@@ -5187,9 +5191,18 @@ index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9
 +    private final ServerLevel serverWorld;
 +    public final ReferenceList<Entity> trackerEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY); // Moonrise - entity tracker
 +
++    // Vanilla does not increment ticket timeouts if the chunk is progressing in generation. They made this change in 1.21.6 so that the ender pearl
++    // ticket does not expire if the chunk fails to generate before the timeout expires. Rather than blindly adjusting the entire system behavior
++    // to fix this small issue, we instead add non-expirable tickets here to keep ender pearls ticking. This is how the original feature should have
++    // been implemented, but I don't think Vanilla has proper entity add/remove hooks like we do. Fixes MC-297591
++    private static final TicketType ENDER_PEARL_TICKER = ChunkSystemTicketType.create("chunk_system:ender_pearl_ticker", null);
++    private final Long2IntOpenHashMap enderPearlChunkCount = new Long2IntOpenHashMap();
++    private final boolean keepEnderPearlsTicking;
++
 +    public ServerEntityLookup(final ServerLevel world, final LevelCallback<Entity> worldCallback) {
 +        super(world, worldCallback);
 +        this.serverWorld = world;
++        this.keepEnderPearlsTicking = PlatformHooks.get().addTicketForEnderPearls(world);
 +    }
 +
 +    @Override
@@ -5231,6 +5244,10 @@ index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9
 +        if (entity instanceof ServerPlayer player) {
 +            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().tickPlayer(player);
 +        }
++        if (entity instanceof ThrownEnderpearl enderpearl && (oldSectionX != newSectionX || oldSectionZ != newSectionZ)) {
++            this.removeEnderPearl(CoordinateUtils.getChunkKey(oldSectionX, oldSectionZ));
++            this.addEnderPearl(CoordinateUtils.getChunkKey(newSectionX, newSectionZ));
++        }
 +        PlatformHooks.get().entityMove(
 +            entity,
 +            CoordinateUtils.getChunkSectionKey(oldSectionX, oldSectionY, oldSectionZ),
@@ -5243,12 +5260,18 @@ index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9
 +        if (entity instanceof ServerPlayer player) {
 +            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().addPlayer(player);
 +        }
++        if (entity instanceof ThrownEnderpearl enderpearl) {
++            this.addEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()));
++        }
 +    }
 +
 +    @Override
 +    protected void removeEntityCallback(final Entity entity) {
 +        if (entity instanceof ServerPlayer player) {
 +            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().removePlayer(player);
++        }
++        if (entity instanceof ThrownEnderpearl enderpearl) {
++            this.removeEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()));
 +        }
 +    }
 +
@@ -5279,6 +5302,33 @@ index 0000000000000000000000000000000000000000..26207443b1223119c03db478d7e816d9
 +    @Override
 +    protected boolean screenEntity(final Entity entity, final boolean fromDisk, final boolean event) {
 +        return PlatformHooks.get().screenEntity(this.serverWorld, entity, fromDisk, event);
++    }
++
++    private void addEnderPearl(final long coordinate) {
++        if (!this.keepEnderPearlsTicking) {
++            return;
++        }
++
++        final int oldCount = this.enderPearlChunkCount.addTo(coordinate, 1);
++        if (oldCount != 0) {
++            return;
++        }
++        ((ChunkSystemServerLevel)this.serverWorld).moonrise$getChunkTaskScheduler().chunkHolderManager
++            .addTicketAtLevel(ENDER_PEARL_TICKER, coordinate, ChunkHolderManager.ENTITY_TICKING_TICKET_LEVEL, null);
++    }
++
++    private void removeEnderPearl(final long coordinate) {
++        if (!this.keepEnderPearlsTicking) {
++            return;
++        }
++
++        final int oldCount = this.enderPearlChunkCount.addTo(coordinate, -1);
++        if (oldCount != 1) {
++            return;
++        }
++        this.enderPearlChunkCount.remove(coordinate);
++        ((ChunkSystemServerLevel)this.serverWorld).moonrise$getChunkTaskScheduler().chunkHolderManager
++            .removeTicketAtLevel(ENDER_PEARL_TICKER, coordinate, ChunkHolderManager.ENTITY_TICKING_TICKET_LEVEL, null);
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/ChunkSystemPoiManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/ChunkSystemPoiManager.java
