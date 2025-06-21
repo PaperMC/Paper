@@ -44,6 +44,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
@@ -213,6 +215,12 @@ import org.jspecify.annotations.Nullable;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
+    private static final PointersSupplier<Player> POINTERS_SUPPLIER = PointersSupplier.<Player>builder()
+        .parent(CraftEntity.POINTERS_SUPPLIER)
+        .resolving(Identity.NAME, Player::getName)
+        .resolving(Identity.DISPLAY_NAME, Player::displayName)
+        .resolving(Identity.LOCALE, Player::locale)
+        .build();
 
     private long firstPlayed = 0;
     private long lastPlayed = 0;
@@ -3283,17 +3291,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public net.kyori.adventure.pointer.Pointers pointers() {
-        if (this.adventure$pointers == null) {
-            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
-                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::displayName)
-                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
-                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
-                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
-                .withDynamic(net.kyori.adventure.identity.Identity.LOCALE, this::locale)
-                .build();
-        }
-
-        return this.adventure$pointers;
+        return POINTERS_SUPPLIER.view(this);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package io.papermc.paper.adventure;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -14,6 +15,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.EntityNBTComponent;
@@ -37,6 +39,9 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.contents.KeybindContents;
@@ -44,6 +49,7 @@ import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
@@ -63,7 +69,14 @@ import static net.kyori.adventure.text.TranslationArgument.numeric;
 
 @DefaultQualifier(NonNull.class)
 public final class AdventureCodecs {
-
+    public static final Codec<BinaryTagHolder> BINARY_TAG_HOLDER_CODEC = ExtraCodecs.NBT.flatComapMap(tag -> BinaryTagHolder.encode(tag, PaperAdventure.NBT_CODEC), api -> {
+        try {
+            final Tag tag = api.get(PaperAdventure.NBT_CODEC);
+            return DataResult.success(tag);
+        } catch (CommandSyntaxException e) {
+            return DataResult.error(e::getMessage);
+        }
+    });
     public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component", AdventureCodecs::createCodec);
     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_COMPONENT_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(COMPONENT_CODEC);
 
@@ -89,27 +102,37 @@ public final class AdventureCodecs {
         return Key.parseable(s) ? DataResult.success(Key.key(s)) : DataResult.error(() -> "Cannot convert " + s + " to adventure Key");
     }, Key::asString);
 
+    static final Function<ClickEvent, String> TEXT_PAYLOAD_EXTRACTOR = a -> ((ClickEvent.Payload.Text) a.payload()).value();
+
     /*
      * Click
      */
     static final MapCodec<ClickEvent> OPEN_URL_CODEC = mapCodec((instance) -> instance.group(
-        ExtraCodecs.UNTRUSTED_URI.fieldOf("url").forGetter(a -> URI.create(!a.value().contains("://") ? "https://" + a.value() : a.value()))
+        ExtraCodecs.UNTRUSTED_URI.fieldOf("url").forGetter(a -> {
+                final String url = ((ClickEvent.Payload.Text) a.payload()).value();
+                return URI.create(!url.contains("://") ? "https://" + url : url);
+            }
+        )
     ).apply(instance, (url) -> ClickEvent.openUrl(url.toString())));
     static final MapCodec<ClickEvent> OPEN_FILE_CODEC = mapCodec((instance) -> instance.group(
-        Codec.STRING.fieldOf("path").forGetter(ClickEvent::value)
+        Codec.STRING.fieldOf("path").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::openFile));
     static final MapCodec<ClickEvent> RUN_COMMAND_CODEC = mapCodec((instance) -> instance.group(
-        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(ClickEvent::value)
+        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::runCommand));
     static final MapCodec<ClickEvent> SUGGEST_COMMAND_CODEC = mapCodec((instance) -> instance.group(
-        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(ClickEvent::value)
+        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::suggestCommand));
     static final MapCodec<ClickEvent> CHANGE_PAGE_CODEC = mapCodec((instance) -> instance.group(
-        ExtraCodecs.POSITIVE_INT.fieldOf("page").forGetter(a -> Integer.parseInt(a.value()))
+        ExtraCodecs.POSITIVE_INT.fieldOf("page").forGetter(a -> ((ClickEvent.Payload.Int) a.payload()).integer())
     ).apply(instance, ClickEvent::changePage));
     static final MapCodec<ClickEvent> COPY_TO_CLIPBOARD_CODEC = mapCodec((instance) -> instance.group(
-        Codec.STRING.fieldOf("value").forGetter(ClickEvent::value)
+        Codec.STRING.fieldOf("value").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::copyToClipboard));
+    static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(
+        KEY_CODEC.fieldOf("id").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).key()),
+        BINARY_TAG_HOLDER_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
+    ).apply(instance, ClickEvent::custom));
 
     static final ClickEventType OPEN_URL_CLICK_EVENT_TYPE = new ClickEventType(OPEN_URL_CODEC, "open_url");
     static final ClickEventType OPEN_FILE_CLICK_EVENT_TYPE = new ClickEventType(OPEN_FILE_CODEC, "open_file");
@@ -117,7 +140,8 @@ public final class AdventureCodecs {
     static final ClickEventType SUGGEST_COMMAND_CLICK_EVENT_TYPE = new ClickEventType(SUGGEST_COMMAND_CODEC, "suggest_command");
     static final ClickEventType CHANGE_PAGE_CLICK_EVENT_TYPE = new ClickEventType(CHANGE_PAGE_CODEC, "change_page");
     static final ClickEventType COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE = new ClickEventType(COPY_TO_CLIPBOARD_CODEC, "copy_to_clipboard");
-    static final Codec<ClickEventType> CLICK_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE});
+    static final ClickEventType CUSTOM_CLICK_EVENT_TYPE = new ClickEventType(CUSTOM_CODEC, "custom");
+    static final Codec<ClickEventType> CLICK_EVENT_TYPE_CODEC = StringRepresentable.fromValues(() -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE, CUSTOM_CLICK_EVENT_TYPE});
 
     record ClickEventType(MapCodec<ClickEvent> codec, String id) implements StringRepresentable {
         @Override
@@ -126,23 +150,17 @@ public final class AdventureCodecs {
         }
     }
 
-    private static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE = he -> {
-        if (he.action() == ClickEvent.Action.OPEN_URL) {
-            return OPEN_URL_CLICK_EVENT_TYPE;
-        } else if (he.action() == ClickEvent.Action.OPEN_FILE) {
-            return OPEN_FILE_CLICK_EVENT_TYPE;
-        } else if (he.action() == ClickEvent.Action.RUN_COMMAND) {
-            return RUN_COMMAND_CLICK_EVENT_TYPE;
-        } else if (he.action() == ClickEvent.Action.SUGGEST_COMMAND) {
-            return SUGGEST_COMMAND_CLICK_EVENT_TYPE;
-        } else if (he.action() == ClickEvent.Action.CHANGE_PAGE) {
-            return CHANGE_PAGE_CLICK_EVENT_TYPE;
-        } else if (he.action() == ClickEvent.Action.COPY_TO_CLIPBOARD) {
-            return COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
-        } else {
-            throw new IllegalStateException();
-        }
-    };
+    private static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE =
+        he -> switch (he.action()) {
+            case OPEN_URL -> OPEN_URL_CLICK_EVENT_TYPE;
+            case OPEN_FILE -> OPEN_FILE_CLICK_EVENT_TYPE;
+            case RUN_COMMAND -> RUN_COMMAND_CLICK_EVENT_TYPE;
+            case SUGGEST_COMMAND -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
+            case CHANGE_PAGE -> CHANGE_PAGE_CLICK_EVENT_TYPE;
+            case COPY_TO_CLIPBOARD -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
+            case SHOW_DIALOG -> throw new UnsupportedOperationException(); // todo: dialog codec with dialog "api"
+            case CUSTOM -> CUSTOM_CLICK_EVENT_TYPE;
+        };
 
     static final Codec<ClickEvent> CLICK_EVENT_CODEC = CLICK_EVENT_TYPE_CODEC.dispatch("action", GET_CLICK_EVENT_TYPE, ClickEventType::codec);
 

@@ -23,7 +23,6 @@ public final class PaperCommands {
 
     public static void registerCommands(final MinecraftServer server) {
         COMMANDS.put("paper", new PaperCommand("paper"));
-        COMMANDS.put("callback", new CallbackCommand("callback"));
         COMMANDS.put("mspt", new MSPTCommand("mspt"));
 
         COMMANDS.forEach((s, command) -> {
