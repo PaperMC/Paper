@@ -1,23 +1,29 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import java.util.EnumSet;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -105,6 +111,24 @@ public final class ArgumentTypes {
     }
 
     /**
+     * A column position argument.
+     * 
+     * @return column position argument
+     */
+    public static ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
+        return provider().columnBlockPosition();
+    }
+
+    /**
+     * A block predicate argument.
+     * 
+     * @return block predicate argument
+     */
+    public static ArgumentType<BlockPredicate> blockPredicate() {
+        return provider().blockPredicate();
+    }
+
+    /**
      * A fine position argument.
      *
      * @return fine position argument
@@ -125,12 +149,51 @@ public final class ArgumentTypes {
     }
 
     /**
+     * A fine position argument.
+     *
+     * @return fine position argument
+     * @see #columnFinePosition(boolean) to center whole numbers
+     */
+    public static ArgumentType<ColumnFinePositionResolver> columnFinePosition() {
+        return columnFinePosition(false);
+    }
+
+    /**
+     * A fine position argument.
+     *
+     * @param centerIntegers if whole numbers should be centered (+0.5)
+     * @return fine position argument
+     */
+    public static ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
+        return provider().columnFinePosition(centerIntegers);
+    }
+
+    /**
      * A rotation argument.
      *
      * @return rotation argument
      */
     public static ArgumentType<RotationResolver> rotation() {
         return provider().rotation();
+    }
+
+    /**
+     * An angle argument.
+     *
+     * @return angle argument
+     */
+    public static ArgumentType<AngleResolver> angle() {
+        return provider().angle();
+    }
+
+    /**
+     * A swizzle argument.
+     *
+     * @return swizzle argument
+     * @see org.bukkit.Axis
+     */
+    public static ArgumentType<EnumSet<Axis>> swizzle() {
+        return provider().swizzle();
     }
 
     /**
@@ -357,8 +420,8 @@ public final class ArgumentTypes {
      * An argument for a resource in a {@link org.bukkit.Registry}.
      *
      * @param registryKey the registry's key
+     * @param <T>         the registry value type
      * @return argument
-     * @param <T> the registry value type
      */
     public static <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
         return provider().resource(registryKey);
@@ -368,8 +431,8 @@ public final class ArgumentTypes {
      * An argument for a typed key for a {@link org.bukkit.Registry}.
      *
      * @param registryKey the registry's key
+     * @param <T>         the registry value type
      * @return argument
-     * @param <T> the registry value type
      * @see RegistryArgumentExtractor#getTypedKey(com.mojang.brigadier.context.CommandContext, RegistryKey, String)
      */
     public static <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
