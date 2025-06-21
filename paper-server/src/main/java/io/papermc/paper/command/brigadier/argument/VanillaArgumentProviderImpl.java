@@ -8,7 +8,6 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -35,6 +34,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +47,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ColorArgument;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -78,7 +77,6 @@ import net.minecraft.commands.arguments.coordinates.RotationArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
-import net.minecraft.commands.arguments.selector.EntitySelectorParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -112,6 +110,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.bukkit.scoreboard.Scoreboard;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -121,6 +120,16 @@ import static java.util.Objects.requireNonNull;
 
 @DefaultQualifier(NonNull.class)
 public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
+
+    private static ScoreHolderResolver convertScoreHolders(ScoreHolderArgument.Result result) {
+        return sourceStack -> {
+            List<ScoreHolder> list = new ArrayList<>();
+            for (net.minecraft.world.scores.ScoreHolder scoreHolder : result.getNames((CommandSourceStack) sourceStack, Collections::emptyList)) {
+                list.add(CraftScoreHolder.fromNms(scoreHolder));
+            }
+            return list;
+        };
+    }
 
     @Override
     public ArgumentType<EntitySelectorArgumentResolver> entity() {
@@ -245,12 +254,12 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<ScoreHolderResolver> scoreHolder() {
-        return new ScoreHolderWrapperArgumentType(ScoreHolderArgument.scoreHolder());
+        return this.wrap(ScoreHolderArgument.scoreHolder(), VanillaArgumentProviderImpl::convertScoreHolders);
     }
 
     @Override
     public ArgumentType<ScoreHolderResolver> scoreHolders() {
-        return new ScoreHolderWrapperArgumentType(ScoreHolderArgument.scoreHolders());
+        return this.wrap(ScoreHolderArgument.scoreHolders(), VanillaArgumentProviderImpl::convertScoreHolders);
     }
 
     @Override
@@ -410,7 +419,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         R convert(T type) throws CommandSyntaxException;
     }
 
-    public static sealed class NativeWrapperArgumentType<M, P> implements ArgumentType<P> permits ScoreHolderWrapperArgumentType {
+    public static final class NativeWrapperArgumentType<M, P> implements ArgumentType<P> {
 
         private final ArgumentType<M> nmsBase;
         private final ResultConverter<M, P> converter;
@@ -442,41 +451,6 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         @Override
         public Collection<String> getExamples() {
             return this.nmsBase.getExamples();
-        }
-    }
-
-    public static final class ScoreHolderWrapperArgumentType extends NativeWrapperArgumentType<ScoreHolderArgument.Result, ScoreHolderResolver> {
-        /**
-         * Copied from {@code ScoreHolderArgument.SUGGEST_SCORE_HOLDERS}
-         *
-         * @see ScoreHolderArgument
-         */
-        public static final SuggestionProvider<?> SUGGESTIONS = (context, builder) -> {
-            if (context.getSource() instanceof CommandSourceStack cast) {
-                StringReader stringReader = new StringReader(builder.getInput());
-                stringReader.setCursor(builder.getStart());
-                EntitySelectorParser entitySelectorParser = new EntitySelectorParser(stringReader, EntitySelectorParser.allowSelectors(context.getSource()));
-
-                try {
-                    entitySelectorParser.parse();
-                } catch (CommandSyntaxException var5) {
-                    // Ignored
-                }
-
-                return entitySelectorParser.fillSuggestions(
-                    builder, offsetBuilder -> SharedSuggestionProvider.suggest(cast.getOnlinePlayerNames(), offsetBuilder)
-                );
-            } else {
-                throw new RuntimeException("Failed to provide suggestions for ScoreHolder argument type.");
-            }
-        };
-
-        private ScoreHolderWrapperArgumentType(final ArgumentType<ScoreHolderArgument.Result> nmsBase) {
-            super(nmsBase, result -> sourceStack -> result.getNames((CommandSourceStack) sourceStack, Collections::emptyList)
-                .stream()
-                .map(CraftScoreHolder::fromNms)
-                .map(craft -> (org.bukkit.scoreboard.ScoreHolder) craft)
-                .toList());
         }
     }
 }
