@@ -32,6 +32,8 @@ import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
+    protected final Conversions conversions;
+
     // Top level
     protected @Nullable Component description;
 
@@ -50,8 +52,6 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
     // Effects
     protected DataComponentMap effects;
-
-    protected final Conversions conversions;
 
     public PaperEnchantmentRegistryEntry(
         final Conversions conversions,
