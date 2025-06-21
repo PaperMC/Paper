@@ -21,7 +21,7 @@ public class HangingBreakByEntityEvent extends HangingBreakEvent {
     }
 
     @ApiStatus.Internal
-    public HangingBreakByEntityEvent( final Hanging hanging, final Entity remover, final DamageSource damageSource, final HangingBreakEvent.RemoveCause cause) {
+    public HangingBreakByEntityEvent(final Hanging hanging, final Entity remover, final DamageSource damageSource, final HangingBreakEvent.RemoveCause cause) {
         super(hanging, cause);
         this.remover = remover;
         this.damageSource = damageSource;
@@ -42,6 +42,6 @@ public class HangingBreakByEntityEvent extends HangingBreakEvent {
      * @return the damage source
      */
     public DamageSource getDamageSource() {
-        return damageSource;
+        return this.damageSource;
     }
 }
