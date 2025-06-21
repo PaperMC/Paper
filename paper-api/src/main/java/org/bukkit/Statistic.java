@@ -194,7 +194,7 @@ public enum Statistic implements Keyed {
     @ApiStatus.Internal
     public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
         Key key = stat.type().key();
-        if (stat.type() == StatisticType.CUSTOM && stat.value() instanceof final CustomStatistic customStatistic) {
+        if (stat.type() == StatisticType.CUSTOM && stat.owner() instanceof final CustomStatistic customStatistic) {
             key = customStatistic.getKey();
         }
         return Objects.requireNonNull(Registry.STATISTIC.get(key), "Couldn't convert " + stat + " to a legacy stat");
@@ -210,13 +210,13 @@ public enum Statistic implements Keyed {
         Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock(), "Must provide a valid block material");
         Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem(), "Must provide a valid item material");
         if (this.type == Type.UNTYPED) {
-            return StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
+            return StatisticType.CUSTOM.forValue(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
         } else {
             StatisticType<?> statType = Objects.requireNonNull(Registry.STAT_TYPE.get(this.key), "Couldn't convert " + this + " to a modern stat");
             return switch (this.type) {
-                case Type.BLOCK -> ((StatisticType<BlockType>) statType).of(Objects.requireNonNull(material.asBlockType()));
-                case Type.ITEM -> ((StatisticType<ItemType>) statType).of(Objects.requireNonNull(material.asItemType()));
-                case Type.ENTITY -> ((StatisticType<EntityType>) statType).of(Objects.requireNonNull(entityType));
+                case Type.BLOCK -> ((StatisticType<BlockType>) statType).forValue(Objects.requireNonNull(material.asBlockType()));
+                case Type.ITEM -> ((StatisticType<ItemType>) statType).forValue(Objects.requireNonNull(material.asItemType()));
+                case Type.ENTITY -> ((StatisticType<EntityType>) statType).forValue(Objects.requireNonNull(entityType));
                 default -> throw new IllegalStateException("Unexpected value: " + this.type);
             };
         }
