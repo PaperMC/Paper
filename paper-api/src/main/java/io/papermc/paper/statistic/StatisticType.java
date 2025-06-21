@@ -47,7 +47,7 @@ public interface StatisticType<S> extends Keyed, Translatable {
      * @return the statistic for that thing
      * @throws IllegalArgumentException if the thing is not valid for this {@link StatisticType}
      */
-    Statistic<S> of(S value);
+    Statistic<S> forValue(S value);
 
     /**
      * Gets the registry key associated with this stat type.

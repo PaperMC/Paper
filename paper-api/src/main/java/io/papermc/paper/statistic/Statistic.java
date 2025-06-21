@@ -4,7 +4,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Represents an individual statistic. Obtained via {@link StatisticType#of(Object)}.
+ * Represents an individual statistic. Obtained via {@link StatisticType#forValue(Object)}.
  * Can be used as a criteria for {@link org.bukkit.scoreboard.Scoreboard#registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
  *
  * @param <S> stat value type.
@@ -13,11 +13,11 @@ import org.jetbrains.annotations.ApiStatus;
 public interface Statistic<S> extends Criteria {
 
     /**
-     * Gets the statistic.
+     * Gets the owner of the statistic.
      *
-     * @return the stat
+     * @return the stat owner
      */
-    S value();
+    S owner();
 
     /**
      * Gets the stat type.
