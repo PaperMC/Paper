@@ -70,26 +70,6 @@ public class StatisticRewriter {
         }
     }
 
-    public static class CraftCustom extends EnumRegistryRewriter<ResourceLocation> {
-
-        private static final Map<String, String> INTERNAL_FIELD_RENAMES = Map.of(
-            "SNEAK_TIME", "CROUCH_TIME"
-        );
-
-        public CraftCustom() {
-            super(Registries.CUSTOM_STAT, false);
-        }
-
-        @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<ResourceLocation> reference) {
-            String keyedName = Formatting.formatKeyAsField(reference.key().location().getPath());
-
-            return super.rewriteEnumValue(reference)
-                .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
-                .argument("%s.%s".formatted(Stats.class.getSimpleName(), INTERNAL_FIELD_RENAMES.getOrDefault(keyedName, keyedName)));
-        }
-    }
-
     public static class Type extends EnumRegistryRewriter<StatType<?>> {
 
         private static final Map<Class<?>, String> TYPE_MAPPING = Map.of(
@@ -123,26 +103,6 @@ public class StatisticRewriter {
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
                 .arguments(arguments);
 
-        }
-    }
-
-    public static class CraftType extends EnumRegistryRewriter<StatType<?>> {
-
-        public CraftType() {
-            super(Registries.STAT_TYPE, false);
-        }
-
-        @Override
-        protected Iterable<Holder.Reference<StatType<?>>> getValues() {
-            return BuiltInRegistries.STAT_TYPE.listElements().filter(reference -> reference.value() != Stats.CUSTOM)
-                .sorted(Formatting.HOLDER_ORDER)::iterator;
-        }
-
-        @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<StatType<?>> reference) {
-            return super.rewriteEnumValue(reference)
-                .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
-                .argument("%s.withDefaultNamespace(%s)".formatted(ResourceLocation.class.getSimpleName(), quoted(reference.key().location().getPath())));
         }
     }
 }
