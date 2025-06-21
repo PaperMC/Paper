@@ -7,8 +7,6 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#doubleRange()
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public non-sealed interface DoubleRangeProvider extends RangeProvider<Double> {
-
 }
