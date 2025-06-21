@@ -7,6 +7,7 @@ import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import java.util.List;
 
 /**
  * Event called when a Crafter is about to craft an item.
@@ -17,14 +18,16 @@ public class CrafterCraftEvent extends BlockEvent implements Cancellable {
 
     private final CraftingRecipe recipe;
     private ItemStack result;
+    private final List<ItemStack> remainingItems;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public CrafterCraftEvent(@NotNull Block crafter, @NotNull CraftingRecipe recipe, @NotNull ItemStack result) {
+    public CrafterCraftEvent(@NotNull Block crafter, @NotNull CraftingRecipe recipe, @NotNull ItemStack result, @NotNull List<@NotNull ItemStack> remainingItems) {
         super(crafter);
         this.result = result;
         this.recipe = recipe;
+        this.remainingItems = remainingItems;
     }
 
     /**
@@ -44,6 +47,16 @@ public class CrafterCraftEvent extends BlockEvent implements Cancellable {
      */
     public void setResult(@NotNull ItemStack result) {
         this.result = result.clone();
+    }
+
+    /**
+     * Gets the remaining items after the recipe has been crafted.
+     *
+     * @return a list of remaining items
+     */
+    @NotNull
+    public List<@NotNull ItemStack> getRemainingItems() {
+        return remainingItems;
     }
 
     /**
