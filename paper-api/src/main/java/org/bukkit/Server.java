@@ -1514,15 +1514,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the default game mode
      */
     @NotNull
-    public GameMode getDefaultGameMode();
+    GameMode getDefaultGameMode();
 
     /**
      * Sets the default {@link GameMode} for new players.
      *
      * @param mode the new game mode
      */
-    public void setDefaultGameMode(@NotNull GameMode mode);
+    void setDefaultGameMode(@NotNull GameMode mode);
 
+    /**
+     * Gets whether the default gamemode is being enforced.
+     *
+     * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
+     */
+    boolean forcesDefaultGameMode();
+    
     /**
      * Gets a {@link ConsoleCommandSender} that may be used as an input source
      * for this server.
