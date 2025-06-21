@@ -1,18 +1,18 @@
 package io.papermc.paper.command;
 
-import net.kyori.adventure.text.Component;
-import net.minecraft.server.MinecraftServer;
-import org.bukkit.Location;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import net.kyori.adventure.text.Component;
+import net.minecraft.server.MinecraftServer;
+import org.bukkit.command.CommandSender;
+import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
@@ -21,28 +21,24 @@ import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
-@Deprecated(forRemoval = true)
-@DefaultQualifier(NonNull.class)
-public final class MSPTCommand extends Command {
+@NullMarked
+public class PaperMSPTCommand {
+    public static final String DESCRIPTION = "View server tick times";
+
     private static final DecimalFormat DF = new DecimalFormat("########0.0");
     private static final Component SLASH = text("/");
 
-    public MSPTCommand(final String name) {
-        super(name);
-        this.description = "View server tick times";
-        this.usageMessage = "/mspt";
-        this.setPermission("bukkit.command.mspt");
+    public static LiteralCommandNode<CommandSourceStack> create() {
+        final PaperMSPTCommand command = new PaperMSPTCommand();
+
+        return Commands.literal("mspt")
+            .requires(source -> source.getSender().hasPermission("bukkit.command.mspt"))
+            .executes(command::execute)
+            .build();
     }
 
-    @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-        if (!testPermission(sender)) return true;
-
+    private int execute(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
         MinecraftServer server = MinecraftServer.getServer();
 
         List<Component> times = new ArrayList<>();
@@ -79,7 +75,7 @@ public final class MSPTCommand extends Command {
                 )
             )
         );
-        return true;
+        return Command.SINGLE_SUCCESS;
     }
 
     private static List<Component> eval(long[] times) {
