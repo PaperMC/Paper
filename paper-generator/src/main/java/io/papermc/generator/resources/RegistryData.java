@@ -34,7 +34,7 @@ public record RegistryData(
         Codec.BOOL.optionalFieldOf("allow_inline", false).forGetter(RegistryData::allowInline)
     ).apply(instance, RegistryData::new));
 
-    public record Api(Class klass, Optional<ClassNamed> holders, boolean generatedClassPrefixRelate, Optional<String> registryField) {
+    public record Api(Class klass, Optional<ClassNamed> holders, boolean keyClassNameRelate, Optional<String> registryField) {
         public Api(ClassNamed klass) {
             this(new Class(klass), Optional.of(klass), false, Optional.empty());
         }
@@ -42,7 +42,7 @@ public record RegistryData(
         public static final Codec<Api> DIRECT_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Class.CODEC.fieldOf("class").forGetter(Api::klass),
             SourceCodecs.CLASS_NAMED.optionalFieldOf("holders").forGetter(Api::holders),
-            Codec.BOOL.optionalFieldOf("generated_class_prefix_relate", false).forGetter(Api::generatedClassPrefixRelate),
+            Codec.BOOL.optionalFieldOf("key_class_name_relate", false).forGetter(Api::keyClassNameRelate),
             SourceCodecs.IDENTIFIER.optionalFieldOf("registry_field").forGetter(Api::registryField)
         ).apply(instance, Api::new));
 
@@ -50,7 +50,7 @@ public record RegistryData(
 
         public static final Codec<Api> CODEC = Codec.either(CLASS_ONLY_CODEC, DIRECT_CODEC).xmap(Either::unwrap, api -> {
             if ((api.holders().isEmpty() || api.klass().name().equals(api.holders().get())) &&
-                !api.generatedClassPrefixRelate() && api.registryField().isEmpty()) {
+                !api.keyClassNameRelate() && api.registryField().isEmpty()) {
                 return Either.left(api);
             }
             return Either.right(api);

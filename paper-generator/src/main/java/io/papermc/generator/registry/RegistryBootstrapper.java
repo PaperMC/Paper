@@ -7,7 +7,6 @@ import io.papermc.generator.rewriter.types.registry.RegistryEventsRewriter;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.registry.GeneratedKeyType;
 import io.papermc.generator.types.registry.GeneratedTagKeyType;
-import io.papermc.generator.types.registry.GeneratedTagType;
 import io.papermc.generator.utils.BasePackage;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
@@ -24,13 +23,11 @@ public class RegistryBootstrapper {
             generators.add(new GeneratedKeyType<>(PAPER_REGISTRY_PACKAGE + ".keys", entry));
             if (entry.registry().listTags().findAny().isPresent()) {
                 generators.add(new GeneratedTagKeyType<>(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
-                generators.add(new GeneratedTagType<>(entry, PAPER_REGISTRY_PACKAGE + ".tags"));
             }
         });
 
         // todo remove once entity type is a registry
         generators.add(new GeneratedTagKeyType<>(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
-        generators.add(new GeneratedTagType<>(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".tags"));
     }
 
     public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {

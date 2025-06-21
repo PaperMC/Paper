@@ -35,7 +35,7 @@ public class GeneratedTagKeyType<T> extends SimpleGenerator implements RegistryI
     private final RegistryEntry<T> entry;
 
     public GeneratedTagKeyType(RegistryEntry<T> entry, String packageName) {
-        super(entry.generatedClassPrefix().concat("TagKeys"), packageName);
+        super(entry.keyClassName().concat("TagKeys"), packageName);
         this.entry = entry;
     }
 

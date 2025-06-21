@@ -44,7 +44,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator implements RegistryIden
     private final boolean isFilteredRegistry;
 
     public GeneratedKeyType(String packageName, RegistryEntry<T> entry) {
-        super(entry.generatedClassPrefix().concat("Keys"), packageName);
+        super(entry.keyClassName().concat("Keys"), packageName);
         this.entry = entry;
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(entry.registry()));
         this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(entry.getRegistryKey());
