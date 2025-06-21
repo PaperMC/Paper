@@ -2,10 +2,12 @@ package org.bukkit.event.player;
 
 import io.papermc.paper.statistic.Statistic;
 import org.bukkit.Material;
+import org.bukkit.block.BlockType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -36,7 +38,13 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.initialValue = initialValue;
         this.newValue = newValue;
         this.entityType = statistic.value() instanceof final EntityType et ? et : null;
-        this.material = statistic.value() instanceof final Material m ? m : null;
+        if (statistic.value() instanceof final ItemType it) {
+            this.material = it.asMaterial();
+        } else if (statistic.value() instanceof final BlockType bt) {
+            this.material = bt.asMaterial();
+        } else {
+            this.material = null;
+        }
     }
 
     /**
