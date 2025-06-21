@@ -1588,7 +1588,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public void decrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
+        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, -amount, this.getHandle());
+    }
+
+    @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
     }
 
