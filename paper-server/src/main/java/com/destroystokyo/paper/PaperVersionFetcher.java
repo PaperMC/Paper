@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.StreamSupport;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -26,6 +27,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.slf4j.Logger;
+import java.util.List;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
@@ -33,9 +35,12 @@ import static net.kyori.adventure.text.format.TextColor.color;
 @DefaultQualifier(NonNull.class)
 public class PaperVersionFetcher implements VersionFetcher {
     private static final Logger LOGGER = LogUtils.getClassLogger();
+    private static final ComponentLogger COMPONENT_LOGGER = ComponentLogger.logger(org.apache.logging.log4j.LogManager.getRootLogger().getName());
     private static final int DISTANCE_ERROR = -1;
     private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
+    public static final String REPOSITORY = "PaperMC/Paper";
+    private static boolean newVersionAvailable;
 
     @Override
     public long getCacheTime() {
@@ -49,11 +54,57 @@ public class PaperVersionFetcher implements VersionFetcher {
         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
         } else {
-            updateMessage = getUpdateStatusMessage("PaperMC/Paper", build);
+            updateMessage = getUpdateStatusMessage(REPOSITORY, build);
         }
         final @Nullable Component history = this.getHistory();
 
         return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
+    }
+
+    public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
+        int distance = DISTANCE_ERROR;
+        @Nullable String newVersion = null;
+
+        final OptionalInt buildNumber = build.buildNumber();
+        if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
+            COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
+        } else {
+            if (buildNumber.isPresent()) {
+                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
+                newVersion = fetchMinecraftVersionList(build);
+            } else {
+                final Optional<String> gitBranch = build.gitBranch();
+                final Optional<String> gitCommit = build.gitCommit();
+                if (gitBranch.isPresent() && gitCommit.isPresent()) {
+                    distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
+                    newVersion = fetchMinecraftVersionList(build);
+                }
+            }
+
+            switch (distance) {
+                case DISTANCE_ERROR -> COMPONENT_LOGGER.error(text("*** Error obtaining version information! Cannot fetch version info ***"));
+                case 0 -> {
+                    if (newVersionAvailable) {
+                        COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionName() + ")", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text("However, there is a new Minecraft version available on the downloads page (" + newVersion + ")!", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text("It is recommended that you download it as soon as possible", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
+                    }
+                }
+                case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
+                default -> {
+                    if (!newVersionAvailable) {
+                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
+                    } else {
+                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
+                        COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
+                    }
+                }
+            };
+        }
     }
 
     private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
@@ -81,6 +132,57 @@ public class PaperVersionFetcher implements VersionFetcher {
                         .hoverEvent(text("Click to open", NamedTextColor.WHITE))
                         .clickEvent(ClickEvent.openUrl(DOWNLOAD_PAGE))));
         };
+    }
+
+    private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build) {
+        try {
+            try (final BufferedReader reader = Resources.asCharSource(
+                URI.create("https://api.papermc.io/v2/projects/paper").toURL(),
+                StandardCharsets.UTF_8
+            ).openBufferedStream()) {
+                final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+                final JsonArray versions = json.getAsJsonArray("versions");
+                final List<String> versionList = StreamSupport.stream(versions.spliterator(), false)
+                    .map(JsonElement::getAsString)
+                    .toList();
+
+                final String currentVersion = build.minecraftVersionName();
+
+                for (int i = versionList.size() - 1; i >= 0; i--) {
+                    final String latestVersion = versionList.get(i);
+
+                    if (latestVersion.equals(currentVersion)) {
+                        return null;
+                    }
+
+                    try (final BufferedReader buildReader = Resources.asCharSource(
+                        URI.create("https://api.papermc.io/v2/projects/paper/versions/" + latestVersion + "/builds").toURL(),
+                        StandardCharsets.UTF_8
+                    ).openBufferedStream()) {
+                        final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
+                        final JsonArray builds = buildJson.getAsJsonArray("builds");
+
+                        for (JsonElement buildElement : builds) {
+                            final JsonObject buildObj = buildElement.getAsJsonObject();
+                            if ("default".equalsIgnoreCase(buildObj.get("channel").getAsString())) {
+                                newVersionAvailable = true;
+                                return latestVersion;
+                            }
+                        }
+                    } catch (final JsonSyntaxException | IOException e) {
+                        LOGGER.error("Error while checking builds for version {}", latestVersion, e);
+                        return null;
+                    }
+                }
+            } catch (final JsonSyntaxException ex) {
+                LOGGER.error("Error parsing json from Paper's downloads API", ex);
+                return null;
+            }
+        } catch (final IOException e) {
+            LOGGER.error("Error while parsing version list", e);
+            return null;
+        }
+        return null;
     }
 
     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
