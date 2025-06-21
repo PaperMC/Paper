@@ -362,7 +362,7 @@ public class CraftBlockData implements BlockData {
     static {
         //<editor-fold desc="CraftBlockData Registration" defaultstate="collapsed">
         // Start generate - CraftBlockData#MAP
-        // @GeneratedFrom 1.21.6-rc1
+        // @GeneratedFrom 1.21.6
         register(net.minecraft.world.level.block.AmethystClusterBlock.class, org.bukkit.craftbukkit.block.impl.CraftAmethystCluster::new);
         register(net.minecraft.world.level.block.AnvilBlock.class, org.bukkit.craftbukkit.block.impl.CraftAnvil::new);
         register(net.minecraft.world.level.block.AttachedStemBlock.class, org.bukkit.craftbukkit.block.impl.CraftAttachedStem::new);

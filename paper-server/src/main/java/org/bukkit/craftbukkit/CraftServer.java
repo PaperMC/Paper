@@ -613,7 +613,6 @@ public final class CraftServer implements Server {
             // Spigot start - Allow vanilla commands to be forced to be the main command
             this.commandMap.setFallbackCommands();
             // Spigot end
-            this.commandMap.registerServerAliases();
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
             if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
@@ -2293,6 +2292,11 @@ public final class CraftServer implements Server {
         for (World world : this.getWorlds()) {
             ((CraftWorld) world).getHandle().serverLevelData.setGameType(GameType.byId(mode.getValue()));
         }
+    }
+
+    @Override
+    public boolean forcesDefaultGameMode() {
+        return this.console.getProperties().forceGameMode;
     }
 
     @Override

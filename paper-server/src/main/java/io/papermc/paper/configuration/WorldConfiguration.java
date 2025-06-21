@@ -3,6 +3,7 @@ package io.papermc.paper.configuration;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 import io.papermc.paper.configuration.mapping.MergeMap;
@@ -512,6 +513,11 @@ public class WorldConfiguration extends ConfigurationPart {
             map.put(EntityType.SMALL_FIREBALL, -1);
         });
         public boolean flushRegionsOnSave = false;
+
+        @PostProcess
+        private void postProcess() {
+            FeatureHooks.setPlayerChunkUnloadDelay(this.delayChunkUnloadsBy.ticks());
+        }
     }
 
     public FishingTimeRange fishingTimeRange;

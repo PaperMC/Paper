@@ -1730,6 +1730,15 @@ public final class Bukkit {
     public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
     }
+    
+    /**
+     * Gets whether the default gamemode is being enforced.
+     *
+     * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
+     */
+    public static boolean forcesDefaultGameMode() {
+        return server.forcesDefaultGameMode();
+    }
 
     /**
      * Gets a {@link ConsoleCommandSender} that may be used as an input source

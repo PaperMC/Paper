@@ -15,6 +15,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.block.entity.FuelValues;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -156,6 +157,18 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     }
 
     @Override
+    public int getBurnDuration() {
+        FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
+        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
+        
+        if (!fuelValues.isFuel(stack)) {
+            return 0;
+        }
+        
+        return fuelValues.burnDuration(stack);
+    }
+
+    @Override
     public boolean isCompostable() {
         return ComposterBlock.COMPOSTABLES.containsKey(this.getHandle());
     }
@@ -171,11 +184,6 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         net.minecraft.world.item.ItemStack expectedItem = this.getHandle().getCraftingRemainder();
         return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
     }
-
-//    @Override
-//    public EquipmentSlot getEquipmentSlot() {
-//        return CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(ItemStack.of(this))));
-//    }
 
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {

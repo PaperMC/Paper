@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 public interface Art extends OldEnum<Art>, Keyed {
 
     // Start generate - Art
-    // @GeneratedFrom 1.21.6-rc1
+    // @GeneratedFrom 1.21.6
     Art ALBAN = getArt("alban");
 
     Art AZTEC = getArt("aztec");
