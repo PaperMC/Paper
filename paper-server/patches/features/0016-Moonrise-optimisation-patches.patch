@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index b6730b785e4adf4e1371b34161c7968d84760e02..749f396840439cfb67ff2a6a1946772fcbe4d181 100644
+index b6a34796d33f1593301c3a67a013fa7e812cb329..42899a91b9061b85985fbbd0de4032c757f4aa8f 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -5624,10 +5624,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6fdbbcae49
+index 0000000000000000000000000000000000000000..bdc1200ef5317fdaf58973bf580b0a672aee800f
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1089 @@
+@@ -0,0 +1,1093 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -5677,11 +5677,15 @@ index 0000000000000000000000000000000000000000..f3bac0906d8a1c5dea7b0dee13c5cd6f
 +public final class RegionizedPlayerChunkLoader {
 +
 +    public static final TicketType PLAYER_TICKET         = ChunkSystemTicketType.create("chunk_system:player_ticket", Long::compareTo);
-+    public static final TicketType PLAYER_TICKET_DELAYED = ChunkSystemTicketType.create("chunk_system:player_ticket_delayed", Long::compareTo, 5L * 20L);
++    public static final TicketType PLAYER_TICKET_DELAYED = ChunkSystemTicketType.create("chunk_system:player_ticket_delayed", Long::compareTo, 1L);
 +
 +    public static final int GENERATED_TICKET_LEVEL = ChunkHolderManager.FULL_LOADED_TICKET_LEVEL;
 +    public static final int LOADED_TICKET_LEVEL = ChunkTaskScheduler.getTicketLevel(ChunkStatus.EMPTY);
 +    public static final int TICK_TICKET_LEVEL = ChunkHolderManager.ENTITY_TICKING_TICKET_LEVEL;
++
++    public static void setUnloadDelay(final long ticks) {
++        ((ChunkSystemTicketType)(Object)PLAYER_TICKET_DELAYED).moonrise$setTimeout(Math.max(1, ticks));
++    }
 +
 +    public static final class ViewDistanceHolder {
 +
@@ -15876,10 +15880,10 @@ index 0000000000000000000000000000000000000000..8942da3b1449eb83bed25f68f43b70ca
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/ticket/ChunkSystemTicketType.java b/ca/spottedleaf/moonrise/patches/chunk_system/ticket/ChunkSystemTicketType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0c76e48e3d5327b5ebac414e3ea21885973a0435
+index 0000000000000000000000000000000000000000..b18992289d1edc3bd0f9ba9b880ab5f47556ff26
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/ticket/ChunkSystemTicketType.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.ticket;
 +
 +import net.minecraft.server.level.TicketType;
@@ -15912,6 +15916,7 @@ index 0000000000000000000000000000000000000000..0c76e48e3d5327b5ebac414e3ea21885
 +
 +    public long[] moonrise$getCounterTypes();
 +
++    public void moonrise$setTimeout(final long to);
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/ticks/ChunkSystemLevelChunkTicks.java b/ca/spottedleaf/moonrise/patches/chunk_system/ticks/ChunkSystemLevelChunkTicks.java
 new file mode 100644
@@ -23036,7 +23041,7 @@ index 0000000000000000000000000000000000000000..f1f72a051083b61273202cb4e67ecb11
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155cd6125aa 100644
+index 338dc0fb07cdba5f7350cca332fa3e942c622bfb..e1fe49e4bf014e2405708270efd81bab4e1512da 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -23049,8 +23054,12 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
-@@ -31,9 +34,12 @@ import org.bukkit.World;
+@@ -31,12 +34,16 @@ import org.bukkit.World;
  public final class FeatureHooks {
+ 
+     public static void setPlayerChunkUnloadDelay(final long ticks) {
++        ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.setUnloadDelay(ticks); // Paper - rewrite chunk system
+     }
  
      public static void initChunkTaskScheduler(final boolean useParallelGen) {
 +        ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen); // Paper - Chunk system
@@ -23062,7 +23071,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155
      }
  
      public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -59,111 +65,58 @@ public final class FeatureHooks {
+@@ -62,111 +69,58 @@ public final class FeatureHooks {
      }
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -23195,7 +23204,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155
  
              org.bukkit.Chunk chunk = null;
              for (net.minecraft.server.level.Ticket ticket : tickets) {
-@@ -183,15 +136,15 @@ public final class FeatureHooks {
+@@ -186,15 +140,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -23214,7 +23223,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -209,35 +162,31 @@ public final class FeatureHooks {
+@@ -212,35 +166,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
@@ -23256,9 +23265,7 @@ index 0a80ab83ca69b8b51fb1bb8c12ee6fcf439a3ac4..766671824c7ea0dc0fe7b70de4148155
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
--}
-\ No newline at end of file
-+}
+ }
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd01fba0fc
@@ -28145,10 +28152,10 @@ index a663c84c756bc59aaddbceda939f552e8a422e60..c3a923b7292e970cbfcde7b9fedcbb6e
  
      public TicketType getType() {
 diff --git a/net/minecraft/server/level/TicketType.java b/net/minecraft/server/level/TicketType.java
-index bab5ea53b70041eb413103a481deae0e770b5d8d..f91eed907ffc61a4092aabaa0a1b061c2c453673 100644
+index bab5ea53b70041eb413103a481deae0e770b5d8d..6a7dae136691fb2476633fa12897424daa6bb5b3 100644
 --- a/net/minecraft/server/level/TicketType.java
 +++ b/net/minecraft/server/level/TicketType.java
-@@ -3,7 +3,40 @@ package net.minecraft.server.level;
+@@ -3,7 +3,45 @@ package net.minecraft.server.level;
  import net.minecraft.core.Registry;
  import net.minecraft.core.registries.BuiltInRegistries;
  
@@ -28185,12 +28192,17 @@ index bab5ea53b70041eb413103a481deae0e770b5d8d..f91eed907ffc61a4092aabaa0a1b061c
 +
 +        return this.counterTypes = ca.spottedleaf.moonrise.common.PlatformHooks.get().getCounterTypesUncached((TicketType)(Object)this);
 +    }
++
++    @Override
++    public final void moonrise$setTimeout(final long to) {
++        this.timeout = to;
++    }
 +    // Paper end - rewrite chunk system
 +
      public static final long NO_TIMEOUT = 0L;
      public static final TicketType START = register("start", 0L, false, TicketType.TicketUse.LOADING_AND_SIMULATION);
      public static final TicketType DRAGON = register("dragon", 0L, false, TicketType.TicketUse.LOADING_AND_SIMULATION);
-@@ -15,7 +48,7 @@ public record TicketType(long timeout, boolean persist, TicketType.TicketUse use
+@@ -15,7 +53,7 @@ public record TicketType(long timeout, boolean persist, TicketType.TicketUse use
      public static final TicketType UNKNOWN = register("unknown", 1L, false, TicketType.TicketUse.LOADING);
      public static final TicketType PLUGIN = register("plugin", 0L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // CraftBukkit
      public static final TicketType POST_TELEPORT = register("post_teleport", 5L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
@@ -28199,12 +28211,12 @@ index bab5ea53b70041eb413103a481deae0e770b5d8d..f91eed907ffc61a4092aabaa0a1b061c
      public static final TicketType FUTURE_AWAIT = register("future_await", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
      public static final TicketType CHUNK_LOAD = register("chunk_load", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING); // Paper - moonrise
  
-@@ -23,9 +56,52 @@ public record TicketType(long timeout, boolean persist, TicketType.TicketUse use
+@@ -23,9 +61,52 @@ public record TicketType(long timeout, boolean persist, TicketType.TicketUse use
          return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, persist, use));
      }
  
 +    // Paper start - rewrite chunk system - convert to class
-+    private final long timeout;
++    private long timeout; // Paper - rewrite chunk system - remove final
 +    private final boolean persist;
 +    private final net.minecraft.server.level.TicketType.TicketUse use;
 +
