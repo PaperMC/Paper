@@ -280,6 +280,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public boolean piglinsGuardChests = true;
             public double babyZombieMovementModifier = 0.5;
             public boolean allowSpiderWorldBorderClimbing = true;
+            public boolean zombifiedPiglinsAggressiveBehavior = true;
 
             private static final List<EntityType<?>> ZOMBIE_LIKE = List.of(EntityType.ZOMBIE, EntityType.HUSK, EntityType.ZOMBIE_VILLAGER, EntityType.ZOMBIFIED_PIGLIN);
             @MergeMap
