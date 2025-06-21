@@ -13,8 +13,8 @@ val annotationsVersion = "26.0.2"
 // Keep in sync with paper-server adventure-text-serializer-ansi dep
 val adventureVersion = "4.21.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
-val slf4jVersion = "2.0.16"
-val log4jVersion = "2.24.1"
+val slf4jVersion = "2.0.17"
+val log4jVersion = "2.24.3"
 
 val apiAndDocs: Configuration by configurations.creating {
     attributes {
