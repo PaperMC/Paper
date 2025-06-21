@@ -3,7 +3,6 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.statistic.CustomStatistic;
 import io.papermc.paper.statistic.StatisticType;
-import java.util.Locale;
 import java.util.Objects;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.ApiStatus;
@@ -193,11 +192,7 @@ public enum Statistic implements Keyed {
     @ApiStatus.Internal
     public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
         if (stat.type() == StatisticType.CUSTOM && stat.value() instanceof final CustomStatistic customStatistic) {
-            if (customStatistic == CustomStatistic.PLAY_TIME) { // special case cause upstream is wrong
-                return Statistic.PLAY_ONE_MINUTE;
-            } else {
-                return Objects.requireNonNull(org.bukkit.Registry.STATISTIC.get(customStatistic.getKey()), "Couldn't convert " + stat + " to a legacy stat");
-            }
+            return Objects.requireNonNull(org.bukkit.Registry.STATISTIC.get(customStatistic.getKey()), "Couldn't convert " + stat + " to a legacy stat");
         } else if (stat.type() == StatisticType.BLOCK_MINED) {
             return Statistic.MINE_BLOCK;
         } else if (stat.type() == StatisticType.ITEM_BROKEN) {
@@ -227,13 +222,8 @@ public enum Statistic implements Keyed {
         Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock());
         Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem());
         return switch (this.type) {
-            case UNTYPED -> {
-                if (this == PLAY_ONE_MINUTE) { // special case cause upstream is wrong
-                    yield CustomStatistic.PLAY_TIME.stat();
-                } else {
-                    yield StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
-                }
-            }
+            case UNTYPED ->
+                StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
             case BLOCK -> StatisticType.BLOCK_MINED.of(Objects.requireNonNull(material.asBlockType()));
             case ITEM -> switch (this) {
                 case DROP -> StatisticType.ITEM_DROPPED.of(Objects.requireNonNull(material.asItemType()));
