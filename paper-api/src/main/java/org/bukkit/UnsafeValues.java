@@ -351,8 +351,6 @@ public interface UnsafeValues {
     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
     // Paper end - namespaced key biome methods
 
-    String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
-
     // Paper start - spawn egg color visibility
     /**
      * Obtains the underlying color informating for a spawn egg of a given

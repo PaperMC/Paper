@@ -31,21 +31,21 @@ public final class PaperStatistics {
 
     public static void changeStatistic(final ServerStatsCounter manager, final Statistic<?> statistic, final int delta) {
         if (delta == 0) return;
-        Preconditions.checkNotNull(statistic, "statistic cannot be null");
+        Preconditions.checkArgument(statistic != null, "statistic cannot be null");
         final Stat<?> stat = getNMSStatistic(statistic);
         //noinspection ConstantConditions
         manager.setValue(null, stat, manager.getValue(stat) + delta);
     }
 
     public static void setStatistic(final ServerStatsCounter manager, final Statistic<?> statistic, final int newAmount) {
-        Preconditions.checkNotNull(statistic, "Statistic cannot be null");
+        Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(newAmount >= 0, "New amount must be greater than or equal to 0");
         //noinspection ConstantConditions
         manager.setValue(null, getNMSStatistic(statistic), newAmount);
     }
 
     public static int getStatistic(final ServerStatsCounter manager, final Statistic<?> statistic) {
-        Preconditions.checkNotNull(statistic, "Statistic cannot be null");
+        Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         return manager.getValue(getNMSStatistic(statistic));
     }
 
