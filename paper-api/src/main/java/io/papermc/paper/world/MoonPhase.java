@@ -2,9 +2,7 @@ package io.papermc.paper.world;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public enum MoonPhase {
     FULL_MOON(0L),
     WANING_GIBBOUS(1L),
