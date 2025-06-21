@@ -4,6 +4,7 @@ import com.destroystokyo.paper.util.SneakyThrow;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
 
 /**
