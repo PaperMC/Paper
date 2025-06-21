@@ -4,16 +4,20 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.statistic.CustomStatistic;
 import io.papermc.paper.statistic.StatisticType;
 import java.util.Objects;
+import net.kyori.adventure.key.Key;
+import org.bukkit.block.BlockType;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a countable statistic, which is tracked by the server.
  *
- * @deprecated use {@link io.papermc.paper.statistic.StatisticType} and {@link io.papermc.paper.statistic.Statistic}
+ * @deprecated use {@link StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
+@NullMarked
 @Deprecated(since = "1.21.6")
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
@@ -124,7 +128,6 @@ public enum Statistic implements Keyed {
      *
      * @return the type of this statistic
      */
-    @NotNull
     public Type getType() {
         return type;
     }
@@ -156,7 +159,6 @@ public enum Statistic implements Keyed {
         return type == Type.BLOCK;
     }
 
-    @NotNull
     @Override
     public NamespacedKey getKey() {
         return key;
@@ -165,7 +167,7 @@ public enum Statistic implements Keyed {
     /**
      * The type of statistic.
      *
-     * @deprecated use {@link io.papermc.paper.statistic.StatisticType}
+     * @deprecated use {@link StatisticType}
      */
     @Deprecated(since = "1.21.6")
     public enum Type {
@@ -193,28 +195,14 @@ public enum Statistic implements Keyed {
     @Deprecated(forRemoval = true)
     @ApiStatus.Internal
     public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
+        Key key = stat.type().key();
         if (stat.type() == StatisticType.CUSTOM && stat.value() instanceof final CustomStatistic customStatistic) {
-            return Objects.requireNonNull(org.bukkit.Registry.STATISTIC.get(customStatistic.getKey()), "Couldn't convert " + stat + " to a legacy stat");
-        } else if (stat.type() == StatisticType.BLOCK_MINED) {
-            return Statistic.MINE_BLOCK;
-        } else if (stat.type() == StatisticType.ITEM_BROKEN) {
-            return Statistic.BREAK_ITEM;
-        } else if (stat.type() == StatisticType.ITEM_CRAFTED) {
-            return Statistic.CRAFT_ITEM;
-        } else if (stat.type() == StatisticType.ITEM_DROPPED) {
-            return Statistic.DROP;
-        } else if (stat.type() == StatisticType.ITEM_USED) {
-            return Statistic.USE_ITEM;
-        } else if (stat.type() == StatisticType.ITEM_PICKED_UP) {
-            return Statistic.PICKUP;
-        } else if (stat.type() == StatisticType.ENTITY_KILLED) {
-            return Statistic.KILL_ENTITY;
-        } else if (stat.type() == StatisticType.ENTITY_KILLED_BY) {
-            return Statistic.ENTITY_KILLED_BY;
+            key = customStatistic.getKey();
         }
-        throw new IllegalArgumentException("Couldn't convert " + stat + " to a legacy stat");
+        return Objects.requireNonNull(Registry.STATISTIC.get(key), "Couldn't convert " + stat + " to a legacy stat");
     }
 
+    @SuppressWarnings("unchecked")
     @Deprecated(forRemoval = true)
     @ApiStatus.Internal
     public io.papermc.paper.statistic.Statistic<?> toModern(@Nullable EntityType entityType, @Nullable Material material) {
@@ -223,23 +211,16 @@ public enum Statistic implements Keyed {
         Preconditions.checkArgument(this.type != Type.ENTITY || (entityType != null && entityType != EntityType.UNKNOWN), "Must provide a valid entity type");
         Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock(), "Must provide a valid block material");
         Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem(), "Must provide a valid item material");
-        return switch (this.type) {
-            case UNTYPED ->
-                StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
-            case BLOCK -> StatisticType.BLOCK_MINED.of(Objects.requireNonNull(material.asBlockType()));
-            case ITEM -> switch (this) {
-                case DROP -> StatisticType.ITEM_DROPPED.of(Objects.requireNonNull(material.asItemType()));
-                case BREAK_ITEM -> StatisticType.ITEM_BROKEN.of(Objects.requireNonNull(material.asItemType()));
-                case CRAFT_ITEM -> StatisticType.ITEM_CRAFTED.of(Objects.requireNonNull(material.asItemType()));
-                case USE_ITEM -> StatisticType.ITEM_USED.of(Objects.requireNonNull(material.asItemType()));
-                case PICKUP -> StatisticType.ITEM_PICKED_UP.of(Objects.requireNonNull(material.asItemType()));
-                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", mat: " + material + " to a modern stat");
+        if (this.type == Type.UNTYPED) {
+            return StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
+        } else {
+            StatisticType<?> statType = Objects.requireNonNull(Registry.STAT_TYPE.get(this.key), "Couldn't convert " + this + " to a modern stat");
+            return switch (this.type) {
+                case Type.BLOCK -> ((StatisticType<BlockType>) statType).of(Objects.requireNonNull(material.asBlockType()));
+                case Type.ITEM -> ((StatisticType<ItemType>) statType).of(Objects.requireNonNull(material.asItemType()));
+                case Type.ENTITY -> ((StatisticType<EntityType>) statType).of(Objects.requireNonNull(entityType));
+                default -> throw new IllegalStateException("Unexpected value: " + this.type);
             };
-            case ENTITY -> switch (this) {
-                case KILL_ENTITY -> StatisticType.ENTITY_KILLED.of(entityType);
-                case ENTITY_KILLED_BY -> StatisticType.ENTITY_KILLED_BY.of(entityType);
-                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", entity_type: " + entityType + " to a modern stat");
-            };
-        };
+        }
     }
 }

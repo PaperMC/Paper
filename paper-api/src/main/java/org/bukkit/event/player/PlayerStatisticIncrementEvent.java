@@ -23,7 +23,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Statistic<?> statistic; // Paper
+    private final Statistic<?> statistic;
     private final int initialValue;
     private final int newValue;
     private final @Nullable EntityType entityType;
@@ -55,7 +55,6 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     public Statistic<?> getStat() {
         return this.statistic;
     }
-    // Paper end
 
     /**
      * Gets the statistic that is being incremented.
