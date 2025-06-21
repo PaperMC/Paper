@@ -388,7 +388,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             this.getPlayer().incrementStatistic(statistic, amount);
         } else {
             final ServerStatsCounter manager = this.getStatisticManager();
-            PaperStatistics.changeStatistic(manager, statistic, amount);
+            PaperStatistics.changeStatistic(manager, statistic, amount, null);
             manager.save();
         }
 
@@ -400,7 +400,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             this.getPlayer().setStatistic(statistic, newAmount);
         } else {
             final ServerStatsCounter manager = this.getStatisticManager();
-            PaperStatistics.setStatistic(manager, statistic, newAmount);
+            PaperStatistics.setStatistic(manager, statistic, newAmount, null);
             manager.save();
         }
     }
