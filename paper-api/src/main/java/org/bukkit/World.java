@@ -2677,7 +2677,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Get the temperature from the biome instead.
      *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
-    @Deprecated(since = "1.21.5")
+    @Deprecated(since = "1.21.6")
     public double getTemperature(int x, int y, int z);
 
     /**
@@ -2707,7 +2707,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Get the temperature from the biome instead.
      *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
-    @Deprecated(since = "1.21.5")
+    @Deprecated(since = "1.21.6")
     public double getHumidity(int x, int y, int z);
 
     /**

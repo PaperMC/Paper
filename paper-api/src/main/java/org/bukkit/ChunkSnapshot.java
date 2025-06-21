@@ -143,7 +143,7 @@ public interface ChunkSnapshot {
      * @deprecated Get the temperature from the biome instead.
      *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
-    @Deprecated(since = "1.21.5")
+    @Deprecated(since = "1.21.6")
     double getRawBiomeTemperature(int x, int y, int z);
 
     /**
