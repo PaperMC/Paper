@@ -9,52 +9,55 @@ public final class PaperBlockProperties {
 
     public static void setup() {
         //<editor-fold desc="Paper API Properties Registration" defaultstate="collapsed">
-        registerProp(BlockStateProperties.DOUBLE_BLOCK_HALF, BlockProperties.DOUBLE_BLOCK_HALF);
-        registerProp(BlockStateProperties.HALF, BlockProperties.HALF);
-        registerProp(BlockStateProperties.HORIZONTAL_AXIS, BlockProperties.HORIZONTAL_AXIS);
-        registerProp(BlockStateProperties.AXIS, BlockProperties.AXIS);
-        registerProp(BlockStateProperties.CHEST_TYPE, BlockProperties.CHEST_TYPE);
-        registerProp(BlockStateProperties.PISTON_TYPE, BlockProperties.PISTON_TYPE);
-        registerProp(BlockStateProperties.SLAB_TYPE, BlockProperties.SLAB_TYPE);
-        registerProp(BlockStateProperties.MODE_COMPARATOR, BlockProperties.MODE_COMPARATOR);
-        registerProp(BlockStateProperties.STRUCTUREBLOCK_MODE, BlockProperties.STRUCTUREBLOCK_MODE);
-        registerProp(BlockStateProperties.TEST_BLOCK_MODE, BlockProperties.TEST_BLOCK_MODE);
-        registerProp(BlockStateProperties.WEST, BlockProperties.WEST);
-        registerProp(BlockStateProperties.WEST_WALL, BlockProperties.WEST_WALL);
-        registerProp(BlockStateProperties.WEST_REDSTONE, BlockProperties.WEST_REDSTONE);
-        registerProp(BlockStateProperties.EAST, BlockProperties.EAST);
-        registerProp(BlockStateProperties.EAST_WALL, BlockProperties.EAST_WALL);
-        registerProp(BlockStateProperties.EAST_REDSTONE, BlockProperties.EAST_REDSTONE);
-        registerProp(BlockStateProperties.NORTH, BlockProperties.NORTH);
-        registerProp(BlockStateProperties.NORTH_WALL, BlockProperties.NORTH_WALL);
-        registerProp(BlockStateProperties.NORTH_REDSTONE, BlockProperties.NORTH_REDSTONE);
-        registerProp(BlockStateProperties.SOUTH, BlockProperties.SOUTH);
-        registerProp(BlockStateProperties.SOUTH_WALL, BlockProperties.SOUTH_WALL);
-        registerProp(BlockStateProperties.SOUTH_REDSTONE, BlockProperties.SOUTH_REDSTONE);
-        registerProp(BlockStateProperties.RAIL_SHAPE, BlockProperties.RAIL_SHAPE);
-        registerProp(BlockStateProperties.RAIL_SHAPE_STRAIGHT, BlockProperties.RAIL_SHAPE_STRAIGHT);
-        registerProp(BlockStateProperties.STAIRS_SHAPE, BlockProperties.STAIRS_SHAPE);
-        registerProp(BlockStateProperties.LEVEL_CAULDRON, BlockProperties.LEVEL_CAULDRON);
-        registerProp(BlockStateProperties.LEVEL_COMPOSTER, BlockProperties.LEVEL_COMPOSTER);
-        registerProp(BlockStateProperties.LEVEL_FLOWING, BlockProperties.LEVEL_FLOWING);
-        registerProp(BlockStateProperties.LEVEL, BlockProperties.LEVEL);
-        registerProp(BlockStateProperties.DISTANCE, BlockProperties.DISTANCE);
-        registerProp(BlockStateProperties.STABILITY_DISTANCE, BlockProperties.STABILITY_DISTANCE);
-        registerProp(BlockStateProperties.FACING, BlockProperties.FACING);
-        registerProp(BlockStateProperties.FACING_HOPPER, BlockProperties.FACING_HOPPER);
-        registerProp(BlockStateProperties.HORIZONTAL_FACING, BlockProperties.HORIZONTAL_FACING);
-        registerProp(BlockStateProperties.AGE_1, BlockProperties.AGE_1);
-        registerProp(BlockStateProperties.AGE_2, BlockProperties.AGE_2);
-        registerProp(BlockStateProperties.AGE_3, BlockProperties.AGE_3);
-        registerProp(BlockStateProperties.AGE_4, BlockProperties.AGE_4);
-        registerProp(BlockStateProperties.AGE_5, BlockProperties.AGE_5);
-        registerProp(BlockStateProperties.AGE_7, BlockProperties.AGE_7);
-        registerProp(BlockStateProperties.AGE_15, BlockProperties.AGE_15);
-        registerProp(BlockStateProperties.AGE_25, BlockProperties.AGE_25);
+        // Start generate - PaperBlockProperties
+        // @GeneratedFrom 1.21.6
+        register(BlockStateProperties.AGE_1, BlockProperties.AGE_1);
+        register(BlockStateProperties.AGE_2, BlockProperties.AGE_2);
+        register(BlockStateProperties.AGE_3, BlockProperties.AGE_3);
+        register(BlockStateProperties.AGE_4, BlockProperties.AGE_4);
+        register(BlockStateProperties.AGE_5, BlockProperties.AGE_5);
+        register(BlockStateProperties.AGE_7, BlockProperties.AGE_7);
+        register(BlockStateProperties.AGE_15, BlockProperties.AGE_15);
+        register(BlockStateProperties.AGE_25, BlockProperties.AGE_25);
+        register(BlockStateProperties.AXIS, BlockProperties.AXIS);
+        register(BlockStateProperties.CHEST_TYPE, BlockProperties.CHEST_TYPE);
+        register(BlockStateProperties.DISTANCE, BlockProperties.DISTANCE);
+        register(BlockStateProperties.DOUBLE_BLOCK_HALF, BlockProperties.DOUBLE_BLOCK_HALF);
+        register(BlockStateProperties.EAST, BlockProperties.EAST);
+        register(BlockStateProperties.EAST_REDSTONE, BlockProperties.EAST_REDSTONE);
+        register(BlockStateProperties.EAST_WALL, BlockProperties.EAST_WALL);
+        register(BlockStateProperties.FACING, BlockProperties.FACING);
+        register(BlockStateProperties.FACING_HOPPER, BlockProperties.FACING_HOPPER);
+        register(BlockStateProperties.HALF, BlockProperties.HALF);
+        register(BlockStateProperties.HORIZONTAL_AXIS, BlockProperties.HORIZONTAL_AXIS);
+        register(BlockStateProperties.HORIZONTAL_FACING, BlockProperties.HORIZONTAL_FACING);
+        register(BlockStateProperties.LEVEL, BlockProperties.LEVEL);
+        register(BlockStateProperties.LEVEL_CAULDRON, BlockProperties.LEVEL_CAULDRON);
+        register(BlockStateProperties.LEVEL_COMPOSTER, BlockProperties.LEVEL_COMPOSTER);
+        register(BlockStateProperties.LEVEL_FLOWING, BlockProperties.LEVEL_FLOWING);
+        register(BlockStateProperties.MODE_COMPARATOR, BlockProperties.MODE_COMPARATOR);
+        register(BlockStateProperties.NORTH, BlockProperties.NORTH);
+        register(BlockStateProperties.NORTH_REDSTONE, BlockProperties.NORTH_REDSTONE);
+        register(BlockStateProperties.NORTH_WALL, BlockProperties.NORTH_WALL);
+        register(BlockStateProperties.PISTON_TYPE, BlockProperties.PISTON_TYPE);
+        register(BlockStateProperties.RAIL_SHAPE, BlockProperties.RAIL_SHAPE);
+        register(BlockStateProperties.RAIL_SHAPE_STRAIGHT, BlockProperties.RAIL_SHAPE_STRAIGHT);
+        register(BlockStateProperties.SLAB_TYPE, BlockProperties.SLAB_TYPE);
+        register(BlockStateProperties.SOUTH, BlockProperties.SOUTH);
+        register(BlockStateProperties.SOUTH_REDSTONE, BlockProperties.SOUTH_REDSTONE);
+        register(BlockStateProperties.SOUTH_WALL, BlockProperties.SOUTH_WALL);
+        register(BlockStateProperties.STABILITY_DISTANCE, BlockProperties.STABILITY_DISTANCE);
+        register(BlockStateProperties.STAIRS_SHAPE, BlockProperties.STAIRS_SHAPE);
+        register(BlockStateProperties.STRUCTUREBLOCK_MODE, BlockProperties.STRUCTUREBLOCK_MODE);
+        register(BlockStateProperties.TEST_BLOCK_MODE, BlockProperties.TEST_BLOCK_MODE);
+        register(BlockStateProperties.WEST, BlockProperties.WEST);
+        register(BlockStateProperties.WEST_REDSTONE, BlockProperties.WEST_REDSTONE);
+        register(BlockStateProperties.WEST_WALL, BlockProperties.WEST_WALL);
+        // End generate - PaperBlockProperties
         //</editor-fold>
     }
 
-    private static void registerProp(final Property<?> nmsProperty, final BlockProperty<?> paperProperty) {
+    private static void register(final Property<?> nmsProperty, final BlockProperty<?> paperProperty) {
         CraftBlockData.DATA_PROPERTY_CACHE_MAP.put(nmsProperty, paperProperty);
     }
 
