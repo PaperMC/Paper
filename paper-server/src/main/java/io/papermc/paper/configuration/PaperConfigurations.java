@@ -20,6 +20,7 @@ import io.papermc.paper.configuration.serializer.registry.RegistryValueSerialize
 import io.papermc.paper.configuration.transformation.Transformations;
 import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
+import io.papermc.paper.configuration.transformation.global.versioned.V30_SpawnMonsters;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
@@ -291,6 +292,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_LogIPs.apply(versionedBuilder);
+        V30_SpawnMonsters.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
