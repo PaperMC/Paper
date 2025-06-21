@@ -49,7 +49,7 @@
      private double firstGoodX;
      private double firstGoodY;
      private double firstGoodZ;
-@@ -252,23 +_,42 @@
+@@ -252,14 +_,33 @@
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
      private boolean receivedMovementThisTick;
@@ -79,18 +79,18 @@
      private boolean waitingForSwitchToConfig;
 +    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
 +    private final io.papermc.paper.event.packet.ClientTickEndEvent tickEndEvent; // Paper - add client tick end event
++    public final io.papermc.paper.connection.PaperPlayerGameConnection playerGameConnection; // Paper
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie cookie) {
--        super(server, connection, cookie);
-+        super(server, connection, cookie, player); // CraftBukkit
-         this.chunkSender = new PlayerChunkSender(connection.isMemoryConnection());
-         this.player = player;
+         super(server, connection, cookie);
+@@ -268,7 +_,9 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
++        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
      }
  
      @Override
@@ -2567,16 +2567,22 @@
                  }
              }
          }
-@@ -2008,7 +_,7 @@
+@@ -2005,11 +_,13 @@
+         if (!this.waitingForSwitchToConfig) {
+             throw new IllegalStateException("Client acknowledged config, but none was requested");
+         } else {
++            ServerConfigurationPacketListenerImpl listener = new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation())); // Paper
              this.connection
                  .setupInboundProtocol(
                      ConfigurationProtocols.SERVERBOUND,
 -                    new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation()))
-+                    new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation()), this.player) // CraftBukkit
++                    listener // Paper
                  );
++            new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigurateEvent(listener.paperConnection).callEvent(); // Paper
          }
      }
-@@ -2027,27 +_,32 @@
+ 
+@@ -2027,27 +_,27 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2596,11 +2602,10 @@
 +                    });
                  }
              );
-     }
- 
-     @Override
-     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-+        super.handleCustomPayload(packet); // CraftBukkit - handled in super
+-    }
+-
+-    @Override
+-    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
      }
  
      @Override
@@ -2610,7 +2615,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,17 @@
+@@ -2078,4 +_,144 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2627,4 +2632,131 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
++    // Paper start - add utilities
++    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
++        return this.player == null ? null : this.player.getBukkitEntity();
++    }
++
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo);
++            if (this.player.quitReason == null) {
++                // cancelled
++                this.connection.enableAutoRead();
++            }
++        });
++    }
++
++    // Paper start
++    public static final net.minecraft.resources.ResourceLocation CUSTOM_REGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
++    private static final net.minecraft.resources.ResourceLocation CUSTOM_UNREGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("unregister"); // CraftBukkit
++
++    @Override
++    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        // Paper start
++        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
++            this.playerBrand = brand;
++        }
++
++        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
++            return;
++        }
++
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
++
++        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
++        final byte[] data = discardedPayload.data();
++        try {
++            final boolean registerChannel = CUSTOM_REGISTER.equals(identifier);
++            if (registerChannel || CUSTOM_UNREGISTER.equals(identifier)) {
++                // Strings separated by zeros instead of length prefixes
++                int startIndex = 0;
++                for (int i = 0; i < data.length; i++) {
++                    final byte b = data[i];
++                    if (b != 0) {
++                        continue;
++                    }
++
++                    readChannelIdentifier(data, startIndex, i, registerChannel);
++                    startIndex = i + 1;
++                }
++
++                // Read the last one
++                readChannelIdentifier(data, startIndex, data.length, registerChannel);
++                return;
++            }
++
++            if (identifier.equals(MINECRAFT_BRAND)) {
++                this.player.connection.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++            }
++
++            this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
++        } catch (final Exception e) {
++            ServerGamePacketListenerImpl.LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
++            this.disconnect(Component.literal("Invalid custom payload payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++        }
++    }
++
++    private void readChannelIdentifier(final byte[] data, final int from, final int to, final boolean register) {
++        final int length = to - from;
++        if (length == 0) {
++            return;
++        }
++
++        final String channel = new String(data, from, length, java.nio.charset.StandardCharsets.US_ASCII);
++        if (register) {
++            this.getCraftPlayer().addChannel(channel);
++        } else {
++            this.getCraftPlayer().removeChannel(channel);
++        }
++    }
++
++    public final boolean isDisconnected() {
++        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
++    }
++
++    @Override
++    public void handleResourcePackResponse(final net.minecraft.network.protocol.common.ServerboundResourcePackPacket packet) {
++        super.handleResourcePackResponse(packet);
++        // Paper start - store last pack status
++        org.bukkit.event.player.PlayerResourcePackStatusEvent.Status packStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
++        this.player.getBukkitEntity().resourcePackStatus = packStatus;
++        this.cserver.getPluginManager().callEvent(new org.bukkit.event.player.PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
++        // Paper end - store last pack status
++    }
++
++    // Paper start - adventure
++    public void disconnect(final net.kyori.adventure.text.Component reason) {
++        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnect(final Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnectAsync(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
++    }
++
++    public void disconnectAsync(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    @Override
++    public io.papermc.paper.connection.ReadablePlayerCookieConnectionImpl getCookieConnection() {
++        return this.playerGameConnection;
++    }
++
++    // Paper end
  }

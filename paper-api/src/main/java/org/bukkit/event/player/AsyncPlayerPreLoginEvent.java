@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import io.papermc.paper.connection.PlayerLoginConnection;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
@@ -33,6 +34,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private Result result;
     private Component message;
     private PlayerProfile profile;
+    private final PlayerLoginConnection playerLoginConnection;
 
     @ApiStatus.Internal
     @Deprecated(since = "1.7.5", forRemoval = true)
@@ -60,11 +62,11 @@ public class AsyncPlayerPreLoginEvent extends Event {
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
-        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
+        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "", null);
     }
 
     @ApiStatus.Internal
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname, final PlayerLoginConnection playerLoginConnection) {
         super(true);
         this.result = Result.ALLOWED;
         this.message = Component.empty();
@@ -73,6 +75,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
         this.rawAddress = rawAddress;
         this.hostname = hostname;
         this.transferred = transferred;
+        this.playerLoginConnection = playerLoginConnection;
     }
 
     /**
@@ -299,6 +302,15 @@ public class AsyncPlayerPreLoginEvent extends Event {
      */
     public boolean isTransferred() {
         return this.transferred;
+    }
+
+    /**
+     * Gets the connection for the player logging in.
+     * @return connection
+     */
+    @NotNull
+    public PlayerLoginConnection getPlayerLoginConnection() {
+        return playerLoginConnection;
     }
 
     @NotNull

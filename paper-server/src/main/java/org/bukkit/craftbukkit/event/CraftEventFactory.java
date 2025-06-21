@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,12 +14,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
@@ -225,6 +233,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerItemMendEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerRecipeBookClickEvent;
 import org.bukkit.event.player.PlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
@@ -2084,5 +2093,17 @@ public class CraftEventFactory {
         }
 
         return event;
+    }
+    public static Component handleLoginResult(PlayerList.LoginResult result, PlayerConnection paperConnection, Connection connection, GameProfile profile, MinecraftServer server) {
+        PlayerConnectionValidateLoginEvent event = new io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent(
+                paperConnection, result.isAllowed() ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(result.message())
+        );
+        event.callEvent();
+
+        Component disconnectReason = PaperAdventure.asVanilla(event.getDisallowedReason());
+
+        return io.papermc.paper.connection.HorriblePlayerLoginEventHack.execute(connection, server, profile,
+            disconnectReason == null ? PlayerList.LoginResult.ALLOW : new PlayerList.LoginResult(disconnectReason, disconnectReason == null ? PlayerLoginEvent.Result.KICK_OTHER : result.result())
+        );
     }
 }

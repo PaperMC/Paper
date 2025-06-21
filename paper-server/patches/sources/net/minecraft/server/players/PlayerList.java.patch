@@ -339,7 +339,7 @@
              }
  
              @Override
-@@ -319,56 +_,156 @@
+@@ -319,56 +_,138 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -446,6 +446,12 @@
 -        }
 -
 -        this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
+-    }
+-
+-    @Nullable
+-    public Component canPlayerLogin(SocketAddress socketAddress, GameProfile gameProfile) {
+-        if (this.bans.isBanned(gameProfile)) {
+-            UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
 +            // CraftBukkit start
 +            // this.stats.remove(uuid);
 +            // this.advancements.remove(uuid);
@@ -468,140 +474,77 @@
 +        this.cserver.getScoreboardManager().removePlayer(player.getBukkitEntity());
 +        // CraftBukkit end
 +        return playerQuitEvent.quitMessage(); // Paper - Adventure
-     }
- 
--    @Nullable
--    public Component canPlayerLogin(SocketAddress socketAddress, GameProfile gameProfile) {
--        if (this.bans.isBanned(gameProfile)) {
--            UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
-+    // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-+    public @Nullable ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
-+        // if (this.bans.isBanned(gameProfile)) {
-+        //     UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
-+        // Moved from disconnectAllPlayersWithProfile
-+        UUID uuid = gameProfile.getId();
-+        List<ServerPlayer> list = Lists.newArrayList();
++    }
 +
-+        for (net.minecraft.server.level.ServerPlayer serverPlayer : this.players) {
-+            if (serverPlayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
-+                list.add(serverPlayer);
-+            }
++    // Paper start - PlayerLoginEvent
++    public record LoginResult(@Nullable Component message, @org.jetbrains.annotations.NotNull org.bukkit.event.player.PlayerLoginEvent.Result result) {
++        public static LoginResult ALLOW = new net.minecraft.server.players.PlayerList.LoginResult(null, org.bukkit.event.player.PlayerLoginEvent.Result.ALLOWED);
++
++        public boolean isAllowed() {
++            return this == ALLOW;
 +        }
-+
-+        for (final net.minecraft.server.level.ServerPlayer serverPlayer : list) {
-+            this.save(serverPlayer); // CraftBukkit - Force the player's inventory to be saved
-+            serverPlayer.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
-+        }
-+
-+        // Instead of kicking then returning, we need to store the kick reason
-+        // in the event, check with plugins to see if it's ok, and THEN kick
-+        // depending on the outcome.
-+        SocketAddress socketAddress = loginlistener.connection.getRemoteAddress();
-+
-+        ServerPlayer entity = new ServerPlayer(this.server, this.server.getLevel(Level.OVERWORLD), gameProfile, net.minecraft.server.level.ClientInformation.createDefault());
-+        entity.transferCookieConnection = loginlistener;
-+        org.bukkit.entity.Player player = entity.getBukkitEntity();
-+        org.bukkit.event.player.PlayerLoginEvent event = new org.bukkit.event.player.PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketAddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
-+
++    }
++    // Paper end - PlayerLoginEvent
++    public LoginResult canPlayerLogin(SocketAddress socketAddress, GameProfile gameProfile) { // Paper - PlayerLoginEvent
++        LoginResult whitelistEventResult; // Paper
 +        // Paper start - Fix MC-158900
 +        UserBanListEntry userBanListEntry;
 +        if (this.bans.isBanned(gameProfile) && (userBanListEntry = this.bans.get(gameProfile)) != null) {
-+            // Paper end - Fix MC-158900
++        // Paper end - Fix MC-158900
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReason());
              if (userBanListEntry.getExpires() != null) {
                  mutableComponent.append(
-@@ -376,10 +_,12 @@
+@@ -376,9 +_,11 @@
                  );
              }
  
 -            return mutableComponent;
 -        } else if (!this.isWhiteListed(gameProfile)) {
 -            return Component.translatable("multiplayer.disconnect.not_whitelisted");
--        } else if (this.ipBans.isBanned(socketAddress)) {
-+            // return mutableComponent;
-+            event.disallow(org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED, io.papermc.paper.adventure.PaperAdventure.asAdventure(mutableComponent)); // Paper - Adventure
-+        } else if (!this.isWhiteListed(gameProfile, event)) { // Paper - ProfileWhitelistVerifyEvent
-+            // return Component.translatable("multiplayer.disconnect.not_whitelisted");
-+            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure - moved to isWhitelisted
-+        } else if (this.ipBans.isBanned(socketAddress) && getIpBans().get(socketAddress) != null && !this.getIpBans().get(socketAddress).hasExpired()) { // Paper - fix NPE with temp ip bans
++            return new LoginResult(mutableComponent, org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED); // Paper - PlayerLoginEvent
++        // Paper start - whitelist event
++        } else if ((whitelistEventResult = this.isWhiteListedLogin(gameProfile)).result == org.bukkit.event.player.PlayerLoginEvent.Result.KICK_WHITELIST) {
++            return whitelistEventResult;
++        // Paper end
+         } else if (this.ipBans.isBanned(socketAddress)) {
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReason());
-             if (ipBanListEntry.getExpires() != null) {
-@@ -388,65 +_,124 @@
+@@ -388,11 +_,9 @@
                  );
              }
  
 -            return mutableComponent;
-+            // return mutableComponent;
-+            event.disallow(org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED, io.papermc.paper.adventure.PaperAdventure.asAdventure(mutableComponent)); // Paper - Adventure
++            return new LoginResult(mutableComponent, org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED); // Paper - PlayerLoginEvent
          } else {
 -            return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameProfile)
 -                ? Component.translatable("multiplayer.disconnect.server_full")
 -                : null;
--        }
--    }
--
--    public boolean disconnectAllPlayersWithProfile(GameProfile gameProfile) {
--        UUID id = gameProfile.getId();
--        Set<ServerPlayer> set = Sets.newIdentityHashSet();
--
--        for (ServerPlayer serverPlayer : this.players) {
++            return this.canBypassFullServerLogin(gameProfile, new LoginResult(Component.translatable("multiplayer.disconnect.server_full"), org.bukkit.event.player.PlayerLoginEvent.Result.KICK_FULL)); // Paper - PlayerServerFullCheckEvent
+         }
+     }
+ 
+@@ -401,7 +_,7 @@
+         Set<ServerPlayer> set = Sets.newIdentityHashSet();
+ 
+         for (ServerPlayer serverPlayer : this.players) {
 -            if (serverPlayer.getUUID().equals(id)) {
--                set.add(serverPlayer);
-+            // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameProfile)
-+            //     ? Component.translatable("multiplayer.disconnect.server_full")
-+            //     : null;
-+            if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameProfile)) {
-+                event.disallow(org.bukkit.event.player.PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
++            if (serverPlayer.getUUID().equals(id) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
+                 set.add(serverPlayer);
              }
          }
--
--        ServerPlayer serverPlayer1 = this.playersByUUID.get(gameProfile.getId());
--        if (serverPlayer1 != null) {
--            set.add(serverPlayer1);
--        }
--
--        for (ServerPlayer serverPlayer2 : set) {
+@@ -412,41 +_,88 @@
+         }
+ 
+         for (ServerPlayer serverPlayer2 : set) {
 -            serverPlayer2.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE);
--        }
--
--        return !set.isEmpty();
--    }
--
++            this.save(serverPlayer2); // CraftBukkit - Force the player's inventory to be saved
++            serverPlayer2.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE, io.papermc.paper.connection.DisconnectionReason.DUPLICATE_LOGIN_MESSAGE); // Paper - disconnect API
+         }
+ 
+         return !set.isEmpty();
+     }
+ 
 -    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason) {
-+        this.cserver.getPluginManager().callEvent(event);
-+        if (event.getResult() != org.bukkit.event.player.PlayerLoginEvent.Result.ALLOWED) {
-+            loginlistener.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
-+            return null;
-+        }
-+        return entity;
-+    }
-+
-+    public boolean disconnectAllPlayersWithProfile(GameProfile gameProfile, ServerPlayer player) { // CraftBukkit - added ServerPlayer
-+        // CraftBukkit start - Moved up
-+        // UUID id = gameProfile.getId();
-+        // Set<ServerPlayer> set = Sets.newIdentityHashSet();
-+        //
-+        // for (ServerPlayer serverPlayer : this.players) {
-+        //     if (serverPlayer.getUUID().equals(id)) {
-+        //         set.add(serverPlayer);
-+        //     }
-+        // }
-+        //
-+        // ServerPlayer serverPlayer1 = this.playersByUUID.get(gameProfile.getId());
-+        // if (serverPlayer1 != null) {
-+        //     set.add(serverPlayer1);
-+        // }
-+        //
-+        // for (ServerPlayer serverPlayer2 : set) {
-+        //     serverPlayer2.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE);
-+        // }
-+        //
-+        // return !set.isEmpty();
-+        return player == null;
-+        // CraftBukkit end
-+    }
-+
 +    // CraftBukkit start
 +    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
 +        return this.respawn(player, keepInventory, reason, eventReason, null);
@@ -836,41 +779,57 @@
          if (player.connection != null) {
              byte b;
              if (permLevel <= 0) {
-@@ -597,11 +_,33 @@
+@@ -597,9 +_,48 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b));
          }
  
 +        if (recalculatePermissions) { // Paper - Add sendOpLevel API
 +        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
          this.server.getCommands().sendCommands(player);
+-    }
+-
 +        } // Paper - Add sendOpLevel API
-     }
- 
-     public boolean isWhiteListed(GameProfile profile) {
--        return !this.doWhiteList || this.ops.contains(profile) || this.whitelist.contains(profile);
-+        // Paper start - ProfileWhitelistVerifyEvent
-+        return this.isWhiteListed(profile, null);
 +    }
 +
-+    public boolean isWhiteListed(GameProfile gameprofile, @Nullable org.bukkit.event.player.PlayerLoginEvent loginEvent) {
-+        boolean isOp = this.ops.contains(gameprofile);
-+        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(gameprofile);
-+        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
++    // Paper start - whitelist verify event / login event
++    public LoginResult canBypassFullServerLogin(final GameProfile profile, final LoginResult currentResult) {
++        final boolean shouldKick = this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(profile);
++        final io.papermc.paper.event.player.PlayerServerFullCheckEvent fullCheckEvent = new io.papermc.paper.event.player.PlayerServerFullCheckEvent(
++            com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(profile),
++            io.papermc.paper.adventure.PaperAdventure.asAdventure(currentResult.message),
++            shouldKick
++        );
++
++        fullCheckEvent.callEvent();
++        if (fullCheckEvent.canJoin()) {
++            return net.minecraft.server.players.PlayerList.LoginResult.ALLOW;
++        } else {
++            return new net.minecraft.server.players.PlayerList.LoginResult(
++                io.papermc.paper.adventure.PaperAdventure.asVanilla(fullCheckEvent.kickMessage()), currentResult.result
++            );
++        }
++    }
++
++    public LoginResult isWhiteListedLogin(GameProfile profile) {
++        boolean isOp = this.ops.contains(profile);
++        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(profile);
 +
 +        final net.kyori.adventure.text.Component configuredMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage);
-+        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile), this.doWhiteList, isWhitelisted, isOp, configuredMessage);
++        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event
++            = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(profile), this.doWhiteList, isWhitelisted, isOp, configuredMessage);
 +        event.callEvent();
 +        if (!event.isWhitelisted()) {
-+            if (loginEvent != null) {
-+                loginEvent.disallow(org.bukkit.event.player.PlayerLoginEvent.Result.KICK_WHITELIST, event.kickMessage() == null ? configuredMessage : event.kickMessage());
-+            }
-+            return false;
++            return new net.minecraft.server.players.PlayerList.LoginResult(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.kickMessage() == null ? configuredMessage : event.kickMessage()), org.bukkit.event.player.PlayerLoginEvent.Result.KICK_WHITELIST);
 +        }
-+        return true;
-+        // Paper end - ProfileWhitelistVerifyEvent
++
++        return net.minecraft.server.players.PlayerList.LoginResult.ALLOW;
++    }
++    // Paper end
++
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     public boolean isWhiteListed(GameProfile profile) {
+         return !this.doWhiteList || this.ops.contains(profile) || this.whitelist.contains(profile);
      }
- 
-     public boolean isOp(GameProfile profile) {
 @@ -612,21 +_,17 @@
  
      @Nullable

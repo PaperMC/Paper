@@ -1,60 +1,46 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -44,9 +_,17 @@
+@@ -44,9 +_,16 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
--public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
 +
-+public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener, CraftPlayer.TransferCookieConnection {
-+    // CraftBukkit end
+ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
      static final Logger LOGGER = LogUtils.getLogger();
 +    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      final MinecraftServer server;
-@@ -59,6 +_,9 @@
+@@ -54,23 +_,45 @@
+     public volatile ServerLoginPacketListenerImpl.State state = ServerLoginPacketListenerImpl.State.HELLO;
+     private int tick;
+     @Nullable
+-    String requestedUsername;
++    public String requestedUsername; // Paper
+     @Nullable
      public GameProfile authenticatedProfile;
      private final String serverId = "";
-     private final boolean transferred;
-+    private net.minecraft.server.level.ServerPlayer player; // CraftBukkit
+-    private final boolean transferred;
++    public final boolean transferred; // Paper
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
 +    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
++    public @Nullable java.util.UUID requestedUuid; // Paper
++    private final io.papermc.paper.connection.PaperPlayerLoginConnection paperLoginConnection; // Paper
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.server = server;
-@@ -67,11 +_,48 @@
+         this.connection = connection;
+         this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
          this.transferred = transferred;
++        this.paperLoginConnection  = new io.papermc.paper.connection.PaperPlayerLoginConnection(this); // Paper
      }
  
-+    // CraftBukkit start
-+    @Override
-+    public boolean isTransferred() {
-+        return this.transferred;
-+    }
-+
-+    @Override
-+    public net.minecraft.network.ConnectionProtocol getProtocol() {
-+        return net.minecraft.network.ConnectionProtocol.LOGIN;
-+    }
-+
-+    @Override
-+    public void sendPacket(net.minecraft.network.protocol.Packet<?> packet) {
-+        this.connection.send(packet);
-+    }
-+
-+    @Override
-+    public void kickPlayer(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) { // Paper - kick event causes - during login, no event can be called.
-+        this.disconnect(reason);
-+    }
-+    // CraftBukkit end
-+
      @Override
      public void tick() {
 +        // Paper start - Do not allow logins while the server is shutting down
@@ -63,23 +49,34 @@
 +            return;
 +        }
 +        // Paper end - Do not allow logins while the server is shutting down
++        // Paper start - login cookie API
++        // Don't block the connection
++        if (this.paperLoginConnection.isAwaitingCookies()) {
++            this.tickTimeout(); // Ensure we tick timeout logic
++            return;
++        }
++        // Paper end - login cookie API
 +
          if (this.state == ServerLoginPacketListenerImpl.State.VERIFYING) {
+-            this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
 +            if (this.connection.isConnected()) { // Paper - prevent logins to be processed even though disconnect was called
-             this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
--        }
++                // Paper start
++                this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
 +            } // Paper - prevent logins to be processed even though disconnect was called
-+        }
-+
-+        // CraftBukkit start
-+        if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_COOKIES && !this.player.getBukkitEntity().isAwaitingCookies()) {
-+            this.postCookies(this.authenticatedProfile);
-+        }
-+        // CraftBukkit end
+         }
  
          if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT
-             && !this.isPlayerAlreadyInWorld(Objects.requireNonNull(this.authenticatedProfile))) {
-@@ -83,6 +_,13 @@
+@@ -78,11 +_,23 @@
+             this.finishLoginAndWaitForClient(this.authenticatedProfile);
+         }
+ 
++    // Paper start - login cookie API
++        this.tickTimeout();
++    }
++    public void tickTimeout() {
++    // Paper end - login cookie API
+         if (this.tick++ == 600) {
+             this.disconnect(Component.translatable("multiplayer.disconnect.slow_login"));
          }
      }
  
@@ -93,7 +90,7 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -115,7 +_,13 @@
+@@ -115,7 +_,14 @@
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet");
@@ -104,6 +101,7 @@
 +            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
 +            Validate.validState(StringUtil.isReasonablePlayerName(packet.name()), "Invalid characters in username");
 +        }
++        this.requestedUuid = packet.profileId();
 +        // Paper end - Validate usernames
          this.requestedUsername = packet.name();
          GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
@@ -142,42 +140,30 @@
              }
          }
      }
-@@ -137,9 +_,23 @@
+@@ -137,7 +_,7 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile profile) {
          PlayerList playerList = this.server.getPlayerList();
 -        Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), profile);
--        if (component != null) {
--            this.disconnect(component);
-+        // CraftBukkit start - fire PlayerLoginEvent
-+        this.player = playerList.canPlayerLogin(this, profile); // CraftBukkit
-+        if (this.player != null) {
-+            if (this.player.getBukkitEntity().isAwaitingCookies()) {
-+                this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_COOKIES;
-+            } else {
-+                this.postCookies(profile);
-+            }
-+        }
-+    }
-+
-+    private void postCookies(GameProfile profile) {
-+        PlayerList playerList = this.server.getPlayerList();
-+
-+        if (this.player == null) {
-+            // this.disconnect(component);
-+            // CraftBukkit end
++        Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), profile), this.paperLoginConnection, this.connection, profile, this.server); // Paper
+         if (component != null) {
+             this.disconnect(component);
          } else {
-             if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-                 this.connection
-@@ -149,7 +_,7 @@
-                     );
-             }
+@@ -159,6 +_,14 @@
+     }
  
--            boolean flag = playerList.disconnectAllPlayersWithProfile(profile);
-+            boolean flag = playerList.disconnectAllPlayersWithProfile(profile, this.player); // CraftBukkit - add player reference
-             if (flag) {
-                 this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT;
-             } else {
+     private void finishLoginAndWaitForClient(GameProfile profile) {
++        // Paper start - PlayerFinishConnectionPhaseEvent
++        io.papermc.paper.event.connection.common.PlayerFinishConnectionPhaseEvent connectionPhaseEvent = new io.papermc.paper.event.connection.common.PlayerFinishConnectionPhaseEvent(this.paperLoginConnection);
++        connectionPhaseEvent.callEvent();
++        if (!connectionPhaseEvent.isAllowed()) {
++            this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(connectionPhaseEvent.getKickMessage()));
++            return;
++        }
++        // Paper end - PlayerFinishConnectionPhaseEvent
+         this.state = ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING;
+         this.connection.send(new ClientboundLoginFinishedPacket(profile));
+     }
 @@ -184,7 +_,8 @@
              throw new IllegalStateException("Protocol error", var7);
          }
@@ -254,7 +240,7 @@
 +        // Paper start - Add more fields to AsyncPlayerPreLoginEvent
 +        final InetAddress rawAddress = ((InetSocketAddress) this.connection.channel.remoteAddress()).getAddress();
 +        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile); // Paper - setPlayerProfileAPI
-+        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname);
++        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname, this.paperLoginConnection); // Paper
 +        server.getPluginManager().callEvent(asyncEvent);
 +        profile = asyncEvent.getPlayerProfile();
 +        profile.complete(true); // Paper - setPlayerProfileAPI
@@ -345,23 +331,17 @@
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie commonListenerCookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);
          ServerConfigurationPacketListenerImpl serverConfigurationPacketListenerImpl = new ServerConfigurationPacketListenerImpl(
--            this.server, this.connection, commonListenerCookie
-+            this.server, this.connection, commonListenerCookie, this.player // CraftBukkit
+             this.server, this.connection, commonListenerCookie
          );
 +
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverConfigurationPacketListenerImpl);
          serverConfigurationPacketListenerImpl.startConfiguration();
          this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
-@@ -252,8 +_,36 @@
+@@ -252,8 +_,31 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
-+        // CraftBukkit start
-+        net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
-+        if (this.player != null && this.player.getBukkitEntity().handleCookieResponse(packet)) {
-+            return;
-+        }
-+        // CraftBukkit end
++        if (this.paperLoginConnection.handleCookieResponse(packet)) return; // Paper
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
 +
@@ -389,11 +369,3 @@
  
      public static enum State {
          HELLO,
-@@ -261,6 +_,7 @@
-         AUTHENTICATING,
-         NEGOTIATING,
-         VERIFYING,
-+        WAITING_FOR_COOKIES, // CraftBukkit
-         WAITING_FOR_DUPE_DISCONNECT,
-         PROTOCOL_SWITCHING,
-         ACCEPTED;

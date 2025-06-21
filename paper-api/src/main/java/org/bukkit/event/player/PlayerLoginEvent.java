@@ -1,6 +1,8 @@
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
+import io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent;
+import org.bukkit.Warning;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
@@ -14,7 +16,10 @@ import org.jetbrains.annotations.NotNull;
  * Note that this event is called <i>early</i> in the player initialization
  * process. It is recommended that most options involving the Player
  * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
+ * @deprecated See {@link PlayerConnectionValidateLoginEvent}
  */
+@Warning(reason = "Listening to this event causes the player to be created early.")
+@Deprecated(since = "idk")
 public class PlayerLoginEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
