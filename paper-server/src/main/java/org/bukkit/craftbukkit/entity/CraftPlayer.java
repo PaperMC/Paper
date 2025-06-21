@@ -45,6 +45,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
@@ -92,6 +93,7 @@ import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPac
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetExperiencePacket;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
@@ -3264,27 +3266,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void openBook(ItemStack book) {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
-        Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack (%s) must have a WrittenBookContent Component", book.getType());
+        Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
 
-        ItemStack hand = this.getInventory().getItemInMainHand();
+        final ItemStack previousItem = this.getInventory().getItemInMainHand();
         this.getInventory().setItemInMainHand(book);
         this.getHandle().openItemGui(CraftItemStack.asNMSCopy(book), InteractionHand.MAIN_HAND);
-        this.getInventory().setItemInMainHand(hand);
+        this.getInventory().setItemInMainHand(previousItem);
     }
 
     @Override
-    public void openBook(final net.kyori.adventure.inventory.Book book) {
-        ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item for set the data
-        mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()).build());
+    public void openBook(final Book book) {
+        final ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item
+        mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()));
 
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
-        final int slot = this.getHandle().getInventory().getNonEquipmentItems().size() + this.getHandle().getInventory().getSelectedSlot();
-        final int stateId = getHandle().containerMenu.getStateId();
+        final int slot = this.getHandle().getInventory().getSelectedSlot();
         this.getHandle().connection.send(new ClientboundBundlePacket(
             List.of(
-                new ClientboundContainerSetSlotPacket(0, stateId, slot, CraftItemStack.unwrap(mutatedItem)),
-                new ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND),
-                new ClientboundContainerSetSlotPacket(0, stateId, slot, selectedItem)
+                new ClientboundSetPlayerInventoryPacket(slot, CraftItemStack.unwrap(mutatedItem)),
+                new ClientboundOpenBookPacket(InteractionHand.MAIN_HAND),
+                new ClientboundSetPlayerInventoryPacket(slot, selectedItem)
             )
         ));
     }

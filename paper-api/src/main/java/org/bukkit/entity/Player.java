@@ -3424,8 +3424,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Open an itemstack with {@link io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT} for a Player
      *
-     * @param book The item with written content to open for this player
-     * @throws IllegalArgumentException if the itemstack is null, empty or not has a {@link io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT}
+     * @param book the item with written book content to open for this player
+     * @throws IllegalArgumentException if the itemstack is null, empty or doesn't have a {@link io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT}
      */
     void openBook(ItemStack book);
 
