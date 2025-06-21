@@ -276,7 +276,6 @@ public class RegistryConversionTest {
         RegistryKey.INSTRUMENT,
         RegistryKey.BANNER_PATTERN,
         RegistryKey.SOUND_EVENT,
-        RegistryKey.INT_PROVIDER_TYPE,
         RegistryKey.WORLD_PRESET,
         RegistryKey.DIMENSION_TYPE,
         RegistryKey.LEVEL_STEM
