@@ -343,7 +343,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
         public int maxJoinsPerTick = 5;
-        public boolean fixEntityPositionDesync = true;
+        public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
         public int regionFileCacheSize = 256;

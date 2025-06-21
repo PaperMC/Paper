@@ -82,6 +82,7 @@ interface RemovedConfigurations {
         path("unsupported-settings", "allow-grindstone-overstacking"),
         path("unsupported-settings", "allow-tripwire-disarming-exploits"),
         path("commands", "fix-target-selector-tag-completion"),
+        path("misc", "fix-entity-position-desync")
     };
 
 }
