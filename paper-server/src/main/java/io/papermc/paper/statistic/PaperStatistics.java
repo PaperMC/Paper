@@ -34,12 +34,13 @@ public final class PaperStatistics {
         if (delta == 0) return;
         Preconditions.checkArgument(statistic != null, "statistic cannot be null");
         final Stat<?> stat = getNMSStatistic(statistic);
+        final int newAmount = manager.getValue(stat) + delta;
+        Preconditions.checkArgument(newAmount >= 0, "New amount must be greater than or equal to 0");
         //noinspection ConstantConditions
-        final int newValue = manager.getValue(stat) + delta;
-        manager.setValue(player, stat, newValue);
+        manager.setValue(player, stat, newAmount);
         if (player != null) {
             player.level().getCraftServer().getScoreboardManager().forAllObjectives(stat, player, score -> {
-                score.set(newValue);
+                score.set(newAmount);
             });
         }
     }
