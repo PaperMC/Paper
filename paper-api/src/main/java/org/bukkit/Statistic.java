@@ -220,9 +220,9 @@ public enum Statistic implements Keyed {
     public io.papermc.paper.statistic.Statistic<?> toModern(@Nullable EntityType entityType, @Nullable Material material) {
         Preconditions.checkArgument(entityType == null || material == null, "No stat has an entity type and material value at the same time");
         Preconditions.checkArgument(this.type != Type.UNTYPED || (entityType == null && material == null), "no value needed for untyped stats");
-        Preconditions.checkArgument(this.type != Type.ENTITY || entityType != null);
-        Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock());
-        Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem());
+        Preconditions.checkArgument(this.type != Type.ENTITY || (entityType != null && entityType != EntityType.UNKNOWN), "Must provide a valid entity type");
+        Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock(), "Must provide a valid block material");
+        Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem(), "Must provide a valid item material");
         return switch (this.type) {
             case UNTYPED ->
                 StatisticType.CUSTOM.of(Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
