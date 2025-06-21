@@ -33,6 +33,10 @@ public final class Types {
 
     public static final ClassName REGISTRY_KEY = PAPER.relativeClass("registry", "RegistryKey");
 
+    public static final ClassName TAG = PAPER.relativeClass("registry.tag", "Tag");
+
+    public static final ClassName REGISTRY_ACCESS = PAPER.relativeClass("registry", "RegistryAccess");
+
     public static final ClassName TYPED_KEY = PAPER.relativeClass("registry", "TypedKey");
 
     public static final ClassName GOAL_KEY = PAPER_LEGACY.relativeClass("entity.ai", "GoalKey");

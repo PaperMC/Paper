@@ -66,8 +66,8 @@ public class RegistryEntry<T> implements RegistryIdentifiable<T> {
         Preconditions.checkState(type != Type.BUILT_IN || !this.data.impl().delayed(), "Built-in registry '%s' cannot be delayed!", this.registryKey.location());
     }
 
-    public String keyClassName() {
-        if (this.data.api().keyClassNameRelate()) {
+    public String generatedClassPrefix() {
+        if (this.data.api().generatedClassPrefixRelate()) {
             return this.data.api().klass().name().simpleName();
         }
 
