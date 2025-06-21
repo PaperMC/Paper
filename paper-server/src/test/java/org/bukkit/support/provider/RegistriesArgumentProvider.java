@@ -1,8 +1,6 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
-import io.papermc.paper.math.provider.IntProviderType;
-import io.papermc.paper.math.provider.PaperIntProviderType;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.PaperWorldPreset;
 import io.papermc.paper.world.WorldPreset;
@@ -123,7 +121,6 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
-        register(RegistryKey.INT_PROVIDER_TYPE, IntProviderType.class, Registries.INT_PROVIDER_TYPE, PaperIntProviderType.class, net.minecraft.util.valueproviders.IntProviderType.class);
         register(RegistryKey.WORLD_PRESET, WorldPreset.class, Registries.WORLD_PRESET, PaperWorldPreset.class, net.minecraft.world.level.levelgen.presets.WorldPreset.class);
         register(RegistryKey.DIMENSION_TYPE, DimensionType.class, Registries.DIMENSION_TYPE, PaperDimensionType.class, net.minecraft.world.level.dimension.DimensionType.class);
         register(RegistryKey.LEVEL_STEM, LevelStem.class, Registries.LEVEL_STEM, PaperLevelStem.class, net.minecraft.world.level.dimension.LevelStem.class);
