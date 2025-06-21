@@ -60,20 +60,20 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableB
         }
     }
 
-    public static StatisticType<?> minecraftToBukkit(final StatType<?> minecraft) {
+    public static <A, M> StatisticType<A> minecraftToBukkit(final StatType<M> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.STAT_TYPE);
     }
 
-    public static StatType<?> bukkitToMinecraft(final StatisticType<?> bukkit) {
+    public static <A, M> StatType<M> bukkitToMinecraft(final StatisticType<A> bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public Statistic<S> convertStat(final Stat<? extends M> nmsStat) {
-        return this.of(this.minecraftToBukkit.apply(nmsStat.getValue(), this.getHandle().getRegistry().key()));
+        return this.forValue(this.minecraftToBukkit.apply(nmsStat.getValue(), this.getHandle().getRegistry().key()));
     }
 
     @Override
-    public Statistic<S> of(final S value) {
+    public Statistic<S> forValue(final S value) {
         if (!this.typeCheck.test(value)) {
             throw new IllegalArgumentException(value + " is not valid for stat type " + this.getKey());
         }

@@ -174,7 +174,7 @@ public interface CustomStatistic extends Keyed, Translatable {
      * @return the statistic for the custom stat.
      */
     default Statistic<CustomStatistic> stat() {
-        return StatisticType.CUSTOM.of(this);
+        return StatisticType.CUSTOM.forValue(this);
     }
 
     private static CustomStatistic get(@KeyPattern.Value final String key) {

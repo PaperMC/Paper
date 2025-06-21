@@ -37,10 +37,10 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;
-        this.entityType = statistic.value() instanceof final EntityType et ? et : null;
-        if (statistic.value() instanceof final ItemType it) {
+        this.entityType = statistic.owner() instanceof final EntityType et ? et : null;
+        if (statistic.owner() instanceof final ItemType it) {
             this.material = it.asMaterial();
-        } else if (statistic.value() instanceof final BlockType bt) {
+        } else if (statistic.owner() instanceof final BlockType bt) {
             this.material = bt.asMaterial();
         } else {
             this.material = null;
