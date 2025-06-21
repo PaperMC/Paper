@@ -204,10 +204,6 @@ public final class Rewriters {
         sourceSet
             .register("CraftBlockData#MAP", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
             .register("CraftBlockEntityStates", Types.CRAFT_BLOCK_STATES, new CraftBlockEntityStateMapping())
-            .register(Types.CRAFT_STATISTIC, composite(
-                holder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),
-                holder("CraftStatisticType", new StatisticRewriter.CraftType())
-            ))
             .register(Types.CRAFT_POTION_UTIL, composite(
                 holder("CraftPotionUtil#upgradeable", new CraftPotionUtilRewriter("strong")),
                 holder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))
