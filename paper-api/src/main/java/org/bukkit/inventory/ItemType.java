@@ -1,10 +1,13 @@
 package org.bukkit.inventory;
 
 import com.google.common.collect.Multimap;
+import io.papermc.paper.datacomponent.DataComponentType;
+import java.util.Set;
 import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.World;
@@ -36,17 +39,14 @@ import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
- * While this API is in a public interface, it is not intended for use by
- * plugins until further notice. The purpose of these types is to make
- * {@link Material} more maintenance friendly, but will in due time be the
- * official replacement for the aforementioned enum. Entirely incompatible
- * changes may occur. Do not use this API in plugins.
+ * Represents an item type.
  */
-@ApiStatus.Experimental // Paper - already required for registry builders
+@NullMarked
 public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
 
     /**
@@ -54,7 +54,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * at compile time.
      *
      * @param <M> the generic type of the item meta that represents the item type.
+     * @apiNote Do not use methods exclusive to this interface unless you are
+     * fine with them being possibly removed in the future.
      */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
     interface Typed<M extends ItemMeta> extends ItemType {
 
         /**
@@ -63,7 +67,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
          * @return the ItemMeta class of this ItemType
          */
         @Override
-        @NotNull
+        @ApiStatus.Experimental
         Class<M> getItemMetaClass();
 
         /**
@@ -73,7 +77,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
          *                         May be null if no intent exists to mutate the item meta at this point.
          * @return the created and configured item stack.
          */
-        @NotNull
+        @ApiStatus.Experimental
         ItemStack createItemStack(@Nullable Consumer<? super M> metaConfigurator);
 
         /**
@@ -84,7 +88,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
          *                         May be null if no intent exists to mutate the item meta at this point.
          * @return the created and configured item stack.
          */
-        @NotNull
+        @ApiStatus.Experimental
         ItemStack createItemStack(int amount, @Nullable Consumer<? super M> metaConfigurator);
     }
 
@@ -2923,18 +2927,19 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     // End generate - ItemType
     //</editor-fold>
 
-    @NotNull
-    private static <M extends ItemType> M getItemType(@NotNull String key) {
+    @SuppressWarnings("unchecked")
+    private static <M extends ItemType> M getItemType(@KeyPattern.Value final String key) {
         // Cast instead of using ItemType#typed, since item type can be a mock during testing and would return null
-        return (M) Registry.ITEM.getOrThrow(NamespacedKey.minecraft(key));
+        return (M) Registry.ITEM.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
      * Yields this item type as a typed version of itself with a plain {@link ItemMeta} representing it.
      *
      * @return the typed item type.
+     * @apiNote The Typed interface is experimental and may be removed in future versions.
      */
-    @NotNull
+    @ApiStatus.Experimental
     Typed<ItemMeta> typed();
 
     /**
@@ -2943,16 +2948,16 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @param itemMetaType the class type of the {@link ItemMeta} to type this {@link ItemType} with.
      * @param <M> the generic type of the item meta to type this item type with.
      * @return the typed item type.
+     * @apiNote The Typed interface is experimental and may be removed in future versions.
      */
-    @NotNull
-    <M extends ItemMeta> Typed<M> typed(@NotNull Class<M> itemMetaType);
+    @ApiStatus.Experimental
+    <M extends ItemMeta> Typed<M> typed(Class<M> itemMetaType);
 
     /**
      * Constructs a new itemstack with this item type that has the amount 1.
      *
      * @return the constructed item stack.
      */
-    @NotNull
     ItemStack createItemStack();
 
     /**
@@ -2961,7 +2966,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @param amount the amount of the item stack.
      * @return the constructed item stack.
      */
-    @NotNull
     ItemStack createItemStack(int amount);
 
     /**
@@ -2976,11 +2980,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Returns the corresponding {@link BlockType} for the given ItemType.
      * <p>
      * If there is no corresponding {@link BlockType} an error will be thrown.
+     * <p>This is <b>NOT</b> the same as the {@link BlockType} with the same key,
+     * but instead is the block associated with this item if this item represents a block.</p>
      *
      * @return the corresponding BlockType
      * @see #hasBlockType()
      */
-    @NotNull
     BlockType getBlockType();
 
     /**
@@ -2988,7 +2993,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @return the ItemMeta class of this ItemType
      */
-    @NotNull
     Class<? extends ItemMeta> getItemMetaClass();
 
     /**
@@ -3055,20 +3059,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @return the item left behind when crafting, or null if nothing is.
      */
-    @Nullable
-    ItemType getCraftingRemainingItem();
+    @Nullable ItemType getCraftingRemainingItem();
 
-//    /**
-//     * Get the best suitable slot for this item type.
-//     *
-//     * For most items this will be {@link EquipmentSlot#HAND}.
-//     *
-//     * @return the best EquipmentSlot for this item type
-//     */
-//    @NotNull
-//    EquipmentSlot getEquipmentSlot();
-
-    // Paper start - improve default item attribute API
     /**
      * Return an immutable copy of all default {@link Attribute}s and their
      * {@link AttributeModifier}s.
@@ -3080,8 +3072,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the immutable {@link Multimap} with the respective default
      * Attributes and modifiers, or an empty map if no attributes are set.
      */
-    @NotNull @org.jetbrains.annotations.Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers();
-    // Paper end - improve default item attribute API
+    @Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers();
 
     /**
      * Return an immutable copy of all default {@link Attribute}s and their
@@ -3094,8 +3085,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the immutable {@link Multimap} with the respective default
      * Attributes and modifiers, or an empty map if no attributes are set.
      */
-    @NotNull
-    Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(@NotNull EquipmentSlot slot);
+    @Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot);
 
     /**
      * Get the {@link CreativeCategory} to which this item type belongs.
@@ -3103,9 +3093,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the creative category. null if does not belong to a category
      <!-- * @deprecated use #getCreativeCategories() -->
      */
-    @Nullable
     @Deprecated(since = "1.20.6", forRemoval = true)
-    CreativeCategory getCreativeCategory();
+    @Nullable CreativeCategory getCreativeCategory();
 
     /**
      * Gets if the ItemType is enabled by the features in a world.
@@ -3115,7 +3104,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
     @Deprecated(forRemoval = true, since = "1.21.1") // Paper
-    boolean isEnabledByFeature(@NotNull World world);
+    boolean isEnabledByFeature(World world);
 
     /**
      * Tries to convert this ItemType into a Material
@@ -3123,38 +3112,33 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return the converted Material or null
      * @deprecated only for internal use
      */
-    @Nullable
     @Deprecated(since = "1.20.6")
-    Material asMaterial();
+    @Nullable Material asMaterial();
 
-    // Paper start - add Translatable
     /**
      * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
      */
     @Deprecated(forRemoval = true)
     @Override
-    @NotNull String getTranslationKey();
-    // Paper end - add Translatable
+    String getTranslationKey();
 
-    // Paper start - expand ItemRarity API
     /**
      * Returns the item rarity for the item.
      *
      * @return the item rarity (or null if none is set)
      */
     @Nullable ItemRarity getItemRarity();
-    // Paper end - expand ItemRarity API
-    // Paper start - data component API
+
     /**
      * Gets the default value of the data component type for this item type.
      *
      * @param type the data component type
      * @param <T> the value type
      * @return the default value or {@code null} if there is none
-     * @see #hasDefaultData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
+     * @see #hasDefaultData(DataComponentType) for DataComponentType.NonValued
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
-    @Nullable <T> T getDefaultData(io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type);
+    @ApiStatus.Experimental
+    @Nullable <T> T getDefaultData(DataComponentType.Valued<T> type);
 
     /**
      * Checks if the data component type has a default value for this item type.
@@ -3163,14 +3147,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return {@code true} if there is a default value
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
-    boolean hasDefaultData(io.papermc.paper.datacomponent.@NotNull DataComponentType type);
+    boolean hasDefaultData(DataComponentType type);
 
     /**
      * Gets the default data component types for this item type.
      *
      * @return an immutable set of data component types
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
-    java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes();
-    // Paper end - data component API
+    @ApiStatus.Experimental
+    @Unmodifiable Set<DataComponentType> getDefaultDataTypes();
 }
