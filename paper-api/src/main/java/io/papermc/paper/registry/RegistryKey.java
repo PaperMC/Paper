@@ -76,16 +76,14 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
     /**
-     * @apiNote DO NOT USE
+     * Built-in registry for block types.
+     * @see io.papermc.paper.registry.keys.BlockTypeKeys
      */
-    @ApiStatus.Internal
     RegistryKey<BlockType> BLOCK = create("block");
     /**
-     * @apiNote use preferably only in the context of registry entries.
-     * @see io.papermc.paper.registry.data
+     * Built-in registry for item types.
      * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
-    @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
     /**
      * Built-in registry for villager professions.

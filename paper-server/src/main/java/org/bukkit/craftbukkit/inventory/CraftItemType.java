@@ -185,11 +185,6 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
     }
 
-//    @Override
-//    public EquipmentSlot getEquipmentSlot() {
-//        return CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(ItemStack.of(this))));
-//    }
-
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
         return this.getDefaultAttributeModifiers(sg -> true);
