@@ -12,6 +12,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.entity.EntitySerializationFlag;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.Commands;
@@ -819,12 +819,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public void setBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z, org.bukkit.NamespacedKey biomeKey) {
         accessor.setBiome(x, y, z, org.bukkit.Registry.BIOME.getOrThrow(biomeKey));
-    }
-
-    @Override
-    public String getStatisticCriteriaKey(org.bukkit.Statistic statistic) {
-        if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
-        return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
     }
 
     @Override
