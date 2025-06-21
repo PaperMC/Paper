@@ -81,6 +81,14 @@ public final class Types {
 
     public static final ClassNamed BLOCK_DATA_MULTIPLE_FACING = BUKKIT.relativeClassNamed("block.data", "MultipleFacing");
 
+    public static final ClassNamed BLOCK_DATA_RAIL_SHAPE = typed(io.papermc.generator.types.Types.BLOCK_DATA_RAIL_SHAPE);
+
+    public static final ClassNamed AXIS = typed(io.papermc.generator.types.Types.AXIS);
+
+    public static final ClassNamed BLOCK_FACE = typed(io.papermc.generator.types.Types.BLOCK_FACE);
+
+    public static final ClassNamed NOTE = typed(io.papermc.generator.types.Types.NOTE);
+
     public static final ClassNamed NAMED_TEXT_COLOR = ClassNamed.of("net.kyori.adventure.text.format", "NamedTextColor");
 
     public static final ClassNamed REGISTRY_KEY = typed(io.papermc.generator.types.Types.REGISTRY_KEY);
@@ -93,6 +101,19 @@ public final class Types {
 
     public static final ClassNamed GENERATED_FROM = typed(io.papermc.generator.types.Types.GENERATED_FROM);
 
+    public static final ClassNamed BLOCK_PROPERTIES = PAPER.relativeClassNamed("block.property", "BlockProperties");
+
+    public static final ClassNamed BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "BlockProperty");
+
+    public static final ClassNamed BOOLEAN_BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "BooleanBlockProperty");
+
+    public static final ClassNamed ENUM_BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "EnumBlockProperty");
+
+    public static final ClassNamed INTEGER_BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "IntegerBlockProperty");
+
+    public static final ClassNamed ROTATION_BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "RotationBlockProperty");
+
+    public static final ClassNamed NOTE_BLOCK_PROPERTY = PAPER.relativeClassNamed("block.property", "NoteBlockProperty");
 
     public static final ClassNamed CRAFT_BLOCK_DATA = typed(io.papermc.generator.types.Types.CRAFT_BLOCK_DATA);
 
@@ -103,8 +124,6 @@ public final class Types {
     public static final ClassNamed CRAFT_STATISTIC = CRAFT_BUKKIT.relativeClassNamed(null, "CraftStatistic");
 
     public static final ClassNamed CRAFT_POTION_UTIL = CRAFT_BUKKIT.relativeClassNamed("potion", "CraftPotionUtil");
-
-    public static final ClassNamed CRAFT_ARMADILLO = CRAFT_BUKKIT.relativeClassNamed("entity", "CraftArmadillo");
 
     public static final ClassNamed FIELD_RENAME = CRAFT_BUKKIT.relativeClassNamed("legacy", "FieldRename");
 

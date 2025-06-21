@@ -15,6 +15,7 @@ import io.papermc.generator.rewriter.types.registry.RegistryConversionTestRewrit
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
 import io.papermc.generator.rewriter.types.registry.RegistryTagRewriter;
 import io.papermc.generator.rewriter.types.registry.TagRewriter;
+import io.papermc.generator.rewriter.types.simple.BlockPropertiesRewriter;
 import io.papermc.generator.rewriter.types.simple.BlockTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.CraftBlockDataMapping;
 import io.papermc.generator.rewriter.types.simple.CraftBlockEntityStateMapping;
@@ -169,6 +170,7 @@ public final class Rewriters {
             .register("ChickenVariant", new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
             .register("CowVariant", new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
             .register("PigVariant", new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
+            .register("BlockProperties", Types.BLOCK_PROPERTIES, new BlockPropertiesRewriter())
             .register("MemoryKey", new MemoryKeyRewriter())
             .register("ItemType", new ItemTypeRewriter())
             .register("BlockType", new BlockTypeRewriter())

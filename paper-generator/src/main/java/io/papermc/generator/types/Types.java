@@ -19,11 +19,11 @@ public final class Types {
 
     public static final ClassName MINECRAFT_EXPERIMENTAL_REQUIRES = BUKKIT.rootClass("MinecraftExperimental", "Requires");
 
+    public static final ClassName VECTOR = BUKKIT.relativeClass("util", "Vector");
+
     public static final ClassName AXIS = BUKKIT.rootClass("Axis");
 
     public static final ClassName BLOCK_FACE = BUKKIT.relativeClass("block", "BlockFace");
-
-    public static final ClassName VECTOR = BUKKIT.relativeClass("util", "Vector");
 
     public static final ClassName NOTE = BUKKIT.rootClass("Note");
 
