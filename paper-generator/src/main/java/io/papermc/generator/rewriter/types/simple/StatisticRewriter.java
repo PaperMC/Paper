@@ -95,14 +95,13 @@ public class StatisticRewriter {
                 throw new IllegalStateException("Unable to translate stat type generic " + genericType.getCanonicalName() + " into the api!");
             }
 
-            final List<String> arguments = List.of(
+            List<String> arguments = List.of(
                 quoted(reference.key().location().getPath()),
                 "%s.%s".formatted(Statistic.Type.class.getSimpleName(), TYPE_MAPPING.get(genericType))
             );
             return super.rewriteEnumValue(reference)
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
                 .arguments(arguments);
-
         }
     }
 }
