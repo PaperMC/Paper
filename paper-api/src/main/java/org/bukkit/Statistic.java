@@ -190,7 +190,7 @@ public enum Statistic implements Keyed {
         ENTITY;
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated
     @ApiStatus.Internal
     public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
         Key key = stat.type().key();
@@ -201,7 +201,7 @@ public enum Statistic implements Keyed {
     }
 
     @SuppressWarnings("unchecked")
-    @Deprecated(forRemoval = true)
+    @Deprecated
     @ApiStatus.Internal
     public io.papermc.paper.statistic.Statistic<?> toModern(@Nullable EntityType entityType, @Nullable Material material) {
         Preconditions.checkArgument(entityType == null || material == null, "No stat has an entity type and material value at the same time");

@@ -315,17 +315,17 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @param statistic the stat to decrement
      * @param amount the value to decrement by
+     * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the stat would have a negative value after decrementing it
      */
-    default void decrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic, final int amount) {
-        this.incrementStatistic(statistic, -amount);
-    }
+    void decrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic, final int amount);
 
     /**
      * Increments the given stat for this player.
      *
      * @param statistic the stat to increment
      * @param amount the amount to increment by
+     * @throws IllegalArgumentException if amount is negative
      */
     void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount);
 
@@ -379,6 +379,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Nullable Location getRespawnLocation(boolean loadLocationAndValidate);
 
+    //<editor-fold desc="deprecated statistic methods" defaultstate="collapsed">
     /**
      * Increments the given statistic for this player.
      * <p>
@@ -424,6 +425,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @throws IllegalArgumentException if amount isn't positive
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
     @Deprecated(since = "1.21.6")
@@ -440,6 +442,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @throws IllegalArgumentException if amount isn't positive
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
@@ -552,6 +555,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param amount Amount to increment this statistic by
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if material is null
+     * @throws IllegalArgumentException if amount isn't positive
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
@@ -571,6 +575,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param amount Amount to decrement this statistic by
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if material is null
+     * @throws IllegalArgumentException if amount isn't positive
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
@@ -673,6 +678,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param amount Amount to increment this statistic by
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if entityType is null
+     * @throws IllegalArgumentException if amount isn't positive
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
@@ -692,6 +698,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param amount Amount to decrement this statistic by
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if entityType is null
+     * @throws IllegalArgumentException if amount isn't positive
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
@@ -723,6 +730,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
         this.setStatistic(statistic.toModern(entityType, null),  newValue);
     }
+    //</editor-fold>
 
     /**
      * Gets the player's last death location.

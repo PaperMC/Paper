@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.statistic.PaperStatistics;
 import io.papermc.paper.statistic.Statistic;
 import java.io.File;
@@ -383,7 +384,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
+    public void decrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
+        if (this.isOnline()) {
+            this.getPlayer().decrementStatistic(statistic, amount);
+        } else {
+            final ServerStatsCounter manager = this.getStatisticManager();
+            PaperStatistics.changeStatistic(manager, statistic, -amount, null);
+            manager.save();
+        }
+    }
+
+    @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         if (this.isOnline()) {
             this.getPlayer().incrementStatistic(statistic, amount);
         } else {
