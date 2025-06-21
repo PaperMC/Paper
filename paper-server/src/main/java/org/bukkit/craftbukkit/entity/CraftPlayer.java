@@ -1589,12 +1589,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
-        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount);
+        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
     }
 
     @Override
     public void setStatistic(final Statistic<?> statistic, final int newAmount) {
-        PaperStatistics.setStatistic(this.getHandle().getStats(), statistic, newAmount);
+        PaperStatistics.setStatistic(this.getHandle().getStats(), statistic, newAmount, this.getHandle());
     }
 
     @Override
