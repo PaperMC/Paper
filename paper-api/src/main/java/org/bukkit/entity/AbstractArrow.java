@@ -1,12 +1,11 @@
 package org.bukkit.entity;
 
+import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
-import java.util.List;
 
 /**
  * Represents an arrow.
@@ -157,7 +156,6 @@ public interface AbstractArrow extends Projectile {
      * @deprecated use {@link #getItemStack()}
      */
     @NotNull
-    @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public ItemStack getItem();
 
@@ -167,7 +165,6 @@ public interface AbstractArrow extends Projectile {
      * @param item ItemStack set to be picked up
      * @deprecated use {@link #setItemStack(ItemStack)}
      */
-    @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public void setItem(@NotNull ItemStack item);
 
@@ -177,7 +174,6 @@ public interface AbstractArrow extends Projectile {
      * @return The firing ItemStack
      */
     @Nullable // Paper
-    @ApiStatus.Experimental
     public ItemStack getWeapon();
 
     /**
@@ -185,7 +181,6 @@ public interface AbstractArrow extends Projectile {
      *
      * @param item The firing ItemStack
      */
-    @ApiStatus.Experimental
     public void setWeapon(@NotNull ItemStack item);
 
     /**

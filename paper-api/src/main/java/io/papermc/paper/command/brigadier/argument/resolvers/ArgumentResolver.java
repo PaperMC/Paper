@@ -3,7 +3,6 @@ package io.papermc.paper.command.brigadier.argument.resolvers;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * An {@link ArgumentResolver} is capable of resolving
@@ -12,8 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> resolved type
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ArgumentResolver<T> {
 

@@ -7,8 +7,6 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#integerRange()
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public non-sealed interface IntegerRangeProvider extends RangeProvider<Integer> {
-
 }
