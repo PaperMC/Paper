@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -65,7 +66,7 @@ public class StatisticRewriter {
     public static class Custom extends EnumRegistryRewriter<ResourceLocation> {
 
         public Custom() {
-            super(Registries.CUSTOM_STAT, false);
+            super(Registries.CUSTOM_STAT, true);
         }
 
         @Override
@@ -125,7 +126,7 @@ public class StatisticRewriter {
         }
 
         public Type() {
-            super(Registries.STAT_TYPE, false);
+            super(Registries.STAT_TYPE, true);
         }
 
         @Override
@@ -141,9 +142,13 @@ public class StatisticRewriter {
                 throw new IllegalStateException("Unable to translate stat type generic " + genericType.getCanonicalName() + " into the api!");
             }
 
+            final List<String> arguments = List.of(
+                quoted(reference.key().location().getPath()),
+                "%s.%s".formatted(Statistic.Type.class.getSimpleName(), TYPE_MAPPING.get(genericType))
+            );
             return super.rewriteEnumValue(reference)
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
-                .argument("%s.%s".formatted(Statistic.Type.class.getSimpleName(), TYPE_MAPPING.get(genericType))); // find a more direct way?
+                .arguments(arguments);
 
         }
     }
