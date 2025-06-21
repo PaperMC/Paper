@@ -1,11 +1,15 @@
 package io.papermc.paper.math.provider;
 
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import net.minecraft.util.random.Weighted;
 import net.minecraft.util.valueproviders.BiasedToBottomInt;
 import net.minecraft.util.valueproviders.ClampedInt;
 import net.minecraft.util.valueproviders.ClampedNormalInt;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.util.valueproviders.WeightedListInt;
+import org.jetbrains.annotations.Unmodifiable;
 
 public interface PaperIntProvider {
 
@@ -76,6 +80,15 @@ public interface PaperIntProvider {
     }
 
     record PaperWeightedList(WeightedListInt handle) implements IntProvider.WeightedList, PaperIntProvider {
+
+        @Override
+        public @Unmodifiable List<WeightedIntProvider> distribution() {
+            final ImmutableList.Builder<WeightedIntProvider> builder = ImmutableList.builder();
+            for (final Weighted<net.minecraft.util.valueproviders.IntProvider> weighted : this.handle.distribution.unwrap()) {
+                builder.add(WeightedIntProvider.create(weighted.weight(), PaperIntProvider.fromMinecraft(weighted.value())));
+            }
+            return builder.build();
+        }
     }
 
     record PaperClampedNormal(ClampedNormalInt handle) implements IntProvider.ClampedNormal, PaperIntProvider {

@@ -108,11 +108,11 @@ import org.jspecify.annotations.Nullable;
 public final class RegistryEntries {
 
     // CraftBukkit entry where implementation start by "Craft"
-    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, @Nullable Class<?> holderElementsClass, Class<? extends Keyed> apiClass) {
+    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass) {
         return entry(registryKey, holderElementsClass, apiClass, "Craft");
     }
 
-    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, @Nullable Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implPrefix) {
+    private static <T> RegistryEntry<T> entry(ResourceKey<? extends Registry<T>> registryKey, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implPrefix) {
         String name = io.papermc.typewriter.util.ClassHelper.retrieveFullNestedName(apiClass);
         RegistryKeyField<T> registryKeyField = (RegistryKeyField<T>) REGISTRY_KEY_FIELDS.get(registryKey);
         String[] classes = name.split("\\.");
@@ -192,7 +192,7 @@ public final class RegistryEntries {
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
         entry(Registries.WORLD_PRESET, WorldPresets.class, WorldPreset.class, "Paper"),
         entry(Registries.DIMENSION_TYPE, DimensionTypes.class, DimensionType.class, "Paper").writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
-        entry(Registries.LEVEL_STEM, null, LevelStem.class, "Paper").writableApiRegistryBuilder(LevelStemRegistryEntry.Builder.class, "PaperLevelStemRegistryEntry.PaperBuilder")
+        entry(Registries.LEVEL_STEM, net.minecraft.world.level.dimension.LevelStem.class, LevelStem.class, "Paper").writableApiRegistryBuilder(LevelStemRegistryEntry.Builder.class, "PaperLevelStemRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
