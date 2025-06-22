@@ -27,6 +27,7 @@ import net.kyori.adventure.text.TranslationArgument;
 import net.kyori.adventure.text.event.DataComponentValue;
 import net.kyori.adventure.text.event.DataComponentValueConverterRegistry;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
@@ -186,6 +187,18 @@ public final class PaperAdventure {
     }
 
     // Component
+
+    // There are edge cases where vanilla can create illegal components that fail the adventure codec roundtrips.
+    // Handle those "safely"
+    // Currently this is needed for command related click events that may have section characters in NMS.
+    public static @NotNull Component asAdventureSafe(@Nullable final net.minecraft.network.chat.Component component) {
+        try {
+            return asAdventure(component);
+        } catch (RuntimeException runtimeException) {
+            runtimeException.printStackTrace();
+            return Component.translatable("multiplayer.message_not_delivered", "Adventure roundtrip").color(NamedTextColor.RED);
+        }
+    }
 
     public static @NotNull Component asAdventure(@Nullable final net.minecraft.network.chat.Component component) {
         return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);

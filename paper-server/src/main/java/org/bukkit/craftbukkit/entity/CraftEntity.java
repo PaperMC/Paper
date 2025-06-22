@@ -797,7 +797,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component teamDisplayName() {
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getHandle().getDisplayName());
+        // Player entities could possibly create a section character in the click event
+        // due to their game profile having an illegal name
+        return io.papermc.paper.adventure.PaperAdventure.asAdventureSafe(this.getHandle().getDisplayName());
     }
 
     @Override
