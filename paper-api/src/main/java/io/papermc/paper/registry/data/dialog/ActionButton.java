@@ -20,8 +20,20 @@ public sealed interface ActionButton permits ActionButtonImpl {
      * @param action  the action to perform when the button is clicked, or null if no action is associated
      * @return a new ActionButton instance
      */
+    @Contract(value = "_, _, _, _ -> new", pure = true)
     static ActionButton create(final Component label, final @Nullable Component tooltip, final int width, final @Nullable DialogAction action) {
         return new ActionButtonImpl(label, tooltip, width, action);
+    }
+
+    /**
+     * Creates a new action button builder with the specified label.
+     *
+     * @param label the label of the button
+     * @return a new ActionButton.Builder instance
+     */
+    @Contract(pure = true, value = "_ -> new")
+    static ActionButton.Builder builder(final Component label) {
+        return new ActionButtonImpl.BuilderImpl(label);
     }
 
     /**
@@ -55,4 +67,45 @@ public sealed interface ActionButton permits ActionButtonImpl {
      */
     @Contract(pure = true)
     @Nullable DialogAction action();
+
+    /**
+     * A builder for creating ActionButton instances.
+     */
+    sealed interface Builder permits ActionButtonImpl.BuilderImpl {
+
+        /**
+         * Sets the tooltip of the action button, or null if no tooltip is desired.
+         *
+         * @param tooltip the tooltip of the button, or null
+         * @return this builder
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder tooltip(@Nullable Component tooltip);
+
+        /**
+         * Sets the width of the action button.
+         *
+         * @param width the width of the button
+         * @return this builder
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder width(int width);
+
+        /**
+         * Sets the action associated with this button, or null if no action is desired.
+         *
+         * @param action the action to perform when the button is clicked, or null
+         * @return this builder
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder action(@Nullable DialogAction action);
+
+        /**
+         * Builds the ActionButton instance with the configured values.
+         *
+         * @return a new ActionButton instance
+         */
+        @Contract(value = "-> new", pure = true)
+        ActionButton build();
+    }
 }
