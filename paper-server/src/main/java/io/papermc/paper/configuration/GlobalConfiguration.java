@@ -28,7 +28,7 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): <insert changes here>
+    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): Migrate server.properties allow-monsters
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
@@ -185,6 +185,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
+        @Comment("This makes the server.properties spawn-monsters block all 'monsters' from spawning by almost any means (spawn eggs, summon cmd, etc.), not just natural spawns")
+        public boolean useLegacySpawnMonstersBehavior = false;
 
         public enum CompressionFormat {
             GZIP,
