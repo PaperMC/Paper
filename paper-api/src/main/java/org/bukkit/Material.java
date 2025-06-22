@@ -3577,9 +3577,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Tries to convert this Material to an item type
      *
      * @return the converted item type or null
-     * @apiNote only for internal use
      */
-    @ApiStatus.Internal
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public ItemType asItemType() {
@@ -3590,9 +3588,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Tries to convert this Material to a block type
      *
      * @return the converted block type or null
-     * @apiNote only for internal use
      */
-    @ApiStatus.Internal
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public BlockType asBlockType() {
