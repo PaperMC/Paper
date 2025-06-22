@@ -196,7 +196,7 @@ public final class PaperAdventure {
             return asAdventure(component);
         } catch (RuntimeException runtimeException) {
             runtimeException.printStackTrace();
-            return Component.translatable("multiplayer.message_not_delivered", "Adventure roundtrip").color(NamedTextColor.RED);
+            return Component.translatable("multiplayer.message_not_delivered", Component.text("Adventure roundtrip")).color(NamedTextColor.RED);
         }
     }
 
