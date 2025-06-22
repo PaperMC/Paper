@@ -9,6 +9,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.GlobalConfiguration;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -56,6 +58,7 @@ import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
@@ -3570,5 +3573,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setDeathScreenScore(final int score) {
         getHandle().setScore(score);
+    }
+
+    @Override
+    public void tempShowDialog(final Dialog dialog) {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().openDialog(PaperDialog.bukkitToMinecraftHolder(dialog));
+    }
+
+    @Override
+    public void tempClearDialog() {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().connection.send(ClientboundClearDialogPacket.INSTANCE);
     }
 }

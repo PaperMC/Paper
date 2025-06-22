@@ -25,7 +25,7 @@ public class CraftArt extends OldEnumHolderable<Art, PaintingVariant> implements
     }
 
     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.PAINTING_VARIANT);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public CraftArt(Holder<PaintingVariant> paintingVariant) {

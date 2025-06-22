@@ -36,7 +36,7 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         if (bukkit == Biome.CUSTOM) {
             return null;
         }
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.BIOME);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public CraftBiome(final Holder<net.minecraft.world.level.biome.Biome> holder) {

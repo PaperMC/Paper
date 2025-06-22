@@ -5,43 +5,38 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
 import org.bukkit.Keyed;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a collection tied to a registry.
  * <p>
- * There are 2<!--3--> types of registry sets:
+ * There are 3 types of registry sets:
  * <ul>
  *     <li>{@link Tag} which is a tag from vanilla or a datapack.
  *     These are obtained via {@link org.bukkit.Registry#getTag(io.papermc.paper.registry.tag.TagKey)}.</li>
- *     <li>{@link RegistryKeySet} which is a set of of keys linked to values that are present in the registry. These are
+ *     <li>{@link RegistryKeySet} which is a set of keys linked to values that are present in the registry. These are
  *     created via {@link #keySet(RegistryKey, Iterable)} or {@link #keySetFromValues(RegistryKey, Iterable)}.</li>
- *     <!-- <li>{@link RegistryValueSet} which is a set of values which are anonymous (don't have keys in the registry). These are
- *     created via {@link #valueSet(RegistryKey, Iterable)}.</li>-->
+ *     <li>{@link RegistryValueSet} which is a set of values which are anonymous (don't have keys in the registry). These are
+ *     created via {@link #valueSet(RegistryKey, Iterable)}.</li>
  * </ul>
  *
  * @param <T> registry value type
  */
-@ApiStatus.Experimental
-@NullMarked
 public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet {
 
-    // TODO uncomment when direct holder sets need to be exposed to the API
-    // /**
-    //  * Creates a {@link RegistryValueSet} from anonymous values.
-    //  * <p>All values provided <b>must not</b> have keys in the given registry.</p>
-    //  *
-    //  * @param registryKey the registry key for the type of these values
-    //  * @param values the values
-    //  * @return a new registry set
-    //  * @param <T> the type of the values
-    //  */
-    // @Contract(value = "_, _ -> new", pure = true)
-    // static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
-    //     return RegistryValueSetImpl.create(registryKey, values);
-    // }
+    /**
+     * Creates a {@link RegistryValueSet} from anonymous values.
+     * <p>All values provided <b>must not</b> have keys in the given registry.</p>
+     *
+     * @param registryKey the registry key for the type of these values
+     * @param values the values
+     * @return a new registry set
+     * @param <T> the type of the values
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
+        return RegistryValueSetImpl.create(registryKey, values);
+    }
 
     /**
      * Creates a {@link RegistryKeySet} from registry-backed values.

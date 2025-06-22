@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.dialog.Dialog;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -3925,4 +3926,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param score New death screen score of player
      */
     void setDeathScreenScore(int score);
+
+    /**
+     * @deprecated JUST FOR DEV TESTING
+     */
+    @Deprecated(forRemoval = true)
+    void tempShowDialog(Dialog dialog);
+
+    /**
+     * @deprecated JUST FOR DEV TESTING
+     */
+    @Deprecated(forRemoval = true)
+    void tempClearDialog();
 }
