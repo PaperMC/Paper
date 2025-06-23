@@ -1,3 +1,4 @@
+import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.data.FileEntry
@@ -10,6 +11,7 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
+    id("io.papermc.fill.gradle") version "1.0.3"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
@@ -371,4 +373,21 @@ tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
     classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
+}
+
+fill {
+    project("paper")
+    versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
+    version(paperweight.minecraftVersion)
+
+    build {
+        channel = BuildChannel.ALPHA
+
+        downloads {
+            register("server:default") {
+                file = tasks.createMojmapPaperclipJar.flatMap { it.outputZip }
+                nameResolver.set { project, _, version, build -> "$project-$version-$build.jar" }
+            }
+        }
+    }
 }
