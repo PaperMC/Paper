@@ -28,7 +28,30 @@
          this.level = level;
          this.broadcast = broadcast;
          this.entity = entity;
-@@ -103,16 +_,22 @@
+@@ -98,21 +_,45 @@
+         this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
+     }
+ 
++    // Paper start - fix desync when a player is added to the tracker
++    public void onPlayerAdd() {
++        // TODO - IMPLEMENT STUBBED METHOD FROM MOONRISE
++    }
++    // Paper end - fix desync when a player is added to the tracker
++    // Paper start - Improve AbstractHurtingProjectile syncing
++    // This can be removed when velocity is no longer downsized when sending it over the protocol.
++    // We create a packet that only updates the velocity on the client.
++    private static final Set<net.minecraft.world.entity.Relative> RELATIVES = net.minecraft.world.entity.Relative.union(Set.of(net.minecraft.world.entity.Relative.X, net.minecraft.world.entity.Relative.Y, net.minecraft.world.entity.Relative.Z), net.minecraft.world.entity.Relative.ROTATION);
++    public Packet<ClientGamePacketListener> getAccurateVelocityPacket() {
++        return new net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket(this.entity.getId(),
++            new net.minecraft.world.entity.PositionMoveRotation(net.minecraft.world.phys.Vec3.ZERO, this.lastSentMovement, 0, 0),
++            RELATIVES,
++            this.wasOnGround
++        );
++    }
++    // Paper end - Improve AbstractHurtingProjectile syncing
++
+     public void sendChanges() {
+         List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
              List<UUID> list = this.mountedOrDismounted(passengers).map(Entity::getUUID).toList();
              this.broadcastWithIgnore.accept(new ClientboundSetPassengersPacket(this.entity), list);
@@ -70,6 +93,15 @@
                  Packet<?> packet = null;
                  boolean flag2 = flag1 || this.tickCount % 60 == 0;
                  boolean flag3 = false;
+@@ -188,7 +_,7 @@
+                                 .accept(
+                                     new ClientboundBundlePacket(
+                                         List.of(
+-                                            new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement),
++                                            this.getAccurateVelocityPacket(), // Paper - Improve AbstractHurtingProjectile syncing
+                                             new ClientboundProjectilePowerPacket(abstractHurtingProjectile.getId(), abstractHurtingProjectile.accelerationPower)
+                                         )
+                                     )
 @@ -227,6 +_,25 @@
  
          this.tickCount++;
@@ -131,6 +163,20 @@
          }
  
          if (!this.entity.getPassengers().isEmpty()) {
+@@ -326,6 +_,13 @@
+         if (this.entity instanceof Leashable leashable && leashable.isLeashed()) {
+             consumer.accept(new ClientboundSetEntityLinkPacket(this.entity, leashable.getLeashHolder()));
+         }
++        // Paper start - Improve AbstractHurtingProjectile syncing
++        // We need to send our more accurate velocity and our acceleration power
++        if (this.entity instanceof AbstractHurtingProjectile abstractHurtingProjectile) {
++            consumer.accept(new ClientboundProjectilePowerPacket(abstractHurtingProjectile.getId(), abstractHurtingProjectile.accelerationPower));
++            consumer.accept(this.getAccurateVelocityPacket());
++        }
++        // Paper end - Improve AbstractHurtingProjectile syncing
+     }
+ 
+     public Vec3 getPositionBase() {
 @@ -359,6 +_,11 @@
          if (this.entity instanceof LivingEntity) {
              Set<AttributeInstance> attributesToSync = ((LivingEntity)this.entity).getAttributes().getAttributesToSync();
