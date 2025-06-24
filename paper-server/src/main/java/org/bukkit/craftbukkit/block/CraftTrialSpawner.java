@@ -2,8 +2,11 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import io.papermc.paper.block.PaperTrialSpawnerConfig;
+import io.papermc.paper.block.TrialSpawnerConfig;
 import java.util.Collection;
 import java.util.UUID;
+import net.minecraft.Optionull;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.block.TrialSpawnerBlock;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
@@ -15,22 +18,48 @@ import org.bukkit.block.TrialSpawner;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEntity> implements TrialSpawner {
 
-    private final CraftTrialSpawnerConfiguration normalConfig;
-    private final CraftTrialSpawnerConfiguration ominousConfig;
+    private @MonotonicNonNull CraftTrialSpawnerConfiguration normalConfig;
+    private @MonotonicNonNull CraftTrialSpawnerConfiguration ominousConfig;
 
     public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity) {
         super(world, blockEntity);
-        this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().normalConfig(), this.getSnapshot());
-        this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().ominousConfig(), this.getSnapshot());
     }
 
-    protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
+    protected CraftTrialSpawner(CraftTrialSpawner state, @Nullable Location location) {
         super(state, location);
-        this.normalConfig = state.normalConfig;
-        this.ominousConfig = state.ominousConfig;
+        // only copy if defined (legacy path)
+        if (state.normalConfig != null) {
+            this.normalConfig = new CraftTrialSpawnerConfiguration(state.normalConfig, this.getSnapshot());
+        }
+        if (state.ominousConfig != null) {
+            this.ominousConfig = new CraftTrialSpawnerConfiguration(state.ominousConfig, this.getSnapshot());
+        }
+    }
+
+    @Override
+    protected void load(TrialSpawnerBlockEntity blockEntity) {
+        super.load(blockEntity);
+        blockEntity.getTrialSpawner().isOminous = this.getBlockEntity().getTrialSpawner().isOminous;
+    }
+
+    @Override
+    protected void applyTo(TrialSpawnerBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
+
+        if (this.normalConfig != null || this.ominousConfig != null) {
+            // only if used, needs to override the modern config for backward compat, remove later
+            blockEntity.trialSpawner.config = blockEntity.trialSpawner.config.withConfigs(
+                Optionull.mapOrDefault(this.normalConfig, config -> Holder.direct(this.normalConfig.toMinecraft()), blockEntity.trialSpawner.config.normal()),
+                Optionull.mapOrDefault(this.ominousConfig, config -> Holder.direct(this.ominousConfig.toMinecraft()), blockEntity.trialSpawner.config.ominous())
+            );
+        }
     }
 
     @Override
@@ -60,7 +89,7 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public void setCooldownLength(int ticks) {
-        this.getSnapshot().trialSpawner.config = this.getSnapshot().trialSpawner.config.overrideTargetCooldownLength(ticks);
+        this.getSnapshot().trialSpawner.config = this.getSnapshot().trialSpawner.config.withTargetCooldownLength(ticks);
     }
 
     @Override
@@ -70,7 +99,7 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.getSnapshot().trialSpawner.config = this.getSnapshot().trialSpawner.config.overrideRequiredPlayerRange(requiredPlayerRange);
+        this.getSnapshot().trialSpawner.config = this.getSnapshot().trialSpawner.config.withRequiredPlayerRange(requiredPlayerRange);
     }
 
     @Override
@@ -164,21 +193,51 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public TrialSpawnerConfiguration getNormalConfiguration() {
+        if (this.normalConfig == null) {
+            this.normalConfig = new CraftTrialSpawnerConfiguration(this.getSnapshot().getTrialSpawner().normalConfig(), this.getSnapshot());
+        }
         return this.normalConfig;
     }
 
     @Override
     public TrialSpawnerConfiguration getOminousConfiguration() {
+        if (this.ominousConfig == null) {
+            this.ominousConfig = new CraftTrialSpawnerConfiguration(this.getSnapshot().getTrialSpawner().ominousConfig(), this.getSnapshot());
+        }
         return this.ominousConfig;
     }
 
     @Override
-    protected void applyTo(TrialSpawnerBlockEntity blockEntity) {
-        super.applyTo(blockEntity);
+    public TrialSpawnerConfig currentConfig() {
+        return this.getSnapshot().getTrialSpawner().isOminous() ? this.ominousConfig() : this.normalConfig();
+    }
 
-        blockEntity.trialSpawner.config = blockEntity.trialSpawner.config.overrideConfigs(
-            Holder.direct(this.normalConfig.toMinecraft()),
-            Holder.direct(this.ominousConfig.toMinecraft())
+    @Override
+    public TrialSpawnerConfig normalConfig() {
+        return PaperTrialSpawnerConfig.minecraftHolderToBukkit(this.getSnapshot().getTrialSpawner().config.normal());
+    }
+
+    @Override
+    public TrialSpawnerConfig ominousConfig() {
+        return PaperTrialSpawnerConfig.minecraftHolderToBukkit(this.getSnapshot().getTrialSpawner().config.ominous());
+    }
+
+    @Override
+    public void configure(TrialSpawnerConfig normalConfig, TrialSpawnerConfig ominousConfig) {
+        this.getTrialData().reset(); // clear to repick from the spawn definition
+        this.getSnapshot().getTrialSpawner().config = this.getSnapshot().getTrialSpawner().config.withConfigs(
+            PaperTrialSpawnerConfig.bukkitToMinecraftHolder(normalConfig),
+            PaperTrialSpawnerConfig.bukkitToMinecraftHolder(ominousConfig)
+        );
+    }
+
+    @Override
+    public void configure(TrialSpawnerConfig currentConfig) {
+        this.getTrialData().reset(); // clear to repick from the spawn definition
+        net.minecraft.world.level.block.entity.trialspawner.TrialSpawner spawner = this.getSnapshot().getTrialSpawner();
+        spawner.config = spawner.config.withConfigs(
+            !spawner.isOminous() ? PaperTrialSpawnerConfig.bukkitToMinecraftHolder(currentConfig) : spawner.config.normal(),
+            spawner.isOminous() ? PaperTrialSpawnerConfig.bukkitToMinecraftHolder(currentConfig) : spawner.config.ominous()
         );
     }
 

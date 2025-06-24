@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import java.util.Collection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -165,17 +166,17 @@ public interface TrialSpawner extends TileState {
 
     /**
      * Checks if this spawner is using the ominous
-     * {@link TrialSpawnerConfiguration}.
+     * {@link TrialSpawnerConfig}.
      *
      * @return true is using the ominous configuration
      */
-    boolean isOminous();
+    boolean isOminous(); // deprecate? in favour of just checking the block data? more explicit
 
     /**
      * Changes this spawner between the normal and ominous
-     * {@link TrialSpawnerConfiguration}.
+     * {@link TrialSpawnerConfig}.
      *
-     * @param ominous true to use the ominous TrialSpawnerConfiguration, false to
+     * @param ominous true to use the ominous TrialSpawnerConfig, false to
      *                use the normal one.
      */
     void setOminous(boolean ominous);
@@ -185,8 +186,10 @@ public interface TrialSpawner extends TileState {
      * false.
      *
      * @return the TrialSpawnerConfiguration
+     * @deprecated TrialSpawnerConfiguration is poorly designed and is replaced by {@link io.papermc.paper.block.TrialSpawnerConfig}
      */
-    @ApiStatus.Experimental
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.2")
+    @Deprecated(since = "1.21.11", forRemoval = true)
     TrialSpawnerConfiguration getNormalConfiguration();
 
     /**
@@ -194,7 +197,16 @@ public interface TrialSpawner extends TileState {
      * true.
      *
      * @return the TrialSpawnerConfiguration
+     * @deprecated TrialSpawnerConfiguration is poorly designed and is replaced by {@link io.papermc.paper.block.TrialSpawnerConfig}
      */
-    @ApiStatus.Experimental
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.2")
+    @Deprecated(since = "1.21.11", forRemoval = true)
     TrialSpawnerConfiguration getOminousConfiguration();
+
+    TrialSpawnerConfig currentConfig();
+    TrialSpawnerConfig normalConfig();
+    TrialSpawnerConfig ominousConfig();
+
+    void configure(TrialSpawnerConfig normalConfig, TrialSpawnerConfig ominousConfig);
+    void configure(TrialSpawnerConfig currentConfig);
 }

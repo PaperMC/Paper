@@ -23,6 +23,7 @@ import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
+import io.papermc.paper.block.TrialSpawnerConfigs;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
@@ -223,6 +224,7 @@ public final class Rewriters {
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("TrialSpawnerConfigs", TrialSpawnerConfigs.class, new RegistryFieldRewriter<>(Registries.TRIAL_SPAWNER_CONFIG, "getConfig"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
