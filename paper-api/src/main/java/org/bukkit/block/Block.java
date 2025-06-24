@@ -592,6 +592,18 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience);
 
     /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     * with a specific tool
+     *
+     * @param tool The tool or item in hand used for digging
+     * @param triggerEffect Play the block break particle effect and sound
+     * @param dropExperience drop exp if the block normally does so
+     * @param forceEffect Force {@code triggerEffect} even if the block is not normally breakable by the tool
+     * @return true if the block was destroyed
+     */
+    boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience, boolean forceEffect);
+
+    /**
      * Causes the block to be ticked, this is different from {@link Block#randomTick()},
      * in that it is usually scheduled to occur, for example
      * redstone components being activated, sand falling, etc.
