@@ -3,7 +3,6 @@ package io.papermc.paper.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,59 +13,25 @@ import org.jspecify.annotations.Nullable;
  * Called before a block is used by a player, allowing plugins to override or alter interaction behavior.
  * <p>
  * This event occurs prior to any vanilla interaction logic. It allows for intercepting
- * the interaction attempt and optionally specifying a {@link BlockUseResult} override that will
+ * the interaction attempt and optionally specifying a {@link BlockUseEvent.Result} override that will
  * replace standard behavior.
  * <p>
  * This event is useful for controlling or blocking interactions entirely, customizing behavior,
  * or injecting logic before the result of the block use is finalized.
  *
  * @see BlockUsedEvent
- * @see BlockUseResult
+ * @see BlockUseEvent.Result
  */
 @NullMarked
-public class BlockPreUseEvent extends BlockEvent {
+public class BlockPreUseEvent extends BlockUseEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Player player;
-    private final @Nullable ItemStack item;
-    private final EquipmentSlot hand;
-    private @Nullable BlockUseResult resultOverride;
+    private BlockUseEvent.@Nullable Result resultOverride;
 
     @ApiStatus.Internal
     public BlockPreUseEvent(final Block block, final Player player, final @Nullable ItemStack item, final EquipmentSlot hand) {
-        super(block);
-        this.player = player;
-        this.item = item;
-        this.hand = hand;
-    }
-
-    /**
-     * Gets the player interacting with the block.
-     *
-     * @return the player
-     */
-    public Player getPlayer() {
-        return player;
-    }
-
-    /**
-     * Gets the item used to interact with the block,
-     * or {@code null} if no item was used.
-     *
-     * @return the item used in the interaction, or {@code null}
-     */
-    public @Nullable ItemStack getItem() {
-        return item;
-    }
-
-    /**
-     * Gets the hand used to interact with the block.
-     *
-     * @return the hand
-     */
-    public EquipmentSlot getHand() {
-        return hand;
+        super(block, player, item, hand);
     }
 
     /**
@@ -77,7 +42,7 @@ public class BlockPreUseEvent extends BlockEvent {
      *
      * @return the result override, or {@code null} if not overridden
      */
-    public @Nullable BlockUseResult getResultOverride() {
+    public BlockUseEvent.@Nullable Result getResultOverride() {
         return resultOverride;
     }
 
@@ -85,11 +50,11 @@ public class BlockPreUseEvent extends BlockEvent {
      * Sets a result override for this interaction.
      * <p>
      * When set, vanilla behavior for this block interaction is skipped
-     * in favor of the provided {@link BlockUseResult}.
+     * in favor of the provided {@link BlockUseEvent.Result}.
      *
      * @param resultOverride the result to override interaction logic with, or {@code null} to clear
      */
-    public void setResultOverride(final @Nullable BlockUseResult resultOverride) {
+    public void setResultOverride(final BlockUseEvent.@Nullable Result resultOverride) {
         this.resultOverride = resultOverride;
     }
 

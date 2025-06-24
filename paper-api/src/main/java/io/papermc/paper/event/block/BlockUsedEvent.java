@@ -3,7 +3,6 @@ package io.papermc.paper.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,53 +20,19 @@ import org.jspecify.annotations.Nullable;
  * or reacting to completed interactions.
  *
  * @see BlockPreUseEvent
- * @see BlockUseResult
+ * @see BlockUseEvent.Result
  */
 @NullMarked
-public class BlockUsedEvent extends BlockEvent {
+public class BlockUsedEvent extends BlockUseEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Player player;
-    private final @Nullable ItemStack item;
-    private final EquipmentSlot hand;
-    private final BlockUseResult result;
+    private final BlockUseEvent.Result result;
 
     @ApiStatus.Internal
-    public BlockUsedEvent(final Block block, final Player player, final @Nullable ItemStack item, final EquipmentSlot hand, final BlockUseResult resultOverride) {
-        super(block);
-        this.player = player;
-        this.item = item;
-        this.hand = hand;
+    public BlockUsedEvent(final Block block, final Player player, final @Nullable ItemStack item, final EquipmentSlot hand, final BlockUseEvent.Result resultOverride) {
+        super(block, player, item, hand);
         this.result = resultOverride;
-    }
-
-    /**
-     * Gets the player interacting with the block.
-     *
-     * @return the player
-     */
-    public Player getPlayer() {
-        return player;
-    }
-
-    /**
-     * Gets the item used to interact with the block,
-     * or {@code null} if no item was used.
-     *
-     * @return the item used in the interaction, or {@code null}
-     */
-    public @Nullable ItemStack getItem() {
-        return item;
-    }
-
-    /**
-     * Gets the hand used to interact with the block.
-     *
-     * @return the hand
-     */
-    public EquipmentSlot getHand() {
-        return hand;
     }
 
     /**
@@ -78,7 +43,7 @@ public class BlockUsedEvent extends BlockEvent {
      *
      * @return the result
      */
-    public BlockUseResult getResult() {
+    public BlockUseEvent.Result getResult() {
         return result;
     }
 
