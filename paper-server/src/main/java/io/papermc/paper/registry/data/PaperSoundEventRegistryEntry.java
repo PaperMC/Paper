@@ -23,14 +23,14 @@ public class PaperSoundEventRegistryEntry implements SoundEventRegistryEntry {
     protected @Nullable Identifier location;
     protected @Nullable Float fixedRange;
 
-    public PaperSoundEventRegistryEntry(final Conversions conversions, final @Nullable SoundEvent soundEvent) {
+    public PaperSoundEventRegistryEntry(final Conversions conversions, final @Nullable SoundEvent internal) {
         this.conversions = conversions;
-        if (soundEvent == null) {
+        if (internal == null) {
             return;
         }
 
-        this.location = soundEvent.location();
-        this.fixedRange = soundEvent.fixedRange().orElse(null);
+        this.location = internal.location();
+        this.fixedRange = internal.fixedRange().orElse(null);
     }
 
     @Override
@@ -45,8 +45,8 @@ public class PaperSoundEventRegistryEntry implements SoundEventRegistryEntry {
 
     public static final class PaperBuilder extends PaperSoundEventRegistryEntry implements SoundEventRegistryEntry.Builder, PaperRegistryBuilder<SoundEvent, Sound> {
 
-        public PaperBuilder(final Conversions conversions, final @Nullable SoundEvent soundEvent) {
-            super(conversions, soundEvent);
+        public PaperBuilder(final Conversions conversions, final @Nullable SoundEvent internal) {
+            super(conversions, internal);
         }
 
         @Override
