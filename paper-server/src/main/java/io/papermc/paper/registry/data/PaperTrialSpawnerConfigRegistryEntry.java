@@ -25,17 +25,19 @@ import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
+import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperTrialSpawnerConfigRegistryEntry implements TrialSpawnerConfigRegistryEntry {
 
     protected final Conversions conversions;
-    protected int spawnRange;
-    protected float totalMobs;
-    protected float simultaneousMobs;
-    protected float totalMobsAddedPerPlayer;
-    protected float simultaneousMobsAddedPerPlayer;
-    protected int ticksBetweenSpawn;
+    protected int spawnRange = TrialSpawnerConfig.DEFAULT.spawnRange();
+    protected float totalMobs = TrialSpawnerConfig.DEFAULT.totalMobs();
+    protected float simultaneousMobs = TrialSpawnerConfig.DEFAULT.simultaneousMobs();
+    protected float totalMobsAddedPerPlayer = TrialSpawnerConfig.DEFAULT.totalMobsAddedPerPlayer();
+    protected float simultaneousMobsAddedPerPlayer = TrialSpawnerConfig.DEFAULT.simultaneousMobsAddedPerPlayer();
+    protected int ticksBetweenSpawn = TrialSpawnerConfig.DEFAULT.ticksBetweenSpawn();
     protected WeightedList<SpawnData> spawnPotentialsDefinition = TrialSpawnerConfig.DEFAULT.spawnPotentialsDefinition();
     protected WeightedList<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTablesToEject = TrialSpawnerConfig.DEFAULT.lootTablesToEject();
     protected ResourceKey<net.minecraft.world.level.storage.loot.LootTable> itemsToDropWhenOminous = TrialSpawnerConfig.DEFAULT.itemsToDropWhenOminous();
@@ -122,37 +124,37 @@ public class PaperTrialSpawnerConfigRegistryEntry implements TrialSpawnerConfigR
 
         @Override
         public Builder spawnRange(final @IntRange(from = 1, to = 128) int radius) {
-            this.spawnRange = radius;
+            this.spawnRange = asArgumentRange(radius, "spawnRange", 1, 128);
             return this;
         }
 
         @Override
         public Builder totalMobs(final @NonNegative float amount) {
-            this.totalMobs = amount;
+            this.totalMobs = asArgumentMin(amount, "totalMobs", 0.0F);
             return this;
         }
 
         @Override
         public Builder simultaneousMobs(final @NonNegative float amount) {
-            this.simultaneousMobs = amount;
+            this.simultaneousMobs = asArgumentMin(amount, "simultaneousMobs", 0.0F);
             return this;
         }
 
         @Override
         public Builder totalAddedMobs(final @NonNegative float amount) {
-            this.totalMobsAddedPerPlayer = amount;
+            this.totalMobsAddedPerPlayer = asArgumentMin(amount, "totalMobsAddedPerPlayer", 0.0F);
             return this;
         }
 
         @Override
         public Builder simultaneousAddedMobs(final @NonNegative float amount) {
-            this.simultaneousMobsAddedPerPlayer = amount;
+            this.simultaneousMobsAddedPerPlayer = asArgumentMin(amount, "simultaneousMobsAddedPerPlayer", 0.0F);
             return this;
         }
 
         @Override
         public Builder ticksBetweenSpawn(final @NonNegative int amount) {
-            this.ticksBetweenSpawn = amount;
+            this.ticksBetweenSpawn = asArgumentMin(amount, "ticksBetweenSpawn", 0);
             return this;
         }
 
