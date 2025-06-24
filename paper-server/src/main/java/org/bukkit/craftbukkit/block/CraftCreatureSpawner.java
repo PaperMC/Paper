@@ -50,7 +50,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
         }
 
         try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(() -> "spawner@" + getLocation(), LOGGER)) {
-            ValueInput valueInput = TagValueInput.create(scopedCollector, this.getInternalWorld().registryAccess(), spawnData.entityToSpawn());
+            ValueInput valueInput = TagValueInput.create(scopedCollector, this.getRegistryAccess(), spawnData.entityToSpawn());
             Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(valueInput);
             return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
         }
@@ -182,7 +182,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
             return null;
         }
         try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(() -> "spawner@" + getLocation(), LOGGER)) {
-            ValueInput valueInput = TagValueInput.create(scopedCollector, this.getInternalWorld().registryAccess(), spawnData.getEntityToSpawn());
+            ValueInput valueInput = TagValueInput.create(scopedCollector, this.getRegistryAccess(), spawnData.getEntityToSpawn());
             Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(valueInput);
 
             return type.map(CraftEntityType::minecraftToBukkit).map(CraftEntityType::bukkitToString).orElse(null);
