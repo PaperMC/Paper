@@ -23,35 +23,6 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
     }
 
     @Override
-    public boolean setFacingDirection(BlockFace face, boolean force) {
-        HangingEntity hanging = this.getHandle();
-        Direction oldDir = hanging.getDirection();
-        Direction newDir = CraftBlock.blockFaceToNotch(face);
-
-        Preconditions.checkArgument(newDir != null, "%s is not a valid facing direction", face);
-
-        this.getHandle().setDirection(newDir);
-        if (!force && !this.getHandle().generation && !hanging.survives()) {
-            hanging.setDirection(oldDir);
-            return false;
-        }
-
-        this.update();
-
-        return true;
-    }
-
-    @Override
-    protected void update() {
-        super.update();
-
-        // update redstone
-        if (!this.getHandle().generation) {
-            this.getHandle().level().updateNeighbourForOutputSignal(this.getHandle().getPos(), Blocks.AIR);
-        }
-    }
-
-    @Override
     public void setItem(org.bukkit.inventory.ItemStack item) {
         this.setItem(item, true);
     }

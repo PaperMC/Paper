@@ -44,14 +44,4 @@ public class CraftPainting extends CraftHanging implements Painting {
         //this.update(); Paper - Don't resent entity on art update
         return true;
     }
-
-    @Override
-    public boolean setFacingDirection(BlockFace face, boolean force) {
-        if (super.setFacingDirection(face, force)) {
-            this.update();
-            return true;
-        }
-
-        return false;
-    }
 }

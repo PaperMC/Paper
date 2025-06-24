@@ -46,10 +46,6 @@ public interface Fireball extends Projectile, Explosive {
      * The acceleration gets applied to the velocity every tick, depending on
      * the specific type of the fireball a damping / drag factor is applied so
      * that the velocity does not grow into infinity.
-     * <br>
-     * <b>Note:</b> that the client may not respect non-default acceleration
-     * power and will therefore mispredict the location of the fireball, causing
-     * visual stutter.
      *
      * @param acceleration the acceleration
      */

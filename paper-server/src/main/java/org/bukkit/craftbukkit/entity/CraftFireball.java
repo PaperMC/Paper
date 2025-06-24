@@ -62,9 +62,10 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     public void setAcceleration(@NotNull Vector acceleration) {
         Preconditions.checkArgument(acceleration != null, "Vector acceleration cannot be null");
         // SPIGOT-6993: AbstractHurtingProjectile#assignDirectionalMovement will normalize the given values
-        // Note: Because of MC-80142 the fireball will stutter on the client when setting the power to something other than 0 or the normalized vector * 0.1
-        this.getHandle().assignDirectionalMovement(CraftVector.toVec3(acceleration), acceleration.length());
-        this.update(); // SPIGOT-6579
+        // Set the acceleration power in order to properly sync the movement to the client
+        double length = acceleration.length();
+        this.getHandle().accelerationPower = length;
+        this.getHandle().assignDirectionalMovement(CraftVector.toVec3(acceleration), length);
     }
 
     @NotNull
