@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
@@ -26,4 +27,6 @@ public interface InlinedRegistryBuilderProvider {
     MusicInstrument createInstrument(Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value);
 
     Dialog createDialog(Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value);
+
+    TrialSpawnerConfig createTrialSpawnerConfig(final Consumer<RegistryBuilderFactory<TrialSpawnerConfig, ? extends TrialSpawnerConfigRegistryEntry.Builder>> value);
 }
