@@ -32,7 +32,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
 
     public static final class CallbackManager {
 
-        private final Map<UUID , StoredCallback> callbacks = new HashMap<>();
+        private final Map<UUID, StoredCallback> callbacks = new HashMap<>();
         private final Queue<StoredCallback> queue = new ConcurrentLinkedQueue<>();
 
         private CallbackManager() {
