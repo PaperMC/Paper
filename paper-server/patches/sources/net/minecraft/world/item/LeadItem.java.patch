@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/LeadItem.java
 +++ b/net/minecraft/world/item/LeadItem.java
-@@ -26,24 +_,43 @@
+@@ -26,24 +_,46 @@
          if (blockState.is(BlockTags.FENCES)) {
              Player player = context.getPlayer();
              if (!level.isClientSide && player != null) {
@@ -22,15 +22,19 @@
 +        for (java.util.Iterator<Leashable> iterator = list.iterator(); iterator.hasNext();) { // Paper - use iterator to remove
 +            Leashable leashable = iterator.next(); // Paper - use iterator to remove
              if (leashFenceKnotEntity == null) {
-                 leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos);
+-                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos);
 +                // CraftBukkit start - fire HangingPlaceEvent
-+                org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(interactionHand);
-+                org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) leashFenceKnotEntity.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, hand);
-+                level.getCraftServer().getPluginManager().callEvent(event);
++                java.util.concurrent.atomic.AtomicBoolean created = new java.util.concurrent.atomic.AtomicBoolean(false);
++                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos, created);
++                if (created.get()) {
++                    org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(interactionHand);
++                    org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) leashFenceKnotEntity.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, hand);
++                    level.getCraftServer().getPluginManager().callEvent(event);
 +
-+                if (event.isCancelled()) {
-+                    leashFenceKnotEntity.discard(null); // CraftBukkit - add Bukkit remove cause
-+                    return InteractionResult.PASS;
++                    if (event.isCancelled()) {
++                        leashFenceKnotEntity.discard(null); // CraftBukkit - add Bukkit remove cause
++                        return InteractionResult.PASS;
++                    }
 +                }
 +                // CraftBukkit end
                  leashFenceKnotEntity.playPlacementSound();
