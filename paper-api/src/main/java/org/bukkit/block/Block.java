@@ -598,7 +598,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param tool The tool or item in hand used for digging
      * @param triggerEffect Play the block break particle effect and sound
      * @param dropExperience drop exp if the block normally does so
-     * @param forceEffect Force {@code triggerEffect} even if the block is not normally breakable by the tool
+     * @param forceEffect Forces the break effect to be triggered even if the tool is not the correct tool for the block
      * @return true if the block was destroyed
      */
     boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience, boolean forceEffect);
