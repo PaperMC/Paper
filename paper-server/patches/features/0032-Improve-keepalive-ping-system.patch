@@ -1,0 +1,204 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 24 Jun 2025 03:41:38 -0700
+Subject: [PATCH] Improve keepalive ping system
+
+Send more keepalives, record all transactions within the last minute.
+We send more keepalives so that the latency calculation is more
+accurate. Since we send more keepalives, we track all pending
+keepalives in case multiple end up in flight.
+
+Additionally, replace the latency calculation with a true
+average over the last 5 seconds of keepalive transactions.
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 53f038e1b5e7a13a08a0c925c8bd3f8a40868195..f3eca351021c37b64315872d075bd0a84aeee267 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -461,6 +461,70 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         return this.viewDistanceHolder;
+     }
+     // Paper end - rewrite chunk system
++    // Paper start - improve keepalives
++    public long lastKeepAliveTx = System.nanoTime();
++    public static final record KeepAliveResponse(long txTimeNS, long rxTimeNS) {
++        public long latencyNS() {
++            return this.rxTimeNS - this.txTimeNS;
++        }
++    }
++    public static final record PendingKeepAlive(long txTimeNS, long challengeId) {}
++
++    public final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<PendingKeepAlive> pendingKeepAlives = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
++
++    public final PingCalculator pingCalculator1m = new PingCalculator(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
++    public final PingCalculator pingCalculator5s = new PingCalculator(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
++
++    public static final class PingCalculator {
++
++        private final long intervalNS;
++        private final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<KeepAliveResponse> responses = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
++
++        private long timeSumNS;
++        private int timeSumCount;
++        private volatile long lastAverageNS;
++
++        public PingCalculator(long intervalNS) {
++            this.intervalNS = intervalNS;
++        }
++
++        public void update(KeepAliveResponse response) {
++            long currTime = response.txTimeNS;
++
++            this.responses.add(response);
++
++            ++this.timeSumCount;
++            this.timeSumNS += response.latencyNS();
++
++            // remove out-of-window times
++            KeepAliveResponse removed;
++            while ((removed = this.responses.pollIf((ka) -> (currTime - ka.txTimeNS) > this.intervalNS)) != null) {
++                --this.timeSumCount;
++                this.timeSumNS -= removed.latencyNS();
++            }
++
++            this.lastAverageNS = this.timeSumNS / (long)this.timeSumCount;
++        }
++
++        public int getAvgLatencyMS() {
++            return (int)java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(this.getAvgLatencyNS());
++        }
++
++        public long getAvgLatencyNS() {
++            return this.lastAverageNS;
++        }
++
++        public it.unimi.dsi.fastutil.longs.LongArrayList getAllNS() {
++            it.unimi.dsi.fastutil.longs.LongArrayList ret = new it.unimi.dsi.fastutil.longs.LongArrayList();
++
++            for (KeepAliveResponse response : this.responses) {
++                ret.add(response.latencyNS());
++            }
++
++            return ret;
++        }
++    }
++    // Paper end - improve keepalives
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
+         super(level, gameProfile);
+diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ecb382e369 100644
+--- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -38,12 +38,12 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     protected final MinecraftServer server;
+     public final Connection connection; // Paper
+     private final boolean transferred;
+-    private long keepAliveTime;
+-    private boolean keepAlivePending;
+-    private long keepAliveChallenge;
++    //private long keepAliveTime; // Paper - improve keepalives
++    //private boolean keepAlivePending; // Paper - improve keepalives
++    //private long keepAliveChallenge; // Paper - improve keepalives
+     private long closedListenerTime;
+     private boolean closed = false;
+-    private int latency;
++    private volatile int latency; // Paper - improve keepalives - make volatile
+     private volatile boolean suspendFlushingOnServerThread = false;
+     // CraftBukkit start
+     protected final net.minecraft.server.level.ServerPlayer player;
+@@ -57,7 +57,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, net.minecraft.server.level.ServerPlayer player) { // CraftBukkit
+         this.server = server;
+         this.connection = connection;
+-        this.keepAliveTime = Util.getMillis();
++        //this.keepAliveTime = Util.getMillis(); // Paper - improve keepalives
+         this.latency = cookie.latency();
+         this.transferred = cookie.transferred();
+         // CraftBukkit start - add fields and methods
+@@ -120,13 +120,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+     @Override
+     public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
+-        if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
+-            int i = (int)(Util.getMillis() - this.keepAliveTime);
+-            this.latency = (this.latency * 3 + i) / 4;
+-            this.keepAlivePending = false;
+-        } else if (!this.isSingleplayerOwner()) {
+-            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
++        // Paper start - improve keepalives
++        long now = System.nanoTime();
++        net.minecraft.server.level.ServerPlayer.PendingKeepAlive pending = this.player.pendingKeepAlives.peek();
++        if (pending != null && pending.challengeId() == packet.getId()) {
++            this.player.pendingKeepAlives.remove(pending);
++
++            net.minecraft.server.level.ServerPlayer.KeepAliveResponse response = new net.minecraft.server.level.ServerPlayer.KeepAliveResponse(pending.txTimeNS(), now);
++
++            this.player.pingCalculator1m.update(response);
++            this.player.pingCalculator5s.update(response);
++
++            this.latency = this.player.pingCalculator5s.getAvgLatencyMS();
++            return;
++        }
++
++        for (java.util.Iterator<net.minecraft.server.level.ServerPlayer.PendingKeepAlive> itr = this.player.pendingKeepAlives.iterator(); itr.hasNext();) {
++            net.minecraft.server.level.ServerPlayer.PendingKeepAlive ka = itr.next();
++            if (ka.challengeId() == packet.getId()) {
++                itr.remove();
++
++                if (!this.processedDisconnect) {
++                    LOGGER.info("Disconnecting " + this.player.getScoreboardName() + " for sending keepalive response (" + packet.getId() + ") out-of-order!");
++                    this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++                    return;
++                }
++                break;
++            }
+         }
++
++        if (!this.processedDisconnect) {
++            LOGGER.info("Disconnecting " + this.player.getScoreboardName() + " for sending keepalive response (" + packet.getId() + ") without matching challenge!");
++            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++            return;
++        }
++        // Paper end - improve keepalives
+     }
+ 
+     @Override
+@@ -247,20 +275,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     protected void keepConnectionAlive() {
+         Profiler.get().push("keepAlive");
+         long millis = Util.getMillis();
+-        // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
+-        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
+-        final long elapsedTime = millis - this.keepAliveTime;
+-        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
+-            if (this.keepAlivePending) {
+-                if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
+-                    this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+-                }
+-                // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
+-            } else if (this.checkIfClosed(millis)) {
+-                this.keepAlivePending = true;
+-                this.keepAliveTime = millis;
+-                this.keepAliveChallenge = millis;
+-                this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
++        // Paper start - improve keepalives
++        if (this.checkIfClosed(millis) && !this.processedDisconnect) {
++            long currTime = System.nanoTime();
++
++            if ((currTime - this.player.lastKeepAliveTx) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1L)) {
++                this.player.lastKeepAliveTx = currTime;
++
++                net.minecraft.server.level.ServerPlayer.PendingKeepAlive pka = new net.minecraft.server.level.ServerPlayer.PendingKeepAlive(currTime, millis);
++                this.player.pendingKeepAlives.add(pka);
++                this.send(new ClientboundKeepAlivePacket(pka.challengeId()));
++            }
++
++            net.minecraft.server.level.ServerPlayer.PendingKeepAlive oldest = this.player.pendingKeepAlives.peek();
++            if (oldest != null && (currTime - oldest.txTimeNS()) > java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(KEEPALIVE_LIMIT)) {
++                LOGGER.warn(this.player.getScoreboardName() + " was kicked due to keepalive timeout!");
++                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++                // Paper end - improve keepalives
+             }
+         }
+ 
