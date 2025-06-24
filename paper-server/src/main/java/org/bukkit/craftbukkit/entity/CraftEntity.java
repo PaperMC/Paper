@@ -200,7 +200,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         // Paper end
         this.entity.setDeltaMovement(CraftVector.toVec3(velocity));
-        this.entity.hurtMarked = true;
+        this.entity.hasImpulse = true;
     }
 
     /**
