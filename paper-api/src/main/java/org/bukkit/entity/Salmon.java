@@ -28,7 +28,7 @@ public interface Salmon extends io.papermc.paper.entity.SchoolableFish { // Pape
     public enum Variant {
 
         // Start generate - SalmonVariant
-        // @GeneratedFrom 1.21.6
+        // @GeneratedFrom 1.21.7-rc2
         SMALL,
         MEDIUM,
         LARGE;
