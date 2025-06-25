@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -85,13 +86,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private static PermissibleBase perm;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
+    static final PointersSupplier<org.bukkit.entity.Entity> POINTERS_SUPPLIER = PointersSupplier.<org.bukkit.entity.Entity>builder()
+        .resolving(net.kyori.adventure.identity.Identity.DISPLAY_NAME, org.bukkit.entity.Entity::name)
+        .resolving(net.kyori.adventure.identity.Identity.UUID, org.bukkit.entity.Entity::getUniqueId)
+        .resolving(net.kyori.adventure.permission.PermissionChecker.POINTER, entity1 -> entity1::permissionValue)
+        .build();
 
     protected final CraftServer server;
     protected Entity entity;
     private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
-    protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
     // Paper start - Folia shedulers
     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
     private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
@@ -670,15 +675,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public net.kyori.adventure.pointer.Pointers pointers() {
-        if (this.adventure$pointers == null) {
-            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
-                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
-                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
-                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
-                .build();
-        }
-
-        return this.adventure$pointers;
+        return POINTERS_SUPPLIER.view(this);
     }
 
     @Override
