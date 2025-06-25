@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7-rc2")
 public final class PigVariantKeys {
     /**
      * {@code minecraft:cold}
