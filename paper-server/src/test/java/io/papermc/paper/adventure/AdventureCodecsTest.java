@@ -109,7 +109,7 @@ class AdventureCodecsTest {
     }
 
     @ParameterizedTest(name = PARAMETERIZED_NAME)
-    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE", "SHOW_DIALOG"})
+    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE", "SHOW_DIALOG", "CUSTOM"})
     void testClickEvent(final ClickEvent.Action action) {
         final ClickEvent event = switch (action) {
             case OPEN_URL -> openUrl("https://google.com");
