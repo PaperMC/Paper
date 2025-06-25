@@ -1,6 +1,8 @@
 package io.papermc.paper.connection;
 
 import java.util.Map;
+
+import com.destroystokyo.paper.ClientOption;
 import org.bukkit.ServerLinks;
 
 /**
@@ -34,4 +36,10 @@ public interface PlayerCommonConnection extends WritablePlayerCookieConnection, 
      * @param port port
      */
     void transfer(String host, int port);
+
+    /**
+     * @param type client option
+     * @return the client option value of the player
+     */
+    <T> T getClientOption(ClientOption<T> type);
 }

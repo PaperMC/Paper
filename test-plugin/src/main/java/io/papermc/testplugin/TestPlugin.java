@@ -3,11 +3,23 @@ package io.papermc.testplugin;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.resource.ResourcePackCallback;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
+import net.kyori.adventure.resource.ResourcePackStatus;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+
+import java.net.URI;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class TestPlugin extends JavaPlugin implements Listener {
 
@@ -51,12 +63,24 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     //     event.getConfigurationConnection().storeCookie(NamespacedKey.fromString("paper:has_cookies"), new byte[0]);
     // }
     //
-    // // Now during config task, get their cookie state.
-    // @EventHandler
-    // public void asyncConfigurate(AsyncPlayerConnectionConfigureEvent event) throws InterruptedException {
-    //     Thread.sleep(5000); // wait 5 seconds cause i hate u
-    //     event.getConfigurationConnection().transfer("127.0.0.1", 25565); // Transfer them to a server, now with our special cookie.
-    // }
+     // Now during config task, get their cookie state.
+     @EventHandler
+     public void asyncConfigurate(AsyncPlayerConnectionConfigureEvent event) throws InterruptedException {
+//         CompletableFuture<Void> res = new CompletableFuture<>();
+//        event.getConnection().getAudience().sendResourcePacks(
+//                ResourcePackRequest.addingRequest(ResourcePackInfo.resourcePackInfo(UUID.randomUUID(), URI.create("res"), "hi"))
+//                        .callback(new ResourcePackCallback() {
+//                            @Override
+//                            public void packEventReceived(@NotNull UUID uuid, @NotNull ResourcePackStatus status, @NotNull Audience audience) {
+//                                System.out.println(audience);
+//                                if (status == ResourcePackStatus.SUCCESSFULLY_LOADED) {
+//                                    res.complete(null);
+//                                }
+//                            }
+//                        })
+//        );
+//        res.join();
+     }
     //
     // @EventHandler
     // public void loginEvent(PlayerConnectionReconfigurateEvent event) {

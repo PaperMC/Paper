@@ -9,17 +9,11 @@ public interface PlayerConfigurationConnection extends PlayerCommonConnection {
     /**
      * Returns the audience representing the player in configuration mode.
      * This can be used to interact with the Adventure API during the configuration stage.
-     * <p>
-     * To access identifying information about this player, use {@link net.kyori.adventure.pointer.Pointered}
-     * with the following pointers:
-     * <ul>
-     *   <li>{@link net.kyori.adventure.identity.Identity#UUID}</li>
-     *   <li>{@link net.kyori.adventure.identity.Identity#NAME}</li>
-     * </ul>
+     * This is guaranteed to be an instance of {@link PlayerConfigurationConnection}
      *
      * @return the configuring player audience
      */
-    Audience getConfiguringPlayer();
+    Audience getAudience();
 
     /**
      * Gets the profile for this connection.
@@ -40,9 +34,4 @@ public interface PlayerConfigurationConnection extends PlayerCommonConnection {
      */
     void completeReconfiguration();
 
-    /**
-     * @param type client option
-     * @return the client option value of the player
-     */
-    <T> T getClientOption(ClientOption<T> type);
 }

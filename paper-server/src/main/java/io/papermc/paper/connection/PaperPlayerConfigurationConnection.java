@@ -4,24 +4,80 @@ import com.destroystokyo.paper.ClientOption;
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.pointer.Pointers;
+import net.kyori.adventure.resource.ResourcePackCallback;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
+import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
+import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
+import org.jspecify.annotations.Nullable;
 
-public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection {
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-    private final ConfiguringPlayer configuringPlayer;
+public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience {
+
+    private @Nullable Pointers adventurePointers;
 
     public PaperPlayerConfigurationConnection(final ServerConfigurationPacketListenerImpl packetListener) {
         super(packetListener);
-        this.configuringPlayer = new ConfiguringPlayer(packetListener);
     }
 
     @Override
-    public Audience getConfiguringPlayer() {
-        return this.configuringPlayer;
+    public ClientInformation getClientInformation() {
+        return this.handle.clientInformation;
+    }
+
+    @Override
+    public void sendResourcePacks(ResourcePackRequest request) {
+        final List<ClientboundResourcePackPushPacket> packs = new java.util.ArrayList<>(request.packs().size());
+        if (request.replace()) {
+            this.clearResourcePacks();
+        }
+        final net.minecraft.network.chat.Component prompt = PaperAdventure.asVanilla(request.prompt());
+        for (final java.util.Iterator<ResourcePackInfo> iter = request.packs().iterator(); iter.hasNext(); ) {
+            final ResourcePackInfo pack = iter.next();
+            packs.add(new ClientboundResourcePackPushPacket(pack.id(), pack.uri().toASCIIString(), pack.hash(), request.required(), iter.hasNext() ? Optional.empty() : Optional.ofNullable(prompt)));
+            if (request.callback() != ResourcePackCallback.noOp()) {
+                this.handle.packCallbacks.put(pack.id(), request.callback()); // just override if there is a previously existing callback
+            }
+        }
+        packs.forEach(this.handle::send);
+    }
+
+    @Override
+    public void removeResourcePacks(UUID id, UUID... others) {
+        net.kyori.adventure.util.MonkeyBars.nonEmptyArrayToList(pack -> new ClientboundResourcePackPopPacket(Optional.of(pack)), id, others).forEach(this.handle::send);
+    }
+
+    @Override
+    public void clearResourcePacks() {
+        this.handle.send(new ClientboundResourcePackPopPacket(Optional.empty()));
+    }
+
+    @Override
+    public Pointers pointers() {
+        if (this.adventurePointers == null) {
+            this.adventurePointers = Pointers.builder()
+                    .withDynamic(Identity.NAME, () -> this.handle.getOwner().getName())
+                    .withDynamic(Identity.UUID, () -> this.handle.getOwner().getId())
+                    .build();
+        }
+
+        return this.adventurePointers;
+    }
+
+    @Override
+    public Audience getAudience() {
+        return this;
     }
 
     @Override
@@ -38,35 +94,11 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     public void completeReconfiguration() {
         ConfigurationTask task = this.handle.currentTask;
         if (task != null) {
-            throw new IllegalStateException("This current connection is already attempting to complete configuration. (FOUND: " + task.type().id() + ")");
+            // This means that the player is going through the normal configuration process, or is already returning to the game phase.
+            // Be safe and just ignore, as many plugins may call this.
+            return;
         }
 
         this.handle.returnToWorld();
-    }
-
-    @Override
-    public <T> T getClientOption(final ClientOption<T> type) {
-        ClientInformation information = this.handle.clientInformation;
-
-        if (ClientOption.SKIN_PARTS == type) {
-            return type.getType().cast(new PaperSkinParts(information.modelCustomisation()));
-        } else if (ClientOption.CHAT_COLORS_ENABLED == type) {
-            return type.getType().cast(information.chatColors());
-        } else if (ClientOption.CHAT_VISIBILITY == type) {
-            return type.getType().cast(ClientOption.ChatVisibility.valueOf(information.chatVisibility().name()));
-        } else if (ClientOption.LOCALE == type) {
-            return type.getType().cast(information.language());
-        } else if (ClientOption.MAIN_HAND == type) {
-            return type.getType().cast(information.mainHand());
-        } else if (ClientOption.VIEW_DISTANCE == type) {
-            return type.getType().cast(information.viewDistance());
-        } else if (ClientOption.TEXT_FILTERING_ENABLED == type) {
-            return type.getType().cast(information.textFilteringEnabled());
-        } else if (ClientOption.ALLOW_SERVER_LISTINGS == type) {
-            return type.getType().cast(information.allowsListing());
-        } else if (ClientOption.PARTICLE_VISIBILITY == type) {
-            return type.getType().cast(ClientOption.ParticleVisibility.valueOf(information.particleStatus().name()));
-        }
-        throw new RuntimeException("Unknown settings type");
     }
 }

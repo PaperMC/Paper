@@ -1,5 +1,7 @@
 package io.papermc.paper.connection;
 
+import com.destroystokyo.paper.ClientOption;
+import com.destroystokyo.paper.PaperSkinParts;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.net.InetSocketAddress;
@@ -10,6 +12,7 @@ import net.minecraft.network.protocol.common.ClientboundCustomReportDetailsPacke
 import net.minecraft.network.protocol.common.ClientboundServerLinksPacket;
 import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
 import net.minecraft.network.protocol.common.ClientboundTransferPacket;
+import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import org.bukkit.NamespacedKey;
 import org.bukkit.ServerLinks;
@@ -17,7 +20,7 @@ import org.bukkit.craftbukkit.CraftServerLinks;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jspecify.annotations.Nullable;
 
-public class PaperCommonConnection<T extends ServerCommonPacketListenerImpl> extends ReadablePlayerCookieConnectionImpl implements PlayerCommonConnection {
+public abstract class PaperCommonConnection<T extends ServerCommonPacketListenerImpl> extends ReadablePlayerCookieConnectionImpl implements PlayerCommonConnection {
 
     protected final T handle;
 
@@ -39,6 +42,32 @@ public class PaperCommonConnection<T extends ServerCommonPacketListenerImpl> ext
     @Override
     public void transfer(final String host, final int port) {
         this.handle.send(new ClientboundTransferPacket(host, port));
+    }
+
+    @Override
+    public <T> T getClientOption(ClientOption<T> type) {
+        ClientInformation information = this.getClientInformation();
+
+        if (ClientOption.SKIN_PARTS == type) {
+            return type.getType().cast(new PaperSkinParts(information.modelCustomisation()));
+        } else if (ClientOption.CHAT_COLORS_ENABLED == type) {
+            return type.getType().cast(information.chatColors());
+        } else if (ClientOption.CHAT_VISIBILITY == type) {
+            return type.getType().cast(ClientOption.ChatVisibility.valueOf(information.chatVisibility().name()));
+        } else if (ClientOption.LOCALE == type) {
+            return type.getType().cast(information.language());
+        } else if (ClientOption.MAIN_HAND == type) {
+            return type.getType().cast(information.mainHand());
+        } else if (ClientOption.VIEW_DISTANCE == type) {
+            return type.getType().cast(information.viewDistance());
+        } else if (ClientOption.TEXT_FILTERING_ENABLED == type) {
+            return type.getType().cast(information.textFilteringEnabled());
+        } else if (ClientOption.ALLOW_SERVER_LISTINGS == type) {
+            return type.getType().cast(information.allowsListing());
+        } else if (ClientOption.PARTICLE_VISIBILITY == type) {
+            return type.getType().cast(ClientOption.ParticleVisibility.valueOf(information.particleStatus().name()));
+        }
+        throw new RuntimeException("Unknown settings type");
     }
 
     @Override
@@ -80,4 +109,6 @@ public class PaperCommonConnection<T extends ServerCommonPacketListenerImpl> ext
 
         this.handle.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
     }
+
+    public abstract ClientInformation getClientInformation();
 }

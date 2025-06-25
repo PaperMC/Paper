@@ -27,6 +27,14 @@ public class PlayerConnectionValidateLoginEvent extends Event {
         this.kickMessage = kickMessage;
     }
 
+    /**
+     * Gets the connection of the player in this event.
+     * Note, the type of this connection is not guaranteed to be stable across versions.
+     * Additionally, disconnecting the player through this connection / using any methods that may send packets
+     * is not supported.
+     *
+     * @return connection
+     */
     public PlayerConnection getConnection() {
         return this.connection;
     }

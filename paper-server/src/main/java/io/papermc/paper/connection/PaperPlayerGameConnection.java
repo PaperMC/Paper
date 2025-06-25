@@ -1,5 +1,6 @@
 package io.papermc.paper.connection;
 
+import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.bukkit.entity.Player;
 
@@ -7,6 +8,11 @@ public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGameP
 
     public PaperPlayerGameConnection(final ServerGamePacketListenerImpl serverConfigurationPacketListenerImpl) {
         super(serverConfigurationPacketListenerImpl);
+    }
+
+    @Override
+    public ClientInformation getClientInformation() {
+        return this.handle.player.clientInformation();
     }
 
     @Override
