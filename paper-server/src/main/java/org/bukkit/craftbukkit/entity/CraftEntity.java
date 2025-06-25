@@ -324,19 +324,23 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // If this entity is riding another entity, we must dismount before teleporting.
         if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
 
+        final TeleportTransition teleportTransition = new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getPitch(), location.getYaw(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN);
+
         // Let the server handle cross world teleports
         if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
             // Prevent teleportation to an other world during world generation
             Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
-            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getPitch(), location.getYaw(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
+            this.entity.teleport(teleportTransition);
             return true;
         }
 
-        // entity.snapTo() throws no event, and so cannot be cancelled
-        this.entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
-
-        // Ensure passengers of entity are teleported
-        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
+        if (retainPassengers && this.entity.isVehicle()) {
+            // Ensure the server teleports passengers of entity
+            this.entity.teleport(teleportTransition);
+        } else {
+            // entity.snapTo() throws no event, and so cannot be cancelled
+            this.entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
+        }
 
         return true;
     }
