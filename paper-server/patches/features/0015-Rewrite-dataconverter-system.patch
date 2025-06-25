@@ -32481,7 +32481,7 @@ index 0000000000000000000000000000000000000000..b028017b9c44821a8a313a04e0b10f5d
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 0c611598a6912b692a7639301811ee557e2304f1..6f65564f6a6e99d6549de9a23a031b1f4a8a9798 100644
+index e4f0653c575c33b1ef8160b6c88e29ee9fb44508..b6a34796d33f1593301c3a67a013fa7e812cb329 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -211,6 +211,43 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
@@ -32542,7 +32542,7 @@ index 6536dc08c80170f5679acedd65cd2b9f6ad3fb3a..294cd15a796ad25823c8ccf98fbfae46
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 794a01ee70a2a30d91550f5265f774ba73828cf9..c716521fb1497dc8a22d827ddb50fc1cc21a05f4 100644
+index 2d597e50dcd957bd566c4da384fac5f36b5362f7..75aba65cbe1a943f21c7464ff9465e64f63e8e5b 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -305,6 +305,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -32585,10 +32585,10 @@ index 8c1417c659ea0e079e99b9bfa79e1cf6ba9b712b..a8a32edea080f32fd25c9e009d4efa41
                  if (stopBelowZero) {
                      chunkData.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index 6be673172548c1382c7402ec4e1ec6ef51f702d3..18750f1ea3101b6c0ab0b8e33c304eb7fa1ed04d 100644
+index 6be673172548c1382c7402ec4e1ec6ef51f702d3..49be43ac896d60587511a97445c53c10c587a341 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-@@ -32,13 +32,30 @@ public class SimpleRegionStorage implements AutoCloseable {
+@@ -32,13 +32,32 @@ public class SimpleRegionStorage implements AutoCloseable {
          return this.worker.store(chunkPos, data);
      }
  
@@ -32609,7 +32609,9 @@ index 6be673172548c1382c7402ec4e1ec6ef51f702d3..18750f1ea3101b6c0ab0b8e33c304eb7
 -        return this.dataFixType.updateToCurrentVersion(this.fixerUpper, tag, dataVersion);
 +        // Paper start - rewrite data conversion system
 +        final int dataVer = NbtUtils.getDataVersion(tag, version);
-+        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), tag, dataVer, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion());
++        final CompoundTag ret =  ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), tag, dataVer, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion());
++        NbtUtils.addCurrentDataVersion(ret); // Fix MC-299110
++        return ret;
 +        // Paper end - rewrite data conversion system
      }
  
