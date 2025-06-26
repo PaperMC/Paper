@@ -45,15 +45,10 @@ public class HorriblePlayerLoginEventHack {
                 WARNING: Legacy PlayerLoginEvent usage detected!
                 
                 This event forces an alternative player loading path that is
-                deprecated and will be REMOVED in a future release.
-                
-                This also does not properly represent the fact that this validation logic is ran
-                twice in vanilla.
+                deprecated and will be removed in a future release.
+                For more information, see: https://forums.papermc.io/threads/1-21-7.1635
                 
                 Please notify the following plugin developers: {}
-                
-                Continued usage may cause instability in future builds.
-                
                 ============================================================""", plugins.toString());
             nagged = true;
         }
