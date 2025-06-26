@@ -39,7 +39,7 @@
      }
  
      private void playAngerSound() {
-@@ -153,18 +_,43 @@
+@@ -153,18 +_,65 @@
      }
  
      @Override
@@ -59,8 +59,30 @@
 -        this.setRemainingPersistentAngerTime(PERSISTENT_ANGER_TIME.sample(this.random));
 +        // Paper start - PersistentAngerTimer 
 +        if(this.level().paperConfig().entities.behavior.zombifiedPiglinsAggressiveBehavior){
-+        net.minecraft.world.entity.Entity entity = this.level().getEntity(this.getPersistentAngerTarget());
-+            org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entity == null) ? null : entity.getBukkitEntity(), PERSISTENT_ANGER_TIME.sample(this.random));
++            int radiusX = 32;
++            int radiusY = 10;
++            int radiusZ = 12;
++
++            net.minecraft.world.entity.Entity entity = this.level().getEntity(this.getPersistentAngerTarget());
++            org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent(
++                (org.bukkit.entity.PigZombie) this.getBukkitEntity(),
++                (entity == null) ? null : entity.getBukkitEntity(),
++                PERSISTENT_ANGER_TIME.sample(this.random)
++            );
++
++            BlockPos piglinPos = this.blockPosition();
++            BlockPos targetPos = entity.blockPosition();
++
++            int dx = Math.abs(piglinPos.getX() - targetPos.getX());
++            int dy = Math.abs(piglinPos.getY() - targetPos.getY());
++            int dz = Math.abs(piglinPos.getZ() - targetPos.getZ());
++
++            if (entity != null && (dx <= radiusX && dy <= radiusY && dz <= radiusZ)) {
++                this.setPersistentAngerTarget(null);
++                this.pathfinderGoalHurtByTarget.stop();
++                return;
++            }
++
 +            if (!event.callEvent()) {
 +                this.setPersistentAngerTarget(null);
 +                this.pathfinderGoalHurtByTarget.stop();
