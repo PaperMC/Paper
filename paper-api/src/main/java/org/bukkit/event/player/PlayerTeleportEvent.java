@@ -88,7 +88,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     public enum TeleportCause {
         /**
-         * Indicates the teleporation was caused by a player throwing an Ender
+         * Indicates the teleportation was caused by a player throwing an Ender
          * Pearl
          */
         ENDER_PEARL,
@@ -129,6 +129,10 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          * Indicates the teleportation was caused by a player exiting a vehicle
          */
         DISMOUNT,
+        /**
+         * Indicates the teleportation was caused by a player enters a vehicle
+         */
+        MOUNT,
         /**
          * Indicates the teleportation was caused by a player exiting a bed
          */
