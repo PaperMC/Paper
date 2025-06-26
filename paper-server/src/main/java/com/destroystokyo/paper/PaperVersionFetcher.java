@@ -142,8 +142,8 @@ public class PaperVersionFetcher implements VersionFetcher {
         final String userAgent = "Paper/" + currentVersion + " (https://papermc.io/)";
 
         try {
-            URL versionsUrl = URI.create("https://fill.papermc.io/v3/projects/paper").toURL();
-            HttpURLConnection connection = (HttpURLConnection) versionsUrl.openConnection();
+            final URL versionsUrl = URI.create("https://fill.papermc.io/v3/projects/paper").toURL();
+            final HttpURLConnection connection = (HttpURLConnection) versionsUrl.openConnection();
             connection.setRequestProperty("User-Agent", userAgent);
             connection.setRequestProperty("Accept", "application/json");
 
@@ -152,9 +152,9 @@ public class PaperVersionFetcher implements VersionFetcher {
                 final JsonObject versions = json.getAsJsonObject("versions");
                 final List<String> versionList = new ArrayList<>();
 
-                for (String key : versions.keySet()) {
-                    JsonArray versionsArray = versions.getAsJsonArray(key);
-                    for (JsonElement versionElement : versionsArray) {
+                for (final String key : versions.keySet()) {
+                    final JsonArray versionsArray = versions.getAsJsonArray(key);
+                    for (final JsonElement versionElement : versionsArray) {
                         versionList.add(versionElement.getAsString());
                     }
                 }
@@ -165,11 +165,11 @@ public class PaperVersionFetcher implements VersionFetcher {
                     final String latestVersion = versionList.get(i);
 
                     if (latestVersion.equals(currentVersion)) {
-                        continue;
+                        return null;
                     }
 
-                    URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + latestVersion + "/builds").toURL();
-                    HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
+                    final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + latestVersion + "/builds").toURL();
+                    final HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
                     connection2.setRequestProperty("User-Agent", userAgent);
                     connection2.setRequestProperty("Accept", "application/json");
 
@@ -177,7 +177,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                         final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
                         final JsonArray builds = buildJson.getAsJsonArray("builds");
 
-                        for (JsonElement buildElement : builds) {
+                        for (final JsonElement buildElement : builds) {
                             final JsonObject buildObj = buildElement.getAsJsonObject();
                             if ("STABLE".equals(buildObj.get("channel").getAsString())) {
                                 newVersionAvailable = true;
@@ -201,11 +201,11 @@ public class PaperVersionFetcher implements VersionFetcher {
         final String userAgent = "Paper/" + build.minecraftVersionId() + " (https://papermc.io/)";
 
         try {
-            URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + build.minecraftVersionId()).toURL();
-            HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
+            final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + build.minecraftVersionId()).toURL();
+            final HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
             connection.setRequestProperty("User-Agent", userAgent);
             connection.setRequestProperty("Accept", "application/json");
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
                 final JsonArray builds = json.getAsJsonArray("builds");
                 final int latest = StreamSupport.stream(builds.spliterator(), false)
