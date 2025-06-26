@@ -84,8 +84,23 @@ index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0
 +        }
 +    }
 +}
+diff --git a/net/minecraft/server/network/CommonListenerCookie.java b/net/minecraft/server/network/CommonListenerCookie.java
+index b94988d6dd98bfb7d3d2f08c2adaa96d7c7a8b55..7e61c8222d567feb8c2b988699e1cfe83bf4be31 100644
+--- a/net/minecraft/server/network/CommonListenerCookie.java
++++ b/net/minecraft/server/network/CommonListenerCookie.java
+@@ -3,8 +3,8 @@ package net.minecraft.server.network;
+ import com.mojang.authlib.GameProfile;
+ import net.minecraft.server.level.ClientInformation;
+ 
+-public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jetbrains.annotations.Nullable String brandName) { // Paper
++public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jetbrains.annotations.Nullable String brandName, io.papermc.paper.util.KeepAlive keepAlive) { // Paper
+     public static CommonListenerCookie createInitial(GameProfile gameProfile, boolean transferred) {
+-        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null); // Paper
++        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null, new io.papermc.paper.util.KeepAlive()); // Paper
+     }
+ }
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 9a665a362bf59dc09983f961a6a92a2c19456b69..76a99c90f14b7995699ad691a3f3f8e406fa67ae 100644
+index e6efb5b07d08ab01afcc9c172320ae95e4d8a6ee..16962ccab91d0941e428a2e53aa37e9ca975f62f 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -38,12 +38,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -102,11 +117,11 @@ index 9a665a362bf59dc09983f961a6a92a2c19456b69..76a99c90f14b7995699ad691a3f3f8e4
      private boolean closed = false;
 -    private int latency;
 +    private volatile int latency; // Paper - improve keepalives - make volatile
-+    private final io.papermc.paper.util.KeepAlive keepAlive = new io.papermc.paper.util.KeepAlive();  // Paper - improve keepalives - make volatile
++    private final io.papermc.paper.util.KeepAlive keepAlive; // Paper - improve keepalives
      private volatile boolean suspendFlushingOnServerThread = false;
      // CraftBukkit start
      protected final org.bukkit.craftbukkit.CraftServer cserver;
-@@ -57,7 +58,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -57,12 +58,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
          this.connection = connection;
@@ -115,7 +130,13 @@ index 9a665a362bf59dc09983f961a6a92a2c19456b69..76a99c90f14b7995699ad691a3f3f8e4
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
          // Paper start
-@@ -89,13 +90,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         this.playerBrand = cookie.brandName();
+         this.cserver = server.server;
++        this.keepAlive = cookie.keepAlive();
+         // Paper end
+     }
+ 
+@@ -89,13 +91,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -163,7 +184,7 @@ index 9a665a362bf59dc09983f961a6a92a2c19456b69..76a99c90f14b7995699ad691a3f3f8e4
      }
  
      @Override
-@@ -148,20 +177,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -148,20 +178,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -201,3 +222,12 @@ index 9a665a362bf59dc09983f961a6a92a2c19456b69..76a99c90f14b7995699ad691a3f3f8e4
              }
          }
  
+@@ -341,6 +374,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
+-        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.keepAlive); // Paper
+     }
+ }
+\ No newline at end of file
