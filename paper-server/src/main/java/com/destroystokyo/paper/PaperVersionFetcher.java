@@ -30,7 +30,6 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 import org.slf4j.Logger;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
@@ -159,11 +158,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                     }
                 }
 
-                Collections.reverse(versionList);
-
-                for (int i = versionList.size() - 1; i >= 0; i--) {
-                    final String latestVersion = versionList.get(i);
-
+                for (String latestVersion : versionList) {
                     if (latestVersion.equals(currentVersion)) {
                         return null;
                     }
