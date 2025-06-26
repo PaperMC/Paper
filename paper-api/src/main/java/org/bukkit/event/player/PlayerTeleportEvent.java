@@ -130,7 +130,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         DISMOUNT,
         /**
-         * Indicates the teleportation was caused by a player enters a vehicle
+         * Indicates the teleportation was caused by a player entering a vehicle
          */
         MOUNT,
         /**
