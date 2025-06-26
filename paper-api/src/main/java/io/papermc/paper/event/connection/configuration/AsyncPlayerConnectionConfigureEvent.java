@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * An event that allows you to configurate the player.
+ * An event that allows you to configure the player.
  * This is async and allows you to run configuration code on the player.
  * Once this event has finished execution, the player connection will continue.
  * <p>

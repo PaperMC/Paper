@@ -8,9 +8,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Validates whether a player connection would be able to log in at this event.
+ * Validates whether a player connection is able to log in.
  * <p>
- * Currently, this occurs when the player connection is attempting to log in for the first time, or is finishing up
+ * Called when is attempting to log in for the first time, or is finishing up
  * being configured.
  */
 public class PlayerConnectionValidateLoginEvent extends Event {
