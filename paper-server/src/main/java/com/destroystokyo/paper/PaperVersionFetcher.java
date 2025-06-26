@@ -89,7 +89,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case 0 -> {
                     if (newVersionAvailable) {
                         COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionName() + ")", NamedTextColor.GREEN));
+                        COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionId() + ")", NamedTextColor.GREEN));
                         COMPONENT_LOGGER.info(text("However, there is a new Minecraft version available on the downloads page (" + newVersion + ")!", NamedTextColor.GREEN));
                         COMPONENT_LOGGER.info(text("It is recommended that you download it as soon as possible", NamedTextColor.GREEN));
                         COMPONENT_LOGGER.info(text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
@@ -168,24 +168,24 @@ public class PaperVersionFetcher implements VersionFetcher {
                         return null;
                     }
 
-                    final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + latestVersion + "/builds").toURL();
-                    final HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
-                    connection2.setRequestProperty("User-Agent", userAgent);
-                    connection2.setRequestProperty("Accept", "application/json");
+                    try {
+                        final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + latestVersion + "/builds/latest").toURL();
+                        final HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
+                        connection2.setRequestProperty("User-Agent", userAgent);
+                        connection2.setRequestProperty("Accept", "application/json");
 
-                    try (final BufferedReader buildReader = new BufferedReader(new InputStreamReader(connection2.getInputStream(), StandardCharsets.UTF_8))) {
-                        final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
-                        final JsonArray builds = buildJson.getAsJsonArray("builds");
-
-                        for (final JsonElement buildElement : builds) {
-                            final JsonObject buildObj = buildElement.getAsJsonObject();
-                            if ("STABLE".equals(buildObj.get("channel").getAsString())) {
+                        try (final BufferedReader buildReader = new BufferedReader(new InputStreamReader(connection2.getInputStream(), StandardCharsets.UTF_8))) {
+                            final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
+                            final String channel = buildJson.get("channel").getAsString();
+                            if ("STABLE".equals(channel)) {
                                 newVersionAvailable = true;
                                 return latestVersion;
                             }
+                        } catch (final JsonSyntaxException ex) {
+                            LOGGER.error("Error parsing json from Paper's downloads API", ex);
                         }
-                    } catch (final JsonSyntaxException | IOException e) {
-                        LOGGER.error("Error while checking builds for version {}", latestVersion, e);
+                    } catch (final IOException e) {
+                        LOGGER.error("Error while parsing latest build", e);
                     }
                 }
             } catch (final JsonSyntaxException ex) {
@@ -194,6 +194,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         } catch (final IOException e) {
             LOGGER.error("Error while parsing version list", e);
         }
+
         return null;
     }
 
