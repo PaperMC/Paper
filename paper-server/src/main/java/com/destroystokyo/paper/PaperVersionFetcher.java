@@ -29,6 +29,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.slf4j.Logger;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
@@ -136,31 +138,37 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build) {
-        final String currentVersion = build.minecraftVersionName();
+        final String currentVersion = build.minecraftVersionId();
         final String userAgent = "Paper/" + currentVersion + " (https://papermc.io/)";
 
         try {
-            URL versionsUrl = URI.create("https://api.papermc.io/v2/projects/paper").toURL();
+            URL versionsUrl = URI.create("https://fill.papermc.io/v3/projects/paper").toURL();
             HttpURLConnection connection = (HttpURLConnection) versionsUrl.openConnection();
             connection.setRequestProperty("User-Agent", userAgent);
             connection.setRequestProperty("Accept", "application/json");
 
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
-                final JsonArray versions = json.getAsJsonArray("versions");
+                final JsonObject versions = json.getAsJsonObject("versions");
+                final List<String> versionList = new ArrayList<>();
 
-                final List<String> versionList = StreamSupport.stream(versions.spliterator(), false)
-                    .map(JsonElement::getAsString)
-                    .toList();
+                for (String key : versions.keySet()) {
+                    JsonArray versionsArray = versions.getAsJsonArray(key);
+                    for (JsonElement versionElement : versionsArray) {
+                        versionList.add(versionElement.getAsString());
+                    }
+                }
+
+                Collections.reverse(versionList);
 
                 for (int i = versionList.size() - 1; i >= 0; i--) {
                     final String latestVersion = versionList.get(i);
 
                     if (latestVersion.equals(currentVersion)) {
-                        return null;
+                        continue;
                     }
 
-                    URL buildsUrl = URI.create("https://api.papermc.io/v2/projects/paper/versions/" + latestVersion + "/builds").toURL();
+                    URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + latestVersion + "/builds").toURL();
                     HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
                     connection2.setRequestProperty("User-Agent", userAgent);
                     connection2.setRequestProperty("Accept", "application/json");
@@ -171,7 +179,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
                         for (JsonElement buildElement : builds) {
                             final JsonObject buildObj = buildElement.getAsJsonObject();
-                            if ("default".equalsIgnoreCase(buildObj.get("channel").getAsString())) {
+                            if ("STABLE".equals(buildObj.get("channel").getAsString())) {
                                 newVersionAvailable = true;
                                 return latestVersion;
                             }
@@ -190,11 +198,14 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+        final String userAgent = "Paper/" + build.minecraftVersionId() + " (https://papermc.io/)";
+
         try {
-            try (final BufferedReader reader = Resources.asCharSource(
-                URI.create("https://api.papermc.io/v2/projects/paper/versions/" + build.minecraftVersionId()).toURL(),
-                StandardCharsets.UTF_8
-            ).openBufferedStream()) {
+            URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + build.minecraftVersionId()).toURL();
+            HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
+            connection.setRequestProperty("User-Agent", userAgent);
+            connection.setRequestProperty("Accept", "application/json");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
                 final JsonArray builds = json.getAsJsonArray("builds");
                 final int latest = StreamSupport.stream(builds.spliterator(), false)
