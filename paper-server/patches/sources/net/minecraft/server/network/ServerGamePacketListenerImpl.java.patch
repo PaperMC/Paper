@@ -295,7 +295,7 @@
  
                  rootVehicle.absSnapTo(d, d1, d2, f, f1);
 +                // CraftBukkit start - fire PlayerMoveEvent TODO: this should be removed.
-+                this.player.absSnapTo(x, y, z, this.player.getYRot(), this.player.getXRot()); // Paper - TODO: This breaks alot of stuff
++                this.player.absSnapTo(d, d1, d2, this.player.getYRot(), this.player.getXRot()); // Paper - TODO: This breaks alot of stuff
 +                org.bukkit.entity.Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
 +                    this.lastPosX = prevX;
@@ -1146,8 +1146,7 @@
  
                      return;
                  case RELEASE_USE_ITEM:
--                    this.player.releaseUsingItem();
-+                    if (this.player.getUseItem() == this.player.getItemInHand(this.player.getUsedItemHand())) this.player.releaseUsingItem(); // Paper - validate use item before processing release
+                     this.player.releaseUsingItem();
 +                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      return;
                  case START_DESTROY_BLOCK:
@@ -2610,7 +2609,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,17 @@
+@@ -2078,4 +_,29 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2627,4 +2626,16 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
++
++    // Paper start - Implement click callbacks with custom click action
++    @Override
++    public void handleCustomClickAction(final net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket packet) {
++        super.handleCustomClickAction(packet);
++        if (packet.id().equals(io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CLICK_CALLBACK_RESOURCE_LOCATION)) {
++            packet.payload().ifPresent(tag ->
++                io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.tryRunCallback(this.player.getBukkitEntity(), tag)
++            );
++        }
++    }
++    // Paper end - Implement click callbacks with custom click action
  }

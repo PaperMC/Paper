@@ -23061,7 +23061,7 @@ index 0000000000000000000000000000000000000000..f1f72a051083b61273202cb4e67ecb11
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 68e1e2da7a3291c6260898c90373bf21630f3351..b2b67a3b1b4620dc97a32df953d4ad47bbe5e481 100644
+index b1a7af2dd3a3e166b1e58125f13ce08b9ec6d9ff..df6fbb35e5023b42de0b97434712e04a6b3e66a3 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -23074,8 +23074,13 @@ index 68e1e2da7a3291c6260898c90373bf21630f3351..b2b67a3b1b4620dc97a32df953d4ad47
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
-@@ -31,12 +34,16 @@ import org.bukkit.World;
- public final class FeatureHooks {
+@@ -32,16 +35,20 @@ public final class FeatureHooks {
+ 
+     // this includes non-accessible entities
+     public static Iterable<Entity> getAllEntities(final net.minecraft.server.level.ServerLevel world) {
+-        return ((net.minecraft.world.level.entity.LevelEntityGetterAdapter<Entity>)world.getEntities()).sectionStorage.getAllEntities();
++        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup)world.getEntities()).getAllMapped(); // Paper - rewrite chunk system
+     }
  
      public static void setPlayerChunkUnloadDelay(final long ticks) {
 +        ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.setUnloadDelay(ticks); // Paper - rewrite chunk system
@@ -23091,7 +23096,7 @@ index 68e1e2da7a3291c6260898c90373bf21630f3351..b2b67a3b1b4620dc97a32df953d4ad47
      }
  
      public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -62,111 +69,58 @@ public final class FeatureHooks {
+@@ -67,111 +74,58 @@ public final class FeatureHooks {
      }
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -23224,7 +23229,7 @@ index 68e1e2da7a3291c6260898c90373bf21630f3351..b2b67a3b1b4620dc97a32df953d4ad47
  
              org.bukkit.Chunk chunk = null;
              for (net.minecraft.server.level.Ticket ticket : tickets) {
-@@ -186,15 +140,15 @@ public final class FeatureHooks {
+@@ -191,15 +145,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -23243,7 +23248,7 @@ index 68e1e2da7a3291c6260898c90373bf21630f3351..b2b67a3b1b4620dc97a32df953d4ad47
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -212,35 +166,31 @@ public final class FeatureHooks {
+@@ -217,35 +171,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
@@ -23862,7 +23867,7 @@ index 46de98a6bbbae48c4837e1e588ba198a363d2dde..fd3553bdc1c3cdbf6aa3dc00e0a4987f
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 4d6011ea0e5f9c9d35569c65b40f9fed916e68b2..2b543dc2e03b020694b7ef00ae56f9272a1c1067 100644
+index fe9c839ab65a71e873c30777e54ae5e6dd2db7d3..a052796eda93b6143dffc85a29908f40f8c4334a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -173,7 +173,7 @@ import net.minecraft.world.phys.Vec2;
@@ -24054,7 +24059,7 @@ index 4d6011ea0e5f9c9d35569c65b40f9fed916e68b2..2b543dc2e03b020694b7ef00ae56f927
              return true;
          } else {
              boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
-@@ -2478,6 +2566,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2487,6 +2575,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -24068,7 +24073,7 @@ index 4d6011ea0e5f9c9d35569c65b40f9fed916e68b2..2b543dc2e03b020694b7ef00ae56f927
      // CraftBukkit start
      public boolean isDebugging() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 5db176be3bd31eb886a541eeaee922ee30ee9908..5fea5e2e9fc10d348fa3e65cd354ef6a4a717a4d 100644
+index 4488d0a2f05ef07afab0f9a1483f54b21757b29e..98927d4a5fba2a0dcdb147ac10b82c3286ccdc6b 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -391,7 +391,33 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -27686,7 +27691,7 @@ index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..f9c96bbdc54e68b9216b7f8662bfae03
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 69dbff3f62e3a9ba7090156380f842bb44deebf8..c0b74d408340101bc3aac4cb4b7232c5cc78b08a 100644
+index 6f7f92cc43c56a7453b289f205502d089474ef6d..b390ba657b8b880e431c84e9dd948ac9c84af2fd 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -193,7 +193,7 @@ import net.minecraft.world.scores.Team;
@@ -28723,7 +28728,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index fa2ffc44336c3ddfe576b202154f14ef91a301b9..7546ff4c5ffc62d93a3f874519db8fef1e3bfbcb 100644
+index 06d07f93e42edcfdd7d69df0b52efe2a58e7dfc1..da880f52920b1101f23ef94f3fd0dbdea218c373 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -147,7 +147,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -29431,7 +29436,7 @@ index fa2ffc44336c3ddfe576b202154f14ef91a301b9..7546ff4c5ffc62d93a3f874519db8fef
          if (!checkPosition(this, x, y, z)) {
              return;
          }
-@@ -4828,6 +5135,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4818,6 +5125,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
      public final void setRemoved(Entity.RemovalReason removalReason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause cause) { // CraftBukkit - add Bukkit remove cause
@@ -29444,7 +29449,7 @@ index fa2ffc44336c3ddfe576b202154f14ef91a301b9..7546ff4c5ffc62d93a3f874519db8fef
          org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause); // CraftBukkit
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-@@ -4838,7 +5151,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4828,7 +5141,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              this.stopRiding();
          }
  
@@ -29453,7 +29458,7 @@ index fa2ffc44336c3ddfe576b202154f14ef91a301b9..7546ff4c5ffc62d93a3f874519db8fef
          this.levelCallback.onRemove(removalReason);
          this.onRemoval(removalReason);
          // Paper start - Folia schedulers
-@@ -4872,7 +5185,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4862,7 +5175,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      public boolean shouldBeSaved() {
          return (this.removalReason == null || this.removalReason.shouldSave())
              && !this.isPassenger()
@@ -31627,7 +31632,7 @@ index 96e8dfb1ff24954656470925a1fc6280fe5e09d9..be6f37f91569c659c609e5e8d38671ca
  
      public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index c846d5d47c6488b11930b858da946e636e025294..d4c02b9bb9bfc10484a79ede35985ba35c99bada 100644
+index 1c81dc30aabb354d18290d42dfc419d9b1581fbd..834e27ef2f7b342b074ff9e1e390e02f3ca1c399 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -413,7 +413,7 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -34312,7 +34317,7 @@ index 15417fab103feec3c1f7d5bd5b332e89d3ace3f5..2e6263d8b466e0f61bc72eb818044734
      }
  }
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index 18750f1ea3101b6c0ab0b8e33c304eb7fa1ed04d..bf708ff89ea1f2c7279e48c41c4f44abc77ceebb 100644
+index 49be43ac896d60587511a97445c53c10c587a341..1b070cf7e3612dbcb170cf5d954eba5f5b3c777c 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -14,7 +14,7 @@ import net.minecraft.util.datafix.DataFixTypes;
@@ -36676,10 +36681,10 @@ index c634d795644be86ad85395ffa39fbac33bf7418b..66d0a6390febe929ef774b0a78133290
  
              for (SavedTick<T> savedTick : this.pendingTicks) {
 diff --git a/net/minecraft/world/waypoints/WaypointTransmitter.java b/net/minecraft/world/waypoints/WaypointTransmitter.java
-index b579839c03b371d408e3750ec09af7da1d7bc9a0..9b41c62afc861847571ad739d1dd848b8276230c 100644
+index 47382efcd50f29601a6623876be50c4d047336c5..5d1c933dfa862d0733777d305563a89ea7827f07 100644
 --- a/net/minecraft/world/waypoints/WaypointTransmitter.java
 +++ b/net/minecraft/world/waypoints/WaypointTransmitter.java
-@@ -31,7 +31,10 @@ public interface WaypointTransmitter extends Waypoint {
+@@ -32,7 +32,10 @@ public interface WaypointTransmitter extends Waypoint {
      }
  
      static boolean isChunkVisible(ChunkPos pos, ServerPlayer player) {

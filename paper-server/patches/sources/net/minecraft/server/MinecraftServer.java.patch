@@ -780,7 +780,7 @@
 +            }
 +            // Paper end - Add onboarding message for initial server start
 +            // Paper start - improve outdated version check
-+            if (System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
++            if (System.getProperty("paper.disableStartupVersionCheck") == null) {
 +                CompletableFuture.runAsync(() -> {
 +                    final io.papermc.paper.ServerBuildInfo build = io.papermc.paper.ServerBuildInfo.buildInfo();
 +                    final String repo = com.destroystokyo.paper.PaperVersionFetcher.REPOSITORY;
@@ -993,16 +993,25 @@
              ObjectArrayList<GameProfile> list = new ObjectArrayList<>(min);
              int randomInt = Mth.nextInt(this.random, 0, players.size() - min);
  
-@@ -1040,17 +_,66 @@
+@@ -1040,17 +_,75 @@
      protected void tickChildren(BooleanSupplier hasTimeLeft) {
          ProfilerFiller profilerFiller = Profiler.get();
          this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing());
 +        this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
++        for (ServerPlayer player : this.playerList.players) {
++            if (!this.playerList.players.contains(player)) {
++                continue;
++            }
++            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = player.getBukkitEntityRaw();
++            if (bukkit != null) {
++                bukkit.taskScheduler.executeTick();
++            }
++        }
 +        getAllLevels().forEach(level -> {
-+            for (final net.minecraft.world.entity.Entity entity : level.getEntities().getAll()) {
-+                if (entity.isRemoved()) {
++            for (final net.minecraft.world.entity.Entity entity : io.papermc.paper.FeatureHooks.getAllEntities(level)) {
++                if (entity.isRemoved() || entity instanceof ServerPlayer) {
 +                    continue;
 +                }
 +                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();

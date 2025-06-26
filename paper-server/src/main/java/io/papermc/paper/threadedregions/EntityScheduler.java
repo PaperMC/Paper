@@ -1,6 +1,7 @@
 package io.papermc.paper.threadedregions;
 
 import ca.spottedleaf.concurrentutil.util.Validate;
+import ca.spottedleaf.moonrise.common.list.ReferenceList;
 import ca.spottedleaf.moonrise.common.util.TickThread;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.world.entity.Entity;
@@ -9,6 +10,8 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 
 /**
@@ -43,11 +46,58 @@ public final class EntityScheduler {
     private static final long RETIRED_TICK_COUNT = -1L;
     private final Object stateLock = new Object();
     private final Long2ObjectOpenHashMap<List<ScheduledTask>> oneTimeDelayed = new Long2ObjectOpenHashMap<>();
+    private EntitySchedulerTickList scheduledList;
+    private boolean insideScheduledList;
 
     private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
 
     public EntityScheduler(final CraftEntity entity) {
         this.entity = Validate.notNull(entity);
+    }
+
+    // must own state lock
+    private boolean hasTasks() {
+        return !this.currentlyExecuting.isEmpty() || !this.oneTimeDelayed.isEmpty();
+    }
+
+    public void registerTo(final EntitySchedulerTickList newTickList) {
+        synchronized (this.stateLock) {
+            final EntitySchedulerTickList prevList = this.scheduledList;
+            if (prevList == newTickList) {
+                return;
+            }
+            this.scheduledList = newTickList;
+
+            // make sure tasks scheduled before registration can be ticked
+            if (prevList == null && this.hasTasks()) {
+                this.insideScheduledList = true;
+            }
+
+            // transfer to new list
+            if (this.insideScheduledList) {
+                if (prevList != null) {
+                    prevList.remove(this);
+                }
+                if (newTickList != null) {
+                    newTickList.add(this);
+                } else {
+                    // retired
+                    this.insideScheduledList = false;
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns whether this scheduler is retired.
+     *
+     * <p>
+     * Note: This should only be invoked on the owning thread for the entity.
+     * </p>
+     * @return whether this scheduler is retired.
+     */
+    public boolean isRetired() {
+        return this.tickCount == RETIRED_TICK_COUNT;
     }
 
     /**
@@ -66,6 +116,7 @@ public final class EntityScheduler {
                 throw new IllegalStateException("Already retired");
             }
             this.tickCount = RETIRED_TICK_COUNT;
+            this.registerTo(null);
         }
 
         final Entity thisEntity = this.entity.getHandleRaw();
@@ -127,6 +178,11 @@ public final class EntityScheduler {
             this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
                 return new ArrayList<>();
             }).add(task);
+
+            if (!this.insideScheduledList && this.scheduledList != null) {
+                this.scheduledList.add(this);
+                this.insideScheduledList = true;
+            }
         }
 
         return true;
@@ -147,6 +203,12 @@ public final class EntityScheduler {
                 throw new IllegalStateException("Ticking retired scheduler");
             }
             ++this.tickCount;
+
+            if (this.scheduledList != null && !this.hasTasks()) {
+                this.scheduledList.remove(this);
+                this.insideScheduledList = false;
+            }
+
             if (this.oneTimeDelayed.isEmpty()) {
                 toRun = null;
             } else {
@@ -175,6 +237,36 @@ public final class EntityScheduler {
                 // retired synchronously
                 // note: here task is null
                 break;
+            }
+        }
+    }
+
+    public static final class EntitySchedulerTickList {
+
+        private static final EntityScheduler[] ENTITY_SCHEDULER_ARRAY = new EntityScheduler[0];
+
+        private final ReferenceList<EntityScheduler> entitySchedulers = new ReferenceList<>(ENTITY_SCHEDULER_ARRAY);
+
+        public boolean add(final EntityScheduler scheduler) {
+            synchronized (this) {
+                return this.entitySchedulers.add(scheduler);
+            }
+        }
+
+        public void remove(final EntityScheduler scheduler) {
+            synchronized (this) {
+                this.entitySchedulers.remove(scheduler);
+            }
+        }
+
+        public EntityScheduler[] getAllSchedulers() {
+            EntityScheduler[] ret = new EntityScheduler[this.entitySchedulers.size()];
+            synchronized (this) {
+                if (ret.length != this.entitySchedulers.size()) {
+                    ret = new EntityScheduler[this.entitySchedulers.size()];
+                }
+                System.arraycopy(this.entitySchedulers.getRawDataUnchecked(), 0, ret, 0, this.entitySchedulers.size());
+                return ret;
             }
         }
     }

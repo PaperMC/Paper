@@ -1,6 +1,7 @@
 package io.papermc.paper.command.subcommands;
 
 import com.google.common.collect.Maps;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.command.CommandUtil;
 import io.papermc.paper.command.PaperSubcommand;
 import java.util.Collections;
@@ -9,7 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -102,7 +102,7 @@ public final class EntityCommand implements PaperSubcommand {
             ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
             Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
             ServerChunkCache chunkProviderServer = world.getChunkSource();
-            world.getAllEntities().forEach(e -> {
+            FeatureHooks.getAllEntities(world).forEach(e -> {
                 ResourceLocation key = EntityType.getKey(e.getType());
 
                 MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));

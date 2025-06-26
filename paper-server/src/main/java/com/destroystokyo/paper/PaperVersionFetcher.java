@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -135,18 +136,22 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build) {
+        final String currentVersion = build.minecraftVersionName();
+        final String userAgent = "Paper/" + currentVersion + " (https://papermc.io/)";
+
         try {
-            try (final BufferedReader reader = Resources.asCharSource(
-                URI.create("https://api.papermc.io/v2/projects/paper").toURL(),
-                StandardCharsets.UTF_8
-            ).openBufferedStream()) {
+            URL versionsUrl = URI.create("https://api.papermc.io/v2/projects/paper").toURL();
+            HttpURLConnection connection = (HttpURLConnection) versionsUrl.openConnection();
+            connection.setRequestProperty("User-Agent", userAgent);
+            connection.setRequestProperty("Accept", "application/json");
+
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
                 final JsonArray versions = json.getAsJsonArray("versions");
+
                 final List<String> versionList = StreamSupport.stream(versions.spliterator(), false)
                     .map(JsonElement::getAsString)
                     .toList();
-
-                final String currentVersion = build.minecraftVersionName();
 
                 for (int i = versionList.size() - 1; i >= 0; i--) {
                     final String latestVersion = versionList.get(i);
@@ -155,10 +160,12 @@ public class PaperVersionFetcher implements VersionFetcher {
                         return null;
                     }
 
-                    try (final BufferedReader buildReader = Resources.asCharSource(
-                        URI.create("https://api.papermc.io/v2/projects/paper/versions/" + latestVersion + "/builds").toURL(),
-                        StandardCharsets.UTF_8
-                    ).openBufferedStream()) {
+                    URL buildsUrl = URI.create("https://api.papermc.io/v2/projects/paper/versions/" + latestVersion + "/builds").toURL();
+                    HttpURLConnection connection2 = (HttpURLConnection) buildsUrl.openConnection();
+                    connection2.setRequestProperty("User-Agent", userAgent);
+                    connection2.setRequestProperty("Accept", "application/json");
+
+                    try (final BufferedReader buildReader = new BufferedReader(new InputStreamReader(connection2.getInputStream(), StandardCharsets.UTF_8))) {
                         final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
                         final JsonArray builds = buildJson.getAsJsonArray("builds");
 
@@ -171,16 +178,13 @@ public class PaperVersionFetcher implements VersionFetcher {
                         }
                     } catch (final JsonSyntaxException | IOException e) {
                         LOGGER.error("Error while checking builds for version {}", latestVersion, e);
-                        return null;
                     }
                 }
             } catch (final JsonSyntaxException ex) {
                 LOGGER.error("Error parsing json from Paper's downloads API", ex);
-                return null;
             }
         } catch (final IOException e) {
             LOGGER.error("Error while parsing version list", e);
-            return null;
         }
         return null;
     }
