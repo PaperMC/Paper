@@ -51,8 +51,6 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
 
     /**
      * Creates a new custom click action that executes a custom action.
-     * <p>The {@code id} should be unique as it will be used to trigger the {@code callback} when
-     * the response is received.</p>
      *
      * @param id the identifier of the custom action
      * @param callback the custom action to execute

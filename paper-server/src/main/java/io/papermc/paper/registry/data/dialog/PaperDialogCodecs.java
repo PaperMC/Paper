@@ -5,6 +5,8 @@ import com.mojang.serialization.Lifecycle;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.adventure.AdventureCodecs;
+import io.papermc.paper.dialog.PaperDialog;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.body.ItemDialogBody;
@@ -34,6 +36,8 @@ import net.minecraft.server.dialog.input.TextInput;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+
+import static io.papermc.paper.util.PaperCodecs.registryFileDecoderFor;
 
 public final class PaperDialogCodecs {
 
@@ -184,4 +188,6 @@ public final class PaperDialogCodecs {
             DIALOG_INPUT_CODEC.listOf().optionalFieldOf("inputs", List.of()).forGetter(DialogBase::inputs)
         ).apply(instance, (title, externalTitle, canCloseWithEsc, pause, afterAction, body, inputs) -> DialogBase.create(title, externalTitle.orElse(null), canCloseWithEsc, pause, afterAction, body, inputs))
     );
+
+    public static final Codec<io.papermc.paper.dialog.Dialog> DIALOG_CODEC = Codec.of(Dialog.CODEC.comap(PaperDialog::bukkitToMinecraftHolder), registryFileDecoderFor(Dialog.DIRECT_CODEC, PaperDialog::minecraftHolderToBukkit, RegistryKey.DIALOG, true));
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
@@ -53,25 +54,27 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
                 if (id.isEmpty()) {
                     return;
                 }
-                final StoredCallback<ClickCallback<Audience>, UUID> callback = this.callbacks.get(id.get());
-                if (callback != null && callback.valid()) {
-                    callback.takeUse();
-                    callback.callback.accept(audience);
-                }
+                this.tryConsumeCallback(id.get(), callback -> {
+                    callback.accept(audience);
+                });
             });
         }
     }
 
-    public static final class DialogClickManager extends CallbackManager<DialogActionCallback, Key> {
+    public record DialogClickKey(Key key, UUID uuid) {}
+
+    public static final class DialogClickManager extends CallbackManager<DialogActionCallback, DialogClickKey> {
 
         @Override
         void doRunCallback(final @NotNull Audience audience, final Key key, final Tag tag) {
             tag.asCompound().ifPresent(t -> {
-                final StoredCallback<DialogActionCallback, Key> callback = this.callbacks.get(key);
-                if (callback != null && callback.valid()) {
-                    callback.takeUse();
-                    callback.callback.accept(PaperDialogResponseView.createUnvalidatedResponse(t), audience);
+                final Optional<UUID> id = t.read(ID_KEY, UUIDUtil.CODEC);
+                if (id.isEmpty()) {
+                    return;
                 }
+                this.tryConsumeCallback(new DialogClickKey(key, id.get()), callback -> {
+                    callback.accept(PaperDialogResponseView.createUnvalidatedResponse(t), audience);
+                });
             });
         }
     }
@@ -109,6 +112,14 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             }
         }
 
+        final void tryConsumeCallback(final I key, final Consumer<? super C> callbackConsumer) {
+            final StoredCallback<C, I> callback = this.callbacks.get(key);
+            if (callback != null && callback.valid()) {
+                callback.takeUse();
+                callbackConsumer.accept(callback.callback);
+            }
+        }
+
         abstract void doRunCallback(final @NotNull Audience audience, final Key key, final Tag tag);
 
         public final void tryRunCallback(final @NotNull Audience audience, final ResourceLocation key, final Optional<? extends Tag> tag) {
@@ -137,7 +148,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             this.id = id;
         }
 
-        public void takeUse() {
+        private void takeUse() {
             if (this.remainingUses != ClickCallback.UNLIMITED_USES) {
                 this.remainingUses--;
             }
@@ -152,7 +163,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             return System.nanoTime() - this.startedAt >= this.lifetime;
         }
 
-        public boolean valid() {
+        private boolean valid() {
             return this.hasRemainingUses() && !this.expired();
         }
 

@@ -6,6 +6,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.data.dialog.PaperDialogCodecs;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -129,6 +131,10 @@ public final class AdventureCodecs {
     static final MapCodec<ClickEvent> COPY_TO_CLIPBOARD_CODEC = mapCodec((instance) -> instance.group(
         Codec.STRING.fieldOf("value").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::copyToClipboard));
+    // needs to be lazy loaded due to depending on PaperDialogCodecs static init
+    static final MapCodec<ClickEvent> SHOW_DIALOG_CODEC = MapCodec.recursive("show_dialog", ignored -> mapCodec((instance) -> instance.group(
+        PaperDialogCodecs.DIALOG_CODEC.fieldOf("dialog").forGetter(a -> (Dialog) ((ClickEvent.Payload.Dialog) a.payload()).dialog())
+    ).apply(instance, ClickEvent::showDialog)));
     static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(
         KEY_CODEC.fieldOf("id").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).key()),
         BINARY_TAG_HOLDER_CODEC.fieldOf("payload").forGetter(a -> ((ClickEvent.Payload.Custom) a.payload()).nbt())
@@ -140,8 +146,9 @@ public final class AdventureCodecs {
     static final ClickEventType SUGGEST_COMMAND_CLICK_EVENT_TYPE = new ClickEventType(SUGGEST_COMMAND_CODEC, "suggest_command");
     static final ClickEventType CHANGE_PAGE_CLICK_EVENT_TYPE = new ClickEventType(CHANGE_PAGE_CODEC, "change_page");
     static final ClickEventType COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE = new ClickEventType(COPY_TO_CLIPBOARD_CODEC, "copy_to_clipboard");
+    static final ClickEventType SHOW_DIALOG_CLICK_EVENT_TYPE = new ClickEventType(SHOW_DIALOG_CODEC, "show_dialog");
     static final ClickEventType CUSTOM_CLICK_EVENT_TYPE = new ClickEventType(CUSTOM_CODEC, "custom");
-    public static final Supplier<ClickEventType[]> CLICK_EVENT_TYPES = () -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE, CUSTOM_CLICK_EVENT_TYPE};
+    public static final Supplier<ClickEventType[]> CLICK_EVENT_TYPES = () -> new ClickEventType[]{OPEN_URL_CLICK_EVENT_TYPE, OPEN_FILE_CLICK_EVENT_TYPE, RUN_COMMAND_CLICK_EVENT_TYPE, SUGGEST_COMMAND_CLICK_EVENT_TYPE, CHANGE_PAGE_CLICK_EVENT_TYPE, COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE, SHOW_DIALOG_CLICK_EVENT_TYPE, CUSTOM_CLICK_EVENT_TYPE};
     static final Codec<ClickEventType> CLICK_EVENT_TYPE_CODEC = StringRepresentable.fromValues(CLICK_EVENT_TYPES);
 
     public record ClickEventType(MapCodec<ClickEvent> codec, String id) implements StringRepresentable {
@@ -159,7 +166,7 @@ public final class AdventureCodecs {
             case SUGGEST_COMMAND -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
             case CHANGE_PAGE -> CHANGE_PAGE_CLICK_EVENT_TYPE;
             case COPY_TO_CLIPBOARD -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
-            case SHOW_DIALOG -> throw new UnsupportedOperationException(); // todo: dialog codec with dialog "api"
+            case SHOW_DIALOG -> SHOW_DIALOG_CLICK_EVENT_TYPE;
             case CUSTOM -> CUSTOM_CLICK_EVENT_TYPE;
         };
 
