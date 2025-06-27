@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.registry.data.dialog.action.DialogActionCallback;
 import net.kyori.adventure.key.Key;
@@ -23,12 +24,12 @@ import org.jspecify.annotations.Nullable;
 public abstract class PlayerCustomClickEvent extends Event {
 
     private final Key identifier;
-    private final Player player;
+    private final PlayerCommonConnection commonConnection;
 
     @ApiStatus.Internal
-    protected PlayerCustomClickEvent(final Key identifier, final Player player) {
+    protected PlayerCustomClickEvent(final Key identifier, final PlayerCommonConnection commonConnection) {
         this.identifier = identifier;
-        this.player = player;
+        this.commonConnection = commonConnection;
     }
 
     /**
@@ -54,8 +55,13 @@ public abstract class PlayerCustomClickEvent extends Event {
      */
     public abstract @Nullable DialogResponseView getDialogResponseView();
 
-    public Player getPlayer() {
-        return this.player;
+    /**
+     * The common connection of the player.
+     *
+     * @return the common connection
+     */
+    public final PlayerCommonConnection getCommonConnection() {
+        return this.commonConnection;
     }
 
     @Override

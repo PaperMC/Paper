@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.dialog.PaperDialogResponseView;
 import net.kyori.adventure.key.Key;
@@ -17,8 +18,8 @@ public class PaperPlayerCustomClickEvent extends PlayerCustomClickEvent {
 
     private @Nullable DialogResponseView rawResponse;
 
-    public PaperPlayerCustomClickEvent(final Key key, final Player player, final @Nullable Tag payload) {
-        super(key, player);
+    public PaperPlayerCustomClickEvent(final Key key, final PlayerCommonConnection commonConnection, final @Nullable Tag payload) {
+        super(key, commonConnection);
         this.payload = payload;
     }
 

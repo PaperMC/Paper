@@ -24,7 +24,7 @@
  
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
-@@ -52,6 +_,10 @@
+@@ -52,7 +_,17 @@
          this.keepAliveTime = Util.getMillis();
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
@@ -33,8 +33,15 @@
 +        this.cserver = server.server;
 +        // Paper end
      }
++
++    // Paper start - configuration phase API
++    public abstract io.papermc.paper.connection.PlayerCommonConnection getApiConnection();
++
++    public abstract net.kyori.adventure.audience.Audience getAudience();
++    // Paper end - configuration phase API
  
      private void close() {
+         if (!this.closed) {
 @@ -82,7 +_,7 @@
              this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
@@ -44,6 +51,19 @@
          }
      }
  
+@@ -98,6 +_,12 @@
+     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
+         this.server.handleCustomClickAction(packet.id(), packet.payload());
++        // Paper start - Implement click callbacks with custom click action
++        final io.papermc.paper.event.player.PaperPlayerCustomClickEvent event = new io.papermc.paper.event.player.PaperPlayerCustomClickEvent(io.papermc.paper.adventure.PaperAdventure.asAdventure(packet.id()), this.getApiConnection(), packet.payload().orElse(null));
++        event.callEvent();
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(),  packet.payload());
++        // Paper end - Implement click callbacks with custom click action
+     }
+ 
+     @Override
 @@ -105,21 +_,46 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
          if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
