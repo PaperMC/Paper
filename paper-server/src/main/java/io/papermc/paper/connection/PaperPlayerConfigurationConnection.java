@@ -1,11 +1,15 @@
 package io.papermc.paper.connection;
 
-import com.destroystokyo.paper.ClientOption;
-import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.resource.ResourcePackCallback;
@@ -13,15 +17,12 @@ import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
+import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.jspecify.annotations.Nullable;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience {
 
@@ -61,6 +62,11 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     @Override
     public void clearResourcePacks() {
         this.handle.send(new ClientboundResourcePackPopPacket(Optional.empty()));
+    }
+
+    @Override
+    public void showDialog(final DialogLike dialog) {
+        this.handle.send(new ClientboundShowDialogPacket(PaperDialog.bukkitToMinecraftHolder((Dialog) dialog)));
     }
 
     @Override

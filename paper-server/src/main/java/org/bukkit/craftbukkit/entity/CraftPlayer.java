@@ -9,6 +9,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.connection.PlayerGameConnection;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -42,6 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
@@ -2488,6 +2491,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void clearResourcePacks() {
         if (this.getHandle().connection == null) return;
         this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
+    }
+
+    @Override
+    public void showDialog(final DialogLike dialog) {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().openDialog(PaperDialog.bukkitToMinecraftHolder((Dialog) dialog));
     }
     // Paper end - adventure
 
