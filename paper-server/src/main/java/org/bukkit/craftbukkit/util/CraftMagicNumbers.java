@@ -813,7 +813,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     private CompoundTag readCompoundFromBytes(byte[] data) {
-        boolean decompress = UnsafeValues.isCompressedNbt(data);
+        boolean decompress = UnsafeValues.isGZipCompressedNbt(data);
         var bis = new it.unimi.dsi.fastutil.io.FastByteArrayInputStream(data);
         try (var is = decompress ?
                 new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(bis)) :  bis) {

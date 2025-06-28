@@ -174,8 +174,7 @@ public interface UnsafeValues {
     @NotNull ItemStack deserializeItemFromNbt(@NotNull java.io.InputStream input) throws java.io.IOException;
 
     /**
-     * Determines if the provided byte[] was compressed using GZip
-     * (which is the standard compression to use on NBT)<br>
+     * Determines if the provided byte[] was compressed using GZip.<br>
      * This method does not mutate the input.
      * <p>
      * This method is intended for those who wish to manually handle NBT data emitted
@@ -216,7 +215,7 @@ public interface UnsafeValues {
      * if the {@code data.length} is below 2
      * @since 1.21.6
      */
-    static boolean isCompressedNbt(@NotNull byte[] data) {
+    static boolean isGZipCompressedNbt(@NotNull byte[] data) {
         // if data length is below 2, it's always invalid data
         return data.length > 1
                 && ((byte) 0x1F) == data[0]
@@ -254,7 +253,7 @@ public interface UnsafeValues {
     @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 
     /**
-     * Serializes the provided entity as compressed NBT.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @return serialized entity data
@@ -270,7 +269,7 @@ public interface UnsafeValues {
     }
 
     /**
-     * Serializes the provided entity as compressed NBT.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @param serializationFlags serialization flags
@@ -286,7 +285,7 @@ public interface UnsafeValues {
     }
 
     /**
-     * Serializes the provided entity as NBT.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @param compress true for compressed GZip output, false for raw NBT bytes.
@@ -299,7 +298,7 @@ public interface UnsafeValues {
     byte @NotNull [] serializeEntity(@NotNull Entity entity, boolean compress, @NotNull EntitySerializationFlag... serializationFlags);
 
     /**
-     * Serializes the provided entity as raw NBT to the provided OutputStream
+     * Serializes the provided entity as raw NBT to the provided OutputStream.
      *
      * @param entity entity
      * @param output the stream to write the data to
@@ -315,8 +314,8 @@ public interface UnsafeValues {
      * Deserializes the entity from NBT data.
      * <br>The entity's {@link java.util.UUID} as well as passengers will not be preserved.
      * <p>
-     * This method automatically decompresses the data, if it was compressed via
-     * {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -335,8 +334,8 @@ public interface UnsafeValues {
      * Deserializes the entity from NBT data.
      * <br>The entity's passengers will not be preserved.
      * <p>
-     * This method automatically decompresses the data, if it was compressed via
-     * {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -355,8 +354,8 @@ public interface UnsafeValues {
     /**
      * Deserializes the entity from NBT data.
      * <p>
-     * This method automatically decompresses the data, if it was compressed via
-     * {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -371,11 +370,9 @@ public interface UnsafeValues {
     @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
 
     /**
-     * Deserializes the entity from a stream of raw NBT data
-     * <p>
-     * This method does NOT automatically decompress the input.
+     * Deserializes the entity from a stream of raw NBT data.
      *
-     * @param input stream of NBT entity data
+     * @param input the InputStream of raw, uncompressed NBT data
      * @param world world
      * @param preserveUUID whether to preserve uuids of the entity and its passengers
      * @param preservePassengers whether to preserve passengers
