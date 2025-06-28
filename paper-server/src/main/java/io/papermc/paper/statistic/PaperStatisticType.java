@@ -93,7 +93,7 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableB
 
     @Override
     public String translationKey() {
-        Preconditions.checkArgument(this != StatisticType.CUSTOM, this.key() + " does not have a translation key, see CustomStatistic#translationKey()");
+        Preconditions.checkArgument(this != StatisticTypes.CUSTOM, this.key() + " does not have a translation key, see CustomStatistic#translationKey()");
         return "stat_type." + this.getKey().toString().replace(':', '.');
     }
 }
