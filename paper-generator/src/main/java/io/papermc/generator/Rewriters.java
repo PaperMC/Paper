@@ -25,7 +25,9 @@ import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.CustomStatistics;
 import io.papermc.paper.statistic.StatisticType;
+import io.papermc.paper.statistic.StatisticTypes;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -187,8 +189,8 @@ public final class Rewriters {
             .register("ChickenVariant", Chicken.Variant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
             .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
-            .register("CustomStatistic", CustomStatistic.class, new RegistryFieldRewriter<>(Registries.CUSTOM_STAT, "get"))
-            .register("StatisticType", StatisticType.class, new StatisticTypeRewriter())
+            .register("CustomStatistics", CustomStatistics.class, new RegistryFieldRewriter<>(Registries.CUSTOM_STAT, "get"))
+            .register("StatisticTypes", StatisticTypes.class, new StatisticTypeRewriter())
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", ItemType.class, new ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
