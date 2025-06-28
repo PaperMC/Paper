@@ -7,8 +7,12 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents one of the configurations of a trial spawner.
+ *
+ * @deprecated in favor of {@link io.papermc.paper.block.TrialSpawnerConfig}
+ * and other methods in {@link org.bukkit.block.TrialSpawner}
  */
-@ApiStatus.Experimental
+@ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+@Deprecated(since = "1.21.6", forRemoval = true)
 public interface TrialSpawnerConfiguration extends BaseSpawner {
 
     /**

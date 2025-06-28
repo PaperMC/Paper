@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
@@ -12,6 +13,7 @@ import io.papermc.paper.registry.data.GameEventRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
+import io.papermc.paper.registry.data.TrialSpawnerConfigRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import org.bukkit.Art;
 import org.bukkit.GameEvent;
@@ -48,6 +50,7 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Chicken.Variant, ChickenVariantRegistryEntry.Builder> CHICKEN_VARIANT = create(RegistryKey.CHICKEN_VARIANT);
     public static final RegistryEventProvider<Cow.Variant, CowVariantRegistryEntry.Builder> COW_VARIANT = create(RegistryKey.COW_VARIANT);
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
+    public static final RegistryEventProvider<TrialSpawnerConfig, TrialSpawnerConfigRegistryEntry.Builder> TRIAL_SPAWNER_CONFIG = create(RegistryKey.TRIAL_SPAWNER_CONFIG);
     // End generate - RegistryEvents
 
     private RegistryEvents() {
