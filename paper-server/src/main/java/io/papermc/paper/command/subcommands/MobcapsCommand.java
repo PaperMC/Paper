@@ -1,10 +1,17 @@
 package io.papermc.paper.command.subcommands;
 
 import com.google.common.collect.ImmutableMap;
-import io.papermc.paper.command.CommandUtil;
-import io.papermc.paper.command.PaperSubcommand;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.MessageComponentSerializer;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
@@ -25,12 +32,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
-@DefaultQualifier(NonNull.class)
-public final class MobcapsCommand implements PaperSubcommand {
+@NullMarked
+public final class MobcapsCommand {
+
     static final Map<MobCategory, TextColor> MOB_CATEGORY_COLORS = ImmutableMap.<MobCategory, TextColor>builder()
         .put(MobCategory.MONSTER, NamedTextColor.RED)
         .put(MobCategory.CREATURE, NamedTextColor.GREEN)
@@ -42,78 +48,78 @@ public final class MobcapsCommand implements PaperSubcommand {
         .put(MobCategory.MISC, TextColor.color(0x636363))
         .build();
 
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        switch (subCommand) {
-            case "mobcaps" -> this.printMobcaps(sender, args);
-            case "playermobcaps" -> this.printPlayerMobcaps(sender, args);
-        }
-        return true;
+    private static final SimpleCommandExceptionType REQUIRES_PLAYER = new SimpleCommandExceptionType(MessageComponentSerializer.message().serialize(
+        Component.text("Must specify a player! ex: '/paper playermobcount playerName'")
+    ));
+    private static final DynamicCommandExceptionType NO_SUCH_WORLD_ERROR = new DynamicCommandExceptionType(obj -> MessageComponentSerializer.message().serialize(
+        Component.text("'" + obj + "' is not a valid world!")
+    ));
+
+    public static LiteralArgumentBuilder<CommandSourceStack> createGlobal() {
+        return Commands.literal("mobcaps")
+            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "mobcaps"))
+
+            .then(Commands.literal("*")
+                .executes(ctx -> {
+                    printMobcaps(ctx.getSource().getSender(), Bukkit.getWorlds());
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+
+            .then(Commands.argument("world", ArgumentTypes.world())
+                .executes(ctx -> {
+                    printMobcaps(ctx.getSource().getSender(), List.of(ctx.getArgument("world", World.class)));
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+
+            .then(Commands.argument("world_name", StringArgumentType.string())
+                .executes(ctx -> {
+                    String worldName = StringArgumentType.getString(ctx, "world_name");
+                    World world = Bukkit.getWorld(worldName);
+
+                    if (world == null) {
+                        throw NO_SUCH_WORLD_ERROR.create(worldName);
+                    }
+
+                    printMobcaps(ctx.getSource().getSender(), List.of(world));
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+
+            .executes(ctx -> {
+                printMobcaps(ctx.getSource().getSender(), List.of(ctx.getSource().getLocation().getWorld()));
+                return Command.SINGLE_SUCCESS;
+            });
     }
 
-    @Override
-    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-        return switch (subCommand) {
-            case "mobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestMobcaps(args));
-            case "playermobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestPlayerMobcaps(sender, args));
-            default -> throw new IllegalArgumentException();
-        };
-    }
+    public static LiteralArgumentBuilder<CommandSourceStack> createPlayer() {
+        return Commands.literal("playermobcaps")
+            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "mobcaps"))
 
-    private List<String> suggestMobcaps(final String[] args) {
-        if (args.length == 1) {
-            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(World::getName).toList());
-            worlds.add("*");
-            return worlds;
-        }
+            .then(Commands.argument("players", ArgumentTypes.player())
+                .executes(ctx -> {
+                    ctx.getArgument("players", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource()).forEach(
+                        player -> printPlayerMobcaps(ctx.getSource().getSender(), player)
+                    );
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
 
-        return Collections.emptyList();
-    }
-
-    private List<String> suggestPlayerMobcaps(final CommandSender sender, final String[] args) {
-        if (args.length == 1) {
-            final List<String> list = new ArrayList<>();
-            for (final Player player : Bukkit.getOnlinePlayers()) {
-                if (!(sender instanceof Player senderPlayer) || senderPlayer.canSee(player)) {
-                    list.add(player.getName());
+            .executes(ctx -> {
+                if (ctx.getSource().getExecutor() instanceof Player player) {
+                    printPlayerMobcaps(ctx.getSource().getSender(), player);
+                    return Command.SINGLE_SUCCESS;
                 }
-            }
-            return list;
-        }
 
-        return Collections.emptyList();
+                throw REQUIRES_PLAYER.create();
+            });
     }
 
-    private void printMobcaps(final CommandSender sender, final String[] args) {
-        final List<World> worlds;
-        if (args.length == 0) {
-            if (sender instanceof Player player) {
-                worlds = List.of(player.getWorld());
-            } else {
-                sender.sendMessage(Component.text("Must specify a world! ex: '/paper mobcaps world'", NamedTextColor.RED));
-                return;
-            }
-        } else if (args.length == 1) {
-            final String input = args[0];
-            if (input.equals("*")) {
-                worlds = Bukkit.getWorlds();
-            } else {
-                final @Nullable World world = Bukkit.getWorld(input);
-                if (world == null) {
-                    sender.sendMessage(Component.text("'" + input + "' is not a valid world!", NamedTextColor.RED));
-                    return;
-                } else {
-                    worlds = List.of(world);
-                }
-            }
-        } else {
-            sender.sendMessage(Component.text("Too many arguments!", NamedTextColor.RED));
-            return;
-        }
-
+    private static void printMobcaps(final CommandSender sender, final List<World> worlds) {
         for (final World world : worlds) {
             final ServerLevel level = ((CraftWorld) world).getHandle();
-            final NaturalSpawner.@Nullable SpawnState state = level.getChunkSource().getLastSpawnState();
+            final NaturalSpawner.SpawnState state = level.getChunkSource().getLastSpawnState();
 
             final int chunks;
             if (state == null) {
@@ -140,27 +146,7 @@ public final class MobcapsCommand implements PaperSubcommand {
         }
     }
 
-    private void printPlayerMobcaps(final CommandSender sender, final String[] args) {
-        final @Nullable Player player;
-        if (args.length == 0) {
-            if (sender instanceof Player pl) {
-                player = pl;
-            } else {
-                sender.sendMessage(Component.text("Must specify a player! ex: '/paper playermobcount playerName'", NamedTextColor.RED));
-                return;
-            }
-        } else if (args.length == 1) {
-            final String input = args[0];
-            player = Bukkit.getPlayerExact(input);
-            if (player == null) {
-                sender.sendMessage(Component.text("Could not find player named '" + input + "'", NamedTextColor.RED));
-                return;
-            }
-        } else {
-            sender.sendMessage(Component.text("Too many arguments!", NamedTextColor.RED));
-            return;
-        }
-
+    private static void printPlayerMobcaps(final CommandSender sender, final Player player) {
         final ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         final ServerLevel level = serverPlayer.level();
 

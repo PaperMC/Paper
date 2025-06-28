@@ -8,7 +8,11 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.Strictness;
 import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonWriter;
-import io.papermc.paper.command.PaperSubcommand;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.entrypoint.Entrypoint;
 import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
 import io.papermc.paper.plugin.entrypoint.classloader.group.LockingClassLoaderGroup;
@@ -17,24 +21,16 @@ import io.papermc.paper.plugin.entrypoint.classloader.group.SimpleListPluginClas
 import io.papermc.paper.plugin.entrypoint.classloader.group.SpigotPluginClassLoaderGroup;
 import io.papermc.paper.plugin.entrypoint.classloader.group.StaticPluginClassLoaderGroup;
 import io.papermc.paper.plugin.entrypoint.dependency.SimpleMetaDependencyTree;
-import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
+import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 import io.papermc.paper.plugin.provider.PluginProvider;
 import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
 import io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup;
+import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 import io.papermc.paper.plugin.storage.ConfiguredProviderStorage;
 import io.papermc.paper.plugin.storage.ProviderStorage;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.minecraft.server.MinecraftServer;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
-
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -45,23 +41,33 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.minecraft.server.MinecraftServer;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 
-@DefaultQualifier(NonNull.class)
-public final class DumpPluginsCommand implements PaperSubcommand {
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        this.dumpPlugins(sender, args);
-        return true;
-    }
+@NullMarked
+public final class DumpPluginsCommand {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
 
-    private void dumpPlugins(final CommandSender sender, final String[] args) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        DumpPluginsCommand instance = new DumpPluginsCommand();
+        return Commands.literal("dumpplugins")
+            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpplugins"))
+            .executes(ctx -> {
+                instance.dumpPlugins(ctx.getSource().getSender());
+                return Command.SINGLE_SUCCESS;
+            });
+    }
+
+    private void dumpPlugins(final CommandSender sender) {
         Path parent = Path.of("debug");
         Path path = parent.resolve("plugin-info-" + FORMATTER.format(LocalDateTime.now()) + ".json");
         try {
