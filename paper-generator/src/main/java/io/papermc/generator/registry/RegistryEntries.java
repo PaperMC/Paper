@@ -20,7 +20,9 @@ import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.CustomStatistics;
 import io.papermc.paper.statistic.StatisticType;
+import io.papermc.paper.statistic.StatisticTypes;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -170,8 +172,8 @@ public final class RegistryEntries {
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
-        entry(Registries.CUSTOM_STAT, Stats.class, CustomStatistic.class, "Paper"),
-        entry(Registries.STAT_TYPE, Stats.class, StatisticType.class, "Paper").genericArgCount(1).apiAccessName("create")
+        entry(Registries.CUSTOM_STAT, Stats.class, CustomStatistic.class, "Paper").preload(CustomStatistics.class),
+        entry(Registries.STAT_TYPE, Stats.class, StatisticType.class, "Paper").preload(StatisticTypes.class).genericArgCount(1).apiAccessName("create")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(

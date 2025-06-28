@@ -14,11 +14,11 @@ import org.jspecify.annotations.Nullable;
 public final class PaperStatistics {
 
     public static final Set<Key> IGNORED_STATS_FOR_EVENT = Util.make(new HashSet<>(), set -> {
-        set.add(CustomStatistic.TIME_SINCE_DEATH.key());
-        set.add(CustomStatistic.TIME_SINCE_REST.key());
-        set.add(CustomStatistic.SNEAK_TIME.key());
-        set.add(CustomStatistic.TOTAL_WORLD_TIME.key());
-        set.add(CustomStatistic.PLAY_TIME.key());
+        set.add(CustomStatistics.TIME_SINCE_DEATH.key());
+        set.add(CustomStatistics.TIME_SINCE_REST.key());
+        set.add(CustomStatistics.SNEAK_TIME.key());
+        set.add(CustomStatistics.TOTAL_WORLD_TIME.key());
+        set.add(CustomStatistics.PLAY_TIME.key());
 
         Registry.CUSTOM_STAT.keyStream().forEach(key -> {
             if (key.key().value().endsWith("_one_cm")) {
