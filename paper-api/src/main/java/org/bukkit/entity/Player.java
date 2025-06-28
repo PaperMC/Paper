@@ -621,7 +621,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return current input
      */
-    @ApiStatus.Experimental
     public Input getCurrentInput();
 
     /**
@@ -1251,7 +1250,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if location is null
      * @throws IllegalArgumentException if tileState is null
      */
-    @ApiStatus.Experimental
     public void sendBlockUpdate(Location loc, TileState tileState) throws IllegalArgumentException;
 
     /**

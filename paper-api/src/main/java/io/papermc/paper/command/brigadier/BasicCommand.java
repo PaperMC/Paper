@@ -4,15 +4,12 @@ import java.util.Collection;
 import java.util.Collections;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Implementing this interface allows for easily creating "Bukkit-style" {@code String[] args} commands.
  * The implementation handles converting the command to a representation compatible with Brigadier on registration, usually in the form of {@literal /commandlabel <greedy_string>}.
  */
-@ApiStatus.Experimental
-@NullMarked
 @FunctionalInterface
 public interface BasicCommand {
 

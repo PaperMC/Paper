@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -60,8 +59,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Commands extends Registrar {
 

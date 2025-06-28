@@ -2,13 +2,12 @@ package org.bukkit;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a song which may play in a Jukebox.
  */
-@ApiStatus.Experimental
+@NullMarked
 public interface JukeboxSong extends Keyed, Translatable {
 
     // Start generate - JukeboxSong
@@ -56,18 +55,15 @@ public interface JukeboxSong extends Keyed, Translatable {
     JukeboxSong WARD = get("ward");
     // End generate - JukeboxSong
 
-    @NotNull
-    private static JukeboxSong get(@NotNull String key) {
+    private static JukeboxSong get(String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(NamespacedKey.minecraft(key));
     }
 
-    // Paper start - adventure
     /**
      * @deprecated this method assumes that jukebox song description will
      * always be a translatable component which is not guaranteed.
      */
     @Override
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.NotNull String getTranslationKey();
-    // Paper end - adventure
+    String getTranslationKey();
 }
