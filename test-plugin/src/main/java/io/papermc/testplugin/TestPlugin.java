@@ -42,7 +42,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
                     .afterAction(DialogBase.DialogAfterAction.CLOSE)
                     .build()
             ).dialogSpecialty(DialogSpecialty.confirmation(
-                ActionButton.builder(text("yes")).action(DialogAction.customClick(Key.key("hello:there"), callback, ClickCallback.Options.builder().uses(1).build())).build(),
+                ActionButton.builder(text("yes")).action(DialogAction.customClick(callback, ClickCallback.Options.builder().uses(1).build())).build(),
                 ActionButton.builder(text("no")).build()
             ))
         );

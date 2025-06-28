@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * This event is fired for any custom click events.
  * @see net.kyori.adventure.text.event.ClickEvent#custom(Key, BinaryTagHolder)
- * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(Key, DialogActionCallback, ClickCallback.Options)
+ * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

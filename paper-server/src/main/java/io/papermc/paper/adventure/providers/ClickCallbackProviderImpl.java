@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("UnstableApiUsage") // permitted provider
 public class ClickCallbackProviderImpl implements ClickCallback.Provider {
     private static final Key ADVENTURE_CLICK_CALLBACK_KEY = Key.key("paper", "click_callback");
+    public static final Key DIALOG_CLICK_CALLBACK_KEY = Key.key("paper", "dialog_click_callback");
     public static final String ID_KEY = "id";
 
     public static final AdventureClick ADVENTURE_CLICK_MANAGER = new AdventureClick();
@@ -61,9 +62,11 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
     }
 
-    public record DialogClickKey(Key key, UUID uuid) {}
+    public static final class DialogClickManager extends CallbackManager<DialogActionCallback, UUID> {
 
-    public static final class DialogClickManager extends CallbackManager<DialogActionCallback, DialogClickKey> {
+        public DialogClickManager() {
+            super(PaperAdventure.asVanilla(DIALOG_CLICK_CALLBACK_KEY)::equals);
+        }
 
         @Override
         void doRunCallback(final @NotNull Audience audience, final Key key, final Tag tag) {
@@ -72,7 +75,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
                 if (id.isEmpty()) {
                     return;
                 }
-                this.tryConsumeCallback(new DialogClickKey(key, id.get()), callback -> {
+                this.tryConsumeCallback(id.get(), callback -> {
                     callback.accept(PaperDialogResponseView.createUnvalidatedResponse(t), audience);
                 });
             });

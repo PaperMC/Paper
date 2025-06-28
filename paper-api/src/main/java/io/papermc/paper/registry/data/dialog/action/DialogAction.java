@@ -45,6 +45,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      * @param additions additional data to be sent with the action, or null if not needed
      * @return a new custom all action instance
      */
+    @Contract(pure = true, value = "_, _ -> new")
     static CustomClickAction customClick(final Key id, final @Nullable BinaryTagHolder additions) {
         return new CustomClickActionImpl(id, additions);
     }
@@ -52,13 +53,13 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
     /**
      * Creates a new custom click action that executes a custom action.
      *
-     * @param id the identifier of the custom action
      * @param callback the custom action to execute
      * @param options the options for the custom action
      * @return a new custom all action instance
      */
-    static CustomClickAction customClick(final Key id, final DialogActionCallback callback, final ClickCallback.Options options) {
-        return DialogActionProvider.INSTANCE.orElseThrow().register(id, callback, options);
+    @Contract(pure = true, value = "_, _ -> new")
+    static CustomClickAction customClick(final DialogActionCallback callback, final ClickCallback.Options options) {
+        return DialogActionProvider.INSTANCE.orElseThrow().register(callback, options);
     }
 
     /**
