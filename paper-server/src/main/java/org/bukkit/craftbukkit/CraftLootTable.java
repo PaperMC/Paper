@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -21,8 +22,10 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -87,12 +90,30 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public void fillInventory(Inventory inventory, Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "Inventory cannot be null");
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootParams nmsContext = this.convertContext(context);
+        LootParams nmsParams = this.convertContext(context);
         CraftInventory craftInventory = (CraftInventory) inventory;
         Container handle = craftInventory.getInventory();
 
-        // TODO: When events are added, call event here w/ custom reason?
-        this.getHandle().fill(handle, nmsContext, random == null ? null : new RandomSourceWrapper(random), true);
+        // Generate ItemStacks based on LootContext for plugin integration
+        // Use the enhanced fill method that supports LootGenerateEvent
+        this.getHandle().fill(handle, nmsParams, random == null ? null : new RandomSourceWrapper(random), true);
+    }
+    
+    // added for compatibility with the LootTable API
+    public Collection<ItemStack> generateLoot(Random random, LootContext context) {
+        Preconditions.checkArgument(context != null, "LootContext cannot be null");
+        LootParams nmsContext = this.convertContext(context);
+        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
+        Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
+
+        for (net.minecraft.world.item.ItemStack item : nmsItems) {
+            if (item.isEmpty()) {
+                continue;
+            }
+            bukkit.add(CraftItemStack.asBukkitCopy(item));
+        }
+
+        return bukkit;
     }
 
     @Override
