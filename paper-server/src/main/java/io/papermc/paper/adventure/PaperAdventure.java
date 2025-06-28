@@ -128,10 +128,11 @@ public final class PaperAdventure {
     @Deprecated
     public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
     public static final ANSIComponentSerializer ANSI_SERIALIZER = ANSIComponentSerializer.builder().flattener(FLATTENER).build();
+    private static final TagParser<Tag> NBT_PARSER = TagParser.create(NbtOps.INSTANCE);
     public static final Codec<Tag, String, CommandSyntaxException, RuntimeException> NBT_CODEC = new Codec<>() {
         @Override
         public @NotNull Tag decode(final @NotNull String encoded) throws CommandSyntaxException {
-            return TagParser.parseCompoundFully(encoded);
+            return NBT_PARSER.parseFully(encoded);
         }
 
         @Override
