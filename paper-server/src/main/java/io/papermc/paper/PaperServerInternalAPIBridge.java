@@ -1,24 +1,28 @@
 package io.papermc.paper;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.function.Predicate;
 import net.minecraft.Optionull;
 import net.minecraft.commands.PermissionSource;
 import net.minecraft.world.damagesource.FallLocation;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scoreboard.Criteria;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.function.Predicate;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -85,5 +89,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         }
 
         return new RestrictedPredicate(predicate);
+    }
+
+    @Override
+    public Criteria getCriteria(final String key) {
+        Preconditions.checkArgument(ObjectiveCriteria.getCustomCriteriaNames().contains(key));
+        return CraftCriteria.getFromNMS(ObjectiveCriteria.byName(key).orElseThrow());
     }
 }
