@@ -6,6 +6,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import io.papermc.paper.util.StackWalkerUtil;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -27,6 +28,19 @@ public class HorriblePlayerLoginEventHack {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
     private static boolean nagged = false;
+
+    public static void warnReenterConfiguration() {
+        LOGGER.warn("""
+                
+                ============================================================
+                WARNING: {} Attempted to use PlayerGameConnection#reenterConfiguration()
+                
+                This method currently requires that all plugins installed on the server
+                are not listening to the PlayerLoginEvent.
+                
+                Please look in your logs for the Plugins listening to this event.
+                ============================================================""", StackWalkerUtil.getFirstPluginCaller().getName());
+    }
 
     public static @Nullable Component execute(final Connection connection, MinecraftServer server, GameProfile profile, PlayerList.LoginResult result) {
         if (PlayerLoginEvent.getHandlerList().getRegisteredListeners().length == 0) {

@@ -17,6 +17,10 @@ public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGameP
 
     @Override
     public void reenterConfiguration() {
+        if (this.handle.connection.savedPlayerForLoginEventLegacy != null) {
+            HorriblePlayerLoginEventHack.warnReenterConfiguration();
+            return;
+        }
         this.handle.switchToConfig();
     }
 
