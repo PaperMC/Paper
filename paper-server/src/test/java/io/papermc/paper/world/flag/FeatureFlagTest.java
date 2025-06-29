@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.kyori.adventure.key.Key;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureElement;
@@ -82,6 +83,7 @@ class FeatureFlagTest {
 
     static Stream<RegistryKey<?>> nonFeatureFilteredRegistries() {
         return RegistryHelper.getRegistry().registries().filter(r -> {
+            if (r.key() == Registries.LEVEL_STEM) return false; // skip cause its empty
             final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(r.key());
             // has an API registry and isn't a filtered registry
             return entry != null && !FeatureElement.FILTERED_REGISTRIES.contains(r.key());
