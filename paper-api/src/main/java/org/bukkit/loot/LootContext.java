@@ -4,13 +4,16 @@ import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents additional information a {@link LootTable} can use to modify it's
  * generated loot.
+ * 
+ * @deprecated This class is fundamentally broken and cannot properly represent
+ *             all loot context parameters required by Minecraft. Use the new
+ *             {@link io.papermc.paper.loot.LootContext} and {@link io.papermc.paper.loot.LootContextBuilder} instead.
  */
+@Deprecated(since = "1.21.4", forRemoval = true)
 public final class LootContext {
 
     public static final int DEFAULT_LOOT_MODIFIER = -1;
@@ -21,7 +24,7 @@ public final class LootContext {
     private final Entity lootedEntity;
     private final HumanEntity killer;
 
-    private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
+    private LootContext(Location location, float luck, int lootingModifier, Entity lootedEntity, HumanEntity killer) {
         Preconditions.checkArgument(location != null, "LootContext location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "LootContext World cannot be null");
         this.location = location.clone();
@@ -36,7 +39,6 @@ public final class LootContext {
      *
      * @return the Location of where the loot will be generated
      */
-    @NotNull
     public Location getLocation() {
         return location.clone();
     }
@@ -74,7 +76,6 @@ public final class LootContext {
      *
      * @return the looted entity or null
      */
-    @Nullable
     public Entity getLootedEntity() {
         return lootedEntity;
     }
@@ -85,7 +86,6 @@ public final class LootContext {
      *
      * @return the killer entity, or null.
      */
-    @Nullable
     public HumanEntity getKiller() {
         return killer;
     }
@@ -109,7 +109,7 @@ public final class LootContext {
          *
          * @param location the location the LootContext should use
          */
-        public Builder(@NotNull Location location) {
+        public Builder(Location location) {
             this.location = location.clone();
         }
 
@@ -119,7 +119,6 @@ public final class LootContext {
          * @param luck the luck level
          * @return the Builder
          */
-        @NotNull
         public Builder luck(float luck) {
             this.luck = luck;
             return this;
@@ -135,7 +134,6 @@ public final class LootContext {
          * @return the Builder
          * @deprecated no longer functional
          */
-        @NotNull
         @Deprecated(since = "1.21", forRemoval = true)
         public Builder lootingModifier(int modifier) {
             this.lootingModifier = modifier;
@@ -148,8 +146,7 @@ public final class LootContext {
          * @param lootedEntity the looted entity
          * @return the Builder
          */
-        @NotNull
-        public Builder lootedEntity(@Nullable Entity lootedEntity) {
+        public Builder lootedEntity(Entity lootedEntity) {
             this.lootedEntity = lootedEntity;
             return this;
         }
@@ -162,8 +159,7 @@ public final class LootContext {
          * @param killer the killer entity
          * @return the Builder
          */
-        @NotNull
-        public Builder killer(@Nullable HumanEntity killer) {
+        public Builder killer(HumanEntity killer) {
             this.killer = killer;
             return this;
         }
@@ -174,7 +170,6 @@ public final class LootContext {
          *
          * @return a new {@link LootContext} instance
          */
-        @NotNull
         public LootContext build() {
             return new LootContext(location, luck, lootingModifier, lootedEntity, killer);
         }

@@ -1,7 +1,5 @@
 package org.bukkit.loot;
 
-import org.jetbrains.annotations.Nullable;
-
 /**
  * Represents a {@link org.bukkit.block.Container} or a
  * {@link org.bukkit.entity.Mob} that can have a loot table.
@@ -21,7 +19,7 @@ public interface Lootable {
      * @param table the Loot Table this {@link org.bukkit.block.Container} or
      * {@link org.bukkit.entity.Mob} will have.
      */
-    void setLootTable(@Nullable LootTable table);
+    void setLootTable(LootTable table);
 
     /**
      * Gets the Loot Table attached to this block or entity.
@@ -32,7 +30,6 @@ public interface Lootable {
      *
      * @return the Loot Table attached to this block or entity.
      */
-    @Nullable
     LootTable getLootTable();
 
     // Paper start
@@ -44,7 +41,7 @@ public interface Lootable {
      * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
      * @param seed the seed to used to generate loot. Default is 0.
      */
-    void setLootTable(final @Nullable LootTable table, final long seed);
+    void setLootTable(final LootTable table, final long seed);
 
     /**
      * Returns whether or not this object has a Loot Table

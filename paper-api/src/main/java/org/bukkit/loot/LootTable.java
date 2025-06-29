@@ -5,8 +5,6 @@ import java.util.Random;
 import org.bukkit.Keyed;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * LootTables are technical files that represent what items should be in
@@ -24,9 +22,12 @@ public interface LootTable extends Keyed {
      * @param random the random instance to use to generate loot
      * @param context context within to populate loot
      * @return a list of ItemStacks
+     * @deprecated Use {@link io.papermc.paper.loot.LootTableManager#createGenerator(LootTable)} 
+     *             and {@link io.papermc.paper.loot.LootGenerator#generateLoot(io.papermc.paper.loot.LootContext)} instead.
+     *             The old LootContext API is fundamentally broken and cannot properly handle all loot table parameters.
      */
-    @NotNull
-    Collection<ItemStack> populateLoot(@Nullable Random random, @NotNull LootContext context);
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    Collection<ItemStack> populateLoot(Random random, LootContext context);
 
     /**
      * Attempt to fill an inventory with this LootTable's loot.
@@ -34,6 +35,10 @@ public interface LootTable extends Keyed {
      * @param inventory the inventory to fill
      * @param random the random instance to use to generate loot
      * @param context context within to populate loot
+     * @deprecated Use {@link io.papermc.paper.loot.LootTableManager#createGenerator(LootTable)} 
+     *             and {@link io.papermc.paper.loot.LootGenerator#fillInventory(Inventory, io.papermc.paper.loot.LootContext)} instead.
+     *             The old LootContext API is fundamentally broken and cannot properly handle all loot table parameters.
      */
-    void fillInventory(@NotNull Inventory inventory, @Nullable Random random, @NotNull LootContext context);
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    void fillInventory(Inventory inventory, Random random, LootContext context);
 }

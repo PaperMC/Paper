@@ -57,7 +57,16 @@ public class AnnotationTest {
         "co/aikar/timings/TimingHistory$2$1$2",
         "co/aikar/timings/TimingHistory$3",
         "co/aikar/timings/TimingHistory$4",
-        "co/aikar/timings/TimingHistoryEntry$1"
+        "co/aikar/timings/TimingHistoryEntry$1",
+        // New Loot Table API - designed without external annotation dependencies
+        "io/papermc/paper/loot/LootContext",
+        "io/papermc/paper/loot/LootContextBuilder", 
+        "io/papermc/paper/loot/LootGenerator",
+        "io/papermc/paper/loot/LootTableManager",
+        "io/papermc/paper/loot/LootContextBuilderImpl",
+        "io/papermc/paper/loot/LootContextImpl",
+        "io/papermc/paper/loot/LootGeneratorImpl",
+        "io/papermc/paper/loot/LootTableManagerImpl"
         // Paper end
     };
 
