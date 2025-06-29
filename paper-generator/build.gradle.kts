@@ -36,6 +36,7 @@ val gameVersion = providers.gradleProperty("mcVersion")
 
 val rewriteApi = tasks.registerGenerationTask("rewriteApi", true, "api", {
     bootstrapTags = true
+    // extraPackFolder = rootProject.layout.projectDirectory.dir("paper-server/src/main/resources/data/minecraft/datapacks") // maybe later
     sourceSet = rootProject.layout.projectDirectory.dir("paper-api")
 }) {
     description = "Rewrite existing API classes"
@@ -88,11 +89,8 @@ if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()
 
         val projectDirs = listOf("paper-api", "paper-server").map { rootProject.layout.projectDirectory.dir(it) }
         args(projectDirs.map { it.asFile.absolutePath })
-        val workDirs = projectDirs.map { it.dir("src/main/java") }
 
-        workDirs.forEach { inputs.dir(it) }
         inputs.property("gameVersion", gameVersion)
-        outputs.dirs(workDirs)
     }
     tasks.check {
         dependsOn(scanOldGeneratedSourceCode)
@@ -110,7 +108,6 @@ fun TaskContainer.registerGenerationTask(
     dependsOn(project.tasks.test)
     javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
     inputs.property("gameVersion", gameVersion)
-    inputs.dir(layout.projectDirectory.dir("src/main/java")).withPathSensitivity(PathSensitivity.RELATIVE)
     mainClass.set("io.papermc.generator.Main")
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
@@ -121,9 +118,6 @@ fun TaskContainer.registerGenerationTask(
         args(provider)
     }
     argumentProviders.add(provider)
-
-    val targetDir = if (rewrite) "src/main/java" else "src/generated/java"
-    outputs.dir(provider.sourceSet.dir(targetDir))
 
     block(this)
 }
@@ -148,6 +142,11 @@ abstract class GenerationArgumentProvider : CommandLineArgumentProvider {
     @get:Optional
     abstract val bootstrapTags: Property<Boolean>
 
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputDirectory
+    @get:Optional
+    abstract val extraPackFolder: DirectoryProperty
+
     init {
         bootstrapTags.convention(false)
     }
@@ -164,7 +163,10 @@ abstract class GenerationArgumentProvider : CommandLineArgumentProvider {
         }
 
         if (bootstrapTags.get()) {
-            args.add(("--bootstrap-tags"))
+            args.add("--bootstrap-tags")
+        }
+        if (extraPackFolder.isPresent) {
+            args.add("--extra-pack-folder=${extraPackFolder.get().asFile.absolutePath}")
         }
         return args.toList()
     }
