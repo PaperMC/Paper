@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.SharedConstants;
 
@@ -26,24 +27,20 @@ import static io.papermc.typewriter.replace.CommentMarker.EMPTY_MARKER;
 
 public class ScanOldGeneratedSourceCode {
 
-    private static final String CURRENT_VERSION;
-
-    static {
-        Main.bootStrap(false);
-        CURRENT_VERSION = SharedConstants.getCurrentVersion().id();
-    }
-
     public static void main(String[] args) throws IOException {
+        Main.bootStrap(Optional.empty(), false).join();
+        String currentVersion = SharedConstants.getCurrentVersion().id();
+
         PaperPatternSourceSetRewriter apiSourceSet = new PaperPatternSourceSetRewriter();
         PaperPatternSourceSetRewriter serverSourceSet = new PaperPatternSourceSetRewriter();
 
         Rewriters.bootstrap(apiSourceSet, serverSourceSet);
 
-        checkOutdated(apiSourceSet, Path.of(args[0], "src/main/java"));
-        checkOutdated(serverSourceSet, Path.of(args[1], "src/main/java"));
+        checkOutdated(apiSourceSet, Path.of(args[0], "src/main/java"), currentVersion);
+        checkOutdated(serverSourceSet, Path.of(args[1], "src/main/java"), currentVersion);
     }
 
-    private static void checkOutdated(PaperPatternSourceSetRewriter sourceSetRewriter, Path sourceSet) throws IOException {
+    private static void checkOutdated(PaperPatternSourceSetRewriter sourceSetRewriter, Path sourceSet, String currentVersion) throws IOException {
         IndentUnit globalIndentUnit = sourceSetRewriter.getMetadata().indentUnit();
         for (Map.Entry<SourceFile, SourceRewriter> entry : sourceSetRewriter.getRewriters().entrySet()) {
             SourceRewriter rewriter = entry.getValue();
@@ -89,10 +86,10 @@ public class ScanOldGeneratedSourceCode {
                         String generatedComment = "// %s ".formatted(Annotations.annotationStyle(GeneratedFrom.class));
                         if (nextLineIterator.trySkipString(generatedComment) && nextLineIterator.canRead()) {
                             String generatedVersion = nextLineIterator.getRemaining();
-                            if (!CURRENT_VERSION.equals(generatedVersion)) {
+                            if (!currentVersion.equals(generatedVersion)) {
                                 throw new AssertionError(
                                     "Code at line %d in %s is marked as being generated in version %s when the current version is %s".formatted(
-                                    reader.getLineNumber(), file.mainClass().canonicalName(), generatedVersion, CURRENT_VERSION)
+                                    reader.getLineNumber(), file.mainClass().canonicalName(), generatedVersion, currentVersion)
                                 );
                             }
 
