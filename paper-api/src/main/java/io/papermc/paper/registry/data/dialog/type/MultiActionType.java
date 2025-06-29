@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.specialty;
+package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import java.util.List;
@@ -8,13 +8,14 @@ import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
- * Represents a dialog specialty that allows multiple actions to be performed.
- * This specialty is used to create dialogs with multiple action buttons, allowing users to choose from several options.
+ * Represents a dialog that allows multiple actions to be performed.
+ * This dialog is used to create dialogs with multiple action buttons, allowing users to choose from several options.
+ * @see DialogType#multiAction(List, ActionButton, int)
  */
-public sealed interface MultiActionSpecialty extends DialogSpecialty permits MultiActionSpecialtyImpl {
+public sealed interface MultiActionType extends DialogType permits MultiActionTypeImpl {
 
     /**
-     * Returns the list of action buttons available in this multi-action specialty.
+     * Returns the list of action buttons available in this multi-action dialog.
      *
      * @return an unmodifiable list of action buttons
      */

@@ -2,7 +2,7 @@ package io.papermc.paper.registry.data.dialog;
 
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.dialog.specialty.DialogSpecialty;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.RegistryValueSetBuilder;
 import io.papermc.paper.registry.set.RegistryValueSetBuilderImpl;
@@ -16,7 +16,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperDialogRegistryEntry implements DialogRegistryEntry {
 
     protected @Nullable DialogBase dialogBase;
-    protected @Nullable DialogSpecialty dialogSpecialty;
+    protected @Nullable DialogType dialogType;
 
     protected final Conversions conversions;
 
@@ -30,17 +30,17 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
         final CommonDialogData common = internal.common();
         this.dialogBase = conversions.convert(common, PaperDialogCodecs.DIALOG_BASE_MAP_CODEC.codec(), CommonDialogData.MAP_CODEC.codec());
 
-        this.dialogSpecialty = PaperDialogs.extractSpecialty(internal, conversions);
+        this.dialogType = PaperDialogs.extractSpecialty(internal, conversions);
     }
 
     @Override
-    public DialogBase dialogBase() {
+    public DialogBase base() {
         return asConfigured(this.dialogBase, "dialogBase");
     }
 
     @Override
-    public DialogSpecialty dialogSpecialty() {
-        return asConfigured(this.dialogSpecialty, "dialogSpecialty");
+    public DialogType type() {
+        return asConfigured(this.dialogType, "dialogSpecialty");
     }
 
     public static final class PaperBuilder extends PaperDialogRegistryEntry implements Builder, PaperRegistryBuilder<Dialog, io.papermc.paper.dialog.Dialog> {
@@ -50,25 +50,25 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
         }
 
         @Override
-        public RegistryValueSetBuilder<io.papermc.paper.dialog.Dialog, Builder> registryValueSetBuilder() {
+        public RegistryValueSetBuilder<io.papermc.paper.dialog.Dialog, Builder> registryValueSet() {
             return new RegistryValueSetBuilderImpl<>(RegistryKey.DIALOG, this.conversions);
         }
 
         @Override
-        public Builder dialogBase(final DialogBase dialogBase) {
+        public Builder base(final DialogBase dialogBase) {
             this.dialogBase = asArgument(dialogBase, "dialogBase");
             return this;
         }
 
         @Override
-        public Builder dialogSpecialty(final DialogSpecialty dialogSpecialty) {
-            this.dialogSpecialty = asArgument(dialogSpecialty, "dialogSpecialty");
+        public Builder type(final DialogType dialogType) {
+            this.dialogType = asArgument(dialogType, "dialogSpecialty");
             return this;
         }
 
         @Override
         public Dialog build() {
-            return PaperDialogs.constructDialog(this.dialogBase(), this.dialogSpecialty(), this.conversions);
+            return PaperDialogs.constructDialog(this.base(), this.type(), this.conversions);
         }
     }
 }

@@ -1,13 +1,13 @@
-package io.papermc.paper.registry.data.dialog.input.type;
+package io.papermc.paper.registry.data.dialog.input;
 
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Contract;
 
 /**
- * A boolean dialog input configuration.
- * <p>Created via {@link DialogInputConfig#bool(Component, boolean, String, String)}</p>
+ * A boolean dialog input.
+ * <p>Created via {@link DialogInput#bool(String, Component, boolean, String, String)}</p>
  */
-public sealed interface BooleanDialogInputConfig extends DialogInputConfig permits BooleanDialogInputConfigImpl {
+public sealed interface BooleanDialogInput extends DialogInput permits BooleanDialogInputImpl {
 
     /**
      * The label for the input.
@@ -42,10 +42,10 @@ public sealed interface BooleanDialogInputConfig extends DialogInputConfig permi
     String onFalse();
 
     /**
-     * A builder for a boolean dialog input configuration.
-     * <p>Created via {@link DialogInputConfig#bool(Component)}</p>
+     * A builder for a boolean dialog input.
+     * <p>Created via {@link DialogInput#bool(String, Component)}</p>
      */
-    sealed interface Builder permits BooleanDialogInputConfigImpl.BuilderImpl {
+    sealed interface Builder permits BooleanDialogInputImpl.BuilderImpl {
 
         /**
          * Sets the initial value of the input.
@@ -80,6 +80,6 @@ public sealed interface BooleanDialogInputConfig extends DialogInputConfig permi
          * @return a new instance
          */
         @Contract(value = "-> new", pure = true)
-        BooleanDialogInputConfig build();
+        BooleanDialogInput build();
     }
 }

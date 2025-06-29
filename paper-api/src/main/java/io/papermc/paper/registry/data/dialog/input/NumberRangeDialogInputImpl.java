@@ -1,10 +1,11 @@
-package io.papermc.paper.registry.data.dialog.input.type;
+package io.papermc.paper.registry.data.dialog.input;
 
 import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.Nullable;
 
-record NumberRangeDialogInputConfigImpl(
+record NumberRangeDialogInputImpl(
+    String key,
     int width,
     Component label,
     String labelFormat,
@@ -12,10 +13,11 @@ record NumberRangeDialogInputConfigImpl(
     float end,
     @Nullable Float initial,
     @Nullable Float step
-) implements NumberRangeDialogInputConfig {
+) implements NumberRangeDialogInput {
 
-    static final class BuilderImpl implements NumberRangeDialogInputConfig.Builder {
+    static final class BuilderImpl implements NumberRangeDialogInput.Builder {
 
+        private final String key;
         private final Component label;
         private final float start;
         private final float end;
@@ -24,7 +26,8 @@ record NumberRangeDialogInputConfigImpl(
         private @Nullable Float initial = null;
         private @Nullable Float step = null;
 
-        BuilderImpl(final Component label, final float start, final float end) {
+        BuilderImpl(final String key, final Component label, final float start, final float end) {
+            this.key = key;
             this.label = label;
             this.start = start;
             this.end = end;
@@ -56,8 +59,8 @@ record NumberRangeDialogInputConfigImpl(
         }
 
         @Override
-        public NumberRangeDialogInputConfig build() {
-            return new NumberRangeDialogInputConfigImpl(this.width, this.label, this.labelFormat, this.start, this.end, this.initial, this.step);
+        public NumberRangeDialogInput build() {
+            return new NumberRangeDialogInputImpl(this.key, this.width, this.label, this.labelFormat, this.start, this.end, this.initial, this.step);
         }
     }
 }

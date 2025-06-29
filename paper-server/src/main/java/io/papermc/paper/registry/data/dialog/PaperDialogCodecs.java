@@ -11,12 +11,11 @@ import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.body.DialogBody;
 import io.papermc.paper.registry.data.dialog.body.ItemDialogBody;
 import io.papermc.paper.registry.data.dialog.body.PlainMessageDialogBody;
+import io.papermc.paper.registry.data.dialog.input.BooleanDialogInput;
 import io.papermc.paper.registry.data.dialog.input.DialogInput;
-import io.papermc.paper.registry.data.dialog.input.type.BooleanDialogInputConfig;
-import io.papermc.paper.registry.data.dialog.input.type.DialogInputConfig;
-import io.papermc.paper.registry.data.dialog.input.type.NumberRangeDialogInputConfig;
-import io.papermc.paper.registry.data.dialog.input.type.SingleOptionDialogInputConfig;
-import io.papermc.paper.registry.data.dialog.input.type.TextDialogInputConfig;
+import io.papermc.paper.registry.data.dialog.input.NumberRangeDialogInput;
+import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
+import io.papermc.paper.registry.data.dialog.input.TextDialogInput;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -108,74 +107,68 @@ public final class PaperDialogCodecs {
     private static final Codec<List<DialogBody>> DIALOG_BODY_LIST_CODEC = ExtraCodecs.compactListCodec(DIALOG_BODY_CODEC);
 
     // input types
-    private static final MapCodec<BooleanDialogInputConfig> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(BooleanDialogInputConfig::label),
-            Codec.BOOL.optionalFieldOf("initial", false).forGetter(BooleanDialogInputConfig::initial),
-            Codec.STRING.optionalFieldOf("on_true", "true").forGetter(BooleanDialogInputConfig::onTrue),
-            Codec.STRING.optionalFieldOf("on_false", "false").forGetter(BooleanDialogInputConfig::onFalse)
-        ).apply(instance, DialogInputConfig::bool)
+    private static final MapCodec<BooleanDialogInput> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        ParsedTemplate.VARIABLE_CODEC.fieldOf("key").forGetter(DialogInput::key),
+        AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(BooleanDialogInput::label),
+        Codec.BOOL.optionalFieldOf("initial", false).forGetter(BooleanDialogInput::initial),
+        Codec.STRING.optionalFieldOf("on_true", "true").forGetter(BooleanDialogInput::onTrue),
+        Codec.STRING.optionalFieldOf("on_false", "false").forGetter(BooleanDialogInput::onFalse)
+    ).apply(instance, DialogInput::bool));
+    private static final MapCodec<NumberRangeDialogInput> NUMBER_RANGE_INPUT_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        ParsedTemplate.VARIABLE_CODEC.fieldOf("key").forGetter(DialogInput::key),
+        Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(NumberRangeDialogInput::width),
+        AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(NumberRangeDialogInput::label),
+        Codec.STRING.optionalFieldOf("label_format", "options.generic_value").forGetter(NumberRangeDialogInput::labelFormat),
+        Codec.FLOAT.fieldOf("start").forGetter(NumberRangeDialogInput::start),
+        Codec.FLOAT.fieldOf("end").forGetter(NumberRangeDialogInput::end),
+        Codec.FLOAT.optionalFieldOf("initial").forGetter(type -> Optional.ofNullable(type.initial())),
+        ExtraCodecs.POSITIVE_FLOAT.optionalFieldOf("step").forGetter(type -> Optional.ofNullable(type.step()))
+    ).apply(instance, (key, width, label, labelFormat, start, end, initial, step) -> DialogInput.numberRange(key, width, label, labelFormat, start, end, initial.orElse(null), step.orElse(null))));
+    private static final Codec<SingleOptionDialogInput.OptionEntry> SINGLE_OPTION_DIALOG_INPUT_ENTRY_FULL_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        Codec.STRING.fieldOf("id").forGetter(SingleOptionDialogInput.OptionEntry::id),
+        AdventureCodecs.COMPONENT_CODEC.optionalFieldOf("display").forGetter(entry -> Optional.ofNullable(entry.display())),
+        Codec.BOOL.optionalFieldOf("initial", false).forGetter(SingleOptionDialogInput.OptionEntry::initial)
+    ).apply(instance, (id, display, initial) -> SingleOptionDialogInput.OptionEntry.create(id, display.orElse(null), initial)));
+    private static final Codec<SingleOptionDialogInput.OptionEntry> SINGLE_OPTION_DIALOG_INPUT_ENTRY_CODEC = Codec.withAlternative(
+        SINGLE_OPTION_DIALOG_INPUT_ENTRY_FULL_CODEC, Codec.STRING, string -> SingleOptionDialogInput.OptionEntry.create(string, null, false)
     );
-    private static final MapCodec<NumberRangeDialogInputConfig> NUMBER_RANGE_INPUT_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(NumberRangeDialogInputConfig::width),
-            AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(NumberRangeDialogInputConfig::label),
-            Codec.STRING.optionalFieldOf("label_format", "options.generic_value").forGetter(NumberRangeDialogInputConfig::labelFormat),
-            Codec.FLOAT.fieldOf("start").forGetter(NumberRangeDialogInputConfig::start),
-            Codec.FLOAT.fieldOf("end").forGetter(NumberRangeDialogInputConfig::end),
-            Codec.FLOAT.optionalFieldOf("initial").forGetter(type -> Optional.ofNullable(type.initial())),
-            ExtraCodecs.POSITIVE_FLOAT.optionalFieldOf("step").forGetter(type -> Optional.ofNullable(type.step()))
-        ).apply(instance, (width, label, labelFormat, start, end, initial, step) -> DialogInputConfig.numberRange(width, label, labelFormat, start, end, initial.orElse(null), step.orElse(null)))
-    );
-    private static final Codec<SingleOptionDialogInputConfig.OptionEntry> SINGLE_OPTION_DIALOG_INPUT_ENTRY_FULL_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("id").forGetter(SingleOptionDialogInputConfig.OptionEntry::id),
-            AdventureCodecs.COMPONENT_CODEC.optionalFieldOf("display").forGetter(entry -> Optional.ofNullable(entry.display())),
-            Codec.BOOL.optionalFieldOf("initial", false).forGetter(SingleOptionDialogInputConfig.OptionEntry::initial)
-        ).apply(instance, (id, display, initial) -> SingleOptionDialogInputConfig.OptionEntry.create(id, display.orElse(null), initial))
-    );
-    private static final Codec<SingleOptionDialogInputConfig.OptionEntry> SINGLE_OPTION_DIALOG_INPUT_ENTRY_CODEC = Codec.withAlternative(
-        SINGLE_OPTION_DIALOG_INPUT_ENTRY_FULL_CODEC, Codec.STRING, string -> SingleOptionDialogInputConfig.OptionEntry.create(string, null, false)
-    );
-    private static final MapCodec<SingleOptionDialogInputConfig> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(SingleOptionDialogInputConfig::width),
-            ExtraCodecs.nonEmptyList(SINGLE_OPTION_DIALOG_INPUT_ENTRY_CODEC.listOf()).fieldOf("options").forGetter(SingleOptionDialogInputConfig::entries),
-            AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(SingleOptionDialogInputConfig::label),
-            Codec.BOOL.optionalFieldOf("label_visible", true).forGetter(SingleOptionDialogInputConfig::labelVisible)
-        ).apply(instance, DialogInputConfig::singleOption)
-    );
-    private static final Codec<TextDialogInputConfig.MultilineOptions> TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_lines").forGetter(options -> Optional.ofNullable(options.maxLines())),
-            ExtraCodecs.intRange(1, TextInput.MultilineOptions.MAX_HEIGHT).optionalFieldOf("height").forGetter(options -> Optional.ofNullable(options.height()))
-        ).apply(instance, (maxLines, height) -> TextDialogInputConfig.MultilineOptions.create(maxLines.orElse(null), height.orElse(null)))
-    );
-    private static final MapCodec<TextDialogInputConfig> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(TextDialogInputConfig::width),
-            AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(TextDialogInputConfig::label),
-            Codec.BOOL.optionalFieldOf("label_visible", true).forGetter(TextDialogInputConfig::labelVisible),
-            Codec.STRING.optionalFieldOf("initial", "").forGetter(TextDialogInputConfig::initial),
-            ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_length", 32).forGetter(TextDialogInputConfig::maxLength),
-            TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC.optionalFieldOf("multiline").forGetter(inputType -> Optional.ofNullable(inputType.multiline()))
-        ).apply(instance, (width, label, labelVisible, initial, maxLength, multilineOptions) ->
-            DialogInputConfig.text(width, label, labelVisible, initial, maxLength, multilineOptions.orElse(null))
-        )
-    );
-    private static final Registry<MapCodec<? extends DialogInputConfig>> DIALOG_INPUT_TYPES = Util.make(() -> {
-        final MappedRegistry<MapCodec<? extends DialogInputConfig>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_input_type")), Lifecycle.experimental());
+    private static final MapCodec<SingleOptionDialogInput> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        ParsedTemplate.VARIABLE_CODEC.fieldOf("key").forGetter(DialogInput::key),
+        Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(SingleOptionDialogInput::width),
+        ExtraCodecs.nonEmptyList(SINGLE_OPTION_DIALOG_INPUT_ENTRY_CODEC.listOf()).fieldOf("options").forGetter(SingleOptionDialogInput::entries),
+        AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(SingleOptionDialogInput::label),
+        Codec.BOOL.optionalFieldOf("label_visible", true).forGetter(SingleOptionDialogInput::labelVisible)
+    ).apply(instance, DialogInput::singleOption));
+    private static final Codec<TextDialogInput.MultilineOptions> TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_lines").forGetter(options -> Optional.ofNullable(options.maxLines())),
+        ExtraCodecs.intRange(1, TextInput.MultilineOptions.MAX_HEIGHT).optionalFieldOf("height").forGetter(options -> Optional.ofNullable(options.height()))
+    ).apply(instance, (maxLines, height) -> TextDialogInput.MultilineOptions.create(maxLines.orElse(null), height.orElse(null))));
+    private static final MapCodec<TextDialogInput> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        ParsedTemplate.VARIABLE_CODEC.fieldOf("key").forGetter(DialogInput::key),
+        Dialog.WIDTH_CODEC.optionalFieldOf("width", PlainMessage.DEFAULT_WIDTH).forGetter(TextDialogInput::width),
+        AdventureCodecs.COMPONENT_CODEC.fieldOf("label").forGetter(TextDialogInput::label),
+        Codec.BOOL.optionalFieldOf("label_visible", true).forGetter(TextDialogInput::labelVisible),
+        Codec.STRING.optionalFieldOf("initial", "").forGetter(TextDialogInput::initial),
+        ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_length", 32).forGetter(TextDialogInput::maxLength),
+        TEXT_DIALOG_INPUT_MULTILINE_OPTIONS_CODEC.optionalFieldOf("multiline").forGetter(inputType -> Optional.ofNullable(inputType.multiline()))
+    ).apply(instance, (key, width, label, labelVisible, initial, maxLength, multilineOptions) ->
+        DialogInput.text(key, width, label, labelVisible, initial, maxLength, multilineOptions.orElse(null))
+    ));
+    private static final Registry<MapCodec<? extends DialogInput>> DIALOG_INPUT_TYPES = Util.make(() -> {
+        final MappedRegistry<MapCodec<? extends DialogInput>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_input_type")), Lifecycle.experimental());
         Registry.register(registry, "boolean", BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC);
         Registry.register(registry, "number_range", NUMBER_RANGE_INPUT_MAP_CODEC);
         Registry.register(registry, "single_option", SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC);
         Registry.register(registry, "text", TEXT_DIALOG_INPUT_TYPE_MAP_CODEC);
         return registry.freeze();
     });
-    private static final Function<DialogInputConfig, MapCodec<? extends DialogInputConfig>> GET_DIALOG_INPUT_TYPE_TYPE = dialogAction -> switch (dialogAction) {
-        case TextDialogInputConfig $ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case SingleOptionDialogInputConfig $ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case NumberRangeDialogInputConfig $ -> NUMBER_RANGE_INPUT_MAP_CODEC;
-        case BooleanDialogInputConfig $ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
+    private static final Function<DialogInput, MapCodec<? extends DialogInput>> GET_DIALOG_INPUT_TYPE_TYPE = dialogAction -> switch (dialogAction) {
+        case TextDialogInput $ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case SingleOptionDialogInput $ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case NumberRangeDialogInput $ -> NUMBER_RANGE_INPUT_MAP_CODEC;
+        case BooleanDialogInput $ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
     };
-    private static final MapCodec<DialogInputConfig> DIALOG_INPUT_TYPE_MAP_CODEC = DIALOG_INPUT_TYPES.byNameCodec().dispatchMap(GET_DIALOG_INPUT_TYPE_TYPE, Function.identity());
-    private static final Codec<DialogInput> DIALOG_INPUT_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        ParsedTemplate.VARIABLE_CODEC.fieldOf("key").forGetter(DialogInput::key),
-        DIALOG_INPUT_TYPE_MAP_CODEC.forGetter(DialogInput::inputType)
-    ).apply(instance, DialogInput::create));
+    private static final Codec<DialogInput> DIALOG_INPUT_CODEC = DIALOG_INPUT_TYPES.byNameCodec().dispatchMap(GET_DIALOG_INPUT_TYPE_TYPE, Function.identity()).codec();
 
     // dialog base / common dialog data
     public static final MapCodec<DialogBase> DIALOG_BASE_MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

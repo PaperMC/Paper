@@ -1,12 +1,12 @@
 package io.papermc.paper.registry.data.dialog;
 
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.dialog.specialty.ConfirmationSpecialty;
-import io.papermc.paper.registry.data.dialog.specialty.DialogListSpecialty;
-import io.papermc.paper.registry.data.dialog.specialty.DialogSpecialty;
-import io.papermc.paper.registry.data.dialog.specialty.MultiActionSpecialty;
-import io.papermc.paper.registry.data.dialog.specialty.NoticeSpecialty;
-import io.papermc.paper.registry.data.dialog.specialty.ServerLinksSpecialty;
+import io.papermc.paper.registry.data.dialog.type.ConfirmationType;
+import io.papermc.paper.registry.data.dialog.type.DialogListType;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
+import io.papermc.paper.registry.data.dialog.type.MultiActionType;
+import io.papermc.paper.registry.data.dialog.type.NoticeType;
+import io.papermc.paper.registry.data.dialog.type.ServerLinksType;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistrySet;
@@ -26,14 +26,14 @@ public final class PaperDialogs {
     private PaperDialogs() {
     }
 
-    public static DialogSpecialty extractSpecialty(final Dialog nmsDialog, final Conversions conversions) {
+    public static DialogType extractSpecialty(final Dialog nmsDialog, final Conversions conversions) {
         final Function<net.minecraft.server.dialog.ActionButton, ActionButton> convertButton = button -> conversions.convert(button, PaperDialogCodecs.ACTION_BUTTON_CODEC, net.minecraft.server.dialog.ActionButton.CODEC);
         return switch (nmsDialog) {
             case final ConfirmationDialog conf ->
-                DialogSpecialty.confirmation(convertButton.apply(conf.yesButton()), convertButton.apply(conf.noButton()));
+                DialogType.confirmation(convertButton.apply(conf.yesButton()), convertButton.apply(conf.noButton()));
             case final DialogListDialog list -> {
                 final RegistrySet<io.papermc.paper.dialog.Dialog> apiSet = PaperRegistrySets.convertToApiWithDirects(RegistryKey.DIALOG, list.dialogs());
-                yield DialogSpecialty.dialogList(
+                yield DialogType.dialogList(
                     apiSet,
                     list.exitAction().map(convertButton).orElse(null),
                     list.columns(),
@@ -41,22 +41,22 @@ public final class PaperDialogs {
                 );
             }
             case final MultiActionDialog multi ->
-                DialogSpecialty.multiAction(multi.actions().stream().map(convertButton).toList(), multi.exitAction().map(convertButton).orElse(null), multi.columns());
-            case final NoticeDialog notice -> DialogSpecialty.notice(convertButton.apply(notice.action()));
+                DialogType.multiAction(multi.actions().stream().map(convertButton).toList(), multi.exitAction().map(convertButton).orElse(null), multi.columns());
+            case final NoticeDialog notice -> DialogType.notice(convertButton.apply(notice.action()));
             case final ServerLinksDialog links ->
-                DialogSpecialty.serverLinks(links.exitAction().map(convertButton).orElse(null), links.columns(), links.buttonWidth());
+                DialogType.serverLinks(links.exitAction().map(convertButton).orElse(null), links.columns(), links.buttonWidth());
             default -> throw new IllegalArgumentException("Unsupported dialog type: " + nmsDialog.getClass().getName());
         };
     }
 
-    public static Dialog constructDialog(final DialogBase dialogBase, final DialogSpecialty dialogSpecialty, final Conversions conversions) {
+    public static Dialog constructDialog(final DialogBase dialogBase, final DialogType dialogType, final Conversions conversions) {
         final Function<ActionButton, net.minecraft.server.dialog.ActionButton> convertButton = button -> conversions.convert(button, net.minecraft.server.dialog.ActionButton.CODEC, PaperDialogCodecs.ACTION_BUTTON_CODEC);
         final CommonDialogData common = conversions.convert(dialogBase, CommonDialogData.MAP_CODEC.codec(), PaperDialogCodecs.DIALOG_BASE_MAP_CODEC.codec());
-        switch (dialogSpecialty) {
-            case final ConfirmationSpecialty conf -> {
+        switch (dialogType) {
+            case final ConfirmationType conf -> {
                 return new ConfirmationDialog(common, convertButton.apply(conf.yesButton()), convertButton.apply(conf.noButton()));
             }
-            case final DialogListSpecialty list -> {
+            case final DialogListType list -> {
                 return new DialogListDialog(
                     common,
                     PaperRegistrySets.convertToNmsWithDirects(Registries.DIALOG, conversions.lookup(), list.dialogs()),
@@ -65,7 +65,7 @@ public final class PaperDialogs {
                     list.buttonWidth()
                 );
             }
-            case final MultiActionSpecialty multi -> {
+            case final MultiActionType multi -> {
                 return new MultiActionDialog(
                     common,
                     multi.actions().stream().map(convertButton).toList(),
@@ -73,10 +73,10 @@ public final class PaperDialogs {
                     multi.columns()
                 );
             }
-            case final NoticeSpecialty notice -> {
+            case final NoticeType notice -> {
                 return new NoticeDialog(common, convertButton.apply(notice.action()));
             }
-            case final ServerLinksSpecialty links -> {
+            case final ServerLinksType links -> {
                 return new ServerLinksDialog(common, Optional.ofNullable(links.exitAction()).map(convertButton), links.columns(), links.buttonWidth());
             }
         }

@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.input.type;
+package io.papermc.paper.registry.data.dialog.input;
 
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Contract;
@@ -6,10 +6,10 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A text dialog input configuration.
- * <p>Created via {@link DialogInputConfig#text(int, Component, boolean, String, int, MultilineOptions)}</p>
+ * A text dialog input.
+ * <p>Created via {@link DialogInput#text(String, int, Component, boolean, String, int, MultilineOptions)}</p>
  */
-public sealed interface TextDialogInputConfig extends DialogInputConfig permits TextDialogInputConfigImpl {
+public sealed interface TextDialogInput extends DialogInput permits TextDialogInputImpl {
 
     /**
      * The width of the input.
@@ -93,10 +93,10 @@ public sealed interface TextDialogInputConfig extends DialogInputConfig permits 
     }
 
     /**
-     * A builder for a text dialog input configuration.
-     * <p>Created via {@link DialogInputConfig#text(Component)}</p>
+     * A builder for a text dialog input.
+     * <p>Created via {@link DialogInput#text(String, Component)}</p>
      */
-    sealed interface Builder permits TextDialogInputConfigImpl.BuilderImpl {
+    sealed interface Builder permits TextDialogInputImpl.BuilderImpl {
 
         /**
          * Sets the width of the input.
@@ -144,11 +144,11 @@ public sealed interface TextDialogInputConfig extends DialogInputConfig permits 
         Builder multiline(final @Nullable MultilineOptions multiline);
 
         /**
-         * Builds the text dialog input configuration.
+         * Builds the text dialog input.
          *
-         * @return the text dialog input configuration
+         * @return the text dialog input
          */
         @Contract(value = "-> new", pure = true)
-        TextDialogInputConfig build();
+        TextDialogInput build();
     }
 }

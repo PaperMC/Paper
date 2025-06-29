@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.input.type;
+package io.papermc.paper.registry.data.dialog.input;
 
 import java.util.List;
 import net.kyori.adventure.text.Component;
@@ -8,9 +8,10 @@ import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
- * A configuration for a single option dialog input.
+ * A single option dialog input.
+ * <p>Created via {@link DialogInput#singleOption(String, int, List, Component, boolean)}</p>
  */
-public sealed interface SingleOptionDialogInputConfig extends DialogInputConfig permits SingleOptionDialogInputConfigImpl {
+public sealed interface SingleOptionDialogInput extends DialogInput permits SingleOptionDialogInputImpl {
 
     /**
      * The width of the input.
@@ -48,7 +49,7 @@ public sealed interface SingleOptionDialogInputConfig extends DialogInputConfig 
      * Represents a single option entry in a single option dialog input.
      * <p>Only 1 option is allowed to have initial selected.</p>
      */
-    sealed interface OptionEntry permits SingleOptionDialogInputConfigImpl.SingleOptionEntryImpl {
+    sealed interface OptionEntry permits SingleOptionDialogInputImpl.SingleOptionEntryImpl {
 
         /**
          * Creates a new option entry.
@@ -60,7 +61,7 @@ public sealed interface SingleOptionDialogInputConfig extends DialogInputConfig 
          */
         @Contract(pure = true, value = "_, _, _ -> new")
         static OptionEntry create(final String id, final @Nullable Component display, final boolean initial) {
-            return new SingleOptionDialogInputConfigImpl.SingleOptionEntryImpl(id, display, initial);
+            return new SingleOptionDialogInputImpl.SingleOptionEntryImpl(id, display, initial);
         }
 
         /**
@@ -90,10 +91,10 @@ public sealed interface SingleOptionDialogInputConfig extends DialogInputConfig 
     }
 
     /**
-     * A builder for creating a {@link SingleOptionDialogInputConfig}.
-     * <p>Created via {@link DialogInputConfig#singleOption(Component, List)}</p>
+     * A builder for creating a {@link SingleOptionDialogInput}.
+     * <p>Created via {@link DialogInput#singleOption(String, Component, List)}</p>
      */
-    sealed interface Builder permits SingleOptionDialogInputConfigImpl.BuilderImpl {
+    sealed interface Builder permits SingleOptionDialogInputImpl.BuilderImpl {
 
         /**
          * Sets the width of the input.
@@ -114,11 +115,11 @@ public sealed interface SingleOptionDialogInputConfig extends DialogInputConfig 
         Builder labelVisible(boolean labelVisible);
 
         /**
-         * Builds the {@link SingleOptionDialogInputConfig}.
+         * Builds the {@link SingleOptionDialogInput}.
          *
-         * @return the built dialog input config
+         * @return the built dialog input
          */
         @Contract(value = "-> new", pure = true)
-        SingleOptionDialogInputConfig build();
+        SingleOptionDialogInput build();
     }
 }

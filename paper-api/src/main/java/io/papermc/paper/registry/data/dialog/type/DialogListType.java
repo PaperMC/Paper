@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.specialty;
+package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -8,9 +8,10 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents a dialog specialty that displays a list of dialogs.
+ * Represents a dialog that displays a list of dialogs.
+ * @see DialogType#dialogList(RegistrySet, ActionButton, int, int)
  */
-public sealed interface DialogListSpecialty extends DialogSpecialty permits DialogListSpecialtyImpl {
+public sealed interface DialogListType extends DialogType permits DialogListTypeImpl {
 
     /**
      * Returns the set of dialogs to display in the dialog list.
@@ -45,9 +46,9 @@ public sealed interface DialogListSpecialty extends DialogSpecialty permits Dial
     @Range(from = 1, to = 1024) int buttonWidth();
 
     /**
-     * A builder for creating a dialog list specialty.
+     * A builder for creating a dialog list type.
      */
-    sealed interface Builder permits DialogListSpecialtyImpl.BuilderImpl {
+    sealed interface Builder permits DialogListTypeImpl.BuilderImpl {
 
         /**
          * Sets the action button to exit the dialog, or null if there is no exit action.
@@ -77,11 +78,11 @@ public sealed interface DialogListSpecialty extends DialogSpecialty permits Dial
         Builder buttonWidth(final int buttonWidth);
 
         /**
-         * Builds the dialog list specialty.
+         * Builds the dialog list type.
          *
-         * @return the built dialog list specialty
+         * @return the built dialog list type
          */
         @Contract(value = "-> new", pure = true)
-        DialogListSpecialty build();
+        DialogListType build();
     }
 }

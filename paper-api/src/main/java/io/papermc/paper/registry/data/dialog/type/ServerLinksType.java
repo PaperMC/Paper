@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.specialty;
+package io.papermc.paper.registry.data.dialog.type;
 
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -7,9 +7,10 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents a server links dialog specialty, which is a specific type of dialog that displays links to servers.
+ * Represents a server links dialog that displays links.
+ * @see DialogType#serverLinks(ActionButton, int, int)
  */
-public sealed interface ServerLinksSpecialty extends DialogSpecialty permits ServerLinksSpecialtyImpl {
+public sealed interface ServerLinksType extends DialogType permits ServerLinksTypeImpl {
 
     /**
      * Returns the action button to exit the dialog, or null if there is no exit action.

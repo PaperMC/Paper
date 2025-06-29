@@ -68,7 +68,7 @@ record DialogBaseImpl(
         }
 
         @Override
-        public BuilderImpl inputs(final List<DialogInput> inputs) {
+        public BuilderImpl inputs(final List<? extends DialogInput> inputs) {
             this.inputs = List.copyOf(inputs);
             return this;
         }

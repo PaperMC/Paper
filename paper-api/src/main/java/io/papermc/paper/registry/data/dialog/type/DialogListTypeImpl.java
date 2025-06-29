@@ -1,18 +1,18 @@
-package io.papermc.paper.registry.data.dialog.specialty;
+package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.set.RegistrySet;
 import org.jspecify.annotations.Nullable;
 
-record DialogListSpecialtyImpl(
+record DialogListTypeImpl(
     RegistrySet<Dialog> dialogs,
     @Nullable ActionButton exitAction,
     int columns,
     int buttonWidth
-) implements DialogListSpecialty {
+) implements DialogListType {
 
-    static final class BuilderImpl implements DialogListSpecialty.Builder {
+    static final class BuilderImpl implements DialogListType.Builder {
 
         private final RegistrySet<Dialog> dialogs;
         private @Nullable ActionButton exitAction;
@@ -24,26 +24,26 @@ record DialogListSpecialtyImpl(
         }
 
         @Override
-        public DialogListSpecialty.Builder exitAction(final @Nullable ActionButton exitAction) {
+        public DialogListType.Builder exitAction(final @Nullable ActionButton exitAction) {
             this.exitAction = exitAction;
             return this;
         }
 
         @Override
-        public DialogListSpecialty.Builder columns(final int columns) {
+        public DialogListType.Builder columns(final int columns) {
             this.columns = columns;
             return this;
         }
 
         @Override
-        public DialogListSpecialty.Builder buttonWidth(final int buttonWidth) {
+        public DialogListType.Builder buttonWidth(final int buttonWidth) {
             this.buttonWidth = buttonWidth;
             return this;
         }
 
         @Override
-        public DialogListSpecialty build() {
-            return new DialogListSpecialtyImpl(this.dialogs, this.exitAction, this.columns, this.buttonWidth);
+        public DialogListType build() {
+            return new DialogListTypeImpl(this.dialogs, this.exitAction, this.columns, this.buttonWidth);
         }
     }
 }

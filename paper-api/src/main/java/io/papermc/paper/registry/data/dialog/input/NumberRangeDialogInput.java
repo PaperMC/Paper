@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.data.dialog.input.type;
+package io.papermc.paper.registry.data.dialog.input;
 
 import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.index.qual.Positive;
@@ -7,10 +7,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 /**
- * A configuration for a number range dialog input.
- * <p>Created via {@link DialogInputConfig#numberRange(int, Component, String, float, float, Float, Float)}</p>
+ * A number range dialog input.
+ * <p>Created via {@link DialogInput#numberRange(String, int, Component, String, float, float, Float, Float)}</p>
  */
-public sealed interface NumberRangeDialogInputConfig extends DialogInputConfig permits NumberRangeDialogInputConfigImpl {
+public sealed interface NumberRangeDialogInput extends DialogInput permits NumberRangeDialogInputImpl {
 
     /**
      * The width of the input.
@@ -70,10 +70,10 @@ public sealed interface NumberRangeDialogInputConfig extends DialogInputConfig p
     @Positive @Nullable Float step();
 
     /**
-     * A builder for creating instances of {@link NumberRangeDialogInputConfig}.
-     * <p>Created via {@link DialogInputConfig#numberRange(Component, float, float)}</p>
+     * A builder for creating instances of {@link NumberRangeDialogInput}.
+     * <p>Created via {@link DialogInput#numberRange(String, Component, float, float)}</p>
      */
-    sealed interface Builder permits NumberRangeDialogInputConfigImpl.BuilderImpl {
+    sealed interface Builder permits NumberRangeDialogInputImpl.BuilderImpl {
 
         /**
          * Sets the width of the input.
@@ -118,6 +118,6 @@ public sealed interface NumberRangeDialogInputConfig extends DialogInputConfig p
          * @return a new instance
          */
         @Contract(pure = true, value = "-> new")
-        NumberRangeDialogInputConfig build();
+        NumberRangeDialogInput build();
     }
 }
