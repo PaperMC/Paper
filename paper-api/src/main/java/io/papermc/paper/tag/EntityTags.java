@@ -8,7 +8,10 @@ import org.bukkit.entity.EntityType;
 /**
  * All tags in this class are unmodifiable, attempting to modify them will throw an
  * {@link UnsupportedOperationException}.
+ *
+ * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys} and {@link Tag}
  */
+@Deprecated(since = "1.21.6")
 public class EntityTags {
 
     private static NamespacedKey keyFor(String key) {
@@ -36,21 +39,30 @@ public class EntityTags {
 
     /**
      * Covers all horses
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#HORSES}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag HORSES = new EntitySetTag(keyFor("horses"))
         .contains("HORSE")
         .ensureSize("HORSES", 3).lock();
 
     /**
      * Covers all minecarts
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#MINECART}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag MINECARTS = new EntitySetTag(keyFor("minecarts"))
         .contains("MINECART")
         .ensureSize("MINECARTS", 7).lock();
 
     /**
      * Covers mobs that split into smaller mobs
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#SPLITTING_MOB}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag SPLITTING_MOBS = new EntitySetTag(keyFor("splitting_mobs"))
         .add(EntityType.SLIME, EntityType.MAGMA_CUBE).lock();
 

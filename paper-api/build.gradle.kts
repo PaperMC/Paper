@@ -227,7 +227,7 @@ tasks.compileTestJava {
 
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
-    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+    jarToScan = tasks.jar.flatMap { it.archiveFile }
     classpath.from(configurations.compileClasspath)
 }
 tasks.check {
@@ -236,9 +236,9 @@ tasks.check {
 
 if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
     val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-        mcVersion.set(providers.gradleProperty("mcVersion"))
-        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+        mcVersion = providers.gradleProperty("mcVersion")
+        annotation = "Lio/papermc/paper/generated/GeneratedFrom;"
+        jarToScan = tasks.jar.flatMap { it.archiveFile }
         classpath.from(configurations.compileClasspath)
     }
     tasks.check {
