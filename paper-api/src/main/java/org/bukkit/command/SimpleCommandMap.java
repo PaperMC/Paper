@@ -31,7 +31,9 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     private void setDefaultCommands() {
-        register("bukkit", new ReloadCommand("reload"));
+        final ReloadCommand reload = new ReloadCommand("reload");
+        this.knownCommands.put("bukkit:reload", reload);
+        this.knownCommands.put("bukkit:rl", reload);
         register("bukkit", new co.aikar.timings.TimingsCommand("timings"));
     }
 
