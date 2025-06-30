@@ -11,6 +11,7 @@ public interface DisconnectionReason {
     DisconnectionReason RESOURCE_PACK_REJECTION = game(PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION);
     DisconnectionReason INVALID_COOKIE = game(PlayerKickEvent.Cause.INVALID_COOKIE);
     DisconnectionReason DUPLICATE_LOGIN_MESSAGE = game(PlayerKickEvent.Cause.DUPLICATE_LOGIN);
+    DisconnectionReason INVALID_PAYLOAD = game(PlayerKickEvent.Cause.INVALID_PAYLOAD);
 
     Optional<PlayerKickEvent.Cause> game();
 

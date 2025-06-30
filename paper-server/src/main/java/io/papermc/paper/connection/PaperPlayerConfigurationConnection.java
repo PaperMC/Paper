@@ -1,7 +1,5 @@
 package io.papermc.paper.connection;
 
-import com.destroystokyo.paper.ClientOption;
-import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -19,13 +17,16 @@ import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
-public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience {
+public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience, PluginMessageBridgeImpl {
 
     private @Nullable Pointers adventurePointers;
+    private final Set<String> channels = new HashSet<>();
 
     public PaperPlayerConfigurationConnection(final ServerConfigurationPacketListenerImpl packetListener) {
         super(packetListener);
@@ -100,5 +101,10 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
         }
 
         this.handle.returnToWorld();
+    }
+
+    @Override
+    public Set<String> channels() {
+        return this.channels;
     }
 }
