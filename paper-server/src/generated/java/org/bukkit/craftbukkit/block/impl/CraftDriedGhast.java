@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DriedGhast;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftDriedGhast extends CraftBlockData implements DriedGhast {
     private static final EnumProperty<Direction> FACING = DriedGhastBlock.FACING;
 

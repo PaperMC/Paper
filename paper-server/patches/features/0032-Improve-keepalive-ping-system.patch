@@ -11,15 +11,16 @@ keepalives in case multiple end up in flight.
 Additionally, replace the latency calculation with a true
 average over the last 5 seconds of keepalive transactions.
 
-diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index aaf0f9bf0ce35b67c642793642cee84b4f055486..728fa1210e0fd837e28c48802045dea2ae59f5d6 100644
---- a/net/minecraft/server/level/ServerPlayer.java
-+++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -461,6 +461,70 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
-         return this.viewDistanceHolder;
-     }
-     // Paper end - rewrite chunk system
-+    // Paper start - improve keepalives
+diff --git a/io/papermc/paper/util/KeepAlive.java b/io/papermc/paper/util/KeepAlive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0f391a6b3
+--- /dev/null
++++ b/io/papermc/paper/util/KeepAlive.java
+@@ -0,0 +1,67 @@
++package io.papermc.paper.util;
++
++public class KeepAlive {
++
 +    public long lastKeepAliveTx = System.nanoTime();
 +    public static final record KeepAliveResponse(long txTimeNS, long rxTimeNS) {
 +        public long latencyNS() {
@@ -82,15 +83,27 @@ index aaf0f9bf0ce35b67c642793642cee84b4f055486..728fa1210e0fd837e28c48802045dea2
 +            return ret;
 +        }
 +    }
-+    // Paper end - improve keepalives
++}
+diff --git a/net/minecraft/server/network/CommonListenerCookie.java b/net/minecraft/server/network/CommonListenerCookie.java
+index b94988d6dd98bfb7d3d2f08c2adaa96d7c7a8b55..7e61c8222d567feb8c2b988699e1cfe83bf4be31 100644
+--- a/net/minecraft/server/network/CommonListenerCookie.java
++++ b/net/minecraft/server/network/CommonListenerCookie.java
+@@ -3,8 +3,8 @@ package net.minecraft.server.network;
+ import com.mojang.authlib.GameProfile;
+ import net.minecraft.server.level.ClientInformation;
  
-     public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
-         super(level, gameProfile);
+-public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jetbrains.annotations.Nullable String brandName) { // Paper
++public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jetbrains.annotations.Nullable String brandName, io.papermc.paper.util.KeepAlive keepAlive) { // Paper
+     public static CommonListenerCookie createInitial(GameProfile gameProfile, boolean transferred) {
+-        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null); // Paper
++        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null, new io.papermc.paper.util.KeepAlive()); // Paper
+     }
+ }
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ecb382e369 100644
+index fae1523404b7afa2b904faad9242273b3c406aac..16962ccab91d0941e428a2e53aa37e9ca975f62f 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -38,12 +38,12 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -38,12 +38,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected final MinecraftServer server;
      public final Connection connection; // Paper
      private final boolean transferred;
@@ -104,19 +117,26 @@ index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ec
      private boolean closed = false;
 -    private int latency;
 +    private volatile int latency; // Paper - improve keepalives - make volatile
++    private final io.papermc.paper.util.KeepAlive keepAlive; // Paper - improve keepalives
      private volatile boolean suspendFlushingOnServerThread = false;
      // CraftBukkit start
-     protected final net.minecraft.server.level.ServerPlayer player;
-@@ -57,7 +57,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-     public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, net.minecraft.server.level.ServerPlayer player) { // CraftBukkit
+     protected final org.bukkit.craftbukkit.CraftServer cserver;
+@@ -57,12 +58,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
          this.connection = connection;
 -        this.keepAliveTime = Util.getMillis();
 +        //this.keepAliveTime = Util.getMillis(); // Paper - improve keepalives
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
-         // CraftBukkit start - add fields and methods
-@@ -120,13 +120,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         // Paper start
+         this.playerBrand = cookie.brandName();
+         this.cserver = server.server;
++        this.keepAlive = cookie.keepAlive();
+         // Paper end
+     }
+ 
+@@ -89,13 +91,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -128,27 +148,27 @@ index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ec
 -            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
 +        // Paper start - improve keepalives
 +        long now = System.nanoTime();
-+        net.minecraft.server.level.ServerPlayer.PendingKeepAlive pending = this.player.pendingKeepAlives.peek();
++        io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = this.keepAlive.pendingKeepAlives.peek();
 +        if (pending != null && pending.challengeId() == packet.getId()) {
-+            this.player.pendingKeepAlives.remove(pending);
++            this.keepAlive.pendingKeepAlives.remove(pending);
 +
-+            net.minecraft.server.level.ServerPlayer.KeepAliveResponse response = new net.minecraft.server.level.ServerPlayer.KeepAliveResponse(pending.txTimeNS(), now);
++            io.papermc.paper.util.KeepAlive.KeepAliveResponse response = new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now);
 +
-+            this.player.pingCalculator1m.update(response);
-+            this.player.pingCalculator5s.update(response);
++            this.keepAlive.pingCalculator1m.update(response);
++            this.keepAlive.pingCalculator5s.update(response);
 +
-+            this.latency = this.player.pingCalculator5s.getAvgLatencyMS();
++            this.latency = this.keepAlive.pingCalculator5s.getAvgLatencyMS();
 +            return;
 +        }
 +
-+        for (java.util.Iterator<net.minecraft.server.level.ServerPlayer.PendingKeepAlive> itr = this.player.pendingKeepAlives.iterator(); itr.hasNext();) {
-+            net.minecraft.server.level.ServerPlayer.PendingKeepAlive ka = itr.next();
++        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext();) {
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive ka = itr.next();
 +            if (ka.challengeId() == packet.getId()) {
 +                itr.remove();
 +
 +                if (!this.processedDisconnect) {
-+                    LOGGER.info("Disconnecting " + this.player.getScoreboardName() + " for sending keepalive response (" + packet.getId() + ") out-of-order!");
-+                    this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++                    LOGGER.info("Disconnecting {} for sending keepalive response ({}) out-of-order!", this.playerProfile().getName(), packet.getId());
++                    this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
 +                    return;
 +                }
 +                break;
@@ -156,15 +176,15 @@ index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ec
          }
 +
 +        if (!this.processedDisconnect) {
-+            LOGGER.info("Disconnecting " + this.player.getScoreboardName() + " for sending keepalive response (" + packet.getId() + ") without matching challenge!");
-+            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++            LOGGER.info("Disconnecting {} for sending keepalive response ({}) without matching challenge!", this.playerProfile().getName(), packet.getId());
++            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
 +            return;
 +        }
 +        // Paper end - improve keepalives
      }
  
      @Override
-@@ -247,20 +275,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -148,20 +178,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -186,19 +206,29 @@ index 85e01c3a1536b41a0301a5a6506e058ff9633a4a..43f70a5561d6cc62aaeba6d1e39598ec
 +        if (this.checkIfClosed(millis) && !this.processedDisconnect) {
 +            long currTime = System.nanoTime();
 +
-+            if ((currTime - this.player.lastKeepAliveTx) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1L)) {
-+                this.player.lastKeepAliveTx = currTime;
++            if ((currTime - this.keepAlive.lastKeepAliveTx) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1L)) {
++                this.keepAlive.lastKeepAliveTx = currTime;
 +
-+                net.minecraft.server.level.ServerPlayer.PendingKeepAlive pka = new net.minecraft.server.level.ServerPlayer.PendingKeepAlive(currTime, millis);
-+                this.player.pendingKeepAlives.add(pka);
++                io.papermc.paper.util.KeepAlive.PendingKeepAlive pka = new io.papermc.paper.util.KeepAlive.PendingKeepAlive(currTime, millis);
++                this.keepAlive.pendingKeepAlives.add(pka);
 +                this.send(new ClientboundKeepAlivePacket(pka.challengeId()));
 +            }
 +
-+            net.minecraft.server.level.ServerPlayer.PendingKeepAlive oldest = this.player.pendingKeepAlives.peek();
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive oldest = this.keepAlive.pendingKeepAlives.peek();
 +            if (oldest != null && (currTime - oldest.txTimeNS()) > java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(KEEPALIVE_LIMIT)) {
-+                LOGGER.warn(this.player.getScoreboardName() + " was kicked due to keepalive timeout!");
-+                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
++                LOGGER.info("{} was kicked due to keepalive timeout!", this.playerProfile().getName());
++                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - kick event cause
 +                // Paper end - improve keepalives
              }
          }
  
+@@ -341,6 +374,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
+-        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.keepAlive); // Paper
+     }
+-}
++}
+\ No newline at end of file

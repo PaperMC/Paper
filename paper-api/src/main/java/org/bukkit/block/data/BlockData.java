@@ -277,7 +277,6 @@ public interface BlockData extends Cloneable {
      * @return a new {@link BlockState}
      */
     @NotNull
-    @ApiStatus.Experimental
     BlockState createBlockState();
 
     // Paper start - destroy speed API

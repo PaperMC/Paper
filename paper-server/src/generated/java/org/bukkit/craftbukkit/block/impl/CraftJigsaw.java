@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftJigsaw extends CraftBlockData implements Jigsaw {
     private static final EnumProperty<FrontAndTop> ORIENTATION = JigsawBlock.ORIENTATION;
 

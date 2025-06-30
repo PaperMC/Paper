@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public final class ItemTypeKeys {
     /**
      * {@code minecraft:acacia_boat}
@@ -5603,6 +5603,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> MUSIC_DISC_FAR = create(key("music_disc_far"));
+
+    /**
+     * {@code minecraft:music_disc_lava_chicken}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> MUSIC_DISC_LAVA_CHICKEN = create(key("music_disc_lava_chicken"));
 
     /**
      * {@code minecraft:music_disc_mall}

@@ -357,6 +357,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("Defines how many orbs groups can exist in an area.")
         @Constraints.Min(1)
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
+        @Comment("See Fix MC-163962; prevent villager demand from going negative.")
+        public boolean preventNegativeVillagerDemand = false;
     }
 
     public BlockUpdates blockUpdates;

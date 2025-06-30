@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  * Represents a type of effect that occurs when damage is inflicted. Currently,
  * effects only determine the sound that plays.
  */
-@ApiStatus.Experimental
 public interface DamageEffect {
 
     /**
