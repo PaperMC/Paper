@@ -17,8 +17,10 @@ public interface PluginMessageBridgeImpl {
     default boolean addChannel(String channel) {
         Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels().size() < 128, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
         channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (channels().add(channel) && this instanceof CraftPlayer player) {
-            Bukkit.getPluginManager().callEvent(new PlayerRegisterChannelEvent(player, channel));
+        if (channels().add(channel)) {
+            if (this instanceof CraftPlayer player) {
+                Bukkit.getPluginManager().callEvent(new PlayerRegisterChannelEvent(player, channel));
+            }
             return true;
         }
 
@@ -27,8 +29,10 @@ public interface PluginMessageBridgeImpl {
 
     default boolean removeChannel(String channel) {
         channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (channels().remove(channel) && this instanceof CraftPlayer player) {
-            Bukkit.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(player, channel));
+        if (channels().remove(channel)) {
+            if (this instanceof CraftPlayer player) {
+                Bukkit.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(player, channel));
+            }
             return true;
         }
 
