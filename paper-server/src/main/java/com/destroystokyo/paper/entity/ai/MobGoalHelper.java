@@ -27,7 +27,7 @@ public class MobGoalHelper {
     public static final Map<Class<? extends net.minecraft.world.entity.Mob>, Class<? extends Mob>> BUKKIT_BRIDGE = Util.make(new LinkedHashMap<>(), map -> {
         //<editor-fold defaultstate="collapsed" desc="bukkitMap Entities">
         // Start generate - MobGoalHelper#BUKKIT_BRIDGE
-        // @GeneratedFrom 1.21.7-rc2
+        // @GeneratedFrom 1.21.7
         map.put(net.minecraft.world.entity.Mob.class, Mob.class);
         map.put(net.minecraft.world.entity.AgeableMob.class, Ageable.class);
         map.put(net.minecraft.world.entity.ambient.AmbientCreature.class, Ambient.class);

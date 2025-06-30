@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 public interface DamageType extends Keyed, Translatable {
 
     // Start generate - DamageType
-    // @GeneratedFrom 1.21.7-rc2
+    // @GeneratedFrom 1.21.7
     DamageType ARROW = getDamageType("arrow");
 
     DamageType BAD_RESPAWN_POINT = getDamageType("bad_respawn_point");
