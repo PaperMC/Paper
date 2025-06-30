@@ -28,7 +28,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     }
 
     public static Holder<Instrument> bukkitToMinecraftHolder(MusicInstrument bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.INSTRUMENT);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static Object bukkitToString(MusicInstrument bukkit) {

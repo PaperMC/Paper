@@ -178,7 +178,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         public static Holder<VillagerType> bukkitToMinecraftHolder(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_TYPE);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public CraftType(final Holder<VillagerType> holder){
@@ -194,7 +194,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_PROFESSION);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {

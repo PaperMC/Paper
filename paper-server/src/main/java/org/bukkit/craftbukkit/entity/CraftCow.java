@@ -49,7 +49,7 @@ public class CraftCow extends CraftAbstractCow implements Cow {
         }
 
         public static Holder<CowVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.COW_VARIANT);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public CraftVariant(final Holder<CowVariant> holder) {

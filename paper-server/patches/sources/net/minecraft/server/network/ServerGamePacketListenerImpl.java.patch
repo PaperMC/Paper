@@ -83,17 +83,31 @@
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie cookie) {
          super(server, connection, cookie);
-@@ -268,7 +_,9 @@
+@@ -268,8 +_,22 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
+-    }
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
 +        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
-     }
++    }
++
++    // Paper start - configuration phase API
++    @Override
++    public io.papermc.paper.connection.PlayerCommonConnection getApiConnection() {
++        return this.playerGameConnection;
++    }
++
++    @Override
++    public net.kyori.adventure.audience.Audience getAudience() {
++        return this.getCraftPlayer();
++    }
++    // Paper end - configuration phase API
  
      @Override
+     public void tick() {
 @@ -288,8 +_,8 @@
          this.knownMovePacketCount = this.receivedMovePacketCount;
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
@@ -2609,7 +2623,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,157 @@
+@@ -2078,4 +_,145 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2626,18 +2640,6 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
-+
-+    // Paper start - Implement click callbacks with custom click action
-+    @Override
-+    public void handleCustomClickAction(final net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket packet) {
-+        super.handleCustomClickAction(packet);
-+        if (packet.id().equals(io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CLICK_CALLBACK_RESOURCE_LOCATION)) {
-+            packet.payload().ifPresent(tag ->
-+                io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.tryRunCallback(this.player.getBukkitEntity(), tag)
-+            );
-+        }
-+    }
-+    // Paper end - Implement click callbacks with custom click action
 +
 +    // Paper start - add utilities
 +    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {

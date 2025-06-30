@@ -1,17 +1,29 @@
 package io.papermc.paper.registry.set;
 
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.tag.Tag;
+import io.papermc.paper.registry.tag.TagKey;
 import java.util.Collection;
 import java.util.Iterator;
-import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
-@ApiStatus.Experimental
-@NullMarked
+/**
+ * Represents a collection tied to a registry.
+ * <p>
+ * There are 2 types of registry key sets:
+ * <ul>
+ *     <li>{@link Tag} which is a tag from vanilla or a datapack.
+ *     These are obtained via {@link org.bukkit.Registry#getTag(io.papermc.paper.registry.tag.TagKey)}.</li>
+ *     <li>{@link RegistryKeySet} which is a set of keys linked to values that are present in the registry. These are
+ *     created via {@link #keySet(RegistryKey, Iterable)} or {@link #keySetFromValues(RegistryKey, Iterable)}.</li>
+ * </ul>
+ *
+ * @param <T> registry value type
+ */
 @ApiStatus.NonExtendable
 public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO remove Keyed
 

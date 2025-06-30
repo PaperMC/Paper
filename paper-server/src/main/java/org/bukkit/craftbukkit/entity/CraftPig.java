@@ -97,7 +97,7 @@ public class CraftPig extends CraftAnimals implements Pig {
         }
 
         public static Holder<PigVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.PIG_VARIANT);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public CraftVariant(final Holder<PigVariant> holder) {

@@ -99,28 +99,18 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param bukkit the bukkit representation
      * @return the minecraft representation of the bukkit value
      */
-    public static <B extends Keyed, M> M bukkitToMinecraft(B bukkit) {
+    @SuppressWarnings("unchecked")
+    public static <B extends Keyed, M> M bukkitToMinecraft(final B bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
         return ((Handleable<M>) bukkit).getHandle();
     }
 
-    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<net.minecraft.core.Registry<M>> registryKey) {
+    @SuppressWarnings("unchecked")
+    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(final B bukkit) {
         Preconditions.checkArgument(bukkit != null);
-        // Paper start - support direct Holder
-        if (bukkit instanceof io.papermc.paper.util.Holderable<?>) {
-            return ((io.papermc.paper.util.Holderable<M>) bukkit).getHolder();
-        }
-        // Paper end - support direct Holder
 
-        net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
-
-        if (registry.wrapAsHolder(CraftRegistry.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<M> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
+        return ((Holderable<M>) bukkit).getHolder();
     }
 
     // Paper start - fixup upstream being dum
