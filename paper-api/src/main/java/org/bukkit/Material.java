@@ -145,7 +145,7 @@ import org.jetbrains.annotations.Nullable;
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
     // Start generate - Items
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.7
     ACACIA_BOAT(-1, 1),
     ACACIA_CHEST_BOAT(-1, 1),
     AIR(-1),
@@ -418,6 +418,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     MUSIC_DISC_CREATOR(-1, 1),
     MUSIC_DISC_CREATOR_MUSIC_BOX(-1, 1),
     MUSIC_DISC_FAR(-1, 1),
+    MUSIC_DISC_LAVA_CHICKEN(-1, 1),
     MUSIC_DISC_MALL(-1, 1),
     MUSIC_DISC_MELLOHI(-1, 1),
     MUSIC_DISC_OTHERSIDE(-1, 1),
@@ -611,7 +612,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
     // End generate - Items
     // Start generate - Blocks
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.7
     ACACIA_BUTTON(-1, Switch.class),
     ACACIA_DOOR(-1, Door.class),
     ACACIA_FENCE(-1, Fence.class),
@@ -3576,9 +3577,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Tries to convert this Material to an item type
      *
      * @return the converted item type or null
-     * @apiNote only for internal use
      */
-    @ApiStatus.Internal
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public ItemType asItemType() {
@@ -3589,9 +3588,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Tries to convert this Material to a block type
      *
      * @return the converted block type or null
-     * @apiNote only for internal use
      */
-    @ApiStatus.Internal
     @Nullable
     @org.jetbrains.annotations.Contract(pure = true) // Paper
     public BlockType asBlockType() {

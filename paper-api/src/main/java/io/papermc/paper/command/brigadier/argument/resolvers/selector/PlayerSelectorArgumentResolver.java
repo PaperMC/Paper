@@ -13,7 +13,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#player()
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#players()
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PlayerSelectorArgumentResolver extends SelectorArgumentResolver<List<Player>> {
 }
