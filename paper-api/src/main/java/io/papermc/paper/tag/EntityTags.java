@@ -1,56 +1,77 @@
 package io.papermc.paper.tag;
 
+import java.util.Objects;
 import org.bukkit.NamespacedKey;
-
-import static org.bukkit.entity.EntityType.*;
+import org.bukkit.Tag;
+import org.bukkit.entity.EntityType;
 
 /**
  * All tags in this class are unmodifiable, attempting to modify them will throw an
  * {@link UnsupportedOperationException}.
+ *
+ * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys} and {@link Tag}
  */
+@Deprecated(since = "1.21.6")
 public class EntityTags {
 
     private static NamespacedKey keyFor(String key) {
-        //noinspection deprecation
         return new NamespacedKey("paper", key + "_settag");
+    }
+
+    private static EntitySetTag replacedBy(Tag<EntityType> vanillaTag) {
+        return replacedBy(vanillaTag, Objects.requireNonNull(vanillaTag).key().value());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static EntitySetTag replacedBy(Tag<EntityType> vanillaTag, String legacyKey) {
+        Objects.requireNonNull(vanillaTag);
+        return new EntitySetTag(keyFor(legacyKey)).add(vanillaTag).lock();
     }
 
     /**
      * Covers undead mobs
+     *
      * @see <a href="https://minecraft.wiki/wiki/Mob#Undead_mobs">https://minecraft.wiki/wiki/Mob#Undead_mobs</a>
+     * @deprecated in favour of {@link Tag#ENTITY_TYPES_UNDEAD}
      */
-    public static final EntitySetTag UNDEADS = new EntitySetTag(keyFor("undeads"))
-        .add(DROWNED, HUSK, PHANTOM, SKELETON, SKELETON_HORSE, STRAY, WITHER, WITHER_SKELETON, ZOGLIN, ZOMBIE, ZOMBIE_HORSE, ZOMBIE_VILLAGER, ZOMBIFIED_PIGLIN, BOGGED)
-        .ensureSize("UNDEADS", 14).lock();
+    @Deprecated(since = "1.21.6")
+    public static final EntitySetTag UNDEADS = replacedBy(Tag.ENTITY_TYPES_UNDEAD, "undeads");
 
     /**
      * Covers all horses
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#HORSES}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag HORSES = new EntitySetTag(keyFor("horses"))
         .contains("HORSE")
         .ensureSize("HORSES", 3).lock();
 
     /**
      * Covers all minecarts
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#MINECART}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag MINECARTS = new EntitySetTag(keyFor("minecarts"))
         .contains("MINECART")
         .ensureSize("MINECARTS", 7).lock();
 
     /**
      * Covers mobs that split into smaller mobs
+     *
+     * @deprecated in favour of {@link io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys#SPLITTING_MOB}
      */
+    @Deprecated(since = "1.21.6")
     public static final EntitySetTag SPLITTING_MOBS = new EntitySetTag(keyFor("splitting_mobs"))
-        .add(SLIME, MAGMA_CUBE)
-        .ensureSize("SLIMES", 2).lock();
+        .add(EntityType.SLIME, EntityType.MAGMA_CUBE).lock();
 
     /**
      * Covers all water based mobs
+     *
      * @see <a href="https://minecraft.wiki/wiki/Mob#Aquatic_mobs">https://minecraft.wiki/wiki/Mob#Aquatic_mobs</a>
-     * @deprecated in favour of {@link org.bukkit.Tag#ENTITY_TYPES_AQUATIC}
+     * @deprecated in favour of {@link Tag#ENTITY_TYPES_AQUATIC}
      */
-    @Deprecated
-    public static final EntitySetTag WATER_BASED = new EntitySetTag(keyFor("water_based"))
-        .add(AXOLOTL, DOLPHIN, SQUID, GLOW_SQUID, GUARDIAN, ELDER_GUARDIAN, TURTLE, COD, SALMON, PUFFERFISH, TROPICAL_FISH, TADPOLE)
-        .ensureSize("WATER_BASED", 12).lock();
+    @Deprecated(since = "1.21.6")
+    public static final EntitySetTag WATER_BASED = replacedBy(Tag.ENTITY_TYPES_AQUATIC, "water_based");
 }
