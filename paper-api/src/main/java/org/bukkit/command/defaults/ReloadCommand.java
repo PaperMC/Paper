@@ -48,11 +48,11 @@ public class ReloadCommand extends BukkitCommand {
             }
         }
         if (!confirmed) {
-            Command.broadcastCommandMessage(sender, text("Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /bukkit:reload. To confirm, please type ", net.kyori.adventure.text.format.NamedTextColor.RED).append(text("/bukkit:reload confirm", net.kyori.adventure.text.format.NamedTextColor.YELLOW)));
+            Command.broadcastCommandMessage(sender, text("Are you sure you wish to reload your server? This command will be removed soon. Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /bukkit:reload. To confirm, please type ", net.kyori.adventure.text.format.NamedTextColor.RED).append(text("/bukkit:reload confirm", net.kyori.adventure.text.format.NamedTextColor.YELLOW)));
             return true;
         }
 
-        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
+        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported, may cause issues when using some plugins, and will be removed soon.");
         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
         // Paper start - lifecycle events
         try {
