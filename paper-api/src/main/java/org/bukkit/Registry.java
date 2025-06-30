@@ -122,7 +122,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see BlockType
      */
-    @ApiStatus.Experimental
     Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
     /**
      * Custom boss bars.
@@ -179,7 +178,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see ItemType
      */
-    @ApiStatus.Experimental
     Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
     /**
      * Default server loot tables.
@@ -480,7 +478,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #getTag(TagKey)
      */
-    @ApiStatus.Experimental
     boolean hasTag(TagKey<T> key);
 
     /**
@@ -491,9 +488,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
+     * @see #getTagValues(TagKey) 
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
+
+    /**
+     * Gets the named registry set (tag) for the given key and resolves it with this registry.
+     *
+     * @param key the key to get the tag for
+     * @return the resolved values
+     * @throws NoSuchElementException        if no tag with the given key is found
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #getTag(TagKey)
+     * @see Tag#resolve(Registry)
+     */
+    @ApiStatus.Experimental
+    default Collection<T> getTagValues(final TagKey<T> key) {
+        Tag<T> tag = this.getTag(key);
+        return tag.resolve(this);
+    }
 
     /**
      * Gets all the tags in this registry.

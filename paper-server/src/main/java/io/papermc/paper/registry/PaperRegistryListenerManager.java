@@ -10,11 +10,12 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import io.papermc.paper.registry.event.RegistryEntryAddEvent;
 import io.papermc.paper.registry.event.RegistryEntryAddEventImpl;
 import io.papermc.paper.registry.event.RegistryEventMap;
 import io.papermc.paper.registry.event.RegistryEventProvider;
-import io.papermc.paper.registry.event.RegistryFreezeEvent;
-import io.papermc.paper.registry.event.RegistryFreezeEventImpl;
+import io.papermc.paper.registry.event.RegistryComposeEventImpl;
+import io.papermc.paper.registry.event.RegistryComposeEvent;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventTypeImpl;
 import io.papermc.paper.registry.event.type.RegistryLifecycleEventType;
@@ -37,7 +38,7 @@ public class PaperRegistryListenerManager {
     public static final PaperRegistryListenerManager INSTANCE = new PaperRegistryListenerManager();
 
     public final RegistryEventMap valueAddEventTypes = new RegistryEventMap("value add");
-    public final RegistryEventMap freezeEventTypes = new RegistryEventMap("freeze");
+    public final RegistryEventMap composeEventType = new RegistryEventMap("compose");
 
     private PaperRegistryListenerManager() {
     }
@@ -60,7 +61,7 @@ public class PaperRegistryListenerManager {
      * For {@link Registry#register(Registry, ResourceKey, Object)}
      */
     public <M> M registerWithListeners(final Registry<M> registry, final ResourceKey<M> key, final M nms) {
-        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, PaperRegistryListenerManager::registerWithInstance, BuiltInRegistries.BUILT_IN_CONVERSIONS);
+        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, PaperRegistryListenerManager::registerWithInstance, BuiltInRegistries.STATIC_ACCESS_CONVERSIONS);
     }
 
     /**
@@ -74,7 +75,7 @@ public class PaperRegistryListenerManager {
      * For {@link Registry#registerForHolder(Registry, ResourceKey, Object)}
      */
     public <M> Holder.Reference<M> registerForHolderWithListeners(final Registry<M> registry, final ResourceKey<M> key, final M nms) {
-        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, WritableRegistry::register, BuiltInRegistries.BUILT_IN_CONVERSIONS);
+        return this.registerWithListeners(registry, key, nms, RegistrationInfo.BUILT_IN, WritableRegistry::register, BuiltInRegistries.STATIC_ACCESS_CONVERSIONS);
     }
 
     public <M> void registerWithListeners(
@@ -157,28 +158,28 @@ public class PaperRegistryListenerManager {
 
     public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
         final RegistryEntry<M, T> entry = PaperRegistries.getEntry(resourceKey);
-        if (entry == null || !entry.meta().modificationApiSupport().canAdd() || !this.freezeEventTypes.hasHandlers(entry.apiKey())) {
+        if (entry == null || !entry.meta().modificationApiSupport().canAdd() || !this.composeEventType.hasHandlers(entry.apiKey())) {
             return;
         }
         final RegistryEntryMeta.Buildable<M, T, B> writableEntry = (RegistryEntryMeta.Buildable<M, T, B>) entry.meta();
         final WritableCraftRegistry<M, T, B> writableRegistry = PaperRegistryAccess.instance().getWritableRegistry(entry.apiKey());
-        final RegistryFreezeEventImpl<T, B> event = writableEntry.createFreezeEvent(writableRegistry, conversions);
-        LifecycleEventRunner.INSTANCE.callEvent(this.freezeEventTypes.getEventType(entry.apiKey()), event);
+        final RegistryComposeEventImpl<T, B> event = writableEntry.createPostLoadEvent(writableRegistry, conversions);
+        LifecycleEventRunner.INSTANCE.callEvent(this.composeEventType.getEventType(entry.apiKey()), event);
     }
 
     public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
         final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
         if (entry == null || !entry.meta().modificationApiSupport().canModify()) {
-            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryEntryAddEvent");
+            throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryEntryAddEvent.class.getSimpleName());
         }
         return this.valueAddEventTypes.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
     }
 
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> getRegistryFreezeEventType(final RegistryEventProvider<T, B> type) {
+    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> getRegistryComposeEventType(final RegistryEventProvider<T, B> type) {
         final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
         if (entry == null || !entry.meta().modificationApiSupport().canAdd()) {
-            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryFreezeEvent");
+            throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryComposeEvent.class.getSimpleName());
         }
-        return this.freezeEventTypes.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
+        return this.composeEventType.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
     }
 }

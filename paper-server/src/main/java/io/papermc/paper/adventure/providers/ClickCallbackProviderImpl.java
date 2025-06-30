@@ -1,24 +1,33 @@
 package io.papermc.paper.adventure.providers;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("UnstableApiUsage") // permitted provider
 public class ClickCallbackProviderImpl implements ClickCallback.Provider {
+    private static final Key CLICK_CALLBACK_KEY = Key.key("paper", "click_callback");
+    private static final String ID_KEY = "id";
 
+    public static final ResourceLocation CLICK_CALLBACK_RESOURCE_LOCATION = PaperAdventure.asVanilla(CLICK_CALLBACK_KEY);
     public static final CallbackManager CALLBACK_MANAGER = new CallbackManager();
 
     @Override
     public @NotNull ClickEvent create(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
-        return ClickEvent.runCommand("/paper:callback " + CALLBACK_MANAGER.addCallback(callback, options));
+        final CompoundTag tag = new CompoundTag();
+        tag.putString(ID_KEY, CALLBACK_MANAGER.addCallback(callback, options).toString());
+        return ClickEvent.custom(CLICK_CALLBACK_KEY, PaperAdventure.asBinaryTagHolder(tag));
     }
 
     public static final class CallbackManager {
@@ -48,12 +57,21 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             }
         }
 
-        public void runCallback(final @NotNull Audience audience, final UUID id) {
-            final StoredCallback callback = this.callbacks.get(id);
-            if (callback != null && callback.valid()) { //TODO Message if expired/invalid?
-                callback.takeUse();
-                callback.callback.accept(audience);
-            }
+        public void tryRunCallback(final @NotNull Audience audience, final Tag tag) {
+            tag.asCompound().flatMap(t -> t.getString(ID_KEY)).ifPresent(s -> {
+                final UUID id;
+                try {
+                    id = UUID.fromString(s);
+                } catch (final IllegalArgumentException ignored) {
+                    return;
+                }
+
+                final StoredCallback callback = this.callbacks.get(id);
+                if (callback != null && callback.valid()) {
+                    callback.takeUse();
+                    callback.callback.accept(audience);
+                }
+            });
         }
     }
 
@@ -65,8 +83,14 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         private int remainingUses;
 
         private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final UUID id) {
+            long lifetimeValue;
             this.callback = callback;
-            this.lifetime = options.lifetime().toNanos();
+            try {
+                lifetimeValue = options.lifetime().toNanos();
+            } catch (final ArithmeticException ex) {
+                lifetimeValue = Long.MAX_VALUE;
+            }
+            this.lifetime = lifetimeValue;
             this.remainingUses = options.uses();
             this.id = id;
         }
@@ -82,6 +106,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
 
         public boolean expired() {
+            if (this.lifetime == Long.MAX_VALUE) return false;
             return System.nanoTime() - this.startedAt >= this.lifetime;
         }
 

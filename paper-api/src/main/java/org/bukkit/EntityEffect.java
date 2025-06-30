@@ -476,7 +476,12 @@ public enum EntityEffect {
      *
      * @see org.bukkit.inventory.EquipmentSlot#SADDLE
      */
-    BREAK_EQUIPMENT_SADDLE(68, LivingEntity.class);
+    BREAK_EQUIPMENT_SADDLE(68, LivingEntity.class),
+    /**
+     * Ravager roars.
+     */
+    RAVAGER_ROARED(69, Ravager.class),
+    ;
 
     private final byte data;
     private final Set<Class<? extends Entity>> applicableClasses;

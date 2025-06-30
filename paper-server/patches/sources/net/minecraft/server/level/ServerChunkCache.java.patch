@@ -5,7 +5,7 @@
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
 +    // Paper start
-+    private final ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = new ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<>();
++    public final ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = new ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<>();
 +    public int getFullChunksCount() {
 +        return this.fullChunks.size();
 +    }
@@ -146,7 +146,7 @@
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
 +
 +        gameprofilerfiller.push("purge");
-+        this.ticketStorage.purgeStaleTickets();
++        this.ticketStorage.purgeStaleTickets(this.chunkMap);
 +        this.runDistanceManagerUpdates();
 +        gameprofilerfiller.popPush("unload");
 +        this.chunkMap.tick(() -> true);
@@ -161,7 +161,7 @@
          profilerFiller.push("purge");
 -        if (this.level.tickRateManager().runsNormally() || !tickChunks) {
 +        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
-             this.ticketStorage.purgeStaleTickets();
+             this.ticketStorage.purgeStaleTickets(this.chunkMap);
          }
  
 @@ -388,12 +_,20 @@
@@ -188,7 +188,7 @@
          } else {
              filteredSpawningCategories = List.of();
          }
-@@ -544,8 +_,13 @@
+@@ -547,8 +_,13 @@
  
      @Override
      public void setSpawnSettings(boolean spawnSettings) {
@@ -203,7 +203,7 @@
      }
  
      public String getChunkDebugData(ChunkPos chunkPos) {
-@@ -618,12 +_,18 @@
+@@ -621,12 +_,18 @@
  
          @Override
          public boolean pollTask() {

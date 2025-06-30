@@ -43,7 +43,7 @@ public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
 
     @Override
     protected Iterable<Holder.Reference<T>> getValues() {
-        return this.registry.get().listElements().sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+        return this.registry.get().listElements().sorted(Formatting.HOLDER_ORDER)::iterator;
     }
 
     @Override

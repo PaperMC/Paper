@@ -2,9 +2,10 @@ package org.bukkit.block;
 
 import java.util.Collection;
 import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.World;
@@ -53,6 +54,7 @@ import org.bukkit.block.data.type.DaylightDetector;
 import org.bukkit.block.data.type.DecoratedPot;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.block.data.type.DriedGhast;
 import org.bukkit.block.data.type.Dripleaf;
 import org.bukkit.block.data.type.EndPortalFrame;
 import org.bukkit.block.data.type.EnderChest;
@@ -81,7 +83,6 @@ import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.block.data.type.Observer;
-import org.bukkit.block.data.type.PinkPetals;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.block.data.type.PitcherCrop;
@@ -121,18 +122,14 @@ import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.data.type.WallSkull;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
- * While this API is in a public interface, it is not intended for use by
- * plugins until further notice. The purpose of these types is to make
- * {@link Material} more maintenance friendly, but will in due time be the
- * official replacement for the aforementioned enum. Entirely incompatible
- * changes may occur. Do not use this API in plugins.
+ * Represents a block type.
  */
-@org.jetbrains.annotations.ApiStatus.Experimental // Paper - data component API - already required for data component API
+@NullMarked
 public interface BlockType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add translatable & feature flag API
 
     /**
@@ -149,7 +146,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          *
          * @return the BlockData class of this BlockType
          */
-        @NotNull
         @Override
         Class<B> getBlockDataClass();
 
@@ -160,7 +156,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          * @param consumer consumer to run on new instance before returning
          * @return new data instance
          */
-        @NotNull
         B createBlockData(@Nullable Consumer<? super B> consumer);
 
         /**
@@ -169,7 +164,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          *
          * @return new data instance
          */
-        @NotNull
         @Override
         B createBlockData();
 
@@ -180,7 +174,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          * @return new block data collection
          */
         @Override
-        @Unmodifiable @NotNull Collection<B> createBlockDataStates();
+        @Unmodifiable Collection<B> createBlockDataStates();
 
         /**
          * Creates a new {@link BlockData} instance for this block type, with all
@@ -191,13 +185,12 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          * @return new data instance
          * @throws IllegalArgumentException if the specified data is not valid
          */
-        @NotNull
         B createBlockData(@Nullable String data);
     }
 
     //<editor-fold desc="BlockTypes" defaultstate="collapsed">
     // Start generate - BlockType
-    // @GeneratedFrom 1.21.5
+    // @GeneratedFrom 1.21.7
     BlockType.Typed<Switch> ACACIA_BUTTON = getBlockType("acacia_button");
 
     BlockType.Typed<Door> ACACIA_DOOR = getBlockType("acacia_door");
@@ -897,6 +890,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Skull> DRAGON_HEAD = getBlockType("dragon_head");
 
     BlockType.Typed<WallSkull> DRAGON_WALL_HEAD = getBlockType("dragon_wall_head");
+
+    BlockType.Typed<DriedGhast> DRIED_GHAST = getBlockType("dried_ghast");
 
     BlockType.Typed<BlockData> DRIED_KELP_BLOCK = getBlockType("dried_kelp_block");
 
@@ -2408,10 +2403,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     // End generate - BlockType
     //</editor-fold>
 
-    @NotNull
-    private static <B extends BlockType> B getBlockType(@NotNull String key) {
+    @SuppressWarnings("unchecked")
+    private static <B extends BlockType> B getBlockType(@KeyPattern.Value final String key) {
         // Cast instead of using BlockType#typed, since block type can be a mock during testing and would return null
-        return (B) Registry.BLOCK.getOrThrow(NamespacedKey.minecraft(key));
+        return (B) Registry.BLOCK.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -2419,7 +2414,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @return the typed block type.
      */
-    @NotNull
     BlockType.Typed<BlockData> typed();
 
     /**
@@ -2429,8 +2423,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @param <B>          the generic type of the block data to type this block type with.
      * @return the typed block type.
      */
-    @NotNull
-    <B extends BlockData> BlockType.Typed<B> typed(@NotNull Class<B> blockDataType);
+    <B extends BlockData> BlockType.Typed<B> typed(Class<B> blockDataType);
 
     /**
      * Returns true if this BlockType has a corresponding {@link ItemType}.
@@ -2444,12 +2437,14 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * Returns the corresponding {@link ItemType} for the given BlockType.
      * <p>
      * If there is no corresponding {@link ItemType} an error will be thrown.
+     * <p>This is <b>NOT</b> the same as the {@link ItemType} with the same key,
+     * but instead is the item associated with this block if this block
+     * can be represented with an item.</p>
      *
      * @return the corresponding ItemType
      * @see #hasItemType()
      * @see BlockData#getPlacementMaterial()
      */
-    @NotNull
     ItemType getItemType();
 
     /**
@@ -2457,7 +2452,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @return the BlockData class of this BlockType
      */
-    @NotNull
     Class<? extends BlockData> getBlockDataClass();
 
     /**
@@ -2466,7 +2460,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @return new data instance
      */
-    @NotNull
     BlockData createBlockData();
 
     /**
@@ -2475,7 +2468,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @return new block data collection
      */
-    @Unmodifiable @NotNull Collection<? extends BlockData> createBlockDataStates();
+    @Unmodifiable Collection<? extends BlockData> createBlockDataStates();
 
     /**
      * Creates a new {@link BlockData} instance for this block type, with all
@@ -2486,7 +2479,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
-    @NotNull
     BlockData createBlockData(@Nullable String data);
 
     /**
@@ -2604,7 +2596,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
     @Deprecated(forRemoval = true, since = "1.21.1") // Paper
-    boolean isEnabledByFeature(@NotNull World world);
+    boolean isEnabledByFeature(World world);
 
     /**
      * Tries to convert this BlockType into a Material
@@ -2616,21 +2608,17 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     @Deprecated(since = "1.20.6")
     Material asMaterial();
 
-    // Paper start - add Translatable
     /**
      * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
      */
     @Deprecated(forRemoval = true)
     @Override
-    @NotNull String getTranslationKey();
-    // Paper end - add Translatable
+    String getTranslationKey();
 
-    // Paper start - hasCollision API
     /**
      * Checks if this block type has collision.
      * <p>
      * @return false if this block never has collision, true if it <b>might</b> have collision
      */
     boolean hasCollision();
-    // Paper end - hasCollision API
 }

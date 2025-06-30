@@ -9,7 +9,7 @@ import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
 public record PaperApplyStatusEffects(
     ApplyStatusEffectsConsumeEffect impl
-) implements ConsumeEffect.ApplyStatusEffects, PaperConsumableEffectImpl<ApplyStatusEffectsConsumeEffect> {
+) implements ConsumeEffect.ApplyStatusEffects, PaperConsumableEffect<ApplyStatusEffectsConsumeEffect> {
 
     @Override
     public List<PotionEffect> effects() {

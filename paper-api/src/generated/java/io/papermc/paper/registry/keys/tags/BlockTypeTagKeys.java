@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.7")
 public final class BlockTypeTagKeys {
     /**
      * {@code #minecraft:acacia_logs}
@@ -581,6 +579,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> GUARDED_BY_PIGLINS = create(key("guarded_by_piglins"));
 
     /**
+     * {@code #minecraft:happy_ghast_avoids}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> HAPPY_GHAST_AVOIDS = create(key("happy_ghast_avoids"));
+
+    /**
      * {@code #minecraft:hoglin_repellents}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -910,13 +915,6 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> PLANKS = create(key("planks"));
 
     /**
-     * {@code #minecraft:plays_ambient_desert_block_sounds}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = create(key("plays_ambient_desert_block_sounds"));
-
-    /**
      * {@code #minecraft:polar_bears_spawnable_on_alternate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1204,6 +1202,27 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> TRAPDOORS = create(key("trapdoors"));
 
     /**
+     * {@code #minecraft:triggers_ambient_desert_dry_vegetation_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS = create(key("triggers_ambient_desert_dry_vegetation_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_desert_sand_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_SAND_BLOCK_SOUNDS = create(key("triggers_ambient_desert_sand_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_dried_ghast_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DRIED_GHAST_BLOCK_SOUNDS = create(key("triggers_ambient_dried_ghast_block_sounds"));
+
+    /**
      * {@code #minecraft:underwater_bonemeals}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1373,7 +1392,6 @@ public final class BlockTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<BlockType> create(final Key key) {
         return TagKey.create(RegistryKey.BLOCK, key);
     }

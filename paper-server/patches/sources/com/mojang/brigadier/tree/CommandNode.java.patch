@@ -10,7 +10,7 @@
      private final RedirectModifier<S> modifier;
      private final boolean forks;
      private Command<S> command;
-+    public CommandNode<net.minecraft.commands.CommandSourceStack> clientNode; // Paper - Brigadier API
++    public CommandNode<S> clientNode; // Paper - Brigadier API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> unwrappedCached = null; // Paper - Brigadier Command API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> wrappedCached = null; // Paper - Brigadier Command API
 +    public io.papermc.paper.command.brigadier.APICommandMeta apiCommandMeta; // Paper - Brigadier Command API
@@ -24,25 +24,6 @@
  
      protected CommandNode(final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
          this.command = command;
-@@ -61,7 +_,17 @@
-         return modifier;
-     }
- 
--    public boolean canUse(final S source) {
-+    // CraftBukkit start
-+    public synchronized boolean canUse(final S source) {
-+        if (source instanceof final net.minecraft.commands.CommandSourceStack css) {
-+            try {
-+                css.currentCommand.put(Thread.currentThread(), this); // Paper - Thread Safe Vanilla Command permission checking
-+                return this.requirement.test(source);
-+            } finally {
-+                css.currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
-+            }
-+        }
-+        // CraftBukkit end
-         return requirement.test(source);
-     }
- 
 @@ -151,6 +_,12 @@
      protected abstract String getSortedKey();
  

@@ -1,22 +1,32 @@
 --- a/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
 +++ b/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
-@@ -37,10 +_,17 @@
+@@ -39,16 +_,25 @@
      protected void onHit(HitResult result) {
          super.onHit(result);
-         if (this.level() instanceof ServerLevel) {
--            this.level().levelEvent(2002, this.blockPosition(), -13083194);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            serverLevel.levelEvent(2002, this.blockPosition(), -13083194);
 +            // CraftBukkit - moved to after event
-             int i = 3 + this.level().random.nextInt(5) + this.level().random.nextInt(5);
--            ExperienceOrb.award((ServerLevel)this.level(), result.getLocation(), i);
--            this.discard();
-+            // CraftBukkit start
+             int i = 3 + serverLevel.random.nextInt(5) + serverLevel.random.nextInt(5);
++            // Paper start - exp bottle event
 +            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, result, i);
 +            i = event.getExperience();
++            // Paper end - exp bottle event
+             if (result instanceof BlockHitResult blockHitResult) {
+                 Vec3 unitVec3 = blockHitResult.getDirection().getUnitVec3();
+-                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), unitVec3, i);
++                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), unitVec3, i, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
+             } else {
+-                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), this.getDeltaMovement().scale(-1.0), i);
+-            }
++                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), this.getDeltaMovement().scale(-1.0), i, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
++            }
++            // Paper start - exp bottle event
 +            if (event.getShowEffect()) {
 +                this.level().levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), net.minecraft.world.item.alchemy.PotionContents.BASE_POTION_COLOR);
 +            }
-+            // CraftBukkit end
-+            ExperienceOrb.award((ServerLevel)this.level(), result.getLocation(), i, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
++            // Paper end - exp bottle event
+ 
+-            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
      }

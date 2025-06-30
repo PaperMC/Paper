@@ -14,17 +14,17 @@ movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a8eaccde3ec9ed912cbc6df0b29e9f8136a46578..0f6ca6ef161ac2934ba761a1eca3215290c7262b 100644
+index 23dfc87db1d5e90099270627197abc0f787a4393..27a01fd28ea565221768f31df02f0a2ddf242fce 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -223,6 +223,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     // Paper end - Share random for entities to make them more random
+@@ -230,6 +230,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      public @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
  
+     private volatile @Nullable org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity; // Paper - Folia schedulers - volatile
 +    public boolean collisionLoadChunks = false; // Paper
-     private @Nullable org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
  
      public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntity() {
+         if (this.bukkitEntity == null) {
 diff --git a/net/minecraft/world/level/BlockCollisions.java b/net/minecraft/world/level/BlockCollisions.java
 index ed6e4f9fd0c7ad1219e66bc1cb4038191dd6edd8..45a20dbb935b12d429153463dba5d6fd3385dd7a 100644
 --- a/net/minecraft/world/level/BlockCollisions.java
@@ -76,7 +76,7 @@ index ed6e4f9fd0c7ad1219e66bc1cb4038191dd6edd8..45a20dbb935b12d429153463dba5d6fd
                          && (nextType != 2 || blockState.is(Blocks.MOVING_PISTON))) {
                          VoxelShape collisionShape = this.context.getCollisionShape(blockState, this.collisionGetter, this.pos);
 diff --git a/net/minecraft/world/level/CollisionGetter.java b/net/minecraft/world/level/CollisionGetter.java
-index 79af1e4dd1f84580e509ac3e9a77bcd5531c8da6..a031d39854eb049a701f3de9e11c73419883d5ca 100644
+index 8956e5d66481d8ca874999df8f38eb28651362db..056005f0728ba14c9d0dd9dd16400a35a9656243 100644
 --- a/net/minecraft/world/level/CollisionGetter.java
 +++ b/net/minecraft/world/level/CollisionGetter.java
 @@ -50,11 +50,13 @@ public interface CollisionGetter extends BlockGetter {

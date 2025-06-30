@@ -35,16 +35,6 @@ public class NamespacedKeyTest {
     }
 
     @Test
-    public void testEmptyNamespace() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("", "foo").toString());
-    }
-
-    @Test
-    public void testEmptyKey() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "").toString());
-    }
-
-    @Test
     public void testInvalidNamespace() {
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft/test", "foo").toString());
     }

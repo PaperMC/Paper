@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.item.component.BlocksAttacks;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 
@@ -35,12 +36,12 @@ public record PaperItemDamageFunction(
 
     static final class BuilderImpl implements Builder {
 
-        private float threshold;
-        private float base;
-        private float factor;
+        private float threshold = BlocksAttacks.ItemDamageFunction.DEFAULT.threshold();
+        private float base = BlocksAttacks.ItemDamageFunction.DEFAULT.base();
+        private float factor = BlocksAttacks.ItemDamageFunction.DEFAULT.factor();
 
         @Override
-        public Builder threshold(@NonNegative final float threshold) {
+        public Builder threshold(final @NonNegative float threshold) {
             Preconditions.checkArgument(threshold >= 0, "threshold must be non-negative, was %s", threshold);
             this.threshold = threshold;
             return this;

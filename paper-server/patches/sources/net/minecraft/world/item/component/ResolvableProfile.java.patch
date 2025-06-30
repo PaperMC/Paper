@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/component/ResolvableProfile.java
 +++ b/net/minecraft/world/item/component/ResolvableProfile.java
-@@ -20,9 +_,10 @@
+@@ -21,9 +_,10 @@
          instance -> instance.group(
                  ExtraCodecs.PLAYER_NAME.optionalFieldOf("name").forGetter(ResolvableProfile::name),
                  UUIDUtil.CODEC.optionalFieldOf("id").forGetter(ResolvableProfile::id),
@@ -12,12 +12,21 @@
      );
      public static final Codec<ResolvableProfile> CODEC = Codec.withAlternative(
          FULL_CODEC, ExtraCodecs.PLAYER_NAME, name -> new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap())
-@@ -49,7 +_,7 @@
-         if (this.isResolved()) {
+@@ -53,7 +_,7 @@
+         } else {
+             Optional<GameProfile> optional;
+             if (this.id.isPresent()) {
+-                optional = SkullBlockEntity.fetchGameProfile(this.id.get()).getNow(null);
++                optional = SkullBlockEntity.fetchGameProfile(this.id.get(), this.name.orElse(null)).getNow(null); // Paper - player profile events - pass name
+             } else {
+                 optional = SkullBlockEntity.fetchGameProfile(this.name.orElseThrow()).getNow(null);
+             }
+@@ -67,7 +_,7 @@
              return CompletableFuture.completedFuture(this);
          } else {
--            return this.id.isPresent() ? SkullBlockEntity.fetchGameProfile(this.id.get()).thenApply(optional -> {
-+            return this.id.isPresent() ? SkullBlockEntity.fetchGameProfile(this.id.get(), this.name.orElse(null)).thenApply(optional -> { // Paper - player profile events
-                 GameProfile gameProfile = optional.orElseGet(() -> new GameProfile(this.id.get(), this.name.orElse("")));
-                 return new ResolvableProfile(gameProfile);
-             }) : SkullBlockEntity.fetchGameProfile(this.name.orElseThrow()).thenApply(optional -> {
+             return this.id.isPresent()
+-                ? SkullBlockEntity.fetchGameProfile(this.id.get()).thenApply(this::createProfile)
++                ? SkullBlockEntity.fetchGameProfile(this.id.get(), this.name.orElse(null)).thenApply(this::createProfile)  // Paper - player profile events - pass name
+                 : SkullBlockEntity.fetchGameProfile(this.name.orElseThrow()).thenApply(this::createProfile);
+         }
+     }

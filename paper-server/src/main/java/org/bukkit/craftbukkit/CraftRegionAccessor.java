@@ -198,7 +198,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         BlockPos pos = CraftLocation.toBlockPosition(location);
         BlockStateListPopulator populator = new BlockStateListPopulator(this.getHandle());
         boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
-        populator.refreshTiles();
         populator.placeSomeBlocks(predicate == null ? ($ -> true) : predicate);
         return result;
     }

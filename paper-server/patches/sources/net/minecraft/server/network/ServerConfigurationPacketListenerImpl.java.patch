@@ -1,18 +1,19 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -48,8 +_,10 @@
+@@ -47,11 +_,13 @@
+     public ClientInformation clientInformation;
      @Nullable
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
--    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
--        super(server, connection, cookie);
-+    // CraftBukkit start
-+    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, ServerPlayer player) {
-+        super(server, connection, cookie, player);
-+        // CraftBukkit end
+     public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+         super(server, connection, cookie);
          this.gameProfile = cookie.gameProfile();
          this.clientInformation = cookie.clientInformation();
++        this.paperConnection = new io.papermc.paper.connection.PaperPlayerConfigurationConnection(this); // Paper
      }
+ 
+     @Override
 @@ -61,6 +_,11 @@
  
      @Override
@@ -25,20 +26,32 @@
          LOGGER.info("{} lost connection: {}", this.gameProfile, details.reason().getString());
          super.onDisconnect(details);
      }
-@@ -73,6 +_,12 @@
+@@ -71,10 +_,15 @@
+     }
+ 
      public void startConfiguration() {
++        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
-+        // CraftBukkit start
-+        org.bukkit.craftbukkit.CraftServerLinks wrapper = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
-+        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.player.getBukkitEntity(), wrapper);
-+        this.cserver.getPluginManager().callEvent(event);
-+        serverLinks = wrapper.getServerLinks();
-+        // CraftBukkit end
          if (!serverLinks.isEmpty()) {
-             this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
+-            this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
++            // Paper start
++            org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
++            new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++            this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
++            // Paper end
          }
-@@ -105,6 +_,7 @@
+ 
+         LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = this.server.registries();
+@@ -87,6 +_,7 @@
+         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
+         this.configurationTasks.add(this.synchronizeRegistriesTask);
+         this.addOptionalTasks();
++        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
+         this.configurationTasks.add(new JoinWorldTask());
+         this.startNextTask();
+     }
+@@ -105,12 +_,13 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
@@ -46,20 +59,36 @@
      }
  
      @Override
-@@ -139,16 +_,21 @@
+     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+         super.handleResourcePackResponse(packet);
+-        if (packet.action().isTerminal()) {
++        if (packet.action().isTerminal() && packet.id().equals(this.server.getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::id).orElse(null))) { // Paper - Ignore resource pack requests that are not vanilla
+             this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
+         }
+     }
+@@ -139,16 +_,30 @@
                  return;
              }
  
 -            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
-+            Component component = null; // CraftBukkit - login checks already completed
++            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
              if (component != null) {
                  this.disconnect(component);
                  return;
              }
  
--            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation);
-+            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
-             playerList.placeNewPlayer(this.connection, playerForLogin, this.createCookie(this.clientInformation));
+-            ServerPlayer serverPlayer = new ServerPlayer(this.server, this.server.overworld(), this.gameProfile, this.clientInformation);
++            // Paper start
++            ServerPlayer serverPlayer;
++            if (this.connection.savedPlayerForLoginEventLegacy != null) {
++                serverPlayer = this.connection.savedPlayerForLoginEventLegacy;
++                // WE have to do this because the player isnt updated properly
++                serverPlayer.updateOptionsNoEvents(this.clientInformation);
++            } else {
++                serverPlayer = new ServerPlayer(this.server, this.server.overworld(), this.gameProfile, this.clientInformation);
++            }
++            // Paper end
+             playerList.placeNewPlayer(this.connection, serverPlayer, this.createCookie(this.clientInformation));
          } catch (Exception var5) {
              LOGGER.error("Couldn't place player in world", (Throwable)var5);
 +            // Paper start - Debugging
@@ -70,3 +99,35 @@
              this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
              this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
          }
+@@ -180,4 +_,31 @@
+             this.startNextTask();
+         }
+     }
++
++    // Paper start
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo); // Currently you cannot cancel disconnect during the config stage
++        });
++    }
++
++    @Override
++    public io.papermc.paper.connection.ReadablePlayerCookieConnectionImpl getCookieConnection() {
++        return this.paperConnection;
++    }
++
++    @Override
++    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
++        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
++            this.playerBrand = brand;
++        }
++    }
++    // Paper end
+ }

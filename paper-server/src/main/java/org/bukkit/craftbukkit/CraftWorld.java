@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit;
 
+import ca.spottedleaf.moonrise.common.list.ReferenceList;
+import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.datafixers.util.Pair;
@@ -12,6 +14,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,12 +22,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import net.kyori.adventure.pointer.PointersSupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -40,6 +45,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
@@ -152,6 +158,10 @@ import org.jetbrains.annotations.Nullable;
 public class CraftWorld extends CraftRegionAccessor implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
+    private static final PointersSupplier<World> POINTERS_SUPPLIER = PointersSupplier.<World>builder()
+        .resolving(net.kyori.adventure.identity.Identity.NAME, World::getName)
+        .resolving(net.kyori.adventure.identity.Identity.UUID, World::getUID)
+        .build();
 
     private final ServerLevel world;
     private WorldBorder worldBorder;
@@ -163,7 +173,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
-    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
     // Paper start - void damage configuration
     private boolean voidDamageEnabled;
     private float voidDamageAmount;
@@ -243,7 +252,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public BiomeProvider vanillaBiomeProvider() {
-        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
+        ServerChunkCache serverCache = this.getHandle().chunkSource;
 
         final net.minecraft.world.level.chunk.ChunkGenerator gen = serverCache.getGenerator();
         net.minecraft.world.level.biome.BiomeSource biomeSource;
@@ -421,8 +430,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world); // Paper
-        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
+        ServerChunkCache serverChunkCache = this.getHandle().chunkSource;
+        ReferenceList<Chunk> chunks = new ReferenceList<>(new Chunk[serverChunkCache.fullChunks.size()]);
+
+        for (PrimitiveIterator.OfLong iterator = serverChunkCache.fullChunks.keyIterator(); iterator.hasNext();) {
+            long chunk = iterator.nextLong();
+            chunks.add(new CraftChunk(this.world, CoordinateUtils.getChunkX(chunk), CoordinateUtils.getChunkZ(chunk)));
+        }
+
+        Chunk[] raw = chunks.getRawDataUnchecked();
+        int size = chunks.size();
+        if (raw.length == size) {
+            // always true when on main
+            return raw;
+        }
+        return Arrays.copyOf(raw, size);
     }
 
     @Override
@@ -631,7 +653,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Set<Chunk> chunks = new HashSet<>();
 
         for (long coord : this.getHandle().getForceLoadedChunks()) {
-            chunks.add(this.getChunkAt(ChunkPos.getX(coord), ChunkPos.getZ(coord)));
+            chunks.add(new CraftChunk(this.getHandle(), ChunkPos.getX(coord), ChunkPos.getZ(coord)));
         }
 
         return Collections.unmodifiableCollection(chunks);
@@ -828,7 +850,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().connection == null) continue;
 
-            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().serverLevel().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
         }
     }
 
@@ -2463,14 +2485,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - implement pointers
     @Override
     public net.kyori.adventure.pointer.Pointers pointers() {
-        if (this.adventure$pointers == null) {
-            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
-                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
-                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUID)
-                .build();
-        }
-
-        return this.adventure$pointers;
+        return POINTERS_SUPPLIER.view(this);
     }
     // Paper end
 }

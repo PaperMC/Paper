@@ -6,6 +6,7 @@ import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.rewriter.types.Types;
 import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
 import io.papermc.generator.rewriter.types.registry.FeatureFlagRewriter;
+import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
 import io.papermc.generator.rewriter.types.registry.RegistryTagRewriter;
 import io.papermc.generator.rewriter.types.registry.TagRewriter;
@@ -17,7 +18,6 @@ import io.papermc.generator.rewriter.types.simple.EntityTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
-import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
 import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
@@ -25,14 +25,15 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
-import java.util.Map;
-import java.util.function.Consumer;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
+import java.util.Map;
+import java.util.function.Consumer;
 import javax.lang.model.SourceVersion;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Rarity;
 import org.bukkit.Art;
@@ -43,12 +44,14 @@ import org.bukkit.JukeboxSong;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.Statistic;
 import org.bukkit.Tag;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
@@ -67,7 +70,6 @@ import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemRarity;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.inventory.recipe.CookingBookCategory;
@@ -124,6 +126,8 @@ public final class Rewriters {
             .register("BoatStatus", Boat.Status.class, new EnumCloneRewriter<>(net.minecraft.world.entity.vehicle.Boat.Status.class))
             .register("FoxType", Fox.Type.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Fox.Variant.class))
             .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Salmon.Variant.class))
+            .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
+            .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
@@ -181,7 +185,6 @@ public final class Rewriters {
             .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            // .register("DataComponentTypes", DataComponentTypes.class, new DataComponentTypesRewriter()) - disable for now
             // .register("ItemType", ItemType.class, new ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
@@ -203,11 +206,11 @@ public final class Rewriters {
                 holder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))
             ))
             .register("PaperFeatureFlagProviderImpl#FLAGS", Types.PAPER_FEATURE_FLAG_PROVIDER_IMPL, new PaperFeatureFlagMapping())
-            .register("MobGoalHelper#bukkitMap", Types.MOB_GOAL_HELPER, new SearchReplaceRewriter() {
+            .register("MobGoalHelper#BUKKIT_BRIDGE", Types.MOB_GOAL_HELPER, new SearchReplaceRewriter() {
                 @Override
                 protected void insert(SearchMetadata metadata, StringBuilder builder) {
-                    for (Map.Entry<Class<? extends Mob>, Class<? extends org.bukkit.entity.Mob>> entry : MobGoalNames.bukkitMap.entrySet()) {
-                        builder.append(metadata.indent()).append("bukkitMap.put(%s.class, %s.class);".formatted(
+                    for (Map.Entry<Class<? extends Mob>, Class<? extends org.bukkit.entity.Mob>> entry : MobGoalNames.BUKKIT_BRIDGE.entrySet()) {
+                        builder.append(metadata.indent()).append("map.put(%s.class, %s.class);".formatted(
                             entry.getKey().getCanonicalName(), this.importCollector.getShortName(entry.getValue())
                         ));
                         builder.append('\n');

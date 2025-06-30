@@ -12,12 +12,10 @@ import io.papermc.typewriter.replace.CompositeRewriter;
 import io.papermc.typewriter.replace.ReplaceOptions;
 import io.papermc.typewriter.replace.ReplaceOptionsLike;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -48,7 +46,7 @@ public class PaperPatternSourceSetRewriter extends SourceSetRewriterImpl<Pattern
                 COMMENT_MARKER_FORMAT.formatted("Start", pattern),
                 COMMENT_MARKER_FORMAT.formatted("End", pattern)
             )
-            .generatedComment(Annotations.annotationStyle(GeneratedFrom.class) + " " + SharedConstants.getCurrentVersion().getId())
+            .generatedComment(Annotations.annotationStyle(GeneratedFrom.class) + " " + SharedConstants.getCurrentVersion().id())
             .targetClass(targetClass);
     }
 

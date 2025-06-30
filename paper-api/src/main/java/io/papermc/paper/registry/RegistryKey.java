@@ -36,7 +36,6 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -76,16 +75,14 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
     /**
-     * @apiNote DO NOT USE
+     * Built-in registry for block types.
+     * @see io.papermc.paper.registry.keys.BlockTypeKeys
      */
-    @ApiStatus.Internal
     RegistryKey<BlockType> BLOCK = create("block");
     /**
-     * @apiNote use preferably only in the context of registry entries.
-     * @see io.papermc.paper.registry.data
+     * Built-in registry for item types.
      * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
-    @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
     /**
      * Built-in registry for villager professions.
@@ -255,7 +252,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the key of the typed key.
      * @return the constructed tag key.
      */
-    @ApiStatus.Experimental
     default TagKey<T> tagKey(final Key key) {
         return TagKey.create(this, key);
     }
@@ -266,7 +262,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
      * @return the constructed tag key.
      */
-    @ApiStatus.Experimental
     default TagKey<T> tagKey(@KeyPattern final String key) {
         return TagKey.create(this, key);
     }
