@@ -190,7 +190,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     //<editor-fold desc="BlockTypes" defaultstate="collapsed">
     // Start generate - BlockType
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.7-rc2
     BlockType.Typed<Switch> ACACIA_BUTTON = getBlockType("acacia_button");
 
     BlockType.Typed<Door> ACACIA_DOOR = getBlockType("acacia_door");

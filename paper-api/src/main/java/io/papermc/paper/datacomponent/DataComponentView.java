@@ -15,7 +15,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.NonExtendable
 public interface DataComponentView {
-    // Paper start - data component API
     /**
      * Gets the value for the data component type on this stack.
      *

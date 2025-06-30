@@ -186,7 +186,7 @@ public interface Panda extends Animals, Sittable {
     public enum Gene {
 
         // Start generate - PandaGene
-        // @GeneratedFrom 1.21.6
+        // @GeneratedFrom 1.21.7-rc2
         NORMAL(false),
         LAZY(false),
         WORRIED(false),

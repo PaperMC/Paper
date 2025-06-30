@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
@@ -620,7 +621,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return current input
      */
-    @ApiStatus.Experimental
     public Input getCurrentInput();
 
     /**
@@ -1250,7 +1250,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if location is null
      * @throws IllegalArgumentException if tileState is null
      */
-    @ApiStatus.Experimental
     public void sendBlockUpdate(Location loc, TileState tileState) throws IllegalArgumentException;
 
     /**
@@ -3925,4 +3924,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param score New death screen score of player
      */
     void setDeathScreenScore(int score);
+
+    /**
+     * Gets the game connection for this player.
+     *
+     * @return the game connection
+     */
+    @ApiStatus.Experimental
+    PlayerGameConnection getConnection();
 }
