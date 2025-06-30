@@ -27,8 +27,8 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = false
-        buildDataRef = "281ac0de7a76d808753ede97d11b034bc801b63d"
+        enabled = true
+        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
         packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
 
