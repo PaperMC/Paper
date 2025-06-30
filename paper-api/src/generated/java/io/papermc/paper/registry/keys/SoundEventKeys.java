@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public final class SoundEventKeys {
     /**
      * {@code minecraft:ambient.basalt_deltas.additions}
@@ -11945,6 +11945,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> MUSIC_DISC_FAR = create(key("music_disc.far"));
+
+    /**
+     * {@code minecraft:music_disc.lava_chicken}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> MUSIC_DISC_LAVA_CHICKEN = create(key("music_disc.lava_chicken"));
 
     /**
      * {@code minecraft:music_disc.mall}

@@ -29,6 +29,7 @@ public final class LifecycleEvents {
      * These events are for registering tags to the server's tag system. You can register a handler for these events
      * only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
      */
+    @ApiStatus.Experimental
     public static final TagEventTypeProvider TAGS = LifecycleEventTypeProvider.provider().tagProvider();
 
 
@@ -37,6 +38,7 @@ public final class LifecycleEvents {
      * can register a handler for this event only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
      * @see DatapackRegistrar an example of a datapack being discovered
      */
+    @ApiStatus.Experimental
     public static final LifecycleEventType.Prioritizable<BootstrapContext, RegistrarEvent<DatapackRegistrar>> DATAPACK_DISCOVERY = bootstrapPrioritized("datapack_discovery");
 
     //<editor-fold desc="helper methods" defaultstate="collapsed">

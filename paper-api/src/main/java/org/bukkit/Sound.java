@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.7
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
 
     Sound AMBIENT_BASALT_DELTAS_LOOP = getSound("ambient.basalt_deltas.loop");
@@ -3430,6 +3430,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound MUSIC_DISC_CREATOR_MUSIC_BOX = getSound("music_disc.creator_music_box");
 
     Sound MUSIC_DISC_FAR = getSound("music_disc.far");
+
+    Sound MUSIC_DISC_LAVA_CHICKEN = getSound("music_disc.lava_chicken");
 
     Sound MUSIC_DISC_MALL = getSound("music_disc.mall");
 

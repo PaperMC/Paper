@@ -17,7 +17,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.6+build.1")
+    mache("io.papermc:mache:1.21.7+build.1")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -28,7 +28,7 @@ paperweight {
 
     spigot {
         enabled = true
-        buildDataRef = "281ac0de7a76d808753ede97d11b034bc801b63d"
+        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
         packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
 

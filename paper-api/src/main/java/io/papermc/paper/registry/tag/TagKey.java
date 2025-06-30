@@ -1,15 +1,12 @@
 package io.papermc.paper.registry.tag;
 
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
-@ApiStatus.Experimental
 @NullMarked
 public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {
 
@@ -35,7 +32,6 @@ public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {
      * @return a new tag key
      * @see Key#key(String)
      */
-    @ApiStatus.Experimental
     static <T> TagKey<T> create(final RegistryKey<T> registryKey, @KeyPattern final String key) {
         return create(registryKey, Key.key(key));
     }

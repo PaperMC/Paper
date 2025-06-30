@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Sapling;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftSapling extends CraftBlockData implements Sapling {
     private static final IntegerProperty STAGE = SaplingBlock.STAGE;
 

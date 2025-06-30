@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
  * Example: A player unlocks a trial chamber vault and the vault block dispenses
  * its loot.
  */
-@ApiStatus.Experimental
 public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

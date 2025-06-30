@@ -14,7 +14,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftSmallDripleaf extends CraftBlockData implements SmallDripleaf {
     private static final EnumProperty<Direction> FACING = SmallDripleafBlock.FACING;
 

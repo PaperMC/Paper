@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftTallSeagrass extends CraftBlockData implements Bisected {
     private static final EnumProperty<DoubleBlockHalf> HALF = TallSeagrassBlock.HALF;
 

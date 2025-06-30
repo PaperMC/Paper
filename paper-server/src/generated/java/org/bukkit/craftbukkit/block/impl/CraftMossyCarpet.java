@@ -14,7 +14,7 @@ import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public class CraftMossyCarpet extends CraftBlockData implements MossyCarpet {
     private static final BooleanProperty BASE = MossyCarpetBlock.BASE;
 

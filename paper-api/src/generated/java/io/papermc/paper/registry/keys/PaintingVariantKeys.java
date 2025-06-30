@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
+@GeneratedFrom("1.21.7")
 public final class PaintingVariantKeys {
     /**
      * {@code minecraft:alban}
@@ -122,6 +122,13 @@ public final class PaintingVariantKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Art> CREEBET = create(key("creebet"));
+
+    /**
+     * {@code minecraft:dennis}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Art> DENNIS = create(key("dennis"));
 
     /**
      * {@code minecraft:donkey_kong}
