@@ -216,7 +216,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
     private final ConversationTracker conversationTracker = new ConversationTracker();
-    private final Set<String> channels = new HashSet<String>();
     private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
     private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
@@ -2366,7 +2365,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         StandardMessenger.validatePluginMessage(this.server.getMessenger(), source, channel, message);
         if (this.getHandle().connection == null) return;
 
-        if (this.channels.contains(channel)) {
+        if (this.channels().contains(channel)) {
             ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
             this.sendCustomPayload(id, message);
         }
@@ -2520,12 +2519,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public Set<String> channels() {
-        return this.channels;
+        if (this.getHandle().connection == null) return new HashSet<>();
+
+        return this.getHandle().connection.pluginMessagerChannels;
     }
 
     @Override
     public Set<String> getListeningPluginChannels() {
-        return ImmutableSet.copyOf(this.channels);
+        return ImmutableSet.copyOf(this.channels());
     }
 
     public void sendSupportedChannels() {

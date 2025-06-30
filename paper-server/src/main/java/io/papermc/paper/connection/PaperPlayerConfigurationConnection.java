@@ -26,7 +26,6 @@ import java.util.UUID;
 public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience, PluginMessageBridgeImpl {
 
     private @Nullable Pointers adventurePointers;
-    private final Set<String> channels = new HashSet<>();
 
     public PaperPlayerConfigurationConnection(final ServerConfigurationPacketListenerImpl packetListener) {
         super(packetListener);
@@ -105,6 +104,6 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
     @Override
     public Set<String> channels() {
-        return this.channels;
+        return this.handle.pluginMessagerChannels;
     }
 }
