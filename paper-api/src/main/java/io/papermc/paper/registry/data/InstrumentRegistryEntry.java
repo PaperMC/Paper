@@ -52,6 +52,7 @@ public interface InstrumentRegistryEntry {
      * @return the description.
      * @see MusicInstrument#description()
      */
+    @Contract(pure = true)
     Component description();
 
     /**
