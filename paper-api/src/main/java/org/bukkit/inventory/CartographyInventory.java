@@ -6,7 +6,7 @@ package org.bukkit.inventory;
 public interface CartographyInventory extends Inventory {
     // Paper begin - add getResult/setResult to CartographyInventory
     /**
-     * Check what item is in the result slot of this smithing table.
+     * Check what item is in the result slot of this cartography table.
      *
      * @return the result item
      */
@@ -16,7 +16,7 @@ public interface CartographyInventory extends Inventory {
     }
 
     /**
-     * Set the item in the result slot of the smithing table
+     * Set the item in the result slot of the cartography table
      *
      * @param newResult the new result item
      */
