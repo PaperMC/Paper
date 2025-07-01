@@ -2,6 +2,7 @@ package org.bukkit.plugin.messaging;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
+import io.papermc.paper.connection.PlayerGameConnection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -440,6 +441,7 @@ public class StandardMessenger implements Messenger {
     }
 
     @Override
+    @Deprecated
     public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, byte @NotNull [] message) {
         if (source == null) {
             throw new IllegalArgumentException("Player source cannot be null");
@@ -478,6 +480,9 @@ public class StandardMessenger implements Messenger {
         for (PluginMessageListenerRegistration registration : registrations) {
             try {
                 registration.getListener().onPluginMessageReceived(channel, source, message);
+                if (source instanceof PlayerGameConnection gameConnection) {
+                    registration.getListener().onPluginMessageReceived(channel, gameConnection.getPlayer(), message);
+                }
             } catch (Throwable t) {
                 registration.getPlugin().getLogger().log(Level.WARNING,
                     String.format("Plugin %s generated an exception whilst handling plugin message",
