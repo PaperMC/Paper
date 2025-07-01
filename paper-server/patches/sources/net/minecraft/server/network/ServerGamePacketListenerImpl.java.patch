@@ -2576,7 +2576,7 @@
          }
      }
  
-@@ -2027,27 +_,27 @@
+@@ -2027,27 +_,32 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2596,10 +2596,11 @@
 +                    });
                  }
              );
--    }
--
--    @Override
--    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+     }
+ 
+     @Override
+     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        super.handleCustomPayload(packet); // Paper
      }
  
      @Override
@@ -2609,7 +2610,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,157 @@
+@@ -2078,4 +_,93 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2659,70 +2660,6 @@
 +                this.connection.enableAutoRead();
 +            }
 +        });
-+    }
-+
-+    // Paper start
-+    public static final ResourceLocation CUSTOM_REGISTER = ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
-+    private static final ResourceLocation CUSTOM_UNREGISTER = ResourceLocation.withDefaultNamespace("unregister"); // CraftBukkit
-+
-+    @Override
-+    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-+        // Paper start
-+        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
-+            this.playerBrand = brand;
-+        }
-+
-+        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
-+            return;
-+        }
-+
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
-+
-+        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
-+        final byte[] data = discardedPayload.data();
-+        try {
-+            final boolean registerChannel = CUSTOM_REGISTER.equals(identifier);
-+            if (registerChannel || CUSTOM_UNREGISTER.equals(identifier)) {
-+                // Strings separated by zeros instead of length prefixes
-+                int startIndex = 0;
-+                for (int i = 0; i < data.length; i++) {
-+                    final byte b = data[i];
-+                    if (b != 0) {
-+                        continue;
-+                    }
-+
-+                    readChannelIdentifier(data, startIndex, i, registerChannel);
-+                    startIndex = i + 1;
-+                }
-+
-+                // Read the last one
-+                readChannelIdentifier(data, startIndex, data.length, registerChannel);
-+                return;
-+            }
-+
-+            if (identifier.equals(MINECRAFT_BRAND)) {
-+                this.player.connection.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
-+            }
-+
-+            this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
-+        } catch (final Exception e) {
-+            ServerGamePacketListenerImpl.LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
-+            this.disconnect(Component.literal("Invalid custom payload payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
-+        }
-+    }
-+
-+    private void readChannelIdentifier(final byte[] data, final int from, final int to, final boolean register) {
-+        final int length = to - from;
-+        if (length == 0) {
-+            return;
-+        }
-+
-+        final String channel = new String(data, from, length, java.nio.charset.StandardCharsets.US_ASCII);
-+        if (register) {
-+            this.getCraftPlayer().addChannel(channel);
-+        } else {
-+            this.getCraftPlayer().removeChannel(channel);
-+        }
 +    }
 +
 +    public final boolean isDisconnected() {

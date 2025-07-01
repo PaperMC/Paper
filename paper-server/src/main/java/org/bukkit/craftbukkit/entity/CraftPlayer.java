@@ -8,8 +8,8 @@ import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.connection.PlayerGameConnection;
+import io.papermc.paper.connection.PluginMessageBridgeImpl;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -33,11 +33,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -54,20 +52,13 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ClientboundServerLinksPacket;
-import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
-import net.minecraft.network.protocol.common.ClientboundTransferPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
-import net.minecraft.network.protocol.cookie.ClientboundCookieRequestPacket;
-import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -196,10 +187,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHideEntityEvent;
-import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerShowEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
@@ -215,7 +204,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
-public class CraftPlayer extends CraftHumanEntity implements Player {
+public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessageBridgeImpl {
     private static final PointersSupplier<Player> POINTERS_SUPPLIER = PointersSupplier.<Player>builder()
         .parent(CraftEntity.POINTERS_SUPPLIER)
         .resolving(Identity.NAME, Player::getName)
@@ -227,7 +216,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
     private final ConversationTracker conversationTracker = new ConversationTracker();
-    private final Set<String> channels = new HashSet<String>();
     private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
     private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
@@ -238,7 +226,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
-    private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
     private long lastSaveTime; // Paper - getLastPlayed replacement API
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
@@ -2378,7 +2365,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         StandardMessenger.validatePluginMessage(this.server.getMessenger(), source, channel, message);
         if (this.getHandle().connection == null) return;
 
-        if (this.channels.contains(channel)) {
+        if (this.channels().contains(channel)) {
             ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
             this.sendCustomPayload(id, message);
         }
@@ -2530,24 +2517,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(resourcePackPushPacket);
     }
 
-    public void addChannel(String channel) {
-        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels.size() < 128, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
-        channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (this.channels.add(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
-        }
-    }
+    @Override
+    public Set<String> channels() {
+        if (this.getHandle().connection == null) return new HashSet<>();
 
-    public void removeChannel(String channel) {
-        channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (this.channels.remove(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(this, channel));
-        }
+        return this.getHandle().connection.pluginMessagerChannels;
     }
 
     @Override
     public Set<String> getListeningPluginChannels() {
-        return ImmutableSet.copyOf(this.channels);
+        return ImmutableSet.copyOf(this.channels());
     }
 
     public void sendSupportedChannels() {
