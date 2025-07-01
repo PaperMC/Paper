@@ -186,7 +186,7 @@ public class ShapedRecipe extends CraftingRecipe {
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
         Preconditions.checkArgument(!item.getType().isAir(), "Item cannot be air"); // Paper
-        return setIngredient(key, new RecipeChoice.ExactChoice(item.clone())); // Paper
+        return setIngredient(key, RecipeChoice.exactChoice(item.clone())); // Paper
     }
     // Paper end
 
