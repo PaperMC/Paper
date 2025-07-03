@@ -120,12 +120,16 @@ public class CraftBee extends CraftAnimals implements Bee {
     }
 
     @Override
-    public void setTimeSinceSting(final int time) {
-        this.getHandle().setTimeSinceSting(time);
+    public void setTimeSinceSting(int time) {
+        if (time < 0) {
+            throw new IllegalArgumentException("Time since sting cannot be negative");
+        }
+
+        this.getHandle().timeSinceSting = time;
     }
 
     @Override
     public int getTimeSinceSting() {
-        return this.getHandle().getTimeSinceSting();
+        return this.getHandle().timeSinceSting;
     }
 }
