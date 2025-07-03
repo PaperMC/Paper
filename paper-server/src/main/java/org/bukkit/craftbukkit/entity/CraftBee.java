@@ -118,4 +118,14 @@ public class CraftBee extends CraftAnimals implements Bee {
     public int getTicksSincePollination() {
         return this.getHandle().ticksWithoutNectarSinceExitingHive;
     }
+
+    @Override
+    public void setTimeSinceSting(final int time) {
+        this.getHandle().setTimeSinceSting(time);
+    }
+
+    @Override
+    public int getTimeSinceSting() {
+        return this.getHandle().getTimeSinceSting();
+    }
 }

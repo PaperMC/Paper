@@ -144,5 +144,22 @@ public interface Bee extends Animals {
      * @return number of ticks
      */
     int getTicksSincePollination();
+
+    /**
+     * Sets how many ticks have passed since this bee last stung.
+     * This value is used to determine when the bee should die after stinging.
+     *
+     * @param time number of ticks since last sting
+     */
+    void setTimeSinceSting(int time);
+
+    /**
+     * Gets how many ticks have passed since this bee last stung.
+     * This value increases each tick after the bee stings and is used
+     * to determine when the bee should die.
+     *
+     * @return number of ticks since last sting
+     */
+    int getTimeSinceSting();
     // Paper end
 }
