@@ -1,6 +1,8 @@
 package io.papermc.paper.registry.data.dialog.input;
 
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -9,7 +11,8 @@ import org.jspecify.annotations.Nullable;
  * A text dialog input.
  * <p>Created via {@link DialogInput#text(String, int, Component, boolean, String, int, MultilineOptions)}</p>
  */
-public sealed interface TextDialogInput extends DialogInput permits TextDialogInputImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface TextDialogInput extends DialogInput {
 
     /**
      * The width of the input.
@@ -62,7 +65,8 @@ public sealed interface TextDialogInput extends DialogInput permits TextDialogIn
     /**
      * Represents the multiline options for a text dialog input.
      */
-    sealed interface MultilineOptions permits MultilineOptionsImpl {
+    @ApiStatus.NonExtendable
+    interface MultilineOptions {
 
         /**
          * Creates a new multiline options instance.
@@ -72,7 +76,7 @@ public sealed interface TextDialogInput extends DialogInput permits TextDialogIn
          * @return a new MultilineOptions instance
          */
         static MultilineOptions create(final @Nullable Integer maxLines, final @Nullable Integer height) {
-            return new MultilineOptionsImpl(maxLines, height);
+            return DialogInstancesProvider.instance().multilineOptions(maxLines, height);
         }
 
         /**
@@ -96,7 +100,8 @@ public sealed interface TextDialogInput extends DialogInput permits TextDialogIn
      * A builder for a text dialog input.
      * <p>Created via {@link DialogInput#text(String, Component)}</p>
      */
-    sealed interface Builder permits TextDialogInputImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the width of the input.

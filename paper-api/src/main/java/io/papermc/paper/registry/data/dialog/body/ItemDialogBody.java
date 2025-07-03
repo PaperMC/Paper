@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data.dialog.body;
 
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -9,7 +10,8 @@ import org.jspecify.annotations.Nullable;
  * An item body for a dialog.
  * <p>Created via {@link DialogBody#item(ItemStack, PlainMessageDialogBody, boolean, boolean, int, int)}</p>
  */
-public sealed interface ItemDialogBody extends DialogBody permits ItemDialogBodyImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface ItemDialogBody extends DialogBody {
 
     /**
      * The item to display in the dialog.
@@ -63,7 +65,8 @@ public sealed interface ItemDialogBody extends DialogBody permits ItemDialogBody
     /**
      * A builder for an item dialog body.
      */
-    sealed interface Builder permits ItemDialogBodyImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the description of the item dialog body, or null if not set.

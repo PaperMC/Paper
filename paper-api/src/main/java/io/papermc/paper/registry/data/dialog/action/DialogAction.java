@@ -1,9 +1,11 @@
 package io.papermc.paper.registry.data.dialog.action;
 
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +24,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      */
     @Contract(pure = true, value = "_ -> new")
     static CommandTemplateAction commandTemplate(final String template) {
-        return new CommandTemplateActionImpl(template);
+        return DialogInstancesProvider.instance().commandTemplate(template);
     }
 
     /**
@@ -33,7 +35,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      */
     @Contract(pure = true, value = "_ -> new")
     static StaticAction staticAction(final ClickEvent value) {
-        return new StaticActionImpl(value);
+        return DialogInstancesProvider.instance().staticAction(value);
     }
 
     /**
@@ -47,7 +49,7 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      */
     @Contract(pure = true, value = "_, _ -> new")
     static CustomClickAction customClick(final Key id, final @Nullable BinaryTagHolder additions) {
-        return new CustomClickActionImpl(id, additions);
+        return DialogInstancesProvider.instance().customClick(id, additions);
     }
 
     /**
@@ -59,13 +61,14 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
      */
     @Contract(pure = true, value = "_, _ -> new")
     static CustomClickAction customClick(final DialogActionCallback callback, final ClickCallback.Options options) {
-        return DialogActionProvider.INSTANCE.orElseThrow().register(callback, options);
+        return DialogInstancesProvider.instance().register(callback, options);
     }
 
     /**
      * Represents an action that executes a command template.
      */
-    sealed interface CommandTemplateAction extends DialogAction permits CommandTemplateActionImpl {
+    @ApiStatus.NonExtendable
+    non-sealed interface CommandTemplateAction extends DialogAction {
 
         /**
          * The command template to execute.
@@ -79,7 +82,8 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
     /**
      * Represents an action that performs a static click event.
      */
-    sealed interface StaticAction extends DialogAction permits StaticActionImpl {
+    @ApiStatus.NonExtendable
+    non-sealed interface StaticAction extends DialogAction {
 
         /**
          * The click event to perform.
@@ -94,7 +98,8 @@ public sealed interface DialogAction permits DialogAction.CommandTemplateAction,
     /**
      * Represents an action that executes a custom action with additional data.
      */
-    sealed interface CustomClickAction extends DialogAction permits CustomClickActionImpl {
+    @ApiStatus.NonExtendable
+    non-sealed interface CustomClickAction extends DialogAction {
 
         /**
          * The identifier of the custom action.

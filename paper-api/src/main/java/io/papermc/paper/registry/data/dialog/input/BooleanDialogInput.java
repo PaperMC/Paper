@@ -1,13 +1,15 @@
 package io.papermc.paper.registry.data.dialog.input;
 
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
 /**
  * A boolean dialog input.
  * <p>Created via {@link DialogInput#bool(String, Component, boolean, String, String)}</p>
  */
-public sealed interface BooleanDialogInput extends DialogInput permits BooleanDialogInputImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface BooleanDialogInput extends DialogInput {
 
     /**
      * The label for the input.
@@ -45,7 +47,8 @@ public sealed interface BooleanDialogInput extends DialogInput permits BooleanDi
      * A builder for a boolean dialog input.
      * <p>Created via {@link DialogInput#bool(String, Component)}</p>
      */
-    sealed interface Builder permits BooleanDialogInputImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the initial value of the input.

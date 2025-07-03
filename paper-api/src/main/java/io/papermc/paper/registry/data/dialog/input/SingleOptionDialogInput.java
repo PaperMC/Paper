@@ -1,7 +1,9 @@
 package io.papermc.paper.registry.data.dialog.input;
 
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -11,7 +13,8 @@ import org.jetbrains.annotations.Unmodifiable;
  * A single option dialog input.
  * <p>Created via {@link DialogInput#singleOption(String, int, List, Component, boolean)}</p>
  */
-public sealed interface SingleOptionDialogInput extends DialogInput permits SingleOptionDialogInputImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface SingleOptionDialogInput extends DialogInput {
 
     /**
      * The width of the input.
@@ -49,7 +52,8 @@ public sealed interface SingleOptionDialogInput extends DialogInput permits Sing
      * Represents a single option entry in a single option dialog input.
      * <p>Only 1 option is allowed to have initial selected.</p>
      */
-    sealed interface OptionEntry permits SingleOptionDialogInputImpl.SingleOptionEntryImpl {
+    @ApiStatus.NonExtendable
+    interface OptionEntry {
 
         /**
          * Creates a new option entry.
@@ -61,7 +65,7 @@ public sealed interface SingleOptionDialogInput extends DialogInput permits Sing
          */
         @Contract(pure = true, value = "_, _, _ -> new")
         static OptionEntry create(final String id, final @Nullable Component display, final boolean initial) {
-            return new SingleOptionDialogInputImpl.SingleOptionEntryImpl(id, display, initial);
+            return DialogInstancesProvider.instance().singleOptionEntry(id, display, initial);
         }
 
         /**
@@ -94,7 +98,8 @@ public sealed interface SingleOptionDialogInput extends DialogInput permits Sing
      * A builder for creating a {@link SingleOptionDialogInput}.
      * <p>Created via {@link DialogInput#singleOption(String, Component, List)}</p>
      */
-    sealed interface Builder permits SingleOptionDialogInputImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the width of the input.

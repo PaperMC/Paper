@@ -1,13 +1,15 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import com.google.common.base.Preconditions;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
-record ItemDialogBodyImpl(
+public record ItemDialogBodyImpl(
     ItemStack item, @Nullable PlainMessageDialogBody description, boolean showDecorations, boolean showTooltip, int width, int height
 ) implements ItemDialogBody {
 
-    static final class BuilderImpl implements ItemDialogBody.Builder {
+    public static final class BuilderImpl implements ItemDialogBody.Builder {
 
         private final ItemStack item;
         private @Nullable PlainMessageDialogBody description;
@@ -16,7 +18,8 @@ record ItemDialogBodyImpl(
         private int width = 16;
         private int height = 16;
 
-        BuilderImpl(final ItemStack item) {
+        public BuilderImpl(final ItemStack item) {
+            net.minecraft.world.item.ItemStack.validateStrict(CraftItemStack.unwrap(item)).getOrThrow();
             this.item = item;
         }
 
@@ -40,12 +43,14 @@ record ItemDialogBodyImpl(
 
         @Override
         public ItemDialogBody.Builder width(final int width) {
+            Preconditions.checkArgument(width >= 1 && width <= 256, "Width must be between 1 and 256");
             this.width = width;
             return this;
         }
 
         @Override
         public ItemDialogBody.Builder height(final int height) {
+            Preconditions.checkArgument(this.width >= 1 && this.width <= 256, "Width must be between 1 and 256");
             this.height = height;
             return this;
         }

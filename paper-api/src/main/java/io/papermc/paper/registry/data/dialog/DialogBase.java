@@ -5,6 +5,7 @@ import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Index;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
@@ -12,7 +13,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Represents the base of all dialogs.
  */
-public sealed interface DialogBase permits DialogBaseImpl {
+@ApiStatus.NonExtendable
+public interface DialogBase {
 
     /**
      * Creates a new dialog base.
@@ -36,7 +38,7 @@ public sealed interface DialogBase permits DialogBaseImpl {
         final List<? extends DialogBody> body,
         final List<? extends DialogInput> inputs
     ) {
-        return new DialogBaseImpl(title, externalTitle, canCloseWithEscape, pause, afterAction, List.copyOf(body), List.copyOf(inputs));
+        return builder(title).externalTitle(externalTitle).canCloseWithEscape(canCloseWithEscape).pause(pause).afterAction(afterAction).body(body).inputs(inputs).build();
     }
 
     /**
@@ -47,7 +49,7 @@ public sealed interface DialogBase permits DialogBaseImpl {
      */
     @Contract(value = "_ -> new", pure = true)
     static Builder builder(final Component title) {
-        return new DialogBaseImpl.BuilderImpl(title);
+        return DialogInstancesProvider.instance().dialogBaseBuilder(title);
     }
 
     /**
@@ -140,7 +142,8 @@ public sealed interface DialogBase permits DialogBaseImpl {
     /**
      * Builder interface for creating dialog bases.
      */
-    sealed interface Builder permits DialogBaseImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the external title of the dialog.

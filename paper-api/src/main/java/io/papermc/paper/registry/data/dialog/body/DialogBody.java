@@ -1,8 +1,10 @@
 package io.papermc.paper.registry.data.dialog.body;
 
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -30,7 +32,13 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
         final int width,
         final int height
     ) {
-        return new ItemDialogBodyImpl(item, description, showDecorations, showTooltip, width, height);
+        return DialogInstancesProvider.instance().itemDialogBodyBuilder(item)
+            .description(description)
+            .showDecorations(showDecorations)
+            .showTooltip(showTooltip)
+            .width(width)
+            .height(height)
+            .build();
     }
 
     /**
@@ -41,7 +49,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      */
     @Contract(pure = true, value = "_ -> new")
     static ItemDialogBody.Builder item(final ItemStack item) {
-        return new ItemDialogBodyImpl.BuilderImpl(item);
+        return DialogInstancesProvider.instance().itemDialogBodyBuilder(item);
     }
 
     /**
@@ -52,7 +60,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      */
     @Contract(pure = true, value = "_, -> new")
     static PlainMessageDialogBody plainMessage(final Component contents) {
-        return new PlainMessageBodyImpl(contents, 200);
+        return DialogInstancesProvider.instance().plainMessageDialogBody(contents);
     }
 
     /**
@@ -63,7 +71,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      * @return a new plain message body instance
      */
     @Contract(pure = true, value = "_, _ -> new")
-    static PlainMessageDialogBody plainMessage(final Component contents, final int width) {
-        return new PlainMessageBodyImpl(contents, width);
+    static PlainMessageDialogBody plainMessage(final Component contents, final @Range(from = 1, to = 1024) int width) {
+        return DialogInstancesProvider.instance().plainMessageDialogBody(contents, width);
     }
 }

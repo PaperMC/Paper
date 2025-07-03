@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog.input;
 
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Contract;
@@ -22,7 +23,11 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _ -> new")
     static BooleanDialogInput bool(final String key, final Component label, final boolean initial, final String onTrue, final String onFalse) {
-        return new BooleanDialogInputImpl(key, label, initial, onTrue, onFalse);
+        return bool(key, label)
+            .initial(initial)
+            .onTrue(onTrue)
+            .onFalse(onFalse)
+            .build();
     }
 
     /**
@@ -34,7 +39,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _ -> new")
     static BooleanDialogInput.Builder bool(final String key, final Component label) {
-        return new BooleanDialogInputImpl.BuilderImpl(key, label);
+        return DialogInstancesProvider.instance().booleanBuilder(key, label);
     }
 
     /**
@@ -52,7 +57,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _, _ -> new")
     static NumberRangeDialogInput numberRange(final String key, final int width, final Component label, final String labelFormat, final float start, final float end, final @Nullable Float initial, final @Nullable Float step) {
-        return new NumberRangeDialogInputImpl(key, width, label, labelFormat, start, end, initial, step);
+        return numberRange(key, label, start, end).width(width).labelFormat(labelFormat).initial(initial).step(step).build();
     }
 
     /**
@@ -66,7 +71,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static NumberRangeDialogInput.Builder numberRange(final String key, final Component label, final float start, final float end) {
-        return new NumberRangeDialogInputImpl.BuilderImpl(key, label, start, end);
+        return DialogInstancesProvider.instance().numberRangeBuilder(key, label, start, end);
     }
 
     /**
@@ -81,7 +86,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _ -> new")
     static SingleOptionDialogInput singleOption(final String key, final int width, final List<SingleOptionDialogInput.OptionEntry> entries, final Component label, final boolean labelVisible) {
-        return new SingleOptionDialogInputImpl(key, width, entries, label, labelVisible);
+        return singleOption(key, label, entries).width(width).labelVisible(labelVisible).build();
     }
 
     /**
@@ -94,7 +99,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(value = "_, _, _ -> new", pure = true)
     static SingleOptionDialogInput.Builder singleOption(final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
-        return new SingleOptionDialogInputImpl.BuilderImpl(key, entries, label);
+        return DialogInstancesProvider.instance().singleOptionBuilder(key, label, entries);
     }
 
     /**
@@ -111,7 +116,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _ -> new")
     static TextDialogInput text(final String key, final int width, final Component label, final boolean labelVisible, final String initial, final int maxLength, final TextDialogInput.@Nullable MultilineOptions multilineOptions) {
-        return new TextDialogInputImpl(key, width, label, labelVisible, initial, maxLength, multilineOptions);
+        return text(key, label).width(width).labelVisible(labelVisible).initial(initial).maxLength(maxLength).multiline(multilineOptions).build();
     }
 
     /**
@@ -123,7 +128,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      */
     @Contract(value = "_, _ -> new", pure = true)
     static TextDialogInput.Builder text(final String key, final Component label) {
-        return new TextDialogInputImpl.BuilderImpl(key, label);
+        return DialogInstancesProvider.instance().textBuilder(key, label);
     }
 
     /**

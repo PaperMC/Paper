@@ -2,9 +2,11 @@ package io.papermc.paper.registry.data.dialog.input;
 
 import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
+import net.minecraft.commands.functions.StringTemplate;
+import net.minecraft.server.dialog.body.PlainMessage;
 import org.jspecify.annotations.Nullable;
 
-record NumberRangeDialogInputImpl(
+public record NumberRangeDialogInputImpl(
     String key,
     int width,
     Component label,
@@ -15,18 +17,19 @@ record NumberRangeDialogInputImpl(
     @Nullable Float step
 ) implements NumberRangeDialogInput {
 
-    static final class BuilderImpl implements NumberRangeDialogInput.Builder {
+    public static final class BuilderImpl implements NumberRangeDialogInput.Builder {
 
         private final String key;
         private final Component label;
         private final float start;
         private final float end;
-        private int width = 200;
+        private int width = PlainMessage.DEFAULT_WIDTH;
         private String labelFormat = "options.generic_value";
         private @Nullable Float initial = null;
         private @Nullable Float step = null;
 
-        BuilderImpl(final String key, final Component label, final float start, final float end) {
+        public BuilderImpl(final String key, final Component label, final float start, final float end) {
+            Preconditions.checkArgument(StringTemplate.isValidVariableName(key), "key must be a valid input name");
             this.key = key;
             this.label = label;
             this.start = start;
@@ -35,6 +38,7 @@ record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl width(final int width) {
+            Preconditions.checkArgument(width >= 1 && width <= 1024, "width must be between 1 and 1024");
             this.width = width;
             return this;
         }
@@ -47,6 +51,9 @@ record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
+            if (initial != null) {
+                Preconditions.checkArgument(initial >= this.start && initial <= this.end, "initial must be within the range");
+            }
             this.initial = initial;
             return this;
         }

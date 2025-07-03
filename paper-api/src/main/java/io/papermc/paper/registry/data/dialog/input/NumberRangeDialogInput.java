@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data.dialog.input;
 
 import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.index.qual.Positive;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -10,7 +11,8 @@ import org.jetbrains.annotations.Range;
  * A number range dialog input.
  * <p>Created via {@link DialogInput#numberRange(String, int, Component, String, float, float, Float, Float)}</p>
  */
-public sealed interface NumberRangeDialogInput extends DialogInput permits NumberRangeDialogInputImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface NumberRangeDialogInput extends DialogInput {
 
     /**
      * The width of the input.
@@ -73,7 +75,8 @@ public sealed interface NumberRangeDialogInput extends DialogInput permits Numbe
      * A builder for creating instances of {@link NumberRangeDialogInput}.
      * <p>Created via {@link DialogInput#numberRange(String, Component, float, float)}</p>
      */
-    sealed interface Builder permits NumberRangeDialogInputImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the width of the input.

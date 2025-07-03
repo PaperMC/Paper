@@ -1,10 +1,12 @@
 package io.papermc.paper.registry.data.dialog.input;
 
+import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
+import net.minecraft.commands.functions.StringTemplate;
 
-record BooleanDialogInputImpl(String key, Component label, boolean initial, String onTrue, String onFalse) implements BooleanDialogInput {
+public record BooleanDialogInputImpl(String key, Component label, boolean initial, String onTrue, String onFalse) implements BooleanDialogInput {
 
-    static final class BuilderImpl implements BooleanDialogInput.Builder {
+    public static final class BuilderImpl implements BooleanDialogInput.Builder {
 
         private final String key;
         private final Component label;
@@ -12,7 +14,8 @@ record BooleanDialogInputImpl(String key, Component label, boolean initial, Stri
         private String onTrue = "true";
         private String onFalse = "false";
 
-        BuilderImpl(final String key, final Component label) {
+        public BuilderImpl(final String key, final Component label) {
+            Preconditions.checkArgument(StringTemplate.isValidVariableName(key), "key must be a valid input name");
             this.key = key;
             this.label = label;
         }
