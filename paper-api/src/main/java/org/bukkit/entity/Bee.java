@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -151,7 +152,7 @@ public interface Bee extends Animals {
      *
      * @param time number of ticks since last sting
      */
-    void setTimeSinceSting(int time);
+    void setTimeSinceSting(@NonNegative int time);
 
     /**
      * Gets how many ticks have passed since this bee last stung.
