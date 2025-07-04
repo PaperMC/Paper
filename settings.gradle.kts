@@ -56,9 +56,9 @@ fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
 }
 
 if (providers.gradleProperty("paperBuildCacheEnabled").orNull.toBoolean()) {
-    val buildCacheUsername = providers.gradleProperty("paperBuildCacheUsername").orNull
-    val buildCachePassword = providers.gradleProperty("paperBuildCachePassword").orNull
-    if (buildCacheUsername == null || buildCachePassword == null) {
+    val buildCacheUsername = providers.gradleProperty("paperBuildCacheUsername").orElse("").get()
+    val buildCachePassword = providers.gradleProperty("paperBuildCachePassword").orElse("").get()
+    if (buildCacheUsername.isBlank() || buildCachePassword.isBlank()) {
         println("The Paper remote build cache is enabled, but no credentials were provided. Remote build cache will not be used.")
     } else {
         val buildCacheUrl = providers.gradleProperty("paperBuildCacheUrl")
