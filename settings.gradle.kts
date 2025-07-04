@@ -1,5 +1,3 @@
-import java.util.Locale
-
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -54,5 +52,25 @@ fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
 
             """.trimIndent()
         )
+    }
+}
+
+val buildCacheUsername = providers.gradleProperty("paperBuildCacheUsername").orNull
+val buildCachePassword = providers.gradleProperty("paperBuildCachePassword").orNull
+if (buildCacheUsername != null && buildCachePassword != null) {
+    val buildCacheUrl = providers.gradleProperty("paperBuildCacheUrl")
+        .orElse("https://gradle-build-cache.papermc.io/")
+        .get()
+    val buildCachePush = providers.gradleProperty("paperBuildCachePush").orNull?.toBoolean()
+        ?: System.getProperty("CI").toBoolean()
+    buildCache {
+        remote<HttpBuildCache> {
+            url = uri(buildCacheUrl)
+            isPush = buildCachePush
+            credentials {
+                username = buildCacheUsername
+                password = buildCachePassword
+            }
+        }
     }
 }
