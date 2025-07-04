@@ -27,7 +27,7 @@
  
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
-@@ -52,6 +_,11 @@
+@@ -52,7 +_,18 @@
          this.keepAliveTime = Util.getMillis();
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
@@ -37,8 +37,15 @@
 +        this.pluginMessagerChannels = cookie.channels();
 +        // Paper end
      }
++
++    // Paper start - configuration phase API
++    public abstract io.papermc.paper.connection.PlayerCommonConnection getApiConnection();
++
++    public abstract net.kyori.adventure.audience.Audience getAudience();
++    // Paper end - configuration phase API
  
      private void close() {
+         if (!this.closed) {
 @@ -82,7 +_,7 @@
              this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
@@ -48,7 +55,7 @@
          }
      }
  
-@@ -90,8 +_,76 @@
+@@ -90,14 +_,88 @@
      public void handlePong(ServerboundPongPacket packet) {
      }
  
@@ -122,6 +129,18 @@
 +            bridge.removeChannel(channel);
 +        }
 +    // Paper end
+     }
+ 
+     @Override
+     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
+         this.server.handleCustomClickAction(packet.id(), packet.payload());
++        // Paper start - Implement click callbacks with custom click action
++        final io.papermc.paper.event.player.PaperPlayerCustomClickEvent event = new io.papermc.paper.event.player.PaperPlayerCustomClickEvent(io.papermc.paper.adventure.PaperAdventure.asAdventure(packet.id()), this.getApiConnection(), packet.payload().orElse(null));
++        event.callEvent();
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(),  packet.payload());
++        // Paper end - Implement click callbacks with custom click action
      }
  
      @Override

@@ -18,9 +18,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
     TagKey<T> tagKey,
     HolderSet.Named<M> namedSet

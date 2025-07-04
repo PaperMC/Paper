@@ -43,7 +43,7 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
     }
 
     public static Holder<net.minecraft.world.entity.ai.attributes.Attribute> bukkitToMinecraftHolder(Attribute bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.ATTRIBUTE);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static String bukkitToString(Attribute bukkit) {

@@ -33,7 +33,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
     }
 
     public static Holder<net.minecraft.world.item.enchantment.Enchantment> bukkitToMinecraftHolder(Enchantment bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.ENCHANTMENT);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static String bukkitToString(Enchantment bukkit) {

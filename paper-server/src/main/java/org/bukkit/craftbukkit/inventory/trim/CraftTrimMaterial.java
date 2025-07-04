@@ -25,7 +25,7 @@ public class CraftTrimMaterial extends HolderableBase<net.minecraft.world.item.e
     }
 
     public static Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.TRIM_MATERIAL);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static Object bukkitToObject(TrimMaterial bukkit) {
