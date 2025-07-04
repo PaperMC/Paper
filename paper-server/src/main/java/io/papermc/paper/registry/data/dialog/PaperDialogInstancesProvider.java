@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data.dialog;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.action.CommandTemplateActionImpl;
 import io.papermc.paper.registry.data.dialog.action.CustomClickActionImpl;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
@@ -19,6 +20,17 @@ import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
 import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInputImpl;
 import io.papermc.paper.registry.data.dialog.input.TextDialogInput;
 import io.papermc.paper.registry.data.dialog.input.TextDialogInputImpl;
+import io.papermc.paper.registry.data.dialog.type.ConfirmationType;
+import io.papermc.paper.registry.data.dialog.type.ConfirmationTypeImpl;
+import io.papermc.paper.registry.data.dialog.type.DialogListType;
+import io.papermc.paper.registry.data.dialog.type.DialogListTypeImpl;
+import io.papermc.paper.registry.data.dialog.type.MultiActionType;
+import io.papermc.paper.registry.data.dialog.type.MultiActionTypeImpl;
+import io.papermc.paper.registry.data.dialog.type.NoticeType;
+import io.papermc.paper.registry.data.dialog.type.NoticeTypeImpl;
+import io.papermc.paper.registry.data.dialog.type.ServerLinksType;
+import io.papermc.paper.registry.data.dialog.type.ServerLinksTypeImpl;
+import io.papermc.paper.registry.set.RegistrySet;
 import java.util.List;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
@@ -36,6 +48,11 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     @Override
     public DialogBase.Builder dialogBaseBuilder(final Component title) {
         return new DialogBaseImpl.BuilderImpl(title);
+    }
+
+    @Override
+    public ActionButton.Builder actionButtonBuilder(final Component label) {
+        return new ActionButtonImpl.BuilderImpl(label);
     }
 
     @Override
@@ -104,5 +121,35 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     @Override
     public TextDialogInput.MultilineOptions multilineOptions(final @Nullable Integer maxLines, final @Nullable Integer height) {
         return new TextDialogInputImpl.MultilineOptionsImpl(maxLines, height);
+    }
+
+    @Override
+    public ConfirmationType confirmation(final ActionButton yesButton, final ActionButton noButton) {
+        return new ConfirmationTypeImpl(yesButton, noButton);
+    }
+
+    @Override
+    public DialogListType.Builder dialogList(final RegistrySet<Dialog> dialogs) {
+        return new DialogListTypeImpl.BuilderImpl(dialogs);
+    }
+
+    @Override
+    public MultiActionType.Builder multiAction(final List<ActionButton> actions) {
+        return new MultiActionTypeImpl.BuilderImpl(actions);
+    }
+
+    @Override
+    public NoticeType notice() {
+        return new NoticeTypeImpl();
+    }
+
+    @Override
+    public NoticeType notice(final ActionButton action) {
+        return new NoticeTypeImpl(action);
+    }
+
+    @Override
+    public ServerLinksType serverLinks(final @Nullable ActionButton exitAction, final int columns, final int buttonWidth) {
+        return new ServerLinksTypeImpl(exitAction, columns, buttonWidth);
     }
 }

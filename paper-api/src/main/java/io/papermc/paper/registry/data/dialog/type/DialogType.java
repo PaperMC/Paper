@@ -2,12 +2,11 @@ package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
+import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import io.papermc.paper.registry.set.RegistrySet;
 import java.util.List;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
-
-import static net.kyori.adventure.text.Component.translatable;
 
 /**
  * Represents a type of dialog.
@@ -21,8 +20,9 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      * @param noButton  the button to cancel the action
      * @return a new instance
      */
+    @Contract(value = "_, _ -> new", pure = true)
     static ConfirmationType confirmation(final ActionButton yesButton, final ActionButton noButton) {
-        return new ConfirmationTypeImpl(yesButton, noButton);
+        return DialogInstancesProvider.instance().confirmation(yesButton, noButton);
     }
 
     /**
@@ -36,7 +36,7 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static DialogListType dialogList(final RegistrySet<Dialog> dialogs, final @Nullable ActionButton exitAction, final int columns, final int buttonWidth) {
-        return new DialogListTypeImpl(dialogs, exitAction, columns, buttonWidth);
+        return dialogList(dialogs).exitAction(exitAction).columns(columns).buttonWidth(buttonWidth).build();
     }
 
     /**
@@ -47,7 +47,7 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "_ -> new", pure = true)
     static DialogListType.Builder dialogList(final RegistrySet<Dialog> dialogs) {
-        return new DialogListTypeImpl.BuilderImpl(dialogs);
+        return DialogInstancesProvider.instance().dialogList(dialogs);
     }
 
     /**
@@ -60,7 +60,18 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "_, _, _ -> new", pure = true)
     static MultiActionType multiAction(final List<ActionButton> actions, final @Nullable ActionButton exitAction, final int columns) {
-        return new MultiActionTypeImpl(actions, exitAction, columns);
+        return multiAction(actions).exitAction(exitAction).columns(columns).build();
+    }
+
+    /**
+     * Creates a multi-action dialog builder with the specified actions.
+     *
+     * @param actions the list of action buttons to display
+     * @return a new builder instance
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static MultiActionType.Builder multiAction(final List<ActionButton> actions) {
+        return DialogInstancesProvider.instance().multiAction(actions);
     }
 
     /**
@@ -70,7 +81,7 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "-> new", pure = true)
     static NoticeType notice() {
-        return new NoticeTypeImpl(ActionButton.builder(translatable("gui.ok")).width(150).build());
+        return DialogInstancesProvider.instance().notice();
     }
 
     /**
@@ -81,7 +92,7 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "_ -> new", pure = true)
     static NoticeType notice(final ActionButton action) {
-        return new NoticeTypeImpl(action);
+        return DialogInstancesProvider.instance().notice(action);
     }
 
     /**
@@ -94,6 +105,6 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      */
     @Contract(value = "_, _, _ -> new", pure = true)
     static ServerLinksType serverLinks(final @Nullable ActionButton exitAction, final int columns, final int buttonWidth) {
-        return new ServerLinksTypeImpl(exitAction, columns, buttonWidth);
+        return DialogInstancesProvider.instance().serverLinks(exitAction, columns, buttonWidth);
     }
 }

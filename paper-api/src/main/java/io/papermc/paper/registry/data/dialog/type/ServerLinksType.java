@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data.dialog.type;
 
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -10,7 +11,8 @@ import org.jspecify.annotations.Nullable;
  * Represents a server links dialog that displays links.
  * @see DialogType#serverLinks(ActionButton, int, int)
  */
-public sealed interface ServerLinksType extends DialogType permits ServerLinksTypeImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface ServerLinksType extends DialogType {
 
     /**
      * Returns the action button to exit the dialog, or null if there is no exit action.

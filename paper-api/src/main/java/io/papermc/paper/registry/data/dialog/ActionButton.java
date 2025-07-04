@@ -2,14 +2,17 @@ package io.papermc.paper.registry.data.dialog;
 
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents an action button in a dialog, which can be used to trigger actions or navigate within the dialog.
  * Action buttons can have labels, tooltips, and associated actions.
  */
-public sealed interface ActionButton permits ActionButtonImpl {
+@ApiStatus.NonExtendable
+public interface ActionButton {
 
     /**
      * Creates a new action button with the specified label, tooltip, width, and action.
@@ -22,7 +25,7 @@ public sealed interface ActionButton permits ActionButtonImpl {
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static ActionButton create(final Component label, final @Nullable Component tooltip, final int width, final @Nullable DialogAction action) {
-        return new ActionButtonImpl(label, tooltip, width, action);
+        return builder(label).tooltip(tooltip).width(width).action(action).build();
     }
 
     /**
@@ -33,7 +36,7 @@ public sealed interface ActionButton permits ActionButtonImpl {
      */
     @Contract(pure = true, value = "_ -> new")
     static ActionButton.Builder builder(final Component label) {
-        return new ActionButtonImpl.BuilderImpl(label);
+        return DialogInstancesProvider.instance().actionButtonBuilder(label);
     }
 
     /**
@@ -58,7 +61,7 @@ public sealed interface ActionButton permits ActionButtonImpl {
      * @return the width of the button
      */
     @Contract(pure = true)
-    int width();
+    @Range(from = 1, to = 1024) int width();
 
     /**
      * Returns the action associated with this button, or null if no action is associated.
@@ -71,7 +74,8 @@ public sealed interface ActionButton permits ActionButtonImpl {
     /**
      * A builder for creating ActionButton instances.
      */
-    sealed interface Builder permits ActionButtonImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the tooltip of the action button, or null if no tooltip is desired.
@@ -89,7 +93,7 @@ public sealed interface ActionButton permits ActionButtonImpl {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder width(int width);
+        Builder width(@Range(from = 1, to = 1024) int width);
 
         /**
          * Sets the action associated with this button, or null if no action is desired.

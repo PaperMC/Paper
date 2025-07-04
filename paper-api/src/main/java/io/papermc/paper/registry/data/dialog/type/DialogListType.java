@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data.dialog.type;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.set.RegistrySet;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -11,7 +12,8 @@ import org.jspecify.annotations.Nullable;
  * Represents a dialog that displays a list of dialogs.
  * @see DialogType#dialogList(RegistrySet, ActionButton, int, int)
  */
-public sealed interface DialogListType extends DialogType permits DialogListTypeImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface DialogListType extends DialogType {
 
     /**
      * Returns the set of dialogs to display in the dialog list.
@@ -48,7 +50,8 @@ public sealed interface DialogListType extends DialogType permits DialogListType
     /**
      * A builder for creating a dialog list type.
      */
-    sealed interface Builder permits DialogListTypeImpl.BuilderImpl {
+    @ApiStatus.NonExtendable
+    interface Builder {
 
         /**
          * Sets the action button to exit the dialog, or null if there is no exit action.
@@ -66,7 +69,7 @@ public sealed interface DialogListType extends DialogType permits DialogListType
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder columns(final int columns);
+        Builder columns(final @Range(from = 1, to = Integer.MAX_VALUE) int columns);
 
         /**
          * Sets the width of each button in the dialog list.
@@ -75,7 +78,7 @@ public sealed interface DialogListType extends DialogType permits DialogListType
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder buttonWidth(final int buttonWidth);
+        Builder buttonWidth(final @Range(from = 1, to = 1024) int buttonWidth);
 
         /**
          * Builds the dialog list type.

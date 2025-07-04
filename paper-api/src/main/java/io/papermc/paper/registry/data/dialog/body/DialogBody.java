@@ -32,7 +32,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
         final int width,
         final int height
     ) {
-        return DialogInstancesProvider.instance().itemDialogBodyBuilder(item)
+        return item(item)
             .description(description)
             .showDecorations(showDecorations)
             .showTooltip(showTooltip)

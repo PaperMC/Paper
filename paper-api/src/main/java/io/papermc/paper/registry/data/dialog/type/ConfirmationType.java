@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
 /**
@@ -8,7 +9,8 @@ import org.jetbrains.annotations.Contract;
  * This interface defines the structure for a confirmation dialog with "confirm" and "deny" buttons.
  * @see DialogType#confirmation(ActionButton, ActionButton)
  */
-public sealed interface ConfirmationType extends DialogType permits ConfirmationTypeImpl {
+@ApiStatus.NonExtendable
+public non-sealed interface ConfirmationType extends DialogType {
 
     /**
      * Gets the button for confirming the action.

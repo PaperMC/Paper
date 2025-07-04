@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data.dialog;
 
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.action.DialogAction;
 import io.papermc.paper.registry.data.dialog.action.DialogActionCallback;
 import io.papermc.paper.registry.data.dialog.body.ItemDialogBody;
@@ -8,6 +9,12 @@ import io.papermc.paper.registry.data.dialog.input.BooleanDialogInput;
 import io.papermc.paper.registry.data.dialog.input.NumberRangeDialogInput;
 import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
 import io.papermc.paper.registry.data.dialog.input.TextDialogInput;
+import io.papermc.paper.registry.data.dialog.type.ConfirmationType;
+import io.papermc.paper.registry.data.dialog.type.DialogListType;
+import io.papermc.paper.registry.data.dialog.type.MultiActionType;
+import io.papermc.paper.registry.data.dialog.type.NoticeType;
+import io.papermc.paper.registry.data.dialog.type.ServerLinksType;
+import io.papermc.paper.registry.set.RegistrySet;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -35,6 +42,8 @@ public interface DialogInstancesProvider {
     }
 
     DialogBase.Builder dialogBaseBuilder(Component title);
+
+    ActionButton.Builder actionButtonBuilder(Component label);
 
     // actions
     DialogAction.CustomClickAction register(DialogActionCallback callback, ClickCallback.Options options);
@@ -64,4 +73,17 @@ public interface DialogInstancesProvider {
     TextDialogInput.Builder textBuilder(String key, Component label);
 
     TextDialogInput.MultilineOptions multilineOptions(@Nullable Integer maxLines, @Nullable Integer height);
+
+    // types
+    ConfirmationType confirmation(ActionButton yesButton, ActionButton noButton);
+
+    DialogListType.Builder dialogList(RegistrySet<Dialog> dialogs);
+
+    MultiActionType.Builder multiAction(List<ActionButton> actions);
+
+    NoticeType notice();
+
+    NoticeType notice(ActionButton action);
+
+    ServerLinksType serverLinks(@Nullable ActionButton exitAction, int columns, int buttonWidth);
 }
