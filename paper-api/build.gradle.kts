@@ -164,7 +164,7 @@ abstract class Services {
 }
 val services = objects.newInstance<Services>()
 
-tasks.withType<Javadoc> {
+tasks.withType<Javadoc>().configureEach {
     val options = options as StandardJavadocDocletOptions
     options.overview = "src/main/javadoc/overview.html"
     options.use()
