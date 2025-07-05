@@ -22,7 +22,15 @@ public class RegistryEventsRewriter extends SearchReplaceRewriter {
                 builder.append(metadata.indent());
                 builder.append("%s %s %s ".formatted(PUBLIC, STATIC, FINAL));
                 builder.append(RegistryEventProvider.class.getSimpleName());
-                builder.append("<").append(this.importCollector.getShortName(entry.apiClass())).append(", ").append(this.importCollector.getShortName(entry.apiRegistryBuilder())).append('>');
+                builder.append("<").append(this.importCollector.getShortName(entry.apiClass()));
+                if (entry.genericArgCount() > 0) {
+                    builder.append("<?").repeat(", ?", entry.genericArgCount() - 1).append(">");
+                }
+                builder.append(", ").append(this.importCollector.getShortName(entry.apiRegistryBuilder()));
+                if (entry.genericArgCount() > 0) {
+                    builder.append("<?").repeat(", ?", entry.genericArgCount() - 1).append(">");
+                }
+                builder.append('>');
                 builder.append(' ');
                 builder.append(entry.registryKeyField());
                 builder.append(" = ");
