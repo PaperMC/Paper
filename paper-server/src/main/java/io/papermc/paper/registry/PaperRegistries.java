@@ -9,11 +9,13 @@ import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperCowVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.PaperDimensionTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperFrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperInstrumentRegistryEntry;
 import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
+import io.papermc.paper.registry.data.PaperLevelStemRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
@@ -21,6 +23,12 @@ import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.PaperWorldPreset;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
+import io.papermc.paper.world.worldgen.PaperDimensionType;
+import io.papermc.paper.world.worldgen.PaperLevelStem;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -132,6 +140,9 @@ public final class PaperRegistries {
             start(Registries.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT).craft(Chicken.Variant.class, CraftChicken.CraftVariant::new).writable(PaperChickenVariantRegistryEntry.PaperBuilder::new),
             start(Registries.COW_VARIANT, RegistryKey.COW_VARIANT).craft(Cow.Variant.class, CraftCow.CraftVariant::new).writable(PaperCowVariantRegistryEntry.PaperBuilder::new),
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.WORLD_PRESET, RegistryKey.WORLD_PRESET).craft(WorldPreset.class, PaperWorldPreset::new).build(),
+            start(Registries.DIMENSION_TYPE, RegistryKey.DIMENSION_TYPE).craft(DimensionType.class, PaperDimensionType::new).writable(PaperDimensionTypeRegistryEntry.PaperBuilder::new),
+            start(Registries.LEVEL_STEM, RegistryKey.LEVEL_STEM).craft(LevelStem.class, PaperLevelStem::new).writable(PaperLevelStemRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
