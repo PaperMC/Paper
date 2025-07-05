@@ -426,6 +426,16 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
+     * Retrieves the rotation of this location.
+     *
+     * @return a new {@code Rotation} object.
+     */
+    @Contract(value = " -> new", pure = true)
+    public Rotation getRotation() {
+        return Rotation.rotation(yaw, pitch);
+    }
+    
+    /**
      * Subtracts the location by another.
      *
      * @param vec The other location
