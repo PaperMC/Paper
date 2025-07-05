@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/level/block/DriedGhastBlock.java
++++ b/net/minecraft/world/level/block/DriedGhastBlock.java
+@@ -104,10 +_,20 @@
+ 
+     private void tickWaterlogged(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         if (!this.isReadyToSpawn(state)) {
++            // Paper start - Call BlockGrowEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(HYDRATION_LEVEL, this.getHydrationLevel(state) + 1), 2)) {
++                return;
++            }
++            // Paper end - Call BlockGrowEvent
+             level.playSound(null, pos, SoundEvents.DRIED_GHAST_TRANSITION, SoundSource.BLOCKS, 1.0F, 1.0F);
+-            level.setBlock(pos, state.setValue(HYDRATION_LEVEL, this.getHydrationLevel(state) + 1), 2);
++            // level.setBlock(pos, state.setValue(HYDRATION_LEVEL, this.getHydrationLevel(state) + 1), 2); // Paper - handled above
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
+         } else {
++            // Paper start - Call BlockFadeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, state.getFluidState().createLegacyBlock()).isCancelled()) {
++                return;
++            }
++            // Paper end - Call BlockFadeEvent
+             this.spawnGhastling(level, pos, state);
+         }
+     }
+@@ -121,7 +_,7 @@
+             float yRot = Direction.getYRot(state.getValue(FACING));
+             happyGhast.setYHeadRot(yRot);
+             happyGhast.snapTo(bottomCenter.x(), bottomCenter.y(), bottomCenter.z(), yRot, 0.0F);
+-            level.addFreshEntity(happyGhast);
++            level.addFreshEntity(happyGhast, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.REHYDRATION); // Paper - spawn reason
+             level.playSound(null, happyGhast, SoundEvents.GHASTLING_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+         }
+     }

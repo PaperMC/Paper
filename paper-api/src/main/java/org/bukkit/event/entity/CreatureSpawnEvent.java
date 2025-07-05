@@ -223,6 +223,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         POTION_EFFECT,
         /**
+         * When a creature is spawned by being rehydrated
+         */
+        REHYDRATION,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
