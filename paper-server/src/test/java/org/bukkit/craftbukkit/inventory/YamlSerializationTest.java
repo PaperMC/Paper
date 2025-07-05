@@ -9,7 +9,6 @@ import io.papermc.paper.registry.keys.BlockTypeKeys;
 import io.papermc.paper.registry.set.RegistrySet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
-import net.minecraft.world.level.storage.DataVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.InvalidConfigurationException;
