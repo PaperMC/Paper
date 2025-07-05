@@ -106,7 +106,7 @@ public class PaperRegistryListenerManager {
         return this.registerWithListeners(registry, modifiableEntry, key, nms, builder, registrationInfo, registerMethod, conversions);
     }
 
-    <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> void registerWithListeners( // TODO remove Keyed
+    <M, T extends Keyed, B extends PaperRegistryBuilder<M, ? extends T>> void registerWithListeners( // TODO remove Keyed
         final WritableRegistry<M> registry,
         final RegistryEntryMeta.Buildable<M, T, B> entry,
         final ResourceKey<M> key,
@@ -121,7 +121,7 @@ public class PaperRegistryListenerManager {
         this.registerWithListeners(registry, entry, key, null, builder, registrationInfo, WritableRegistry::register, conversions);
     }
 
-    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
+    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, ? extends T>, R> R registerWithListeners( // TODO remove Keyed
         final Registry<M> registry,
         final RegistryEntryMeta.Buildable<M, T, B> entry,
         final ResourceKey<M> key,
@@ -167,7 +167,7 @@ public class PaperRegistryListenerManager {
         LifecycleEventRunner.INSTANCE.callEvent(this.composeEventType.getEventType(entry.apiKey()), event);
     }
 
-    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
+    public <T, B extends RegistryBuilder<? extends T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
         final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
         if (entry == null || !entry.meta().modificationApiSupport().canModify()) {
             throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryEntryAddEvent.class.getSimpleName());
@@ -175,7 +175,7 @@ public class PaperRegistryListenerManager {
         return this.valueAddEventTypes.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
     }
 
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> getRegistryComposeEventType(final RegistryEventProvider<T, B> type) {
+    public <T, B extends RegistryBuilder<? extends T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> getRegistryComposeEventType(final RegistryEventProvider<T, B> type) {
         final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
         if (entry == null || !entry.meta().modificationApiSupport().canAdd()) {
             throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryComposeEvent.class.getSimpleName());

@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
-public class RegistryEntryAddHandlerConfiguration<T, B extends RegistryBuilder<T>> extends PrioritizedLifecycleEventHandlerConfigurationImpl<BootstrapContext, RegistryEntryAddEvent<T, B>> implements RegistryEntryAddConfiguration<T> {
+public class RegistryEntryAddHandlerConfiguration<T, B extends RegistryBuilder<? extends T>> extends PrioritizedLifecycleEventHandlerConfigurationImpl<BootstrapContext, RegistryEntryAddEvent<T, B>> implements RegistryEntryAddConfiguration<T> {
 
     private @Nullable Predicate<TypedKey<T>> filter;
 
