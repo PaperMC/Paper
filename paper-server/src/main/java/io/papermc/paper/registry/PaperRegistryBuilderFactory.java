@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.Nullable;
 
-public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> implements RegistryBuilderFactory<A, B> { // TODO remove Keyed
+public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegistryBuilder<M, ? extends A>> implements RegistryBuilderFactory<A, B> { // TODO remove Keyed
 
     private final ResourceKey<? extends Registry<M>> registryKey;
     private final Conversions conversions;
@@ -49,7 +49,7 @@ public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegi
     }
 
     @Override
-    public B copyFrom(final TypedKey<A> key) {
+    public B copyFrom(final TypedKey<? extends A> key) {
         this.validate();
         final Optional<M> existing = this.existingValueGetter.apply(PaperAdventure.asVanilla(this.registryKey, key));
         if (existing.isEmpty()) {

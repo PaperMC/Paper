@@ -8,7 +8,7 @@ public interface PaperRegistryBuilder<M, T> extends RegistryBuilder<T> {
     M build();
 
     @FunctionalInterface
-    interface Filler<M, T, B extends PaperRegistryBuilder<M, T>> {
+    interface Filler<M, T, B extends PaperRegistryBuilder<M, ? extends T>> {
 
         B fill(Conversions conversions, @Nullable M nms);
 

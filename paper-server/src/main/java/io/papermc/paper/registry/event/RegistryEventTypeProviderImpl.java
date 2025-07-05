@@ -13,12 +13,12 @@ public class RegistryEventTypeProviderImpl implements RegistryEventTypeProvider 
     }
 
     @Override
-    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(final RegistryEventProvider<T, B> type) {
+    public <T, B extends RegistryBuilder<? extends T>> RegistryEntryAddEventType<T, B> registryEntryAdd(final RegistryEventProvider<T, B> type) {
         return PaperRegistryListenerManager.INSTANCE.getRegistryValueAddEventType(type);
     }
 
     @Override
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> registryCompose(final RegistryEventProvider<T, B> type) {
+    public <T, B extends RegistryBuilder<? extends T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> registryCompose(final RegistryEventProvider<T, B> type) {
         return PaperRegistryListenerManager.INSTANCE.getRegistryComposeEventType(type);
     }
 }

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <B> registry entry builder type
  */
 @ApiStatus.NonExtendable
-public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
+public interface WritableRegistry<T, B extends RegistryBuilder<? extends T>> {
 
     /**
      * Register a new value with the specified key. This will
@@ -21,9 +21,10 @@ public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
      *
      * @param key the entry's key (must be unique from others)
      * @param value a consumer for the entry's builder
+     * @param <VB> the builder type
      */
-    default void register(final TypedKey<T> key, final Consumer<? super B> value) {
-        this.registerWith(key, factory -> value.accept(factory.empty()));
+    default <VB extends B> void register(final TypedKey<? extends T> key, final Consumer<? super VB> value) {
+        this.<VB>registerWith(key, factory -> value.accept(factory.empty()));
     }
 
     /**
@@ -34,6 +35,7 @@ public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
      *
      * @param key the entry's key (must be unique from others)
      * @param value a consumer of a builder factory
+     * @param <VB> the builder type
      */
-    void registerWith(TypedKey<T> key, Consumer<RegistryBuilderFactory<T, B>> value);
+    <VB extends B> void registerWith(TypedKey<? extends T> key, Consumer<RegistryBuilderFactory<T, VB>> value);
 }
