@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import io.papermc.paper.advancement.CriteriaTrigger;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
@@ -37,6 +38,7 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -125,7 +127,12 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-
+    /**
+     * Built-in registry for criteria triggers.
+     * @see io.papermc.paper.registry.keys.CriterionTriggerKeys
+     */
+    @ApiStatus.Experimental
+    RegistryKey<CriteriaTrigger<?>> TRIGGER_TYPE = create("trigger_type");
 
 
     /* ********************** *
