@@ -15,5 +15,5 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.ScheduledForRemoval(inVersion = "1.21.7 or 1.22, whichever comes first")
 @Deprecated(since = "1.21.6", forRemoval = true)
 @ApiStatus.NonExtendable
-public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryComposeEvent<T, B> {
+public interface RegistryFreezeEvent<T, B extends RegistryBuilder<? extends T>> extends RegistryComposeEvent<T, B> {
 }

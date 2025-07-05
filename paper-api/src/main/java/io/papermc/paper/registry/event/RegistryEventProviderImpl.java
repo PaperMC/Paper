@@ -8,9 +8,9 @@ import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-record RegistryEventProviderImpl<T, B extends RegistryBuilder<T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
+record RegistryEventProviderImpl<T, B extends RegistryBuilder<? extends T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
 
-    static <T, B extends RegistryBuilder<T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
+    static <T, B extends RegistryBuilder<? extends T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
         return new RegistryEventProviderImpl<>(registryKey);
     }
 

@@ -1,10 +1,12 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.advancement.CriteriaTrigger;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
+import io.papermc.paper.registry.data.CriteriaTriggerRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
@@ -39,6 +41,7 @@ public final class RegistryEvents {
     // Start generate - RegistryEvents
     // @GeneratedFrom 1.21.7
     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
+    public static final RegistryEventProvider<CriteriaTrigger<?>, CriteriaTriggerRegistryEntry.Builder<?>> TRIGGER_TYPE = create(RegistryKey.TRIGGER_TYPE);
     public static final RegistryEventProvider<DamageType, DamageTypeRegistryEntry.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);
     public static final RegistryEventProvider<Wolf.Variant, WolfVariantRegistryEntry.Builder> WOLF_VARIANT = create(RegistryKey.WOLF_VARIANT);
     public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
