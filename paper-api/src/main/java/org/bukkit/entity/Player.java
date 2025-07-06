@@ -1,5 +1,9 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.connection.PlayerGameConnection;
+import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -10,10 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import io.papermc.paper.connection.PlayerGameConnection;
-import io.papermc.paper.entity.LookAnchor;
-import io.papermc.paper.entity.PlayerGiveResult;
-import io.papermc.paper.math.Position;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
