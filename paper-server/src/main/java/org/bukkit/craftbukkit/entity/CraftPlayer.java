@@ -3234,6 +3234,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public long getAttackCooldownCounter() {
+        return getHandle().getPaperAttackStrengthTicker();
+    }
+
+    @Override
+    public void setAttackCooldownCounter(long ticks) {
+        // can be MIN_VALUE or MAX_VALUE as game logic already checks this in:
+        // #getAttackStrengthScale with a Mth.clamp call
+        // using a long for compatibility if nms changes to using one so that the
+        // API doesn't break.
+        // Keeping the number within the range of an int for predictability
+        // when used with Long.MAX_VALUE and Long.MIN_VALUE
+        ticks = Math.min(Integer.MAX_VALUE, ticks);
+        ticks = Math.max(Integer.MIN_VALUE, ticks);
+        getHandle().setPaperAttackStrengthTicker((int) ticks);
+    }
+
+    @Override
     public void resetCooldown() {
         getHandle().resetAttackStrengthTicker();
     }

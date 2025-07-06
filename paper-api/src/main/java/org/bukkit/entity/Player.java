@@ -3522,7 +3522,30 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     float getCooledAttackStrength(float adjustTicks);
 
     /**
+     * Returns the number of ticks this player has been warming up for an attack.
+     * <p>
+     * This increments every tick, and is reset to zero when the
+     * player either swings their arm or swaps their main-hand item.
+     *
+     * @return the cooldown counter, which might be negative
+     * @since 1.21.7
+     */
+    long getAttackCooldownCounter();
+
+    /**
+     * Sets the number of ticks this player has been warming up for an attack.
+     * <p>
+     * See {@link #getAttackCooldownCounter()} for more details.
+     *
+     * @param ticks the number ticks to set the counter to
+     * @since 1.21.7
+     */
+    void setAttackCooldownCounter(long ticks);
+
+    /**
      * Reset the cooldown counter to 0, effectively starting the cooldown period.
+     * <p>
+     * See {@link #getAttackCooldownCounter()} for more details.
      */
     void resetCooldown();
     // Paper end - attack cooldown API
