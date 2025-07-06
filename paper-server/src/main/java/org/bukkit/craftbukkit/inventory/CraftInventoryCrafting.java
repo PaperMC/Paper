@@ -38,6 +38,16 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     @Override
+    public ItemStack[] getStorageContents() {
+        return this.asCraftMirror(this.getMatrixInventory().getContents());
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.getInventory().isEmpty() && this.getResultInventory().isEmpty();
+    }
+
+    @Override
     public ItemStack[] getContents() {
         ItemStack[] items = new ItemStack[this.getSize()];
         List<net.minecraft.world.item.ItemStack> mcResultItems = this.getResultInventory().getContents();
