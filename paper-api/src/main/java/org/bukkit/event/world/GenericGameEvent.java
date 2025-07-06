@@ -37,9 +37,9 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Get the underlying event.
+     * Get the underlying game event.
      *
-     * @return the event
+     * @return the game event
      */
     @NotNull
     public GameEvent getEvent() {
@@ -47,9 +47,9 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Get the location where the event occurred.
+     * Get the location where the game event occurred.
      *
-     * @return event location
+     * @return game event location
      */
     @NotNull
     public Location getLocation() {
@@ -57,7 +57,7 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Get the entity which triggered this event, if present.
+     * Get the entity which triggered this game event, if present.
      *
      * @return triggering entity or {@code null}
      */
@@ -67,7 +67,7 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Get the block radius to which this event will be broadcast.
+     * Get the block radius to which this game event will be broadcast.
      *
      * @return broadcast radius
      */
@@ -76,7 +76,7 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Set the radius to which the event should be broadcast.
+     * Set the radius to which the game event should be broadcast.
      *
      * @param radius radius, must be greater than or equal to 0
      */
