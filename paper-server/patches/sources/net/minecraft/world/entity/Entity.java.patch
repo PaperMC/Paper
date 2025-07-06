@@ -1473,7 +1473,7 @@
          try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
              TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, entity.registryAccess());
              entity.saveWithoutId(tagValueOutput);
-@@ -2864,7 +_,65 @@
+@@ -2864,13 +_,72 @@
  
      @Nullable
      public Entity teleport(TeleportTransition teleportTransition) {
@@ -1539,6 +1539,13 @@
              ServerLevel level = teleportTransition.newLevel();
              boolean flag = level.dimension() != serverLevel.dimension();
              if (!teleportTransition.asPassenger()) {
+                 this.stopRiding();
+             }
+ 
++            if (teleportTransition.postTeleportTransition() == TeleportTransition.DONT_KEEP_PASSENGERS) this.ejectPassengers(); // Paper - eject passengers if requested
+             return flag ? this.teleportCrossDimension(serverLevel, level, teleportTransition) : this.teleportSameDimension(serverLevel, teleportTransition);
+         } else {
+             return null;
 @@ -2913,10 +_,15 @@
              profilerFiller.pop();
              return null;
@@ -1615,19 +1622,20 @@
          if (fromLevel.dimension() == Level.END && toLevel.dimension() == Level.OVERWORLD) {
              for (Entity entity : this.getPassengers()) {
                  if (entity instanceof ServerPlayer serverPlayer && !serverPlayer.seenCredits) {
-@@ -3125,8 +_,14 @@
+@@ -3125,8 +_,15 @@
          return this.entityData.get(DATA_CUSTOM_NAME_VISIBLE);
      }
  
 -    public boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera) {
 -        Entity entity = this.teleport(new TeleportTransition(level, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, relativeMovements, TeleportTransition.DO_NOTHING));
-+    // CraftBukkit start
++    // Paper start - add teleport cause
++    @io.papermc.paper.annotation.DoNotUse
 +    public final boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera) {
 +        return this.teleportTo(level, x, y, z, relativeMovements, yaw, pitch, setCamera, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
 +
 +    public boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
-+        // CraftBukkit end
++        // Paper end - add teleport cause
 +        Entity entity = this.teleport(new TeleportTransition(level, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, relativeMovements, TeleportTransition.DO_NOTHING, cause)); // CraftBukkit
          return entity != null;
      }
