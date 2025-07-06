@@ -9,19 +9,30 @@
                      ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.Data::getTravelTimeInTicks)
                  )
                  .apply(
-@@ -219,7 +_,14 @@
+@@ -219,7 +_,13 @@
                      return false;
                  } else {
                      Vec3 destination = listenerSourcePos.get();
 -                    if (!user.canReceiveVibration(level, BlockPos.containing(sourcePosition), event, context)) {
-+                    // CraftBukkit start
-+                    boolean defaultCancel = !user.canReceiveVibration(level, BlockPos.containing(sourcePosition), event, context);
-+                    Entity entity = context.sourceEntity();
-+                    org.bukkit.event.block.BlockReceiveGameEvent event1 = new org.bukkit.event.block.BlockReceiveGameEvent(org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(event), org.bukkit.craftbukkit.block.CraftBlock.at(level, BlockPos.containing(sourcePosition)), (entity == null) ? null : entity.getBukkitEntity());
-+                    event1.setCancelled(defaultCancel);
-+                    level.getCraftServer().getPluginManager().callEvent(event1);
-+                    if (event1.isCancelled()) {
-+                        // CraftBukkit end
++                    // Paper start - improve GameEvent events
++                    boolean deaf = !user.canReceiveVibration(level, BlockPos.containing(sourcePosition), event, context);
++                    // TODO add special sub vibration events to control LOS check (GameEvent != Vibration)
++                    io.papermc.paper.event.ReceiveGameEvent bukkitEvent = user.createReceiveGameEvent(level, event, context, destination);
++                    bukkitEvent.setCancelled(deaf);
++                    if (!bukkitEvent.callEvent()) {
++                        // Paper end - improve GameEvent events
                          return false;
                      } else if (isOccluded(level, sourcePosition, destination)) {
                          return false;
+@@ -434,5 +_,11 @@
+ 
+         default void onDataChanged() {
+         }
++
++        // Paper start - improve GameEvent events
++        default io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(final ServerLevel level, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
++            return org.bukkit.craftbukkit.event.CraftEventFactory.createReceiveGameEvent(level, position, event, context);
++        }
++        // Paper end - improve GameEvent events
+     }
+ }
