@@ -2,14 +2,15 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.logging.LogUtils;
+import io.papermc.paper.adventure.PaperAdventure;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import com.mojang.logging.LogUtils;
-import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -25,7 +26,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
@@ -37,6 +37,7 @@ import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -58,6 +59,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
@@ -386,11 +388,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         //String title = container.getBukkitView().getTitle(); // Paper - comment
         net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
-        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
-        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+        if (adventure$title == null)
+            adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
+        if (result.getFirst() != null)
+            adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
 
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+        if (!player.isImmobile())
+            player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
         player.containerMenu = container;
         player.initMenu(container);
     }
@@ -447,7 +452,76 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public void openInventory(InventoryView inventory) {
+    public void openInventory(InventoryView view) {
+        Preconditions.checkArgument(this.equals(view.getPlayer()), "InventoryView must belong to the opening player");
+        Preconditions.checkArgument(this.getHandle() instanceof ServerPlayer, "The opening player must be a internal ServerPlayer");
+        final ServerPlayer player = (ServerPlayer) this.getHandle();
+        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
+            // fire INVENTORY_CLOSE if one already open
+            player.connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW);
+        }
+
+        AbstractContainerMenu containerMenu;
+        if (view instanceof CraftInventoryView<?,?> craftView) {
+            containerMenu = craftView.getHandle();
+        } else {
+            containerMenu = new CraftContainer(view, this.getHandle(), player.nextContainerCounter());
+        }
+
+        // Trigger an INVENTORY_OPEN event
+        final Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, containerMenu);
+        containerMenu = result.getSecond();
+        if (containerMenu == null) {
+            return;
+        }
+
+        final MenuType<?> menuType = containerMenu.menuType;
+        if (menuType == MenuType.MERCHANT) {
+            openMerchantInventoryView(player, (MerchantMenu) containerMenu);
+            return;
+        }
+
+        net.kyori.adventure.text.Component title = view.title();
+        if (result.getFirst() != null)
+            title = result.getFirst();
+        if (!player.isImmobile()) {
+            if (containerMenu instanceof HorseInventoryMenu horse) {
+                player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
+            } else {
+                player.connection.send(new ClientboundOpenScreenPacket(containerMenu.containerId, menuType, PaperAdventure.asVanilla(title)));
+            }
+        }
+        player.containerMenu = containerMenu;
+        player.initMenu(containerMenu);
+    }
+
+    private void openMerchantInventoryView(final ServerPlayer player, final MerchantMenu merchant) {
+        final net.minecraft.world.item.trading.Merchant minecraftMerchant = ((CraftMerchant) merchant.getBukkitView().getMerchant()).getMerchant();
+        int level = 1;
+        if (minecraftMerchant instanceof final net.minecraft.world.entity.npc.Villager villager) {
+            level = villager.getVillagerData().level();
+        }
+
+        if (minecraftMerchant.getTradingPlayer() != null) { // merchant's can only have one trader
+            minecraftMerchant.getTradingPlayer().closeContainer();
+        }
+
+        minecraftMerchant.setTradingPlayer(player);
+
+        player.connection.send(new ClientboundOpenScreenPacket(merchant.containerId, net.minecraft.world.inventory.MenuType.MERCHANT, merchant.getTitle()));
+        player.containerMenu = merchant;
+        player.initMenu(merchant);
+
+        // Copy Merchant#openTradingScreen
+        MerchantOffers offers = minecraftMerchant.getOffers();
+        if (!offers.isEmpty()) {
+            player.sendMerchantOffers(merchant.containerId, offers, level, minecraftMerchant.getVillagerXp(), minecraftMerchant.showProgressBar(), minecraftMerchant.canRestock());
+        }
+        // End Copy Merchant#openTradingScreen
+    }
+
+    //@Override
+    public void openInventoryOld(InventoryView inventory) {
         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
         if (((ServerPlayer) this.getHandle()).connection == null) return;
@@ -477,18 +551,20 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
         // we can open these now, delegate for now
         if (windowType == MenuType.MERCHANT) {
-            CraftMenus.openMerchantMenu(player, (MerchantMenu) container);
+            openMerchantInventoryView(player, (MerchantMenu) container);
             return;
         }
 
         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
-        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
-        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+        if (adventure$title == null)
+            adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+        if (result.getFirst() != null)
+            adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
         if (!player.isImmobile()) {
             if (container instanceof HorseInventoryMenu horse) {
                 player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
             } else {
-                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title)));
+                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, PaperAdventure.asVanilla(adventure$title)));
             }
         }
         player.containerMenu = container;
@@ -577,7 +653,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             }
         }
         net.minecraft.world.level.block.Block block;
-        if (material == Material.ANVIL) {
+        if (material == org.bukkit.Material.ANVIL) {
             block = Blocks.ANVIL;
         } else if (material == Material.CARTOGRAPHY_TABLE) {
             block = Blocks.CARTOGRAPHY_TABLE;
@@ -777,10 +853,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (!this.getHandle().getShoulderEntityLeft().isEmpty()) {
             try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(this.getHandle().problemPath(), LOGGER)) {
                 return EntityType.create(
-                        TagValueInput.create(scopedCollector.forChild(() -> ".shoulder"), this.getHandle().registryAccess(), this.getHandle().getShoulderEntityLeft()),
-                        this.getHandle().level(),
-                        EntitySpawnReason.LOAD
-                    ).map(Entity::getBukkitEntity).orElse(null);
+                    TagValueInput.create(scopedCollector.forChild(() -> ".shoulder"), this.getHandle().registryAccess(), this.getHandle().getShoulderEntityLeft()),
+                    this.getHandle().level(),
+                    EntitySpawnReason.LOAD
+                ).map(Entity::getBukkitEntity).orElse(null);
             }
         }
 

@@ -15,9 +15,11 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> implements MerchantInventoryViewBuilder<V> {
+@NullMarked
+public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends CraftInventoryViewBuilder<V> implements MerchantInventoryViewBuilder<V> {
 
     private net.minecraft.world.item.trading.@Nullable Merchant merchant;
 
@@ -59,7 +61,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
         container.checkReachable = super.checkReachable;
         setDefaultTitle(this.merchant);
-        container.setTitle(super.title != null ? PaperAdventure.asVanilla(this.title) : super.defaultTitle);
+        container.setTitle(super.title != null ? PaperAdventure.asVanilla(super.title) : super.defaultTitle);
         return (V) container.getBukkitView();
     }
 
@@ -80,10 +82,10 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
     @Override
     public MerchantInventoryViewBuilder<V> copy() {
-        final CraftMerchantInventoryViewBuilder<V> copy = new CraftMerchantInventoryViewBuilder<>(super.handle);
-        copy.checkReachable = super.checkReachable;
-        copy.merchant = this.merchant;
-        copy.title = title;
-        return copy;
+        final CraftMerchantInventoryViewBuilder<V> builder = new CraftMerchantInventoryViewBuilder<>(super.handle);
+        builder.checkReachable = super.checkReachable;
+        builder.merchant = this.merchant;
+        builder.title = super.title;
+        return builder;
     }
 }

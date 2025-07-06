@@ -7,8 +7,7 @@ import net.minecraft.world.inventory.MenuType;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 
-public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> {
-
+public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends CraftInventoryViewBuilder<V> {
     public CraftStandardInventoryViewBuilder(final MenuType<?> handle) {
         super(handle);
         super.defaultTitle = Component.translatable("container.chest");
@@ -21,8 +20,8 @@ public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends 
 
     @Override
     public InventoryViewBuilder<V> copy() {
-        final CraftStandardInventoryViewBuilder<V> copy = new CraftStandardInventoryViewBuilder<>(handle);
-        copy.title = this.title;
-        return copy;
+        final CraftStandardInventoryViewBuilder<V> builder = new CraftStandardInventoryViewBuilder<>(handle);
+        builder.title = super.title;
+        return builder;
     }
 }
