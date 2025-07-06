@@ -19,6 +19,8 @@ import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
+import io.papermc.paper.registry.data.PaperTrimMaterialRegistryEntry;
+import io.papermc.paper.registry.data.PaperTrimPatternRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
@@ -125,8 +127,8 @@ public final class PaperRegistries {
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
             start(Registries.STRUCTURE, RegistryKey.STRUCTURE).craft(Structure.class, CraftStructure::new).build().delayed(),
-            start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new, true).build().delayed(),
-            start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new, true).build().delayed(),
+            start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new, true).writable(PaperTrimMaterialRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new, true).writable(PaperTrimPatternRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).writable(PaperDamageTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).writable(PaperWolfVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.WOLF_SOUND_VARIANT, RegistryKey.WOLF_SOUND_VARIANT).craft(Wolf.SoundVariant.class, CraftWolf.CraftSoundVariant::new).build(),
