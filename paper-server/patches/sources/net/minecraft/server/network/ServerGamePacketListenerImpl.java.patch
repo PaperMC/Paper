@@ -1261,7 +1261,7 @@
                                      this.player.swing(hand, true);
                                  }
 -                            }
-+                            } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
++                            } else { this.player.containerMenu.forceHeldSlot(hand); } // Paper - Fix inventory desync; MC-99075
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
@@ -1327,7 +1327,7 @@
 +
 +                if (cancelled) {
 +                    this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
-+                    this.player.containerMenu.sendAllDataToRemote(); // SPIGOT-2524
++                    this.player.containerMenu.forceHeldSlotAndArmor(hand); // SPIGOT-2524
 +                    return;
 +                }
 +                itemInHand = this.player.getItemInHand(hand); // Update in case it was changed in the event
@@ -1812,7 +1812,7 @@
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
              if (target != null) {
-@@ -1703,16 +_,58 @@
+@@ -1703,16 +_,53 @@
                  }
  
                  AABB boundingBox = target.getBoundingBox();
@@ -1834,7 +1834,7 @@
 +
 +                                    ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
 +
-+                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
++                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
 +                                    if ((target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && origItem != null && origItem == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || !ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().is(origItem))) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
 +                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
@@ -1854,9 +1854,10 @@
 +                                                target.getId(), java.util.Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values())
 +                                                .map((slot) -> com.mojang.datafixers.util.Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
 +                                                .collect(Collectors.toList()), true)); // Paper - sanitize
++                                            player.containerMenu.sendAllDataToRemote();
++                                        } else {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand); // Paper - fix slot desync (is this needed?)
 +                                        }
-+
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - fix slot desync - always refresh player inventory
 +                                    }
 +
 +                                    if (event.isCancelled()) {
@@ -1864,12 +1865,6 @@
 +                                    }
 +                                    // CraftBukkit end
 +                                    InteractionResult result = entityInteraction.run(ServerGamePacketListenerImpl.this.player, target, hand);
-+
-+                                    // CraftBukkit start
-+                                    if (!itemInHand.isEmpty() && itemInHand.getCount() <= -1) {
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
-+                                    }
-+                                    // CraftBukkit end
 +
 +                                    if (result instanceof InteractionResult.Success success // CraftBukkit
 +                                    ) {
@@ -1892,7 +1887,7 @@
                                  );
                              }
  
-@@ -1738,14 +_,19 @@
+@@ -1738,14 +_,14 @@
                              public void onAttack() {
                                  if (!(target instanceof ItemEntity)
                                      && !(target instanceof ExperienceOrb)
@@ -1902,11 +1897,6 @@
                                      ItemStack itemInHand = ServerGamePacketListenerImpl.this.player.getItemInHand(InteractionHand.MAIN_HAND);
                                      if (itemInHand.isItemEnabled(serverLevel.enabledFeatures())) {
                                          ServerGamePacketListenerImpl.this.player.attack(target);
-+                                        // CraftBukkit start
-+                                        if (!itemInHand.isEmpty() && itemInHand.getCount() <= -1) {
-+                                            ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
-+                                        }
-+                                        // CraftBukkit end
                                      }
                                  } else {
 -                                    ServerGamePacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.invalid_entity_attacked"));
@@ -1996,7 +1986,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1811,7 +_,340 @@
+@@ -1811,7 +_,339 @@
                  } else {
                      boolean flag = packet.stateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2298,7 +2288,6 @@
 +                                    case HOTBAR_SWAP:
 +                                    case COLLECT_TO_CURSOR:
 +                                    case UNKNOWN:
-+                                        this.player.containerMenu.sendAllDataToRemote();
 +                                        break;
 +                                    // Modified cursor and clicked
 +                                    case PICKUP_SOME:
