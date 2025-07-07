@@ -4,6 +4,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.minecraft.nbt.CompoundTag;
 import org.jspecify.annotations.Nullable;
+import java.util.Collection;
 
 public class PaperDialogResponseView implements DialogResponseView {
 
@@ -44,5 +45,10 @@ public class PaperDialogResponseView implements DialogResponseView {
             return null;
         }
         return this.payload.getFloat(key).orElse(null);
+    }
+
+    @Override
+    public Collection<String> keys() {
+        return this.payload.keySet();
     }
 }

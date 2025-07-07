@@ -4,6 +4,7 @@ import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
+import java.util.Collection;
 
 /**
  * A view for a possible response to a dialog.
@@ -49,4 +50,12 @@ public interface DialogResponseView {
      */
     @Contract(pure = true)
     @Nullable Float getFloat(String key);
+
+    /**
+     * Gets all keys in the response.
+     *
+     * @return a collection of keys
+     */
+    @Contract(pure = true)
+    Collection<String> keys();
 }
