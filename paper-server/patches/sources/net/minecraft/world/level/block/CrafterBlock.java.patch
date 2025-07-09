@@ -5,7 +5,7 @@
                  RecipeHolder<CraftingRecipe> recipeHolder = potentialResults.get();
                  ItemStack itemStack = recipeHolder.value().assemble(var11, level.registryAccess());
 +                // CraftBukkit start
-+                org.bukkit.event.block.CrafterCraftEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callCrafterCraftEvent(pos, level, itemStack, recipeHolder);
++                org.bukkit.event.block.CrafterCraftEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callCrafterCraftEvent(pos, level, itemStack, recipeHolder, recipeHolder.value().getRemainingItems(var11)); // Paper - call Event with Remaining Items
 +                if (event.isCancelled()) {
 +                    return;
 +                }
@@ -14,6 +14,20 @@
                  if (itemStack.isEmpty()) {
                      level.levelEvent(1050, pos, 0);
                  } else {
+@@ -160,9 +_,11 @@
+                     itemStack.onCraftedBySystem(level);
+                     this.dispenseItem(level, pos, crafterBlockEntity, itemStack, state, recipeHolder);
+ 
+-                    for (ItemStack itemStack1 : recipeHolder.value().getRemainingItems(var11)) {
++                    // Paper start - drop Items from Event
++                    for (org.bukkit.inventory.ItemStack itemStack1 : event.getRemainingItems()) {
+                         if (!itemStack1.isEmpty()) {
+-                            this.dispenseItem(level, pos, crafterBlockEntity, itemStack1, state, recipeHolder);
++                            this.dispenseItem(level, pos, crafterBlockEntity, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack1), state, recipeHolder);
++                    // Paper end - drop Items from Event
+                         }
+                     }
+ 
 @@ -186,7 +_,25 @@
          Container containerAt = HopperBlockEntity.getContainerAt(level, pos.relative(direction));
          ItemStack itemStack = stack.copy();

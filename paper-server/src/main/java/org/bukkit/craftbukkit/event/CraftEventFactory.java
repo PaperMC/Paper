@@ -260,6 +260,7 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftEventFactory {
@@ -1309,12 +1310,18 @@ public class CraftEventFactory {
         return CraftItemStack.asNMSCopy(event.getInventory().getResult());
     }
 
-    public static CrafterCraftEvent callCrafterCraftEvent(BlockPos pos, Level world, ItemStack result, RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> holder) {
+    public static CrafterCraftEvent callCrafterCraftEvent(BlockPos pos, Level world, ItemStack result, RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> holder, List<ItemStack> remainingItems) { // Paper - Add Remaining Items Parameter
         CraftBlock block = CraftBlock.at(world, pos);
         CraftItemStack itemStack = CraftItemStack.asCraftMirror(result);
         CraftingRecipe craftingRecipe = (CraftingRecipe) holder.toBukkitRecipe();
-
-        CrafterCraftEvent crafterCraftEvent = new CrafterCraftEvent(block, craftingRecipe, itemStack);
+        // Paper start - Call Event with Remaining Items
+        ArrayList<org.bukkit.inventory.ItemStack> castItems = new ArrayList<>(remainingItems.size());
+        for (final ItemStack remainingItem : remainingItems) {
+            if (remainingItem.isEmpty()) continue;
+            castItems.add(remainingItem.asBukkitMirror());
+        }
+        CrafterCraftEvent crafterCraftEvent = new CrafterCraftEvent(block, craftingRecipe, itemStack, castItems);
+        // Paper end - Call Event with Remaining Items
         Bukkit.getPluginManager().callEvent(crafterCraftEvent);
         return crafterCraftEvent;
     }
