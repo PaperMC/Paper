@@ -773,6 +773,13 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param flag if the entity is invulnerable
      */
     void setInvulnerable(boolean flag);
+    
+    /**
+     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
+     * 
+     * @return whether the entity is invulnerable.
+     */
+    boolean getInvulnerable();
 
     /**
      * Gets whether the entity is invulnerable or not.
