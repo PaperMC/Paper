@@ -195,7 +195,7 @@ public class Conversation {
     /**
      * Returns the current state of the conversation.
      *
-     * @return The ConversationState.
+     * @return The current state of the conversation.
      */
     @NotNull
     public ConversationState getState() {
