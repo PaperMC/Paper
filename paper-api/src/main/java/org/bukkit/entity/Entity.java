@@ -772,14 +772,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param flag if the entity is invulnerable
      */
-    public void setInvulnerable(boolean flag);
+    void setInvulnerable(boolean flag);
 
     /**
      * Gets whether the entity is invulnerable or not.
      *
      * @return whether the entity is invulnerable.
      */
-    public boolean isInvulnerable();
+    boolean isInvulnerable();
 
     /**
      * Gets whether the entity is silent or not.
