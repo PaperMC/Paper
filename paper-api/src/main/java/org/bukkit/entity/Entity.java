@@ -777,7 +777,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Gets whether the entity is invulnerable or not.
      *
-     * @return whether the entity is
+     * @return whether the entity is invulnerable.
      */
     public boolean isInvulnerable();
 
