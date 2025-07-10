@@ -10,6 +10,7 @@ import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -43,5 +44,23 @@ public interface Dialog extends Keyed, DialogLike {
     private static Dialog getDialog(@KeyPattern.Value final String value) {
         final Registry<Dialog> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.DIALOG);
         return registry.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, value));
+    }
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
+     */
+    @Deprecated(since = "1.21.8", forRemoval = true)
+    @Override
+    NamespacedKey getKey();
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#DIALOG}. Dialogs can exist without a key.
+     */
+    @Deprecated(since = "1.21.8", forRemoval = true)
+    @Override
+    default Key key() {
+        return Keyed.super.key();
     }
 }
