@@ -767,7 +767,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets whether the entity is invulnerable or not.
      * <p>
-     * When an entity is invulnerable it can only be damaged by players in
+     * When an entity is invulnerable, it can only be damaged by players in
      * creative mode.
      *
      * @param flag if the entity is invulnerable
