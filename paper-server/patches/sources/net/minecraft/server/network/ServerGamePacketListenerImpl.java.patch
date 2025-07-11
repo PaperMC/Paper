@@ -1812,7 +1812,7 @@
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
              if (target != null) {
-@@ -1703,16 +_,53 @@
+@@ -1703,16 +_,54 @@
                  }
  
                  AABB boundingBox = target.getBoundingBox();
@@ -1829,23 +1829,24 @@
 -                                        )
 -                                     {
 +                                    // CraftBukkit start
-+                                    boolean triggerLeashUpdate = itemInHand.is(net.minecraft.world.item.Items.LEAD) && target instanceof net.minecraft.world.entity.Leashable;
-+                                    Item origItem = ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() ? null : ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem();
++                                    final Item itemType = itemInHand.getItem();
++                                    boolean triggerLeashUpdate = itemStack.is(Items.LEAD) && target instanceof net.minecraft.world.entity.Leashable;
 +
 +                                    ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
++                                    final boolean resendData = event.isCancelled() || !ServerGamePacketListenerImpl.this.player.getItemInHand(hand).is(itemType);
 +
 +                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
-+                                    if ((target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && origItem != null && origItem == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || !ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().is(origItem))) {
++                                    if (itemType == Items.WATER_BUCKET && target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && resendData) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
 +                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                    }
 +
-+                                    if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem)) {
++                                    if (triggerLeashUpdate && resendData) {
 +                                        // Refresh the current leash state
 +                                        ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(target, ((net.minecraft.world.entity.Leashable) target).getLeashHolder()));
 +                                    }
 +
-+                                    if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem) {
++                                    if (resendData) {
 +                                        // Refresh the current entity metadata
 +                                        target.refreshEntityData(ServerGamePacketListenerImpl.this.player);
 +                                        // SPIGOT-7136 - Allays
