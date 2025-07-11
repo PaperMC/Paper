@@ -1986,7 +1986,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1811,7 +_,339 @@
+@@ -1811,7 +_,292 @@
                  } else {
                      boolean flag = packet.stateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2261,60 +2261,13 @@
 +                        net.minecraft.world.inventory.AbstractContainerMenu oldContainer = this.player.containerMenu; // SPIGOT-1224
 +                        this.cserver.getPluginManager().callEvent(event);
 +                        if (this.player.containerMenu != oldContainer) {
++                            this.player.containerMenu.resumeRemoteUpdates();
++                            this.player.containerMenu.broadcastFullState();
 +                            return;
 +                        }
 +
-+                        switch (event.getResult()) {
-+                            case ALLOW:
-+                            case DEFAULT:
-+                                this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
-+                                break;
-+                            case DENY:
-+                                /* Needs enum constructor in InventoryAction
-+                                if (action.modifiesOtherSlots()) {
-+
-+                                } else {
-+                                    if (action.modifiesCursor()) {
-+                                        this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
-+                                    }
-+                                    if (action.modifiesClicked()) {
-+                                        this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, packet102windowclick.slot, this.player.activeContainer.getSlot(packet102windowclick.slot).getItem()));
-+                                    }
-+                                }*/
-+                                switch (action) {
-+                                    // Modified other slots
-+                                    case PICKUP_ALL:
-+                                    case MOVE_TO_OTHER_INVENTORY:
-+                                    case HOTBAR_SWAP:
-+                                    case COLLECT_TO_CURSOR:
-+                                    case UNKNOWN:
-+                                        break;
-+                                    // Modified cursor and clicked
-+                                    case PICKUP_SOME:
-+                                    case PICKUP_HALF:
-+                                    case PICKUP_ONE:
-+                                    case PLACE_ALL:
-+                                    case PLACE_SOME:
-+                                    case PLACE_ONE:
-+                                    case SWAP_WITH_CURSOR:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.player.containerMenu.containerId, this.player.inventoryMenu.incrementStateId(), slotNum, this.player.containerMenu.getSlot(slotNum).getItem()));
-+                                        break;
-+                                    // Modified clicked only
-+                                    case DROP_ALL_SLOT:
-+                                    case DROP_ONE_SLOT:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.player.containerMenu.containerId, this.player.inventoryMenu.incrementStateId(), slotNum, this.player.containerMenu.getSlot(slotNum).getItem()));
-+                                        break;
-+                                    // Modified cursor only
-+                                    case DROP_ALL_CURSOR:
-+                                    case DROP_ONE_CURSOR:
-+                                    case CLONE_STACK:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
-+                                        break;
-+                                    // Nothing
-+                                    case NOTHING:
-+                                        break;
-+                                }
++                        if (event.getResult() != org.bukkit.event.Event.Result.DENY) { // if denied, synchronizing is fully handled by broadcastChanges at the end
++                            this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
 +                        }
 +
 +                        if (event instanceof CraftItemEvent || event instanceof SmithItemEvent) {
