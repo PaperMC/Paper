@@ -118,4 +118,15 @@ public class CraftBee extends CraftAnimals implements Bee {
     public int getTicksSincePollination() {
         return this.getHandle().ticksWithoutNectarSinceExitingHive;
     }
+
+    @Override
+    public void setTimeSinceSting(int time) {
+        Preconditions.checkArgument(time >= 0, "Time since sting cannot be negative");
+        this.getHandle().timeSinceSting = time;
+    }
+
+    @Override
+    public int getTimeSinceSting() {
+        return this.getHandle().timeSinceSting;
+    }
 }
