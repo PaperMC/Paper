@@ -102,6 +102,22 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
     private LootParams convertContext(LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
+        // Paper start
+        if (!context.isLegacy()) {
+            final LootParams.Builder paramsBuilder = new LootParams.Builder(((CraftWorld) context.getWorld()).getHandle()).withLuck(context.getLuck());
+            context.getContextMap().forEach((lootContextKey, o) -> io.papermc.paper.loot.PaperLootContextKey.applyToNmsBuilder(this.handle.getParamSet(), paramsBuilder, lootContextKey, o));
+
+            return paramsBuilder.create(this.handle.getParamSet());
+            // final net.minecraft.world.level.storage.loot.LootContext.Builder contextBuilder = new net.minecraft.world.level.storage.loot.LootContext.Builder(paramsBuilder.create(this.handle.getParamSet()));
+            //     // .withRandom(new RandomSourceWrapper(random != null ? random : context.getRandom()))
+            // return contextBuilder.create(java.util.Optional.empty());
+        } else {
+            return this.convertLegacyContext(context);
+        }
+    }
+    @Deprecated
+    private LootParams convertLegacyContext(final LootContext context) {
+        // Paper end
         Location loc = context.getLocation();
         Preconditions.checkArgument(loc.getWorld() != null, "LootContext.getLocation#getWorld cannot be null");
         ServerLevel handle = ((CraftWorld) loc.getWorld()).getHandle();
@@ -149,6 +165,20 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
+        // Paper start
+        final LootContext.Builder builder = new LootContext.Builder(info.getLevel().getWorld())
+            .withRandom(new org.bukkit.craftbukkit.util.RandomSourceWrapper.RandomWrapper(info.getRandom()))
+            .luck(info.getLuck());
+        for (final ContextKey<?> nmsParam : io.papermc.paper.loot.PaperLootContextKey.KEY_BI_MAP.keySet()) {
+            if (info.hasParameter(nmsParam)) {
+                io.papermc.paper.loot.PaperLootContextKey.applyToApiBuilder(builder, nmsParam, info.getParameter(nmsParam));
+            }
+        }
+        return builder.build();
+    }
+    @Deprecated @io.papermc.paper.annotation.DoNotUse
+    public static LootContext convertLegacyContext(net.minecraft.world.level.storage.loot.LootContext info) {
+        // Paper end
         Vec3 position = info.getOptionalParameter(LootContextParams.ORIGIN);
         if (position == null) {
             position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
