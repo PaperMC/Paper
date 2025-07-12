@@ -20,7 +20,7 @@ public record DialogBaseImpl(
 ) implements DialogBase {
 
     public DialogBaseImpl {
-        Preconditions.checkArgument(!pause || afterAction != DialogAfterAction.NONE);
+        Preconditions.checkArgument(!pause || afterAction != DialogAfterAction.NONE, "Dialogs that pause the game must use after_action values that unpause it after user action!");
         body = List.copyOf(body);
         inputs = List.copyOf(inputs);
     }
