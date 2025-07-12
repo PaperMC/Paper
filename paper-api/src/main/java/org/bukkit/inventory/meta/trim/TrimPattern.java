@@ -1,18 +1,37 @@
 package org.bukkit.inventory.meta.trim;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.TrimPatternRegistryEntry;
+import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Keyed;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a pattern that may be used in an {@link ArmorTrim}.
  */
+@NullMarked
 public interface TrimPattern extends Keyed, Translatable {
+
+    /**
+     * Creates an inlined trim pattern.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created trim pattern
+     */
+    @ApiStatus.Experimental
+    static TrimPattern create(final Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createTrimPattern(value);
+    }
 
     // Start generate - TrimPattern
     // @GeneratedFrom 1.21.7
@@ -53,9 +72,8 @@ public interface TrimPattern extends Keyed, Translatable {
     TrimPattern WILD = getTrimPattern("wild");
     // End generate - TrimPattern
 
-    @NotNull
-    private static TrimPattern getTrimPattern(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_PATTERN).getOrThrow(NamespacedKey.minecraft(key));
+    private static TrimPattern getTrimPattern(@KeyPattern.Value final String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_PATTERN).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     // Paper start - adventure
@@ -64,7 +82,7 @@ public interface TrimPattern extends Keyed, Translatable {
      *
      * @return the description
      */
-    net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component description();
+    Component description();
 
     /**
      * @deprecated this method assumes that {@link #description()} will
@@ -72,7 +90,7 @@ public interface TrimPattern extends Keyed, Translatable {
      */
     @Override
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.NotNull String getTranslationKey();
+    String getTranslationKey();
     // Paper end - adventure
 
     // Paper start - Registry#getKey
@@ -82,7 +100,7 @@ public interface TrimPattern extends Keyed, Translatable {
      */
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
-    org.bukkit.@org.jetbrains.annotations.NotNull NamespacedKey getKey();
+    NamespacedKey getKey();
 
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
@@ -90,8 +108,8 @@ public interface TrimPattern extends Keyed, Translatable {
      */
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
-    default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
-        return org.bukkit.Keyed.super.key();
+    default Key key() {
+        return Keyed.super.key();
     }
     // Paper end - Registry#getKey
 }
