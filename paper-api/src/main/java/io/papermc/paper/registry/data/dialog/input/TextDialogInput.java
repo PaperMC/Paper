@@ -75,7 +75,10 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @param height the height of the input, or null if not set
          * @return a new MultilineOptions instance
          */
-        static MultilineOptions create(final @Nullable Integer maxLines, final @Nullable Integer height) {
+        static MultilineOptions create(
+            final @Range(from = 1, to = Integer.MAX_VALUE) @Nullable Integer maxLines,
+            final @Range(from = 1, to = 512) @Nullable Integer height
+        ) {
             return DialogInstancesProvider.instance().multilineOptions(maxLines, height);
         }
 

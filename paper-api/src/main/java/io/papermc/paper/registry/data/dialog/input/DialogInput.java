@@ -3,7 +3,9 @@ package io.papermc.paper.registry.data.dialog.input;
 import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -56,7 +58,16 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new number range dialog input instance
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _, _ -> new")
-    static NumberRangeDialogInput numberRange(final String key, final int width, final Component label, final String labelFormat, final float start, final float end, final @Nullable Float initial, final @Nullable Float step) {
+    static NumberRangeDialogInput numberRange(
+        final String key,
+        final @Range(from = 1, to = 1024) int width,
+        final Component label,
+        final String labelFormat,
+        final float start,
+        final float end,
+        final @Nullable Float initial,
+        final @Positive @Nullable Float step
+    ) {
         return numberRange(key, label, start, end).width(width).labelFormat(labelFormat).initial(initial).step(step).build();
     }
 
@@ -85,7 +96,13 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new single option dialog input instance
      */
     @Contract(pure = true, value = "_, _, _, _, _ -> new")
-    static SingleOptionDialogInput singleOption(final String key, final int width, final List<SingleOptionDialogInput.OptionEntry> entries, final Component label, final boolean labelVisible) {
+    static SingleOptionDialogInput singleOption(
+        final String key,
+        final @Range(from = 1, to = 1024) int width,
+        final List<SingleOptionDialogInput.OptionEntry> entries,
+        final Component label,
+        final boolean labelVisible
+    ) {
         return singleOption(key, label, entries).width(width).labelVisible(labelVisible).build();
     }
 
@@ -115,7 +132,15 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @return a new text dialog input instance
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _ -> new")
-    static TextDialogInput text(final String key, final int width, final Component label, final boolean labelVisible, final String initial, final int maxLength, final TextDialogInput.@Nullable MultilineOptions multilineOptions) {
+    static TextDialogInput text(
+        final String key,
+        final @Range(from = 1, to = 1024) int width,
+        final Component label,
+        final boolean labelVisible,
+        final String initial,
+        final @Range(from = 1, to = Integer.MAX_VALUE) int maxLength,
+        final TextDialogInput.@Nullable MultilineOptions multilineOptions
+    ) {
         return text(key, label).width(width).labelVisible(labelVisible).initial(initial).maxLength(maxLength).multiline(multilineOptions).build();
     }
 

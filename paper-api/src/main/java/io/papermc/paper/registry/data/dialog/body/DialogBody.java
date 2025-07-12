@@ -29,8 +29,8 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
         final @Nullable PlainMessageDialogBody description,
         final boolean showDecorations,
         final boolean showTooltip,
-        final int width,
-        final int height
+        final @Range(from = 1, to = 256) int width,
+        final @Range(from = 1, to = 256) int height
     ) {
         return item(item)
             .description(description)
