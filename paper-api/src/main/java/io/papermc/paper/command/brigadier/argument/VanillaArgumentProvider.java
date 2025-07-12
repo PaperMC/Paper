@@ -35,8 +35,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 interface VanillaArgumentProvider {
 
-    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
-        .findFirst();
+    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class, VanillaArgumentProvider.class.getClassLoader()).findFirst();
 
     static VanillaArgumentProvider provider() {
         return PROVIDER.orElseThrow();

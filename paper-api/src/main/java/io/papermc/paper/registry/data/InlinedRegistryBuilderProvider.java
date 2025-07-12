@@ -15,7 +15,7 @@ public interface InlinedRegistryBuilderProvider {
 
     static InlinedRegistryBuilderProvider instance() {
         final class Holder {
-            static final Optional<InlinedRegistryBuilderProvider> INSTANCE = ServiceLoader.load(InlinedRegistryBuilderProvider.class).findFirst();
+            static final Optional<InlinedRegistryBuilderProvider> INSTANCE = ServiceLoader.load(InlinedRegistryBuilderProvider.class, InlinedRegistryBuilderProvider.class.getClassLoader()).findFirst();
         }
         return Holder.INSTANCE.orElseThrow();
     }

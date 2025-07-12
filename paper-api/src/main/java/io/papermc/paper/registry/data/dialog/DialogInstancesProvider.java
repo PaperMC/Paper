@@ -36,7 +36,7 @@ public interface DialogInstancesProvider {
 
     static DialogInstancesProvider instance() {
         final class Holder {
-            static final Optional<DialogInstancesProvider> INSTANCE = ServiceLoader.load(DialogInstancesProvider.class).findFirst();
+            static final Optional<DialogInstancesProvider> INSTANCE = ServiceLoader.load(DialogInstancesProvider.class, DialogInstancesProvider.class.getClassLoader()).findFirst();
         }
         return Holder.INSTANCE.orElseThrow();
     }
