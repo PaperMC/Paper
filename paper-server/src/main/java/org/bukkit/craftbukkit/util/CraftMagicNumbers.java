@@ -307,6 +307,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist) {
+        record LoadAdvancementEntry(Key key, String rawAdvancement, ResourceLocation nmsResourceLocation, JsonElement nmsAdvancement) {}
+
         for (Map.Entry<Key, String> entry : advancements.entrySet()) {
             Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(PaperAdventure.asVanilla(entry.getKey())) == null, "Advancement %s already exists", entry.getKey());
         }
@@ -885,6 +887,4 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
     }
-
-    private record LoadAdvancementEntry(Key key, String rawAdvancement, ResourceLocation nmsResourceLocation, JsonElement nmsAdvancement) {}
 }
