@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.EntityTargetEvent;
 
 public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warden {
 
@@ -69,6 +70,11 @@ public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warde
         Preconditions.checkArgument(location != null, "Location cannot be null");
 
         WardenAi.setDisturbanceLocation(this.getHandle(), BlockPos.containing(location.getX(), location.getY(), location.getZ()));
+    }
+
+    @Override
+    public void setTarget(LivingEntity livingEntity) {
+        this.getHandle().setAttackTarget(((CraftLivingEntity) livingEntity).getHandle(), EntityTargetEvent.TargetReason.CUSTOM);
     }
 
     @Override
