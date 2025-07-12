@@ -306,59 +306,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public Advancement loadAdvancement(Key key, String advancement, boolean persist) {
-        ResourceLocation resourceKey = PaperAdventure.asVanilla(key);
-        Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(resourceKey) == null, "Advancement %s already exists", key);
-
-        JsonElement jsonelement = JsonParser.parseString(advancement);
-        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
-        final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
-        if (nms != null) {
-            final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
-            mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
-
-            final AdvancementHolder holder = new AdvancementHolder(resourceKey, nms);
-            mapBuilder.put(resourceKey, holder);
-
-            MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
-            final net.minecraft.advancements.AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
-            tree.addAll(java.util.List.of(holder));
-
-            // recalculate advancement position
-            final net.minecraft.advancements.AdvancementNode node = tree.get(resourceKey);
-            if (node != null) {
-                final net.minecraft.advancements.AdvancementNode root = node.root();
-                if (root.holder().value().display().isPresent()) {
-                    net.minecraft.advancements.TreeNodePosition.run(root);
-                }
-            }
-
-            AdvancementHolder nmsAdvancement = MinecraftServer.getServer().getAdvancements().get(resourceKey);
-            if (nmsAdvancement != null) {
-                if (persist) {
-                    File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.namespace() + File.separator + "advancements" + File.separator + key.value() + ".json");
-                    file.getParentFile().mkdirs();
-
-                    try {
-                        Files.write(advancement, file, StandardCharsets.UTF_8);
-                    } catch (IOException ex) {
-                        Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
-                    }
-                }
-
-                MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
-                    player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
-                    player.getAdvancements().flushDirty(player, false);
-                });
-
-                return nmsAdvancement.toBukkit();
-            }
-        }
-
-        return null;
-    }
-
-    @Override
     public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist) {
         for (Map.Entry<Key, String> entry : advancements.entrySet()) {
             Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(PaperAdventure.asVanilla(entry.getKey())) == null, "Advancement %s already exists", entry.getKey());
