@@ -4,33 +4,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * A {@link FinePosition}, which does not hold
- * a y value, always returning {@code 0} for y.
+ * A fine position, which does not hold a y value.
  */
 @ApiStatus.Experimental
 @NullMarked
-public interface ColumnFinePosition extends FinePosition {
+public interface ColumnFinePosition {
 
-    @Override
-    default double y() {
-        return 0;
-    }
-
-    @Override
-    default ColumnFinePosition offset(int x, int y, int z) {
-        return offset(x, z);
-    }
-
-    @Override
-    default ColumnFinePosition offset(double x, double y, double z) {
-        return offset(x, z);
-    }
-
-    default ColumnFinePosition offset(final int x, final int z) {
-        return this.offset((double) x, z);
-    }
-
-    default ColumnFinePosition offset(final double x, final double z) {
-        return x == 0.0 && z == 0.0 ? this : new ColumnFinePositionImpl(this.x() + x, this.z() + z);
-    }
+    double x();
+    
+    double z();
 }

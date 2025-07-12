@@ -228,7 +228,7 @@ public interface Position {
      * Creates a fine column position from the location.
      *
      * @param location location to copy the position of
-     * @return new finel column position at that location
+     * @return new fine column position at that location
      */
     static ColumnFinePosition columnFine(final Location location) {
         return new ColumnFinePositionImpl(location.getX(), location.getZ());

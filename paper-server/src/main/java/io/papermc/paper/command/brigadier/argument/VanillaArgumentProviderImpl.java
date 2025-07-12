@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -219,7 +220,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
-    public ArgumentType<EnumSet<Axis>> swizzle() {
+    public ArgumentType<Set<Axis>> swizzle() {
         return this.wrap(SwizzleArgument.swizzle(), result -> {
             EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
