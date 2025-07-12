@@ -878,6 +878,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public boolean getInvulnerable() {
+        return this.getHandle().isInvulnerable();
+    }
+
+    @Override
     public boolean isInvulnerable() {
         return this.getHandle().isInvulnerableToBase(this.getHandle().damageSources().generic());
     }

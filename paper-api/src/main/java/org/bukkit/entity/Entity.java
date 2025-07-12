@@ -767,19 +767,26 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets whether the entity is invulnerable or not.
      * <p>
-     * When an entity is invulnerable it can only be damaged by players in
+     * When an entity is invulnerable, it can only be damaged by players in
      * creative mode.
      *
      * @param flag if the entity is invulnerable
      */
-    public void setInvulnerable(boolean flag);
+    void setInvulnerable(boolean flag);
+    
+    /**
+     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
+     * 
+     * @return whether the entity is invulnerable.
+     */
+    boolean getInvulnerable();
 
     /**
      * Gets whether the entity is invulnerable or not.
      *
-     * @return whether the entity is
+     * @return whether the entity is invulnerable.
      */
-    public boolean isInvulnerable();
+    boolean isInvulnerable();
 
     /**
      * Gets whether the entity is silent or not.
