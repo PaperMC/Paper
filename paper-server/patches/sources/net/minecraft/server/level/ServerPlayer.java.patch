@@ -501,7 +501,7 @@
          }
      }
  
-@@ -927,23 +_,82 @@
+@@ -927,23 +_,84 @@
      }
  
      private boolean isPvpAllowed() {
@@ -514,6 +514,7 @@
 +    public @Nullable TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
 +        TeleportTransition teleportTransition;
 +        boolean isBedSpawn = false;
++        boolean isAnchorSpawn = false;
 +        Runnable consumeAnchorCharge = null;
 +        // CraftBukkit end
          ServerPlayer.RespawnConfig respawnConfig = this.getRespawnConfig();
@@ -525,6 +526,7 @@
 -                return new TeleportTransition(level, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), 0.0F, postTeleportTransition);
 +                // CraftBukkit start
 +                isBedSpawn = respawnPosAngle.isBedSpawn();
++                isAnchorSpawn = respawnPosAngle.isAnchorSpawn();
 +                consumeAnchorCharge = respawnPosAngle.consumeAnchorCharge();
 +                teleportTransition = new TeleportTransition(level, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), 0.0F, postTeleportTransition);
 +                // CraftBukkit end
@@ -555,7 +557,7 @@
 +            respawnPlayer,
 +            location,
 +            isBedSpawn,
-+            consumeAnchorCharge != null,
++            isAnchorSpawn,
 +            teleportTransition.missingRespawnBlock(),
 +            respawnReason
 +        );
@@ -602,11 +604,11 @@
 +            final Runnable finalConsumeAnchorCharge = consumeAnchorCharge; // Paper - Fix SPIGOT-5989
  
 -            return optional.map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos));
-+            return optional.map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, false, finalConsumeAnchorCharge)); // Paper - Fix SPIGOT-5989 (don't use charge until after respawn event)
++            return optional.map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, false, true, finalConsumeAnchorCharge)); // Paper - Fix SPIGOT-5989 (don't use charge until after respawn event)
          } else if (block instanceof BedBlock && BedBlock.canSetSpawn(level)) {
              return BedBlock.findStandUpPosition(EntityType.PLAYER, level, blockPos, blockState.getValue(BedBlock.FACING), f)
 -                .map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos));
-+                .map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, true, null)); // Paper - Fix SPIGOT-5989
++                .map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, true, false, null)); // Paper - Fix SPIGOT-5989
          } else if (!flag) {
              return Optional.empty();
          } else {
@@ -615,7 +617,7 @@
              boolean isPossibleToRespawnInThis1 = blockState1.getBlock().isPossibleToRespawnInThis(blockState1);
              return isPossibleToRespawnInThis && isPossibleToRespawnInThis1
 -                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(blockPos.getX() + 0.5, blockPos.getY() + 0.1, blockPos.getZ() + 0.5), f))
-+                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(blockPos.getX() + 0.5, blockPos.getY() + 0.1, blockPos.getZ() + 0.5), f, false, null)) // Paper - Fix SPIGOT-5989
++                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(blockPos.getX() + 0.5, blockPos.getY() + 0.1, blockPos.getZ() + 0.5), f, false, false, null)) // Paper - Fix SPIGOT-5989
                  : Optional.empty();
          }
      }
@@ -1411,9 +1413,9 @@
 -        public static ServerPlayer.RespawnPosAngle of(Vec3 position, BlockPos towardsPos) {
 -            return new ServerPlayer.RespawnPosAngle(position, calculateLookAtYaw(position, towardsPos));
 +    // CraftBukkit start
-+    public record RespawnPosAngle(Vec3 position, float yaw, boolean isBedSpawn, @Nullable Runnable consumeAnchorCharge) {
-+        public static ServerPlayer.RespawnPosAngle of(Vec3 position, BlockPos towardsPos, boolean isBedSpawn, @Nullable Runnable consumeAnchorCharge) {
-+            return new ServerPlayer.RespawnPosAngle(position, calculateLookAtYaw(position, towardsPos), isBedSpawn, consumeAnchorCharge);
++    public record RespawnPosAngle(Vec3 position, float yaw, boolean isBedSpawn, boolean isAnchorSpawn, @Nullable Runnable consumeAnchorCharge) {
++        public static ServerPlayer.RespawnPosAngle of(Vec3 position, BlockPos towardsPos, boolean isBedSpawn, boolean isAnchorSpawn, @Nullable Runnable consumeAnchorCharge) {
++            return new ServerPlayer.RespawnPosAngle(position, calculateLookAtYaw(position, towardsPos), isBedSpawn, isAnchorSpawn, consumeAnchorCharge);
 +            // CraftBukkit end
          }
  
