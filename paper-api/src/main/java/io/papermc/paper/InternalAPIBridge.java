@@ -3,16 +3,16 @@ package io.papermc.paper;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.function.Predicate;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -76,6 +76,14 @@ public interface InternalAPIBridge {
      * @return combat entry
      */
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
+
+    /**
+     * Creates a wrapping score holder
+     *
+     * @param entry The entry to wrap
+     * @return a wrapping ScoreHolder
+     */
+    ScoreHolder scoreHolderOf(String entry);
 
     /**
      * Causes this predicate to be considered restricted.
