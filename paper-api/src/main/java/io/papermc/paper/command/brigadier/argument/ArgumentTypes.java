@@ -18,6 +18,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -165,6 +166,15 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<NamedTextColor> namedColor() {
         return provider().namedColor();
+    }
+
+    /**
+     * A hex color argument.
+     *
+     * @return argument
+     */
+    public static ArgumentType<TextColor> hexColor() {
+        return provider().hexColor();
     }
 
     /**

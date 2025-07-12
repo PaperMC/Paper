@@ -20,6 +20,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -64,6 +65,8 @@ interface VanillaArgumentProvider {
     ArgumentType<ItemStackPredicate> itemStackPredicate();
 
     ArgumentType<NamedTextColor> namedColor();
+
+    ArgumentType<TextColor> hexColor();
 
     ArgumentType<Component> component();
 
