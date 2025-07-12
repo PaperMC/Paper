@@ -2,7 +2,7 @@
 +++ b/net/minecraft/world/entity/EntitySelector.java
 @@ -17,6 +_,22 @@
      public static final Predicate<Entity> NO_SPECTATORS = entity -> !entity.isSpectator();
-     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = NO_SPECTATORS.and(Entity::canBeCollidedWith);
+     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = NO_SPECTATORS.and(entity -> entity.canBeCollidedWith(null));
      public static final Predicate<Entity> CAN_BE_PICKED = NO_SPECTATORS.and(Entity::isPickable);
 +    // Paper start - Ability to control player's insomnia and phantoms
 +    public static Predicate<Player> IS_INSOMNIAC = (player) -> {
@@ -38,12 +38,13 @@
          return (Predicate<Entity>)(collisionRule == Team.CollisionRule.NEVER
              ? Predicates.alwaysFalse()
              : NO_SPECTATORS.and(
-                 pushedEntity -> {
--                    if (!pushedEntity.isPushable()) {
+-                entity1 -> {
+-                    if (!entity1.isPushable()) {
++                entity1 -> { final Entity pushedEntity = entity1; // Paper - OBFHELPER
 +                    if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
                          return false;
-                     } else if (!entity.level().isClientSide || pushedEntity instanceof Player player && player.isLocalPlayer()) {
-                         Team team1 = pushedEntity.getTeam();
+                     } else if (!entity.level().isClientSide || entity1 instanceof Player player && player.isLocalPlayer()) {
+                         Team team1 = entity1.getTeam();
                          Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
 -                        if (collisionRule1 == Team.CollisionRule.NEVER) {
 +                        if (collisionRule1 == Team.CollisionRule.NEVER || (pushedEntity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions)) { // Paper - Configurable player collision

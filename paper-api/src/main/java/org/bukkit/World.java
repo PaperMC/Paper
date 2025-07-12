@@ -733,7 +733,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location Location to spawn the tree
      * @param type Type of the tree to create
      * @return true if the tree was created successfully, otherwise false
+     * @deprecated in favor of {@link #generateTree(Location, java.util.Random, TreeType)} to specify its own random instance
+     * and this method is not accessible through {@link RegionAccessor}
      */
+    @Deprecated(since = "1.21.6")
     public boolean generateTree(@NotNull Location location, @NotNull TreeType type);
 
     /**
@@ -854,6 +857,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     // Paper start - additional getNearbyEntities API
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param radius Radius
      * @return the collection of entities near location. This will always be a non-null collection.
@@ -864,6 +868,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
@@ -875,6 +880,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -887,6 +893,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param radius X Radius
      * @param predicate a predicate used to filter results
@@ -898,6 +905,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
@@ -910,6 +918,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby LivingEntities within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -923,6 +932,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param radius X/Y/Z Radius
      * @return the collection of living entities near location. This will always be a non-null collection.
@@ -933,6 +943,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
@@ -944,6 +955,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -956,6 +968,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param radius X/Y/Z Radius
      * @param predicate a predicate used to filter results
@@ -967,6 +980,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
@@ -979,6 +993,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets nearby players within the specified radius (bounding box)
+     *
      * @param loc Center location
      * @param xRadius X Radius
      * @param yRadius Y Radius
@@ -992,6 +1007,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param loc Center location
      * @param radius X/Y/Z radius to search within
@@ -1004,6 +1020,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
+     *
      * @param clazz Type to filter by
      * @param loc Center location
      * @param xzRadius X/Z radius to search within
@@ -1017,6 +1034,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param loc Center location
      * @param xRadius X Radius
@@ -1031,6 +1049,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+     *
      * @param clazz Type to filter by
      * @param loc Center location
      * @param radius X/Y/Z radius to search within
@@ -1044,6 +1063,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
+     *
      * @param clazz Type to filter by
      * @param loc Center location
      * @param xzRadius X/Z radius to search within
@@ -1058,6 +1078,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
      /**
       * Gets all nearby entities of the specified type, within the specified radius (bounding box)
+      *
       * @param clazz Type to filter by
       * @param loc Center location
       * @param xRadius X Radius
@@ -1067,16 +1088,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
       * @param <T> the entity type
       * @return the collection of entities near location. This will always be a non-null collection.
       */
-     default <T extends Entity> @NotNull Collection<T> getNearbyEntitiesByType(@Nullable Class<? extends Entity> clazz, final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
-         if (clazz == null) {
-            clazz = Entity.class;
-        }
+    default <T extends Entity> @NotNull Collection<T> getNearbyEntitiesByType(@Nullable Class<? extends T> clazz, final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
         final List<T> nearby = new ArrayList<>();
-        for (final Entity bukkitEntity : this.getNearbyEntities(loc, xRadius, yRadius, zRadius)) {
+        for (final Entity entity : this.getNearbyEntities(loc, xRadius, yRadius, zRadius)) {
             //noinspection unchecked
-            if (clazz.isAssignableFrom(bukkitEntity.getClass()) && (predicate == null || predicate.test((T) bukkitEntity))) {
+            if ((clazz == null || clazz.isInstance(entity)) && (predicate == null || predicate.test((T) entity))) {
                 //noinspection unchecked
-                nearby.add((T) bukkitEntity);
+                nearby.add((T) entity);
             }
         }
         return nearby;

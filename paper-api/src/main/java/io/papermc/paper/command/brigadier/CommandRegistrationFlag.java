@@ -15,5 +15,10 @@ public enum CommandRegistrationFlag {
      * @deprecated This is the default behavior now.
      */
     @Deprecated(since = "1.21.4")
-    FLATTEN_ALIASES
+    FLATTEN_ALIASES,
+    /**
+     * @deprecated Removed as it causes a warning to appear on the client now.
+     */
+    @Deprecated(since = "1.21.6", forRemoval = true)
+    SERVER_ONLY
 }

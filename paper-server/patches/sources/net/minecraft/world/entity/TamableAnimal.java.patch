@@ -1,34 +1,15 @@
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
-@@ -77,7 +_,7 @@
+@@ -75,7 +_,7 @@
          }
  
-         this.orderedToSit = compound.getBooleanOr("Sitting", false);
+         this.orderedToSit = input.getBooleanOr("Sitting", false);
 -        this.setInSittingPose(this.orderedToSit);
 +        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
      }
  
      @Override
-@@ -88,8 +_,16 @@
-     @Override
-     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
-         if (this.isInSittingPose()) {
--            if (distance > 10.0F) {
--                this.dropLeash();
-+            if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
-+                // Paper start - Expand EntityUnleashEvent
-+                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
-+                if (!event.callEvent()) return false;
-+                if (event.isDropLeash()) {
-+                    this.dropLeash();
-+                } else {
-+                    this.removeLeash();
-+                }
-+                // Paper end - Expand EntityUnleashEvent
-             }
- 
-             return false;
-@@ -148,6 +_,13 @@
+@@ -133,6 +_,13 @@
      }
  
      public void setInSittingPose(boolean sitting) {
@@ -42,7 +23,7 @@
          byte b = this.entityData.get(DATA_FLAGS_ID);
          if (sitting) {
              this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
-@@ -230,7 +_,12 @@
+@@ -215,7 +_,12 @@
          if (this.level() instanceof ServerLevel serverLevel
              && serverLevel.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
              && this.getOwner() instanceof ServerPlayer serverPlayer) {
@@ -56,7 +37,7 @@
          }
  
          super.die(cause);
-@@ -273,7 +_,14 @@
+@@ -258,7 +_,14 @@
          if (!this.canTeleportTo(new BlockPos(x, y, z))) {
              return false;
          } else {

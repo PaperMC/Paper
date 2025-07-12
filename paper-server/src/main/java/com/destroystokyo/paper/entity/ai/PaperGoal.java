@@ -21,41 +21,45 @@ public class PaperGoal<T extends Mob> implements com.destroystokyo.paper.entity.
     }
 
     public Goal getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     public boolean shouldActivate() {
-        return handle.canUse();
+        return this.handle.canUse();
     }
 
     @Override
     public boolean shouldStayActive() {
-        return handle.canContinueToUse();
+        return this.handle.canContinueToUse();
     }
 
     @Override
     public void start() {
-        handle.start();
+        this.handle.start();
     }
 
     @Override
     public void stop() {
-        handle.stop();
+        this.handle.stop();
     }
 
     @Override
     public void tick() {
-        handle.tick();
+        this.handle.tick();
     }
 
     @Override
     public GoalKey<T> getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public EnumSet<GoalType> getTypes() {
-        return types;
+        return this.types;
+    }
+
+    public String toString() {
+        return this.key.toString();
     }
 }

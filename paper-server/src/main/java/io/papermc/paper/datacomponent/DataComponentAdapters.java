@@ -40,10 +40,10 @@ import io.papermc.paper.datacomponent.item.PaperUseRemainder;
 import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
+import io.papermc.paper.registry.PaperRegistries;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import io.papermc.paper.registry.PaperRegistries;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -147,7 +147,8 @@ public final class DataComponentAdapters {
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
         register(DataComponents.PROVIDES_BANNER_PATTERNS, PaperRegistries::fromNms, PaperRegistries::toNms);
-        register(DataComponents.RECIPES,
+        register(
+            DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
             api -> transformUnmodifiable(api, key -> PaperAdventure.asVanilla(Registries.RECIPE, key))
         );
@@ -164,7 +165,7 @@ public final class DataComponentAdapters {
         // bees
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
-        register(DataComponents.BREAK_SOUND,  nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
+        register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
         register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         register(DataComponents.WEAPON, PaperWeapon::new);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
@@ -183,7 +184,6 @@ public final class DataComponentAdapters {
         register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Rabbit.Variant.byId(api.ordinal()));
         register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
-        // TODO: We should probably find a better pattern for handling this which retains the EitherHolder, this does kinda suck in terms of exposure, however
         register(DataComponents.CHICKEN_VARIANT, nms -> CraftChicken.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftChicken.CraftVariant.bukkitToMinecraftHolder(api)));
         register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.HORSE_VARIANT, nms -> Horse.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.horse.Variant.byId(api.ordinal()));
@@ -195,38 +195,42 @@ public final class DataComponentAdapters {
         register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 
-        for (final Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
-            if (!ADAPTERS.containsKey(componentType.getKey())) {
-                registerUnimplemented(componentType.getValue());
+        for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
+            if (!ADAPTERS.containsKey(key)) {
+                registerUnimplemented(key);
             }
         }
     }
 
+    private static <NMS> ResourceKey<DataComponentType<?>> getKey(final DataComponentType<NMS> type) {
+        return BuiltInRegistries.DATA_COMPONENT_TYPE.getResourceKey(type).orElseThrow();
+    }
+
     public static void registerUntyped(final DataComponentType<Unit> type) {
-        registerInternal(type, UNIT_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIT_CONVERTER, false);
+        registerInternal(getKey(type), UNIT_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIT_CONVERTER, false);
     }
 
     private static <COMMON> void registerIdentity(final DataComponentType<COMMON> type) {
-        registerInternal(type, Function.identity(), Function.identity(), true);
+        registerInternal(getKey(type), Function.identity(), Function.identity(), true);
     }
 
-    public static <NMS> void registerUnimplemented(final DataComponentType<NMS> type) {
-        registerInternal(type, UNIMPLEMENTED_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIMPLEMENTED_CONVERTER, false);
+    @SuppressWarnings("unchecked")
+    public static void registerUnimplemented(final ResourceKey<DataComponentType<?>> key) {
+        registerInternal(key, UNIMPLEMENTED_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIMPLEMENTED_CONVERTER, false);
     }
 
     private static <NMS, API extends Handleable<NMS>> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi) {
-        registerInternal(type, vanillaToApi, Handleable::getHandle, false);
+        registerInternal(getKey(type), vanillaToApi, Handleable::getHandle, false);
     }
 
     private static <NMS, API> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
-        registerInternal(type, vanillaToApi, apiToVanilla, false);
+        registerInternal(getKey(type), vanillaToApi, apiToVanilla, false);
     }
 
-    private static <NMS, API> void registerInternal(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla, final boolean codecValidation) {
-        final ResourceKey<DataComponentType<?>> key = BuiltInRegistries.DATA_COMPONENT_TYPE.getResourceKey(type).orElseThrow();
+    private static <NMS, API> void registerInternal(final ResourceKey<DataComponentType<?>> key, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla, final boolean codecValidation) {
         if (ADAPTERS.containsKey(key)) {
             throw new IllegalStateException("Duplicate adapter registration for " + key);
         }
-        ADAPTERS.put(key, new DataComponentAdapter<>(type, apiToVanilla, vanillaToApi, codecValidation && !type.isTransient()));
+        ADAPTERS.put(key, new DataComponentAdapter<>(apiToVanilla, vanillaToApi, codecValidation));
     }
 }

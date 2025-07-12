@@ -12,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a group of {@link EquipmentSlot}.
  */
-@ApiStatus.Experimental
 public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
 
     private static final Map<String, EquipmentSlotGroup> BY_NAME = new HashMap<>();

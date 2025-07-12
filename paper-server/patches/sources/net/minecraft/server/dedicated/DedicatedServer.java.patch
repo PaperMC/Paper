@@ -70,7 +70,7 @@
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
 -        thread.start();
 +        // thread.start(); // Paper - Enhance console tab completions for brigadier commands; moved down
-         LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
+         LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().name());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
          }
@@ -273,7 +273,7 @@
      }
  
      @Override
-@@ -291,13 +_,23 @@
+@@ -291,12 +_,20 @@
      }
  
      public void handleConsoleInput(String msg, CommandSourceStack source) {
@@ -284,23 +284,19 @@
      public void handleConsoleInputs() {
 -        while (!this.consoleInput.isEmpty()) {
 -            ConsoleInput consoleInput = this.consoleInput.remove(0);
--            this.getCommands().performPrefixedCommand(consoleInput.source, consoleInput.msg);
 +        // Paper start - Perf: use proper queue
-+        ConsoleInput servercommand;
-+        while ((servercommand = this.serverCommandQueue.poll()) != null) {
++        ConsoleInput consoleInput;
++        while ((consoleInput = this.serverCommandQueue.poll()) != null) {
 +            // Paper end - Perf: use proper queue
 +            // CraftBukkit start - ServerCommand for preprocessing
-+            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(this.console, servercommand.msg);
++            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(this.console, consoleInput.msg);
 +            this.server.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) continue;
-+            servercommand = new ConsoleInput(event.getCommand(), servercommand.source);
-+
-+            // this.getCommands().performPrefixedCommand(servercommand.source, servercommand.msg); // Called in dispatchServerCommand
-+            this.server.dispatchServerCommand(this.console, servercommand);
++            consoleInput = new ConsoleInput(event.getCommand(), consoleInput.source);
 +            // CraftBukkit end
+             this.getCommands().performPrefixedCommand(consoleInput.source, consoleInput.msg);
          }
      }
- 
 @@ -430,7 +_,11 @@
      @Override
      public boolean enforceSecureProfile() {
@@ -314,7 +310,7 @@
      }
  
      @Override
-@@ -515,14 +_,54 @@
+@@ -515,14 +_,53 @@
  
      @Override
      public String getPluginNames() {
@@ -365,8 +361,7 @@
 +            if (event.isCancelled()) {
 +                return;
 +            }
-+            ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
-+            this.server.dispatchServerCommand(event.getSender(), serverCommand);
++            this.getCommands().performPrefixedCommand(wrapper, event.getCommand());
 +        });
 +        return rconConsoleSource.getCommandResponse();
 +        // CraftBukkit end

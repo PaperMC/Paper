@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/AbstractThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/AbstractThrownPotion.java
-@@ -70,54 +_,95 @@
+@@ -67,54 +_,95 @@
      @Override
      protected void onHit(HitResult result) {
          super.onHit(result);
@@ -8,7 +8,7 @@
 +        this.splash(result);
 +    }
 +
-+    public void splash(@Nullable HitResult result) {
++    public void splash(HitResult result) {
 +        // Paper end - More projectile API
          if (this.level() instanceof ServerLevel serverLevel) {
              ItemStack item = this.getItem();
@@ -17,10 +17,10 @@
              if (potionContents.is(Potions.WATER)) {
 -                this.onHitAsWater(serverLevel);
 -            } else if (potionContents.hasEffects()) {
--                this.onHitAsPotion(serverLevel, item, result.getType() == HitResult.Type.ENTITY ? ((EntityHitResult)result).getEntity() : null);
+-                this.onHitAsPotion(serverLevel, item, result);
 +                showParticles = this.onHitAsWater(serverLevel, result); // Paper - Fix potions splash events
 +            } else if (true || potionContents.hasEffects()) { // CraftBukkit - Call event even if no effects to apply
-+                showParticles = this.onHitAsPotion(serverLevel, item, result != null && result.getType() == HitResult.Type.ENTITY ? ((EntityHitResult)result).getEntity() : null, result); // Paper - pass HitResult
++                showParticles = this.onHitAsPotion(serverLevel, item, result); // Paper - pass HitResult
              }
  
 +            if (showParticles) { // Paper - Fix potions splash events
@@ -35,7 +35,7 @@
 -    private void onHitAsWater(ServerLevel level) {
 +    private static final Predicate<LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = AbstractThrownPotion.WATER_SENSITIVE_OR_ON_FIRE.or(Axolotl.class::isInstance); // Paper - Fix potions splash events
 +
-+    private boolean onHitAsWater(ServerLevel level, @Nullable HitResult result) { // Paper - Fix potions splash events
++    private boolean onHitAsWater(ServerLevel level, HitResult result) { // Paper - Fix potions splash events
          AABB aabb = this.getBoundingBox().inflate(4.0, 2.0, 4.0);
  
 -        for (LivingEntity livingEntity : this.level().getEntitiesOfClass(LivingEntity.class, aabb, WATER_SENSITIVE_OR_ON_FIRE)) {
@@ -85,8 +85,8 @@
 +        return !event.isCancelled(); // Paper - Fix potions splash events
      }
  
--    protected abstract void onHitAsPotion(ServerLevel level, ItemStack stack, @Nullable Entity entity);
-+    protected abstract boolean onHitAsPotion(ServerLevel level, ItemStack stack, @Nullable Entity entity, @Nullable HitResult hitResult); // Paper - Pass HitResult // Paper - Fix potions splash events & More Projectile API
+-    protected abstract void onHitAsPotion(ServerLevel level, ItemStack stack, HitResult hitResult);
++    protected abstract boolean onHitAsPotion(ServerLevel level, ItemStack stack, HitResult hitResult); // Paper - Fix potions splash events & More Projectile API
  
      private void dowseFire(BlockPos pos) {
          BlockState blockState = this.level().getBlockState(pos);

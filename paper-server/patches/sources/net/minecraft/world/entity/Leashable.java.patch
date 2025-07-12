@@ -1,18 +1,18 @@
 --- a/net/minecraft/world/entity/Leashable.java
 +++ b/net/minecraft/world/entity/Leashable.java
-@@ -56,6 +_,11 @@
+@@ -80,6 +_,11 @@
      }
  
-     default void writeLeashData(CompoundTag tag, @Nullable Leashable.LeashData leashData) {
+     default void writeLeashData(ValueOutput output, @Nullable Leashable.LeashData leashData) {
 +        // CraftBukkit start - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
 +        if (leashData != null && leashData.leashHolder != null && leashData.leashHolder.pluginRemoved) {
 +            return;
 +        }
 +        // CraftBukkit end
-         tag.storeNullable("leash", Leashable.LeashData.CODEC, leashData);
+         output.storeNullable("leash", Leashable.LeashData.CODEC, leashData);
      }
  
-@@ -75,7 +_,9 @@
+@@ -99,7 +_,9 @@
              }
  
              if (entity.tickCount > 100) {
@@ -22,7 +22,7 @@
                  entity.setLeashData(null);
              }
          }
-@@ -99,7 +_,9 @@
+@@ -123,7 +_,9 @@
              entity.onLeashRemoved();
              if (entity.level() instanceof ServerLevel serverLevel) {
                  if (dropItem) {
@@ -32,7 +32,7 @@
                  }
  
                  if (broadcastPacket) {
-@@ -117,7 +_,15 @@
+@@ -143,7 +_,15 @@
  
          if (leashData != null && leashData.leashHolder != null) {
              if (!entity.isAlive() || !leashData.leashHolder.isAlive()) {
@@ -49,16 +49,29 @@
                      entity.dropLeash();
                  } else {
                      entity.removeLeash();
-@@ -131,7 +_,7 @@
-                     return;
-                 }
- 
--                if (f > 10.0) {
-+                if (f > entity.level().paperConfig().misc.maxLeashDistance.or(LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
+@@ -154,7 +_,7 @@
+             if (leashHolder != null && leashHolder.level() == entity.level()) {
+                 double d = entity.leashDistanceTo(leashHolder);
+                 entity.whenLeashedTo(leashHolder);
+-                if (d > entity.leashSnapDistance()) {
++                if (d > entity.leashSnapDistanceOrConfig()) { // Paper - Configurable max leash distance
+                     level.playSound(null, leashHolder.getX(), leashHolder.getY(), leashHolder.getZ(), SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
                      entity.leashTooFarBehaviour();
-                 } else if (f > 6.0) {
-                     entity.elasticRangeLeashBehaviour(leashHolder, f);
-@@ -148,7 +_,21 @@
+                 } else if (d > entity.leashElasticDistance() - leashHolder.getBbWidth() - entity.getBbWidth()
+@@ -175,6 +_,12 @@
+         entity.checkFallDistanceAccumulation();
+     }
+ 
++    // Paper start - Configurable max leash distance
++    default double leashSnapDistanceOrConfig() {
++        if (!(this instanceof final Entity entity)) return leashSnapDistance();
++        return entity.level().paperConfig().misc.maxLeashDistance.or(leashSnapDistance());
++    }
++    // Paper end - Configurable max leash distance
+     default double leashSnapDistance() {
+         return 12.0;
+     }
+@@ -196,7 +_,21 @@
      }
  
      default void leashTooFarBehaviour() {

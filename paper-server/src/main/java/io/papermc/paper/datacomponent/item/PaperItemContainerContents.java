@@ -48,7 +48,7 @@ public record PaperItemContainerContents(
                 this.items.size() + stacks.size()
             );
             MCUtil.addAndConvert(this.items, stacks, stack -> {
-                Preconditions.checkArgument(stack != null, "Cannot pass null itemstacks!");
+                Preconditions.checkArgument(stack != null, "Cannot pass null item!");
                 return CraftItemStack.asNMSCopy(stack);
             });
             return this;

@@ -1,16 +1,22 @@
 --- a/net/minecraft/util/datafix/DataFixers.java
 +++ b/net/minecraft/util/datafix/DataFixers.java
-@@ -541,6 +_,18 @@
+@@ -515,6 +_,24 @@
          Schema schema44 = builder.addSchema(1456, SAME_NAMESPACED);
          builder.addFixer(new EntityItemFrameDirectionFix(schema44, false));
          Schema schema45 = builder.addSchema(1458, V1458::new);
 +        // CraftBukkit start
-+        builder.addFixer(new com.mojang.datafixers.DataFix(schema45, false) {
++        // API allows setting player custom names, so we need to convert them.
++        // This does *not* handle upgrades in any other version, but generally those shouldn't need conversion.
++        builder.addFixer(new DataFix(schema45, false) {
 +            @Override
-+            protected com.mojang.datafixers.TypeRewriteRule makeRule() {
-+                return this.fixTypeEverywhereTyped("Player CustomName", this.getInputSchema().getType(References.PLAYER), (typed) -> {
-+                    return typed.update(DSL.remainderFinder(), (dynamic) -> {
-+                        return EntityCustomNameToComponentFix.fixCustomName(dynamic.getOps(), dynamic.get("CustomName").asString(""), "minecraft:player");
++            protected TypeRewriteRule makeRule() {
++                return this.fixTypeEverywhereTyped("Player CustomName", this.getInputSchema().getType(References.PLAYER), typed -> {
++                    return typed.update(DSL.remainderFinder(), dynamic -> {
++                        final String customName = dynamic.get("CustomName").asString("");
++                        if (customName.isEmpty()) {
++                            return dynamic.remove("CustomName");
++                        }
++                        return dynamic.set("CustomName", LegacyComponentDataFixUtils.createPlainTextComponent(dynamic.getOps(), customName));
 +                    });
 +                });
 +            }

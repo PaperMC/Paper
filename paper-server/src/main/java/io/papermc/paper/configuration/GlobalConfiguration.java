@@ -185,8 +185,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
-        @Comment("Only checks an item's amount and type instead of its full data during inventory desync checks.")
-        public boolean simplifyRemoteItemMatching = false;
 
         public enum CompressionFormat {
             GZIP,
@@ -345,7 +343,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
         public int maxJoinsPerTick = 5;
-        public boolean fixEntityPositionDesync = true;
+        public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
         public int regionFileCacheSize = 256;
@@ -356,6 +354,11 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
+        @Comment("Defines how many orbs groups can exist in an area.")
+        @Constraints.Min(1)
+        public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
+        @Comment("See Fix MC-163962; prevent villager demand from going negative.")
+        public boolean preventNegativeVillagerDemand = false;
     }
 
     public BlockUpdates blockUpdates;

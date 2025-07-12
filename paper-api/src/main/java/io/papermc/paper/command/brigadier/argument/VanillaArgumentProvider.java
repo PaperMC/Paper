@@ -31,14 +31,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 @ApiStatus.Internal
-@NullMarked
 interface VanillaArgumentProvider {
 
-    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
-        .findFirst();
+    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class, VanillaArgumentProvider.class.getClassLoader()).findFirst();
 
     static VanillaArgumentProvider provider() {
         return PROVIDER.orElseThrow();

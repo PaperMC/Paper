@@ -1,10 +1,12 @@
 package io.papermc.paper;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import net.minecraft.Optionull;
+import net.minecraft.commands.PermissionSource;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
@@ -19,6 +21,7 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.function.Predicate;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -76,6 +79,17 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, PermissionSource.RestrictedMarker {
+            @Override
+            public boolean test(final CommandSourceStack commandSourceStack) {
+                return this.predicate.test(commandSourceStack);
+            }
+        }
+
+        return new RestrictedPredicate(predicate);
+    }
+
     public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
         return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
     }

@@ -1,6 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
+import io.papermc.paper.datacomponent.item.attribute.PaperAttributeModifierDisplay;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
@@ -21,7 +23,8 @@ public record PaperItemAttributeModifiers(
     private static List<Entry> convert(final net.minecraft.world.item.component.ItemAttributeModifiers nmsModifiers) {
         return MCUtil.transformUnmodifiable(nmsModifiers.modifiers(), nms -> new PaperEntry(
             CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
-            CraftAttributeInstance.convert(nms.modifier(), nms.slot())
+            CraftAttributeInstance.convert(nms.modifier(), nms.slot()),
+            PaperAttributeModifierDisplay.fromNms(nms.display())
         ));
     }
 
@@ -35,7 +38,7 @@ public record PaperItemAttributeModifiers(
         return convert(this.impl);
     }
 
-    public record PaperEntry(Attribute attribute, AttributeModifier modifier) implements ItemAttributeModifiers.Entry {
+    public record PaperEntry(Attribute attribute, AttributeModifier modifier, AttributeModifierDisplay display) implements ItemAttributeModifiers.Entry {
     }
 
     static final class BuilderImpl implements ItemAttributeModifiers.Builder {
@@ -43,12 +46,7 @@ public record PaperItemAttributeModifiers(
         private final List<net.minecraft.world.item.component.ItemAttributeModifiers.Entry> entries = new ObjectArrayList<>();
 
         @Override
-        public Builder addModifier(final Attribute attribute, final AttributeModifier modifier) {
-            return this.addModifier(attribute, modifier, modifier.getSlotGroup());
-        }
-
-        @Override
-        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier modifier, final EquipmentSlotGroup equipmentSlotGroup) {
+        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier modifier, final EquipmentSlotGroup equipmentSlotGroup, final AttributeModifierDisplay display) {
             Preconditions.checkArgument(
                 this.entries.stream().noneMatch(e ->
                     e.modifier().id().equals(CraftNamespacedKey.toMinecraft(modifier.getKey())) && e.attribute().is(CraftNamespacedKey.toMinecraft(attribute.getKey()))
@@ -60,7 +58,8 @@ public record PaperItemAttributeModifiers(
             this.entries.add(new net.minecraft.world.item.component.ItemAttributeModifiers.Entry(
                 CraftAttribute.bukkitToMinecraftHolder(attribute),
                 CraftAttributeInstance.convert(modifier),
-                CraftEquipmentSlot.getNMSGroup(equipmentSlotGroup)
+                CraftEquipmentSlot.getNMSGroup(equipmentSlotGroup),
+                PaperAttributeModifierDisplay.toNms(display)
             ));
             return this;
         }

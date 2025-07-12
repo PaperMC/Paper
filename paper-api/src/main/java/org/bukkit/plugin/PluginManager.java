@@ -29,7 +29,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
     /**
      * Checks if the given plugin is loaded and returns it when applicable
      * <p>
-     * Please note that the name of the plugin is case-sensitive
+     * Please note that the name of the plugin is case-insensitive
      *
      * @param name Name of the plugin to check
      * @return Plugin if it exists, otherwise null
@@ -48,7 +48,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
     /**
      * Checks if the given plugin is enabled or not
      * <p>
-     * Please note that the name of the plugin is case-sensitive.
+     * Please note that the name of the plugin is case-insensitive.
      *
      * @param name Name of the plugin to check
      * @return true if the plugin is enabled, otherwise false

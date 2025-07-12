@@ -131,7 +131,7 @@ public class StatisticRewriter {
         @Override
         protected Iterable<Holder.Reference<StatType<?>>> getValues() {
             return BuiltInRegistries.STAT_TYPE.listElements().filter(reference -> reference.value() != Stats.CUSTOM)
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override
@@ -157,7 +157,7 @@ public class StatisticRewriter {
         @Override
         protected Iterable<Holder.Reference<StatType<?>>> getValues() {
             return BuiltInRegistries.STAT_TYPE.listElements().filter(reference -> reference.value() != Stats.CUSTOM)
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override

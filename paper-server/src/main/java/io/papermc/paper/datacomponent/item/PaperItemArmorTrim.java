@@ -26,6 +26,7 @@ public record PaperItemArmorTrim(
         BuilderImpl(final ArmorTrim armorTrim) {
             this.armorTrim = armorTrim;
         }
+
         @Override
         public ItemArmorTrim.Builder armorTrim(final ArmorTrim armorTrim) {
             this.armorTrim = armorTrim;

@@ -28,7 +28,6 @@ public record PaperUseCooldown(
             .orElse(null);
     }
 
-
     static final class BuilderImpl implements Builder {
 
         private final float seconds;

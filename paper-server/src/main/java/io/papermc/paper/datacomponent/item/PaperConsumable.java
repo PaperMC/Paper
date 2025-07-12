@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
-import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffects;
+import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffect;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ public record PaperConsumable(
 
     @Override
     public @Unmodifiable List<ConsumeEffect> consumeEffects() {
-        return MCUtil.transformUnmodifiable(this.impl.onConsumeEffects(), PaperConsumableEffects::fromNms);
+        return MCUtil.transformUnmodifiable(this.impl.onConsumeEffects(), PaperConsumableEffect::fromNms);
     }
 
     @Override
@@ -98,14 +98,14 @@ public record PaperConsumable(
 
         @Override
         public Builder addEffect(final ConsumeEffect effect) {
-            this.effects.add(PaperConsumableEffects.toNms(effect));
+            this.effects.add(PaperConsumableEffect.toNms(effect));
             return this;
         }
 
         @Override
         public Builder addEffects(final List<ConsumeEffect> effects) {
             for (final ConsumeEffect effect : effects) {
-                this.effects.add(PaperConsumableEffects.toNms(effect));
+                this.effects.add(PaperConsumableEffect.toNms(effect));
             }
             return this;
         }

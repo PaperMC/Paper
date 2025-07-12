@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-@@ -38,6 +_,7 @@
+@@ -45,6 +_,7 @@
      private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
      public final int[] cookingProgress = new int[4];
      public final int[] cookingTime = new int[4];
@@ -8,7 +8,7 @@
  
      public CampfireBlockEntity(BlockPos pos, BlockState blockState) {
          super(BlockEntityType.CAMPFIRE, pos, blockState);
-@@ -56,14 +_,44 @@
+@@ -63,14 +_,44 @@
              ItemStack itemStack = campfire.items.get(i);
              if (!itemStack.isEmpty()) {
                  flag = true;
@@ -55,38 +55,38 @@
                          campfire.items.set(i, ItemStack.EMPTY);
                          level.sendBlockUpdated(pos, state, state, 3);
                          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
-@@ -135,6 +_,16 @@
+@@ -142,6 +_,16 @@
              .ifPresentOrElse(
                  ints -> System.arraycopy(ints, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, ints.length)), () -> Arrays.fill(this.cookingTime, 0)
              );
 +
 +        // Paper start - Add more Campfire API
-+        tag.getByteArray("Paper.StopCooking").ifPresent(bytes -> {
++        input.read("Paper.StopCooking", com.mojang.serialization.Codec.BYTE_BUFFER).ifPresent(bytes -> {
 +            final boolean[] cookingState = new boolean[4];
-+            for (int index = 0; index < bytes.length; index++) {
-+                cookingState[index] = bytes[index] == 1;
++            for (int index = 0; bytes.hasRemaining() && index < cookingState.length; index++) {
++                cookingState[index] = bytes.get() == 1;
 +            }
-+            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, bytes.length));
++            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, bytes.capacity()));
 +        });
 +        // Paper end - Add more Campfire API
      }
  
      @Override
-@@ -143,6 +_,13 @@
-         ContainerHelper.saveAllItems(tag, this.items, true, registries);
-         tag.putIntArray("CookingTimes", this.cookingProgress);
-         tag.putIntArray("CookingTotalTimes", this.cookingTime);
+@@ -150,6 +_,13 @@
+         ContainerHelper.saveAllItems(output, this.items, true);
+         output.putIntArray("CookingTimes", this.cookingProgress);
+         output.putIntArray("CookingTotalTimes", this.cookingTime);
 +        // Paper start - Add more Campfire API
 +        byte[] cookingState = new byte[4];
 +        for (int index = 0; index < cookingState.length; index++) {
 +            cookingState[index] = (byte) (this.stopCooking[index] ? 1 : 0);
 +        }
-+        tag.putByteArray("Paper.StopCooking", cookingState);
++        output.store("Paper.StopCooking", com.mojang.serialization.Codec.BYTE_BUFFER, java.nio.ByteBuffer.wrap(cookingState));
 +        // Paper end - Add more Campfire API
      }
  
      @Override
-@@ -167,7 +_,15 @@
+@@ -179,7 +_,15 @@
                      return false;
                  }
  

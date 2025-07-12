@@ -29,7 +29,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -106,6 +_,40 @@
+@@ -106,6 +_,41 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -44,8 +44,7 @@
 +        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
 +            return impl.player;
 +        } else if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
-+            org.bukkit.craftbukkit.entity.CraftPlayer player = impl.getCraftPlayer();
-+            return player == null ? null : player.getHandle();
++            return null;
 +        }
 +        return null;
 +    }
@@ -67,6 +66,8 @@
 +    }
 +    // Paper end - packet limiter
 +    @Nullable public SocketAddress haProxyAddress; // Paper - Add API to get player's proxy address
++    public @Nullable java.util.Optional<net.minecraft.network.chat.Component> legacySavedLoginEventResultOverride; // Paper - playerloginevent
++    public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLoginEventLegacy; // Paper - playerloginevent
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
@@ -192,7 +193,7 @@
                      } catch (RejectedExecutionException var6) {
                          this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException var7) {
-@@ -385,10 +_,30 @@
+@@ -373,10 +_,30 @@
          }
      }
  
@@ -223,7 +224,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -396,7 +_,7 @@
+@@ -384,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -232,7 +233,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -432,12 +_,13 @@
+@@ -420,12 +_,13 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
@@ -247,7 +248,7 @@
              this.disconnectionDetails = disconnectionDetails;
          }
      }
-@@ -584,6 +_,13 @@
+@@ -572,6 +_,13 @@
          }
      }
  
@@ -261,7 +262,7 @@
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -597,6 +_,7 @@
+@@ -585,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
@@ -269,7 +270,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -605,6 +_,7 @@
+@@ -593,6 +_,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -277,7 +278,7 @@
          }
      }
  
-@@ -622,6 +_,26 @@
+@@ -610,6 +_,26 @@
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }

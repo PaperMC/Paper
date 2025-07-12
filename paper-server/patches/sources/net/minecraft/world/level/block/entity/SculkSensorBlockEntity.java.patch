@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-@@ -24,6 +_,7 @@
+@@ -21,6 +_,7 @@
      private final VibrationSystem.Listener vibrationListener;
      private final VibrationSystem.User vibrationUser;
      public int lastVibrationFrequency = 0;
@@ -8,32 +8,31 @@
  
      protected SculkSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
          super(type, pos, blockState);
-@@ -46,15 +_,23 @@
-         this.lastVibrationFrequency = tag.getIntOr("last_vibration_frequency", 0);
-         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
-         this.vibrationData = tag.read("listener", VibrationSystem.Data.CODEC, registryOps).orElseGet(VibrationSystem.Data::new);
-+        this.rangeOverride = tag.getInt(PAPER_LISTENER_RANGE_NBT_KEY).orElse(null); // Paper start - Configurable sculk sensor listener range
+@@ -42,14 +_,22 @@
+         super.loadAdditional(input);
+         this.lastVibrationFrequency = input.getIntOr("last_vibration_frequency", 0);
+         this.vibrationData = input.read("listener", VibrationSystem.Data.CODEC).orElseGet(VibrationSystem.Data::new);
++        this.rangeOverride = input.getInt(PAPER_LISTENER_RANGE_NBT_KEY).orElse(null); // Paper start - Configurable sculk sensor listener range
      }
  
 +    protected static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper - Configurable sculk sensor listener range
      @Override
-     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-         super.saveAdditional(tag, registries);
-         tag.putInt("last_vibration_frequency", this.lastVibrationFrequency);
-         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
-         tag.store("listener", VibrationSystem.Data.CODEC, registryOps, this.vibrationData);
+     protected void saveAdditional(ValueOutput output) {
+         super.saveAdditional(output);
+         output.putInt("last_vibration_frequency", this.lastVibrationFrequency);
+         output.store("listener", VibrationSystem.Data.CODEC, this.vibrationData);
 -    }
-+        this.saveRangeOverride(tag); // Paper - Configurable sculk sensor listener range
++        this.saveRangeOverride(output); // Paper - Configurable sculk sensor listener range
 +    }
 +    // Paper start - Configurable sculk sensor listener range
-+    protected void saveRangeOverride(CompoundTag tag) {
-+        if (this.rangeOverride != null && this.rangeOverride != VibrationUser.LISTENER_RANGE) tag.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.rangeOverride); // only save if it's different from the default
++    protected void saveRangeOverride(ValueOutput output) {
++        if (this.rangeOverride != null && this.rangeOverride != VibrationUser.LISTENER_RANGE) output.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.rangeOverride); // only save if it's different from the default
 +    }
 +    // Paper end - Configurable sculk sensor listener range
  
      @Override
      public VibrationSystem.Data getVibrationData() {
-@@ -91,6 +_,7 @@
+@@ -86,6 +_,7 @@
  
          @Override
          public int getListenerRadius() {

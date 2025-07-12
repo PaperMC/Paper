@@ -1,6 +1,8 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.PaperPoiType;
 import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.registry.RegistryKey;
@@ -117,6 +119,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
+        register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(RegistryKey.POINT_OF_INTEREST_TYPE, PoiType.class, Registries.POINT_OF_INTEREST_TYPE, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
     }
 
