@@ -1,6 +1,8 @@
 package io.papermc.paper.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.HolderableBase;
+import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -13,61 +15,46 @@ import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperPoiType implements PoiType, Handleable<net.minecraft.world.entity.ai.village.poi.PoiType> {
+public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.village.poi.PoiType> implements PoiType {
 
-    public static PoiType minecraftToBukkit(net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
+    public static PoiType minecraftToBukkit(final net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);
     }
 
-    public static PaperPoiType minecraftHolderToBukkit(Holder<net.minecraft.world.entity.ai.village.poi.PoiType> minecraft) {
+    public static PaperPoiType minecraftHolderToBukkit(final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);
     }
 
-    public static net.minecraft.world.entity.ai.village.poi.PoiType bukkitToMinecraft(PoiType bukkit) {
+    public static net.minecraft.world.entity.ai.village.poi.PoiType bukkitToMinecraft(final PoiType bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<net.minecraft.world.entity.ai.village.poi.PoiType> bukkitToMinecraftHolder(PoiType bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.POINT_OF_INTEREST_TYPE);
+    public static Holder<net.minecraft.world.entity.ai.village.poi.PoiType> bukkitToMinecraftHolder(final PoiType bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
-    private final NamespacedKey key;
-    private final net.minecraft.world.entity.ai.village.poi.PoiType handle;
-
-    public PaperPoiType(final NamespacedKey key, final net.minecraft.world.entity.ai.village.poi.PoiType handle) {
-        this.key = key;
-        this.handle = handle;
+    public PaperPoiType(final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> holder) {
+        super(holder);
     }
 
     @Override
     public boolean is(final @NotNull BlockData data) {
-        return this.handle.is(((CraftBlockData) data).getState());
+        return this.getHandle().is(((CraftBlockData) data).getState());
     }
 
     @Override
     public boolean hasOccupants() {
-        return this.handle.maxTickets() != 0;
+        return this.getHandle().maxTickets() != 0;
     }
 
-    @Override
-    public @NotNull NamespacedKey getKey() {
-        return this.key;
-    }
-
-    @Override
-    public net.minecraft.world.entity.ai.village.poi.PoiType getHandle() {
-        return this.handle;
-    }
-
-    public static class PaperOccupancy implements Occupancy, Handleable<PoiManager.Occupancy> {
-
-        public static PoiManager.Occupancy bukkitToMinecraft(Occupancy bukkit) {
+    public record PaperOccupancy(PoiManager.Occupancy handle) implements Occupancy, Handleable<PoiManager.Occupancy> {
+        public static PoiManager.Occupancy bukkitToMinecraft(final Occupancy bukkit) {
             Preconditions.checkArgument(bukkit != null);
 
-            return ((PaperOccupancy) bukkit).getHandle();
+            return ((PaperOccupancy) bukkit).handle();
         }
 
-        public static Occupancy minecraftToBukkit(PoiManager.Occupancy minecraft) {
+        public static Occupancy minecraftToBukkit(final PoiManager.Occupancy minecraft) {
             Preconditions.checkArgument(minecraft != null);
 
             return switch (minecraft) {
@@ -77,15 +64,9 @@ public class PaperPoiType implements PoiType, Handleable<net.minecraft.world.ent
             };
         }
 
-        private final PoiManager.Occupancy handle;
-
-        public PaperOccupancy(final PoiManager.Occupancy handle) {
-            this.handle = handle;
-        }
-
         @Override
         public PoiManager.Occupancy getHandle() {
-            return this.handle;
+            return this.handle();
         }
     }
 }

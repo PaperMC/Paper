@@ -7,7 +7,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.7")
 public final class PoiTypeTagKeys {
     /**
      * {@code #minecraft:acquirable_job_site}
@@ -57,7 +55,6 @@ public final class PoiTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<PoiType> create(final Key key) {
         return TagKey.create(RegistryKey.POINT_OF_INTEREST_TYPE, key);
     }

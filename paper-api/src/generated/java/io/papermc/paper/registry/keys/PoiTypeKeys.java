@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedFrom("1.21.7")
 public final class PoiTypeKeys {
     /**
      * {@code minecraft:armorer}
@@ -150,6 +150,13 @@ public final class PoiTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<PoiType> SHEPHERD = create(key("shepherd"));
+
+    /**
+     * {@code minecraft:test_instance}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<PoiType> TEST_INSTANCE = create(key("test_instance"));
 
     /**
      * {@code minecraft:toolsmith}
