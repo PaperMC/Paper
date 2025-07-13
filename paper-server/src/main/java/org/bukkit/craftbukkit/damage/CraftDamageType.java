@@ -79,7 +79,7 @@ public class CraftDamageType extends HolderableBase<net.minecraft.world.damageso
     }
 
     public static Holder<net.minecraft.world.damagesource.DamageType> bukkitToMinecraftHolder(DamageType bukkitDamageType) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkitDamageType, Registries.DAMAGE_TYPE);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkitDamageType);
     }
 
     public static net.minecraft.world.damagesource.DamageType bukkitToMinecraft(DamageType bukkitDamageType) {

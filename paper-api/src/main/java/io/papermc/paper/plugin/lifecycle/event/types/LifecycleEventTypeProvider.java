@@ -9,8 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 interface LifecycleEventTypeProvider {
 
-    Optional<LifecycleEventTypeProvider> INSTANCE = ServiceLoader.load(LifecycleEventTypeProvider.class)
-        .findFirst();
+    Optional<LifecycleEventTypeProvider> INSTANCE = ServiceLoader.load(LifecycleEventTypeProvider.class, LifecycleEventTypeProvider.class.getClassLoader()).findFirst();
 
     static LifecycleEventTypeProvider provider() {
         return INSTANCE.orElseThrow();
