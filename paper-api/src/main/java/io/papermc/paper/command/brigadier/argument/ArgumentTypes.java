@@ -35,6 +35,7 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
+import org.jetbrains.annotations.ApiStatus;
 
 import static io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider.provider;
 
@@ -112,6 +113,7 @@ public final class ArgumentTypes {
      * 
      * @return column position argument
      */
+    @ApiStatus.Experimental
     public static ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
         return provider().columnBlockPosition();
     }
@@ -121,6 +123,7 @@ public final class ArgumentTypes {
      * 
      * @return block predicate argument
      */
+    @ApiStatus.Experimental
     public static ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
         return provider().blockInWorldPredicate();
     }
@@ -151,6 +154,7 @@ public final class ArgumentTypes {
      * @return fine position argument
      * @see #columnFinePosition(boolean) to center whole numbers
      */
+    @ApiStatus.Experimental
     public static ArgumentType<ColumnFinePositionResolver> columnFinePosition() {
         return columnFinePosition(false);
     }
@@ -161,6 +165,7 @@ public final class ArgumentTypes {
      * @param centerIntegers if whole numbers should be centered (+0.5)
      * @return fine position argument
      */
+    @ApiStatus.Experimental
     public static ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
         return provider().columnFinePosition(centerIntegers);
     }
@@ -179,6 +184,7 @@ public final class ArgumentTypes {
      *
      * @return angle argument
      */
+    @ApiStatus.Experimental
     public static ArgumentType<AngleResolver> angle() {
         return provider().angle();
     }
@@ -189,6 +195,7 @@ public final class ArgumentTypes {
      * @return a set of axes.
      * @see org.bukkit.Axis
      */
+    @ApiStatus.Experimental
     public static ArgumentType<Set<Axis>> axes() {
         return provider().axes();
     }
