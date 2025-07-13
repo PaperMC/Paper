@@ -1,7 +1,7 @@
 package io.papermc.paper.command.brigadier.argument.resolvers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.math.ColumnFinePosition;
+import io.papermc.paper.command.brigadier.argument.position.ColumnFinePosition;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

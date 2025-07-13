@@ -2,7 +2,7 @@ package io.papermc.paper.command.brigadier.argument.resolvers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
-import io.papermc.paper.math.ColumnBlockPosition;
+import io.papermc.paper.command.brigadier.argument.position.ColumnBlockPosition;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

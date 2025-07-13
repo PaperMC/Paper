@@ -12,7 +12,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
-import io.papermc.paper.command.brigadier.argument.predicate.BlockPredicate;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -26,8 +26,9 @@ import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListRe
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.command.brigadier.position.ColumnBlockPositionImpl;
+import io.papermc.paper.command.brigadier.position.ColumnFinePositionImpl;
 import io.papermc.paper.entity.LookAnchor;
-import io.papermc.paper.math.Position;
 import io.papermc.paper.math.Rotation;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
@@ -176,14 +177,14 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(ColumnPosArgument.columnPos(), result -> source -> {
             final BlockPos pos = result.getBlockPos((CommandSourceStack) source);
 
-            return Position.columnBlock(pos.getX(), pos.getZ());
+            return new ColumnBlockPositionImpl(pos.getX(), pos.getZ());
         });
     }
 
     @Override
-    public ArgumentType<BlockPredicate> blockPredicate() {
+    public ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
         return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
-            result -> block -> result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), true))
+            result -> (block, loadChunk) -> result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), loadChunk))
         );
     }
 
@@ -201,7 +202,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(Vec2Argument.vec2(centerIntegers), result -> source -> {
             final Vec3 vec3 = result.getPosition((CommandSourceStack) source);
 
-            return Position.columnFine(vec3.x(), vec3.z());
+            return new ColumnFinePositionImpl(vec3.x(), vec3.z());
         });
     }
 
@@ -220,9 +221,9 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
-    public ArgumentType<Set<Axis>> swizzle() {
+    public ArgumentType<Set<Axis>> axes() {
         return this.wrap(SwizzleArgument.swizzle(), result -> {
-            EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
+            final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
                 bukkitAxes.add(switch (nmsAxis) {
                     case X -> Axis.X;
