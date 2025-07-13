@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
  * calls {@link org.bukkit.event.entity.EntityDamageByEntityEvent}.
  */
 @NullMarked
-public class EntitySpinAttackEvent extends EntityEvent implements Cancellable {
+public class EntityRiptideAttackEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -23,7 +23,7 @@ public class EntitySpinAttackEvent extends EntityEvent implements Cancellable {
 
 
     @ApiStatus.Internal
-    public EntitySpinAttackEvent(final LivingEntity attacker, final LivingEntity touched) {
+    public EntityRiptideAttackEvent(final LivingEntity attacker, final LivingEntity touched) {
         super(attacker);
         this.touched = touched;
     }
