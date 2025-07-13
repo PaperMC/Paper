@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventorySupport;
@@ -44,6 +45,7 @@ public class CraftInventorySupportViewBuilder<V extends InventoryView> extends C
     @Override
     public InventoryViewBuilder<InventoryView> inventory(final Inventory inventory) {
         Preconditions.checkArgument(inventory != null, "the provided inventory must not be null");
+        Preconditions.checkArgument(!(inventory instanceof CraftInventoryCustom), "Can not set CraftInventoryCustom as a inventory for a view please use Server#createMenuInventory");
         this.inventory = inventory;
         return (InventoryViewBuilder<InventoryView>) this;
     }

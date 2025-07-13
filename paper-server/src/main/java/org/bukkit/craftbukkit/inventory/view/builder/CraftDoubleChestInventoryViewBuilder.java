@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoubleBlockCombiner;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventorySupport;
@@ -43,6 +44,7 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
     @Override
     public InventoryViewBuilder<InventoryView> inventory(final Inventory inventory) {
         Preconditions.checkArgument(inventory != null, "The provided inventory must not be null");
+        Preconditions.checkArgument(!(inventory instanceof CraftInventoryCustom), "Can not set CraftInventoryCustom as a inventory for a view please use Server#createMenuInventory");
         this.inventory = inventory;
         return (InventoryViewBuilder<InventoryView>) this;
     }

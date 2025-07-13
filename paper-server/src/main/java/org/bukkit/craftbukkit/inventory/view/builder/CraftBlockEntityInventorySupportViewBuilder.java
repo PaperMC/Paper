@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.inventory.view.builder;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventorySupport;
@@ -37,6 +39,8 @@ public class CraftBlockEntityInventorySupportViewBuilder<V extends InventoryView
 
     @Override
     public InventoryViewBuilder<InventoryView> inventory(final Inventory inventory) {
+        Preconditions.checkArgument(inventory != null, "The provided inventory must not be null");
+        Preconditions.checkArgument(!(inventory instanceof CraftInventoryCustom), "Can not set CraftInventoryCustom as a inventory for a view please use Server#createMenuInventory");
         this.inventory = inventory;
         return (InventoryViewBuilder<InventoryView>) this;
     }
