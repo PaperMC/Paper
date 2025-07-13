@@ -1,7 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import io.papermc.paper.command.brigadier.argument.predicate.BlockPredicate;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -121,8 +121,8 @@ public final class ArgumentTypes {
      * 
      * @return block predicate argument
      */
-    public static ArgumentType<BlockPredicate> blockPredicate() {
-        return provider().blockPredicate();
+    public static ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
+        return provider().blockInWorldPredicate();
     }
 
     /**
@@ -184,13 +184,13 @@ public final class ArgumentTypes {
     }
 
     /**
-     * A swizzle argument.
+     * An argument used to resolve a set of axes.
      *
-     * @return swizzle argument
+     * @return a set of axes.
      * @see org.bukkit.Axis
      */
-    public static ArgumentType<Set<Axis>> swizzle() {
-        return provider().swizzle();
+    public static ArgumentType<Set<Axis>> axes() {
+        return provider().axes();
     }
 
     /**
