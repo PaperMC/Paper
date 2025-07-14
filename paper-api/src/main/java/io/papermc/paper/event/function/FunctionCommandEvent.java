@@ -16,8 +16,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Some examples of valid uses for this event are:
  * <ul>
- * <li>Logging executed commands to a separate file
- * <li>Conditionally blocking commands executed from functions.
+ * <li>Logging executed commands to a separate file</li>
+ * <li>Conditionally blocking commands executed from functions.</li>
+ * <li>Conditionally modify commands executed from functions.</li>
  * </ul>
  * <p>
  * Examples of incorrect uses are:
@@ -28,14 +29,15 @@ import org.jetbrains.annotations.NotNull;
  * If the event is cancelled, processing of the command will halt.
  * <p>
  * The command here is without (<code>/</code>) at the
- * beginning as the minecraft function expected.
+ * beginning as the minecraft function expected. So
+ * if you set the command, it should also be without (<code>/</code>)
  */
 public class FunctionCommandEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final CommandSender sender;
-    private final String command;
+    private String command;
 
     private boolean cancelled;
 
@@ -63,6 +65,15 @@ public class FunctionCommandEvent extends Event implements Cancellable {
     @NotNull
     public String getCommand() {
         return this.command;
+    }
+
+    /**
+     * Sets the command that the function is attempting to execute.
+     *
+     * @param command New command that the function will execute
+     */
+    public void setCommand(@NotNull final String command) {
+        this.command = command;
     }
 
     @Override
