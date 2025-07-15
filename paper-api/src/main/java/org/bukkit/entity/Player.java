@@ -3530,22 +3530,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the cooldown counter, which might be negative
      * @since 1.21.7
      */
-    long getAttackCooldownCounter();
+    long getAttackStrengthTicks();
 
     /**
      * Sets the number of ticks this player has been warming up for an attack.
      * <p>
-     * See {@link #getAttackCooldownCounter()} for more details.
+     * See {@link #getAttackStrengthTicks()} for more details.
      *
-     * @param ticks the number ticks to set the counter to
+     * @param ticks the number ticks to set
      * @since 1.21.7
      */
-    void setAttackCooldownCounter(long ticks);
+    void setAttackStrengthTicks(long ticks);
 
     /**
      * Reset the cooldown counter to 0, effectively starting the cooldown period.
      * <p>
-     * See {@link #getAttackCooldownCounter()} for more details.
+     * See {@link #getAttackStrengthTicks()} for more details.
      */
     void resetCooldown();
     // Paper end - attack cooldown API
