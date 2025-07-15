@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftWeatheringCopperTrapDoor extends CraftBlockData implements TrapDoor {
     private static final EnumProperty<Direction> FACING = WeatheringCopperTrapDoorBlock.FACING;
 

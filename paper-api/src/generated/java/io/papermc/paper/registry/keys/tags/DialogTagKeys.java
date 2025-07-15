@@ -7,7 +7,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.7-rc2")
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.8")
 public final class DialogTagKeys {
     /**
      * {@code #minecraft:pause_screen_additions}
@@ -50,7 +48,6 @@ public final class DialogTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<Dialog> create(final Key key) {
         return TagKey.create(RegistryKey.DIALOG, key);
     }

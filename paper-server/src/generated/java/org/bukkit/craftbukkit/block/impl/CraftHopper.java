@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Hopper;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftHopper extends CraftBlockData implements Hopper {
     private static final BooleanProperty ENABLED = HopperBlock.ENABLED;
 

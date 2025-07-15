@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftWeightedPressurePlate extends CraftBlockData implements AnaloguePowerable {
     private static final IntegerProperty POWER = WeightedPressurePlateBlock.POWER;
 

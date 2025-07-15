@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftUntintedParticleLeaves extends CraftBlockData implements Leaves {
     private static final IntegerProperty DISTANCE = UntintedParticleLeavesBlock.DISTANCE;
 
