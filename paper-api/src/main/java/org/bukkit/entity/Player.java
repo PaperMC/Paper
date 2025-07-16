@@ -3932,4 +3932,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @ApiStatus.Experimental
     PlayerGameConnection getConnection();
+
+    /**
+     * Updates the player's pose according to the current game state,
+     * clearing any fixed pose in the process.
+     */
+    void resetPose();
 }
