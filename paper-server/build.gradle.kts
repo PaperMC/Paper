@@ -11,7 +11,7 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.3"
+    id("io.papermc.fill.gradle") version "1.0.7"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
