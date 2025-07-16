@@ -1587,7 +1587,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void loadData() {
-        this.server.getHandle().playerIo.load(this.getHandle(), ProblemReporter.DISCARDING);
+        this.server.getHandle().playerIo.load(this.getHandle(), ProblemReporter.DISCARDING)
+                .flatMap(this.server.getHandle()::getPlayerLevelKey)
+                .map(this.server.getServer()::getLevel)
+                .ifPresent(this.getHandle()::setServerLevel);
     }
 
     @Override
