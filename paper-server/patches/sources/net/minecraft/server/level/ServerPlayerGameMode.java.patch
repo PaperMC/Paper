@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -41,28 +_,50 @@
+@@ -41,30 +_,58 @@
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -27,6 +27,14 @@
 +            return null; // Paper - Expand PlayerGameModeChangeEvent
          } else {
 -            this.setGameModeForPlayer(gameModeForPlayer, this.previousGameModeForPlayer);
+-            this.player.onUpdateAbilities();
+-            this.level
+-                .getServer()
+-                .getPlayerList()
+-                .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player));
+-            this.level.updateSleepingPlayerList();
+-            if (gameModeForPlayer == GameType.CREATIVE) {
+-                this.player.resetCurrentImpulseContext();
 +            // CraftBukkit start
 +            org.bukkit.event.player.PlayerGameModeChangeEvent event = new org.bukkit.event.player.PlayerGameModeChangeEvent(
 +                this.player.getBukkitEntity(),
@@ -36,25 +44,35 @@
 +            );
 +            if (!event.callEvent()) {
 +                return event; // Paper - Expand PlayerGameModeChangeEvent
-+            }
+             }
+-
+-            return true;
+-        }
+-    }
 +            // CraftBukkit end
 +            this.setGameModeForPlayer(gameModeForPlayer, this.gameModeForPlayer); // Paper - Fix MC-259571
-             this.player.onUpdateAbilities();
-             this.level
-                 .getServer()
-                 .getPlayerList()
--                .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player));
-+                .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
-             this.level.updateSleepingPlayerList();
-             if (gameModeForPlayer == GameType.CREATIVE) {
-                 this.player.resetCurrentImpulseContext();
-             }
- 
--            return true;
++            this.onGameModeUpdate(); // Paper - moved to a separate method for use in CraftPlayer#loadData()
++
 +            return event; // Paper - Expand PlayerGameModeChangeEvent
-         }
-     }
++        }
++    }
++
++    // Paper start - moved to a separate method from changeGameModeForPlayer for use in CraftPlayer#loadData()
++    public void onGameModeUpdate() {
++        this.player.onUpdateAbilities();
++        this.level
++            .getServer()
++            .getPlayerList()
++            .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player);
++        this.level.updateSleepingPlayerList();
++        if (this.gameModeForPlayer == GameType.CREATIVE) {
++            this.player.resetCurrentImpulseContext();
++        }
++    }
++    // Paper end - moved to a separate method from changeGameModeForPlayer for use in CraftPlayer#loadData()
  
+     protected void setGameModeForPlayer(GameType gameModeForPlayer, @Nullable GameType previousGameModeForPlayer) {
+         this.previousGameModeForPlayer = previousGameModeForPlayer;
 @@ -90,10 +_,11 @@
      }
  

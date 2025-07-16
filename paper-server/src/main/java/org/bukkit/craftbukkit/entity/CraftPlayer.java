@@ -96,12 +96,14 @@ import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTabListPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
@@ -1360,6 +1362,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
+        return this.teleport(this.getLocation(), location, cause, flags);
+    }
+
+    public boolean teleport(Location from, Location to, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
         Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
         Set<io.papermc.paper.entity.TeleportFlag> allFlags;
         if (flags.length == 0) {
@@ -1378,20 +1384,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
         boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Paper end - Teleport API
-        Preconditions.checkArgument(location != null, "location");
-        Preconditions.checkArgument(location.getWorld() != null, "location.world");
+        Preconditions.checkArgument(to != null, "location");
+        Preconditions.checkArgument(to.getWorld() != null, "location.world");
         // Paper start - Teleport passenger API
         // Don't allow teleporting between worlds while keeping passengers
-        if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+        if (ignorePassengers && entity.isVehicle() && to.getWorld() != this.getWorld()) {
             return false;
         }
 
         // Don't allow to teleport between worlds if remaining on vehicle
-        if (!dismount && entity.isPassenger() && location.getWorld() != this.getWorld()) {
+        if (!dismount && entity.isPassenger() && to.getWorld() != this.getWorld()) {
             return false;
         }
         // Paper end
-        location.checkFinite();
+        to.checkFinite();
 
         ServerPlayer entity = this.getHandle();
 
@@ -1407,10 +1413,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             return false;
         }
 
-        // From = Players current Location
-        Location from = this.getLocation();
-        // To = Players new Location if Teleport is Successful
-        Location to = location;
         // Create & Call the Teleport Event.
         PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
         this.server.getPluginManager().callEvent(event);
@@ -1482,7 +1484,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void loadData() {
-        this.server.getHandle().playerIo.load(this.getHandle(), ProblemReporter.DISCARDING);
+        Location previousLocation = this.getLocation();
+
+        PlayerList playerList = this.server.getHandle();
+        playerList.playerIo.load(this.getHandle(), ProblemReporter.DISCARDING).ifPresent(data -> {
+            Optional<ResourceKey<net.minecraft.world.level.Level>> levelKey = playerList.getPlayerLevelKey(data);
+            levelKey
+                .map(this.server.getServer()::getLevel)
+                .ifPresent(level -> {
+                    CraftWorld world = level.getWorld();
+                    Location newLocation = this.getLocation();
+                    newLocation.setWorld(world);
+                    this.teleport(previousLocation, newLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                });
+
+            ServerPlayer serverPlayer = this.getHandle();
+            serverPlayer.loadGameTypes(data);
+            serverPlayer.gameMode.onGameModeUpdate();
+            serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, serverPlayer.gameMode().getId()));
+        });
     }
 
     @Override
