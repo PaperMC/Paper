@@ -3524,26 +3524,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Returns the number of ticks this player has been warming up for an attack.
      * <p>
-     * This increments every tick, and is reset to zero when the
-     * player either swings their arm or swaps their main-hand item.
+     * This increments every tick, and is reset to zero when the player either
+     * swings their arm or swaps their main-hand item.
      *
-     * @return the cooldown counter, which might be negative
+     * @return the number of warmup ticks, always positive
      * @since 1.21.7
      */
-    long getAttackStrengthTicks();
+    int getAttackStrengthTicks();
 
     /**
      * Sets the number of ticks this player has been warming up for an attack.
      * <p>
      * See {@link #getAttackStrengthTicks()} for more details.
      *
-     * @param ticks the number ticks to set
+     * @param ticks the number ticks to set, cannot be negative
      * @since 1.21.7
      */
-    void setAttackStrengthTicks(long ticks);
+    void setAttackStrengthTicks(int ticks);
 
     /**
-     * Reset the cooldown counter to 0, effectively starting the cooldown period.
+     * Resets the strength ticks to 0, starting the cooldown period.
      * <p>
      * See {@link #getAttackStrengthTicks()} for more details.
      */
