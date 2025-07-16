@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 16 Jul 2025 10:25:44 -0700
+Subject: [PATCH] Fix spawners converted from 1.21.4 not running finalisation
+ logic
+
+DataConverter incorrectly placed a fall_distance value with 0.0
+if the entity did not have a FallDistance entry. This results in the
+entity spawn data having 2 entries, which prevents finalisation
+logic from running.
+
+We can fix this by removing the fall_distance entry if it is 0.0.
+
+diff --git a/net/minecraft/world/level/SpawnData.java b/net/minecraft/world/level/SpawnData.java
+index 60144561b277a2e20b50b8257b6d5e5c792629ce..04b4b7a50353497c3e637590fa2503379c304304 100644
+--- a/net/minecraft/world/level/SpawnData.java
++++ b/net/minecraft/world/level/SpawnData.java
+@@ -37,6 +37,13 @@ public record SpawnData(CompoundTag entityToSpawn, Optional<SpawnData.CustomSpaw
+             entityToSpawn.remove("id");
+         }
+ 
++        // Paper start - fix already converted data
++        // See https://github.com/PaperMC/DataConverter/commit/b6675e47ca068f152c3b648b3869fe63ca12b720
++        if (entityToSpawn.getDoubleOr("fall_distance", -1.0) == 0.0) {
++            entityToSpawn.remove("fall_distance");
++        }
++        // Paper end
++
+         this.entityToSpawn = entityToSpawn;
+         this.customSpawnRules = customSpawnRules;
+         this.equipment = equipment;
