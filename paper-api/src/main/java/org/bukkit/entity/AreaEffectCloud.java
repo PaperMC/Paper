@@ -241,9 +241,9 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Sets the color of this cloud. Will be applied as a tint to its particles.
      *
-     * @param color cloud color
+     * @param color cloud color or {@code null} to reset to default
      */
-    void setColor(@NotNull Color color);
+    void setColor(@Nullable Color color);
 
     /**
      * Retrieve the original source of this cloud.
