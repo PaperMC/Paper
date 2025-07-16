@@ -3514,38 +3514,36 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     float getCooldownPeriod();
 
     /**
-     * Returns the percentage of attack power available based on the cooldown (zero to one).
+     * Returns the percentage of attack power available based on the cooldown (0.0 to 1.0).
+     *
+     * @return Percentage of attack power available
+     * @see #getCooledAttackStrength(float)
+     * @since 1.21.7
+     */
+    default float getCooledAttackStrength() {
+        return getCooledAttackStrength(0F);
+    }
+
+    /**
+     * Returns the percentage of attack power available based on the cooldown (0.0 to 1.0).
      *
      * @param adjustTicks Amount of ticks to add to cooldown counter for this calculation
      * @return Percentage of attack power available
+     * @see #setCooledAttackStrength(float)
      */
     float getCooledAttackStrength(float adjustTicks);
 
     /**
-     * Returns the number of ticks this player has been warming up for an attack.
-     * <p>
-     * This increments every tick, and is reset to zero when the player either
-     * swings their arm or swaps their main-hand item.
+     * Sets the percentage of attack power available (0.0 to 1.0).
      *
-     * @return the number of warmup ticks, always positive
+     * @param strength The new percentage of attack power available
+     * @see #getCooledAttackStrength(float)
      * @since 1.21.7
      */
-    int getAttackStrengthTicks();
+    void setCooledAttackStrength(float strength);
 
     /**
-     * Sets the number of ticks this player has been warming up for an attack.
-     * <p>
-     * See {@link #getAttackStrengthTicks()} for more details.
-     *
-     * @param ticks the number ticks to set, cannot be negative
-     * @since 1.21.7
-     */
-    void setAttackStrengthTicks(int ticks);
-
-    /**
-     * Resets the strength ticks to 0, starting the cooldown period.
-     * <p>
-     * See {@link #getAttackStrengthTicks()} for more details.
+     * Reset the cooldown counter to 0, effectively starting the cooldown period.
      */
     void resetCooldown();
     // Paper end - attack cooldown API

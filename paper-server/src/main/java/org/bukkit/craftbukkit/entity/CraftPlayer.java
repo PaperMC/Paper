@@ -100,6 +100,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -3234,16 +3235,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public int getAttackStrengthTicks() {
-        return Math.max(0, getHandle().attackStrengthTicker);
-    }
+    public void setCooledAttackStrength(float strength) {
+        Preconditions.checkArgument(Float.isFinite(strength), "strength must be finite");
+        strength = Math.clamp(strength, 0F, 1F);
 
-    @Override
-    public void setAttackStrengthTicks(int ticks) {
-        Preconditions.checkArgument(ticks >= 0, "ticks cannot be negative");
-        // if someone sets it to MAX_VALUE the next tick will overflow the counter, cap at 1/2 MAX_VALUE
-        ticks = Math.min(Integer.MAX_VALUE / 2, ticks);
-        getHandle().attackStrengthTicker = ticks;
+        float ticks = getHandle().getCurrentItemAttackStrengthDelay() * strength;
+        getHandle().attackStrengthTicker = (int) Math.ceil(ticks);
     }
 
     @Override
