@@ -734,10 +734,10 @@ public class MaterialTags {
             Material.HOPPER, Material.CHEST, Material.BARREL, Material.CHISELED_BOOKSHELF, Material.FURNACE,
             Material.TRAPPED_CHEST, Material.JUKEBOX, Material.DECORATED_POT, Material.OBSERVER, Material.NOTE_BLOCK,
             Material.COMPOSTER, Material.CAULDRON, Material.RAIL, Material.MINECART, Material.HOPPER_MINECART,
-            Material.CHEST_MINECART, Material.FURNACE_MINECART, Material.TNT_MINECART, Material.TNT,
+            Material.CHEST_MINECART, Material.FURNACE_MINECART, Material.TNT_MINECART, Material.TNT, Material.TARGET,
             Material.REDSTONE_LAMP, Material.BELL, Material.BIG_DRIPLEAF, Material.ARMOR_STAND, Material.REDSTONE_ORE)
         .add(MaterialTags.RAILS, MaterialTags.DOORS, MaterialTags.TRAPDOORS, MaterialTags.FENCE_GATES,
             MaterialTags.PRESSURE_PLATES, MaterialTags.PISTONS, Tag.BUTTONS)
-        .ensureSize("REDSTONE_RELATED", 139).lock();
+        .ensureSize("REDSTONE_RELATED", 140).lock();
 
 }
