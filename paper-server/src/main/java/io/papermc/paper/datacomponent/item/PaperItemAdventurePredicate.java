@@ -2,13 +2,13 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.advancements.critereon.DataComponentMatchers;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 
@@ -25,6 +25,7 @@ public record PaperItemAdventurePredicate(
     public net.minecraft.world.item.AdventureModePredicate getHandle() {
         return this.impl;
     }
+
     @Override
     public List<BlockPredicate> predicates() {
         return convert(this.impl);
@@ -37,7 +38,7 @@ public record PaperItemAdventurePredicate(
         @Override
         public ItemAdventurePredicate.Builder addPredicate(final BlockPredicate predicate) {
             this.predicates.add(new net.minecraft.advancements.critereon.BlockPredicate(Optional.ofNullable(predicate.blocks()).map(
-                blocks -> PaperRegistrySets.convertToNms(Registries.BLOCK, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), blocks)
+                blocks -> PaperRegistrySets.convertToNms(Registries.BLOCK, Conversions.global().lookup(), blocks)
             ), Optional.empty(), Optional.empty(), DataComponentMatchers.ANY)); // TODO DataComponentMatchers
             return this;
         }

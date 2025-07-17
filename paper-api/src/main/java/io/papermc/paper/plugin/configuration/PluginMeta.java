@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * This class acts as an abstraction for a plugin configuration.
  */
-@ApiStatus.Experimental // Subject to change!
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginMeta {
@@ -161,7 +160,6 @@ public interface PluginMeta {
      *
      * @return an immutable list of permissions
      */
-    // TODO: Do we even want this? Why not just use the bootstrapper
     List<Permission> getPermissions();
 
     /**
@@ -170,7 +168,6 @@ public interface PluginMeta {
      * @return the bukkit permission default container.
      * @see #getPermissions()
      */
-    // TODO: Do we even want this? Why not just use the bootstrapper
     PermissionDefault getPermissionDefault();
 
     /**

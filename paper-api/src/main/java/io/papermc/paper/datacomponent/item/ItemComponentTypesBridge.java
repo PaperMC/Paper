@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 @ApiStatus.Internal
 interface ItemComponentTypesBridge {
 
-    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class).findFirst();
+    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class, ItemComponentTypesBridge.class.getClassLoader()).findFirst();
 
     static ItemComponentTypesBridge bridge() {
         return BRIDGE.orElseThrow();
@@ -90,7 +90,7 @@ interface ItemComponentTypesBridge {
 
     MapId mapId(int id);
 
-    UseRemainder useRemainder(ItemStack itemStack);
+    UseRemainder useRemainder(ItemStack stack);
 
     Consumable.Builder consumable();
 

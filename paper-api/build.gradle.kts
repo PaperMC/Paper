@@ -11,7 +11,7 @@ java {
 
 val annotationsVersion = "26.0.2"
 // Keep in sync with paper-server adventure-text-serializer-ansi dep
-val adventureVersion = "4.21.0"
+val adventureVersion = "4.23.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.16"
 val log4jVersion = "2.24.1"
@@ -66,8 +66,8 @@ dependencies {
     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
 
     api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
-    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-    compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
+    implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
     // Annotations - Slowly migrate to jspecify
     val annotations = "org.jetbrains:annotations:$annotationsVersion"
@@ -164,7 +164,7 @@ abstract class Services {
 }
 val services = objects.newInstance<Services>()
 
-tasks.withType<Javadoc> {
+tasks.withType<Javadoc>().configureEach {
     val options = options as StandardJavadocDocletOptions
     options.overview = "src/main/javadoc/overview.html"
     options.use()

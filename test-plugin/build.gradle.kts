@@ -5,7 +5,10 @@ dependencies {
 }
 
 tasks.processResources {
-    val apiVersion = rootProject.providers.gradleProperty("mcVersion").get()
+    var apiVersion = rootProject.providers.gradleProperty("mcVersion").get()
+    // Bukkit api versioning does not support suffixed versions
+    apiVersion = apiVersion.substringBefore('-')
+
     val props = mapOf(
         "version" to project.version,
         "apiversion" to "\"$apiVersion\"",

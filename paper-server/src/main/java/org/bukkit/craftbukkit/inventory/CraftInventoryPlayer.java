@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
@@ -71,14 +72,25 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     @Override
     public void setItem(int index, ItemStack item) {
         // Paper start - Validate setItem index
-        if (index < 0 || index > 40) {
-            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 40");
+        if (index < 0 || index > 42) {
+            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 42");
         }
         // Paper end - Validate setItem index
         super.setItem(index, item);
         if (this.getHolder() == null) return;
+
         ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
         if (player.connection == null) return;
+        // Of course, these are not part of the player inventory "menu" because these slots are not accessible.
+        // However they are technically part of the player inventory.
+        // This is a poor representation by this API, but basically instead send a player inventory update packet.
+        // This will allow updates to the player inventory rather than through the menu.
+        // TODO: This could be something worth cleaning up in the future.
+        if (index > 40) {
+            player.connection.send(new ClientboundSetPlayerInventoryPacket(index, CraftItemStack.asNMSCopy(item)));
+            return;
+        }
+
         // PacketPlayOutSetSlot places the items differently than setItem()
         //
         // Between, and including, index 9 (the first index outside of the hotbar) and index 35 (the last index before
@@ -123,11 +135,8 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
         switch (slot) {
             case HAND -> this.setItemInMainHand(item);
-            case OFF_HAND, FEET, LEGS, CHEST, HEAD ->
+            case OFF_HAND, FEET, LEGS, CHEST, HEAD, BODY, SADDLE ->
                 this.getInventory().equipment.set(CraftEquipmentSlot.getNMS(slot), CraftItemStack.asNMSCopy(item));
-            case BODY -> throw new IllegalArgumentException("BODY is not valid for players!"); // Paper end
-            default ->
-                throw new IllegalArgumentException("Could not set slot " + slot + " - not a valid slot for PlayerInventory");
         }
     }
 
@@ -142,10 +151,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
         return switch (slot) {
             case HAND -> this.getItemInMainHand();
-            case OFF_HAND, FEET, LEGS, CHEST, HEAD -> CraftItemStack.asCraftMirror(this.getInventory().equipment.get(CraftEquipmentSlot.getNMS(slot)));
-            case BODY -> throw new IllegalArgumentException("BODY is not valid for players!");
-            default ->
-                throw new IllegalArgumentException("Could not get slot " + slot + " - not a valid slot for PlayerInventory");
+            case OFF_HAND, FEET, LEGS, CHEST, HEAD, BODY, SADDLE -> CraftItemStack.asCraftMirror(this.getInventory().equipment.get(CraftEquipmentSlot.getNMS(slot)));
         };
     }
 
@@ -253,12 +259,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getExtraContents() {
-        return this.asCraftMirror(List.of(this.getInventory().equipment.get(net.minecraft.world.entity.EquipmentSlot.OFFHAND)));
+        return this.asCraftMirror(this.getInventory().getExtraContent());
     }
 
     @Override
     public void setExtraContents(ItemStack[] items) {
-        this.setSlots(items, this.getInventory().getNonEquipmentItems().size() + this.getInventory().getArmorContents().size(), 1);
+        this.setSlots(items, this.getInventory().getNonEquipmentItems().size() + this.getInventory().getArmorContents().size(), 3);
     }
 
     @Override

@@ -1,17 +1,16 @@
 package io.papermc.paper.datacomponent;
 
+import io.papermc.paper.registry.HolderableBase;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
-public abstract class PaperDataComponentType<T, NMS> implements DataComponentType, Handleable<net.minecraft.core.component.DataComponentType<NMS>> {
+public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>> implements DataComponentType {
 
     static {
         DataComponentAdapters.bootstrap();
@@ -42,80 +41,64 @@ public abstract class PaperDataComponentType<T, NMS> implements DataComponentTyp
         return type.getAdapter().fromVanilla(nmsValue);
     }
 
-    private final NamespacedKey key;
-    private final net.minecraft.core.component.DataComponentType<NMS> type;
     private final DataComponentAdapter<NMS, T> adapter;
 
-    public PaperDataComponentType(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> type, final DataComponentAdapter<NMS, T> adapter) {
-        this.key = key;
-        this.type = type;
+    private PaperDataComponentType(final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder, final DataComponentAdapter<NMS, T> adapter) {
+        super(holder);
         this.adapter = adapter;
     }
 
     @Override
-    public NamespacedKey getKey() {
-        return this.key;
-    }
-
-    @Override
     public boolean isPersistent() {
-        return !this.type.isTransient();
+        return !this.getHandle().isTransient();
     }
 
     public DataComponentAdapter<NMS, T> getAdapter() {
         return this.adapter;
     }
 
-    @Override
-    public net.minecraft.core.component.DataComponentType<NMS> getHandle() {
-        return this.type;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <NMS> DataComponentType of(final NamespacedKey key, final net.minecraft.core.component.DataComponentType<NMS> type) {
-        final DataComponentAdapter<NMS, ?> adapter = (DataComponentAdapter<NMS, ?>) DataComponentAdapters.ADAPTERS.get(BuiltInRegistries.DATA_COMPONENT_TYPE.getResourceKey(type).orElseThrow());
+    @SuppressWarnings({"unchecked"})
+    public static <NMS> DataComponentType of(final Holder<?> holder) {
+        final DataComponentAdapter<NMS, ?> adapter = (DataComponentAdapter<NMS, ?>) DataComponentAdapters.ADAPTERS.get(holder.unwrapKey().orElseThrow());
         if (adapter == null) {
-            throw new IllegalArgumentException("No adapter found for " + key);
+            throw new IllegalArgumentException("No adapter found for " + holder);
         }
         if (adapter.isUnimplemented()) {
-            return new Unimplemented<>(key, type, adapter);
+            return new Unimplemented<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
         } else if (adapter.isValued()) {
-            return new ValuedImpl<>(key, type, adapter);
+            return new ValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
         } else {
-            return new NonValuedImpl<>(key, type, adapter);
+            return new NonValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
         }
     }
 
     public static final class NonValuedImpl<T, NMS> extends PaperDataComponentType<T, NMS> implements NonValued {
 
         NonValuedImpl(
-            final NamespacedKey key,
-            final net.minecraft.core.component.DataComponentType<NMS> type,
+            final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
             final DataComponentAdapter<NMS, T> adapter
         ) {
-            super(key, type, adapter);
+            super(holder, adapter);
         }
     }
 
     public static final class ValuedImpl<T, NMS> extends PaperDataComponentType<T, NMS> implements Valued<T> {
 
         ValuedImpl(
-            final NamespacedKey key,
-            final net.minecraft.core.component.DataComponentType<NMS> type,
+            final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
             final DataComponentAdapter<NMS, T> adapter
         ) {
-            super(key, type, adapter);
+            super(holder, adapter);
         }
     }
 
     public static final class Unimplemented<T, NMS> extends PaperDataComponentType<T, NMS> {
 
         public Unimplemented(
-            final NamespacedKey key,
-            final net.minecraft.core.component.DataComponentType<NMS> type,
+            final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
             final DataComponentAdapter<NMS, T> adapter
         ) {
-            super(key, type, adapter);
+            super(holder, adapter);
         }
     }
 }

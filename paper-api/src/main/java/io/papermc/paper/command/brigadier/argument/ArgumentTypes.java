@@ -18,6 +18,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -28,8 +29,6 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider.provider;
 
@@ -41,8 +40,6 @@ import static io.papermc.paper.command.brigadier.argument.VanillaArgumentProvide
  *
  * <p>{@link CustomArgumentType} is provided for customizing parsing or result types server-side, while sending the vanilla argument type to the client.</p>
  */
-@ApiStatus.Experimental
-@NullMarked
 public final class ArgumentTypes {
 
     /**
@@ -169,6 +166,15 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<NamedTextColor> namedColor() {
         return provider().namedColor();
+    }
+
+    /**
+     * A hex color argument.
+     *
+     * @return argument
+     */
+    public static ArgumentType<TextColor> hexColor() {
+        return provider().hexColor();
     }
 
     /**

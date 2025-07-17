@@ -1,23 +1,27 @@
 --- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -62,35 +_,67 @@
+@@ -79,39 +_,71 @@
  
      @Override
      protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (level instanceof ServerLevel serverLevel && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
--            entity.clearFire();
--            if (entity.mayInteract(serverLevel, pos)) {
--                this.handleEntityOnFireInside(state, level, pos);
-+            // CraftBukkit start - moved down
-+            // entity.clearFire();
-+            if ((entity instanceof net.minecraft.world.entity.player.Player || serverLevel.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(serverLevel, pos)) { // Paper - Fixes MC-248588
-+                if (this.handleEntityOnFireInside(state, level, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
-+                    entity.clearFire();
-+                }
-+            // CraftBukkit end
-             }
+         if (level instanceof ServerLevel serverLevel) {
+             BlockPos blockPos = pos.immutable();
+             effectApplier.runBefore(InsideBlockEffectType.EXTINGUISH, entity1 -> {
+-                if (entity1.isOnFire() && entity1.mayInteract(serverLevel, blockPos)) {
+-                    this.handleEntityOnFireInside(state, level, blockPos);
++                if (entity1.isOnFire() && (entity instanceof net.minecraft.world.entity.player.Player || serverLevel.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity1.mayInteract(serverLevel, blockPos)) { // Paper - Fixes MC-248588
++                    // Paper start - cauldron level change event
++                    if (this.handleEntityOnFireInside(state, level, blockPos, entity1)) { // Paper - track entity
++                        InsideBlockEffectType.EXTINGUISH.effect().affect(entity1, blockPos); // apply extinguishing if event was not cancelled.
++                    }
++                    // Paper end - cauldron level change event
+                 }
+             });
          }
+ 
+-        effectApplier.apply(InsideBlockEffectType.EXTINGUISH);
++        // effectApplier.apply(InsideBlockEffectType.EXTINGUISH); // Paper - manually applied above - cauldron level change event - delay to not extinguish when event is cancelled
      }
  
 -    private void handleEntityOnFireInside(BlockState state, Level level, BlockPos pos) {
@@ -79,7 +83,7 @@
          }
      }
  
-@@ -108,8 +_,11 @@
+@@ -129,8 +_,11 @@
      protected void receiveStalactiteDrip(BlockState state, Level level, BlockPos pos, Fluid fluid) {
          if (!this.isFull(state)) {
              BlockState blockState = state.setValue(LEVEL, state.getValue(LEVEL) + 1);

@@ -1,6 +1,7 @@
 package io.papermc.generator;
 
 import io.papermc.generator.utils.BlockStateMapping;
+import io.papermc.generator.utils.ClassHelper;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -10,7 +11,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import io.papermc.generator.utils.ClassHelper;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;

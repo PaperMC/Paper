@@ -364,8 +364,8 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Rabbit.Type> RABBIT_VARIANT = valued("rabbit/variant");
     public static final DataComponentType.Valued<Pig.Variant> PIG_VARIANT = valued("pig/variant");
     public static final DataComponentType.Valued<Cow.Variant> COW_VARIANT = valued("cow/variant");
-    // TODO: This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
     public static final DataComponentType.Valued<Chicken.Variant> CHICKEN_VARIANT = valued("chicken/variant");
+    // This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
     public static final DataComponentType.Valued<Frog.Variant> FROG_VARIANT = valued("frog/variant");
     public static final DataComponentType.Valued<Horse.Color> HORSE_VARIANT = valued("horse/variant");
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
@@ -375,7 +375,6 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
-
 
     private static DataComponentType.NonValued unvalued(final String name) {
         final DataComponentType dataComponentType = requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");

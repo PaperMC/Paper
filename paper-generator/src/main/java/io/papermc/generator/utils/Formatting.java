@@ -1,17 +1,19 @@
 package io.papermc.generator.utils;
 
-import java.util.Optional;
-import org.apache.commons.lang3.math.NumberUtils;
 import java.util.Comparator;
 import java.util.Locale;
-import java.util.OptionalInt;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class Formatting {
@@ -73,33 +75,36 @@ public final class Formatting {
         return newName;
     }
 
-    public static final Comparator<String> ALPHABETIC_KEY_ORDER = alphabeticKeyOrder(path -> path);
+    public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().location().getPath());
+    public static final Comparator<TagKey<?>> TAG_ORDER = alphabeticKeyOrder(tagKey -> tagKey.location().getPath());
 
-    public static <T> Comparator<T> alphabeticKeyOrder(Function<T, String> mapper) {
-        return (o1, o2) -> {
-            String path1 = mapper.apply(o1);
-            String path2 = mapper.apply(o2);
+    public static <T> Comparator<T> alphabeticKeyOrder(Function<T, String> pathConverter) {
+        return Comparator.comparing(pathConverter, (path1, path2) -> {
+            TrailingInt trailingInt1 = tryParseTrailingInt(path1);
+            TrailingInt trailingInt2 = tryParseTrailingInt(path2);
 
-            OptionalInt trailingInt1 = tryParseTrailingInt(path1);
-            OptionalInt trailingInt2 = tryParseTrailingInt(path2);
-
-            if (trailingInt1.isPresent() && trailingInt2.isPresent()) {
-                return Integer.compare(trailingInt1.getAsInt(), trailingInt2.getAsInt());
+            if (trailingInt1 != null && trailingInt2 != null &&
+                trailingInt1.prefix().equals(trailingInt2.prefix())) {
+                return Integer.compareUnsigned(trailingInt1.value(), trailingInt2.value());
             }
 
             return path1.compareTo(path2);
-        };
+        });
     }
 
-    private static OptionalInt tryParseTrailingInt(String path) {
+    private static @Nullable TrailingInt tryParseTrailingInt(String path) {
         int delimiterIndex = path.lastIndexOf('_');
         if (delimiterIndex != -1) {
-            String score = path.substring(delimiterIndex + 1);
-            if (NumberUtils.isDigits(score)) {
-                return OptionalInt.of(Integer.parseInt(score));
+            String value = path.substring(delimiterIndex + 1);
+            if (NumberUtils.isDigits(value)) {
+                String prefix = path.substring(0, delimiterIndex);
+                return new TrailingInt(prefix, Integer.parseInt(value));
             }
         }
-        return OptionalInt.empty();
+        return null;
+    }
+
+    private record TrailingInt(String prefix, int value) {
     }
 
     private Formatting() {

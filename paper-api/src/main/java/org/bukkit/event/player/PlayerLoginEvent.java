@@ -1,6 +1,8 @@
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import org.bukkit.Warning;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
@@ -14,7 +16,15 @@ import org.jetbrains.annotations.NotNull;
  * Note that this event is called <i>early</i> in the player initialization
  * process. It is recommended that most options involving the Player
  * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
+ * @deprecated Use {@link PlayerConnectionValidateLoginEvent} to handle pre-login logic
+ * (e.g. authentication or ban checks), or {@link io.papermc.paper.event.player.PlayerServerFullCheckEvent} to allow
+ * players to bypass the server's maximum player limit.
+ * Minecraft triggers this twice internally, using this event skips one of the validation checks done by the server.
+ * Additionally, this event causes the full player entity to be created much earlier than it would be in Vanilla,
+ * leaving it with mostly disfunctional methods and state.
  */
+@Warning(reason = "Listening to this event causes the player to be created early.")
+@Deprecated(since = "1.21.6")
 public class PlayerLoginEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

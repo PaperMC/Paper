@@ -343,7 +343,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
         public int maxJoinsPerTick = 5;
-        public boolean fixEntityPositionDesync = true;
+        public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
         public int regionFileCacheSize = 256;
@@ -357,6 +357,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("Defines how many orbs groups can exist in an area.")
         @Constraints.Min(1)
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
+        @Comment("See Fix MC-163962; prevent villager demand from going negative.")
+        public boolean preventNegativeVillagerDemand = false;
     }
 
     public BlockUpdates blockUpdates;

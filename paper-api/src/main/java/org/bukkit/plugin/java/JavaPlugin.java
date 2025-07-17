@@ -372,7 +372,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final BasicCommand basicCommand) {
         this.registerCommand(label, null, Collections.emptyList(), basicCommand);
     }
@@ -392,7 +391,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final @Nullable String description, final BasicCommand basicCommand) {
         this.registerCommand(label, description, Collections.emptyList(), basicCommand);
     }
@@ -412,7 +410,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final Collection<String> aliases, final BasicCommand basicCommand) {
         this.registerCommand(label, null, aliases, basicCommand);
     }
@@ -433,7 +430,6 @@ public abstract class JavaPlugin extends PluginBase {
      * @param basicCommand the basic command instance to register
      * @see LifecycleEvents#COMMANDS
      */
-    @ApiStatus.Experimental
     public void registerCommand(final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(label, description, aliases, basicCommand);

@@ -27,23 +27,27 @@
 +        // CraftBukkit end
          if (!serverLevel.isClientSide()) {
              BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
--            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearLivingEntity(serverLevel, blockPos, item));
-+            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearLivingEntity(serverLevel, blockPos, item, bukkitBlock, craftItem)); // CraftBukkit
+-            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearEntity(serverLevel, blockPos, item));
++            this.setSuccess(tryShearBeehive(serverLevel, blockPos) || tryShearEntity(serverLevel, blockPos, item, bukkitBlock, craftItem)); // CraftBukkit
              if (this.isSuccess()) {
                  item.hurtAndBreak(1, serverLevel, null, item1 -> {});
              }
-@@ -50,10 +_,18 @@
+@@ -50,14 +_,22 @@
          return false;
      }
  
--    private static boolean tryShearLivingEntity(ServerLevel level, BlockPos pos, ItemStack stack) {
-+    private static boolean tryShearLivingEntity(ServerLevel level, BlockPos pos, ItemStack stack, org.bukkit.block.Block bukkitBlock, org.bukkit.craftbukkit.inventory.CraftItemStack craftItem) { // CraftBukkit - add args
-         for (LivingEntity livingEntity : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos), EntitySelector.NO_SPECTATORS)) {
-             if (livingEntity instanceof Shearable shearable && shearable.readyForShearing()) {
+-    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack stack) {
++    private static boolean tryShearEntity(ServerLevel level, BlockPos pos, ItemStack stack, org.bukkit.block.Block bukkitBlock, org.bukkit.craftbukkit.inventory.CraftItemStack craftItem) { // CraftBukkit - add args
+         for (Entity entity : level.getEntitiesOfClass(Entity.class, new AABB(pos), EntitySelector.NO_SPECTATORS)) {
+             if (entity.shearOffAllLeashConnections(null)) {
+                 return true;
+             }
+ 
+             if (entity instanceof Shearable shearable && shearable.readyForShearing()) {
 -                shearable.shear(level, SoundSource.BLOCKS, stack);
 +                // CraftBukkit start
 +                // Paper start - Add drops to shear events
-+                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(livingEntity, bukkitBlock, craftItem, shearable.generateDefaultDrops(level, stack));
++                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(entity, bukkitBlock, craftItem, shearable.generateDefaultDrops(level, stack));
 +                if (event.isCancelled()) {
 +                    // Paper end - Add drops to shear events
 +                    continue;

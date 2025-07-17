@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Phantom;
 import java.util.UUID;
 
-public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
+public class CraftPhantom extends CraftMob implements Phantom, CraftEnemy {
 
     public CraftPhantom(CraftServer server, net.minecraft.world.entity.monster.Phantom entity) {
         super(server, entity);
@@ -50,7 +50,6 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
 
     @Override
     public void setAnchorLocation(Location location) {
-        com.google.common.base.Preconditions.checkArgument(location != null, "location cannot be null");
         this.getHandle().anchorPoint = location == null ? null : CraftLocation.toBlockPosition(location);
     }
 }

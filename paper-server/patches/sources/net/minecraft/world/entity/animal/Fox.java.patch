@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/entity/animal/Fox.java
 +++ b/net/minecraft/world/entity/animal/Fox.java
-@@ -429,7 +_,7 @@
-         compound.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
-         this.setSleeping(compound.getBooleanOr("Sleeping", false));
-         this.setVariant(compound.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
--        this.setSitting(compound.getBooleanOr("Sitting", false));
-+        this.setSitting(compound.getBooleanOr("Sitting", false), false); // Paper - Add EntityToggleSitEvent
-         this.setIsCrouching(compound.getBooleanOr("Crouching", false));
+@@ -430,7 +_,7 @@
+         input.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
+         this.setSleeping(input.getBooleanOr("Sleeping", false));
+         this.setVariant(input.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
+-        this.setSitting(input.getBooleanOr("Sitting", false));
++        this.setSitting(input.getBooleanOr("Sitting", false), false); // Paper - Add EntityToggleSitEvent
+         this.setIsCrouching(input.getBooleanOr("Crouching", false));
          if (this.level() instanceof ServerLevel) {
              this.setTargetGoals();
-@@ -446,6 +_,12 @@
+@@ -447,6 +_,12 @@
      }
  
      public void setSitting(boolean sitting) {
@@ -22,7 +22,7 @@
          this.setFlag(1, sitting);
      }
  
-@@ -505,19 +_,20 @@
+@@ -506,19 +_,20 @@
              itemEntity.setPickUpDelay(40);
              itemEntity.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
@@ -46,7 +46,7 @@
              int count = item.getCount();
              if (count > 1) {
                  this.dropItemStack(item.split(count - 1));
-@@ -528,7 +_,7 @@
+@@ -529,7 +_,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, item.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(entity, item.getCount());
@@ -55,7 +55,7 @@
              this.ticksSinceEaten = 0;
          }
      }
-@@ -623,12 +_,12 @@
+@@ -620,12 +_,12 @@
      }
  
      @Override
@@ -70,7 +70,7 @@
      }
  
      void wakeUp() {
-@@ -692,15 +_,33 @@
+@@ -689,15 +_,33 @@
          return this.getTrustedEntities().anyMatch(entityReference -> entityReference.matches(entity));
      }
  
@@ -108,7 +108,7 @@
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
-@@ -876,6 +_,19 @@
+@@ -873,6 +_,19 @@
                      fox.addTrustedEntity(loveCause1);
                  }
  
@@ -128,7 +128,7 @@
                  if (serverPlayer != null) {
                      serverPlayer.awardStat(Stats.ANIMALS_BRED);
                      CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this.animal, this.partner, fox);
-@@ -885,14 +_,12 @@
+@@ -882,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -142,11 +142,11 @@
                      this.level
                          .addFreshEntity(
 -                            new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), this.animal.getRandom().nextInt(7) + 1)
-+                            new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, fox) // Paper - call EntityBreedEvent, add spawn context
++                            new ExperienceOrb(this.level, this.animal.position(), net.minecraft.world.phys.Vec3.ZERO, experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, fox) // Paper - call EntityBreedEvent, add spawn context
                          );
                  }
              }
-@@ -956,6 +_,7 @@
+@@ -953,6 +_,7 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);
              state.setValue(SweetBerryBushBlock.AGE, 1);

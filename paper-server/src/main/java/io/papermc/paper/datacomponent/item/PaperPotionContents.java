@@ -14,8 +14,8 @@ import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperPotionContents(
     net.minecraft.world.item.alchemy.PotionContents impl

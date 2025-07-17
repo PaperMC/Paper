@@ -1,3 +1,4 @@
+import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.data.FileEntry
@@ -10,12 +11,13 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
+    id("io.papermc.fill.gradle") version "1.0.7"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.5+build.2")
+    mache("io.papermc:mache:1.21.8+build.1")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -24,13 +26,10 @@ paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
     gitFilePatches = false
 
-    //updatingMinecraft {
-    //    oldPaperCommit = "f4f275519f7c1fbe9db173b7144a4fe81440e365"
-    //}
-
     spigot {
-        buildDataRef = "702e1a0a5072b2c4082371d5228cb30525687efc"
-        packageVersion = "v1_21_R4" // also needs to be updated in MappingEnvironment
+        enabled = true
+        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
+        packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
 
     reobfPackagesToFix.addAll(
@@ -135,7 +134,7 @@ dependencies {
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
-    implementation("net.kyori:adventure-text-serializer-ansi:4.21.0") // Keep in sync with adventureVersion from Paper-API build file
+    implementation("net.kyori:adventure-text-serializer-ansi:4.23.0") // Keep in sync with adventureVersion from Paper-API build file
     runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*
@@ -166,10 +165,6 @@ dependencies {
     implementation("com.googlecode.json-simple:json-simple:1.1.1") { // change to runtimeOnly once Timings is removed
         isTransitive = false // includes junit
     }
-
-    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
     testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
@@ -228,6 +223,11 @@ tasks.jar {
 // Compile tests with -parameters for better junit parameterized test names
 tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
+}
+
+// Bump compile tasks to 1GB memory to avoid OOMs
+tasks.withType<JavaCompile>().configureEach {
+    options.forkOptions.memoryMaximumSize = "1G"
 }
 
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
@@ -369,4 +369,21 @@ tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
     classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
+}
+
+fill {
+    project("paper")
+    versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
+    version(paperweight.minecraftVersion)
+
+    build {
+        channel = BuildChannel.STABLE
+
+        downloads {
+            register("server:default") {
+                file = tasks.createMojmapPaperclipJar.flatMap { it.outputZip }
+                nameResolver.set { project, _, version, build -> "$project-$version-$build.jar" }
+            }
+        }
+    }
 }

@@ -12,7 +12,6 @@ import io.papermc.typewriter.parser.StringReader;
 import io.papermc.typewriter.replace.CommentMarker;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import io.papermc.typewriter.replace.SearchReplaceRewriterBase;
-import net.minecraft.SharedConstants;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.SharedConstants;
 
 import static io.papermc.typewriter.replace.CommentMarker.EMPTY_MARKER;
 
@@ -30,7 +30,7 @@ public class ScanOldGeneratedSourceCode {
 
     static {
         Main.bootStrap(false);
-        CURRENT_VERSION = SharedConstants.getCurrentVersion().getId();
+        CURRENT_VERSION = SharedConstants.getCurrentVersion().id();
     }
 
     public static void main(String[] args) throws IOException {
