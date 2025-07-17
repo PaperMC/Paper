@@ -721,4 +721,23 @@ public class MaterialTags {
         .add(Material.NETHERITE_AXE, Material.NETHERITE_HOE, Material.NETHERITE_PICKAXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_SWORD)
         .ensureSize("NETHERITE_TOOLS", 5).lock();
 
+    /**
+     * Covers almost all the materials in creative redstone tab.
+     */
+    public static final MaterialSetTag REDSTONE_RELATED = new MaterialSetTag(keyFor("redstone_related"))
+        .add(Material.REDSTONE, Material.REDSTONE_TORCH, Material.REDSTONE_BLOCK,
+            Material.REPEATER, Material.COMPARATOR, Material.WAXED_COPPER_BULB, Material.WAXED_EXPOSED_COPPER_BULB,
+            Material.WAXED_WEATHERED_COPPER_BULB, Material.WAXED_OXIDIZED_COPPER_BULB, Material.LEVER,
+            Material.SCULK_SENSOR, Material.CALIBRATED_SCULK_SENSOR, Material.SCULK_SHRIEKER, Material.AMETHYST_BLOCK,
+            Material.TRIPWIRE_HOOK, Material.STRING, Material.LECTERN, Material.DAYLIGHT_DETECTOR, Material.LIGHTNING_ROD,
+            Material.SLIME_BLOCK, Material.HONEY_BLOCK, Material.DISPENSER, Material.DROPPER, Material.CRAFTER,
+            Material.HOPPER, Material.CHEST, Material.BARREL, Material.CHISELED_BOOKSHELF, Material.FURNACE,
+            Material.TRAPPED_CHEST, Material.JUKEBOX, Material.DECORATED_POT, Material.OBSERVER, Material.NOTE_BLOCK,
+            Material.COMPOSTER, Material.CAULDRON, Material.RAIL, Material.MINECART, Material.HOPPER_MINECART,
+            Material.CHEST_MINECART, Material.FURNACE_MINECART, Material.TNT_MINECART, Material.TNT,
+            Material.REDSTONE_LAMP, Material.BELL, Material.BIG_DRIPLEAF, Material.ARMOR_STAND, Material.REDSTONE_ORE)
+        .add(MaterialTags.RAILS, MaterialTags.DOORS, MaterialTags.TRAPDOORS, MaterialTags.FENCE_GATES,
+            MaterialTags.PRESSURE_PLATES, MaterialTags.PISTONS, Tag.BUTTONS)
+        .ensureSize("REDSTONE_RELATED", 139).lock();
+
 }
