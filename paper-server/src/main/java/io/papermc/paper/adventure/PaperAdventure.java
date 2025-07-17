@@ -475,7 +475,7 @@ public final class PaperAdventure {
     public static @NotNull TextColor asAdventure(final ChatFormatting formatting) {
         final Integer color = formatting.getColor();
         if (color == null) {
-            throw new IllegalArgumentException("Not a valid color");
+            throw new IllegalArgumentException("Formatting was not a valid color: " + formatting);
         }
         return TextColor.color(color);
     }

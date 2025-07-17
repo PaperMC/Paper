@@ -88,6 +88,18 @@ public final class AdventureCodecs {
         if (s.startsWith("#")) {
             @Nullable TextColor value = TextColor.fromHexString(s);
             return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure TextColor");
+        } else if (s.startsWith("§")) {
+            // Check if this is a formatting code (not a color)
+            if (s.length() == 2) {
+                char code = s.charAt(1);
+                // These are formatting codes, not colors
+                if (code == 'k' || code == 'l' || code == 'm' || code == 'n' || code == 'o' || code == 'r') {
+                    return DataResult.error(() -> "Formatting was not a valid color: " + s);
+                }
+            }
+            // Fall through to normal named color handling
+            final @Nullable NamedTextColor value = NamedTextColor.NAMES.value(s);
+            return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure NamedTextColor");
         } else {
             final @Nullable NamedTextColor value = NamedTextColor.NAMES.value(s);
             return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure NamedTextColor");
