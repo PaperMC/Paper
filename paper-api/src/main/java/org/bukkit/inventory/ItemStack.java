@@ -766,7 +766,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param input the InputStream of raw, uncompressed NBT data
      * @throws java.io.IOException if there was an IO problem
      * @return ItemStack migrated to this version of Minecraft if needed.
-     * @since 1.21.7
+     * @since 1.21.8
      */
     public static @NotNull ItemStack deserializeNbt(final @NotNull java.io.InputStream input) throws java.io.IOException {
         return org.bukkit.Bukkit.getUnsafe().deserializeItemFromNbt(input);
@@ -779,7 +779,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param output the OutputStream to write the NBT data to
      * @throws java.io.IOException if there was an IO problem
-     * @since 1.21.7
+     * @since 1.21.8
      */
     public void serializeAsNbt(final @NotNull java.io.OutputStream output) throws java.io.IOException {
         org.bukkit.Bukkit.getUnsafe().serializeItemToNbt(this, output);
@@ -823,7 +823,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param compress true for GZip-compressed output, false for raw NBT output.
      * @return bytes representing this item in NBT
-     * @since 1.21.7
+     * @since 1.21.8
      */
     public byte @NotNull [] serializeAsBytes(final boolean compress) {
         return org.bukkit.Bukkit.getUnsafe().serializeItem(this, compress);
