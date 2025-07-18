@@ -4,6 +4,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.ScoreHolder;
 import net.minecraft.world.scores.Scoreboard;
@@ -16,12 +18,13 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
 public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     private final Scoreboard board;
     public boolean registeredGlobally = false; // Paper - Lazily track plugin scoreboards by default
 
-    CraftScoreboard(Scoreboard board) {
+    public CraftScoreboard(Scoreboard board) {
         this.board = board;
     }
 
@@ -107,15 +110,10 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         }
         return new CraftObjective(this, objective);
     }
-
+    
     @Override
-    public ImmutableSet<Score> getScores(OfflinePlayer player) {
-        return this.getScores(CraftScoreboard.getScoreHolder(player));
-    }
-
-    @Override
-    public ImmutableSet<Score> getScores(String entry) {
-        return this.getScores(CraftScoreboard.getScoreHolder(entry));
+    public @NotNull ImmutableSet<Score> getScores(final org.bukkit.scoreboard.@NotNull ScoreHolder holder) {
+        return this.getScores(((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     private ImmutableSet<Score> getScores(ScoreHolder entry) {
@@ -129,13 +127,8 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     @Override
-    public void resetScores(OfflinePlayer player) {
-        this.resetScores(CraftScoreboard.getScoreHolder(player));
-    }
-
-    @Override
-    public void resetScores(String entry) {
-        this.resetScores(CraftScoreboard.getScoreHolder(entry));
+    public void resetScores(final org.bukkit.scoreboard.@NotNull ScoreHolder scoreHolder) {
+        this.resetScores(((CraftScoreHolder) scoreHolder).asNmsScoreHolder());
     }
 
     private void resetScores(ScoreHolder entry) {
@@ -203,6 +196,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     @Override
+    @NotNull
+    public Set<org.bukkit.scoreboard.ScoreHolder> getHolders() {
+        return this.getHandle().getTrackedPlayers().stream().map(CraftScoreHolder::fromNms).collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
     public void clearSlot(DisplaySlot slot) {
         Preconditions.checkArgument(slot != null, "Slot cannot be null");
         this.getHandle().setDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot), null);
@@ -226,15 +225,27 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         return this.getEntryTeam(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
     }
 
+    @Override
+    public @NotNull Set<Score> getScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
+        Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
+        return this.getScores(((CraftScoreHolder) holder).asNmsScoreHolder());
+    }
+
+    @Override
+    public void resetScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
+        Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
+        this.resetScores(((CraftScoreHolder) holder).asNmsScoreHolder());
+    }
+
     public Scoreboard getHandle() {
         return this.board;
     }
 
-    static ScoreHolder getScoreHolder(String entry) {
+    public static ScoreHolder getScoreHolder(String entry) {
         return () -> entry;
     }
 
-    static ScoreHolder getScoreHolder(OfflinePlayer player) {
+    public static ScoreHolder getScoreHolder(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
 
         if (player instanceof CraftPlayer craft) {
