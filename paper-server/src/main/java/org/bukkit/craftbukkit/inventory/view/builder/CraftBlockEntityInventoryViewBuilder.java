@@ -11,51 +11,44 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
-public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
+@NullMarked
+public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftLocationInventoryViewBuilder<V> {
 
-    private final Block block;
-    private final boolean useFakeBlockEntity;
-    private final @Nullable CraftBlockInventoryBuilder builder;
+    protected final BlockEntityProvider blockEntityProvider;
+    protected final boolean useFakeBlockEntity;
 
-    public CraftBlockEntityInventoryViewBuilder(
-        final MenuType<?> handle,
-        final Block block,
-        final @Nullable CraftBlockInventoryBuilder builder
-    ) {
-        this(handle, block, builder, true);
+    public CraftBlockEntityInventoryViewBuilder(final MenuType<?> handle, final Block block, final BlockEntityProvider blockEntityProvider, boolean useFakeBlockEntity) {
+        super(handle, block);
+        this.blockEntityProvider = blockEntityProvider;
+        this.useFakeBlockEntity = useFakeBlockEntity;
     }
 
-    public CraftBlockEntityInventoryViewBuilder(
-        final MenuType<?> handle,
-        final Block block,
-        final @Nullable CraftBlockInventoryBuilder builder,
-        final boolean useFakeBlockEntity
-    ) {
-        super(handle);
-        this.useFakeBlockEntity = useFakeBlockEntity;
-        this.block = block;
-        this.builder = builder;
+    @Override
+    public LocationInventoryViewBuilder<V> copy() {
+        final CraftBlockEntityInventoryViewBuilder<V> builder = new CraftBlockEntityInventoryViewBuilder<>(super.handle, super.block, this.blockEntityProvider, this.useFakeBlockEntity);
+        builder.title = super.title;
+        builder.checkReachable = super.checkReachable;
+        builder.bukkitLocation = super.bukkitLocation;
+        return builder;
     }
 
     @Override
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
-        if (this.world == null) {
-            this.world = player.level();
-        }
-
-        if (this.position == null) {
+        setupLocation(); // prevents state from being corrupted since the builder mutates this
+        if (super.position == null) {
             this.position = player.blockPosition();
+            this.world = player.level();
             return buildFakeBlockEntity(player);
         }
 
-        final BlockEntity entity = this.world.getBlockEntity(position);
-        if (!(entity instanceof final MenuConstructor container)) {
+        final BlockEntity entity = super.world.getBlockEntity(super.position);
+        if (!(entity instanceof final MenuConstructor menuConstructor)) {
             return buildFakeBlockEntity(player);
         }
 
-        final AbstractContainerMenu atBlock = container.createMenu(player.nextContainerCounter(), player.getInventory(), player);
+        final AbstractContainerMenu atBlock = menuConstructor.createMenu(player.nextContainerCounter(), player.getInventory(), player);
         if (atBlock.getType() != super.handle) {
             return buildFakeBlockEntity(player);
         }
@@ -68,10 +61,10 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         return atBlock;
     }
 
-    private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
-        final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
+    protected AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
+        final MenuProvider inventory = this.blockEntityProvider.build(super.position, super.block.defaultBlockState());
         if (inventory instanceof final BlockEntity blockEntity) {
-            blockEntity.setLevel(this.world);
+            blockEntity.setLevel(super.world);
             super.defaultTitle = inventory.getDisplayName();
         }
 
@@ -82,17 +75,8 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
     }
 
-    @Override
-    public LocationInventoryViewBuilder<V> copy() {
-        final CraftBlockEntityInventoryViewBuilder<V> copy = new CraftBlockEntityInventoryViewBuilder<>(super.handle, this.block, this.builder, this.useFakeBlockEntity);
-        copy.world = this.world;
-        copy.position = this.position;
-        copy.checkReachable = super.checkReachable;
-        copy.title = title;
-        return copy;
-    }
-
-    public interface CraftBlockInventoryBuilder {
-        MenuProvider build(BlockPos pos, BlockState state);
+    @FunctionalInterface
+    public interface BlockEntityProvider {
+        MenuProvider build(BlockPos position, BlockState state);
     }
 }

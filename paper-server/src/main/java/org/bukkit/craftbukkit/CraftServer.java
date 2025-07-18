@@ -79,6 +79,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.village.VillageSiege;
@@ -167,6 +168,7 @@ import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemCraftResult;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -2341,6 +2343,13 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    @Override
+    public Inventory createMenuInventory(@Nullable final InventoryHolder owner, final int size) {
+        // is it worth adding more size checks? is it worth adding more size checks?
+        Preconditions.checkArgument(size > 0, "The inventory size must be at least greater than 0");
+        return new CraftInventory(new SimpleContainer(size, owner));
     }
 
     @Override
