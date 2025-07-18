@@ -52,7 +52,9 @@ public class HorriblePlayerLoginEventHack {
             for (final RegisteredListener listener : PlayerLoginEvent.getHandlerList().getRegisteredListeners()) {
                 plugins.add(listener.getPlugin().getName());
             }
-
+            if (true) {
+                LOGGER.info("You have plugins listening to the PlayerLoginEvent, this will cause re-configuration APIs to be unavailable: {}", plugins);
+            } else
             LOGGER.warn("""
                 
                 ============================================================

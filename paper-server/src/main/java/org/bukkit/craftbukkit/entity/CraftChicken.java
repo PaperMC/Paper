@@ -49,7 +49,7 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         }
 
         public static Holder<ChickenVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.CHICKEN_VARIANT);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
 

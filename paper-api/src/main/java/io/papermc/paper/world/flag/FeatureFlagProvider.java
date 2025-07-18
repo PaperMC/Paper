@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.Internal
 interface FeatureFlagProvider {
 
-    Optional<FeatureFlagProvider> PROVIDER = ServiceLoader.load(FeatureFlagProvider.class).findFirst();
+    Optional<FeatureFlagProvider> PROVIDER = ServiceLoader.load(FeatureFlagProvider.class, FeatureFlagProvider.class.getClassLoader()).findFirst();
 
     static FeatureFlagProvider provider() {
         return PROVIDER.orElseThrow();
