@@ -16,6 +16,7 @@ import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -48,12 +49,14 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -878,8 +881,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public boolean getInvulnerable() {
+    public boolean isMarkedInvulnerable() {
         return this.getHandle().isInvulnerable();
+    }
+
+    @Override
+    public boolean isInvulnerableTo(final @NotNull DamageType type) {
+        Holder<net.minecraft.world.damagesource.DamageType> holder = CraftDamageType.bukkitToMinecraftHolder(type);
+        return this.getHandle().isInvulnerableToBase(new net.minecraft.world.damagesource.DamageSource(holder));
     }
 
     @Override
