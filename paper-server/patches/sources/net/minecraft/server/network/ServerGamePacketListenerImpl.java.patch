@@ -154,7 +154,7 @@
      }
  
      private int getMaximumFlyingTicks(Entity entity) {
-@@ -388,11 +_,37 @@
+@@ -388,11 +_,36 @@
      @Override
      public void handlePlayerInput(ServerboundPlayerInputPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -166,15 +166,15 @@
 +        // CraftBukkit end
 +        // Paper start - PlayerToggleSneakEvent
 +        net.minecraft.world.entity.player.Input lastInput = this.player.getLastClientInput();
-+        boolean shiftKeyDown = packet.input().shift();
 +        if (lastInput.shift() != packet.input().shift()) {
 +            // Has sneak changed
 +            org.bukkit.event.player.PlayerToggleSneakEvent event = new org.bukkit.event.player.PlayerToggleSneakEvent(this.getCraftPlayer(), packet.input().shift());
 +            this.cserver.getPluginManager().callEvent(event);
 +
 +            // Technically the player input and the flag is desynced, but this is previous behavior.. so should be fine?
-+            if (event.isCancelled()) {
-+               shiftKeyDown = this.player.isShiftKeyDown();
++            if (!event.isCancelled() && this.player.hasClientLoaded()) {
++                // Only set the shift key status if the shift input has changed and the event has not been cancelled
++                this.player.setShiftKeyDown(packet.input().shift());
 +            }
 +        }
 +        // Paper end - PlayerToggleSneakEvent
@@ -183,7 +183,6 @@
              this.player.resetLastActionTime();
 -            this.player.setShiftKeyDown(packet.input().shift());
 -        }
-+            this.player.setShiftKeyDown(shiftKeyDown); // Paper
 +        }
 +        // Paper start - Add option to make parrots stay
 +        if (packet.input().shift() && this.player.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
