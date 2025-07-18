@@ -17,6 +17,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -767,19 +768,41 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets whether the entity is invulnerable or not.
      * <p>
-     * When an entity is invulnerable it can only be damaged by players in
+     * When an entity is invulnerable, it can only be damaged by players in
      * creative mode.
      *
      * @param flag if the entity is invulnerable
      */
-    public void setInvulnerable(boolean flag);
+    void setInvulnerable(boolean flag);
+
+    /**
+     * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
+     *
+     * @return whether the entity is invulnerable.
+     * @see #isInvulnerableTo(DamageType)
+     */
+    boolean isMarkedInvulnerable();
+
+    /**
+     * Determines if the entity is invulnerable to the specified damage type.
+     * <p>
+     * {@code #isInvulnerableTo(DamageType.GENERIC)} is equivalent to {@code #isInvulnerable()}
+     *
+     * @param type the damage type to check against
+     * @return {@code true} if the entity is invulnerable to the given damage type, {@code false} otherwise
+     */
+    boolean isInvulnerableTo(@NotNull DamageType type);
 
     /**
      * Gets whether the entity is invulnerable or not.
      *
-     * @return whether the entity is
+     * @return whether the entity is invulnerable.
+     * @see #isInvulnerableTo(DamageType)
+     * @deprecated this method does not reflect the invulnerability state set by
+     * {@link #setInvulnerable(boolean)}, use {@link #isMarkedInvulnerable()} instead
      */
-    public boolean isInvulnerable();
+    @Deprecated(since = "1.21.8")
+    boolean isInvulnerable();
 
     /**
      * Gets whether the entity is silent or not.
