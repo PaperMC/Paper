@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftWeatheringCopperGrate extends CraftBlockData implements Waterlogged {
     private static final BooleanProperty WATERLOGGED = WeatheringCopperGrateBlock.WATERLOGGED;
 

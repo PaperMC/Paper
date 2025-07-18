@@ -39,6 +39,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.ColorArgument;
@@ -49,6 +50,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
+import net.minecraft.commands.arguments.HexColorArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
@@ -203,6 +205,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
                 () -> result.getColor() + " didn't map to an adventure named color"
             )
         );
+    }
+
+    @Override
+    public ArgumentType<TextColor> hexColor() {
+        return this.wrap(HexColorArgument.hexColor(), TextColor::color);
     }
 
     @Override

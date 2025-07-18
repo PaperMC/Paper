@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftRespawnAnchor extends CraftBlockData implements RespawnAnchor {
     private static final IntegerProperty CHARGE = RespawnAnchorBlock.CHARGE;
 
