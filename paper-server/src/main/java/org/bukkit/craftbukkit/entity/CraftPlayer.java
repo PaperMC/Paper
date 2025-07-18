@@ -219,7 +219,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private final ConversationTracker conversationTracker = new ConversationTracker();
     private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
     private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
-    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
@@ -2630,7 +2629,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper start - more resource pack API
     @Override
     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
-        return this.resourcePackStatus;
+        return this.getHandle().connection.connection.resourcePackStatus;
     }
 
     @Override
