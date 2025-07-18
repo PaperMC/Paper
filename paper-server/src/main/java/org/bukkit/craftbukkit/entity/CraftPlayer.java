@@ -315,6 +315,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         super(server, entity);
 
         this.firstPlayed = System.currentTimeMillis();
+
+        this.resourcePackStatus = entity.configurationResourcePackStatus;
+        entity.configurationResourcePackStatus = null;
     }
 
     public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {

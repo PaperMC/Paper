@@ -1,10 +1,11 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -47,12 +_,26 @@
+@@ -47,12 +_,27 @@
      public ClientInformation clientInformation;
      @Nullable
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
 +    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
++    private @Nullable org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper
  
      public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          super(server, connection, cookie);
@@ -65,7 +66,7 @@
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
      }
-@@ -105,12 +_,13 @@
+@@ -105,12 +_,14 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
@@ -76,11 +77,12 @@
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
          super.handleResourcePackResponse(packet);
 -        if (packet.action().isTerminal()) {
++        this.resourcePackStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()]; // Paper
 +        if (packet.action().isTerminal() && packet.id().equals(this.server.getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::id).orElse(null))) { // Paper - Ignore resource pack requests that are not vanilla
              this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
          }
      }
-@@ -139,16 +_,30 @@
+@@ -139,16 +_,31 @@
                  return;
              }
  
@@ -101,6 +103,7 @@
 +            } else {
 +                serverPlayer = new ServerPlayer(this.server, this.server.overworld(), this.gameProfile, this.clientInformation);
 +            }
++            serverPlayer.configurationResourcePackStatus = this.resourcePackStatus;
 +            // Paper end
              playerList.placeNewPlayer(this.connection, serverPlayer, this.createCookie(this.clientInformation));
          } catch (Exception var5) {
