@@ -149,6 +149,9 @@ public interface Bee extends Animals {
     /**
      * Sets how many ticks have passed since this bee last stung.
      * This value is used to determine when the bee should die after stinging.
+     * <p>
+     * Note that bees don’t die at a fixed time. Instead, every few ticks, they
+     * have a random chance of dying, and that chance increases with this value.
      *
      * @param time number of ticks since last sting
      */
@@ -158,6 +161,9 @@ public interface Bee extends Animals {
      * Gets how many ticks have passed since this bee last stung.
      * This value increases each tick after the bee stings and is used
      * to determine when the bee should die.
+     * <p>
+     * Note that bees don’t die at a fixed time. Instead, every few ticks, they
+     * have a random chance of dying, and that chance increases with this value.
      *
      * @return number of ticks since last sting
      */
