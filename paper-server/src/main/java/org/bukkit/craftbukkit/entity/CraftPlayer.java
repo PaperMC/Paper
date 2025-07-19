@@ -3402,11 +3402,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void setCooledAttackStrength(float strength) {
-        Preconditions.checkArgument(Float.isFinite(strength), "strength must be finite");
+        Preconditions.checkArgument(!Float.isNaN(strength), "strength cannot be NaN");
         strength = Math.clamp(strength, 0F, 1F);
 
-        float ticks = getHandle().getCurrentItemAttackStrengthDelay() * strength;
-        getHandle().attackStrengthTicker = (int) Math.ceil(ticks);
+        float delay = getCooldownPeriod();
+        // It's possible to set attributes that cause delay to be infinite
+        // don't overflow/underflow the attackStrengthTicker
+        delay = Math.clamp(delay, 0F, Integer.MAX_VALUE / 2F);
+
+        int ticks = (int) Math.ceil(delay * strength);
+        getHandle().attackStrengthTicker = ticks;
     }
 
     @Override
