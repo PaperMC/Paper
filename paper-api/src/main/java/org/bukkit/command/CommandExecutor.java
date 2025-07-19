@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a class which contains a single method for executing commands
  */
+@FunctionalInterface
 public interface CommandExecutor {
 
     /**

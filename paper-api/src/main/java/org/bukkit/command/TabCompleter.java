@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a class which can suggest tab completions for commands.
  */
+@FunctionalInterface
 public interface TabCompleter {
 
     /**
