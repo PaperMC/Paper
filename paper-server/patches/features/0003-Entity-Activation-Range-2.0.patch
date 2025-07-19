@@ -562,18 +562,20 @@ index 13cf40918ead3e2cb2699398ac659a3e1806294b..1ba342a1a60951f828034d3ed535b577
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 3047763580fabd069db5e90a9a854396c6243763..0470c4bbf8be7e48ce8dfa4910c3b9f5ebb23360 100644
+index 3047763580fabd069db5e90a9a854396c6243763..5cad1df9f9a104ba3817f0d7a1c6371068e3e14a 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -206,6 +206,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -206,6 +206,21 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          return this.lookControl;
      }
  
 +    // Paper start
++    int INACTIVE_TICK_DISABLE_COUNTER = 0;
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (this.goalSelector.inactiveTick()) {
++        boolean isThrottled = ((ServerLevel) this.level()).paperConfig().entities.behavior.throttleInactiveMobGoalSelector && INACTIVE_TICK_DISABLE_COUNTER++ % 20 != 0; // throttle inactive goal selector ticking
++        if (this.goalSelector.inactiveTick() && !isThrottled) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
