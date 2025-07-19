@@ -253,7 +253,7 @@ tasks.jar {
 }
 
 tasks.test {
-    // include("**/**TestSuite.class")
+    include("**/**TestSuite.class")
     workingDir = temporaryDir
     useJUnitPlatform {
         forkEvery = 1
