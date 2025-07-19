@@ -16,7 +16,11 @@ final class InnerClassInstanceFactory implements FieldDiscoverer.MutableInstance
     private final FieldDiscoverer.MutableInstanceFactory<Map<Field, Object>> fallback;
     private final AnnotatedType targetType;
 
-    InnerClassInstanceFactory(final InnerClassInstanceSupplier instanceSupplier, final FieldDiscoverer.MutableInstanceFactory<Map<Field, Object>> fallback, final AnnotatedType targetType) {
+    InnerClassInstanceFactory(
+        final InnerClassInstanceSupplier instanceSupplier,
+        final FieldDiscoverer.MutableInstanceFactory<Map<Field, Object>> fallback,
+        final AnnotatedType targetType
+    ) {
         this.instanceSupplier = instanceSupplier;
         this.fallback = fallback;
         this.targetType = targetType;
@@ -33,10 +37,10 @@ final class InnerClassInstanceFactory implements FieldDiscoverer.MutableInstance
         final Iterator<Map.Entry<Field, Object>> iter = intermediate.entrySet().iterator();
         try {
             while (iter.hasNext()) { // manually merge any mergeable maps
-                Map.Entry<Field, Object> entry = iter.next();
-                if (entry.getKey().isAnnotationPresent(MergeMap.class) && Map.class.isAssignableFrom(entry.getKey().getType()) && intermediate.get(entry.getKey()) instanceof Map<?, ?> map) {
+                final Map.Entry<Field, Object> entry = iter.next();
+                if (entry.getKey().isAnnotationPresent(MergeMap.class) && Map.class.isAssignableFrom(entry.getKey().getType()) && intermediate.get(entry.getKey()) instanceof final Map<?, ?> map) {
                     iter.remove();
-                    Map<Object, Object> existingMap = (Map<Object, Object>) entry.getKey().get(instance);
+                    final Map<Object, Object> existingMap = (Map<Object, Object>) entry.getKey().get(instance);
                     if (existingMap != null) {
                         existingMap.putAll(map);
                     } else {

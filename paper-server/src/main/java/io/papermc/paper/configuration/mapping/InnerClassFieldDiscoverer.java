@@ -32,14 +32,14 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
                     collector.accept(name, type, annotations, deserializer, serializer);
                 }
             });
-            if (instanceFactoryDelegate instanceof MutableInstanceFactory<Map<Field, Object>> mutableInstanceFactoryDelegate) {
+            if (instanceFactoryDelegate instanceof final MutableInstanceFactory<Map<Field, Object>> mutableInstanceFactoryDelegate) {
                 return new InnerClassInstanceFactory(this.instanceSupplier, mutableInstanceFactoryDelegate, target);
             }
         }
         return null;
     }
 
-    public static FieldDiscoverer<?> worldConfig(WorldConfiguration worldConfiguration) {
+    public static FieldDiscoverer<?> worldConfig(final WorldConfiguration worldConfiguration) {
         final Map<Class<?>, Object> overrides = Map.of(
             WorldConfiguration.class, worldConfiguration
         );
