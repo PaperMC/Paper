@@ -79,10 +79,9 @@ public interface PluginMeta extends Namespaced {
      * plugin.
      *
      * @return the specific overwrite of the logger prefix as defined by the plugin. If the plugin did not define a
-     * custom logger prefix, this method will return null
+     *     custom logger prefix, this method will return null
      */
-    @Nullable
-    String getLoggerPrefix();
+    @Nullable String getLoggerPrefix();
 
     /**
      * Provides a list of dependencies that are required for this plugin to load.
@@ -150,8 +149,7 @@ public interface PluginMeta extends Namespaced {
      *
      * @return description or null if the plugin did not define a human readable description.
      */
-    @Nullable
-    String getDescription();
+    @Nullable String getDescription();
 
     /**
      * Provides the website for the plugin or the plugin's author.
@@ -159,8 +157,7 @@ public interface PluginMeta extends Namespaced {
      *
      * @return a string representation of the website that serves as the main hub for this plugin/its author.
      */
-    @Nullable
-    String getWebsite();
+    @Nullable String getWebsite();
 
     /**
      * Provides the list of permissions that are defined via the plugin meta instance.
@@ -185,8 +182,7 @@ public interface PluginMeta extends Namespaced {
      * @return the version string made up of the major and minor version (e.g. 1.18 or 1.19). Minor versions like 1.18.2
      * are unified to their major release version (in this example 1.18)
      */
-    @Nullable
-    String getAPIVersion();
+    @Nullable String getAPIVersion();
 
     @KeyPattern.Namespace
     @SuppressWarnings("PatternValidation")
