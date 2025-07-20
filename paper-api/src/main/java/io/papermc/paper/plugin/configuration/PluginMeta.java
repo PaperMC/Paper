@@ -9,7 +9,6 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -187,7 +186,6 @@ public interface PluginMeta extends Namespaced {
     @KeyPattern.Namespace
     @SuppressWarnings("PatternValidation")
     @Override
-    @NotNull
     default String namespace() {
         return this.getName().toLowerCase(Locale.ROOT);
     }
