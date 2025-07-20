@@ -55,7 +55,7 @@ public @interface MergeMap {
                     ((Map) valueInField).putAll(deserializedValue);
                     return valueInField;
                 } else {
-                    checkState(!data.restricted(), "If marked as restricted, field must have a value");
+                    checkState(!data.restricted() || valueInField != null, "If marked as restricted, field must have a value");
                     return deserializedValue;
                 }
             };
