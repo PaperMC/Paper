@@ -140,18 +140,9 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     @Override
-    public Team getPlayerTeam(OfflinePlayer player) {
-        Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
-
-        PlayerTeam team = this.getHandle().getPlayersTeam(player.getName());
-        return team == null ? null : new CraftTeam(this, team);
-    }
-
-    @Override
-    public Team getEntryTeam(String entry) {
-        Preconditions.checkArgument(entry != null, "Entry cannot be null");
-
-        PlayerTeam team = this.getHandle().getPlayersTeam(entry);
+    public Team getEntryTeam(final org.bukkit.scoreboard.@NotNull ScoreHolder holder) {
+        Preconditions.checkArgument(holder != null, "holder cannot be null");
+        PlayerTeam team = this.getHandle().getPlayersTeam(holder.getScoreboardName());
         return team == null ? null : new CraftTeam(this, team);
     }
 
@@ -196,45 +187,9 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     }
 
     @Override
-    @NotNull
-    public Set<org.bukkit.scoreboard.ScoreHolder> getHolders() {
-        return this.getHandle().getTrackedPlayers().stream().map(CraftScoreHolder::fromNms).collect(Collectors.toUnmodifiableSet());
-    }
-
-    @Override
     public void clearSlot(DisplaySlot slot) {
         Preconditions.checkArgument(slot != null, "Slot cannot be null");
         this.getHandle().setDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot), null);
-    }
-
-    @Override
-    public ImmutableSet<Score> getScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        return this.getScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle());
-    }
-
-    @Override
-    public void resetScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        this.resetScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle());
-    }
-
-    @Override
-    public Team getEntityTeam(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        return this.getEntryTeam(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
-    }
-
-    @Override
-    public @NotNull Set<Score> getScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
-        Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
-        return this.getScores(((CraftScoreHolder) holder).asNmsScoreHolder());
-    }
-
-    @Override
-    public void resetScoresFor(final org.bukkit.scoreboard.ScoreHolder holder) throws IllegalArgumentException {
-        Preconditions.checkArgument(holder != null, "ScoreHolder cannot be null");
-        this.resetScores(((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     public Scoreboard getHandle() {

@@ -5,13 +5,14 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.world.entity.Entity;
 import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public interface CraftScoreHolder extends ScoreHolder {
 
     @Override
     default String getScoreboardName() {
-        return asNmsScoreHolder().getScoreboardName();
+        return this.asNmsScoreHolder().getScoreboardName();
     }
 
     @Override
@@ -28,7 +29,7 @@ public interface CraftScoreHolder extends ScoreHolder {
         };
     }
 
-    class CraftStringScoreHolder implements StringScoreHolder, CraftScoreHolder {
+    class CraftStringScoreHolder implements CraftScoreHolder, net.minecraft.world.scores.ScoreHolder {
         private final String name;
 
         public CraftStringScoreHolder(final String name) {
@@ -36,8 +37,13 @@ public interface CraftScoreHolder extends ScoreHolder {
         }
 
         @Override
+        public String getScoreboardName() {
+            return this.name;
+        }
+
+        @Override
         public net.minecraft.world.scores.ScoreHolder asNmsScoreHolder() {
-            return () -> this.name;
+            return this;
         }
     }
 }

@@ -24,7 +24,7 @@ public interface ScoreHolder {
      * @return the display name
      */
     default Component getScoreDisplayName() {
-        return Component.text(getScoreboardName());
+        return Component.text(this.getScoreboardName());
     }
 
     /**
@@ -32,12 +32,7 @@ public interface ScoreHolder {
      * @param entry the text to warp
      * @return a {@link ScoreHolder} representing the given String
      */
-    static ScoreHolder of(String entry) {
+    static ScoreHolder scoreHolder(String entry) {
         return InternalAPIBridge.get().scoreHolderOf(entry);
     }
-
-    /**
-     * A simple {@link ScoreHolder} which holds a string entry
-     */
-    interface StringScoreHolder extends ScoreHolder {}
 }
