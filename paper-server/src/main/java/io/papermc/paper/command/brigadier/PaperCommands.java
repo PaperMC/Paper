@@ -91,7 +91,7 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
 
     @Override
     public @Unmodifiable Set<String> registerWithFlags(final PluginMeta pluginMeta, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases, final Set<CommandRegistrationFlag> flags) {
-        return registerWithFlagsInternal(pluginMeta, pluginMeta.getName().toLowerCase(Locale.ROOT), null, node, description, aliases, flags);
+        return registerWithFlagsInternal(pluginMeta, pluginMeta.namespace(), null, node, description, aliases, flags);
     }
 
     public @Unmodifiable Set<String> registerWithFlagsInternal(final @Nullable PluginMeta pluginMeta, final String namespace, final @Nullable String helpNamespaceOverride, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases, final Set<CommandRegistrationFlag> flags) {

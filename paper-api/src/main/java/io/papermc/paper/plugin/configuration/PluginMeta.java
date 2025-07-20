@@ -1,11 +1,15 @@
 package io.papermc.paper.plugin.configuration;
 
 import java.util.List;
+import java.util.Locale;
+import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.key.Namespaced;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -14,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface PluginMeta {
+public interface PluginMeta extends Namespaced {
 
     /**
      * Provides the name of the plugin. This name uniquely identifies the plugin amongst all loaded plugins on the
@@ -75,9 +79,10 @@ public interface PluginMeta {
      * plugin.
      *
      * @return the specific overwrite of the logger prefix as defined by the plugin. If the plugin did not define a
-     *     custom logger prefix, this method will return null
+     * custom logger prefix, this method will return null
      */
-    @Nullable String getLoggerPrefix();
+    @Nullable
+    String getLoggerPrefix();
 
     /**
      * Provides a list of dependencies that are required for this plugin to load.
@@ -145,7 +150,8 @@ public interface PluginMeta {
      *
      * @return description or null if the plugin did not define a human readable description.
      */
-    @Nullable String getDescription();
+    @Nullable
+    String getDescription();
 
     /**
      * Provides the website for the plugin or the plugin's author.
@@ -153,7 +159,8 @@ public interface PluginMeta {
      *
      * @return a string representation of the website that serves as the main hub for this plugin/its author.
      */
-    @Nullable String getWebsite();
+    @Nullable
+    String getWebsite();
 
     /**
      * Provides the list of permissions that are defined via the plugin meta instance.
@@ -178,6 +185,14 @@ public interface PluginMeta {
      * @return the version string made up of the major and minor version (e.g. 1.18 or 1.19). Minor versions like 1.18.2
      * are unified to their major release version (in this example 1.18)
      */
-    @Nullable String getAPIVersion();
+    @Nullable
+    String getAPIVersion();
 
+    @KeyPattern.Namespace
+    @SuppressWarnings("PatternValidation")
+    @Override
+    @NotNull
+    default String namespace() {
+        return this.getName().toLowerCase(Locale.ROOT);
+    }
 }
