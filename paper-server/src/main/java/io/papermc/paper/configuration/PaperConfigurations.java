@@ -5,7 +5,10 @@ import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
+import io.papermc.paper.configuration.mapping.Definition;
+import io.papermc.paper.configuration.mapping.FieldProcessor;
 import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
+import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
@@ -42,10 +45,12 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -197,7 +202,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ObjectMapper.Factory.Builder defaultGlobalFactoryBuilder(ObjectMapper.Factory.Builder builder) {
-        return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig());
+        return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig(defaultFieldProcessors()));
     }
 
     @Override
@@ -233,7 +238,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         return super.createWorldObjectMapperFactoryBuilder(contextMap)
             .addNodeResolver(new RequiresSpigotInitialization.Factory(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get()))
             .addNodeResolver(new NestedSetting.Factory())
-            .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(createWorldConfigInstance(contextMap)));
+            .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(createWorldConfigInstance(contextMap), defaultFieldProcessors()));
     }
 
     private static WorldConfiguration createWorldConfigInstance(ContextMap contextMap) {
@@ -334,6 +339,12 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         } catch (Exception ex) {
             throw new RuntimeException("Could not reload paper configuration files", ex);
         }
+    }
+
+    private static List<Definition<? extends Annotation, ?, ? extends FieldProcessor.Factory<?, ?>>> defaultFieldProcessors() {
+        return List.of(
+            MergeMap.DEFINITION
+        );
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
