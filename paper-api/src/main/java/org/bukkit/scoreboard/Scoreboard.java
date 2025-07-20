@@ -314,7 +314,8 @@ public interface Scoreboard {
      * @param holder the score holder to search for
      * @return the score holder's Team or null if the score holder is not on a team
      */
-    Team getEntryTeam(@NotNull ScoreHolder holder);
+    @Nullable Team getEntryTeam(@NotNull ScoreHolder holder);
+
     /**
      * Gets a Team by name on this Scoreboard
      *
