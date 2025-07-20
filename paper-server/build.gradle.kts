@@ -143,8 +143,7 @@ dependencies {
     implementation("io.netty:netty-codec-haproxy:4.1.115.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.7.1")
-    implementation("org.spongepowered:configurate-yaml:4.2.0-20250225.064233-199")
-    implementation("org.spongepowered:configurate-core:4.2.0-20250225.064233-204") // Pinned dependency of above pinned yaml snapshot.
+    implementation("org.spongepowered:configurate-yaml:4.2.0")
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
