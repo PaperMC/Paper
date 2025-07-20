@@ -38,6 +38,6 @@ public abstract class PluginBase implements Plugin {
     @Override
     @NotNull
     public String namespace() {
-        return this.getPluginMeta().getName().toLowerCase(Locale.ROOT);
+        return this.getPluginMeta().namespace();
     }
 }
