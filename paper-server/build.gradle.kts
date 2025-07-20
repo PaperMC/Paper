@@ -155,8 +155,7 @@ dependencies {
     implementation("io.netty:netty-codec-haproxy:4.1.118.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.8")
-    implementation("org.spongepowered:configurate-yaml:4.2.0-20250225.064233-199")
-    implementation("org.spongepowered:configurate-core:4.2.0-20250225.064233-204") // Pinned dependency of above pinned yaml snapshot.
+    implementation("org.spongepowered:configurate-yaml:4.2.0")
 
     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
     runtimeOnly("commons-lang:commons-lang:2.6")
