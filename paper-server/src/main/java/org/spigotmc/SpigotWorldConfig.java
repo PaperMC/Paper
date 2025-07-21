@@ -33,9 +33,15 @@ public class SpigotWorldConfig {
         this.config.set("world-settings.default." + path, val);
     }
 
-    public boolean getBoolean(String path, boolean def) {
-        this.config.addDefault("world-settings.default." + path, def);
+    public boolean getBoolean(String path, boolean def, boolean updateDefaults) {
+        if (updateDefaults) {
+            this.config.addDefault("world-settings.default." + path, def);
+        }
         return this.config.getBoolean("world-settings." + this.worldName + "." + path, this.config.getBoolean("world-settings.default." + path));
+    }
+
+    public boolean getBoolean(String path, boolean def) {
+        return this.getBoolean(path, def, true);
     }
 
     public double getDouble(String path, double def) {
@@ -71,6 +77,10 @@ public class SpigotWorldConfig {
     private Object get(String path, Object def) {
         this.config.addDefault("world-settings.default." + path, def);
         return this.config.get("world-settings." + this.worldName + "." + path, this.config.get("world-settings.default." + path));
+    }
+
+    private boolean hasKey(String path) {
+        return this.config.get("world-settings." + this.worldName + "." + path, this.config.get("world-settings.default." + path)) != null;
     }
 
     // Crop growth rates
@@ -208,8 +218,27 @@ public class SpigotWorldConfig {
     public boolean villagersActiveForPanic = true;
     public boolean tickInactiveVillagers = true;
     public boolean ignoreSpectatorActivation = false;
+    public boolean enabledActivationRange = false;
 
     private void activationRange() {
+        // I dont want to create a new version as I know we are planning on migrating this soon.
+        // Unless I should anyways?
+
+        // Activation range is set
+        if (this.hasKey("entity-activation-range.enabled")) {
+            // Avoid updating the defaults, as it will cause it to override.
+            this.enabledActivationRange = this.getBoolean("entity-activation-range.enabled", false, false);
+        } else {
+            // Its not set... so we need to figure out:
+            // 1. Is this a new config? 2. Is this an old config?
+            if (this.hasKey("entity-activation-range.monsters")) { // this is a totally arbitrary key
+                // This is an old config without the enabled option, so enable it
+                this.enabledActivationRange = this.getBoolean("entity-activation-range.enabled", true);
+            } else {
+                // This is a new config option as we dont have the monsters field, so lets define it as disabled!
+                this.enabledActivationRange = this.getBoolean("entity-activation-range.enabled", false);
+            }
+        }
         boolean hasAnimalsConfig = config.getInt("entity-activation-range.animals", this.animalActivationRange) != this.animalActivationRange; // Paper
         this.animalActivationRange = this.getInt("entity-activation-range.animals", this.animalActivationRange);
         this.monsterActivationRange = this.getInt("entity-activation-range.monsters", this.monsterActivationRange);
@@ -240,7 +269,9 @@ public class SpigotWorldConfig {
         this.villagersActiveForPanic = this.getBoolean("entity-activation-range.villagers-active-for-panic", this.villagersActiveForPanic);
         this.tickInactiveVillagers = this.getBoolean("entity-activation-range.tick-inactive-villagers", this.tickInactiveVillagers);
         this.ignoreSpectatorActivation = this.getBoolean("entity-activation-range.ignore-spectators", this.ignoreSpectatorActivation);
-        this.log("Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation);
+        if (this.enabledActivationRange) {
+            this.log("Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation);
+        }
     }
 
     public int playerTrackingRange = 128;
