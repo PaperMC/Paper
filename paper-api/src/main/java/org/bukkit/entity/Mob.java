@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
 
     /**
-     * Check if a mob should be despawned on the peaceful difficulty.
+     * Check if a mob should be despawned when the world is set to peaceful difficulty.
      * This also takes the {@link Mob#getSpawnInPeacefulOverride()} into account.
      *
      * @return True if the entity should be removed in peaceful
@@ -20,11 +20,11 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     boolean shouldDespawnInPeaceful();
 
     /**
-     * Sets if the entity should be removed on the peaceful difficulty.
+     * Sets if the entity should be despawned when the game is set to peaceful difficulty.
      * <ul>
-     *     <li>{@link TriState#NOT_SET} – will revert to the default value</li>
-     *     <li>{@link TriState#TRUE} – will set the entity to be removed on peaceful</li>
-     *     <li>{@link TriState#FALSE} – will set the entity to persist on peaceful difficulty</li>
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>#
+     *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
+     *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
      * </ul>
      *
      * @param state a TriState representing the state of the override
@@ -32,14 +32,15 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     void setDespawnInPeacefulOverride(TriState state);
 
     /**
-     * Gets the state of the spawn in peaceful override.
-     * <ul>
-     *     <li>{@link TriState#NOT_SET} – to the value of the entity type is used</li>
-     *     <li>{@link TriState#TRUE} – the entity will be removed on peaceful</li>
-     *     <li>{@link TriState#FALSE} – the entity will persist on peaceful</li>
+     * Gets the current override value for whether this entity should despawn in peaceful difficulty.
+     * * <ul>
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>#
+     *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
+     *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
      * </ul>
      *
      * @return a TriState representing the state of the override
+     * @see Mob#setDespawnInPeacefulOverride(TriState)
      */
     TriState getSpawnInPeacefulOverride();
 
