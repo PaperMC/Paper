@@ -1,23 +1,22 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.entity.TeleportFlag;
+import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
-import java.util.Set;
 
 /**
  * Event that is fired before attempting to teleport the player (Allows for pre-teleport handling, such as dismounting passengers if teleporting cross-worlds etc.)
  * After the handling of this event, the player teleport will either proceed or cancel.
  */
 @NullMarked
-public class PlayerPreTeleportEvent extends PlayerEvent implements Cancellable {
+public class PlayerPreTeleportEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -25,21 +24,12 @@ public class PlayerPreTeleportEvent extends PlayerEvent implements Cancellable {
     private PlayerTeleportEvent.TeleportCause cause;
     private Set<TeleportFlag> allFlags;
 
-    private boolean cancelled;
-
     @ApiStatus.Internal
     public PlayerPreTeleportEvent(@NotNull Player player, @NotNull Location to, @NotNull PlayerTeleportEvent.TeleportCause cause, @NotNull Set<TeleportFlag> allFlags) {
         super(player);
         this.to = to;
         this.cause = cause;
         this.allFlags = allFlags;
-    }
-
-    /**
-     * Updates the destination location of the teleport
-     */
-    public void setTo(Location location) {
-        this.to = location;
     }
 
     /**
@@ -72,16 +62,6 @@ public class PlayerPreTeleportEvent extends PlayerEvent implements Cancellable {
      */
     public Set<TeleportFlag> getFlags() {
         return this.allFlags;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
     }
 
     @Override
