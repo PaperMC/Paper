@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Sound;
 import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,38 @@ import org.jetbrains.annotations.Nullable;
  * Represents a Mob. Mobs are living entities with simple AI.
  */
 public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
+
+    /**
+     * Check if a mob should be despawned on the peaceful difficulty.
+     * This also takes the {@link Mob#getSpawnInPeacefulOverride()} into account.
+     *
+     * @return True if the entity should be removed in peaceful
+     */
+    boolean shouldDespawnInPeaceful();
+
+    /**
+     * Sets if the entity should be removed on the peaceful difficulty.
+     * <ul>
+     *     <li>{@link TriState#NOT_SET} – will revert to the default value</li>
+     *     <li>{@link TriState#TRUE} – will set the entity to be removed on peaceful</li>
+     *     <li>{@link TriState#FALSE} – will set the entity to persist on peaceful difficulty</li>
+     * </ul>
+     *
+     * @param state a TriState representing the state of the override
+     */
+    void setDespawnInPeacefulOverride(TriState state);
+
+    /**
+     * Gets the state of the spawn in peaceful override.
+     * <ul>
+     *     <li>{@link TriState#NOT_SET} – to the value of the entity type is used</li>
+     *     <li>{@link TriState#TRUE} – the entity will be removed on peaceful</li>
+     *     <li>{@link TriState#FALSE} – the entity will persist on peaceful</li>
+     * </ul>
+     *
+     * @return a TriState representing the state of the override
+     */
+    TriState getSpawnInPeacefulOverride();
 
     // Paper start
     @Override
