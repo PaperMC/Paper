@@ -22,7 +22,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     /**
      * Sets if the entity should be despawned when the game is set to peaceful difficulty.
      * <ul>
-     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>#
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>
      *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
      *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
      * </ul>
@@ -34,7 +34,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     /**
      * Gets the current override value for whether this entity should despawn in peaceful difficulty.
      * * <ul>
-     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>#
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>
      *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
      *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
      * </ul>
