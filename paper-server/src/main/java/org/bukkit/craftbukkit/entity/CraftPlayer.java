@@ -1381,14 +1381,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Create & Call the PlayerPreTeleportEvent.
         PlayerPreTeleportEvent preTeleportEvent = new PlayerPreTeleportEvent(this, location, cause, allFlags); // Paper - PreTeleport API
         this.server.getPluginManager().callEvent(preTeleportEvent);
-        // Return False to inform the Plugin that the teleport was intercepted and the teleport should not proceed
-        if (preTeleportEvent.isCancelled()) {
-            return false;
-        }
-        // Updates the teleport location if the destination was changed in the PreTeleport event
-        if (!preTeleportEvent.getTo().equals(location)) {
-            location = preTeleportEvent.getTo();
-        }
         // Paper end - Add PlayerPreTeleportEvent
 
         boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
