@@ -8,6 +8,7 @@ import io.papermc.paper.command.subcommands.EntityCommand;
 import io.papermc.paper.command.subcommands.HeapDumpCommand;
 import io.papermc.paper.command.subcommands.MobcapsCommand;
 import io.papermc.paper.command.subcommands.ReloadCommand;
+import io.papermc.paper.command.subcommands.ResendChunksCommand;
 import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
 import io.papermc.paper.command.subcommands.VersionCommand;
 import it.unimi.dsi.fastutil.Pair;
@@ -51,6 +52,7 @@ public final class PaperCommand extends Command {
         commands.put(Set.of("dumpitem"), new DumpItemCommand());
         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+        commands.put(Set.of("resendchunks"), new ResendChunksCommand());
         FeatureHooks.registerPaperCommands(commands);
 
         return commands.entrySet().stream()
