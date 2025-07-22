@@ -29,7 +29,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @param state a TriState representing the state of the override
      */
-    void setDespawnInPeacefulOverride(TriState state);
+    void setDespawnInPeacefulOverride(@NotNull TriState state);
 
     /**
      * Gets the current override value for whether this entity should despawn in peaceful difficulty.
@@ -42,6 +42,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @return a TriState representing the state of the override
      * @see Mob#setDespawnInPeacefulOverride(TriState)
      */
+    @NotNull
     TriState getSpawnInPeacefulOverride();
 
     // Paper start
