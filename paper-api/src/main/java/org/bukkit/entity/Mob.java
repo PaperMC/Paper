@@ -13,7 +13,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
 
     /**
      * Check if a mob should be despawned when the world is set to peaceful difficulty.
-     * This also takes the {@link Mob#getSpawnInPeacefulOverride()} into account.
+     * This also takes the {@link Mob#getDespawnInPeacefulOverride()} into account.
      *
      * @return True if the entity should be removed in peaceful
      */
@@ -43,7 +43,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @see Mob#setDespawnInPeacefulOverride(TriState)
      */
     @NotNull
-    TriState getSpawnInPeacefulOverride();
+    TriState getDespawnInPeacefulOverride();
 
     // Paper start
     @Override

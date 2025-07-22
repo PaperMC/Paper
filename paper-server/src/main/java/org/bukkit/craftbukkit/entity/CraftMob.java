@@ -33,7 +33,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public TriState getSpawnInPeacefulOverride() {
+    public TriState getDespawnInPeacefulOverride() {
         return this.getHandle().despawnInPeacefulOverride;
     }
 
