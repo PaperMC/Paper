@@ -1,15 +1,21 @@
 package org.bukkit.entity;
 
+import com.destroystokyo.paper.entity.Pathfinder;
+import io.papermc.paper.entity.Leashable;
 import net.kyori.adventure.util.TriState;
+import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.loot.LootTable;
 import org.bukkit.loot.Lootable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a Mob. Mobs are living entities with simple AI.
  */
-public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
+@NullMarked
+public interface Mob extends LivingEntity, Lootable, Leashable {
 
     /**
      * Check if a mob should be despawned when the world is set to peaceful difficulty.
@@ -22,39 +28,36 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     /**
      * Sets if the entity should be despawned when the game is set to peaceful difficulty.
      * <ul>
-     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity</li>
      *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
-     *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
+     *     <li>{@link TriState#FALSE} – The entity will not automatically be removed in Peaceful difficulty</li>
      * </ul>
      *
      * @param state a TriState representing the state of the override
      */
-    void setDespawnInPeacefulOverride(@NotNull TriState state);
+    void setDespawnInPeacefulOverride(TriState state);
 
     /**
      * Gets the current override value for whether this entity should despawn in peaceful difficulty.
-     * * <ul>
-     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity type</li>
+     * <ul>
+     *     <li>{@link TriState#NOT_SET} – Use the default behavior for the entity</li>
      *     <li>{@link TriState#TRUE} – The entity will be removed in Peaceful difficulty</li>
-     *     <li>{@link TriState#FALSE} – The entity will not be automatically removed in Peaceful difficulty</li>
+     *     <li>{@link TriState#FALSE} – The entity will not automatically be removed in Peaceful difficulty</li>
      * </ul>
      *
      * @return a TriState representing the state of the override
      * @see Mob#setDespawnInPeacefulOverride(TriState)
      */
-    @NotNull
     TriState getDespawnInPeacefulOverride();
 
-    // Paper start
     @Override
-    org.bukkit.inventory.@org.jetbrains.annotations.NotNull EntityEquipment getEquipment();
+    EntityEquipment getEquipment();
 
     /**
      * Enables access to control the pathing of an Entity
      * @return Pathfinding Manager for this entity
      */
-    @NotNull
-    com.destroystokyo.paper.entity.Pathfinder getPathfinder();
+    Pathfinder getPathfinder();
 
     /**
      * Check if this mob is exposed to daylight
@@ -70,7 +73,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @param location location to look at
      */
-    void lookAt(@NotNull org.bukkit.Location location);
+    void lookAt(Location location);
 
     /**
      * Instruct this Mob to look at a specific Location
@@ -81,7 +84,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param headRotationSpeed head rotation speed
      * @param maxHeadPitch max head pitch rotation
      */
-    void lookAt(@NotNull org.bukkit.Location location, float headRotationSpeed, float maxHeadPitch);
+    void lookAt(Location location, float headRotationSpeed, float maxHeadPitch);
 
     /**
      * Instruct this Mob to look at a specific Entity
@@ -92,7 +95,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @param entity entity to look at
      */
-    void lookAt(@NotNull Entity entity);
+    void lookAt(Entity entity);
 
     /**
      * Instruct this Mob to look at a specific Entity
@@ -105,7 +108,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param headRotationSpeed head rotation speed
      * @param maxHeadPitch max head pitch rotation
      */
-    void lookAt(@NotNull Entity entity, float headRotationSpeed, float maxHeadPitch);
+    void lookAt(Entity entity, float headRotationSpeed, float maxHeadPitch);
 
     /**
      * Instruct this Mob to look at a specific position
@@ -144,7 +147,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @return the max head pitch rotation
      */
     int getMaxHeadPitch();
-    // Paper end
+
     /**
      * Instructs this Mob to set the specified LivingEntity as its target.
      * <p>
@@ -153,26 +156,25 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @param target New LivingEntity to target, or null to clear the target
      */
-    public void setTarget(@Nullable LivingEntity target);
+    void setTarget(@Nullable LivingEntity target);
 
     /**
      * Gets the current target of this Mob
      *
      * @return Current target of this creature, or null if none exists
      */
-    @Nullable
-    public LivingEntity getTarget();
+    @Nullable LivingEntity getTarget();
 
     /**
      * Sets whether this mob is aware of its surroundings.
-     *
+     * <p>
      * Unaware mobs will still move if pushed, attacked, etc. but will not move
      * or perform any actions on their own. Unaware mobs may also have other
      * unspecified behaviours disabled, such as drowning.
      *
      * @param aware whether the mob is aware
      */
-    public void setAware(boolean aware);
+    void setAware(boolean aware);
 
     /**
      * Gets whether this mob is aware of its surroundings.
@@ -183,7 +185,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @return whether the mob is aware
      */
-    public boolean isAware();
+    boolean isAware();
 
     /**
      * Get the {@link Sound} this mob makes while ambiently existing. This sound
@@ -195,18 +197,14 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @return the ambient sound, or null if this entity is ambiently quiet
      */
-    @Nullable
-    public Sound getAmbientSound();
+    @Nullable Sound getAmbientSound();
 
-    // Paper start - LootTable API
     @Override
-    default void setLootTable(final @Nullable org.bukkit.loot.LootTable table, final long seed) {
+    default void setLootTable(final @Nullable LootTable table, final long seed) {
         this.setLootTable(table);
         this.setSeed(seed);
     }
-    // Paper end - LootTable API
 
-    // Paper start - Missing Entity API
     /**
      * Some mobs will raise their arm(s) when aggressive:
      * <ul>
@@ -238,30 +236,25 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @see #isAggressive()
      */
     void setAggressive(boolean aggressive);
-    // Paper end - Missing Entity API
 
-    // Paper start - left-handed API
     /**
      * Check if Mob is left-handed
      *
      * @return True if left-handed
      */
-    public boolean isLeftHanded();
+    boolean isLeftHanded();
 
     /**
       * Set if Mob is left-handed
       *
       * @param leftHanded True if left-handed
       */
-    public void setLeftHanded(boolean leftHanded);
-    // Paper end - left-handed API
+    void setLeftHanded(boolean leftHanded);
 
-    // Paper start - mob xp reward API
     /**
      * Gets the amount of experience the mob will possibly drop. This value is randomized and it can give different results
      *
      * @return the amount of experience the mob will possibly drop
      */
-    public int getPossibleExperienceReward();
-    // Paper end - mob xp reward API
+    int getPossibleExperienceReward();
 }
