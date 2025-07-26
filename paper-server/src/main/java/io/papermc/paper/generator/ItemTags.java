@@ -4,8 +4,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.VisibleForTesting;
 
-interface ItemTags {
+@VisibleForTesting
+public interface ItemTags {
 
     TagKey<Item> BUCKET = create("bucket");
     TagKey<Item> FISH_BUCKET = create("fish_bucket");
