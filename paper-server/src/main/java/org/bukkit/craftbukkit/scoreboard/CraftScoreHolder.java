@@ -48,5 +48,12 @@ public interface CraftScoreHolder extends ScoreHolder {
         public net.minecraft.world.scores.ScoreHolder asNmsScoreHolder() {
             return this;
         }
+
+        @Override
+        public String toString() {
+            return "CraftStringScoreHolder{" +
+                "name='" + this.name + '\'' +
+                '}';
+        }
     }
 }
