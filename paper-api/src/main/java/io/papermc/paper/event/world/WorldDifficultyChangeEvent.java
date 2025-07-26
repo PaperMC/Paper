@@ -5,6 +5,7 @@ import org.bukkit.Difficulty;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.WorldEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -22,6 +23,7 @@ public class WorldDifficultyChangeEvent extends WorldEvent {
     private final @Nullable CommandSourceStack commandSource;
     private final Difficulty difficulty;
 
+    @ApiStatus.Internal
     public WorldDifficultyChangeEvent(final World world, final @Nullable CommandSourceStack commandSource, final Difficulty difficulty) {
         super(world);
         this.commandSource = commandSource;
