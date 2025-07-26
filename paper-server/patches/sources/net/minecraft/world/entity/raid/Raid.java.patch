@@ -22,9 +22,24 @@
              )
              .apply(instance, Raid::new)
      );
-@@ -126,6 +_,7 @@
+@@ -114,18 +_,19 @@
+     private int postRaidTicks;
+     private int raidCooldownTicks;
+     private final RandomSource random = RandomSource.create();
+-    public int numGroups;
++    public final int numGroups;
+     private Raid.RaidStatus status;
+     private int celebrationTicks;
+     private Optional<BlockPos> waveSpawnPos = Optional.empty();
+ 
+-    public Raid(BlockPos center, Difficulty difficulty) {
++    public Raid(BlockPos center, ServerLevel serverLevel) { // Paper - replace Difficulty with ServerLevel for configurable difficulty
+         this.active = true;
+         this.raidCooldownTicks = 300;
+         this.raidEvent.setProgress(0.0F);
          this.center = center;
-         this.numGroups = this.getNumGroups(difficulty);
+-        this.numGroups = this.getNumGroups(difficulty);
++        this.numGroups = this.getNumGroups(serverLevel, serverLevel.getDifficulty()); // Paper - configurable numGroups
          this.status = Raid.RaidStatus.ONGOING;
 +        this.persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(PDC_TYPE_REGISTRY); // Paper - add persistent data container
      }
@@ -129,6 +144,18 @@
          this.totalHealth = 0.0F;
          DifficultyInstance currentDifficultyAt = level.getCurrentDifficultyAt(pos);
          boolean shouldSpawnBonusGroup = this.shouldSpawnBonusGroup();
+@@ -517,9 +_,9 @@
+                 this.joinRaid(level, i, raider, pos, false);
+                 if (raiderType.entityType == EntityType.RAVAGER) {
+                     Raider raider1 = null;
+-                    if (i == this.getNumGroups(Difficulty.NORMAL)) {
++                    if (i == this.getNumGroups(level, Difficulty.NORMAL)) { // Paper - configurable difficulty
+                         raider1 = EntityType.PILLAGER.create(level, EntitySpawnReason.EVENT);
+-                    } else if (i >= this.getNumGroups(Difficulty.HARD)) {
++                    } else if (i >= this.getNumGroups(level, Difficulty.HARD)) { // Paper - configurable difficulty
+                         if (i2 == 0) {
+                             raider1 = EntityType.EVOKER.create(level, EntitySpawnReason.EVENT);
+                         } else {
 @@ -541,6 +_,7 @@
          this.groupsSpawned++;
          this.updateBossbar();
@@ -146,6 +173,19 @@
              }
          }
      }
+@@ -749,6 +_,12 @@
+         return this.active;
+     }
+ 
++    // Paper start
++    public int getNumGroups(ServerLevel serverLevel, Difficulty difficulty) {
++        return serverLevel.paperConfig().entities.behavior.raidNumGroupsDifficulty.getOrDefault(difficulty, this.getNumGroups(difficulty));
++    }
++    // Paper end
++
+     public int getNumGroups(Difficulty difficulty) {
+         return switch (difficulty) {
+             case PEACEFUL -> 0;
 @@ -774,6 +_,12 @@
      public void addHeroOfTheVillage(Entity player) {
          this.heroesOfTheVillage.add(player.getUUID());

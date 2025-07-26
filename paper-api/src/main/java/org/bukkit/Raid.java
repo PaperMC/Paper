@@ -3,13 +3,16 @@ package org.bukkit;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Raider;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.persistence.PersistentDataHolder;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a raid event.
  */
-public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // Paper
+@NullMarked
+public interface Raid extends PersistentDataHolder {
 
     /**
      * Get whether this raid started.
@@ -48,7 +51,6 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      *
      * @return location
      */
-    @NotNull
     Location getLocation();
 
     /**
@@ -59,7 +61,6 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      *
      * @return Raids status
      */
-    @NotNull
     RaidStatus getStatus();
 
     /**
@@ -87,6 +88,15 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
     int getTotalWaves();
 
     /**
+     * Gets the number of waves in this raid (exclude the additional wave).
+     *
+     * @param totalWaves number of waves
+     * @throws IllegalArgumentException if totalWaves is negative or zero
+     * @throws IllegalArgumentException if the totalWaves is less or equals to {@link #getSpawnedGroups()}
+     */
+    void setTotalWaves(int totalWaves);
+
+    /**
      * Gets the sum of all raider's health.
      *
      * @return total raiders health
@@ -98,7 +108,6 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      *
      * @return a set of unique ids
      */
-    @NotNull
     Set<UUID> getHeroes();
 
     /**
@@ -106,13 +115,29 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      *
      * @return a list of current raiders
      */
-    @NotNull
     List<Raider> getRaiders();
+
+    /**
+     * Gets the id of this raid.
+     *
+     * @return the raid id
+     * @deprecated Raid identifiers are magic internal values and may or may not be present.
+     * -1 is returned for raids without an assigned id.
+     */
+    @Deprecated(forRemoval = true, since = "1.21.5")
+    int getId();
+
+    /**
+     * Get the boss bar to be displayed for this raid.
+     *
+     * @return the boss bar
+     */
+    BossBar getBossBar();
 
     /**
      * Represents the status of a {@link Raid}.
      */
-    public enum RaidStatus {
+    enum RaidStatus {
 
         /**
          * The raid is in progress.
@@ -131,23 +156,4 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
          */
         STOPPED;
     }
-
-    // Paper start
-    /**
-     * Gets the id of this raid.
-     *
-     * @return the raid id
-     * @deprecated Raid identifiers are magic internal values and may or may not be present.
-     * -1 is returned for raids without an assigned id.
-     */
-    @Deprecated(forRemoval = true, since = "1.21.5")
-    int getId();
-
-    /**
-     * Get the boss bar to be displayed for this raid.
-     *
-     * @return the boss bar
-     */
-    org.bukkit.boss.@NotNull BossBar getBossBar();
-    // Paper end
 }

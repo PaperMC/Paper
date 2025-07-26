@@ -289,6 +289,13 @@ public class WorldConfiguration extends ConfigurationPart {
                 map.put(EntityType.VINDICATOR, Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList());
             });
 
+            public Map<Difficulty, Integer> raidNumGroupsDifficulty = Map.of(
+                Difficulty.PEACEFUL, 0,
+                Difficulty.EASY, 3,
+                Difficulty.NORMAL, 5,
+                Difficulty.HARD, 7
+            );
+
             public boolean disableCreeperLingeringEffect = false;
             public boolean enderDragonsDeathAlwaysPlacesDragonEgg = false;
             public boolean phantomsDoNotSpawnOnCreativePlayers = true;
