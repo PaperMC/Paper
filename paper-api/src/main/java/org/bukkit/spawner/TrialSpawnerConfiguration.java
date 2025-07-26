@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-@Deprecated(since = "1.21.7", forRemoval = true)
+@Deprecated(since = "1.21.8", forRemoval = true)
 public interface TrialSpawnerConfiguration extends BaseSpawner {
 
     /**

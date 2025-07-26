@@ -34,8 +34,13 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     protected CraftTrialSpawner(CraftTrialSpawner state, @Nullable Location location) {
         super(state, location);
-        this.normalConfig = state.normalConfig;
-        this.ominousConfig = state.ominousConfig;
+        // only copy if defined (legacy path)
+        if (state.normalConfig != null) {
+            this.normalConfig = new CraftTrialSpawnerConfiguration(state.normalConfig, this.getSnapshot());
+        }
+        if (state.ominousConfig != null) {
+            this.ominousConfig = new CraftTrialSpawnerConfiguration(state.ominousConfig, this.getSnapshot());
+        }
     }
 
     @Override
