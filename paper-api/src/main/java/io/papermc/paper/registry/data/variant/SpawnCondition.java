@@ -49,8 +49,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
      */
     @Contract(pure = true, value = "_ -> new")
     static SpawnCondition moonBrightnessCheck(final Range<Double> range) {
-        Preconditions.checkArgument(range.lowerBoundType() == BoundType.CLOSED, "Range lower bound must be closed");
-        Preconditions.checkArgument(range.upperBoundType() == BoundType.CLOSED, "Range lower bound must be closed");
+        Preconditions.checkArgument(!range.hasLowerBound() || range.lowerBoundType() == BoundType.CLOSED, "Range lower bound must be closed");
+        Preconditions.checkArgument(!range.hasUpperBound() || range.upperBoundType() == BoundType.CLOSED, "Range upper bound must be closed");
         return new MoonBrightnessCheckImpl(range);
     }
 
