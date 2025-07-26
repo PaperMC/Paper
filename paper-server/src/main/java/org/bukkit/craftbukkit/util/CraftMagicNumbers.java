@@ -485,28 +485,47 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] serializeItem(ItemStack item) {
+    public byte[] serializeItem(ItemStack item, boolean compress) {
+        CompoundTag compound = serializeItemToCompound(item);
+        return writeCompoundToBytes(compound, compress);
+    }
+
+    @Override
+    public void serializeItemToNbt(ItemStack item, java.io.OutputStream output) throws IOException {
+        Preconditions.checkNotNull(output, "output cannot be null");
+
+        CompoundTag compound = serializeItemToCompound(item);
+        writeCompoundToStream(compound, output);
+    }
+
+    private CompoundTag serializeItemToCompound(ItemStack item) {
         Preconditions.checkNotNull(item, "null cannot be serialized");
         Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialized");
 
-        return serializeNbtToBytes(
-            (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+        return (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
                 MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE),
                 CraftItemStack.unwrap(item)
-            ).getOrThrow()
-        );
+        ).getOrThrow();
     }
 
     @Override
     public ItemStack deserializeItem(byte[] data) {
-        Preconditions.checkNotNull(data, "null cannot be deserialized");
-        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
+        Preconditions.checkNotNull(data, "data cannot be null");
+        Preconditions.checkArgument(data.length > 0, "data cannot be empty");
 
-        CompoundTag compound = deserializeNbtFromBytes(data);
-        return deserializeItem(compound);
+        CompoundTag compound = readCompoundFromBytes(data);
+        return deserializeItemFromCompound(compound);
     }
 
-    private ItemStack deserializeItem(CompoundTag compound) {
+    @Override
+    public ItemStack deserializeItemFromNbt(java.io.InputStream input) throws IOException {
+        Preconditions.checkNotNull(input, "input cannot be null");
+
+        CompoundTag compound = readCompoundFromStream(input);
+        return deserializeItemFromCompound(compound);
+    }
+
+    private ItemStack deserializeItemFromCompound(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
@@ -610,7 +629,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         });
 
-        return deserializeItem(tag);
+        return deserializeItemFromCompound(tag);
     }
 
     @Override
@@ -644,7 +663,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] serializeEntity(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
+    public byte[] serializeEntity(org.bukkit.entity.Entity entity, boolean compress, EntitySerializationFlag... serializationFlags) {
+        CompoundTag compound = serializeEntityToCompound(entity, serializationFlags);
+        return writeCompoundToBytes(compound, compress);
+    }
+
+    @Override
+    public void serializeEntityToNbt(org.bukkit.entity.Entity entity, java.io.OutputStream outputStream, EntitySerializationFlag... serializationFlags) throws IOException {
+        Preconditions.checkNotNull(outputStream, "outputStream cannot be null");
+
+        CompoundTag compound = serializeEntityToCompound(entity, serializationFlags);
+        writeCompoundToStream(compound, outputStream);
+    }
+
+    private CompoundTag serializeEntityToCompound(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
         Preconditions.checkNotNull(entity, "null cannot be serialized");
         Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
 
@@ -700,26 +732,40 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     throw new IllegalArgumentException("Couldn't serialize entity");
                 }
             }
-            return serializeNbtToBytes(output.buildResult());
+            return output.buildResult();
         }
     }
 
     @Override
     public org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID, boolean preservePassengers) {
-        Preconditions.checkNotNull(data, "null cannot be deserialized");
-        Preconditions.checkArgument(data.length > 0, "Cannot deserialize empty data");
+        Preconditions.checkNotNull(data, "input cannot be null");
+        Preconditions.checkNotNull(world, "world cannot be null");
+        Preconditions.checkArgument(data.length > 0, "data cannot be empty");
 
-        CompoundTag compound = deserializeNbtFromBytes(data);
+        CompoundTag compound = readCompoundFromBytes(data);
+        return deserializeEntityFromCompound(compound, world, preserveUUID, preservePassengers);
+    }
+
+    @Override
+    public org.bukkit.entity.Entity deserializeEntityFromNbt(java.io.InputStream input, World world, boolean preserveUUID, boolean preservePassengers) throws IOException {
+        Preconditions.checkNotNull(input, "input cannot be null");
+        Preconditions.checkNotNull(world, "world cannot be null");
+
+        CompoundTag compound = readCompoundFromStream(input);
+        return deserializeEntityFromCompound(compound, world, preserveUUID, preservePassengers);
+    }
+
+    private org.bukkit.entity.Entity deserializeEntityFromCompound(CompoundTag compound, World world, boolean preserveUUID, boolean preservePassengers) {
         int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
             compound.remove("Passengers");
         }
-        net.minecraft.world.entity.Entity nmsEntity = deserializeEntity(compound, ((CraftWorld) world).getHandle(), preserveUUID);
+        net.minecraft.world.entity.Entity nmsEntity = deserializeEntityFromConvertedCompound(compound, ((CraftWorld) world).getHandle(), preserveUUID);
         return nmsEntity.getBukkitEntity();
     }
 
-    private net.minecraft.world.entity.Entity deserializeEntity(CompoundTag compound, ServerLevel world, boolean preserveUUID) {
+    private net.minecraft.world.entity.Entity deserializeEntityFromConvertedCompound(CompoundTag compound, ServerLevel world, boolean preserveUUID) {
         if (!preserveUUID) {
             // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
             compound.remove("UUID");
@@ -741,39 +787,52 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 if (!(tag instanceof final CompoundTag serializedPassenger)) {
                     continue;
                 }
-                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
+                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntityFromConvertedCompound(serializedPassenger, world, preserveUUID);
                 passengerEntity.startRiding(nmsEntity, true);
             }
         });
         return nmsEntity;
     }
 
-    private byte[] serializeNbtToBytes(CompoundTag compound) {
+    private void writeCompoundToStream(CompoundTag compound, java.io.OutputStream output) throws IOException {
         compound.putInt("DataVersion", getDataVersion());
-        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
-        try {
-            net.minecraft.nbt.NbtIo.writeCompressed(
+        net.minecraft.nbt.NbtIo.write(
                 compound,
-                outputStream
-            );
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-        return outputStream.toByteArray();
+                new java.io.DataOutputStream(output)
+        );
     }
 
-    private CompoundTag deserializeNbtFromBytes(byte[] data) {
-        CompoundTag compound;
-        try {
-            compound = net.minecraft.nbt.NbtIo.readCompressed(
-                new java.io.ByteArrayInputStream(data), net.minecraft.nbt.NbtAccounter.unlimitedHeap()
-            );
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+    private CompoundTag readCompoundFromStream(java.io.InputStream input) throws IOException {
+        CompoundTag compound = net.minecraft.nbt.NbtIo.read(
+                new java.io.DataInputStream(input),
+                net.minecraft.nbt.NbtAccounter.unlimitedHeap()
+        );
         int dataVersion = compound.getIntOr("DataVersion", 0);
         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
         return compound;
+    }
+
+    private CompoundTag readCompoundFromBytes(byte[] data) {
+        boolean decompress = UnsafeValues.isGZipCompressedNbt(data);
+        var bis = new it.unimi.dsi.fastutil.io.FastByteArrayInputStream(data);
+        try (var is = decompress ?
+                new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(bis)) :  bis) {
+            return readCompoundFromStream(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private byte[] writeCompoundToBytes(CompoundTag compound, boolean compress) {
+        var bos = new it.unimi.dsi.fastutil.io.FastByteArrayOutputStream();
+        try (var os = compress ?
+                new java.io.BufferedOutputStream(new java.util.zip.GZIPOutputStream(bos)) : bos) {
+            writeCompoundToStream(compound, os);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        bos.trim();
+        return bos.array;
     }
 
     @Override
