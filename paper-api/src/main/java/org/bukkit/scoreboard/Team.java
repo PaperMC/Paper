@@ -338,8 +338,6 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      */
     void addScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
 
-    boolean removeScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
-
     /**
      * This puts a collection of entities onto this team for the scoreboard which results in one
      * packet for the updates rather than a packet-per-entity.
@@ -396,7 +394,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entries are null
      * @throws IllegalStateException if this team has been unregistered
      */
-    void addEntries(@NotNull java.util.Collection<String> entries);
+    void addEntries(@NotNull Collection<String> entries);
 
     /**
      * Removes the player from this team.
@@ -433,6 +431,17 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
     boolean removeEntry(@NotNull ScoreHolder holder);
 
     /**
+     * Removes a collection of score holders from this team which results in one
+     * packet for the updates rather than a packet-per-holder.
+     *
+     * @param holders the score holders to remove
+     * @return if any of the holders were a part of this team
+     * @throws IllegalArgumentException if holders is null
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean removeScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
+
+    /**
      * Removes a collection of entities from this team which results in one
      * packet for the updates rather than a packet-per-entity.
      *
@@ -440,9 +449,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
+     * @deprecated use {@link #removeScoreHolders(Collection)}
      */
+    @Deprecated(since = "1.21.8", forRemoval = true)
     default boolean removeEntities(@NotNull Entity @NotNull ... entities) {
-        return this.removeEntities(List.of(entities));
+        return this.removeScoreHolders(List.of(entities));
     }
 
     /**
@@ -453,7 +464,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
+     * @deprecated use {@link #removeScoreHolders(Collection)}
      */
+    @Deprecated(since = "1.21.8", forRemoval = true)
     default boolean removeEntities(@NotNull Collection<Entity> entities) {
         return this.removeScoreHolders(entities);
     }
@@ -467,8 +480,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entries is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    default boolean removeEntries(@NotNull String... entries) throws IllegalStateException, IllegalArgumentException {
-        return this.removeEntries(java.util.List.of(entries));
+    default boolean removeEntries(@NotNull String... entries) {
+        return this.removeEntries(List.of(entries));
     }
 
     /**
@@ -480,7 +493,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entries is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean removeEntries(@NotNull java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException;
+    boolean removeEntries(@NotNull Collection<String> entries);
 
     /**
      * Unregisters this team from the Scoreboard
@@ -554,7 +567,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @deprecated use {@link #addEntry(ScoreHolder)}
      */
     @Deprecated(since = "1.21.8", forRemoval = true)
-    default void addEntity(@NotNull org.bukkit.entity.Entity entity) {
+    default void addEntity(@NotNull Entity entity) {
         this.addEntry(entity);
     }
 
@@ -569,7 +582,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @deprecated use {@link #removeEntry(ScoreHolder)}
      */
     @Deprecated(since = "1.21.8", forRemoval = true)
-    default boolean removeEntity(@NotNull org.bukkit.entity.Entity entity) {
+    default boolean removeEntity(@NotNull Entity entity) {
         return this.removeEntry(entity);
     }
 
@@ -584,7 +597,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @deprecated use {@link #hasEntry(ScoreHolder)}
      */
     @Deprecated(since = "1.21.8", forRemoval = true)
-    default boolean hasEntity(@NotNull org.bukkit.entity.Entity entity) {
+    default boolean hasEntity(@NotNull Entity entity) {
         return this.hasEntry(entity);
     }
 
