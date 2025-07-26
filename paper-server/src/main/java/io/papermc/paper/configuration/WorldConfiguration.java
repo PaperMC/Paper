@@ -297,6 +297,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public int phantomsSpawnAttemptMinSeconds = 60;
             public int phantomsSpawnAttemptMaxSeconds = 119;
             public boolean parrotsAreUnaffectedByPlayerMovement = false;
+            public boolean throttleInactiveMobGoalSelector = false;
             @BelowZeroToEmpty
             public DoubleOr.Default zombieVillagerInfectionChance = DoubleOr.Default.USE_DEFAULT;
             public MobsCanAlwaysPickUpLoot mobsCanAlwaysPickUpLoot;
