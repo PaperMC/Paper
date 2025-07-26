@@ -268,7 +268,7 @@ public final class CraftTeam extends CraftScoreboardComponent implements Team {
     }
 
     @Override
-    public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
+    public boolean removeEntries(Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
         Preconditions.checkArgument(entries != null, "Entry cannot be null");
         this.checkState();
 

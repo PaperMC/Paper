@@ -1,17 +1,15 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.base.Preconditions;
+import java.util.Objects;
 import net.minecraft.world.scores.Scoreboard;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
-import java.util.Objects;
 import org.bukkit.scoreboard.ScoreHolder;
-import org.jetbrains.annotations.NotNull;
 
 public final class CraftObjective extends CraftScoreboardComponent implements Objective {
     private final net.minecraft.world.scores.Objective objective;
@@ -133,7 +131,7 @@ public final class CraftObjective extends CraftScoreboardComponent implements Ob
     }
 
     @Override
-    public @NotNull Score getScore(@NotNull final ScoreHolder holder) {
+    public Score getScore(final ScoreHolder holder) {
         Preconditions.checkArgument(holder != null, "Entry cannot be null");
         Preconditions.checkArgument(holder.getScoreboardName().length() <= Short.MAX_VALUE, "Score '" + holder + "' is longer than the limit of 32767 characters");
         this.checkState();
