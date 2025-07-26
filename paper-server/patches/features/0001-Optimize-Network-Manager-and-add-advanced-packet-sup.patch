@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e338de3b718 100644
+index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866a23399eb 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -85,7 +85,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -40,10 +40,10 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
      public Channel channel;
      public SocketAddress address;
      // Spigot start
-@@ -146,6 +146,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     @Nullable public SocketAddress haProxyAddress; // Paper - Add API to get player's proxy address
+@@ -147,6 +147,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public @Nullable java.util.Optional<net.minecraft.network.chat.Component> legacySavedLoginEventResultOverride; // Paper - playerloginevent
      public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLoginEventLegacy; // Paper - playerloginevent
+     public @Nullable org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper
 +    // Paper start - Optimize network
 +    public boolean isPending = true;
 +    public boolean queueImmunity;
@@ -51,7 +51,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -420,11 +424,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -421,11 +425,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
@@ -93,7 +93,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
          }
      }
  
-@@ -433,7 +464,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -434,7 +465,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.flushQueue();
              action.accept(this);
          } else {
@@ -102,7 +102,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
          }
      }
  
-@@ -447,21 +478,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -448,21 +479,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
@@ -148,7 +148,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
          }
      }
  
-@@ -473,16 +524,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -474,16 +525,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -211,7 +211,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
  
      private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
      private static int joinAttemptsThisTick; // Paper - Buffer joins to world
-@@ -552,6 +644,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -553,6 +645,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
          this.preparing = false; // Spigot
@@ -219,7 +219,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
          if (this.channel == null) {
              this.delayedDisconnect = disconnectionDetails;
          }
-@@ -740,7 +833,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -741,7 +834,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -228,7 +228,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetListener = this.getPacketListener();
-@@ -751,7 +844,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -752,7 +845,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }
@@ -237,7 +237,7 @@ index 14a25f4d9c6da9b9d7646cf88b80a04f5b4d0823..682fb4cbf9975b21171ae210defd6e33
                  // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-@@ -786,4 +879,97 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -787,4 +880,97 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void setBandwidthLogger(LocalSampleLogger bandwithLogger) {
          this.bandwidthDebugMonitor = new BandwidthDebugMonitor(bandwithLogger);
      }
