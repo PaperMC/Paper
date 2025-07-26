@@ -81,6 +81,13 @@ public final class CraftRaid implements Raid {
     }
 
     @Override
+    public void setTotalWaves(int waves) {
+        Preconditions.checkArgument(waves > 0, "Total waves must be greater than 0");
+        Preconditions.checkArgument(waves >= this.getSpawnedGroups(), "Total waves must be greater than or equal to the current spawned groups (%s)", this.getSpawnedGroups());
+        this.handle.numGroups = waves;
+    }
+
+    @Override
     public float getTotalHealth() {
         return this.handle.getHealthOfLivingRaiders();
     }
