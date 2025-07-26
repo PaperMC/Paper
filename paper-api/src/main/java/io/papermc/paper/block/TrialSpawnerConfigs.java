@@ -16,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
 public class TrialSpawnerConfigs {
 
     // Start generate - TrialSpawnerConfigs
-    // @GeneratedFrom 1.21.7
+    // @GeneratedFrom 1.21.8
     public static final TrialSpawnerConfig TRIAL_CHAMBER_BREEZE_NORMAL = getConfig("trial_chamber/breeze/normal");
 
     public static final TrialSpawnerConfig TRIAL_CHAMBER_BREEZE_OMINOUS = getConfig("trial_chamber/breeze/ominous");

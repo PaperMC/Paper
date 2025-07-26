@@ -38,7 +38,7 @@ public interface TrialSpawnerConfig extends Keyed {
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link RegistryAccess#getRegistry(RegistryKey)},
      * and {@link RegistryKey#TRIAL_SPAWNER_CONFIG}. Trial spawner configs can exist without a key.
      */
-    @Deprecated(forRemoval = true, since = "1.21.7")
+    @Deprecated(since = "1.21.8", forRemoval = true)
     @Override
     NamespacedKey getKey();
 
@@ -46,7 +46,7 @@ public interface TrialSpawnerConfig extends Keyed {
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link RegistryAccess#getRegistry(RegistryKey)},
      * and {@link RegistryKey#TRIAL_SPAWNER_CONFIG}. Trial spawner configs can exist without a key.
      */
-    @Deprecated(forRemoval = true, since = "1.21.7")
+    @Deprecated(since = "1.21.8", forRemoval = true)
     @Override
     default Key key() {
         return Keyed.super.key();

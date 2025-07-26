@@ -189,7 +189,7 @@ public interface TrialSpawner extends TileState {
      * @deprecated TrialSpawnerConfiguration is poorly designed and is replaced by {@link io.papermc.paper.block.TrialSpawnerConfig}
      */
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-    @Deprecated(since = "1.21.7", forRemoval = true)
+    @Deprecated(since = "1.21.8", forRemoval = true)
     TrialSpawnerConfiguration getNormalConfiguration();
 
     /**
@@ -200,7 +200,7 @@ public interface TrialSpawner extends TileState {
      * @deprecated TrialSpawnerConfiguration is poorly designed and is replaced by {@link io.papermc.paper.block.TrialSpawnerConfig}
      */
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-    @Deprecated(since = "1.21.7", forRemoval = true)
+    @Deprecated(since = "1.21.8", forRemoval = true)
     TrialSpawnerConfiguration getOminousConfiguration();
 
     TrialSpawnerConfig currentConfig();

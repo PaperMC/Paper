@@ -62,6 +62,20 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         this.itemsToDropWhenOminous = config.itemsToDropWhenOminous();
     }
 
+    public CraftTrialSpawnerConfiguration(CraftTrialSpawnerConfiguration from, TrialSpawnerBlockEntity snapshot) {
+        this.snapshot = snapshot;
+
+        this.spawnRange = from.spawnRange;
+        this.totalMobs = from.totalMobs;
+        this.simultaneousMobs = from.simultaneousMobs;
+        this.totalMobsAddedPerPlayer = from.totalMobsAddedPerPlayer;
+        this.simultaneousMobsAddedPerPlayer = from.simultaneousMobsAddedPerPlayer;
+        this.ticksBetweenSpawn = from.ticksBetweenSpawn;
+        this.spawnPotentialsDefinition = WeightedList.of(from.spawnPotentialsDefinition.unwrap());
+        this.lootTablesToEject = WeightedList.of(from.lootTablesToEject.unwrap());
+        this.itemsToDropWhenOminous = from.itemsToDropWhenOminous;
+    }
+
     @Override
     public EntityType getSpawnedType() {
         if (this.spawnPotentialsDefinition.isEmpty()) {
