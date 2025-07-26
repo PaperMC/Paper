@@ -379,6 +379,7 @@ tasks.registerGeneratePackTask("generatePaperPack") {
 
     val fsOps = services.fileSystemOperations
     doLast {
+        target.asFile.toPath().cleanDir() // only clear paper pack target, vanilla has an extra structure dir that is not generated
         fsOps.copy {
             from(temporaryDir.resolve("generated/${packPath}"))
             into(target)
