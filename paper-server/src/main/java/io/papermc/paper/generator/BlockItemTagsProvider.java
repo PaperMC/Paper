@@ -85,44 +85,6 @@ public abstract class BlockItemTagsProvider {
                 Blocks.PURPLE_TERRACOTTA,
                 Blocks.BLUE_TERRACOTTA
             );
-        this.tag(BlockTags.STAINED_TERRACOTTA, ItemTags.STAINED_TERRACOTTA)
-            .add(
-                Blocks.GRAY_TERRACOTTA,
-                Blocks.GREEN_TERRACOTTA,
-                Blocks.BROWN_TERRACOTTA,
-                Blocks.YELLOW_TERRACOTTA,
-                Blocks.LIGHT_BLUE_TERRACOTTA,
-                Blocks.ORANGE_TERRACOTTA,
-                Blocks.RED_TERRACOTTA,
-                Blocks.WHITE_TERRACOTTA,
-                Blocks.LIME_TERRACOTTA,
-                Blocks.LIGHT_GRAY_TERRACOTTA,
-                Blocks.CYAN_TERRACOTTA,
-                Blocks.MAGENTA_TERRACOTTA,
-                Blocks.PINK_TERRACOTTA,
-                Blocks.BLACK_TERRACOTTA,
-                Blocks.PURPLE_TERRACOTTA,
-                Blocks.BLUE_TERRACOTTA
-            );
-        this.tag(BlockTags.STAINED_TERRACOTTA, ItemTags.STAINED_TERRACOTTA)
-            .add(
-                Blocks.GRAY_TERRACOTTA,
-                Blocks.GREEN_TERRACOTTA,
-                Blocks.BROWN_TERRACOTTA,
-                Blocks.YELLOW_TERRACOTTA,
-                Blocks.LIGHT_BLUE_TERRACOTTA,
-                Blocks.ORANGE_TERRACOTTA,
-                Blocks.RED_TERRACOTTA,
-                Blocks.WHITE_TERRACOTTA,
-                Blocks.LIME_TERRACOTTA,
-                Blocks.LIGHT_GRAY_TERRACOTTA,
-                Blocks.CYAN_TERRACOTTA,
-                Blocks.MAGENTA_TERRACOTTA,
-                Blocks.PINK_TERRACOTTA,
-                Blocks.BLACK_TERRACOTTA,
-                Blocks.PURPLE_TERRACOTTA,
-                Blocks.BLUE_TERRACOTTA
-            );
         this.tag(BlockTags.TERRACOTTA, ItemTags.TERRACOTTA)
             .addTag(BlockTags.GLAZED_TERRACOTTA)
             .addTag(BlockTags.STAINED_TERRACOTTA)
@@ -136,12 +98,6 @@ public abstract class BlockItemTagsProvider {
                 Blocks.INFESTED_CHISELED_STONE_BRICKS,
                 Blocks.INFESTED_CRACKED_STONE_BRICKS,
                 Blocks.INFESTED_MOSSY_STONE_BRICKS
-            );
-        this.tag(BlockTags.MUSHROOM_BLOCKS, ItemTags.MUSHROOM_BLOCKS)
-            .add(
-                Blocks.BROWN_MUSHROOM_BLOCK,
-                Blocks.MUSHROOM_STEM,
-                Blocks.RED_MUSHROOM_BLOCK
             );
         this.tag(BlockTags.MUSHROOM_BLOCKS, ItemTags.MUSHROOM_BLOCKS)
             .add(
@@ -199,13 +155,6 @@ public abstract class BlockItemTagsProvider {
                 Blocks.SANDSTONE,
                 Blocks.CHISELED_SANDSTONE
             );
-        this.tag(BlockTags.SANDSTONES, ItemTags.SANDSTONES)
-            .add(
-                Blocks.SMOOTH_SANDSTONE,
-                Blocks.CUT_SANDSTONE,
-                Blocks.SANDSTONE,
-                Blocks.CHISELED_SANDSTONE
-            );
         this.tag(BlockTags.SPONGE, ItemTags.SPONGE)
             .add(
                 Blocks.WET_SPONGE,
@@ -255,11 +204,6 @@ public abstract class BlockItemTagsProvider {
                 Blocks.PURPUR_BLOCK,
                 Blocks.PURPUR_SLAB,
                 Blocks.PURPUR_STAIRS
-            );
-        this.tag(BlockTags.LANTERNS, ItemTags.LANTERNS)
-            .add(
-                Blocks.LANTERN,
-                Blocks.SOUL_LANTERN
             );
         this.tag(BlockTags.LANTERNS, ItemTags.LANTERNS)
             .add(

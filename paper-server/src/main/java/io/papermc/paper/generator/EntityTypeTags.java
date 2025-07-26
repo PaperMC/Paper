@@ -4,8 +4,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import org.jetbrains.annotations.VisibleForTesting;
 
-interface EntityTypeTags {
+@VisibleForTesting
+public interface EntityTypeTags {
 
     TagKey<EntityType<?>> HORSES = create("horses");
     TagKey<EntityType<?>> MINECART = create("minecart");

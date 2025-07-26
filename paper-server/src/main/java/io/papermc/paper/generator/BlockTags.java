@@ -4,8 +4,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.VisibleForTesting;
 
-interface BlockTags {
+@VisibleForTesting
+public interface BlockTags {
 
     TagKey<Block> COBBLESTONE_WALL = create("cobblestone_wall");
     TagKey<Block> COBBLESTONE = create("cobblestone");

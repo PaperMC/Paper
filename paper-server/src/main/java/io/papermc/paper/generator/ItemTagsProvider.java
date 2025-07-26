@@ -254,15 +254,13 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.CROSSBOW
             );
         this.tag(ItemTags.THROWABLE_PROJECTILES)
+            .addTag(net.minecraft.tags.ItemTags.EGGS)
             .add(
-                Items.EGG,
-                Items.BLUE_EGG,
                 Items.SNOWBALL,
                 Items.WIND_CHARGE,
                 Items.TRIDENT,
                 Items.FIREWORK_ROCKET,
                 Items.LINGERING_POTION,
-                Items.BROWN_EGG,
                 Items.ENDER_PEARL,
                 Items.SPLASH_POTION,
                 Items.EXPERIENCE_BOTTLE
