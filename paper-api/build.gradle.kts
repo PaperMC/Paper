@@ -1,3 +1,7 @@
+import io.papermc.paperweight.checkstyle.JavadocTag
+import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
+import io.papermc.paperweight.checkstyle.setCustomJavadocTags
+
 plugins {
     `java-library`
     `maven-publish`
@@ -7,6 +11,22 @@ plugins {
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+val customJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+paperCheckstyle {
+    val packagesToSkipSource = providers
+        .fileContents(layout.projectDirectory.file(".checkstyle/packages.txt"))
+        .asText.map { it.trim().split("\n").toSet() }
+
+    directoriesToSkip.set(packagesToSkipSource)
+}
+
+tasks.withType<PaperCheckstyleTask>().configureEach {
+    setCustomJavadocTags(customJavadocTags)
 }
 
 val annotationsVersion = "26.0.2"
@@ -187,7 +207,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(customJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements
