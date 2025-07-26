@@ -1,9 +1,8 @@
 package io.papermc.paper.event.world;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Difficulty;
 import org.bukkit.World;
-import org.bukkit.command.CommandSender;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.WorldEvent;
 import org.jspecify.annotations.NullMarked;
@@ -16,27 +15,26 @@ import org.jspecify.annotations.Nullable;
  * the resulting difficulty will always be {@link Difficulty#HARD}
  */
 @NullMarked
-public class WorldDifficultyChangeEvent extends WorldEvent implements Cancellable {
+public class WorldDifficultyChangeEvent extends WorldEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final @Nullable CommandSender commandSender;
-    private Difficulty difficulty;
-    private boolean cancelled;
+    private final @Nullable CommandSourceStack commandSource;
+    private final Difficulty difficulty;
 
-    public WorldDifficultyChangeEvent(final World world, final @Nullable CommandSender commandSender, final Difficulty difficulty) {
+    public WorldDifficultyChangeEvent(final World world, final @Nullable CommandSourceStack commandSource, final Difficulty difficulty) {
         super(world);
-        this.commandSender = commandSender;
+        this.commandSource = commandSource;
         this.difficulty = difficulty;
     }
 
     /**
-     * Gets the command sender associated with this event.
+     * Gets the command source associated with this event.
      *
-     * @return {@code null} if the difficulty was changed via api, otherwise the {@link CommandSender}.
+     * @return {@code null} if the difficulty was changed via api, otherwise the {@link CommandSourceStack}.
      */
-    public @Nullable CommandSender getCommandSender() {
-        return commandSender;
+    public @Nullable CommandSourceStack getCommandSource() {
+        return commandSource;
     }
 
     /**
@@ -46,25 +44,6 @@ public class WorldDifficultyChangeEvent extends WorldEvent implements Cancellabl
      */
     public Difficulty getDifficulty() {
         return difficulty;
-    }
-
-    /**
-     * Set the new difficulty of the world.
-     *
-     * @param difficulty the new difficulty.
-     */
-    public void setDifficulty(final Difficulty difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
     }
 
     @Override
