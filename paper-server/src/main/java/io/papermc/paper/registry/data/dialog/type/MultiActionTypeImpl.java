@@ -26,7 +26,7 @@ public record MultiActionTypeImpl(
         }
 
         @Override
-        public Builder exitAction(final @org.jetbrains.annotations.Nullable ActionButton exitAction) {
+        public Builder exitAction(final @Nullable ActionButton exitAction) {
             this.exitAction = exitAction;
             return this;
         }
