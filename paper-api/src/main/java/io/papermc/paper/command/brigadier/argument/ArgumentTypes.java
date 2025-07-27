@@ -109,9 +109,9 @@ public final class ArgumentTypes {
     }
 
     /**
-     * A column position argument.
+     * A column block position argument.
      * 
-     * @return column position argument
+     * @return column block position argument
      */
     @ApiStatus.Experimental
     public static ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
@@ -149,9 +149,9 @@ public final class ArgumentTypes {
     }
 
     /**
-     * A fine position argument.
+     * A column fine position argument.
      *
-     * @return fine position argument
+     * @return column fine position argument
      * @see #columnFinePosition(boolean) to center whole numbers
      */
     @ApiStatus.Experimental
@@ -160,10 +160,10 @@ public final class ArgumentTypes {
     }
 
     /**
-     * A fine position argument.
+     * A column fine position argument.
      *
      * @param centerIntegers if whole numbers should be centered (+0.5)
-     * @return fine position argument
+     * @return column fine position argument
      */
     @ApiStatus.Experimental
     public static ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
