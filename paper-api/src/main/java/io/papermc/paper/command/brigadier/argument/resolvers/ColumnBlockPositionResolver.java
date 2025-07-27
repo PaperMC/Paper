@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * An {@link ArgumentResolver} that's capable of resolving
- * a column position argument value using a {@link CommandSourceStack}.
+ * a column block position argument value using a {@link CommandSourceStack}.
  *
  * @see ArgumentTypes#columnBlockPosition() 
  */

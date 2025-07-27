@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * An {@link ArgumentResolver} that's capable of resolving
- * a vec2 fine position argument value using a {@link CommandSourceStack}.
+ * a column fine position argument value using a {@link CommandSourceStack}.
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#columnFinePosition()
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#columnFinePosition(boolean)

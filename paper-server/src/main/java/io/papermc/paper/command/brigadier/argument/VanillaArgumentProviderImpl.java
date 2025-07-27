@@ -107,6 +107,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
@@ -174,8 +175,8 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
-        return this.wrap(ColumnPosArgument.columnPos(), result -> source -> {
-            final BlockPos pos = result.getBlockPos((CommandSourceStack) source);
+        return this.wrap(ColumnPosArgument.columnPos(), (result) -> sourceStack -> {
+            final BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
 
             return new ColumnBlockPositionImpl(pos.getX(), pos.getZ());
         });
@@ -184,7 +185,9 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
         return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
-            result -> (block, loadChunk) -> result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), loadChunk))
+            result -> (block, loadChunk) -> {
+                return result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), loadChunk));
+            }
         );
     }
 
@@ -199,8 +202,8 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
-        return this.wrap(Vec2Argument.vec2(centerIntegers), result -> source -> {
-            final Vec3 vec3 = result.getPosition((CommandSourceStack) source);
+        return this.wrap(Vec2Argument.vec2(centerIntegers), (result) -> sourceStack -> {
+            final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
 
             return new ColumnFinePositionImpl(vec3.x(), vec3.z());
         });
@@ -222,14 +225,10 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<Set<Axis>> axes() {
-        return this.wrap(SwizzleArgument.swizzle(), result -> {
+        return this.wrap(SwizzleArgument.swizzle(), (result) -> {
             final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
-                bukkitAxes.add(switch (nmsAxis) {
-                    case X -> Axis.X;
-                    case Y -> Axis.Y;
-                    case Z -> Axis.Z;
-                });
+                bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
             }
             return bukkitAxes;
         });
