@@ -110,6 +110,11 @@ public abstract class BlockItemTagsProvider {
                 Blocks.BROWN_MUSHROOM,
                 Blocks.RED_MUSHROOM
             );
+        this.tag(BlockTags.PISTONS, ItemTags.PISTONS)
+            .add(
+                Blocks.STICKY_PISTON,
+                Blocks.PISTON
+            );
         this.tag(BlockTags.PRISMARINE, ItemTags.PRISMARINE)
             .add(
                 Blocks.PRISMARINE_BRICKS,
@@ -215,9 +220,12 @@ public abstract class BlockItemTagsProvider {
             .addTag(net.minecraft.tags.BlockTags.WOOL_CARPETS)
             .addTag(net.minecraft.tags.BlockTags.SHULKER_BOXES)
             .addTag(net.minecraft.tags.BlockTags.BEDS)
+            .addTag(net.minecraft.tags.BlockTags.CANDLES)
+            .addTag(net.minecraft.tags.BlockTags.TERRACOTTA)
+            .addTag(BlockTags.CONCRETE)
+            .addTag(BlockTags.GLAZED_TERRACOTTA)
             .addTag(BlockTags.STAINED_GLASS)
-            .addTag(BlockTags.STAINED_GLASS_PANE)
-            .addTag(BlockTags.CONCRETE);
+            .addTag(BlockTags.STAINED_GLASS_PANE);
         this.tag(BlockTags.CORAL, ItemTags.CORAL)
             .add(
                 Blocks.BRAIN_CORAL,
@@ -230,6 +238,19 @@ public abstract class BlockItemTagsProvider {
                 Blocks.DEAD_HORN_CORAL,
                 Blocks.DEAD_FIRE_CORAL,
                 Blocks.DEAD_TUBE_CORAL
+            );
+        this.tag(BlockTags.CORAL_FAN, ItemTags.CORAL_FAN)
+            .add(
+                Blocks.BRAIN_CORAL_FAN,
+                Blocks.TUBE_CORAL_FAN,
+                Blocks.DEAD_FIRE_CORAL_FAN,
+                Blocks.DEAD_TUBE_CORAL_FAN,
+                Blocks.DEAD_BRAIN_CORAL_FAN,
+                Blocks.FIRE_CORAL_FAN,
+                Blocks.HORN_CORAL_FAN,
+                Blocks.DEAD_HORN_CORAL_FAN,
+                Blocks.BUBBLE_CORAL_FAN,
+                Blocks.DEAD_BUBBLE_CORAL_FAN
             );
         this.tag(BlockTags.CORAL_BLOCKS, ItemTags.CORAL_BLOCKS)
             .add(

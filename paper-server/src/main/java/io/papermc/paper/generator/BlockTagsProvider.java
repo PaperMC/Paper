@@ -29,8 +29,6 @@ public class BlockTagsProvider extends IntrinsicHolderTagsProvider<Block> {
         this.tag(BlockTags.PISTONS)
             .add(
                 Blocks.MOVING_PISTON,
-                Blocks.STICKY_PISTON,
-                Blocks.PISTON,
                 Blocks.PISTON_HEAD
             );
         this.tag(BlockTags.SKULLS)
@@ -65,6 +63,9 @@ public class BlockTagsProvider extends IntrinsicHolderTagsProvider<Block> {
                 Blocks.SOUL_TORCH,
                 Blocks.SOUL_WALL_TORCH
             );
+        this.tag(BlockTags.COLORABLE)
+            .addTag(net.minecraft.tags.BlockTags.CONCRETE_POWDER)
+            .addTag(net.minecraft.tags.BlockTags.CANDLE_CAKES);
         this.tag(BlockTags.TORCHES)
             .addTag(BlockTags.TORCH)
             .addTag(BlockTags.REDSTONE_TORCH)
@@ -72,25 +73,15 @@ public class BlockTagsProvider extends IntrinsicHolderTagsProvider<Block> {
         this.tag(BlockTags.CORAL_FAN)
             .add(
                 Blocks.DEAD_FIRE_CORAL_WALL_FAN,
-                Blocks.BRAIN_CORAL_FAN,
                 Blocks.HORN_CORAL_WALL_FAN,
                 Blocks.DEAD_HORN_CORAL_WALL_FAN,
-                Blocks.TUBE_CORAL_FAN,
-                Blocks.DEAD_FIRE_CORAL_FAN,
-                Blocks.DEAD_TUBE_CORAL_FAN,
                 Blocks.BRAIN_CORAL_WALL_FAN,
-                Blocks.DEAD_BRAIN_CORAL_FAN,
                 Blocks.TUBE_CORAL_WALL_FAN,
                 Blocks.BUBBLE_CORAL_WALL_FAN,
                 Blocks.DEAD_BRAIN_CORAL_WALL_FAN,
                 Blocks.FIRE_CORAL_WALL_FAN,
                 Blocks.DEAD_BUBBLE_CORAL_WALL_FAN,
-                Blocks.FIRE_CORAL_FAN,
-                Blocks.HORN_CORAL_FAN,
-                Blocks.DEAD_HORN_CORAL_FAN,
-                Blocks.BUBBLE_CORAL_FAN,
-                Blocks.DEAD_TUBE_CORAL_WALL_FAN,
-                Blocks.DEAD_BUBBLE_CORAL_FAN
+                Blocks.DEAD_TUBE_CORAL_WALL_FAN
             );
     }
 }
