@@ -88,7 +88,7 @@ public interface Raid extends PersistentDataHolder {
     int getTotalWaves();
 
     /**
-     * Gets the number of waves in this raid (exclude the additional wave).
+     * Sets the number of waves in this raid.
      *
      * @param totalWaves number of waves
      * @throws IllegalArgumentException if totalWaves is negative or zero
