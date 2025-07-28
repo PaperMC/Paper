@@ -1,8 +1,8 @@
 package io.papermc.paper.generator;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider;
@@ -118,11 +118,6 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.MUSIC_DISC_STRAD,
                 Items.MUSIC_DISC_FAR,
                 Items.MUSIC_DISC_PIGSTEP
-            );
-        this.tag(ItemTags.PISTONS)
-            .add(
-                Items.STICKY_PISTON,
-                Items.PISTON
             );
         this.tag(ItemTags.POTATO)
             .add(
@@ -265,19 +260,8 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.SPLASH_POTION,
                 Items.EXPERIENCE_BOTTLE
             );
-        this.tag(ItemTags.CORAL_FAN)
-            .add(
-                Items.BRAIN_CORAL_FAN,
-                Items.TUBE_CORAL_FAN,
-                Items.DEAD_FIRE_CORAL_FAN,
-                Items.DEAD_TUBE_CORAL_FAN,
-                Items.FIRE_CORAL_FAN,
-                Items.HORN_CORAL_FAN,
-                Items.DEAD_BRAIN_CORAL_FAN,
-                Items.DEAD_HORN_CORAL_FAN,
-                Items.BUBBLE_CORAL_FAN,
-                Items.DEAD_BUBBLE_CORAL_FAN
-            );
+        this.tag(ItemTags.COLORABLE)
+            .addTag(ItemTags.CONCRETE_POWDER);
         this.tag(ItemTags.RAW_ORES)
             .add(
                 Items.RAW_GOLD,
@@ -353,15 +337,23 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
             this.itemAppender = itemAppender;
         }
 
+        private static Item blockToItem(Block block) {
+            Item item = block.asItem();
+            if (item == Items.AIR) {
+                throw new RuntimeException("Unknown block item for " + BuiltInRegistries.BLOCK.getKey(block));
+            }
+            return item;
+        }
+
         @Override
         public TagAppender<Block, Block> add(Block block) {
-            this.itemAppender.add(Objects.requireNonNull(block.asItem()));
+            this.itemAppender.add(blockToItem(block));
             return this;
         }
 
         @Override
         public TagAppender<Block, Block> addOptional(Block block) {
-            this.itemAppender.addOptional(Objects.requireNonNull(block.asItem()));
+            this.itemAppender.addOptional(blockToItem(block));
             return this;
         }
 

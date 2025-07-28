@@ -10,7 +10,6 @@ import io.papermc.paper.tag.EntityTags;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -18,14 +17,11 @@ import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
@@ -94,25 +90,6 @@ public class CustomTagsTest {
     }
 
     // registry tags
-    public static Set<TagKey<Block>> inheritTags() {
-        return Set.of(
-            BlockTags.PISTONS,
-            BlockTags.CORAL_FAN
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("inheritTags")
-    public void testInheritTags(TagKey<Block> parentTagKey) {
-        TagKey<Item> childKey = TagKey.create(Registries.ITEM, parentTagKey.location());
-        HolderSet.Named<Block> parentTag = BuiltInRegistries.BLOCK.get(parentTagKey).orElseThrow();
-        HolderSet.Named<Item> childTag = BuiltInRegistries.ITEM.get(childKey).orElseThrow();
-
-        List<ResourceLocation> entries = parentTag.stream().map(holder -> holder.unwrapKey().orElseThrow().location()).toList();
-        List<ResourceLocation> childEntries = childTag.stream().map(holder -> holder.unwrapKey().orElseThrow().location()).toList();
-        assertTrue(entries.containsAll(childEntries), "Tag '%s' doesn't inherit all the values from %s".formatted(parentTagKey, childKey));
-    }
-
     public record TagPredicate<E>(TagKey<E> tagKey, Predicate<Holder.Reference<E>> filter) {
     }
 

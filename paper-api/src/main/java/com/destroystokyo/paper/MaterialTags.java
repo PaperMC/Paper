@@ -103,7 +103,7 @@ public class MaterialTags {
     /**
      * Covers both cobblestone and mossy Cobblestone.
      *
-     * @deprecated in favour of {@link PaperBlockTypeTagKeys#COBBLESTONE}or {@link PaperItemTypeTagKeys#COBBLESTONE}
+     * @deprecated in favour of {@link PaperBlockTypeTagKeys#COBBLESTONE} or {@link PaperItemTypeTagKeys#COBBLESTONE}
      */
     @Deprecated(since = "1.21.8")
     public static final MaterialSetTag COBBLESTONES = new MaterialSetTag(keyFor("cobblestones"))
@@ -112,7 +112,7 @@ public class MaterialTags {
     /**
      * Covers all colors of concrete.
      *
-     * @deprecated in favour of {@link PaperBlockTypeTagKeys#CONCRETE}or {@link PaperItemTypeTagKeys#CONCRETE}
+     * @deprecated in favour of {@link PaperBlockTypeTagKeys#CONCRETE} or {@link PaperItemTypeTagKeys#CONCRETE}
      */
     @Deprecated(since = "1.21.8")
     public static final MaterialSetTag CONCRETES = new MaterialSetTag(keyFor("concretes"))
@@ -173,7 +173,7 @@ public class MaterialTags {
     /**
      * Covers all variants of fish buckets.
      *
-     * @deprecated in favour of {@link PaperItemTypeTagKeys#BUCKET}
+     * @deprecated in favour of {@link PaperItemTypeTagKeys#FISH_BUCKET}
      */
     @Deprecated(since = "1.21.8")
     public static final MaterialSetTag FISH_BUCKETS = new MaterialSetTag(keyFor("fish_buckets"))
@@ -764,7 +764,7 @@ public class MaterialTags {
     /**
      * Covers the variants of raw ores.
      *
-     * @deprecated in favour of {@link PaperItemTypeTagKeys#BOWS}
+     * @deprecated in favour of {@link PaperItemTypeTagKeys#RAW_ORES}
      */
     @Deprecated(since = "1.21.8")
     public static final MaterialSetTag RAW_ORES = new MaterialSetTag(keyFor("raw_ores"))
