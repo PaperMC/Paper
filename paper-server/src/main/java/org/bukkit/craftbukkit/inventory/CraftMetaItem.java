@@ -318,6 +318,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         DataComponents.FIREWORK_EXPLOSION,
         DataComponents.FIREWORKS,
         DataComponents.INSTRUMENT,
+        DataComponents.JUKEBOX_PLAYABLE,
         DataComponents.MAP_ID,
         DataComponents.PAINTING_VARIANT,
         DataComponents.POT_DECORATIONS,
