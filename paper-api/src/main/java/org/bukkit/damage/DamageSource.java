@@ -1,5 +1,6 @@
 package org.bukkit.damage;
 
+import io.papermc.paper.damage.DamageContext;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -98,6 +99,14 @@ public interface DamageSource {
     public boolean scalesWithDifficulty();
 
     /**
+     * Gets the plugin-provided {@link DamageContext}, if present.
+     *
+     * @return the damage cotnext
+     */
+    @Nullable
+    public DamageContext getDamageContext();
+
+    /**
      * Create a new {@link DamageSource.Builder}.
      *
      * @param damageType the {@link DamageType} to use
@@ -144,6 +153,16 @@ public interface DamageSource {
          */
         @NotNull
         public Builder withDamageLocation(@NotNull Location location);
+
+        /**
+         * Set the {@link DamageContext} of the damage source.
+         *
+         * @param context additional damage context
+         * @return this instance. Allows for chained method calls
+         * @see DamageSource#getDamageContext()
+         */
+        @NotNull
+        public Builder withDamageContext(@NotNull DamageContext context);
 
         /**
          * Create a new {@link DamageSource} instance using the supplied
