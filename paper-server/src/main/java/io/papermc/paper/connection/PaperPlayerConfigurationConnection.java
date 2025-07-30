@@ -19,6 +19,7 @@ import net.kyori.adventure.resource.ResourcePackCallback;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
@@ -71,6 +72,11 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     @Override
     public void showDialog(final DialogLike dialog) {
         this.handle.send(new ClientboundShowDialogPacket(PaperDialog.bukkitToMinecraftHolder((Dialog) dialog)));
+    }
+
+    @Override
+    public void closeDialog() {
+        this.handle.send(ClientboundClearDialogPacket.INSTANCE);
     }
 
     @Override
