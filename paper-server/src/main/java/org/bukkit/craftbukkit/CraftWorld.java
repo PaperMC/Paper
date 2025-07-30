@@ -2322,6 +2322,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
     // Paper end
 
+    // Paper start - expose potion mixing API
+    @Override
+    public ItemStack mixPotion(ItemStack potion, ItemStack ingredient) {
+        return CraftItemStack.asCraftMirror(
+            getHandle().potionBrewing().mix(CraftItemStack.asNMSCopy(ingredient), CraftItemStack.asNMSCopy(potion))
+        );
+    }
+
+    @Override
+    public boolean canMixPotion(ItemStack potion, ItemStack ingredient) {
+        return getHandle().potionBrewing().hasMix(
+            CraftItemStack.asNMSCopy(ingredient), CraftItemStack.asNMSCopy(potion)
+        );
+    }
+    // Paper end
+
     @Override
     public BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes) {
         return this.locateNearestBiome(origin, radius, 32, 64, biomes);
