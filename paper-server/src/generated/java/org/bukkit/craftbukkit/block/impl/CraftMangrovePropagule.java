@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftMangrovePropagule extends CraftBlockData implements MangrovePropagule {
     private static final IntegerProperty AGE = MangrovePropaguleBlock.AGE;
 

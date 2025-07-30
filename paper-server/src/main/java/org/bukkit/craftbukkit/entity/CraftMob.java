@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -18,6 +19,22 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
         super(server, entity);
         this.paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
+    }
+
+    @Override
+    public boolean shouldDespawnInPeaceful() {
+        return this.getHandle().shouldActuallyDespawnInPeaceful();
+    }
+
+    @Override
+    public void setDespawnInPeacefulOverride(final TriState state) {
+        Preconditions.checkArgument(state != null, "TriState cannot be null");
+        this.getHandle().despawnInPeacefulOverride = state;
+    }
+
+    @Override
+    public TriState getDespawnInPeacefulOverride() {
+        return this.getHandle().despawnInPeacefulOverride;
     }
 
     @Override

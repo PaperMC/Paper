@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.Internal
 interface AttributeModifierDisplayBridge {
 
-    Optional<AttributeModifierDisplayBridge> BRIDGE = ServiceLoader.load(AttributeModifierDisplayBridge.class).findFirst();
+    Optional<AttributeModifierDisplayBridge> BRIDGE = ServiceLoader.load(AttributeModifierDisplayBridge.class, AttributeModifierDisplayBridge.class.getClassLoader()).findFirst();
 
     static AttributeModifierDisplayBridge bridge() {
         return BRIDGE.orElseThrow();

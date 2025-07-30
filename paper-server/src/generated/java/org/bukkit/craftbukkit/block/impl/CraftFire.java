@@ -16,7 +16,7 @@ import org.bukkit.block.data.type.Fire;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftFire extends CraftBlockData implements Fire {
     private static final IntegerProperty AGE = FireBlock.AGE;
 

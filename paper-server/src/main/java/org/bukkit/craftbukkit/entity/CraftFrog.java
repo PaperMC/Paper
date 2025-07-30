@@ -63,7 +63,7 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         }
 
         public static Holder<FrogVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.FROG_VARIANT);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
         public CraftVariant(final Holder<FrogVariant> holder) {
             super(holder, count++);

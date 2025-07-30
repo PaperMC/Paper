@@ -9,7 +9,7 @@
      private final boolean transferred;
      private long keepAliveTime;
      private boolean keepAlivePending;
-@@ -45,6 +_,14 @@
+@@ -45,6 +_,17 @@
      private boolean closed = false;
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
@@ -20,21 +20,32 @@
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 +    protected static final net.minecraft.resources.ResourceLocation MINECRAFT_BRAND = net.minecraft.resources.ResourceLocation.withDefaultNamespace("brand"); // Paper - Brand support
-+    public @Nullable String playerBrand; // Paper
++    // Paper start - retain certain values
++    public @Nullable String playerBrand;
++    public final java.util.Set<String> pluginMessagerChannels;
++    // Paper end - retain certain values
  
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
-@@ -52,6 +_,10 @@
+@@ -52,7 +_,18 @@
          this.keepAliveTime = Util.getMillis();
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
 +        // Paper start
 +        this.playerBrand = cookie.brandName();
 +        this.cserver = server.server;
++        this.pluginMessagerChannels = cookie.channels();
 +        // Paper end
      }
++
++    // Paper start - configuration phase API
++    public abstract io.papermc.paper.connection.PlayerCommonConnection getApiConnection();
++
++    public abstract net.kyori.adventure.audience.Audience getAudience();
++    // Paper end - configuration phase API
  
      private void close() {
+         if (!this.closed) {
 @@ -82,7 +_,7 @@
              this.latency = (this.latency * 3 + i) / 4;
              this.keepAlivePending = false;
@@ -44,6 +55,95 @@
          }
      }
  
+@@ -90,14 +_,88 @@
+     public void handlePong(ServerboundPongPacket packet) {
+     }
+ 
++    // Paper start
++    public static final net.minecraft.resources.ResourceLocation CUSTOM_REGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("register");
++    private static final net.minecraft.resources.ResourceLocation CUSTOM_UNREGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("unregister");
++    // Paper end
++
+     @Override
+     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        // Paper start
++        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
++            return;
++        }
++
++        net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
++
++        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
++        final byte[] data = discardedPayload.data();
++        try {
++            final boolean registerChannel = CUSTOM_REGISTER.equals(identifier);
++            if (registerChannel || CUSTOM_UNREGISTER.equals(identifier)) {
++                // Strings separated by zeros instead of length prefixes
++                int startIndex = 0;
++                for (int i = 0; i < data.length; i++) {
++                    final byte b = data[i];
++                    if (b != 0) {
++                        continue;
++                    }
++
++                    readChannelIdentifier(data, startIndex, i, registerChannel);
++                    startIndex = i + 1;
++                }
++
++                // Read the last one
++                readChannelIdentifier(data, startIndex, data.length, registerChannel);
++                return;
++            }
++
++            if (identifier.equals(MINECRAFT_BRAND)) {
++                this.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++            }
++
++            this.cserver.getMessenger().dispatchIncomingMessage(paperConnection(), identifier.toString(), data);
++        } catch (final Exception e) {
++            ServerGamePacketListenerImpl.LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
++            this.disconnect(net.minecraft.network.chat.Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
++        }
++    }
++
++    private void readChannelIdentifier(final byte[] data, final int from, final int to, final boolean register) {
++        io.papermc.paper.connection.PluginMessageBridgeImpl bridge = switch (this) {
++            case ServerGamePacketListenerImpl gamePacketListener -> gamePacketListener.player.getBukkitEntity();
++            case ServerConfigurationPacketListenerImpl commonPacketListener -> commonPacketListener.paperConnection;
++            default -> null;
++        };
++        if (bridge == null) {
++            return;
++        }
++
++
++        final int length = to - from;
++        if (length == 0) {
++            return;
++        }
++
++        final String channel = new String(data, from, length, java.nio.charset.StandardCharsets.US_ASCII);
++        if (register) {
++            bridge.addChannel(channel);
++        } else {
++            bridge.removeChannel(channel);
++        }
++    // Paper end
+     }
+ 
+     @Override
+     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
+         this.server.handleCustomClickAction(packet.id(), packet.payload());
++        // Paper start - Implement click callbacks with custom click action
++        final io.papermc.paper.event.player.PaperPlayerCustomClickEvent event = new io.papermc.paper.event.player.PaperPlayerCustomClickEvent(io.papermc.paper.adventure.PaperAdventure.asAdventure(packet.id()), this.getApiConnection(), packet.payload().orElse(null));
++        event.callEvent();
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(),  packet.payload());
++        // Paper end - Implement click callbacks with custom click action
+     }
+ 
+     @Override
 @@ -105,21 +_,46 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.server);
          if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
@@ -75,7 +175,7 @@
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
 -        this.disconnect(DISCONNECT_UNEXPECTED_QUERY);
-+        if (this.getCookieConnection().handleCookieResponse(packet)) return; // Paper
++        if (this.paperConnection().handleCookieResponse(packet)) return; // Paper
 +        this.disconnect(DISCONNECT_UNEXPECTED_QUERY, io.papermc.paper.connection.DisconnectionReason.INVALID_COOKIE); // Paper - kick event cause
      }
  
@@ -231,11 +331,11 @@
 +
 +    public abstract void disconnectAsync(DisconnectionDetails disconnectionInfo);
 +
-+    public abstract io.papermc.paper.connection.ReadablePlayerCookieConnectionImpl getCookieConnection();
-+
 +    public boolean isTransferred() {
 +        return this.transferred;
 +    }
++
++    public abstract io.papermc.paper.connection.PaperCommonConnection<?> paperConnection();
 +    // Paper end - add proper async disconnect
  
      protected boolean isSingleplayerOwner() {
@@ -245,6 +345,6 @@
  
      protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred);
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
      }
  }

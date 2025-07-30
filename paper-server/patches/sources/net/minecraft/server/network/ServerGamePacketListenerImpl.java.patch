@@ -83,17 +83,31 @@
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie cookie) {
          super(server, connection, cookie);
-@@ -268,7 +_,9 @@
+@@ -268,8 +_,22 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
+-    }
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
 +        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
-     }
++    }
++
++    // Paper start - configuration phase API
++    @Override
++    public io.papermc.paper.connection.PlayerCommonConnection getApiConnection() {
++        return this.playerGameConnection;
++    }
++
++    @Override
++    public net.kyori.adventure.audience.Audience getAudience() {
++        return this.getCraftPlayer();
++    }
++    // Paper end - configuration phase API
  
      @Override
+     public void tick() {
 @@ -288,8 +_,8 @@
          this.knownMovePacketCount = this.receivedMovePacketCount;
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
@@ -152,15 +166,15 @@
 +        // CraftBukkit end
 +        // Paper start - PlayerToggleSneakEvent
 +        net.minecraft.world.entity.player.Input lastInput = this.player.getLastClientInput();
-+        boolean shiftKeyDown = packet.input().shift();
 +        if (lastInput.shift() != packet.input().shift()) {
 +            // Has sneak changed
 +            org.bukkit.event.player.PlayerToggleSneakEvent event = new org.bukkit.event.player.PlayerToggleSneakEvent(this.getCraftPlayer(), packet.input().shift());
 +            this.cserver.getPluginManager().callEvent(event);
 +
 +            // Technically the player input and the flag is desynced, but this is previous behavior.. so should be fine?
-+            if (event.isCancelled()) {
-+               shiftKeyDown = this.player.isShiftKeyDown();
++            if (!event.isCancelled() && this.player.hasClientLoaded()) {
++                // Only set the shift key status if the shift input has changed and the event has not been cancelled
++                this.player.setShiftKeyDown(packet.input().shift());
 +            }
 +        }
 +        // Paper end - PlayerToggleSneakEvent
@@ -169,7 +183,7 @@
              this.player.resetLastActionTime();
 -            this.player.setShiftKeyDown(packet.input().shift());
 -        }
-+            this.player.setShiftKeyDown(shiftKeyDown); // Paper
++            // this.player.setShiftKeyDown(packet.input().shift()); // Paper - move up and only set if event is not cancelled.
 +        }
 +        // Paper start - Add option to make parrots stay
 +        if (packet.input().shift() && this.player.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
@@ -1247,7 +1261,7 @@
                                      this.player.swing(hand, true);
                                  }
 -                            }
-+                            } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
++                            } else { this.player.containerMenu.forceHeldSlot(hand); } // Paper - Fix inventory desync; MC-99075
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
@@ -1313,7 +1327,7 @@
 +
 +                if (cancelled) {
 +                    this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
-+                    this.player.containerMenu.sendAllDataToRemote(); // SPIGOT-2524
++                    this.player.containerMenu.forceHeldSlotAndArmor(hand); // SPIGOT-2524
 +                    return;
 +                }
 +                itemInHand = this.player.getItemInHand(hand); // Update in case it was changed in the event
@@ -1348,7 +1362,7 @@
          LOGGER.info("{} lost connection: {}", this.player.getName().getString(), details.reason().getString());
 -        this.removePlayerFromWorld();
 +        // Paper start - Fix kick event leave message not being sent
-+        final net.kyori.adventure.text.Component quitMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(details.quitMessage().orElse(null));
++        final net.kyori.adventure.text.Component quitMessage = details.quitMessage().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).orElse(null);
 +        this.removePlayerFromWorld(quitMessage);
 +        // Paper end - Fix kick event leave message not being sent
          super.onDisconnect(details);
@@ -1798,7 +1812,7 @@
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
              if (target != null) {
-@@ -1703,16 +_,58 @@
+@@ -1703,16 +_,54 @@
                  }
  
                  AABB boundingBox = target.getBoundingBox();
@@ -1815,23 +1829,24 @@
 -                                        )
 -                                     {
 +                                    // CraftBukkit start
-+                                    boolean triggerLeashUpdate = itemInHand.is(net.minecraft.world.item.Items.LEAD) && target instanceof net.minecraft.world.entity.Leashable;
-+                                    Item origItem = ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() ? null : ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem();
++                                    final Item itemType = itemInHand.getItem();
++                                    boolean triggerLeashUpdate = itemStack.is(Items.LEAD) && target instanceof net.minecraft.world.entity.Leashable;
 +
 +                                    ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
++                                    final boolean resendData = event.isCancelled() || !ServerGamePacketListenerImpl.this.player.getItemInHand(hand).is(itemType);
 +
-+                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
-+                                    if ((target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && origItem != null && origItem == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || !ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().is(origItem))) {
++                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
++                                    if (itemType == Items.WATER_BUCKET && target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && resendData) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
 +                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                    }
 +
-+                                    if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem)) {
++                                    if (triggerLeashUpdate && resendData) {
 +                                        // Refresh the current leash state
 +                                        ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(target, ((net.minecraft.world.entity.Leashable) target).getLeashHolder()));
 +                                    }
 +
-+                                    if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem) {
++                                    if (resendData) {
 +                                        // Refresh the current entity metadata
 +                                        target.refreshEntityData(ServerGamePacketListenerImpl.this.player);
 +                                        // SPIGOT-7136 - Allays
@@ -1840,9 +1855,10 @@
 +                                                target.getId(), java.util.Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values())
 +                                                .map((slot) -> com.mojang.datafixers.util.Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
 +                                                .collect(Collectors.toList()), true)); // Paper - sanitize
++                                            player.containerMenu.sendAllDataToRemote();
++                                        } else {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand); // Paper - fix slot desync (is this needed?)
 +                                        }
-+
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - fix slot desync - always refresh player inventory
 +                                    }
 +
 +                                    if (event.isCancelled()) {
@@ -1850,12 +1866,6 @@
 +                                    }
 +                                    // CraftBukkit end
 +                                    InteractionResult result = entityInteraction.run(ServerGamePacketListenerImpl.this.player, target, hand);
-+
-+                                    // CraftBukkit start
-+                                    if (!itemInHand.isEmpty() && itemInHand.getCount() <= -1) {
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
-+                                    }
-+                                    // CraftBukkit end
 +
 +                                    if (result instanceof InteractionResult.Success success // CraftBukkit
 +                                    ) {
@@ -1878,7 +1888,7 @@
                                  );
                              }
  
-@@ -1738,14 +_,19 @@
+@@ -1738,14 +_,14 @@
                              public void onAttack() {
                                  if (!(target instanceof ItemEntity)
                                      && !(target instanceof ExperienceOrb)
@@ -1888,11 +1898,6 @@
                                      ItemStack itemInHand = ServerGamePacketListenerImpl.this.player.getItemInHand(InteractionHand.MAIN_HAND);
                                      if (itemInHand.isItemEnabled(serverLevel.enabledFeatures())) {
                                          ServerGamePacketListenerImpl.this.player.attack(target);
-+                                        // CraftBukkit start
-+                                        if (!itemInHand.isEmpty() && itemInHand.getCount() <= -1) {
-+                                            ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
-+                                        }
-+                                        // CraftBukkit end
                                      }
                                  } else {
 -                                    ServerGamePacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.invalid_entity_attacked"));
@@ -1982,7 +1987,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1811,7 +_,340 @@
+@@ -1811,7 +_,292 @@
                  } else {
                      boolean flag = packet.stateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2257,61 +2262,13 @@
 +                        net.minecraft.world.inventory.AbstractContainerMenu oldContainer = this.player.containerMenu; // SPIGOT-1224
 +                        this.cserver.getPluginManager().callEvent(event);
 +                        if (this.player.containerMenu != oldContainer) {
++                            this.player.containerMenu.resumeRemoteUpdates();
++                            this.player.containerMenu.broadcastFullState();
 +                            return;
 +                        }
 +
-+                        switch (event.getResult()) {
-+                            case ALLOW:
-+                            case DEFAULT:
-+                                this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
-+                                break;
-+                            case DENY:
-+                                /* Needs enum constructor in InventoryAction
-+                                if (action.modifiesOtherSlots()) {
-+
-+                                } else {
-+                                    if (action.modifiesCursor()) {
-+                                        this.player.playerConnection.sendPacket(new Packet103SetSlot(-1, -1, this.player.inventory.getCarried()));
-+                                    }
-+                                    if (action.modifiesClicked()) {
-+                                        this.player.playerConnection.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, packet102windowclick.slot, this.player.activeContainer.getSlot(packet102windowclick.slot).getItem()));
-+                                    }
-+                                }*/
-+                                switch (action) {
-+                                    // Modified other slots
-+                                    case PICKUP_ALL:
-+                                    case MOVE_TO_OTHER_INVENTORY:
-+                                    case HOTBAR_SWAP:
-+                                    case COLLECT_TO_CURSOR:
-+                                    case UNKNOWN:
-+                                        this.player.containerMenu.sendAllDataToRemote();
-+                                        break;
-+                                    // Modified cursor and clicked
-+                                    case PICKUP_SOME:
-+                                    case PICKUP_HALF:
-+                                    case PICKUP_ONE:
-+                                    case PLACE_ALL:
-+                                    case PLACE_SOME:
-+                                    case PLACE_ONE:
-+                                    case SWAP_WITH_CURSOR:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.player.containerMenu.containerId, this.player.inventoryMenu.incrementStateId(), slotNum, this.player.containerMenu.getSlot(slotNum).getItem()));
-+                                        break;
-+                                    // Modified clicked only
-+                                    case DROP_ALL_SLOT:
-+                                    case DROP_ONE_SLOT:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.player.containerMenu.containerId, this.player.inventoryMenu.incrementStateId(), slotNum, this.player.containerMenu.getSlot(slotNum).getItem()));
-+                                        break;
-+                                    // Modified cursor only
-+                                    case DROP_ALL_CURSOR:
-+                                    case DROP_ONE_CURSOR:
-+                                    case CLONE_STACK:
-+                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
-+                                        break;
-+                                    // Nothing
-+                                    case NOTHING:
-+                                        break;
-+                                }
++                        if (event.getResult() != org.bukkit.event.Event.Result.DENY) { // if denied, synchronizing is fully handled by broadcastChanges at the end
++                            this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
 +                        }
 +
 +                        if (event instanceof CraftItemEvent || event instanceof SmithItemEvent) {
@@ -2324,10 +2281,11 @@
  
                      for (Entry<HashedStack> entry : Int2ObjectMaps.fastIterable(packet.changedSlots())) {
                          this.player.containerMenu.setRemoteSlotUnsafe(entry.getIntKey(), entry.getValue());
-@@ -1824,6 +_,7 @@
+@@ -1824,6 +_,8 @@
                      } else {
                          this.player.containerMenu.broadcastChanges();
                      }
++                    if (packet.buttonNum() == Inventory.SLOT_OFFHAND && this.player.containerMenu != this.player.inventoryMenu) this.player.containerSynchronizer.sendOffHandSlotChange(); // Paper - update offhand data when the player is clicking in an inventory not their own as the sychronizer does not include offhand slots
 +                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
              }
@@ -2576,7 +2534,7 @@
          }
      }
  
-@@ -2027,27 +_,27 @@
+@@ -2027,27 +_,32 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2596,10 +2554,11 @@
 +                    });
                  }
              );
--    }
--
--    @Override
--    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+     }
+ 
+     @Override
+     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        super.handleCustomPayload(packet); // Paper
      }
  
      @Override
@@ -2609,7 +2568,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2078,4 +_,157 @@
+@@ -2078,4 +_,80 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2626,18 +2585,6 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
-+
-+    // Paper start - Implement click callbacks with custom click action
-+    @Override
-+    public void handleCustomClickAction(final net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket packet) {
-+        super.handleCustomClickAction(packet);
-+        if (packet.id().equals(io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CLICK_CALLBACK_RESOURCE_LOCATION)) {
-+            packet.payload().ifPresent(tag ->
-+                io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.tryRunCallback(this.player.getBukkitEntity(), tag)
-+            );
-+        }
-+    }
-+    // Paper end - Implement click callbacks with custom click action
 +
 +    // Paper start - add utilities
 +    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
@@ -2661,70 +2608,6 @@
 +        });
 +    }
 +
-+    // Paper start
-+    public static final ResourceLocation CUSTOM_REGISTER = ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
-+    private static final ResourceLocation CUSTOM_UNREGISTER = ResourceLocation.withDefaultNamespace("unregister"); // CraftBukkit
-+
-+    @Override
-+    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-+        // Paper start
-+        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
-+            this.playerBrand = brand;
-+        }
-+
-+        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
-+            return;
-+        }
-+
-+        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
-+
-+        final net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
-+        final byte[] data = discardedPayload.data();
-+        try {
-+            final boolean registerChannel = CUSTOM_REGISTER.equals(identifier);
-+            if (registerChannel || CUSTOM_UNREGISTER.equals(identifier)) {
-+                // Strings separated by zeros instead of length prefixes
-+                int startIndex = 0;
-+                for (int i = 0; i < data.length; i++) {
-+                    final byte b = data[i];
-+                    if (b != 0) {
-+                        continue;
-+                    }
-+
-+                    readChannelIdentifier(data, startIndex, i, registerChannel);
-+                    startIndex = i + 1;
-+                }
-+
-+                // Read the last one
-+                readChannelIdentifier(data, startIndex, data.length, registerChannel);
-+                return;
-+            }
-+
-+            if (identifier.equals(MINECRAFT_BRAND)) {
-+                this.player.connection.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
-+            }
-+
-+            this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
-+        } catch (final Exception e) {
-+            ServerGamePacketListenerImpl.LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
-+            this.disconnect(Component.literal("Invalid custom payload payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
-+        }
-+    }
-+
-+    private void readChannelIdentifier(final byte[] data, final int from, final int to, final boolean register) {
-+        final int length = to - from;
-+        if (length == 0) {
-+            return;
-+        }
-+
-+        final String channel = new String(data, from, length, java.nio.charset.StandardCharsets.US_ASCII);
-+        if (register) {
-+            this.getCraftPlayer().addChannel(channel);
-+        } else {
-+            this.getCraftPlayer().removeChannel(channel);
-+        }
-+    }
-+
 +    public final boolean isDisconnected() {
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
 +    }
@@ -2734,7 +2617,7 @@
 +        super.handleResourcePackResponse(packet);
 +        // Paper start - store last pack status
 +        org.bukkit.event.player.PlayerResourcePackStatusEvent.Status packStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
-+        this.player.getBukkitEntity().resourcePackStatus = packStatus;
++        this.connection.resourcePackStatus = packStatus;
 +        this.cserver.getPluginManager().callEvent(new org.bukkit.event.player.PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
 +        // Paper end - store last pack status
 +    }
@@ -2761,9 +2644,8 @@
 +    }
 +
 +    @Override
-+    public io.papermc.paper.connection.ReadablePlayerCookieConnectionImpl getCookieConnection() {
++    public io.papermc.paper.connection.PaperPlayerGameConnection paperConnection() {
 +        return this.playerGameConnection;
 +    }
-+
 +    // Paper end
  }

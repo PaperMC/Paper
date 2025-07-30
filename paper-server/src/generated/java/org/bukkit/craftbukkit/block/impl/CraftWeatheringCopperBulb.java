@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.CopperBulb;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftWeatheringCopperBulb extends CraftBlockData implements CopperBulb {
     private static final BooleanProperty LIT = WeatheringCopperBulbBlock.LIT;
 
