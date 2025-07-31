@@ -66,7 +66,7 @@ public class PaperPotionBrewer implements PotionBrewer {
     @Override
     public boolean canMixPotion(ItemStack potion, ItemStack ingredient) {
         return this.minecraftServer.potionBrewing().hasMix(
-            CraftItemStack.unwrap(ingredient), CraftItemStack.unwrap(potion)
+            CraftItemStack.unwrap(potion), CraftItemStack.unwrap(ingredient)
         );
     }
 }
