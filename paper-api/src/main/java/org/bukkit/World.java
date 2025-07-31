@@ -4168,26 +4168,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void sendGameEvent(@Nullable Entity sourceEntity, @NotNull GameEvent gameEvent, @NotNull Vector position);
     // Paper end
 
-    /**
-     * Add an ingredient to a potion if applicable.
-     *
-     * @param potion the original potion the ingredient is added to
-     * @param ingredient the ingredient to add to the potion
-     * @return new {@link ItemStack} with added ingredient if applicable
-     * @see #canMixPotion(ItemStack, ItemStack) 
-     */
-    @NotNull ItemStack mixPotion(@NotNull ItemStack potion, @NotNull ItemStack ingredient);
-
-    /**
-     * Checks if a potion and ingredient can be mixed.
-     *
-     * @param potion the original potion the ingredient is added to
-     * @param ingredient the ingredient to add to the potion
-     * @return whether potion and ingredient can mix
-     * @see #mixPotion(ItemStack, ItemStack)
-     */
-    boolean canMixPotion(@NotNull ItemStack potion, @NotNull ItemStack ingredient);
-
     // Spigot start
     @Deprecated(forRemoval = true) // Paper
     public class Spigot {
