@@ -129,7 +129,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     }
 
     @Override
-    public void sendPluginMessage(final Plugin source, final String channel, final byte [] message) {
+    public void sendPluginMessage(final Plugin source, final String channel, final byte[] message) {
         StandardMessenger.validatePluginMessage(this.handle.cserver.getMessenger(), source, channel, message);
 
         if (this.channels().contains(channel)) {

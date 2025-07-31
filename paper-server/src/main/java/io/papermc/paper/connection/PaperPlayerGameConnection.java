@@ -32,7 +32,7 @@ public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGameP
     }
 
     @Override
-    public void sendPluginMessage(final Plugin source, final String channel, final byte [] message) {
+    public void sendPluginMessage(final Plugin source, final String channel, final byte[] message) {
         getPlayer().sendPluginMessage(source, channel, message);
     }
 
