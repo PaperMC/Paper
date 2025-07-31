@@ -166,8 +166,8 @@ dependencies {
     }
 
     testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
-    testImplementation("org.junit.platform:junit-platform-suite-engine:1.12.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
+    testImplementation("org.junit.platform:junit-platform-suite-engine:1.13.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
