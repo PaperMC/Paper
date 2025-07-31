@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Helvetica Volubi <suisuroru@blue-millennium.fun>
+Date: Thu, 31 Jul 2025 13:37:07 +0800
+Subject: [PATCH] Fix endermite spawn position
+
+
+diff --git a/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index 4b04ca7d50d7a85827bd89fff24434e603e99579..495d5c296dba4efc65280e31b99806abfbdaaf3e 100644
+--- a/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -119,6 +119,9 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                 Vec3 vec3 = this.oldPosition();
+                 if (owner instanceof ServerPlayer serverPlayer) {
+                     if (serverPlayer.connection.isAcceptingMessages()) {
++                        // Paper start - fix endermite spawn position
++                        double x = serverPlayer.getX(), y = serverPlayer.getY(), z = serverPlayer.getZ();
++                        float yaw = serverPlayer.getYRot(), pitch = serverPlayer.getXRot();
+                         // CraftBukkit start
+                         ServerPlayer serverPlayer1 = serverPlayer.teleport(new TeleportTransition(serverLevel, vec3, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.ROTATION, Relative.DELTA), TeleportTransition.DO_NOTHING, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL));
+                         if (serverPlayer1 == null) {
+@@ -129,7 +132,8 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                         if (this.random.nextFloat() < 0.05F && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                             Endermite endermite = EntityType.ENDERMITE.create(serverLevel, EntitySpawnReason.TRIGGERED);
+                             if (endermite != null) {
+-                                endermite.snapTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
++                                endermite.snapTo(x, y, z, yaw, pitch);
++                                // Paper end - fix endermite spawn position
+                                 serverLevel.addFreshEntity(endermite, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
+                             }
+                         }
