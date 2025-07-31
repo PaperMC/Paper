@@ -3,6 +3,8 @@ package org.bukkit.structure;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+
+import io.papermc.paper.structure.PlacementOptions;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
 import org.bukkit.block.structure.Mirror;
@@ -154,6 +156,25 @@ public interface Structure extends PersistentDataHolder {
      */
     @ApiStatus.Experimental
     void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
+
+    /**
+     * Place a structure in the world.
+     *
+     * @param location The location to place the structure at.
+     * @param placementOptions Options used to determine different settings applied to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull Location location, @NotNull PlacementOptions placementOptions);
+
+    /**
+     * Place a structure in the world.
+     *
+     * @param regionAccessor The world to place the structure in.
+     * @param location The location to place the structure at.
+     * @param placementOptions Options used to determine different settings applied to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, @NotNull PlacementOptions placementOptions);
 
     /**
      * Fills the structure from an area in a world. The origin and size will be
