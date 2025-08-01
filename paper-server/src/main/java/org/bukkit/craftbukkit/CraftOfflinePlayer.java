@@ -10,14 +10,12 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.game.ClientboundTagQueryPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
-import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.BanEntry;
@@ -577,4 +575,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             manager.save();
         }
     }
+
+    // Paper start - add player data file support
+    @Override
+    public io.papermc.paper.entity.PlayerDataFile loadDataFile() throws java.io.IOException, io.papermc.paper.entity.PlayerSerializationException {
+        return io.papermc.paper.entity.PlayerDataFileImpl.load(getUniqueId());
+    }
+    // Paper end - add player data file support
 }

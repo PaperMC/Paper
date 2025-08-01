@@ -3600,4 +3600,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             this(new ShortArraySet(), new ArrayList<>());
         }
     }
+
+    // Paper start - add player data file support
+    @Override
+    public io.papermc.paper.entity.PlayerDataFile loadDataFile() throws java.io.IOException, io.papermc.paper.entity.PlayerSerializationException {
+        return io.papermc.paper.entity.PlayerDataFileImpl.load(getUniqueId());
+    }
+    // Paper end - add player data file support
 }

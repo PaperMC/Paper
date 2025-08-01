@@ -585,4 +585,16 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     @Override
     io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer();
     // Paper end - add pdc to offline player
+
+    // Paper start - add player data file support
+
+    /**
+     * Gets player <b>.dat</b> file
+     *
+     * @return player data file
+     * @throws java.io.IOException on error while reading file
+     * @throws io.papermc.paper.entity.PlayerSerializationException if file wasn't found or has incorrect format
+     */
+    io.papermc.paper.entity.PlayerDataFile loadDataFile() throws java.io.IOException, io.papermc.paper.entity.PlayerSerializationException;
+    // Paper end - add player data file support
 }
