@@ -1,12 +1,21 @@
 --- a/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
-@@ -257,7 +_,12 @@
+@@ -253,11 +_,20 @@
+                 } else if (serverData.hasRewardedPlayer(player)) {
+                     playInsertFailSound(level, serverData, pos, SoundEvents.VAULT_REJECT_REWARDED_PLAYER);
+                 } else {
+-                    List<ItemStack> list = resolveItemsToEject(level, config, pos, player, stack);
++                    // Paper start - Add loot table to event
++                    LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(config.lootTable());
++                    List<ItemStack> list = resolveItemsToEject(level, config, pos, player, stack, lootTable);
++                    // Paper end
                      if (!list.isEmpty()) {
                          player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
                          stack.consume(config.keyItem().getCount(), player);
 -                        unlock(level, state, pos, config, serverData, sharedData, list);
 +                        // CraftBukkit start
-+                        org.bukkit.event.block.BlockDispenseLootEvent vaultDispenseLootEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseLootEvent(level, pos, player, list);
++                        org.bukkit.event.block.BlockDispenseLootEvent vaultDispenseLootEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseLootEvent(level, pos, player, list, lootTable); // Paper - Add loot table to event
++                        // Paper end
 +                        if (vaultDispenseLootEvent.isCancelled()) return;
 +                        list = vaultDispenseLootEvent.getDispensedLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).toList();
 +                        // CraftBukkit end
@@ -59,7 +68,7 @@
                  sharedData.setDisplayItem(randomDisplayItemFromLootTable);
              }
          }
-@@ -301,10 +_,24 @@
+@@ -301,14 +_,33 @@
              VaultSharedData sharedData,
              List<ItemStack> itemsToEject
          ) {
@@ -85,3 +94,12 @@
          }
  
          private static List<ItemStack> resolveItemsToEject(ServerLevel level, VaultConfig config, BlockPos pos, Player player, ItemStack key) {
+             LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(config.lootTable());
++        // Paper start - Add loot table to event
++            return resolveItemsToEject(level, config, pos, player, key, lootTable);
++        }
++        private static List<ItemStack> resolveItemsToEject(ServerLevel level, VaultConfig config, BlockPos pos, Player player, ItemStack key, LootTable lootTable) {
++        // Paper end
+             LootParams lootParams = new LootParams.Builder(level)
+                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+                 .withLuck(player.getLuck())
