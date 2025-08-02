@@ -570,7 +570,7 @@ public class Metrics {
             if (!config.isSet("serverUuid")) {
 
                 // Add default values
-                config.addDefault("enabled", true);
+                config.addDefault("enabled", false);
                 // Every server gets it's unique random id.
                 config.addDefault("serverUuid", UUID.randomUUID().toString());
                 // Should failed request be logged?
@@ -579,7 +579,7 @@ public class Metrics {
                 // Inform the server owners about bStats
                 config.options().header(
                         "bStats collects some data for plugin authors like how many servers are using their plugins.\n" +
-                                "To honor their work, you should not disable it.\n" +
+                                "To honor their work, you should enable it.\n" +
                                 "This has nearly no effect on the server performance!\n" +
                                 "Check out https://bStats.org/ to learn more :)"
                 ).copyDefaults(true);
