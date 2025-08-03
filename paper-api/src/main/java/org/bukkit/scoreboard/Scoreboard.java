@@ -234,10 +234,9 @@ public interface Scoreboard {
     }
 
     /**
-     * Removes all scores for a player on this Scoreboard
+     * Gets all scores for an entry on this Scoreboard
      *
      * @param player the player to drop all current scores for
-     * @see #resetScores(ScoreHolder)
      * @deprecated use {@link #getScores(ScoreHolder)}
      */
     @Deprecated(forRemoval = true, since = "1.21.8")
