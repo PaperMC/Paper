@@ -23,44 +23,51 @@ public interface ObjectiveResolver {
     /**
      * Resolves the argument with the given command source stack.
      * <p>
-     * This method is the same as calling {@link #resolve(Scoreboard, CommandSourceStack)} with
-     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()}.
-     * 
+     * This method is the same as calling {@link #resolve(CommandSourceStack, Scoreboard, boolean)} with
+     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()} and {@link false}.
+     *
      * @param sourceStack source stack
      * @return resolved objective
      */
     default Objective resolve(CommandSourceStack sourceStack) throws CommandSyntaxException {
-        return resolve(Bukkit.getScoreboardManager().getMainScoreboard(), sourceStack);
+        return resolve(sourceStack, Bukkit.getScoreboardManager().getMainScoreboard(), false);
     }
 
     /**
      * Resolves the argument with the given command source stack.
      * <p>
-     * This method is the same as calling {@link #resolve(Scoreboard, CommandSourceStack)} with
-     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()}.
-     * 
-     * @param sourceStack source stack
-     * @return resolved objective, whose criteria is writable
-     */
-    default Objective resolveWritable(CommandSourceStack sourceStack) throws CommandSyntaxException {
-        return resolveWritable(Bukkit.getScoreboardManager().getMainScoreboard(), sourceStack);
-    }
-    
-    /**
-     * Resolves the argument with the given command source stack.
+     * This method is the same as calling {@link #resolve(CommandSourceStack, Scoreboard, boolean)} with
+     * the provided scoreboard and {@code false}.
      *
-     * @param scoreboard  scoreboard to get the objective from
      * @param sourceStack source stack
+     * @param scoreboard  scoreboard to get the objective from
      * @return resolved objective
      */
-    Objective resolve(Scoreboard scoreboard, CommandSourceStack sourceStack) throws CommandSyntaxException;
+    default Objective resolve(CommandSourceStack sourceStack, Scoreboard scoreboard) throws CommandSyntaxException {
+        return resolve(sourceStack, scoreboard, false);
+    }
+
+    /**
+     * Resolves the argument with the given command source stack.
+     * <p>
+     * This method is the same as calling {@link #resolve(CommandSourceStack, Scoreboard, boolean)} with
+     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()}.
+     *
+     * @param sourceStack  source stack
+     * @param onlyWritable whether to only retrieve modifiable objectives
+     * @return resolved objective
+     */
+    default Objective resolve(CommandSourceStack sourceStack, boolean onlyWritable) throws CommandSyntaxException {
+        return resolve(sourceStack, Bukkit.getScoreboardManager().getMainScoreboard(), onlyWritable);
+    }
 
     /**
      * Resolves the argument with the given command source stack.
      *
-     * @param scoreboard  scoreboard to get the objective from
-     * @param sourceStack source stack
-     * @return resolved objective, whose criteria is writable
+     * @param sourceStack  source stack
+     * @param scoreboard   scoreboard to get the objective from
+     * @param onlyWritable whether to only retrieve modifiable objectives
+     * @return resolved objective
      */
-    Objective resolveWritable(Scoreboard scoreboard, CommandSourceStack sourceStack) throws CommandSyntaxException;
+    Objective resolve(CommandSourceStack sourceStack, Scoreboard scoreboard, boolean onlyWritable) throws CommandSyntaxException;
 }
