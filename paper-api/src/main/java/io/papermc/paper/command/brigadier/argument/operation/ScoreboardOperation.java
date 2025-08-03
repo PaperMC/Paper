@@ -1,13 +1,12 @@
 package io.papermc.paper.command.brigadier.argument.operation;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import it.unimi.dsi.fastutil.ints.IntIntPair;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a simple arithmetic operation between two integers.
- * An {@link Operation} backs an operator.
+ * A {@link ScoreboardOperation} backs an operator.
  * Most arithmetic operators (like {@code +=, -=, /=, etc.}) are
  * supported, alongside certain conditional operators ({@code >=, <=, ==, etc.}).
  * <p>
@@ -18,40 +17,48 @@ import org.jspecify.annotations.NullMarked;
  */
 @ApiStatus.Experimental
 @NullMarked
-public interface Operation {
+public interface ScoreboardOperation {
 
     /**
      * Applies this operation to a pair of integers.
      * <p>
-     * Arithmetic between two integers always follows this pattern: 
+     * Arithmetic between two integers always follows this pattern:
      * <pre>
      * return left &lt;operator&gt; right
      * </pre>
      * On certain operators, such as division, the order matters.
      * {@code 20 %= 10} yields a different result than{@code 10 %= 20}.
      *
-     * @param left left side of the expression
+     * @param left  left side of the expression
      * @param right right side of the expression
      * @return result of this operation
+     * @see Result
      */
-    IntIntPair apply(int left, int right) throws CommandSyntaxException;
+    Result apply(int left, int right) throws CommandSyntaxException;
 
     /**
-     * Applies this operation to a pair of integers.
+     * Represents the result of a {@link ScoreboardOperation}.
      * <p>
-     * Arithmetic between two integers always follows this pattern: 
-     * <pre>
-     * return left &lt;operator&gt; right
-     * </pre>
-     * On certain operators, such as division, the order matters.
-     * {@code 20 %= 10} yields a different result than{@code 10 %= 20}.
-     *
-     * @param left left side of the expression
-     * @param right right side of the expression
-     * @return the left side of the result of this operation
-     * @see #apply(int, int) 
+     * For arithmetical operations (+=, -=, /=, *=), {@link #result()} will yield the mathemtical result.
+     * {@link #other()} will return the right input integer.
+     * <p>
+     * For any conditional operations or the swap operation, {@link #result()} will yield the left side
+     * and {@link #other()} will yield the right side of the operation.
      */
-    default int applyLeftSide(int left, int right) throws CommandSyntaxException {
-        return apply(left, right).leftInt();
+    interface Result {
+
+        /**
+         * Get the left side of the result.
+         *
+         * @return result
+         */
+        int result();
+
+        /**
+         * Get the right side of the result.
+         *
+         * @return other
+         */
+        int other();
     }
 }

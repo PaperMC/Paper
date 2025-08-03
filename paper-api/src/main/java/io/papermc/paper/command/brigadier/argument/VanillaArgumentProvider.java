@@ -1,7 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import io.papermc.paper.command.brigadier.argument.operation.Operation;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperation;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -35,8 +35,6 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -86,7 +84,7 @@ interface VanillaArgumentProvider {
     
     ArgumentType<ScoreHolderResolver> scoreHolders();
     
-    ArgumentType<Operation> operation();
+    ArgumentType<ScoreboardOperation> operation();
     
     ArgumentType<ObjectiveResolver> objective();
     

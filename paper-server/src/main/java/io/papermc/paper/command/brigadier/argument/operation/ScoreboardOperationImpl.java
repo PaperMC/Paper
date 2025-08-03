@@ -1,41 +1,34 @@
 package io.papermc.paper.command.brigadier.argument.operation;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
-import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.commands.arguments.OperationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.numbers.NumberFormat;
 import net.minecraft.world.scores.ScoreAccess;
-import net.minecraft.world.scores.ScoreHolder;
-import org.bukkit.craftbukkit.scoreboard.CraftObjective;
-import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class OperationImpl implements Operation {
-    
+public class ScoreboardOperationImpl implements ScoreboardOperation {
+
     private final OperationArgument.Operation operation;
 
-    public OperationImpl(OperationArgument.Operation operation) {
+    public ScoreboardOperationImpl(OperationArgument.Operation operation) {
         this.operation = operation;
     }
 
     @Override
-    public IntIntPair apply(final int left, final int right) throws CommandSyntaxException {
+    public Result apply(final int left, final int right) throws CommandSyntaxException {
         ScoreAccess leftScoreAccess = new SimpleScoreAccess(left);
         ScoreAccess rightScoreAccess = new SimpleScoreAccess(right);
 
         this.operation.apply(leftScoreAccess, rightScoreAccess);
-        
-        return new IntIntImmutablePair(leftScoreAccess.get(), rightScoreAccess.get());
+
+        return new OperationResultImpl(leftScoreAccess.get(), rightScoreAccess.get());
     }
-    
+
     private static final class SimpleScoreAccess implements ScoreAccess {
-        
+
         private int value;
 
         public SimpleScoreAccess(final int value) {
@@ -82,4 +75,9 @@ public class OperationImpl implements Operation {
             // Not implemented
         }
     }
+
+    private record OperationResultImpl(
+        int result,
+        int other
+    ) implements Result {}
 }

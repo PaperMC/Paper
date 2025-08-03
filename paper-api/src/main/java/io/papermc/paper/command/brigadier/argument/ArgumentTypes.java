@@ -1,7 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import io.papermc.paper.command.brigadier.argument.operation.Operation;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperation;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
@@ -326,7 +326,7 @@ public final class ArgumentTypes {
      *
      * @return argument
      */
-    public static ArgumentType<Operation> operation() {
+    public static ArgumentType<ScoreboardOperation> operation() {
         return provider().operation();
     }
 
