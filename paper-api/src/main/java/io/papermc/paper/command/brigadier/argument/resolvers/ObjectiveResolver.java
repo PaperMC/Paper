@@ -24,7 +24,7 @@ public interface ObjectiveResolver {
      * Resolves the argument with the given command source stack.
      * <p>
      * This method is the same as calling {@link #resolve(CommandSourceStack, Scoreboard, boolean)} with
-     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()} and {@link false}.
+     * the scoreboard retrieved from {@code Bukkit.getScoreboardManager().getMainScoreboard()} and {@code false}.
      *
      * @param sourceStack source stack
      * @return resolved objective
