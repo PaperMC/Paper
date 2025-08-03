@@ -125,10 +125,13 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     private static ScoreHolderResolver convertScoreHolders(ScoreHolderArgument.Result result) {
         return sourceStack -> {
-            List<ScoreHolder> list = new ArrayList<>();
-            for (net.minecraft.world.scores.ScoreHolder scoreHolder : result.getNames((CommandSourceStack) sourceStack, Collections::emptyList)) {
+            Collection<net.minecraft.world.scores.ScoreHolder> results = result.getNames((CommandSourceStack) sourceStack, Collections::emptyList);
+            List<ScoreHolder> list = new ArrayList<>(results.size());
+
+            for (net.minecraft.world.scores.ScoreHolder scoreHolder : results) {
                 list.add(CraftScoreHolder.fromNms(scoreHolder));
             }
+
             return list;
         };
     }
