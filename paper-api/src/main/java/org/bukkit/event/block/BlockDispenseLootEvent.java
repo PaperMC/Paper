@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,14 +27,16 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
 
     private final Player player;
     private List<ItemStack> dispensedLoot;
+    private final LootTable lootTable;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public BlockDispenseLootEvent(@Nullable Player player, @NotNull Block block, @NotNull List<ItemStack> dispensedLoot) {
+    public BlockDispenseLootEvent(@Nullable Player player, @NotNull Block block, @NotNull List<ItemStack> dispensedLoot, @NotNull LootTable lootTable) {
         super(block);
         this.player = player;
         this.dispensedLoot = dispensedLoot;
+        this.lootTable = lootTable;
     }
 
     /**
@@ -53,6 +56,16 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
      */
     public void setDispensedLoot(@Nullable List<ItemStack> dispensedLoot) {
         this.dispensedLoot = dispensedLoot == null ? new ArrayList<>() : dispensedLoot;
+    }
+
+    /**
+     * Gets the loot table used to generate the initial loot to dispense.
+     *
+     * @return the loot table used to generate the initial loot to dispense
+     */
+    @NotNull
+    public LootTable getLootTable() {
+        return this.lootTable;
     }
 
     /**
