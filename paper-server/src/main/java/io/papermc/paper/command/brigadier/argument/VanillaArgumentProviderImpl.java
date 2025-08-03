@@ -13,8 +13,8 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
-import io.papermc.paper.command.brigadier.argument.operation.Operation;
-import io.papermc.paper.command.brigadier.argument.operation.OperationImpl;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperation;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperationImpl;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
@@ -354,8 +354,8 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
-    public ArgumentType<Operation> operation() {
-        return this.wrap(OperationArgument.operation(), OperationImpl::new);
+    public ArgumentType<ScoreboardOperation> operation() {
+        return this.wrap(OperationArgument.operation(), ScoreboardOperationImpl::new);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import io.papermc.paper.command.brigadier.argument.operation.Operation;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperation;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
@@ -98,7 +98,7 @@ interface VanillaArgumentProvider {
 
     ArgumentType<ScoreHolderResolver> scoreHolders();
 
-    ArgumentType<Operation> operation();
+    ArgumentType<ScoreboardOperation> operation();
 
     ArgumentType<ObjectiveResolver> objective();
 
