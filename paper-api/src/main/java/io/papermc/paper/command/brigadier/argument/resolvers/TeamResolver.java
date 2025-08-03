@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
  * A resolver that's capable of resolving
  * a {@link Team} value using a {@link Scoreboard} and {@link CommandSourceStack}.
  *
- * @see ArgumentTypes#objective()
+ * @see ArgumentTypes#team()
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
@@ -29,13 +29,13 @@ public interface TeamResolver {
      *
      * @param sourceStack source stack
      * @return resolved team
-     * @see #resolve(Scoreboard, CommandSourceStack) 
-     * @see ScoreboardManager#getMainScoreboard() 
+     * @see #resolve(Scoreboard, CommandSourceStack)
+     * @see ScoreboardManager#getMainScoreboard()
      */
     default Team resolve(CommandSourceStack sourceStack) throws CommandSyntaxException {
         return resolve(Bukkit.getScoreboardManager().getMainScoreboard(), sourceStack);
     }
-    
+
     /**
      * Resolves the argument with the given scoreboard and command source stack.
      *
