@@ -88,6 +88,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Objective;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Keyed;
@@ -111,9 +112,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.ScoreHolder;
-import org.bukkit.scoreboard.Scoreboard;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -279,18 +278,14 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<ObjectiveResolver> objective() {
-        return this.wrap(ObjectiveArgument.objective(), (name) -> new ObjectiveResolver() {
-            @Override
-            public Objective resolve(final Scoreboard scoreboard, final io.papermc.paper.command.brigadier.CommandSourceStack sourceStack) throws CommandSyntaxException {
-                CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
-                return new CraftObjective(craftScoreboard, ObjectiveArgument.getObjective(craftScoreboard.getHandle(), name));
-            }
+        return this.wrap(ObjectiveArgument.objective(), (name) -> (sourceStack, scoreboard, onlyWritable) -> {
+            final CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
 
-            @Override
-            public Objective resolveWritable(final Scoreboard scoreboard, final io.papermc.paper.command.brigadier.CommandSourceStack sourceStack) throws CommandSyntaxException {
-                CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
-                return new CraftObjective(craftScoreboard, ObjectiveArgument.getWritableObjective(craftScoreboard.getHandle(), name));
-            }
+            final Objective objective = onlyWritable
+                ? ObjectiveArgument.getWritableObjective(craftScoreboard.getHandle(), name)
+                : ObjectiveArgument.getObjective(craftScoreboard.getHandle(), name);
+
+            return new CraftObjective(craftScoreboard, objective);
         });
     }
 
