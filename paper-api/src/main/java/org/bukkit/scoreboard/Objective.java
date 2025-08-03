@@ -176,7 +176,7 @@ public interface Objective {
      * @param holder score holder for the Score
      * @return Score tracking the Objective and score holder specified
      * @throws IllegalStateException if this objective has been unregistered
-     * @throws IllegalArgumentException if entry is longer than 32767 characters.
+     * @throws IllegalArgumentException if the holder's name is longer than 32767 characters.
      */
     @NotNull
     Score getScore(@NotNull ScoreHolder holder);

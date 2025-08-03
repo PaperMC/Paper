@@ -27,7 +27,7 @@ public interface ScoreboardOperation {
      * return left &lt;operator&gt; right
      * </pre>
      * On certain operators, such as division, the order matters.
-     * {@code 20 %= 10} yields a different result than{@code 10 %= 20}.
+     * {@code 20 %= 10} yields a different result than {@code 10 %= 20}.
      *
      * @param left  left side of the expression
      * @param right right side of the expression

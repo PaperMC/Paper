@@ -15,12 +15,14 @@ public interface ScoreHolder {
 
     /**
      * The name used to access this {@link ScoreHolder} on a scoreboard.
+     *
      * @return the name
      */
     String getScoreboardName();
 
     /**
      * The display name of this {@link ScoreHolder}.
+     *
      * @return the display name
      */
     default Component getScoreDisplayName() {
@@ -29,6 +31,7 @@ public interface ScoreHolder {
 
     /**
      * Wraps a {@link String} into a {@link ScoreHolder}.
+     *
      * @param entry the text to warp
      * @return a {@link ScoreHolder} representing the given String
      */
