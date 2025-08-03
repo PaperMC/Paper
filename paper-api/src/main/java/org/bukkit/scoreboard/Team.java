@@ -323,6 +323,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * This will remove the entry from any other team on the scoreboard.
      *
      * @param holder the score holder to add
+     * @throws IllegalStateException if this team has been unregistered
      */
     void addEntry(@NotNull ScoreHolder holder);
 
@@ -333,7 +334,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * Score holders on other teams will be removed from their respective teams.
      *
      * @param holders the score holders to add
-     * @throws IllegalArgumentException if entities are null
+     * @throws IllegalArgumentException if the holders are null
      * @throws IllegalStateException if this team has been unregistered
      */
     void addScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
@@ -345,7 +346,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * Entities on other teams will be removed from their respective teams.
      *
      * @param entities the entities to add
-     * @throws IllegalArgumentException if entities are null
+     * @throws IllegalArgumentException if the holders are null
      * @throws IllegalStateException if this team has been unregistered
      * @deprecated use {@link #addScoreHolders(Collection)}
      */
