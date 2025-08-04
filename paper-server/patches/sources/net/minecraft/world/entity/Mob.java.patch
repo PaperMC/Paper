@@ -23,11 +23,12 @@
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -129,6 +_,7 @@
+@@ -129,6 +_,8 @@
      private Leashable.LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
++    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
  
      protected Mob(EntityType<? extends Mob> entityType, Level level) {
          super(entityType, level);
@@ -84,11 +85,16 @@
      }
  
      @Override
-@@ -365,13 +_,22 @@
+@@ -365,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
 +        output.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
++        // Paper start - allow changing despawnInPeaceful
++        if (this.despawnInPeacefulOverride != net.kyori.adventure.util.TriState.NOT_SET) {
++            output.putString("Paper.DespawnInPeacefulOverride", this.despawnInPeacefulOverride.name());
++        }
++        // Paper end - allow changing despawnInPeaceful
      }
  
      @Override
@@ -109,11 +115,12 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -383,6 +_,7 @@
+@@ -383,6 +_,8 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
 +        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
++        this.despawnInPeacefulOverride = input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - allow changing despawnInPeaceful
      }
  
      @Override
@@ -176,11 +183,25 @@
                  }
  
                  ItemStack itemStack = equipmentSlotForItem.limit(stack);
-@@ -608,22 +_,29 @@
+@@ -601,29 +_,42 @@
+         return this.isPassenger();
+     }
+ 
++    // Paper start - allow changing despawnInPeaceful
++    public final boolean shouldActuallyDespawnInPeaceful() {
++        return this.despawnInPeacefulOverride.toBooleanOrElse(this.shouldDespawnInPeaceful());
++    }
++    // Paper end - allow changing despawnInPeaceful
++
+     protected boolean shouldDespawnInPeaceful() {
+         return false;
+     }
+ 
      @Override
      public void checkDespawn() {
-         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
 -            this.discard();
++        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldActuallyDespawnInPeaceful()) { //Paper - allow changing despawnInPeaceful
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Entity nearestPlayer = this.level().getNearestPlayer(this, -1.0);
