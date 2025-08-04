@@ -1,10 +1,13 @@
 --- a/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
 +++ b/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
-@@ -119,11 +_,18 @@
+@@ -119,11 +_,21 @@
                  Vec3 vec3 = this.oldPosition();
                  if (owner instanceof ServerPlayer serverPlayer) {
                      if (serverPlayer.connection.isAcceptingMessages()) {
 +                        // CraftBukkit start
++                        // Store pre teleportation position as the teleport has been moved up.
++                        final double preTeleportX = serverPlayer.getX(), preTeleportY = serverPlayer.getY(), preTeleportZ = serverPlayer.getZ();
++                        final float preTeleportYRot = serverPlayer.getYRot(), preTeleportXRot = serverPlayer.getXRot();
 +                        ServerPlayer serverPlayer1 = serverPlayer.teleport(new TeleportTransition(serverLevel, vec3, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.ROTATION, Relative.DELTA), TeleportTransition.DO_NOTHING, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL));
 +                        if (serverPlayer1 == null) {
 +                            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT);
@@ -14,8 +17,9 @@
                          if (this.random.nextFloat() < 0.05F && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
                              Endermite endermite = EntityType.ENDERMITE.create(serverLevel, EntitySpawnReason.TRIGGERED);
                              if (endermite != null) {
-                                 endermite.snapTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
+-                                endermite.snapTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
 -                                serverLevel.addFreshEntity(endermite);
++                                endermite.snapTo(preTeleportX, preTeleportY, preTeleportZ, preTeleportYRot, preTeleportXRot); // Paper - spawn endermite at pre teleport position as teleport has been moved up
 +                                serverLevel.addFreshEntity(endermite, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
                              }
                          }
