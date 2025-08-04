@@ -12,6 +12,8 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.potion.PotionEffect;
@@ -787,6 +789,158 @@ public interface PlayerDataFile extends Attributable, Identified, InventoryHolde
      * @param value hotbar slot change to
      */
     void setSelectedHotbarSlot(int value);
+
+    /**
+     * Gets if the player currently has its freeze ticks locked
+     * to a set amount.
+     * <p>
+     * This is only set by plugins
+     *
+     * @return locked or not
+     */
+    boolean isFreezeTickingLocked();
+
+    /**
+     * Sets if the player currently has its freeze ticks locked,
+     * preventing default vanilla freeze tick modification.
+     *
+     * @param locked prevent vanilla modification or not
+     */
+    void lockFreezeTicks(boolean locked);
+
+    /**
+     * Returns true if this entity has been marked for removal.
+     *
+     * @return True if it is dead.
+     */
+    boolean isDead();
+
+    /**
+     * Returns whether this entity is inside a vehicle.
+     *
+     * @return True if the entity is in a vehicle.
+     */
+    boolean isInsideVehicle();
+
+    /**
+     * Leave the current vehicle. If the entity is currently in a vehicle (and
+     * is removed from it), true will be returned, otherwise false will be
+     * returned.
+     *
+     * @return True if the entity was in a vehicle.
+     */
+    boolean leaveVehicle();
+
+    /**
+     * Get the vehicle that this entity is inside. If there is no vehicle,
+     * null will be returned.
+     *
+     * @return The current vehicle.
+     */
+    @Nullable
+    Entity getVehicle();
+
+    /**
+     * Sets whether or not to display the mob's custom name client side. The
+     * name will be displayed above the mob similarly to a player.
+     * <p>
+     * This value has no effect on players, they will always display their
+     * name.
+     *
+     * @param flag custom name or not
+     */
+    void setCustomNameVisible(boolean flag);
+
+    /**
+     * Gets whether or not the mob's custom name is displayed client side.
+     * <p>
+     * This value has no effect on players, they will always display their
+     * name.
+     *
+     * @return if the custom name is displayed
+     */
+    boolean isCustomNameVisible();
+
+    /**
+     * Sets whether the entity has a team colored (default: white) glow.
+     *
+     * <b>nb: this refers to the 'Glowing' entity property, not whether a
+     * glowing potion effect is applied</b>
+     *
+     * @param flag if the entity is glowing
+     */
+    void setGlowing(boolean flag);
+
+    /**
+     * Gets whether the entity is glowing or not.
+     *
+     * <b>nb: this refers to the 'Glowing' entity property, not whether a
+     * glowing potion effect is applied</b>
+     *
+     * @return whether the entity is glowing
+     */
+    boolean isGlowing();
+
+    /**
+     * Gets whether the entity is silent or not.
+     *
+     * @return whether the entity is silent.
+     */
+    boolean isSilent();
+
+    /**
+     * Sets whether the entity is silent or not.
+     * <p>
+     * When an entity is silent it will not produce any sound.
+     *
+     * @param flag if the entity is silent
+     */
+    void setSilent(boolean flag);
+
+    /**
+     * Returns whether gravity applies to this entity.
+     *
+     * @return whether gravity applies
+     */
+    boolean hasGravity();
+
+    /**
+     * Sets whether gravity applies to this entity.
+     *
+     * @param gravity whether gravity should apply
+     */
+    void setGravity(boolean gravity);
+
+    /**
+     * Gets the location where this entity originates from.
+     * <p>
+     * This value can be null if the entity hasn't yet been added to the world.
+     *
+     * @return Location where entity originates or null if not yet added
+     */
+    @Nullable
+    Location getOrigin();
+
+    /**
+     * Returns the maximum amount of air the living entity can have, in ticks.
+     *
+     * @return maximum amount of air
+     */
+    int getMaximumAir();
+
+    /**
+     * Sets the maximum amount of air the living entity can have, in ticks.
+     *
+     * @param ticks maximum amount of air
+     */
+    void setMaximumAir(int ticks);
+
+    /**
+     * If the player has slept enough to count towards passing the night.
+     *
+     * @return true if the player has slept enough
+     */
+    boolean isDeeplySleeping();
 
     /**
      * Save data file

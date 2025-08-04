@@ -9,6 +9,7 @@ import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.Position;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.Util;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -35,6 +37,7 @@ import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -66,6 +69,8 @@ public final class PlayerDataFileImpl implements PlayerDataFile{
     private Location location;
     private final @Nullable BlockPosition sleepPos;
     private Vector velocity;
+
+    private Entity vehicle=null;
 
     private final OfflinePlayerInventoryImpl inventory;
     private final OfflinePlayerEnderChestImpl enderChest;
@@ -222,6 +227,18 @@ public final class PlayerDataFileImpl implements PlayerDataFile{
         CompoundTag customDataTag=data.getCompoundOrEmpty("BukkitValues");
         customData=new CraftPersistentDataContainer(persistentRegistry);
         customData.putAll(customDataTag);
+
+        Optional<CompoundTag> vehicleTag=data.getCompound("RootVehicle");
+        if(vehicleTag.isPresent()){
+            Optional<int[]> entityTag=vehicleTag.get().getIntArray("Attach");
+            if(entityTag.isPresent()){
+                int[] vehicleUUID=entityTag.get();
+                if(vehicleUUID.length!=4)throw new PlayerSerializationException("Player vehicle has incorrect uuid format");
+
+                UUID vehicleId=UUIDUtil.uuidFromIntArray(vehicleUUID);
+                vehicle=Bukkit.getEntity(vehicleId);
+            }
+        }
     }
 
     @Override
@@ -267,6 +284,7 @@ public final class PlayerDataFileImpl implements PlayerDataFile{
         Preconditions.checkArgument(fire!=null,"fire cannot be null");
         if(fire==TriState.NOT_SET)data.remove("HasVisualFire");
         else data.putBoolean("HasVisualFire",fire.toBoolean());
+        data.putString("Paper.FireOverride",fire.name());
     }
 
     @Override
@@ -873,6 +891,112 @@ public final class PlayerDataFileImpl implements PlayerDataFile{
     @Override
     public @NotNull PersistentDataContainer getPersistentDataContainer() {
         return customData;
+    }
+
+    @Override
+    public boolean isFreezeTickingLocked() {
+        return data.getBooleanOr("Paper.FreezeLock", false);
+    }
+
+    @Override
+    public void lockFreezeTicks(final boolean locked) {
+        data.putBoolean("Paper.FreezeLock",locked);
+    }
+
+    @Override
+    public boolean isDead() {
+        return data.getShortOr("DeathTime",(short)0)>0;
+    }
+
+    @Override
+    public boolean isInsideVehicle() {
+        return vehicle!=null;
+    }
+
+    @Override
+    public boolean leaveVehicle() {
+        data.remove("RootVehicle");
+
+        if(vehicle!=null){
+            vehicle=null;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public @Nullable Entity getVehicle() {
+        return vehicle;
+    }
+
+    @Override
+    public void setCustomNameVisible(final boolean flag) {
+        data.putBoolean("CustomNameVisible",flag);
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return data.getBooleanOr("CustomNameVisible",true);
+    }
+
+    @Override
+    public void setGlowing(final boolean flag) {
+        data.putBoolean("Glowing",flag);
+    }
+
+    @Override
+    public boolean isGlowing() {
+        return data.getBooleanOr("Glowing",false);
+    }
+
+    @Override
+    public boolean isSilent() {
+        return data.getBooleanOr("Silent",false);
+    }
+
+    @Override
+    public void setSilent(final boolean flag) {
+        data.putBoolean("Silent",flag);
+    }
+
+    @Override
+    public boolean hasGravity() {
+        return !data.getBooleanOr("NoGravity",false);
+    }
+
+    @Override
+    public void setGravity(final boolean gravity) {
+        data.putBoolean("NoGravity",!gravity);
+    }
+
+    @Override
+    public @Nullable Location getOrigin() {
+        Optional<UUID> worldTag=data.read("Paper.OriginWorld",UUIDUtil.CODEC);
+        Optional<Vec3> posTag=data.read("Paper.Origin", Vec3.CODEC);
+
+        if(posTag.isPresent()){
+            World world=worldTag.map(Bukkit::getWorld).orElse(null);
+            Vec3 pos=posTag.get();
+
+            return new Location(world,pos.x,pos.y,pos.z);
+        }
+
+        return null;
+    }
+
+    @Override
+    public int getMaximumAir() {
+        return data.getIntOr("Bukkit.MaxAirSupply",300);
+    }
+
+    @Override
+    public void setMaximumAir(final int ticks) {
+        data.putInt("Bukkit.MaxAirSupply",ticks);
+    }
+
+    @Override
+    public boolean isDeeplySleeping() {
+        return data.getShortOr("SleepTimer",(short)0)>=100;
     }
 
     @Override
