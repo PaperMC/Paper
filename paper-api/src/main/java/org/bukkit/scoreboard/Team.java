@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -298,9 +299,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
      * @see #addEntry(String)
-     * @deprecated use {@link #addEntry(ScoreHolder)}
+     * @apiNote use {@link #addEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void addPlayer(@NotNull OfflinePlayer player) {
         this.addEntry(player);
     }
@@ -348,9 +349,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entities the entities to add
      * @throws IllegalArgumentException if the holders are null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated use {@link #addScoreHolders(Collection)}
+     * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void addEntities(@NotNull Entity @NotNull ...entities) {
         this.addScoreHolders(List.of(entities));
     }
@@ -364,9 +365,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entities the entities to add
      * @throws IllegalArgumentException if entities are null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated use {@link #addScoreHolders(Collection)}
+     * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void addEntities(@NotNull Collection<Entity> entities) {
         this.addScoreHolders(entities);
     }
@@ -404,9 +405,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if the player was on this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #removeEntry(String)
-     * @deprecated use {@link #removeEntry(ScoreHolder)}
+     * @apiNote use {@link #removeEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean removePlayer(@NotNull OfflinePlayer player) {
         return this.removeEntry(player);
     }
@@ -450,9 +451,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated use {@link #removeScoreHolders(Collection)}
+     * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean removeEntities(@NotNull Entity @NotNull ... entities) {
         return this.removeScoreHolders(List.of(entities));
     }
@@ -465,9 +466,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated use {@link #removeScoreHolders(Collection)}
+     * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean removeEntities(@NotNull Collection<Entity> entities) {
         return this.removeScoreHolders(entities);
     }
@@ -510,9 +511,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return true if the player is a member of this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
-     * @deprecated use {@link #hasEntry(ScoreHolder)}
+     * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean hasPlayer(@NotNull OfflinePlayer player) {
         return this.hasEntry(player);
     }
@@ -563,11 +564,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param entity the entity to add
      * @throws IllegalArgumentException if entity is null
-     * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalStateException    if this team has been unregistered
+     * @apiNote use {@link #addEntry(ScoreHolder)}
      * @see #addEntry(String)
-     * @deprecated use {@link #addEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void addEntity(@NotNull Entity entity) {
         this.addEntry(entity);
     }
@@ -578,11 +579,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entity the entity to remove
      * @return if the entity was on this team
      * @throws IllegalArgumentException if entity is null
-     * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalStateException    if this team has been unregistered
+     * @apiNote use {@link #removeEntry(ScoreHolder)}
      * @see #removeEntry(String)
-     * @deprecated use {@link #removeEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean removeEntity(@NotNull Entity entity) {
         return this.removeEntry(entity);
     }
@@ -595,13 +596,13 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
-     * @deprecated use {@link #hasEntry(ScoreHolder)}
+     * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default boolean hasEntity(@NotNull Entity entity) {
         return this.hasEntry(entity);
     }
-
+    
     /**
      * Represents an option which may be applied to this team.
      */
