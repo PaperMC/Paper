@@ -2,6 +2,7 @@ package org.bukkit.scoreboard;
 
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -149,10 +150,10 @@ public interface Objective {
      * @return Score tracking the Objective and player specified
      * @throws IllegalStateException if this objective has been unregistered
      * @see #getScore(String)
-     * @deprecated use {@link #getScore(ScoreHolder)}
+     * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
     @NotNull
+    @ApiStatus.Obsolete(since = "1.21.8")
     default Score getScore(@NotNull OfflinePlayer player) {
         return this.getScore((ScoreHolder) player);
     }
@@ -188,9 +189,9 @@ public interface Objective {
      * @return Score tracking the Objective and entity specified
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this objective has been unregistered
-     * @deprecated use {@link #getScore(ScoreHolder)}
+     * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
+    @ApiStatus.Obsolete(since = "1.21.8")
     default @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) {
         return this.getScore(entity);
     }

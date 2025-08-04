@@ -2,6 +2,7 @@ package org.bukkit.scoreboard;
 
 import java.util.Set;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -237,9 +238,9 @@ public interface Scoreboard {
      * Gets all scores for an entry on this Scoreboard
      *
      * @param player the player to drop all current scores for
-     * @deprecated use {@link #getScores(ScoreHolder)}
+     * @apiNote use {@link #getScores(ScoreHolder)}
      */
-    @Deprecated(forRemoval = true, since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.8")
     default Set<Score> getScores(@NotNull OfflinePlayer player) {
         return this.getScores((ScoreHolder) player);
     }
@@ -266,10 +267,10 @@ public interface Scoreboard {
      * Removes all scores for a player on this Scoreboard
      *
      * @param player the player to drop all current scores for
+     * @apiNote use {@link #resetScores(ScoreHolder)}
      * @see #resetScores(String)
-     * @deprecated use {@link #resetScores(ScoreHolder)}
      */
-    @Deprecated(forRemoval = true, since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void resetScores(@NotNull OfflinePlayer player) {
         this.resetScores((ScoreHolder) player);
     }
@@ -287,11 +288,11 @@ public interface Scoreboard {
      *
      * @param player the player to search for
      * @return the player's Team or null if the player is not on a team
+     * @apiNote use {@link #getEntryTeam(ScoreHolder)}
      * @see #getEntryTeam(String)
-     * @deprecated use {@link #getEntryTeam(ScoreHolder)}
      */
-    @Deprecated(since = "1.21.8", forRemoval = true)
     @Nullable
+    @ApiStatus.Obsolete(since = "1.21.8")
     default Team getPlayerTeam(@NotNull OfflinePlayer player) {
         return this.getEntryTeam(player);
     }
@@ -374,9 +375,9 @@ public interface Scoreboard {
      * @param entity the entity whose scores are being retrieved
      * @return immutable set of all scores tracked for the entity
      * @throws IllegalArgumentException if entity is null
-     * @deprecated use {@link #getScores(ScoreHolder)}
+     * @apiNote use {@link #getScores(ScoreHolder)}
      */
-    @Deprecated(forRemoval = true, since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.8")
     default @NotNull Set<Score> getScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         return this.getScores(entity);
     }
@@ -386,10 +387,10 @@ public interface Scoreboard {
      *
      * @param entity the entity to drop all current scores for
      * @throws IllegalArgumentException if entity is null
+     * @apiNote use {@link #resetScores(ScoreHolder)}
      * @see #resetScores(String)
-     * @deprecated use {@link #resetScores(ScoreHolder)}
      */
-    @Deprecated(forRemoval = true, since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.8")
     default void resetScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         this.resetScores(entity);
     }
@@ -400,10 +401,10 @@ public interface Scoreboard {
      * @param entity the entity to search for
      * @return the entity's Team or null if the entity is not on a team
      * @throws IllegalArgumentException if entity is null
+     * @apiNote use {@link #getEntryTeam(ScoreHolder)}
      * @see #getEntryTeam(String)
-     * @deprecated use {@link #getEntryTeam(ScoreHolder)}
      */
-    @Deprecated(forRemoval = true, since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.8")
     default @Nullable Team getEntityTeam(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         return this.getEntryTeam(entity);
     }
