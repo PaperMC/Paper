@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     // Start generate - Attribute
-    // @GeneratedFrom 1.21.8
     /**
      * Armor bonus of an Entity.
      */

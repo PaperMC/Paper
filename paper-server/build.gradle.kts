@@ -1,6 +1,7 @@
 import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
-import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.Git
+import io.papermc.paperweight.util.path
 import java.time.Instant
 
 plugins {
@@ -269,18 +270,6 @@ sourceSets {
         java {
             srcDir(generatedDir)
         }
-    }
-}
-
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-        mcVersion.set(providers.gradleProperty("mcVersion"))
-        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-        classpath.from(configurations.compileClasspath)
-    }
-    tasks.check {
-        dependsOn(scanJarForOldGeneratedCode)
     }
 }
 

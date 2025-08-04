@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 public class PrepareInputFiles {
 
     static {
-        Main.bootStrap(true);
+        Main.bootStrap(true).join();
     }
 
     private static final Logger LOGGER = LogUtils.getLogger();

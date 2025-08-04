@@ -272,7 +272,6 @@ public class RegistryConversionTest {
 
     static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(
         // Start generate - RegistryConversionTest#IGNORE_FOR_DIRECT_HOLDER
-        // @GeneratedFrom 1.21.8
         RegistryKey.SOUND_EVENT,
         RegistryKey.TRIM_MATERIAL,
         RegistryKey.TRIM_PATTERN,

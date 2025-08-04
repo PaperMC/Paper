@@ -26,7 +26,6 @@ public interface Tag<T extends Keyed> extends Keyed {
     String REGISTRY_GAME_EVENTS = "game_events";
 
     // Start generate - Tag
-    // @GeneratedFrom 1.21.8
     Tag<Material> ACACIA_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("acacia_logs"), Material.class);
 
     Tag<Material> AIR = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("air"), Material.class);

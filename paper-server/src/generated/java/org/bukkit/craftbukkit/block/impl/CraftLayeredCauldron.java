@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.block.impl;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public class CraftLayeredCauldron extends CraftBlockData implements Levelled {
     private static final IntegerProperty LEVEL = LayeredCauldronBlock.LEVEL;
 

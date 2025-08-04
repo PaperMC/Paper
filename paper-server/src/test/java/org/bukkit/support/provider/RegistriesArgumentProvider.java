@@ -92,7 +92,6 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
     static {
         // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
         // Start generate - RegistriesArgumentProvider#DATA
-        // @GeneratedFrom 1.21.8
         register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class, false);
         register(RegistryKey.STRUCTURE_TYPE, StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class, false);
         register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class, false);

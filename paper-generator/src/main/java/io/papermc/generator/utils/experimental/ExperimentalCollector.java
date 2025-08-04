@@ -22,7 +22,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.BuiltInPackSource;
-import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -79,7 +79,7 @@ public final class ExperimentalCollector {
 
     // collect all the tags by grabbing the json from the data-packs
     // another (probably) way is to hook into the data generator like the typed keys generator
-    public static Map<TagKey<?>, String> collectTags(MultiPackResourceManager resourceManager) {
+    public static Map<TagKey<?>, String> collectTags(ResourceManager resourceManager) {
         Map<TagKey<?>, String> result = new IdentityHashMap<>();
 
         // collect all vanilla tags

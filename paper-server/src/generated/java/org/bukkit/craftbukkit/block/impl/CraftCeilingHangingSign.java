@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.CeilingHangingSignBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -12,7 +12,7 @@ import org.bukkit.block.data.type.HangingSign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
 
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public class CraftCeilingHangingSign extends CraftBlockData implements HangingSign {
     private static final BooleanProperty ATTACHED = CeilingHangingSignBlock.ATTACHED;
 

@@ -162,7 +162,6 @@ public final class CraftItemMetas {
             return CraftItemMetas.asType(CraftItemMetas.EMPTY_META_DATA);
         }
         // Start generate - CraftItemMetas#getItemMetaData
-        // @GeneratedFrom 1.21.8
         if (itemType == ItemType.WRITTEN_BOOK) {
             return CraftItemMetas.asType(SIGNED_BOOK_META_DATA);
         }

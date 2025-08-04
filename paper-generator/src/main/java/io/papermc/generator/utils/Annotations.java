@@ -4,7 +4,6 @@ import com.squareup.javapoet.AnnotationSpec;
 import io.papermc.generator.types.Types;
 import io.papermc.generator.utils.experimental.SingleFlagHolder;
 import java.util.List;
-import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -32,13 +31,11 @@ public final class Annotations {
     public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
     public static final AnnotationSpec NULL_MARKED = AnnotationSpec.builder(NullMarked.class).build();
     public static final AnnotationSpec OVERRIDE = AnnotationSpec.builder(Override.class).build();
-    public static final AnnotationSpec GENERATED_FROM = AnnotationSpec.builder(Types.GENERATED_FROM)
-        .addMember("value", "$S", SharedConstants.getCurrentVersion().id())
-        .build();
+    public static final AnnotationSpec GENERATED_CLASS = AnnotationSpec.builder(Types.GENERATED_CLASS).build();
     public static final Iterable<AnnotationSpec> CLASS_HEADER = List.of(
         suppressWarnings("unused", "SpellCheckingInspection"),
         NULL_MARKED,
-        GENERATED_FROM
+        GENERATED_CLASS
     );
 
     private Annotations() {

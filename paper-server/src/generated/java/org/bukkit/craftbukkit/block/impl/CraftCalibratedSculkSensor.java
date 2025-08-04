@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.CalibratedSculkSensorBlock;
@@ -15,7 +15,7 @@ import org.bukkit.block.data.type.CalibratedSculkSensor;
 import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public class CraftCalibratedSculkSensor extends CraftBlockData implements CalibratedSculkSensor {
     private static final EnumProperty<Direction> FACING = CalibratedSculkSensorBlock.FACING;
 

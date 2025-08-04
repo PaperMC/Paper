@@ -99,7 +99,7 @@ public final class Types {
 
     public static final ClassNamed ITEM_USE_ANIMATION = PAPER.relativeClassNamed("datacomponent.item.consumable", "ItemUseAnimation");
 
-    public static final ClassNamed GENERATED_FROM = typed(io.papermc.generator.types.Types.GENERATED_FROM);
+    public static final ClassNamed GENERATED_CLASS = typed(io.papermc.generator.types.Types.GENERATED_CLASS);
 
     public static final ClassNamed BLOCK_PROPERTIES = PAPER.relativeClassNamed("block.property", "BlockProperties");
 

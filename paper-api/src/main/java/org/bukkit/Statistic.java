@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
-    // @GeneratedFrom 1.21.8
     ANIMALS_BRED,
     AVIATE_ONE_CM,
     BELL_RING,
@@ -87,7 +86,6 @@ public enum Statistic implements Keyed {
     WALK_UNDER_WATER_ONE_CM,
     // End generate - StatisticCustom
     // Start generate - StatisticType
-    // @GeneratedFrom 1.21.8
     BREAK_ITEM(Type.ITEM),
     CRAFT_ITEM(Type.ITEM),
     DROP(Type.ITEM),

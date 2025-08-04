@@ -50,7 +50,7 @@ public final class Types {
 
     public static final ClassName TAG_KEY = PAPER.relativeClass("registry.tag", "TagKey");
 
-    public static final ClassName GENERATED_FROM = PAPER.relativeClass("generated", "GeneratedFrom");
+    public static final ClassName GENERATED_CLASS = PAPER.relativeClass("annotation", "GeneratedClass");
 
     public static ClassName typed(ClassNamed name) {
         if (name.knownClass() != null) {

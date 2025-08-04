@@ -6,7 +6,7 @@ plugins {
 }
 
 paperweight {
-    atFile.set(layout.projectDirectory.file("wideners.at"))
+    atFile = layout.projectDirectory.file("wideners.at")
 }
 
 dependencies {
@@ -81,34 +81,13 @@ tasks.register<JavaExec>("prepareInputFiles") {
     group = "generation"
     description = "Prepare input files by sorting them (and updating them if possible)"
     javaLauncher = javaToolchains.defaultJavaLauncher(project)
-    mainClass.set("io.papermc.generator.tasks.PrepareInputFiles")
+    mainClass = "io.papermc.generator.tasks.PrepareInputFiles"
     classpath(sourceSets.main.map { it.runtimeClasspath })
 
     inputs.property("gameVersion", gameVersion)
     val resourceDir = layout.projectDirectory.dir("src/main/resources")
     args(resourceDir.asFile.absolutePath)
-    inputs.dir(resourceDir)
     outputs.dir(resourceDir)
-}
-
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanOldGeneratedSourceCode by tasks.registering(JavaExec::class) {
-        group = "verification"
-        description = "Scan source code to detect outdated generated code"
-        javaLauncher = javaToolchains.defaultJavaLauncher(project)
-        mainClass.set("io.papermc.generator.tasks.ScanOldGeneratedSourceCode")
-        classpath(sourceSets.main.map { it.runtimeClasspath })
-
-        val projectDirs = listOf("paper-api", "paper-server").map { rootProject.layout.projectDirectory.dir(it) }
-        args(projectDirs.map { it.asFile.absolutePath })
-        val workDirs = projectDirs.map { it.dir("src/main/java") }.plus(rootProject.layout.projectDirectory.dir("paper-server/src/test/java"))
-
-        workDirs.forEach { inputs.dir(it) }
-        inputs.property("gameVersion", gameVersion)
-    }
-    tasks.check {
-        dependsOn(scanOldGeneratedSourceCode)
-    }
 }
 
 fun TaskContainer.registerGenerationTask(
@@ -123,7 +102,7 @@ fun TaskContainer.registerGenerationTask(
     javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
     inputs.property("gameVersion", gameVersion)
     inputs.dir(layout.projectDirectory.dir("src/main/")).withPathSensitivity(PathSensitivity.RELATIVE)
-    mainClass.set("io.papermc.generator.Main")
+    mainClass = "io.papermc.generator.Main"
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val provider = objects.newInstance<GenerationArgumentProvider>()
