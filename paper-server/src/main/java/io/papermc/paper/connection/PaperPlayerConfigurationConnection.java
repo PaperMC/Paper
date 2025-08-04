@@ -20,13 +20,18 @@ import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.messaging.StandardMessenger;
 import org.jspecify.annotations.Nullable;
 
 public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience, PluginMessageBridgeImpl {
@@ -121,5 +126,22 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     @Override
     public Set<String> channels() {
         return this.handle.pluginMessagerChannels;
+    }
+
+    @Override
+    public void sendPluginMessage(final Plugin source, final String channel, final byte[] message) {
+        StandardMessenger.validatePluginMessage(this.handle.cserver.getMessenger(), source, channel, message);
+
+        if (this.channels().contains(channel)) {
+            @SuppressWarnings("deprecation") // "not an API method" does not apply to us
+            ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
+            ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
+            this.handle.send(packet);
+        }
+    }
+
+    @Override
+    public Set<String> getListeningPluginChannels() {
+        return Set.copyOf(this.channels());
     }
 }
