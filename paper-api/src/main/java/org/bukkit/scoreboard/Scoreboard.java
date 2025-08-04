@@ -238,6 +238,7 @@ public interface Scoreboard {
      * Gets all scores for an entry on this Scoreboard
      *
      * @param player the player to drop all current scores for
+     * @return immutable set of all scores tracked for the player
      * @apiNote use {@link #getScores(ScoreHolder)}
      */
     @ApiStatus.Obsolete(since = "1.21.8")
