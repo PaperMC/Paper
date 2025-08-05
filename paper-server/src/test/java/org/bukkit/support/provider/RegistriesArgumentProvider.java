@@ -1,13 +1,16 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.CreativeModeTabs;
 import io.papermc.paper.inventory.PaperCreativeModeTab;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
@@ -29,6 +32,7 @@ import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
+import org.bukkit.Keyed;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
@@ -85,7 +89,21 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 
 public class RegistriesArgumentProvider implements ArgumentsProvider {
 
-    private static final List<Arguments> DATA = Lists.newArrayList();
+    public record RegistryArgument<M, C extends Keyed>(RegistryKey<C> type, Class<? extends Keyed> api, Class<?> apiHolder, ResourceKey<? extends Registry<?>> registryKey, Class<?> impl, Class<M> internal) implements Arguments {
+        @Override
+        public Object[] get() {
+            return new Object[] {
+                this.type,
+                this.api,
+                this.registryKey,
+                this.impl,
+                this.internal,
+                this.apiHolder
+            };
+        }
+    }
+
+    private static final List<RegistryArgument<?, ?>> DATA = Lists.newArrayList();
 
     static {
         // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
@@ -108,35 +126,35 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.JUKEBOX_SONG, JukeboxSong.class, Registries.JUKEBOX_SONG, CraftJukeboxSong.class, net.minecraft.world.item.JukeboxSong.class);
         register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
         register(RegistryKey.WOLF_SOUND_VARIANT, Wolf.SoundVariant.class, Registries.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant.class, WolfSoundVariant.class);
-        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
-        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
+        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class);
+        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class);
         register(RegistryKey.FROG_VARIANT, Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class);
         register(RegistryKey.CAT_VARIANT, Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
         register(RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
         register(RegistryKey.BANNER_PATTERN, PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
         register(RegistryKey.MENU, MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
-        register(RegistryKey.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
+        register(RegistryKey.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, DataComponentTypes.class, Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
         register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
         register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
-        register(RegistryKey.CREATIVE_MODE_TAB, CreativeModeTab.class, Registries.CREATIVE_MODE_TAB, PaperCreativeModeTab.class, net.minecraft.world.item.CreativeModeTab.class);
+        register(RegistryKey.CREATIVE_MODE_TAB, CreativeModeTab.class, CreativeModeTabs.class, Registries.CREATIVE_MODE_TAB, PaperCreativeModeTab.class, net.minecraft.world.item.CreativeModeTab.class);
     }
 
-    private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
-        RegistriesArgumentProvider.register(registryKey, bukkit, registry, craft, minecraft, false);
+    private static <M, C extends Keyed> void register(RegistryKey<C> type, Class<? extends Keyed> api, ResourceKey<? extends Registry<?>> registryKey, Class<?> impl, Class<M> internal) {
+        register(type, api, api, registryKey, impl, internal);
     }
 
-    private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft, boolean newClass) { // Paper
-        RegistriesArgumentProvider.DATA.add(Arguments.of(registryKey, bukkit, registry, craft, minecraft, newClass));
+    private static <M, C extends Keyed> void register(RegistryKey<C> type, Class<? extends Keyed> api, Class<?> apiHolder, ResourceKey<? extends Registry<?>> registryKey, Class<?> impl, Class<M> internal) {
+        DATA.add(new RegistryArgument<>(type, api, apiHolder, registryKey, impl, internal));
     }
 
     @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return RegistriesArgumentProvider.getData();
+    public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
+        return getData();
     }
 
-    public static Stream<? extends Arguments> getData() {
-        return RegistriesArgumentProvider.DATA.stream();
+    public static Stream<? extends RegistryArgument<?, ?>> getData() {
+        return DATA.stream();
     }
 }
