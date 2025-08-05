@@ -13,7 +13,6 @@ import org.bukkit.inventory.ItemType;
 public final class StatisticTypes {
 
     // Start generate - StatisticTypes
-    // @GeneratedFrom 1.21.6
     public static final StatisticType<BlockType> BLOCK_MINED = get("mined");
 
     public static final StatisticType<CustomStatistic> CUSTOM = get("custom");

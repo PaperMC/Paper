@@ -6,6 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a statistic of the type {@link StatisticTypes#CUSTOM}.
+ *
  * @see CustomStatistics
  */
 @ApiStatus.NonExtendable
