@@ -62,7 +62,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @return the incremented statistic
      * @deprecated use {@link #getStat()}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     public org.bukkit.Statistic getStatistic() {
         return org.bukkit.Statistic.toLegacy(this.statistic);
     }
@@ -92,7 +92,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @return the EntityType of the statistic
      * @deprecated use {@link #getStat()}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     public @Nullable EntityType getEntityType() {
         return this.entityType;
     }
@@ -104,7 +104,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @return the Material of the statistic
      * @deprecated use {@link #getStat()}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     public @Nullable Material getMaterial() {
         return this.material;
     }

@@ -10,7 +10,7 @@ import org.bukkit.Registry;
 public final class CustomStatistics {
 
     // Start generate - CustomStatistics
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.8
     public static final CustomStatistic ANIMALS_BRED = get("animals_bred");
 
     public static final CustomStatistic AVIATE_ONE_CM = get("aviate_one_cm");

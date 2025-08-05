@@ -19,10 +19,10 @@ import org.jspecify.annotations.Nullable;
  * @deprecated use {@link StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
 @NullMarked
-@Deprecated(since = "1.21.6")
+@Deprecated(since = "1.21.8")
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.8
     ANIMALS_BRED("animals_bred"),
     AVIATE_ONE_CM("aviate_one_cm"),
     BELL_RING("bell_ring"),
@@ -101,7 +101,7 @@ public enum Statistic implements Keyed {
     WALK_UNDER_WATER_ONE_CM("walk_under_water_one_cm"),
     // End generate - StatisticCustom
     // Start generate - StatisticType
-    // @GeneratedFrom 1.21.6
+    // @GeneratedFrom 1.21.8
     BREAK_ITEM("broken", Type.ITEM),
     CRAFT_ITEM("crafted", Type.ITEM),
     DROP("dropped", Type.ITEM),
@@ -170,7 +170,7 @@ public enum Statistic implements Keyed {
      *
      * @deprecated use {@link StatisticType}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     public enum Type {
         /**
          * Statistics of this type do not require a qualifier.

@@ -390,7 +390,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         this.incrementStatistic(statistic.toModern(null, null));
@@ -409,7 +409,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         this.decrementStatistic(statistic.toModern(null, null));
@@ -426,7 +426,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount isn't positive
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         this.incrementStatistic(statistic.toModern(null, null), amount);
@@ -444,7 +444,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         this.decrementStatistic(statistic.toModern(null, null), amount);
@@ -461,7 +461,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void setStatistic(Statistic statistic, int newValue) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         this.setStatistic(statistic.toModern(null, null), newValue);
@@ -477,7 +477,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     additional parameter
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default int getStatistic(Statistic statistic) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         return this.getStatistic(statistic.toModern(null, null));
@@ -497,7 +497,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -519,7 +519,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -538,7 +538,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -558,7 +558,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -579,7 +579,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -599,7 +599,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void setStatistic(Statistic statistic, Material material, int newValue) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -620,7 +620,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
@@ -642,7 +642,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
@@ -661,7 +661,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
@@ -681,7 +681,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void incrementStatistic(Statistic statistic, EntityType entityType, int amount) throws IllegalArgumentException {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
@@ -702,7 +702,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if the statistic would have a negative value after decrementing it
      * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void decrementStatistic(Statistic statistic, EntityType entityType, int amount) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
@@ -722,7 +722,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.8")
     default void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
