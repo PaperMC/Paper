@@ -1,6 +1,6 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.AttatchableDirectional;
+import org.bukkit.block.data.AttachableDirectional;
 import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
