@@ -3282,9 +3282,10 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Get the {@link CreativeCategory} to which this item type belongs.
      *
      * @return the creative category. null if does not belong to a category
-     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead.
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead
+     * and check the type.
      */
-    @Deprecated(since = "1.20.6", forRemoval = true)
+    @Deprecated(since = "1.21.11", forRemoval = true)
     @Nullable CreativeCategory getCreativeCategory();
 
     /**
@@ -3293,8 +3294,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @return a collection of creative mode tabs to which this item type belongs, which
      * can be empty.
      */
-    @Unmodifiable
-    Collection<CreativeModeTab> getCreativeModeTabs();
+    @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs();
 
     /**
      * Gets if the ItemType is enabled by the features in a world.

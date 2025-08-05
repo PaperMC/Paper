@@ -26,6 +26,7 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -166,6 +167,10 @@ public final class Rewriters {
                     );
                 }
             })
+            .register(CreativeModeTab.class, composite(
+                holder("CreativeModeTabRow", CreativeModeTab.Row.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Row.class)),
+                holder("CreativeModeTabType", CreativeModeTab.Type.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Type.class))
+            ))
             .register(Material.class, composite(
                 holder("Blocks", new MaterialRewriter.Blocks()),
                 //holder("Material#isTransparent", MaterialRewriter.IsTransparent()),

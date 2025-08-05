@@ -356,7 +356,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see GameRule
      */
     Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
-
     /**
      * Creative mode tabs.
      *

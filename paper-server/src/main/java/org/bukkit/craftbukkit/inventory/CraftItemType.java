@@ -217,7 +217,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public CreativeCategory getCreativeCategory() {
-        final CreativeModeTab tab = Iterables.getFirst(getCreativeModeTabs(), null);
+        final CreativeModeTab tab = Iterables.getFirst(this.getCreativeModeTabs(), null);
         return tab == null ? null : ((PaperCreativeModeTab) tab).toLegacy();
     }
 
@@ -226,7 +226,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
 
         for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
-            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItemType(this)) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
                 builder.add(tab);
             }
         }

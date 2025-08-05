@@ -7,7 +7,7 @@ import io.papermc.paper.inventory.CreativeModeTab;
  *
  * @deprecated Replaced by {@link CreativeModeTab}
  */
-@Deprecated(since = "1.21.4")
+@Deprecated(since = "1.21.11")
 public enum CreativeCategory implements net.kyori.adventure.translation.Translatable { // Paper
 
     /**
@@ -52,7 +52,7 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
      *
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     DECORATIONS("decorations"),
     /**
      * Blocks used and associated with redstone contraptions including buttons,
@@ -62,16 +62,18 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * Items pertaining to transportation including minecarts, rails, boats,
      * elytra, etc.
+     *
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     TRANSPORTATION("transportation"),
     /**
      * Miscellaneous items and blocks that do not fit into other categories
      * including gems, dyes, spawn eggs, discs, banner patterns, etc.
+     *
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     MISC("misc"),
     /**
      * Food items or potions consumable by the player including meats, berries, edible
@@ -90,9 +92,10 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * All items related to brewing and potions including all types of potions,
      * their variants, and ingredients to brew them.
+     *
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     BREWING("brewing");
 
     private final String translationKey;

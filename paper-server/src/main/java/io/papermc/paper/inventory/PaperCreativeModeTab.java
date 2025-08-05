@@ -3,148 +3,102 @@ package io.papermc.paper.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.registry.HolderableBase;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTab.ItemDisplayBuilder;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackLinkedSet;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @NullMarked
-public class PaperCreativeModeTab implements io.papermc.paper.inventory.CreativeModeTab, Handleable<CreativeModeTab> {
-    private final NamespacedKey key;
-    private final CreativeModeTab handle;
-    private final io.papermc.paper.inventory.CreativeModeTab.Type type;
+public class PaperCreativeModeTab extends HolderableBase<CreativeModeTab> implements io.papermc.paper.inventory.CreativeModeTab {
 
-    private final Set<ItemType> itemTypes = new HashSet<>();
-    private final Set<ItemStack> itemStacks = ItemStackLinkedSet.createTypeAndComponentsSet();
+    private @MonotonicNonNull Set<ItemType> itemTypes;
 
-    private PaperCreativeModeTab(final NamespacedKey key, final CreativeModeTab handle) {
-        this.key = key;
-        this.handle = handle;
-        this.type = io.papermc.paper.inventory.CreativeModeTab.Type.valueOf(handle.getType().name());
+    public PaperCreativeModeTab(final Holder<CreativeModeTab> holder) {
+        super(holder);
     }
 
-    public static PaperCreativeModeTab create(final NamespacedKey key, final CreativeModeTab tab) {
-        final PaperCreativeModeTab paperTab = new PaperCreativeModeTab(key, tab);
+    private void requireContents() {
+        CreativeModeTabs.tryRebuildTabContents(CraftRegistry.getEnabledFeatures(), true, CraftRegistry.getMinecraftRegistry());
+        if (this.itemTypes == null) {
+            this.itemTypes = new HashSet<>();
 
-        // Special handling for search tabs, they contain the items of all other tabs.
-        if (tab.getType() == CreativeModeTab.Type.SEARCH) {
-            for (final CreativeModeTab otherTab : BuiltInRegistries.CREATIVE_MODE_TAB) {
-                if (otherTab.getType() == CreativeModeTab.Type.SEARCH) {
-                    continue;
-                }
-
-                final PaperCreativeModeTab created = create(key, otherTab);
-                paperTab.itemStacks.addAll(created.itemStacks);
-                paperTab.itemTypes.addAll(created.itemTypes);
+            for (final ItemStack itemStack : this.getHandle().getDisplayItems()) {
+                this.itemTypes.add(CraftItemType.minecraftToBukkitNew(itemStack.getItem()));
             }
         }
-
-        final ItemDisplayBuilder builder = buildTab(tab);
-
-        paperTab.itemStacks.addAll(Stream.concat(builder.searchTabContents.stream(), builder.tabContents.stream())
-            .collect(Collectors.toCollection(ItemStackLinkedSet::createTypeAndComponentsSet)));
-
-        for (final ItemStack itemStack : paperTab.itemStacks) {
-            final ItemType itemType = CraftItemType.minecraftToBukkitNew(itemStack.getItem());
-            paperTab.itemTypes.add(itemType);
-        }
-
-        return paperTab;
-    }
-
-    private static ItemDisplayBuilder buildTab(final CreativeModeTab tab) {
-        // Tab contents are not built by the server, so we have to build them ourselves.
-        final CreativeModeTab.ItemDisplayParameters parameters = new CreativeModeTab.ItemDisplayParameters(CraftRegistry.getEnabledFeatures(), true, CraftRegistry.getMinecraftRegistry());
-        ItemDisplayBuilder itemDisplayBuilder = new ItemDisplayBuilder(tab, parameters.enabledFeatures());
-
-        tab.displayItemsGenerator.accept(parameters, itemDisplayBuilder);
-
-        return itemDisplayBuilder;
     }
 
     @Override
-    public @NotNull Iterator<org.bukkit.inventory.ItemStack> iterator() {
-        return this.getContents().iterator();
-    }
-
-    @Override
-    public @NotNull String translationKey() {
-        return ((TranslatableContents) this.handle.getDisplayName().getContents()).getKey();
-    }
-
-    @Override
-    public @NotNull NamespacedKey getKey() {
-        return this.key;
+    public String translationKey() {
+        return ((TranslatableContents) this.getHandle().getDisplayName().getContents()).getKey();
     }
 
     @Override
     public Component displayName() {
-        return PaperAdventure.asAdventure(this.handle.getDisplayName());
+        return PaperAdventure.asAdventure(this.getHandle().getDisplayName());
     }
 
     @Override
     public org.bukkit.inventory.ItemStack iconItem() {
-        return CraftItemStack.asBukkitCopy(this.handle.getIconItem());
+        return CraftItemStack.asBukkitCopy(this.getHandle().getIconItem());
     }
 
     @Override
     public boolean scrollbarShown() {
-        return this.handle.canScroll();
+        return this.getHandle().canScroll();
     }
 
     @Override
-    public boolean containsItemType(final ItemType itemType) {
-        Preconditions.checkArgument(itemType != null, "itemType may not be null.");
-        return this.itemTypes.contains(itemType);
+    public boolean containsItem(final ItemType type) {
+        Preconditions.checkArgument(type != null, "itemType may not be null.");
+        this.requireContents();
+
+        return this.itemTypes.contains(type);
     }
 
     @Override
-    public boolean containsItem(final org.bukkit.inventory.ItemStack itemStack) {
-        Preconditions.checkArgument(itemStack != null, "itemStack may not be null.");
+    public boolean containsItemStack(final org.bukkit.inventory.ItemStack stack) {
+        Preconditions.checkArgument(stack != null, "itemStack may not be null.");
+        this.requireContents();
 
-        final ItemStack stack = CraftItemStack.unwrap(itemStack);
-        return this.itemStacks.contains(stack);
+        return this.getHandle().getDisplayItems().contains(CraftItemStack.unwrap(stack));
     }
 
     @Override
     public @Unmodifiable Collection<org.bukkit.inventory.ItemStack> getContents() {
-        final ImmutableList.Builder<org.bukkit.inventory.ItemStack> list = ImmutableList.builder();
+        this.requireContents();
 
-        for (final ItemStack itemStack : this.itemStacks) {
-            list.add(CraftItemStack.asBukkitCopy(itemStack));
+        final ImmutableList.Builder<org.bukkit.inventory.ItemStack> contents = ImmutableList.builder();
+
+        for (final ItemStack itemStack : this.getHandle().getDisplayItems()) {
+            contents.add(CraftItemStack.asBukkitCopy(itemStack));
         }
 
-        return list.build();
+        return contents.build();
     }
 
     @Override
     public Row getRow() {
-        return this.handle.row() == CreativeModeTab.Row.TOP ? Row.TOP : Row.BOTTOM;
+        return Row.valueOf(this.getHandle().row().name());
     }
 
     @Override
     public Type getType() {
-        return this.type;
+        return Type.valueOf(this.getHandle().getType().name());
     }
 
     @SuppressWarnings("deprecation")
@@ -158,18 +112,5 @@ public class PaperCreativeModeTab implements io.papermc.paper.inventory.Creative
         }
 
         return CreativeCategory.NATURAL_BLOCKS;
-    }
-
-    public static io.papermc.paper.inventory.CreativeModeTab minecraftToBukkit(CreativeModeTab minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.CREATIVE_MODE_TAB);
-    }
-
-    public static CreativeModeTab bukkitToMinecraft(io.papermc.paper.inventory.CreativeModeTab bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
-    }
-
-    @Override
-    public CreativeModeTab getHandle() {
-        return this.handle;
     }
 }

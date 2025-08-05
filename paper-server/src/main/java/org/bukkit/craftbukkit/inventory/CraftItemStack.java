@@ -678,17 +678,21 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        if (this.handle == null) {
+            return ImmutableSet.of();
+        }
+
         final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
 
         for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
-            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItemStack(this)) {
                 builder.add(tab);
             }
         }
 
         // Differing data components (i.e. durability) may cause the above contains to fail, return the categories for the item type if empty.
         final Collection<CreativeModeTab> built = builder.build();
-        if (built.isEmpty() && this.handle != null) {
+        if (built.isEmpty()) {
             return CraftItemType.minecraftToBukkitNew(this.handle.getItem()).getCreativeModeTabs();
         } else {
             return built;

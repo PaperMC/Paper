@@ -24,10 +24,6 @@ public class AllFeaturesExtension extends BaseExtension {
         return (Registry<T>) AllFeaturesExtension.realRegistries.get(clazz);
     }
 
-    public static Map<Class<? extends Keyed>, Registry<?>> getRealRegistries() {
-        return AllFeaturesExtension.realRegistries;
-    }
-
     @Override
     public void init(ExtensionContext extensionContext) {
         RegistryHelper.setup(FeatureFlags.REGISTRY.allFlags());

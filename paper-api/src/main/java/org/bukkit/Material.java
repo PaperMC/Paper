@@ -3565,10 +3565,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      *
      * @return the creative category. null if it does not belong to a category
      *
-     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead.
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead
+     * and check the type.
      */
-    @Deprecated(since = "1.21.8")
     @Nullable
+    @Deprecated(since = "1.21.11", forRemoval = true)
     public CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
         return type == null ? null : type.getCreativeCategory();
@@ -3581,8 +3582,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * can be empty.
      */
     @NotNull
-    @Unmodifiable
-    public Collection<CreativeModeTab> getCreativeModeTabs() {
+    public @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs() {
         ItemType type = asItemType();
         return type == null ? List.of() : type.getCreativeModeTabs();
     }

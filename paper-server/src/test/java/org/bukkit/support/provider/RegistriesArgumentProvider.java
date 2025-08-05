@@ -5,6 +5,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.CreativeModeTabs;
 import io.papermc.paper.inventory.PaperCreativeModeTab;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
@@ -151,7 +152,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant.class, ZombieNautilusVariant.class);
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
-        register(Registries.CREATIVE_MODE_TAB, CreativeModeTab.class, PaperCreativeModeTab.class, net.minecraft.world.item.CreativeModeTab.class);
+        register(Registries.CREATIVE_MODE_TAB, CreativeModeTab.class, CreativeModeTabs.class, PaperCreativeModeTab.class, net.minecraft.world.item.CreativeModeTab.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

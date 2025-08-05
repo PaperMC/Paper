@@ -1385,9 +1385,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * can be empty.
      * @see ItemType#getCreativeModeTabs()
      */
-    @Unmodifiable
     @NotNull
-    public Collection<CreativeModeTab> getCreativeModeTabs() {
+    public @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs() {
         return this.craftDelegate.getCreativeModeTabs();
     }
 }
