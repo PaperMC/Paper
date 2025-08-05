@@ -4,7 +4,7 @@ import org.bukkit.block.data.AttatchableDirectional;
 import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
-public interface Switch extends AttatchableDirectional, Powerable {
+public interface Switch extends AttachableDirectional, Powerable {
 
     @NotNull
     AttachedFace getAttachedFace();
