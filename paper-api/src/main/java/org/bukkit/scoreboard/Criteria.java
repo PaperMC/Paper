@@ -242,7 +242,7 @@ public interface Criteria {
      * {@link Material#isItem()} is false
      * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
-    @Deprecated(since = "1.21.6", forRemoval = true)
+    @Deprecated(since = "1.21.9", forRemoval = true)
     static Criteria statistic(Statistic statistic, Material material) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(material != null, "material must not be null");
@@ -269,7 +269,7 @@ public interface Criteria {
      * @throws IllegalArgumentException if {@link Statistic#getType()} is not {@link Type#ENTITY}
      * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
-    @Deprecated(since = "1.21.6", forRemoval = true)
+    @Deprecated(since = "1.21.9", forRemoval = true)
     static Criteria statistic(Statistic statistic, EntityType entityType) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(entityType != null, "entityType must not be null");
@@ -292,7 +292,7 @@ public interface Criteria {
      * @return the criteria
      * @deprecated Use {@link io.papermc.paper.statistic.Statistic}
      */
-    @Deprecated(since = "1.21.6", forRemoval = true)
+    @Deprecated(since = "1.21.9", forRemoval = true)
     static Criteria statistic(Statistic statistic) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         return statistic.toModern(null, null);
@@ -305,7 +305,7 @@ public interface Criteria {
      * @return the created criteria
      * @deprecated use the constants here, or {@link io.papermc.paper.statistic.Statistic}
      */
-    @Deprecated(since = "1.21.6", forRemoval = true)
+    @Deprecated(since = "1.21.9", forRemoval = true)
     static Criteria create(String name) {
         return InternalAPIBridge.get().getCriteria(name);
     }

@@ -1979,8 +1979,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @see Criteria Criteria for a list of constants
      * @deprecated use constants in {@link Criteria} or {@link io.papermc.paper.statistic.Statistic}
      */
-    @Deprecated(forRemoval = true, since = "1.21.6")
     @NotNull
+    @Deprecated(since = "1.21.9", forRemoval = true)
     Criteria getScoreboardCriteria(@NotNull String name);
 
     /**

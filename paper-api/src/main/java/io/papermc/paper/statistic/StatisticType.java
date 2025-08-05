@@ -20,7 +20,7 @@ public interface StatisticType<S> extends Keyed, Translatable {
      *
      * @param value what you want the stat of
      * @return the statistic for that thing
-     * @throws IllegalArgumentException if the thing is not valid for this this type
+     * @throws IllegalArgumentException if the thing is not valid for this type
      */
     Statistic<S> forValue(S value);
 

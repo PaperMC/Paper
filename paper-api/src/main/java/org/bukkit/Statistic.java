@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  * @deprecated use {@link StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
 @NullMarked
-@Deprecated(since = "1.21.6")
+@Deprecated(since = "1.21.9")
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
     ANIMALS_BRED("animals_bred"),
@@ -168,7 +168,7 @@ public enum Statistic implements Keyed {
      *
      * @deprecated use {@link StatisticType}
      */
-    @Deprecated(since = "1.21.6")
+    @Deprecated(since = "1.21.9")
     public enum Type {
         /**
          * Statistics of this type do not require a qualifier.
