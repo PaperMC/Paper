@@ -7,7 +7,7 @@ import io.papermc.paper.inventory.CreativeModeTab;
  *
  * @deprecated Replaced by {@link CreativeModeTab}
  */
-@Deprecated(since = "1.21.4")
+@Deprecated(since = "1.21.8")
 public enum CreativeCategory implements net.kyori.adventure.translation.Translatable { // Paper
 
     /**
@@ -62,6 +62,7 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * Items pertaining to transportation including minecarts, rails, boats,
      * elytra, etc.
+     *
      * @deprecated removed in 1.19.3
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
@@ -69,6 +70,7 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * Miscellaneous items and blocks that do not fit into other categories
      * including gems, dyes, spawn eggs, discs, banner patterns, etc.
+     *
      * @deprecated removed in 1.19.3
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
@@ -90,6 +92,7 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * All items related to brewing and potions including all types of potions,
      * their variants, and ingredients to brew them.
+     *
      * @deprecated removed in 1.19.3
      */
     @Deprecated(forRemoval = true, since = "1.19.3")

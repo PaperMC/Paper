@@ -1,7 +1,5 @@
 package org.bukkit.registry;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import com.google.common.base.Joiner;
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +51,13 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+
 /**
  * Note: This test class assumes that feature flags only enable more features and do not disable vanilla ones.
  */
@@ -87,8 +92,7 @@ public class RegistryClassTest {
 
         // First init listening for outside requests
         RegistriesArgumentProvider.getData()
-                .map(Arguments::get).map(args -> args[0])
-                .map(type -> (Class<? extends Keyed>) type)
+            .map(RegistriesArgumentProvider.RegistryArgument::api)
                 .forEach(type -> {
                     Registry<?> spyRegistry = Bukkit.getRegistry(type);
                     spyOutsideRequests(outsideRequest, type, spyRegistry);
@@ -96,9 +100,7 @@ public class RegistryClassTest {
 
         // Init all registries and recorde the outcome
         RegistriesArgumentProvider.getData()
-                .map(Arguments::get)
-                .map(args -> args[0])
-                .map(type -> (Class<? extends Keyed>) type)
+                .map(RegistriesArgumentProvider.RegistryArgument::api)
                 .forEachOrdered(type -> {
                     try {
                         Registry<?> spyRegistry = Bukkit.getRegistry(type);
@@ -160,9 +162,7 @@ public class RegistryClassTest {
 
         // Cleanup
         RegistriesArgumentProvider.getData()
-                .map(Arguments::get)
-                .map(args -> args[0])
-                .map(type -> (Class<? extends Keyed>) type)
+                .map(RegistriesArgumentProvider.RegistryArgument::api)
                 .forEach(type -> MockUtil.resetMock(Bukkit.getRegistry(type)));
     }
 
@@ -181,8 +181,8 @@ public class RegistryClassTest {
     }
 
     private static void initFieldDataCache() {
-        RegistriesArgumentProvider.getData().map(arguments -> {
-            Class<? extends Keyed> type = (Class<? extends Keyed>) arguments.get()[0];
+        RegistriesArgumentProvider.getData().map(args -> {
+            Class<? extends Keyed> type = args.api();
             Map<String, List<Class<? extends Annotation>>> annotations = RegistryClassTest.getFieldAnnotations(type);
 
             List<FieldData> fields = new ArrayList<>();
@@ -218,7 +218,7 @@ public class RegistryClassTest {
                 fields.add(new FieldData(field, annotations.computeIfAbsent(field.getName(), k -> new ArrayList<>())));
             }
 
-            return Arguments.arguments(arguments.get()[0], arguments.get()[1], fields);
+            return Arguments.arguments(args.api(), args.registryKey(), fields);
         }).forEach(FIELD_DATA_CACHE::add);
     }
 

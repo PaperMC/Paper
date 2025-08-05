@@ -44,8 +44,8 @@ public class RegistryConversionTest {
 
     private static final Set<Class<? extends Keyed>> IMPLEMENT_HANDLE_ABLE = new HashSet<>();
 
-    public static Stream<? extends Arguments> getValues(RegistryKey<? extends Keyed> registryType) { // Paper
-        Registry<?> registry = RegistryAccess.registryAccess().getRegistry(registryType); // Paper
+    public static Stream<? extends Arguments> getValues(RegistryKey<? extends Keyed> registryKey) { // Paper
+        Registry<?> registry = RegistryAccess.registryAccess().getRegistry(registryKey); // Paper
         return registry.stream().map(keyed -> (Handleable<?>) keyed)
             .map(handleAble -> Arguments.of(handleAble, handleAble.getHandle()));
     }
@@ -72,11 +72,16 @@ public class RegistryConversionTest {
         RegistryConversionTest.IMPLEMENT_HANDLE_ABLE.add(clazz);
     }
 
+    private static final Set<RegistryKey> CHECK_NEW_METHODS = Set.of(
+        RegistryKey.BLOCK,
+        RegistryKey.ITEM
+    );
+
     @Order(2)
     @RegistriesTest
     public void testMinecraftToBukkitPresent(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
-                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
-        String methodName = (newMethod) ? RegistryConversionTest.MINECRAFT_TO_BUKKIT_NEW : RegistryConversionTest.MINECRAFT_TO_BUKKIT;
+                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
+        String methodName = CHECK_NEW_METHODS.contains(type) ? RegistryConversionTest.MINECRAFT_TO_BUKKIT_NEW : RegistryConversionTest.MINECRAFT_TO_BUKKIT;
         Method method = null;
         try {
             method = craftClazz.getDeclaredMethod(methodName, minecraftClazz);
@@ -124,8 +129,8 @@ public class RegistryConversionTest {
     @Order(2)
     @RegistriesTest
     public void testBukkitToMinecraftPresent(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
-                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
-        String methodName = (newMethod) ? RegistryConversionTest.BUKKIT_TO_MINECRAFT_NEW : RegistryConversionTest.BUKKIT_TO_MINECRAFT;
+                                             Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
+        String methodName = CHECK_NEW_METHODS.contains(type) ? RegistryConversionTest.BUKKIT_TO_MINECRAFT_NEW : RegistryConversionTest.BUKKIT_TO_MINECRAFT;
         Method method = null;
         try {
             method = craftClazz.getDeclaredMethod(methodName, clazz);
