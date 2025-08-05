@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * This represents blocks that are mounted on a specific face of another block (e.g., buttons, levers)
  * and also have a facing direction.
  */
-public interface AttatchableDirectional extends FaceAttachable, Directional {
+public interface AttachableDirectional extends FaceAttachable, Directional {
 
     /**
      * Gets the {@link BlockFace} of the block that this block is physically attached to.
