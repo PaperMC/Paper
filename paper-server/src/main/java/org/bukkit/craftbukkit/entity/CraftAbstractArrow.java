@@ -174,6 +174,7 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
         this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
     }
 
+    // Override to ensure the entity data flag is set; otherwise, the isNoPhysics() method always returns false
     @Override
     public void setNoPhysics(final boolean noPhysics) {
         this.getHandle().setNoPhysics(noPhysics);
