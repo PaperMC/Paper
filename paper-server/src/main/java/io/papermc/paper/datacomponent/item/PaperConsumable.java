@@ -99,8 +99,7 @@ public record PaperConsumable(
         @Override
         public Builder effects(final List<ConsumeEffect> effects) {
             this.effects.clear();
-            this.addEffects(effects);
-            return this;
+            return this.addEffects(effects);
         }
 
         @Override
