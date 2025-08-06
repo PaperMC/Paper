@@ -97,6 +97,13 @@ public record PaperConsumable(
         }
 
         @Override
+        public Builder effects(final List<ConsumeEffect> effects) {
+            this.effects.clear();
+            this.addEffects(effects);
+            return this;
+        }
+
+        @Override
         public Builder addEffect(final ConsumeEffect effect) {
             this.effects.add(PaperConsumableEffect.toNms(effect));
             return this;

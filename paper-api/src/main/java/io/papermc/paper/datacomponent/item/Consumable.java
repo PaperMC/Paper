@@ -61,6 +61,9 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
         Builder hasConsumeParticles(boolean hasConsumeParticles);
 
         @Contract(value = "_ -> this", mutates = "this")
+        Builder effects(List<ConsumeEffect> effects);
+
+        @Contract(value = "_ -> this", mutates = "this")
         Builder addEffect(ConsumeEffect effect);
 
         @Contract(value = "_ -> this", mutates = "this")
