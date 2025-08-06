@@ -92,7 +92,7 @@ public class RegistryClassTest {
 
         // First init listening for outside requests
         RegistriesArgumentProvider.getData()
-            .map(RegistriesArgumentProvider.RegistryArgument::api)
+                .map(RegistriesArgumentProvider.RegistryArgument::api)
                 .forEach(type -> {
                     Registry<?> spyRegistry = Bukkit.getRegistry(type);
                     spyOutsideRequests(outsideRequest, type, spyRegistry);

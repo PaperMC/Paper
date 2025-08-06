@@ -6,7 +6,7 @@ import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CreativeModeTabs {
+public final class CreativeModeTabs {
 
     /**
      * An assortment of building blocks including dirt, bricks, planks, ores
@@ -88,5 +88,8 @@ public class CreativeModeTabs {
 
     private static CreativeModeTab getTab(TypedKey<CreativeModeTab> typed) {
         return Registry.CREATIVE_MODE_TAB.getOrThrow(typed.key());
+    }
+
+    private CreativeModeTabs() {
     }
 }
