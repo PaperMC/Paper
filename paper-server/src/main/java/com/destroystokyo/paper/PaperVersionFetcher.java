@@ -67,9 +67,9 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
-        int distance = DISTANCE_ERROR;
         final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
         @Nullable String newVersion = null;
+        int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
@@ -105,7 +105,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                         COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
                         COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
                     } else {
-                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of minecraft which is " + distance + " builds behind!"));
+                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of Minecraft which is " + distance + " builds behind!"));
                         COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
                     }
                 }
