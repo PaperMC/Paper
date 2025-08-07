@@ -33,6 +33,7 @@ import java.util.ArrayList;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
+import static io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE;
 
 @DefaultQualifier(NonNull.class)
 public class PaperVersionFetcher implements VersionFetcher {
@@ -53,10 +54,12 @@ public class PaperVersionFetcher implements VersionFetcher {
     public Component getVersionMessage() {
         final Component updateMessage;
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
+        final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
+
         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
         } else {
-            updateMessage = getUpdateStatusMessage(REPOSITORY, build);
+            updateMessage = getUpdateStatusMessage(REPOSITORY, build, userAgent);
         }
         final @Nullable Component history = this.getHistory();
 
@@ -65,6 +68,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
     public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
         int distance = DISTANCE_ERROR;
+        final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
         @Nullable String newVersion = null;
 
         final OptionalInt buildNumber = build.buildNumber();
@@ -72,14 +76,14 @@ public class PaperVersionFetcher implements VersionFetcher {
             COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
         } else {
             if (buildNumber.isPresent()) {
-                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
-                newVersion = fetchMinecraftVersionList(build);
+                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent);
+                newVersion = fetchMinecraftVersionList(build, userAgent);
             } else {
                 final Optional<String> gitBranch = build.gitBranch();
                 final Optional<String> gitCommit = build.gitCommit();
                 if (gitBranch.isPresent() && gitCommit.isPresent()) {
                     distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
-                    newVersion = fetchMinecraftVersionList(build);
+                    newVersion = fetchMinecraftVersionList(build, userAgent);
                 }
             }
 
@@ -109,12 +113,12 @@ public class PaperVersionFetcher implements VersionFetcher {
         }
     }
 
-    private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
+    private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build, final String userAgent) {
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isPresent()) {
-            distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
+            distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent);
         } else {
             final Optional<String> gitBranch = build.gitBranch();
             final Optional<String> gitCommit = build.gitCommit();
@@ -136,9 +140,8 @@ public class PaperVersionFetcher implements VersionFetcher {
         };
     }
 
-    private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build) {
+    private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build, final String userAgent) {
         final String currentVersion = build.minecraftVersionId();
-        final String userAgent = "Paper/" + currentVersion + " (https://papermc.io/)";
 
         try {
             final URL versionsUrl = URI.create("https://fill.papermc.io/v3/projects/paper").toURL();
@@ -193,8 +196,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         return null;
     }
 
-    private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
-        final String userAgent = "Paper/" + build.minecraftVersionId() + " (https://papermc.io/)";
+    private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild, final String userAgent) {
 
         try {
             final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + build.minecraftVersionId()).toURL();
