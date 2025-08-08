@@ -26,7 +26,7 @@ dependencies {
     implementation("info.picocli:picocli:4.7.6")
     implementation("io.github.classgraph:classgraph:4.8.47")
     implementation("org.jetbrains:annotations:26.0.1")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     serverRuntimeClasspath(project(":paper-server", "runtimeConfiguration"))
