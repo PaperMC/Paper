@@ -3477,7 +3477,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead
      * and check the type.
      */
-    @Deprecated(since = "1.21.8")
+    @Deprecated(since = "1.21.8", forRemoval = true)
     @Nullable
     public CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
