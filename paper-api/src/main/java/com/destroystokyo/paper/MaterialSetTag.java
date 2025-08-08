@@ -5,23 +5,29 @@
 package com.destroystokyo.paper;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.keys.tags.PaperBlockTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.PaperItemTypeTagKeys;
 import io.papermc.paper.tag.BaseTag;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.inventory.ItemStack;
-
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated in favour of regular registry tags
+ */
+@Deprecated(since = "1.21.8")
 public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
 
     /**
@@ -94,7 +100,8 @@ public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
         return isTagged(item.getType());
     }
 
+    @Override
     public boolean isTagged(@NotNull Material material) {
-        return this.tagged.contains(material);
+        return super.isTagged(material);
     }
 }
