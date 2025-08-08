@@ -94,12 +94,12 @@ public class PaperCreativeModeTab extends HolderableBase<CreativeModeTab> implem
 
     @Override
     public Row getRow() {
-        return this.getHandle().row() == CreativeModeTab.Row.TOP ? Row.TOP : Row.BOTTOM;
+        return Row.valueOf(this.getHandle().row().name());
     }
 
     @Override
     public Type getType() {
-        return io.papermc.paper.inventory.CreativeModeTab.Type.valueOf(this.getHandle().getType().name());
+        return Type.valueOf(this.getHandle().getType().name());
     }
 
     @SuppressWarnings("deprecation")

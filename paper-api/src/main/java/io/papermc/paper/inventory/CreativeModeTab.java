@@ -60,14 +60,20 @@ public interface CreativeModeTab extends Keyed, Translatable {
     Type getType();
 
     enum Row {
+        // Start generate - CreativeModeTabRow
+        // @GeneratedFrom 1.21.8
         TOP,
-        BOTTOM
+        BOTTOM;
+        // End generate - CreativeModeTabRow
     }
 
     enum Type {
+        // Start generate - CreativeModeTabType
+        // @GeneratedFrom 1.21.8
         CATEGORY,
         INVENTORY,
         HOTBAR,
-        SEARCH
+        SEARCH;
+        // End generate - CreativeModeTabType
     }
 }
