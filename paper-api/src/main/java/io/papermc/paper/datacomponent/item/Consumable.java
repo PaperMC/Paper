@@ -67,7 +67,7 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
         Builder animation(ItemUseAnimation animation);
 
         /**
-         * Sets the sound associated with a consumable item.
+         * Sets the sound played when consuming the item.
          *
          * @param sound the {@link Key} representing the sound to be used
          * @return the builder for chaining
@@ -86,6 +86,8 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
 
         /**
          * Sets the effects that occur when an item is consumed.
+         * <br>
+         * <b>Note:</b> this clears any previous effects set.
          *
          * @param effects a list of {@link ConsumeEffect} instances representing the effects to apply upon consumption
          * @return the builder for chaining
