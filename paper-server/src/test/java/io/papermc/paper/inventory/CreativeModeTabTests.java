@@ -23,14 +23,14 @@ public class CreativeModeTabTests {
         final ItemStack ominousBanner = Raid.getOminousBannerInstance(RegistryHelper.getRegistry().lookupOrThrow(Registries.BANNER_PATTERN)).asBukkitCopy();
 
         final Collection<CreativeModeTab> ominousBannerTabs = ominousBanner.getCreativeModeTabs();
-        assertEquals(1, ominousBannerTabs.size());
+        assertEquals(2, ominousBannerTabs.size()); // 1 category + search
         assertEquals(CreativeModeTabs.FUNCTIONAL_BLOCKS, Iterables.getFirst(ominousBannerTabs, null));
 
         final ItemStack whiteBanner = ItemStack.of(Material.WHITE_BANNER);
         assertEquals(whiteBanner.getType(), ominousBanner.getType());
 
         final Collection<CreativeModeTab> whiteBannerTabs = whiteBanner.getCreativeModeTabs();
-        assertEquals(2, whiteBannerTabs.size());
+        assertEquals(3, whiteBannerTabs.size()); // 2 categories + search
         assertTrue(whiteBannerTabs.contains(CreativeModeTabs.FUNCTIONAL_BLOCKS));
         assertTrue(whiteBannerTabs.contains(CreativeModeTabs.COLORED_BLOCKS));
     }
