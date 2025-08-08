@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -113,14 +112,5 @@ public class PaperCreativeModeTab extends HolderableBase<CreativeModeTab> implem
         }
 
         return CreativeCategory.NATURAL_BLOCKS;
-    }
-
-    // unused but needed for aggressive tests
-    public static io.papermc.paper.inventory.CreativeModeTab minecraftToBukkit(CreativeModeTab minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.CREATIVE_MODE_TAB);
-    }
-
-    public static CreativeModeTab bukkitToMinecraft(io.papermc.paper.inventory.CreativeModeTab bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 }
