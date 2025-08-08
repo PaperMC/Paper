@@ -9,9 +9,6 @@ import org.junit.jupiter.params.ArgumentCountValidationMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-/**
- * Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
- */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ArgumentsSource(RegistriesArgumentProvider.class)
