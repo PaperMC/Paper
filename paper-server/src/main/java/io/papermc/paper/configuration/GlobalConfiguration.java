@@ -186,7 +186,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
-        @Comment("Add seconds delay before retrying POI acquisition when entity navigation is stuck to reduce pathfinding performance impact.")
+        @Comment("Add a delay before retrying POI acquisition when entity navigation is stuck to reduce pathfinding performance impact. (in seconds)")
         public int stuckEntityPoiRetryDelay = 10;
 
         public enum CompressionFormat {
