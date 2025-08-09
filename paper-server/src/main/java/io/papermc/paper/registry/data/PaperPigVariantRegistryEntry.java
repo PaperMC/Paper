@@ -3,10 +3,14 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import java.util.List;
 import net.minecraft.world.entity.animal.PigVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Pig;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -26,7 +30,7 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
     ) {
         this.conversions = conversions;
         if (internal == null) {
-            spawnConditions = SpawnPrioritySelectors.EMPTY;
+            this.spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
         }
 
@@ -48,6 +52,11 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
         };
     }
 
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
+    }
+
     public static final class PaperBuilder extends PaperPigVariantRegistryEntry implements Builder, PaperRegistryBuilder<PigVariant, Pig.Variant> {
 
         public PaperBuilder(final Conversions conversions, final @Nullable PigVariant internal) {
@@ -66,6 +75,12 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
                 case NORMAL -> PigVariant.ModelType.NORMAL;
                 case COLD -> PigVariant.ModelType.COLD;
             };
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 
