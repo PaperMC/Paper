@@ -161,9 +161,66 @@ public interface UnsafeValues {
         return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
     }
 
-    byte[] serializeItem(ItemStack item);
+    default @NotNull byte[] serializeItem(@NotNull ItemStack item) {
+        return serializeItem(item, true);
+    }
 
-    ItemStack deserializeItem(byte[] data);
+    @NotNull byte[] serializeItem(@NotNull ItemStack item, boolean compress);
+
+    void serializeItemToNbt(@NotNull ItemStack item, @NotNull java.io.OutputStream output) throws java.io.IOException;
+
+    @NotNull ItemStack deserializeItem(@NotNull byte[] data);
+
+    @NotNull ItemStack deserializeItemFromNbt(@NotNull java.io.InputStream input) throws java.io.IOException;
+
+    /**
+     * Determines if the provided byte[] was compressed using GZip.<br>
+     * This method does not mutate the input.
+     * <p>
+     * This method is intended for those who wish to manually handle NBT data emitted
+     * from NBT serialization methods, such as {@link #serializeItem(ItemStack)}
+     * <p>
+     * NBT data always starts with 0A, which is the ID for an NBT Compound.
+     * The next two bytes are a short denoting the length of the tag name.
+     *
+     * <p><b>NBT Format:</b>
+     * <pre>
+     * POS  DATA  DESCRIPTION
+     * 0    0A    ID for NBT Compound
+     * 1    ??    First byte of 2-byte string length {@link java.io.DataOutputStream#writeUTF(String)}
+     * 2    ??    Second byte of 2-byte string length
+     * </pre>
+     *
+     * Whereas GZip data always starts with the GZip header,
+     * as defined by the GZip spec.
+     * The first two bytes are always {@code 1F} and {@code 8B}.
+     *
+     * <p><b>GZip Format:</b>
+     * <pre>
+     * POS  DATA  DESCRIPTION
+     * 0    1F    First GZip header byte
+     * 1    8B    Second GZip header byte
+     * 2    ??    Compression method
+     * </pre>
+     *
+     * Using this difference, we can reliably determine if the data is compressed or
+     * not by any of the NBT serialization methods provided by Paper.
+     * <p>
+     * This method will only reliably determine compression of raw NBT data
+     * compressed by GZip.<br>
+     * Don't use it with any other input.
+     *
+     * @param data the data to check
+     * @return true if the data has a GZip header, false otherwise, including
+     * if the {@code data.length} is below 2
+     * @since 1.21.8
+     */
+    static boolean isGZipCompressedNbt(@NotNull byte[] data) {
+        // if data length is below 2, it's always invalid data
+        return data.length > 1
+                && ((byte) 0x1F) == data[0]
+                && ((byte) 0x8B) == data[1];
+    }
 
     /**
      * Serializes this itemstack to json format.
@@ -196,10 +253,12 @@ public interface UnsafeValues {
     @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 
     /**
-     * Serializes the provided entity.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @return serialized entity data
+     * @apiNote For high-frequency use, consider {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * to avoid compression overhead.
      * @see #serializeEntity(Entity, EntitySerializationFlag...)
      * @see #deserializeEntity(byte[], World, boolean, boolean)
      * @throws IllegalArgumentException if couldn't serialize the entity
@@ -210,20 +269,53 @@ public interface UnsafeValues {
     }
 
     /**
-     * Serializes the provided entity.
+     * Serializes the provided entity as GZip-compressed NBT.
      *
      * @param entity entity
      * @param serializationFlags serialization flags
      * @return serialized entity data
+     * @apiNote For high-frequency use, consider {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
+     * to avoid compression overhead.
      * @throws IllegalArgumentException if couldn't serialize the entity
      * @see #deserializeEntity(byte[], World, boolean, boolean)
      * @since 1.21.4
      */
-    byte @NotNull [] serializeEntity(@NotNull Entity entity, @NotNull EntitySerializationFlag... serializationFlags);
+    default byte @NotNull [] serializeEntity(@NotNull Entity entity, @NotNull EntitySerializationFlag... serializationFlags) {
+        return serializeEntity(entity, true, serializationFlags);
+    }
 
     /**
-     * Deserializes the entity from data.
+     * Serializes the provided entity as GZip-compressed NBT.
+     *
+     * @param entity entity
+     * @param compress true for compressed GZip output, false for raw NBT bytes.
+     * @param serializationFlags serialization flags
+     * @return serialized entity data
+     * @throws IllegalArgumentException if couldn't serialize the entity
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @since 1.21.8
+     */
+    byte @NotNull [] serializeEntity(@NotNull Entity entity, boolean compress, @NotNull EntitySerializationFlag... serializationFlags);
+
+    /**
+     * Serializes the provided entity as raw NBT to the provided OutputStream.
+     *
+     * @param entity entity
+     * @param output the stream to write the data to
+     * @param serializationFlags serialization flags
+     * @throws IllegalArgumentException if it couldn't serialize the entity
+     * @throws java.io.IOException if there was an IO problem
+     * @see #deserializeEntityFromNbt(java.io.InputStream, World, boolean, boolean)
+     * @since 1.21.8
+     */
+    void serializeEntityToNbt(@NotNull Entity entity, @NotNull java.io.OutputStream output, @NotNull EntitySerializationFlag... serializationFlags) throws java.io.IOException;
+
+    /**
+     * Deserializes the entity from NBT data.
      * <br>The entity's {@link java.util.UUID} as well as passengers will not be preserved.
+     * <p>
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -239,8 +331,11 @@ public interface UnsafeValues {
     }
 
     /**
-     * Deserializes the entity from data.
+     * Deserializes the entity from NBT data.
      * <br>The entity's passengers will not be preserved.
+     * <p>
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -257,7 +352,10 @@ public interface UnsafeValues {
     }
 
     /**
-     * Deserializes the entity from data.
+     * Deserializes the entity from NBT data.
+     * <p>
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeEntity(Entity, boolean, EntitySerializationFlag...)}
      *
      * @param data serialized entity data
      * @param world world
@@ -270,6 +368,22 @@ public interface UnsafeValues {
      * @since 1.21.4
      */
     @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
+
+    /**
+     * Deserializes the entity from a stream of raw NBT data.
+     *
+     * @param input the InputStream of raw, uncompressed NBT data
+     * @param world world
+     * @param preserveUUID whether to preserve uuids of the entity and its passengers
+     * @param preservePassengers whether to preserve passengers
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @throws java.io.IOException if there was an IO problem
+     * @see #serializeEntityToNbt(Entity, java.io.OutputStream, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 1.21.8
+     */
+    @NotNull Entity deserializeEntityFromNbt(@NotNull java.io.InputStream input, @NotNull World world, boolean preserveUUID, boolean preservePassengers) throws java.io.IOException;
 
     /**
      * Creates and returns the next EntityId available.
