@@ -331,6 +331,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
             @Comment("Adds a cooldown to bees being released after a failed release, which can occur if the hive is blocked or it being night.")
             public boolean cooldownFailedBeehiveReleases = true;
+            @Comment("Add a delay before retrying POI acquisition when entity navigation is stuck to reduce pathfinding performance impact. (in seconds)")
+            public int stuckEntityPoiRetryDelay = 10;
         }
 
         public TrackingRangeY trackingRangeY;
