@@ -10,17 +10,19 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
+@NullMarked
+public abstract class CraftInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
 
     protected final MenuType<?> handle;
 
-    protected boolean checkReachable = false;
-    protected @Nullable Component title = null;
+    protected @Nullable Component title;
+    protected boolean checkReachable;
     protected net.minecraft.network.chat.Component defaultTitle = null;
 
-    public CraftAbstractInventoryViewBuilder(final MenuType<?> handle) {
+    public CraftInventoryViewBuilder(final MenuType<?> handle) {
         this.handle = handle;
     }
 
@@ -30,7 +32,6 @@ public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView>
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public V build(final HumanEntity player) {
         Preconditions.checkArgument(player != null, "The given player must not be null");
@@ -45,5 +46,5 @@ public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView>
         return (V) container.getBukkitView();
     }
 
-    protected abstract AbstractContainerMenu buildContainer(ServerPlayer player);
+    protected abstract AbstractContainerMenu buildContainer(final ServerPlayer player);
 }
