@@ -186,8 +186,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
-        @Comment("Add a delay before retrying POI acquisition when entity navigation is stuck to reduce pathfinding performance impact. (in seconds)")
-        public int stuckEntityPoiRetryDelay = 10;
 
         public enum CompressionFormat {
             GZIP,
@@ -362,6 +360,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
         @Comment("See Fix MC-163962; prevent villager demand from going negative.")
         public boolean preventNegativeVillagerDemand = false;
+        @Comment("Add a delay before retrying POI acquisition when entity navigation is stuck to reduce pathfinding performance impact. (in seconds)")
+        public int stuckEntityPoiRetryDelay = 10;
     }
 
     public BlockUpdates blockUpdates;
