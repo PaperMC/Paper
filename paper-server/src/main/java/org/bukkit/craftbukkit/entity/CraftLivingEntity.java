@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -47,11 +48,13 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
@@ -90,6 +93,7 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
@@ -385,6 +389,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().removeArrowTime;
     }
     // Paper end - Add methods for working with arrows stuck in living entities
+
+    @Override
+    public boolean isInvulnerableTo(final @NotNull DamageType type) {
+        Holder<net.minecraft.world.damagesource.DamageType> holder = CraftDamageType.bukkitToMinecraftHolder(type);
+        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), new net.minecraft.world.damagesource.DamageSource(holder));
+    }
 
     @Override
     public boolean isInvulnerable() {
