@@ -13,6 +13,7 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1611,6 +1612,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public File getWorldFolder() {
         return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
+    }
+
+    @Override
+    public Path getWorldPath() {
+        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).getParent();
     }
 
     @Override
