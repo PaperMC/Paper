@@ -1610,11 +1610,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public File getWorldFolder() {
-        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
-    }
-
-    @Override
     public Path getWorldPath() {
         return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).getParent();
     }

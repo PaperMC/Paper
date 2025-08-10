@@ -2868,7 +2868,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The folder of this world.
      */
     @NotNull
-    File getWorldFolder();
+    default File getWorldFolder() {
+        return getWorldPath().toFile();
+    }
     
     /**
      * Gets the path of this world on disk.
