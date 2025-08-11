@@ -24592,7 +24592,7 @@ index e823b8aac00158892538083bc877ccf99895909a..7d871318065f19540748363809de8265
      private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c0817861107 100644
+index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..c4b02c28c919d7b760ac636236632132c2b54960 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -100,7 +100,7 @@ import net.minecraft.world.phys.Vec3;
@@ -25329,7 +25329,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
      @Nullable
      public LevelChunk getChunkToSend(long chunkPos) {
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(chunkPos);
-@@ -977,28 +647,69 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -977,28 +647,72 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      // CraftBukkit start
@@ -25339,6 +25339,8 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
      // CraftBukkit end
      }
  
+-    void collectSpawningChunks(List<LevelChunk> output) {
+-        LongIterator spawnCandidateChunks = this.distanceManager.getSpawnCandidateChunks();
 +    // Paper start - optimise chunk tick iteration
 +    private boolean isChunkNearPlayer(final ChunkMap chunkMap, final ChunkPos chunkPos, final LevelChunk levelChunk) {
 +        final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData chunkData = ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk)levelChunk).moonrise$getChunkHolder().holderData;
@@ -25346,7 +25348,14 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
 +        if (nearbyPlayers == null) {
 +            return false;
 +        }
-+
+ 
+-        while (spawnCandidateChunks.hasNext()) {
+-            ChunkHolder chunkHolder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
+-            if (chunkHolder != null) {
+-                LevelChunk tickingChunk = chunkHolder.getTickingChunk();
+-                if (tickingChunk != null && this.anyPlayerCloseEnoughForSpawningInternal(chunkHolder.getPos(), true)) { // Spigot
+-                    output.add(tickingChunk);
+-                }
 +        // Note: cannot use narrow on Paper due to custom spawn range
 +
 +        final ca.spottedleaf.moonrise.common.list.ReferenceList<ServerPlayer> players = nearbyPlayers.getPlayers(ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
@@ -25369,24 +25378,16 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
 +            if (chunkMap.playerIsCloseEnoughForSpawning(raw[i], chunkPos, blockRange)) {
 +                // Paper end - PlayerNaturallySpawnCreaturesEvent
 +                return true;
-+            }
-+        }
+             }
+         }
 +
 +        return false;
 +    }
 +    // Paper end - optimise chunk tick iteration
 +
-     void collectSpawningChunks(List<LevelChunk> output) {
--        LongIterator spawnCandidateChunks = this.distanceManager.getSpawnCandidateChunks();
++    void collectSpawningChunks(List<LevelChunk> output, long timeInhabited) { // Paper - move up increment inhabited time
 +        final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.level.chunk.LevelChunk> tickingChunks = ((ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickServerLevel)this.level).moonrise$getPlayerTickingChunks();
- 
--        while (spawnCandidateChunks.hasNext()) {
--            ChunkHolder chunkHolder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
--            if (chunkHolder != null) {
--                LevelChunk tickingChunk = chunkHolder.getTickingChunk();
--                if (tickingChunk != null && this.anyPlayerCloseEnoughForSpawningInternal(chunkHolder.getPos(), true)) { // Spigot
--                    output.add(tickingChunk);
--                }
++
 +        final LevelChunk[] raw = tickingChunks.getRawDataUnchecked();
 +        final int size = tickingChunks.size();
 +
@@ -25394,12 +25395,15 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
 +        for (int i = 0; i < size; ++i) {
 +            final LevelChunk levelChunk = raw[i];
 +
-+            if (!this.isChunkNearPlayer((ChunkMap)(Object)this, levelChunk.getPos(), levelChunk)) {
-+                continue;
-             }
-+
-+            output.add(levelChunk);
-         }
++            // Paper start - move up increment inhabited time
++            if (this.isChunkNearPlayer((ChunkMap)(Object)this, levelChunk.getPos(), levelChunk)) {
++                output.add(levelChunk);
++                levelChunk.incrementInhabitedTime(timeInhabited);
++            } else if (this.anyPlayerCloseEnoughForSpawningInternal(levelChunk.getPos())) {
++                levelChunk.incrementInhabitedTime(timeInhabited);
++            }
++            // Paper end - move up increment inhabited time
++        }
      }
  
      void forEachBlockTickingChunk(Consumer<LevelChunk> action) {
@@ -25409,7 +25413,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
              if (chunkHolder != null) {
                  LevelChunk tickingChunk = chunkHolder.getTickingChunk();
                  if (tickingChunk != null) {
-@@ -1014,8 +725,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1014,8 +728,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      boolean anyPlayerCloseEnoughForSpawning(ChunkPos chunkPos, boolean reducedRange) {
@@ -25420,7 +25424,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
          // Spigot end
      }
  
-@@ -1027,7 +738,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1027,7 +741,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos chunkPos, boolean reducedRange) {
          double blockRange; // Paper - use from event
          // Spigot end
@@ -25442,7 +25446,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
              // Paper start - PlayerNaturallySpawnCreaturesEvent
              com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
              blockRange = 16384.0D;
-@@ -1043,26 +767,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1043,26 +770,41 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          return false;
@@ -25495,7 +25499,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
          if (player.isSpectator()) {
              return false;
          } else {
-@@ -1091,18 +830,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1091,18 +833,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.updatePlayerPos(player);
              if (!flag) {
                  this.distanceManager.addPlayer(SectionPos.of(player), player);
@@ -25518,7 +25522,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
          }
      }
  
-@@ -1112,13 +853,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1112,13 +856,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -25533,7 +25537,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
  
          SectionPos lastSectionPos = player.getLastSectionPos();
          SectionPos sectionPos = SectionPos.of(player);
-@@ -1127,6 +862,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1127,6 +865,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          boolean flag2 = lastSectionPos.asLong() != sectionPos.asLong();
          if (flag2 || flag != flag1) {
              this.updatePlayerPos(player);
@@ -25541,7 +25545,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
              if (!flag) {
                  this.distanceManager.removePlayer(lastSectionPos, player);
              }
-@@ -1143,49 +879,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1143,49 +882,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.playerMap.unIgnorePlayer(player);
              }
  
@@ -25602,7 +25606,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
      }
  
      public void addEntity(Entity entity) {
-@@ -1209,6 +925,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1209,6 +928,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  } else {
                      ChunkMap.TrackedEntity trackedEntity = new ChunkMap.TrackedEntity(entity, i, updateInterval, type.trackDeltas());
                      this.entityMap.put(entity.getId(), trackedEntity);
@@ -25615,7 +25619,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
                      trackedEntity.updatePlayers(this.level.players());
                      if (entity instanceof ServerPlayer serverPlayer) {
                          this.updatePlayerStatus(serverPlayer, true);
-@@ -1238,12 +960,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1238,12 +963,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (trackedEntity1 != null) {
              trackedEntity1.broadcastRemoved();
          }
@@ -25656,7 +25660,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
  
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
-@@ -1321,23 +1069,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1321,23 +1072,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void waitForLightBeforeSending(ChunkPos chunkPos, int range) {
@@ -25690,7 +25694,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
          }
  
          @Nullable
-@@ -1353,13 +1102,96 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1353,13 +1105,96 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -25788,7 +25792,7 @@ index 3faf1b5556c55f3468182f75b2dbff4aaa3aae3a..61692c07dfb75ca0c19f603aafc96c08
          public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this::broadcast, this::broadcastIgnorePlayers, this.seenBy); // Paper
              this.entity = entity;
-@@ -1458,17 +1290,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1458,17 +1293,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          private int getEffectiveRange() {
@@ -26443,7 +26447,7 @@ index 302841522cf990c38b1493b716048c0f2db40726..7932a6676db7b652d63be5ae4dcf9bcf
          }
      }
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 92a39927d7bd9af3ab67c2595d8ed435a2da6a69..7c9a2eed4441f816723562e0012f918db265912e 100644
+index 92a39927d7bd9af3ab67c2595d8ed435a2da6a69..bfbd639bf2c8594a8d2ebd96fb01984de32ea10c 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -55,7 +55,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26825,9 +26829,12 @@ index 92a39927d7bd9af3ab67c2595d8ed435a2da6a69..7c9a2eed4441f816723562e0012f918d
              if (tickingChunk != null) {
                  chunkHolder.broadcastChanges(tickingChunk);
              }
-@@ -491,7 +570,10 @@ public class ServerChunkCache extends ChunkSource {
+@@ -489,20 +568,23 @@ public class ServerChunkCache extends ChunkSource {
+ 
+         try {
              profiler.push("filteringSpawningChunks");
-             this.chunkMap.collectSpawningChunks(list);
+-            this.chunkMap.collectSpawningChunks(list);
++            this.chunkMap.collectSpawningChunks(list, timeInhabited); // Paper - move up increment inhabited time
              profiler.popPush("shuffleSpawningChunks");
 -            Util.shuffle(list, this.level.random);
 +            // Paper start - chunk tick iteration optimisation
@@ -26837,7 +26844,11 @@ index 92a39927d7bd9af3ab67c2595d8ed435a2da6a69..7c9a2eed4441f816723562e0012f918d
              profiler.popPush("tickSpawningChunks");
  
              for (LevelChunk levelChunk : list) {
-@@ -502,7 +584,7 @@ public class ServerChunkCache extends ChunkSource {
+-                this.tickSpawningChunk(levelChunk, timeInhabited, filteredSpawningCategories, spawnState);
++                this.tickSpawningChunk(levelChunk, filteredSpawningCategories, spawnState); // Paper - move up increment inhabited time
+             }
+         } finally {
+             list.clear();
          }
  
          profiler.popPush("tickTickingChunks");
@@ -26846,11 +26857,16 @@ index 92a39927d7bd9af3ab67c2595d8ed435a2da6a69..7c9a2eed4441f816723562e0012f918d
          profiler.pop();
          profiler.popPush("customSpawners");
          if (_boolean) {
-@@ -513,22 +595,25 @@ public class ServerChunkCache extends ChunkSource {
-     private void tickSpawningChunk(LevelChunk chunk, long timeInhabited, List<MobCategory> spawnCategories, NaturalSpawner.SpawnState spawnState) {
+@@ -510,25 +592,28 @@ public class ServerChunkCache extends ChunkSource {
+         }
+     }
+ 
+-    private void tickSpawningChunk(LevelChunk chunk, long timeInhabited, List<MobCategory> spawnCategories, NaturalSpawner.SpawnState spawnState) {
++    private void tickSpawningChunk(LevelChunk chunk, List<MobCategory> spawnCategories, NaturalSpawner.SpawnState spawnState) { // Paper - move up increment inhabited time
          ChunkPos pos = chunk.getPos();
-         chunk.incrementInhabitedTime(timeInhabited);
+-        chunk.incrementInhabitedTime(timeInhabited);
 -        if (this.distanceManager.inEntityTickingRange(pos.toLong())) {
++        // chunk.incrementInhabitedTime(timeInhabited); // Paper - move up
 +        if (true) { // Paper - rewrite chunk system
              this.level.tickThunder(chunk);
          }
@@ -27691,7 +27707,7 @@ index 49008b4cbaead8a66a93d2b0d4b50b335a6c3eed..f9c96bbdc54e68b9216b7f8662bfae03
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 537821a41e4ef4be17b8859a23107cf726569112..514ff8543dbbe1c6ae47c7fd6c1545b87d3b2927 100644
+index f1706da6a1290a49cfcfb567e68acd5872c527ad..dcf371aeb3696fbee72a8a7e7cbd7677a788819b 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -193,7 +193,7 @@ import net.minecraft.world.scores.Team;
