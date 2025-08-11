@@ -1,6 +1,7 @@
 package io.papermc.paper.util;
 
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.papermc.paper.math.BlockPosition;
@@ -9,6 +10,7 @@ import io.papermc.paper.math.Position;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -21,8 +23,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -215,5 +223,25 @@ public final class MCUtil {
         for (final A value : toAdd) {
             target.add(converter.apply(value));
         }
+    }
+
+    private static final Set<Block> FLOWER_POTS_WITH_CONTENT = ImmutableSet.of(
+        Blocks.POTTED_OPEN_EYEBLOSSOM, Blocks.POTTED_CLOSED_EYEBLOSSOM, Blocks.POTTED_POPPY, Blocks.POTTED_BLUE_ORCHID,
+        Blocks.POTTED_ALLIUM, Blocks.POTTED_AZURE_BLUET, Blocks.POTTED_RED_TULIP, Blocks.POTTED_ORANGE_TULIP,
+        Blocks.POTTED_WHITE_TULIP, Blocks.POTTED_PINK_TULIP, Blocks.POTTED_OXEYE_DAISY, Blocks.POTTED_DANDELION,
+        Blocks.POTTED_OAK_SAPLING, Blocks.POTTED_SPRUCE_SAPLING, Blocks.POTTED_BIRCH_SAPLING, Blocks.POTTED_JUNGLE_SAPLING,
+        Blocks.POTTED_ACACIA_SAPLING, Blocks.POTTED_DARK_OAK_SAPLING, Blocks.POTTED_PALE_OAK_SAPLING, Blocks.POTTED_RED_MUSHROOM,
+        Blocks.POTTED_BROWN_MUSHROOM, Blocks.POTTED_DEAD_BUSH, Blocks.POTTED_FERN, Blocks.POTTED_CACTUS, Blocks.POTTED_CORNFLOWER,
+        Blocks.POTTED_LILY_OF_THE_VALLEY, Blocks.POTTED_WITHER_ROSE, Blocks.POTTED_BAMBOO, Blocks.POTTED_CRIMSON_FUNGUS,
+        Blocks.POTTED_WARPED_FUNGUS, Blocks.POTTED_CRIMSON_ROOTS, Blocks.POTTED_WARPED_ROOTS, Blocks.POTTED_AZALEA,
+        Blocks.POTTED_FLOWERING_AZALEA, Blocks.POTTED_MANGROVE_PROPAGULE, Blocks.POTTED_CHERRY_SAPLING, Blocks.POTTED_TORCHFLOWER
+    );
+
+    // The client predicts that certain interactions will result in an item being added to its inventory.
+    // If one of these interactions is cancelled, we need to send a full inventory update to prevent desyncs.
+    public static boolean clientPredictsInteraction(final BlockState block, final ItemStack item) {
+        return (FLOWER_POTS_WITH_CONTENT.contains(block.getBlock()))
+            || (block.is(Blocks.LODESTONE) && item.is(Items.COMPASS))
+            || ((item.is(Items.BUCKET) || item.is(Items.GLASS_BOTTLE)) && item.getCount() > 1); // fluids or bee nests with honey; count <= 1 will try to replace in hand
     }
 }

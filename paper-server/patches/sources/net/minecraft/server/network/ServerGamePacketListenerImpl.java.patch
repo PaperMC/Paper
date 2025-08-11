@@ -1242,17 +1242,18 @@
                  BlockPos blockPos = hitResult.getBlockPos();
                  if (this.player.canInteractWithBlock(blockPos, 1.0)) {
                      Vec3 vec3 = location.subtract(Vec3.atCenterOf(blockPos));
-@@ -1262,7 +_,8 @@
+@@ -1262,7 +_,9 @@
                          this.player.resetLastActionTime();
                          int maxY = this.player.level().getMaxY();
                          if (blockPos.getY() <= maxY) {
 -                            if (this.awaitingPositionFromClient == null && serverLevel.mayInteract(this.player, blockPos)) {
-+                            if (this.awaitingPositionFromClient == null && (serverLevel.mayInteract(this.player, blockPos) || (serverLevel.paperConfig().spawn.allowUsingSignsInsideSpawnProtection && serverLevel.getBlockState(blockPos).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - Allow using signs inside spawn protection
++                            final boolean mayInteract = serverLevel.mayInteract(this.player, blockPos); // Paper - Reuse in inventory desync fix
++                            if (this.awaitingPositionFromClient == null && (mayInteract || (serverLevel.paperConfig().spawn.allowUsingSignsInsideSpawnProtection && serverLevel.getBlockState(blockPos).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - Allow using signs inside spawn protection
 +                                this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
                                  InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, serverLevel, itemInHand, hand, hitResult);
                                  if (interactionResult.consumesAction()) {
                                      CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, hitResult.getBlockPos(), itemInHand.copy());
-@@ -1275,10 +_,10 @@
+@@ -1275,10 +_,16 @@
                                      Component component = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                                      this.player.sendSystemMessage(component, true);
                                  } else if (interactionResult instanceof InteractionResult.Success success
@@ -1260,8 +1261,13 @@
 +                                    && success.swingSource() == InteractionResult.SwingSource.SERVER && !this.player.gameMode.interactResult) { // Paper - Call interact event
                                      this.player.swing(hand, true);
                                  }
--                            }
-+                            } else { this.player.containerMenu.forceHeldSlot(hand); } // Paper - Fix inventory desync; MC-99075
++                            // Paper start - Fix inventory desync; MC-99075
++                            } else if (!mayInteract) {
++                                if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(serverLevel.getBlockState(blockPos), itemInHand)) {
++                                    this.player.containerMenu.sendAllDataToRemote();
++                                } else { this.player.containerMenu.forceHeldSlot(hand); }
+                             }
++                            // Paper end - Fix inventory desync
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
