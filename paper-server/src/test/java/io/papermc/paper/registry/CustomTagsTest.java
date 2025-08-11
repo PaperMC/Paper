@@ -5,6 +5,9 @@ import com.google.common.collect.Sets;
 import io.papermc.paper.generator.BlockTags;
 import io.papermc.paper.generator.EntityTypeTags;
 import io.papermc.paper.generator.ItemTags;
+import io.papermc.paper.registry.keys.tags.PaperBlockTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.PaperItemTypeTagKeys;
 import io.papermc.paper.tag.BaseTag;
 import io.papermc.paper.tag.EntityTags;
 import java.lang.reflect.Field;
@@ -48,11 +51,13 @@ import org.bukkit.support.environment.AllFeatures;
 import org.jetbrains.annotations.ApiStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @AllFeatures
 public class CustomTagsTest {
@@ -212,5 +217,35 @@ public class CustomTagsTest {
             assertEquals(Set.of(), missedEntries, "Tag '%s' is outdated, missed content".formatted(predicate.tagKey()));
             assertEquals(Set.of(), extraEntries, "Tag '%s' is outdated, extra content".formatted(predicate.tagKey()));
         }
+    }
+
+    public static Set<Arguments> fieldHolders() {
+        return Set.of(
+            arguments(PaperBlockTypeTagKeys.class, BlockTags.class),
+            arguments(PaperItemTypeTagKeys.class, ItemTags.class),
+            arguments(PaperEntityTypeTagKeys.class, EntityTypeTags.class)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("fieldHolders")
+    public void testExposedFields(Class<?> holder, Class<?> internalHolder) {
+        Set<String> fields = fetchFields(holder);
+        Set<String> internalFields = fetchFields(internalHolder);
+
+        Set<String> extraFields = Sets.difference(fields, internalFields);
+        Set<String> missingFields = Sets.difference(internalFields, fields);
+        assertTrue(missingFields.isEmpty(), "Some fields are missing in %s: %s".formatted(holder.getCanonicalName(), missingFields));
+        assertTrue(extraFields.isEmpty(), "Found some extra fields in %s: %s".formatted(holder.getCanonicalName(), extraFields));
+    }
+
+    private static Set<String> fetchFields(Class<?> holder) {
+        Set<String> names = new HashSet<>();
+        for (Field field : holder.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                names.add(field.getName());
+            }
+        }
+        return names;
     }
 }
