@@ -21,7 +21,7 @@ public class PaperItemTypeTagKeys {
     /**
      * Covers all beehive items.
      */
-    public static final TagKey<ItemType> BEE_HIVES = create(key("paper:beehives"));
+    public static final TagKey<ItemType> BEEHIVES = create(key("paper:beehives"));
 
     /**
      * Covers all variants of fish buckets.
