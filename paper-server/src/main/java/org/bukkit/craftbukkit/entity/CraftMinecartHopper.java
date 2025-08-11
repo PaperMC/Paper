@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.vehicle.MinecartHopper;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -47,11 +48,10 @@ public class CraftMinecartHopper extends CraftMinecartContainer implements Hoppe
         throw new UnsupportedOperationException("Hopper minecarts don't have cooldowns");
     }
 
-    // Paper start - Allow you to set the number of items that a hopper moves
     @Override
     public void setTransferAmount(@Nullable final Integer transferAmount) {
         if (transferAmount != null) {
-            com.google.common.base.Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
+            Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
         }
         this.getHandle().setTransferAmount(transferAmount);
     }
@@ -60,6 +60,5 @@ public class CraftMinecartHopper extends CraftMinecartContainer implements Hoppe
     public Optional<Integer> getTransferAmount() {
         return this.getHandle().getTransferAmount();
     }
-    // Paper end - Allow you to set the number of items that a hopper moves
 
 }

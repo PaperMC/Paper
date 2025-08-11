@@ -3,12 +3,15 @@ package org.bukkit.entity.minecart;
 import com.destroystokyo.paper.loottable.LootableEntityInventory;
 import org.bukkit.entity.Minecart;
 import org.bukkit.inventory.InventoryHolder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 /**
  * Represents a Minecart with a Hopper inside it
  */
+@NullMarked
 public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
 
     /**
@@ -45,21 +48,17 @@ public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntit
     void setPickupCooldown(int cooldown);
     // Paper end
 
-    // Paper start - Allow you to set the number of items that a hopper moves
-
     /**
      * Define the number of items transferred by the hopper; the amount must be strictly greater than 0.
      * Setting a value to null corresponds to resuming the server's default behavior.
      * @param transferAmount Items amount
      */
-    void setTransferAmount(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) @Nullable Integer transferAmount);
+    void setTransferAmount(@Range(from = 1, to = Integer.MAX_VALUE) @Nullable Integer transferAmount);
 
     /**
      * Retrieve the number of items transferred by the hopper. If there is no value, it refers to the configuration of
      * the server being used.
      * @return Items amount
      */
-    @NotNull
-    java.util.Optional<Integer> getTransferAmount();
-    // Paper end - Allow you to set the number of items that a hopper moves
+    Optional<Integer> getTransferAmount();
 }

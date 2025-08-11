@@ -57,11 +57,10 @@ public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hop
     }
     // Paper end - Expanded Hopper API
 
-    // Paper start - Allow you to set the number of items that a hopper moves
     @Override
     public void setTransferAmount(@Nullable final Integer transferAmount) {
-        if(transferAmount != null){
-            com.google.common.base.Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
+        if (transferAmount != null){
+            Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
         }
         this.getSnapshot().setTransferAmount(transferAmount);
     }
@@ -70,5 +69,4 @@ public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hop
     public Optional<Integer> getTransferAmount() {
         return this.getSnapshot().getTransferAmount();
     }
-    //Paper end - Allow you to set the number of items that a hopper moves
 }
