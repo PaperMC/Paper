@@ -24,7 +24,6 @@
 package com.destroystokyo.paper;
 
 import io.papermc.paper.registry.keys.tags.PaperBlockTypeTagKeys;
-import io.papermc.paper.registry.keys.tags.PaperEntityTypeTagKeys;
 import io.papermc.paper.registry.keys.tags.PaperItemTypeTagKeys;
 import java.util.Objects;
 import org.bukkit.Material;
@@ -425,7 +424,7 @@ public class MaterialTags {
     /**
      * Covers zombie, creeper, skeleton, dragon, and player heads.
      *
-     * @deprecated in favour of {@link PaperBlockTypeTagKeys#SKULLS} or {@link PaperItemTypeTagKeys#SKULLS}
+     * @deprecated in favour of {@link PaperBlockTypeTagKeys#SKULLS} or {@link Tag#ITEMS_SKULLS}
      */
     @Deprecated(since = "1.21.8")
     public static final MaterialSetTag SKULLS = new MaterialSetTag(keyFor("skulls"))
