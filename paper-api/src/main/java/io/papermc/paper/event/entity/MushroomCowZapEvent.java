@@ -5,10 +5,12 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.MushroomCow;
 import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Stores data for mushroom cow being zapped
  */
+@NullMarked
 public class MushroomCowZapEvent extends EntityZapEvent implements Cancellable {
 
     private MushroomCow.Variant variant;
