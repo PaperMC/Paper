@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -1494,4 +1496,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
+
+    void setWaypointStyle(NamespacedKey key);
+
+    void setWaypointColor(Color color);
+
+    NamespacedKey getWaypointStyle();
+
+    @org.jspecify.annotations.Nullable
+    Color getWaypointColor();
 }

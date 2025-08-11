@@ -13,7 +13,9 @@ import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.waypoints.ServerWaypointManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -36,9 +38,13 @@ import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.waypoints.Waypoint;
+import net.minecraft.world.waypoints.WaypointStyleAssets;
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -53,6 +59,7 @@ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
@@ -1087,5 +1094,36 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public CombatTracker getCombatTracker() {
         return this.getHandle().getCombatTracker().paperCombatTracker;
+    }
+
+    @Override
+    public Color getWaypointColor() {
+        return getHandle().waypointIcon().color.map(Color::fromRGB).orElse(null);
+    }
+
+    @Override
+    public NamespacedKey getWaypointStyle() {
+        return CraftNamespacedKey.fromMinecraft(getHandle().waypointIcon().style.location());
+    }
+
+    @Override
+    public void setWaypointColor(final Color color) {
+        final Waypoint.Icon icon = getHandle().waypointIcon();
+        icon.color = Optional.ofNullable(color).map(Color::asRGB);
+        ((ServerLevel) getHandle().level()).getWaypointManager().updateWaypoint(getHandle());
+        updateWaypoint();
+    }
+
+    @Override
+    public void setWaypointStyle(final NamespacedKey key) {
+        final Waypoint.Icon icon = getHandle().waypointIcon();
+        icon.style = ResourceKey.create(WaypointStyleAssets.ROOT_ID, CraftNamespacedKey.toMinecraft(key));
+        updateWaypoint();
+    }
+
+    private void updateWaypoint() {
+        ServerWaypointManager manager = ((ServerLevel) getHandle().level()).getWaypointManager();
+        manager.untrackWaypoint(getHandle());
+        manager.trackWaypoint(getHandle());
     }
 }
