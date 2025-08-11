@@ -10,12 +10,15 @@ import org.jetbrains.annotations.VisibleForTesting;
 public interface ItemTags {
 
     TagKey<Item> BUCKET = create("bucket");
+    TagKey<Item> BEEHIVES = create("beehives");
     TagKey<Item> FISH_BUCKET = create("fish_bucket");
     TagKey<Item> COBBLESTONE_WALL = create("cobblestone_wall");
     TagKey<Item> COBBLESTONE = create("cobblestone");
     TagKey<Item> CONCRETE = create("concrete");
     TagKey<Item> CONCRETE_POWDER = create("concrete_powder");
     TagKey<Item> DYE = create("dye");
+    TagKey<Item> ICE = create("ice");
+    TagKey<Item> SNOW = create("snow");
     TagKey<Item> GLASS = create("glass");
     TagKey<Item> GLASS_PANE = create("glass_pane");
     TagKey<Item> GLAZED_TERRACOTTA = create("glazed_terracotta");
@@ -39,13 +42,13 @@ public interface ItemTags {
     TagKey<Item> RED_SANDSTONES = create("red_sandstones");
     TagKey<Item> SANDSTONES = create("sandstones");
     TagKey<Item> SPONGE = create("sponge");
-    TagKey<Item> SKULLS = create("skulls");
     TagKey<Item> SPAWN_EGGS = create("spawn_eggs");
     TagKey<Item> STAINED_GLASS = create("stained_glass");
     TagKey<Item> STAINED_GLASS_PANE = create("stained_glass_pane");
     TagKey<Item> PURPUR = create("purpur");
     TagKey<Item> TORCHES = create("torches");
     TagKey<Item> LANTERNS = create("lanterns");
+    TagKey<Item> CAMPFIRES = create("campfires");
     TagKey<Item> ARMOR = create("armor");
     TagKey<Item> BOWS = create("bows");
     TagKey<Item> THROWABLE_PROJECTILES = create("throwable_projectiles");
@@ -53,6 +56,7 @@ public interface ItemTags {
     TagKey<Item> CORAL = create("coral");
     TagKey<Item> CORAL_FAN = create("coral_fan");
     TagKey<Item> CORAL_BLOCKS = create("coral_blocks");
+    TagKey<Item> NYLIUM = create("nylium");
     TagKey<Item> RAW_ORES = create("raw_ores");
     TagKey<Item> COMMAND_BLOCKS = create("command_blocks");
     TagKey<Item> FURNACES = create("furnaces");

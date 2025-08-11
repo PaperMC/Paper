@@ -19,6 +19,11 @@ public class PaperItemTypeTagKeys {
     public static final TagKey<ItemType> BUCKET = create(key("paper:bucket"));
 
     /**
+     * Covers all beehive items.
+     */
+    public static final TagKey<ItemType> BEE_HIVES = create(key("paper:beehives"));
+
+    /**
      * Covers all variants of fish buckets.
      */
     public static final TagKey<ItemType> FISH_BUCKET = create(key("paper:fish_bucket"));
@@ -47,6 +52,16 @@ public class PaperItemTypeTagKeys {
      * Covers all dyes.
      */
     public static final TagKey<ItemType> DYE = create(key("paper:dye"));
+
+    /**
+     * Covers all ice variants.
+     */
+    public static final TagKey<ItemType> ICE = create(key("paper:ice"));
+
+    /**
+     * Covers snow layer and snow block.
+     */
+    public static final TagKey<ItemType> SNOW = create(key("paper:snow"));
 
     /**
      * Covers the non-colored glass and stained-glasses (not panes).
@@ -164,11 +179,6 @@ public class PaperItemTypeTagKeys {
     public static final TagKey<ItemType> SPONGE = create(key("paper:sponge"));
 
     /**
-     * Covers skull and heads.
-     */
-    public static final TagKey<ItemType> SKULLS = create(key("paper:skulls"));
-
-    /**
      * Covers all spawn egg items.
      */
     public static final TagKey<ItemType> SPAWN_EGGS = create(key("paper:spawn_eggs"));
@@ -197,6 +207,11 @@ public class PaperItemTypeTagKeys {
      * Covers the variants of lanterns.
      */
     public static final TagKey<ItemType> LANTERNS = create(key("paper:lanterns"));
+
+    /**
+     * Covers the variants of campfires.
+     */
+    public static final TagKey<ItemType> CAMPFIRES = create(key("paper:campfires"));
 
     /**
      * Covers all variants of armor.
@@ -232,6 +247,11 @@ public class PaperItemTypeTagKeys {
      * Covers the variants of coral blocks.
      */
     public static final TagKey<ItemType> CORAL_BLOCKS = create(key("paper:coral_blocks"));
+
+    /**
+     * Covers the variants of nylium.
+     */
+    public static final TagKey<ItemType> NYLIUM = create(key("paper:nylium"));
 
     /**
      * Covers the variants of raw ores.

@@ -38,6 +38,11 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.MILK_BUCKET,
                 Items.WATER_BUCKET
             );
+        this.tag(ItemTags.BEEHIVES)
+            .add(
+                Items.BEE_NEST,
+                Items.BEEHIVE
+            );
         this.tag(ItemTags.FISH_BUCKET)
             .add(
                 Items.PUFFERFISH_BUCKET,
@@ -82,6 +87,17 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.GREEN_DYE,
                 Items.ORANGE_DYE,
                 Items.BLACK_DYE
+            );
+        this.tag(ItemTags.ICE)
+            .add(
+                Items.ICE,
+                Items.PACKED_ICE,
+                Items.BLUE_ICE
+            );
+        this.tag(ItemTags.SNOW)
+            .add(
+                Items.SNOW,
+                Items.SNOW_BLOCK
             );
         this.tag(ItemTags.GOLDEN_APPLE)
             .add(
@@ -136,16 +152,6 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.TROPICAL_FISH,
                 Items.PUFFERFISH,
                 Items.COD
-            );
-        this.tag(ItemTags.SKULLS)
-            .add(
-                Items.SKELETON_SKULL,
-                Items.ZOMBIE_HEAD,
-                Items.CREEPER_HEAD,
-                Items.PLAYER_HEAD,
-                Items.WITHER_SKELETON_SKULL,
-                Items.PIGLIN_HEAD,
-                Items.DRAGON_HEAD
             );
         this.tag(ItemTags.SPAWN_EGGS)
             .add(
@@ -238,6 +244,11 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
                 Items.REDSTONE_TORCH,
                 Items.TORCH
             );
+        this.tag(ItemTags.CAMPFIRES)
+            .add(
+                Items.CAMPFIRE,
+                Items.SOUL_CAMPFIRE
+            );
         this.tag(ItemTags.ARMOR)
             .addTag(net.minecraft.tags.ItemTags.HEAD_ARMOR)
             .addTag(net.minecraft.tags.ItemTags.CHEST_ARMOR)
@@ -262,6 +273,11 @@ public class ItemTagsProvider extends IntrinsicHolderTagsProvider<Item> {
             );
         this.tag(ItemTags.COLORABLE)
             .addTag(ItemTags.CONCRETE_POWDER);
+        this.tag(ItemTags.NYLIUM)
+            .add(
+                Items.CRIMSON_NYLIUM,
+                Items.WARPED_NYLIUM
+            );
         this.tag(ItemTags.RAW_ORES)
             .add(
                 Items.RAW_GOLD,
