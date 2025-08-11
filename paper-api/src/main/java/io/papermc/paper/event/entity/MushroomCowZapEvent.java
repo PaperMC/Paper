@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class MushroomCowZapEvent extends EntityZapEvent implements Cancellable {
 
-    private MushroomCow.Variant variant;
+    private final MushroomCow.Variant variant;
 
     @ApiStatus.Internal
     public MushroomCowZapEvent(final MushroomCow entity, final LightningStrike bolt, final MushroomCow.Variant variant) {
