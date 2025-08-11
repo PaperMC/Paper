@@ -1,0 +1,167 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William AVENTIN <william.aventin@elesia.org>
+Date: Mon, 11 Aug 2025 09:56:45 +0200
+Subject: [PATCH] Allow you to set the number of items that a hopper moves
+
+
+diff --git a/net/minecraft/world/entity/vehicle/MinecartHopper.java b/net/minecraft/world/entity/vehicle/MinecartHopper.java
+index 41a6ec508a10a49a37539d2f10171d15c233b280..fd84b0e4d6990a23a8078c14917c2dee0a1e26b8 100644
+--- a/net/minecraft/world/entity/vehicle/MinecartHopper.java
++++ b/net/minecraft/world/entity/vehicle/MinecartHopper.java
+@@ -24,6 +24,10 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+     private boolean enabled = true;
+     private boolean consumedItemThisFrame = false;
+ 
++    // Paper - Allow you to set the number of items that a hopper moves
++    @org.jspecify.annotations.Nullable
++    private Integer transferAmount = null;
++
+     public MinecartHopper(EntityType<? extends MinecartHopper> entityType, Level level) {
+         super(entityType, level);
+     }
+@@ -80,6 +84,18 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+         return false;
+     }
+ 
++    // Paper start - Allow you to set the number of items that a hopper moves
++    @Override
++    public void setTransferAmount(@org.jspecify.annotations.Nullable final Integer transferAmount) {
++        this.transferAmount = transferAmount;
++    }
++
++    @Override
++    public java.util.Optional<Integer> getTransferAmount() {
++        return java.util.Optional.ofNullable(this.transferAmount);
++    }
++    // Paper end - Allow you to set the number of items that a hopper moves
++
+     @Override
+     public void tick() {
+         this.consumedItemThisFrame = false;
+@@ -132,12 +148,22 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+     protected void addAdditionalSaveData(ValueOutput output) {
+         super.addAdditionalSaveData(output);
+         output.putBoolean("Enabled", this.enabled);
++
++        // Paper start - Allow you to set the number of items that a hopper moves
++        if(this.transferAmount != null) {
++            output.putInt("TransferAmount", this.transferAmount);
++        }
++        // Paper end - Allow you to set the number of items that a hopper moves
+     }
+ 
+     @Override
+     protected void readAdditionalSaveData(ValueInput input) {
+         super.readAdditionalSaveData(input);
+         this.enabled = input.getBooleanOr("Enabled", true);
++
++        // Paper - Allow you to set the number of items that a hopper moves
++        this.transferAmount = input.getInt("TransferAmount").orElse(null);
++
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/level/block/entity/Hopper.java b/net/minecraft/world/level/block/entity/Hopper.java
+index 484c2ba2752fbf3ad929e46c2f078e906f6f0637..229f5adef5f81d236cda6e55007b0693772316f5 100644
+--- a/net/minecraft/world/level/block/entity/Hopper.java
++++ b/net/minecraft/world/level/block/entity/Hopper.java
+@@ -18,4 +18,10 @@ public interface Hopper extends Container {
+     double getLevelZ();
+ 
+     boolean isGridAligned();
++
++    // Paper start - Allow you to set the number of items that a hopper moves
++    void setTransferAmount(@org.jspecify.annotations.Nullable Integer transferAmount);
++
++    java.util.Optional<Integer> getTransferAmount();
++    // Paper end - Allow you to set the number of items that a hopper moves
+ }
+diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 800b7e78ae989868ed0b9e060c80dcd002759412..59b8bf1629a61e0955620ad5b330decf961b58e1 100644
+--- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.level.block.entity;
+ 
+ import java.util.List;
++import java.util.Optional;
+ import java.util.function.BooleanSupplier;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+@@ -42,6 +43,10 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
+     private int maxStack = MAX_STACK;
+ 
++    // Paper - Allow you to set the number of items that a hopper moves
++    @Nullable
++    private Integer transferAmount = null;
++
+     @Override
+     public List<ItemStack> getContents() {
+         return this.items;
+@@ -86,6 +91,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         }
+ 
+         this.cooldownTime = input.getIntOr("TransferCooldown", -1);
++
++        //Paper - Allow you to set the number of items that a hopper moves
++        this.transferAmount = input.getInt("TransferAmount").orElse(null);
+     }
+ 
+     @Override
+@@ -96,6 +104,12 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         }
+ 
+         output.putInt("TransferCooldown", this.cooldownTime);
++
++        //Paper start - Allow you to set the number of items that a hopper moves
++        if(this.transferAmount != null) {
++            output.putInt("TransferAmount", this.transferAmount);
++        }
++        //Paper end - Allow you to set the number of items that a hopper moves
+     }
+ 
+     @Override
+@@ -232,7 +246,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+                 ItemStack movedItem = origItemStack;
+ 
+                 final int originalItemCount = origItemStack.getCount();
+-                final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
++
++                //Paper - Allow you to set the number of items that a hopper moves
++                int movedItemCount = Math.min(hopper.getTransferAmount().orElse(level.spigotConfig.hopperAmount), originalItemCount);
++
+                 origItemStack.setCount(movedItemCount);
+ 
+                 // We only need to fire the event once to give protection plugins a chance to cancel this event
+@@ -269,7 +290,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     private static boolean hopperPull(final Level level, final Hopper hopper, final Container container, ItemStack origItemStack, final int i) {
+         ItemStack movedItem = origItemStack;
+         final int originalItemCount = origItemStack.getCount();
+-        final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
++
++        //Paper - Allow you to set the number of items that a hopper moves
++        int movedItemCount = Math.min(hopper.getTransferAmount().orElse(level.spigotConfig.hopperAmount), originalItemCount);
++
+         container.setChanged(); // original logic always marks source inv as changed even if no move happens.
+         movedItem.setCount(movedItemCount);
+ 
+@@ -840,6 +868,18 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         return true;
+     }
+ 
++    // Paper start - Allow you to set the number of items that a hopper moves
++    @Override
++    public void setTransferAmount(@Nullable final Integer transferAmount) {
++        this.transferAmount = transferAmount;
++    }
++
++    @Override
++    public Optional<Integer> getTransferAmount() {
++        return Optional.ofNullable(this.transferAmount);
++    }
++    // Paper end - Allow you to set the number of items that a hopper moves
++
+     public void setCooldown(int cooldownTime) {
+         this.cooldownTime = cooldownTime;
+     }

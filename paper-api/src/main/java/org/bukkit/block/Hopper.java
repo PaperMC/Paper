@@ -1,7 +1,8 @@
 package org.bukkit.block;
 
 import com.destroystokyo.paper.loottable.LootableBlockInventory;
-import org.bukkit.loot.Lootable;
+import org.jetbrains.annotations.NotNull;
+import java.util.Optional;
 
 /**
  * Represents a captured state of a hopper.
@@ -21,5 +22,23 @@ public interface Hopper extends Container, LootableBlockInventory { // Paper
      */
     int getTransferCooldown();
     // Paper end - Expanded Hopper API
+
+    // Paper start - Allow you to set the number of items that a hopper moves
+
+    /**
+     * Define the number of items transferred by the hopper; the amount must be strictly greater than 0.
+     * Setting a value to null corresponds to resuming the server's default behavior.
+     * @param transferAmount Items amount
+     */
+    void setTransferAmount(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) @org.jspecify.annotations.Nullable Integer transferAmount);
+
+    /**
+     * Retrieve the number of items transferred by the hopper. If there is no value, it refers to the configuration of
+     * the server being used.
+     * @return Items amount
+     */
+    @NotNull
+    Optional<Integer> getTransferAmount();
+    // Paper end - Allow you to set the number of items that a hopper moves
 }
 
