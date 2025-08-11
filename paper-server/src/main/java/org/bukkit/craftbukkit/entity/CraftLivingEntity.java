@@ -1117,7 +1117,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setWaypointStyle(final NamespacedKey key) {
         final Waypoint.Icon icon = getHandle().waypointIcon();
-        icon.style = ResourceKey.create(WaypointStyleAssets.ROOT_ID, CraftNamespacedKey.toMinecraft(key));
+        icon.style = key == null ? WaypointStyleAssets.DEFAULT : ResourceKey.create(WaypointStyleAssets.ROOT_ID, CraftNamespacedKey.toMinecraft(key));
         updateWaypoint();
     }
 
