@@ -16,17 +16,17 @@ public class MushroomCowZapEvent extends EntityZapEvent implements Cancellable {
     private MushroomCow.Variant variant;
 
     @ApiStatus.Internal
-    public MushroomCowZapEvent(final MushroomCow entity, final LightningStrike bolt, final MushroomCow.Variant variantReplacement) {
+    public MushroomCowZapEvent(final MushroomCow entity, final LightningStrike bolt, final MushroomCow.Variant variant) {
         super(entity, bolt, entity);
-        this.variant = variantReplacement;
+        this.variant = variant;
     }
 
     /**
-     * Retrieves the variant replacement for the affected mushroom cow in this event.
+     * Get the variant to set for the affected mushroom cow in this event.
      *
      * @return the variant replacement
      */
-    public MushroomCow.Variant getVariantReplacement() {
+    public MushroomCow.Variant getVariant() {
         return this.variant;
     }
 }
