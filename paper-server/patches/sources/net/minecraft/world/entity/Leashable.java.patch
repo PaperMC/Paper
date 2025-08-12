@@ -49,15 +49,16 @@
                      entity.dropLeash();
                  } else {
                      entity.removeLeash();
-@@ -154,7 +_,7 @@
+@@ -154,8 +_,7 @@
              if (leashHolder != null && leashHolder.level() == entity.level()) {
                  double d = entity.leashDistanceTo(leashHolder);
                  entity.whenLeashedTo(leashHolder);
 -                if (d > entity.leashSnapDistance()) {
+-                    level.playSound(null, leashHolder.getX(), leashHolder.getY(), leashHolder.getZ(), SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
 +                if (d > entity.leashSnapDistanceOrConfig()) { // Paper - Configurable max leash distance
-                     level.playSound(null, leashHolder.getX(), leashHolder.getY(), leashHolder.getZ(), SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
                      entity.leashTooFarBehaviour();
                  } else if (d > entity.leashElasticDistance() - leashHolder.getBbWidth() - entity.getBbWidth()
+                     && entity.checkElasticInteractions(leashHolder, leashData)) {
 @@ -175,6 +_,12 @@
          entity.checkFallDistanceAccumulation();
      }
@@ -71,7 +72,7 @@
      default double leashSnapDistance() {
          return 12.0;
      }
-@@ -196,7 +_,21 @@
+@@ -196,7 +_,25 @@
      }
  
      default void leashTooFarBehaviour() {
@@ -82,7 +83,11 @@
 +            // Paper start - Expand EntityUnleashEvent
 +            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(entity.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
 +            if (!event.callEvent()) return;
++
++            Entity leashHolder = this.getLeashHolder();
++            Level level = leashHolder.level();
 +            dropLeash = event.isDropLeash();
++            level.playSound(null, leashHolder.getX(), leashHolder.getY(), leashHolder.getZ(), SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F); // Moved from Leashable#tickLeash
 +        }
 +        // CraftBukkit end
 +        if (dropLeash) {
