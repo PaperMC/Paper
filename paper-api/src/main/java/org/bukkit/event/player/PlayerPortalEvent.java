@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import io.papermc.paper.entity.TeleportFlag;
 import org.bukkit.Location;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
@@ -22,15 +23,18 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
     private int searchRadius = 128;
     private boolean canCreatePortal = true;
     private int creationRadius = 16;
+    private WorldBorder worldBorder;
 
     @ApiStatus.Internal
     public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player, from, to);
+        this.worldBorder = from.getWorld().getWorldBorder();
     }
 
     @ApiStatus.Internal
     public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause) {
         super(player, from, to, cause);
+        this.worldBorder = from.getWorld().getWorldBorder();
     }
 
     @ApiStatus.Internal
@@ -39,6 +43,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
         this.searchRadius = searchRadius;
         this.canCreatePortal = canCreatePortal;
         this.creationRadius = creationRadius;
+        this.worldBorder = from.getWorld().getWorldBorder();
     }
 
     /**
@@ -137,6 +142,30 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      */
     public int getCreationRadius() {
         return this.creationRadius;
+    }
+
+    /**
+     * Sets the {@link WorldBorder} which the portal creation and search should be limited.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param worldBorder the {@link WorldBorder} to limit portal search and creation to.
+     */
+    public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+        this.worldBorder = worldBorder;
+    }
+
+    /**
+     * Gets the {@link WorldBorder} to which the portal creation and search is limited.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @return the {@link WorldBorder} to which portal creation and search is limited.
+     */
+    public @NotNull WorldBorder getWorldBorder() {
+        return this.worldBorder;
     }
 
     /**
