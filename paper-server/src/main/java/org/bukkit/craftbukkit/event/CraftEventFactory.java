@@ -862,7 +862,7 @@ public class CraftEventFactory {
         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
         CraftWorld world = (CraftWorld) entity.getWorld();
-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(world.getHandle(), damageSource.getEntity())); // Paper - Restore vanilla drops behavior
+        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(world.getHandle(), damageSource.getEntity()), victim.getExperienceReward(world.getHandle(), damageSource.getEntity())); // Paper - Restore vanilla drops behavior
         populateFields(victim, event); // Paper - make cancellable
         Bukkit.getServer().getPluginManager().callEvent(event);
 
@@ -873,6 +873,7 @@ public class CraftEventFactory {
         playDeathSound(victim, event, damageSource);
         // Paper end
         victim.expToDrop = event.getDroppedExp();
+        victim.expToReward = event.getRewardExp();
         lootCheck.run(); // Paper - advancement triggers before destroying items
 
         // Paper start - Restore vanilla drops behavior
@@ -908,6 +909,7 @@ public class CraftEventFactory {
         victim.newLevel = event.getNewLevel();
         victim.newTotalExp = event.getNewTotalExp();
         victim.expToDrop = event.getDroppedExp();
+        victim.expToReward = event.getRewardExp(); // Paper - exp fix
         victim.newExp = event.getNewExp();
 
         // Paper start - Restore vanilla drops behavior
