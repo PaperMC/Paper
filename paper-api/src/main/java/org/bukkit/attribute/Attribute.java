@@ -158,6 +158,12 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
 
+    /**
+     * {@return the sentiment of this attribute}
+     */
+    @NotNull
+    Sentiment getSentiment();
+    
     @NotNull
     private static Attribute getAttribute(@NotNull String key) {
         return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
@@ -184,5 +190,15 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
         return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
+    }
+
+    /**
+     * An attribute sentiment describes the intent behind the attribute, meaning
+     * whether it is supposed to be a positive, neutral, or negative attribute.
+     */
+    enum Sentiment {
+        POSITIVE,
+        NEUTRAL,
+        NEGATIVE;
     }
 }
