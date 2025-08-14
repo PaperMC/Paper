@@ -9,7 +9,7 @@
      }
  
      @Override
-@@ -446,6 +_,15 @@
+@@ -446,11 +_,20 @@
      @VisibleForTesting
      public void increaseAngerAt(@Nullable Entity entity, int offset, boolean playListeningSound) {
          if (!this.isNoAi() && this.canTargetEntity(entity)) {
@@ -25,3 +25,73 @@
              WardenAi.setDigCooldown(this);
              boolean flag = !(this.getTarget() instanceof Player);
              int i = this.angerManagement.increaseAnger(entity, offset);
+             if (entity instanceof Player && flag && AngerLevel.byAnger(i).isAngry()) {
+-                this.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
++                this.removeAttackTarget(org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper - handle remove target over "this.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);"
+             }
+ 
+             if (playListeningSound) {
+@@ -498,14 +_,62 @@
+             if (this.brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
+                 && entity instanceof LivingEntity livingEntity
+                 && (damageSource.isDirect() || this.closerThan(livingEntity, 5.0))) {
+-                this.setAttackTarget(livingEntity);
++                this.setAttackTarget(livingEntity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY); // Paper
+             }
+         }
+ 
+         return flag;
+     }
+ 
++    // Paper start - remove target
++    public void removeAttackTarget() {
++        this.removeAttackTarget(org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN);
++    }
++
++    public void removeAttackTarget(@Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
++        if (reason != null) {
++            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = new org.bukkit.event.entity.EntityTargetLivingEntityEvent(this.getBukkitEntity(), null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET);
++            if (!event.callEvent()) {
++                return;
++            }
++
++            if (event.getTarget() != null) {
++                LivingEntity attackTarget = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++                this.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attackTarget);
++                return;
++            }
++        }
++        this.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.ATTACK_TARGET);
++    }
++    // Paper end - remove target
++
+     public void setAttackTarget(LivingEntity attackTarget) {
++        // Paper start - handle EntityTargetLivingEntityEvent
++        this.setAttackTarget(attackTarget, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN);
++    }
++
++    public void setAttackTarget(LivingEntity attackTarget, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
++        if (this.getTarget() == attackTarget) {
++            return;
++        }
++        if (reason != null) {
++            if (reason == org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN) {
++                this.level().getCraftServer().getLogger().log(java.util.logging.Level.WARNING, "Unknown target reason, please report on the issue tracker", new Exception());
++            }
++            org.bukkit.craftbukkit.entity.CraftLivingEntity ctarget = (org.bukkit.craftbukkit.entity.CraftLivingEntity) attackTarget.getBukkitEntity();
++            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = new org.bukkit.event.entity.EntityTargetLivingEntityEvent(this.getBukkitEntity(), ctarget, reason);
++            if (!event.callEvent()) {
++                return;
++            }
++
++            if (event.getTarget() != null) {
++                attackTarget = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++            } else {
++                this.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.ATTACK_TARGET);
++                return;
++            }
++        }
++        // Paper end - handle EntityTargetLivingEntityEvent
+         this.getBrain().eraseMemory(MemoryModuleType.ROAR_TARGET);
+         this.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attackTarget);
+         this.getBrain().eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
