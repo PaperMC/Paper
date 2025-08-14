@@ -2,9 +2,12 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import java.util.List;
 import org.bukkit.entity.Wolf;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * A data-centric version-specific registry entry for the {@link Wolf.Variant} type.
@@ -33,6 +36,14 @@ public interface WolfVariantRegistryEntry {
      * @return the client texture asset.
      */
     ClientTextureAsset tameClientTextureAsset();
+
+    /**
+     * Provides the spawn conditions of the wolf variant, which is a list of {@link SpawnConditionPriority} that
+     * determine the priority of the spawn conditions for this variant.
+     *
+     * @return the list of spawn condition priorities.
+     */
+    @Unmodifiable List<SpawnConditionPriority> spawnConditions();
 
     /**
      * A mutable builder for the {@link WolfVariantRegistryEntry} plugins may change in applicable registry events.
@@ -77,5 +88,16 @@ public interface WolfVariantRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder tameClientTextureAsset(ClientTextureAsset tameClientTextureAsset);
+
+        /**
+         * Sets the spawn conditions of the wolf variant, which is a list of {@link SpawnConditionPriority} that
+         * determine the priority of the spawn conditions for this variant.
+         *
+         * @param spawnConditions the list of spawn condition priorities.
+         * @return this builder instance.
+         * @see WolfVariantRegistryEntry#spawnConditions()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder spawnConditions(List<SpawnConditionPriority> spawnConditions);
     }
 }
