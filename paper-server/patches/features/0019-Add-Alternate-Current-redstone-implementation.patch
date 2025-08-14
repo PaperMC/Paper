@@ -22,30 +22,25 @@ Alternate Current's wire handler.
 
 diff --git a/alternate/current/wire/LevelHelper.java b/alternate/current/wire/LevelHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff663d3089627e75221aa128aff4bf5cc459addb
+index 0000000000000000000000000000000000000000..dd533953f33aacfc91a8acad6c9a9d601df0bd86
 --- /dev/null
 +++ b/alternate/current/wire/LevelHelper.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,61 @@
 +package alternate.current.wire;
-+
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockRedstoneEvent;
 +
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +
 +class LevelHelper {
 +
 +    static int doRedstoneEvent(ServerLevel level, BlockPos pos, int prevPower, int newPower) {
-+        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), prevPower, newPower);
-+        level.getCraftServer().getPluginManager().callEvent(event);
-+
-+        return event.getNewCurrent();
++        return CraftEventFactory.callRedstoneChange(level, pos, prevPower, newPower).getNewCurrent();
 +    }
 +
 +    /**
@@ -2352,7 +2347,7 @@ index f9c96bbdc54e68b9216b7f8662bfae03012d2866..34b7769663e235b93c6388ab0c92c00f
          @Override
          public void onCreated(Entity entity) {
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f286dd9996590e5d448ca809c34b6f640203e274..c41df4b1fff1f65532256e835dc30fadbb4f8c8b 100644
+index 2707fc5e0d0a63df51c9176ab52e341ca4529489..be16627136f7b3979e62308f58b96a2b16ee9f62 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -2093,6 +2093,17 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
@@ -2374,7 +2369,7 @@ index f286dd9996590e5d448ca809c34b6f640203e274..c41df4b1fff1f65532256e835dc30fad
          NONE("none"),
          BLOCK("block"),
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd81c6f9df 100644
+index bba48c71310fd24db3fad44bc2db8a4a7d6fcda1..10eb5a9a827ad1e49df47602788e8eb7e56bb2f7 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -265,7 +265,7 @@ public class RedStoneWireBlock extends Block {
@@ -2386,7 +2381,7 @@ index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
  
-@@ -347,7 +347,13 @@ public class RedStoneWireBlock extends Block {
+@@ -343,7 +343,13 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide) {
@@ -2401,7 +2396,7 @@ index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -364,7 +370,13 @@ public class RedStoneWireBlock extends Block {
+@@ -360,7 +366,13 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -2416,7 +2411,7 @@ index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -387,9 +399,15 @@ public class RedStoneWireBlock extends Block {
+@@ -383,9 +395,15 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
          if (!level.isClientSide) {
