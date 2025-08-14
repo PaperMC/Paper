@@ -1,6 +1,8 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.block.PaperTrialSpawnerConfig;
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.registry.RegistryKey;
@@ -118,6 +120,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
         register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
+        register(RegistryKey.TRIAL_SPAWNER_CONFIG, TrialSpawnerConfig.class, Registries.TRIAL_SPAWNER_CONFIG, PaperTrialSpawnerConfig.class, net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
