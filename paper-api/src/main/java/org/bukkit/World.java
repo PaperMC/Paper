@@ -2,6 +2,7 @@ package org.bukkit;
 
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -2867,7 +2868,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The folder of this world.
      */
     @NotNull
-    public File getWorldFolder();
+    default File getWorldFolder() {
+        return getWorldPath().toFile();
+    }
+    
+    /**
+     * Gets the path of this world on disk.
+     *
+     * @return The path of this world.
+     */
+    @NotNull
+    Path getWorldPath();
 
     /**
      * Gets the type of this world.
