@@ -244,5 +244,11 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
         return this.hasProperty("textures");
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the cloned player profile.
+     */
+    @Override
     PlayerProfile clone();
 }
