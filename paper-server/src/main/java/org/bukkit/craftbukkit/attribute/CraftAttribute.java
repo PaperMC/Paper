@@ -65,4 +65,13 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
     public String translationKey() {
         return this.getHandle().getDescriptionId();
     }
+
+    @Override
+    public Sentiment getSentiment() {
+        return switch (this.getHandle().getSentiment()) {
+            case POSITIVE -> Sentiment.POSITIVE;
+            case NEUTRAL -> Sentiment.NEUTRAL;
+            case NEGATIVE -> Sentiment.NEGATIVE;
+        };
+    }
 }
