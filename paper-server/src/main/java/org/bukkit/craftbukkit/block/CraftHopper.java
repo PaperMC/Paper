@@ -1,11 +1,14 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Hopper;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
+import org.jetbrains.annotations.Nullable;
+import java.util.Optional;
 
 public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hopper {
 
@@ -53,4 +56,17 @@ public class CraftHopper extends CraftLootable<HopperBlockEntity> implements Hop
         return getSnapshot().cooldownTime;
     }
     // Paper end - Expanded Hopper API
+
+    @Override
+    public void setTransferAmount(@Nullable final Integer transferAmount) {
+        if (transferAmount != null){
+            Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
+        }
+        this.getSnapshot().setTransferAmount(transferAmount);
+    }
+
+    @Override
+    public Optional<Integer> getTransferAmount() {
+        return this.getSnapshot().getTransferAmount();
+    }
 }
