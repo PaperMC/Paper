@@ -8,9 +8,11 @@ import io.papermc.generator.utils.experimental.ExperimentalCollector;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -26,13 +28,17 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.FolderRepositorySource;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.level.validation.DirectoryValidator;
 import org.apache.commons.io.file.PathUtils;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
@@ -59,17 +65,26 @@ public class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"--bootstrap-tags"})
     boolean tagBootstrap;
 
+    @CommandLine.Option(names = {"--extra-pack-folder"})
+    Path extraPackFolder;
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static RegistryAccess.@MonotonicNonNull Frozen REGISTRY_ACCESS;
     public static @MonotonicNonNull Map<TagKey<?>, String> EXPERIMENTAL_TAGS;
 
-    public static CompletableFuture<Void> bootStrap(boolean withTags) {
+    public static CompletableFuture<Void> bootStrap(Optional<Path> extraPackFolder, boolean withTags) {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         Bootstrap.validate();
 
-        PackRepository resourceRepository = ServerPacksSource.createVanillaTrustedRepository();
+        List<RepositorySource> repositories = new ArrayList<>(2);
+        repositories.add(new ServerPacksSource(new DirectoryValidator(path -> true))); // see ServerPacksSource#createVanillaTrustedRepository
+        extraPackFolder.ifPresent(path -> {
+            if (Files.notExists(path)) return;
+            repositories.add(new FolderRepositorySource(path, PackType.SERVER_DATA, PackSource.BUILT_IN, new DirectoryValidator($ -> true)));
+        });
+        PackRepository resourceRepository = new PackRepository(repositories.toArray(RepositorySource[]::new));
         resourceRepository.reload();
         MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(Pack::open).toList());
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
@@ -104,7 +119,7 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        bootStrap(this.tagBootstrap).join();
+        bootStrap(Optional.ofNullable(this.extraPackFolder), this.tagBootstrap).join();
 
         try {
             if (this.isRewrite) {
