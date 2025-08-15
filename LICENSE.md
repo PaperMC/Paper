@@ -65,4 +65,5 @@ aerulion <aerulion@gmail.com>
 Lukas Planz <lukas.planz@web.de>
 granny <contact@granny.dev>
 mja00 <me@mja00.dev>
+Strokkur24 <strokkur.24@gmail.com>
 ```
