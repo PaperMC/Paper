@@ -6,9 +6,11 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -1463,4 +1465,39 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
+
+    /**
+     * Sets the visual style of the waypoint icon using the specified {@link NamespacedKey}.
+     * <p>
+     * Passing {@code null} will reset the style to the default.
+     * <p>
+     * minecraft has the keys, "minecraft:bowtie" and "minecraft:default" built in.
+     *
+     * @param key the namespaced key representing the style, or {@code null} to use the default style
+     */
+    void setWaypointStyle(@org.jspecify.annotations.Nullable NamespacedKey key);
+
+    /**
+     * Sets the color of the waypoint icon.
+     * <p>
+     * Passing {@code null} will remove any custom color and use the default.
+     *
+     * @param color the new color to apply to the waypoint icon, or {@code null} to use the default color
+     */
+    void setWaypointColor(@org.jspecify.annotations.Nullable Color color);
+
+    /**
+     * Gets the current visual style of the waypoint icon.
+     *
+     * @return the {@link NamespacedKey} representing the icon's style
+     */
+    NamespacedKey getWaypointStyle();
+
+    /**
+     * Gets the current color of the waypoint icon, if any.
+     *
+     * @return the icon's color, or {@code null} if the default color is used
+     */
+    @org.jspecify.annotations.Nullable
+    Color getWaypointColor();
 }
