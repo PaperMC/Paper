@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collections;
 import java.util.Set;
@@ -24,19 +23,19 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     private TeleportCause cause = TeleportCause.UNKNOWN;
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to) {
         super(player, from, to);
         this.teleportFlags = Collections.emptySet();
     }
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause) {
+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to, @NotNull final TeleportCause cause) {
         this(player, from, to);
         this.cause = cause;
     }
 
     @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, @NotNull Set<TeleportFlag.Relative> teleportFlags) {
+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to, @NotNull final TeleportCause cause, @NotNull Set<TeleportFlag.Relative> teleportFlags) {
         super(player, from, to);
         this.cause = cause;
         this.teleportFlags = teleportFlags;

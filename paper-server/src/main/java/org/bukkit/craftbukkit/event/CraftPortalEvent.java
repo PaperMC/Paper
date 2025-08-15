@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event;
 
 import org.bukkit.Location;
+import org.bukkit.WorldBorder;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 
@@ -15,12 +16,15 @@ public class CraftPortalEvent {
     private final boolean canCreatePortal;
     private final boolean cancelled;
 
+    private final WorldBorder worldBorder;
+
     public CraftPortalEvent(EntityPortalEvent portalEvent) {
         this.to = portalEvent.getTo();
         this.searchRadius = portalEvent.getSearchRadius();
         this.cancelled = portalEvent.isCancelled();
         this.creationRadius = portalEvent.getCreationRadius();
         this.canCreatePortal = portalEvent.getCanCreatePortal();
+        this.worldBorder = portalEvent.getWorldBorder();
     }
 
     public CraftPortalEvent(PlayerPortalEvent portalEvent) {
@@ -29,6 +33,7 @@ public class CraftPortalEvent {
         this.creationRadius = portalEvent.getCreationRadius();
         this.canCreatePortal = portalEvent.getCanCreatePortal();
         this.cancelled = portalEvent.isCancelled();
+        this.worldBorder = portalEvent.getWorldBorder();
     }
 
     public Location getTo() {
@@ -49,5 +54,9 @@ public class CraftPortalEvent {
 
     public boolean isCancelled() {
         return this.cancelled;
+    }
+
+    public WorldBorder getWorldBorder() {
+        return this.worldBorder;
     }
 }
