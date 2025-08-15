@@ -36,16 +36,8 @@ public class CraftCow extends CraftAbstractCow implements Cow {
 
     public static class CraftVariant extends HolderableBase<CowVariant> implements Variant {
 
-        public static Variant minecraftToBukkit(CowVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.COW_VARIANT);
-        }
-
         public static Variant minecraftHolderToBukkit(Holder<CowVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.COW_VARIANT);
-        }
-
-        public static CowVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<CowVariant> bukkitToMinecraftHolder(Variant bukkit) {
