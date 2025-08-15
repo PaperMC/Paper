@@ -756,25 +756,77 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
+     * Deserializes this itemstack from a stream of raw NBT data.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     * <p>
+     * This expects that the DataVersion was stored on the root of the Compound, as saved from
+     * the {@link #serializeAsNbt(java.io.OutputStream)} API returned.
      *
+     * @param input the InputStream of raw, uncompressed NBT data
+     * @throws java.io.IOException if there was an IO problem
+     * @return ItemStack migrated to this version of Minecraft if needed.
+     * @since 1.21.8
+     */
+    public static @NotNull ItemStack deserializeNbt(final @NotNull java.io.InputStream input) throws java.io.IOException {
+        return org.bukkit.Bukkit.getUnsafe().deserializeItemFromNbt(input);
+    }
+
+    /**
+     * Serializes this itemstack as a stream of raw NBT data.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     *
+     * @param output the OutputStream to write the NBT data to
+     * @throws java.io.IOException if there was an IO problem
+     * @since 1.21.8
+     */
+    public void serializeAsNbt(final @NotNull java.io.OutputStream output) throws java.io.IOException {
+        org.bukkit.Bukkit.getUnsafe().serializeItemToNbt(this, output);
+    }
+
+    /**
+     * Deserializes this itemstack from NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     * <p>
+     * If the data is compressed in the GZip format, it will be automatically decompressed.<br>
+     * Such as the GZip-compressed data returned by {@link #serializeAsBytes()}
+     * <p>
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
      * the {@link #serializeAsBytes()} API returned.
-     * @param bytes bytes representing an item in NBT
-     * @return ItemStack migrated to this version of Minecraft if needed.
+     *
+     * @param bytes bytes representing this item in NBT
+     * @return ItemStack migrated to this version of Minecraft if needed
      */
     public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
         return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
     }
 
     /**
-     * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
-     * @return bytes representing this item in NBT.
+     * Serializes this itemstack as GZip-compressed NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     *
+     * @return bytes representing this item in GZip-compressed NBT
+     * @apiNote For high-frequency use, consider {@link #serializeAsBytes(boolean)} to avoid
+     * compression overhead.
      */
     public byte @NotNull [] serializeAsBytes() {
         return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
+    }
+
+    /**
+     * Serializes this itemstack as NBT bytes.<br>
+     * NBT is safer for data migrations as it will use the built-in data converter
+     * instead of bukkits dangerous serialization system.
+     *
+     * @param compress true for GZip-compressed output, false for raw NBT output.
+     * @return bytes representing this item in NBT
+     * @since 1.21.8
+     */
+    public byte @NotNull [] serializeAsBytes(final boolean compress) {
+        return org.bukkit.Bukkit.getUnsafe().serializeItem(this, compress);
     }
 
     /**
