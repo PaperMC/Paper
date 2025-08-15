@@ -243,4 +243,6 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
     default boolean hasTextures() {
         return this.hasProperty("textures");
     }
+
+    PlayerProfile clone();
 }
