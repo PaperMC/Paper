@@ -6,7 +6,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Thrown when a non-player entity is teleported from one location to another.
@@ -24,7 +23,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityTeleportEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to) {
+    public EntityTeleportEvent(@NotNull Entity entity, @NotNull Location from, @NotNull Location to) {
         super(entity);
         this.from = from;
         this.to = to;
@@ -54,7 +53,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      *
      * @return Location the entity moved to
      */
-    @Nullable
+    @NotNull
     public Location getTo() {
         return this.to;
     }
@@ -64,8 +63,8 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      *
      * @param to New Location this entity moved to
      */
-    public void setTo(@Nullable Location to) {
-        this.to = to != null ? to.clone() : null;
+    public void setTo(@NotNull Location to) {
+        this.to = to.clone();
     }
 
     @Override
