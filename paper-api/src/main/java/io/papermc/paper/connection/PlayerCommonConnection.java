@@ -4,11 +4,12 @@ import java.util.Map;
 
 import com.destroystokyo.paper.ClientOption;
 import org.bukkit.ServerLinks;
+import org.bukkit.plugin.messaging.PluginMessageRecipient;
 
 /**
  * Represents a connection that has properties shared between the GAME and CONFIG stage.
  */
-public interface PlayerCommonConnection extends WritablePlayerCookieConnection, ReadablePlayerCookieConnection {
+public interface PlayerCommonConnection extends WritablePlayerCookieConnection, ReadablePlayerCookieConnection, PluginMessageRecipient {
 
     /**
      * Sends data to appear in this connection's report logs.
