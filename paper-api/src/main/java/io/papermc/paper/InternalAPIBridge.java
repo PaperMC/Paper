@@ -3,16 +3,14 @@ package io.papermc.paper;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.function.Predicate;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -21,7 +19,6 @@ import java.util.function.Predicate;
  * cause issues when called under unexpected circumstances.
  */
 @ApiStatus.Internal
-@NullMarked
 public interface InternalAPIBridge {
 
     /**
@@ -31,6 +28,7 @@ public interface InternalAPIBridge {
      */
     static InternalAPIBridge get() {
         class Holder {
+
             public static final InternalAPIBridge INSTANCE = Services.service(InternalAPIBridge.class).orElseThrow();
         }
 
@@ -49,30 +47,31 @@ public interface InternalAPIBridge {
      * Constructs the legacy custom biome instance for the biome enum.
      *
      * @return the created biome.
+     * @deprecated for removal, legacy custom biome constant isn't supported
      */
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
-     
+
     /**
      * Creates a new combat entry.
      * <p>
      * The fall location and fall distance will be calculated from the entity's current state.
      *
-     * @param entity entity
+     * @param entity       entity
      * @param damageSource damage source
-     * @param damage damage amount
+     * @param damage       damage amount
      * @return new combat entry
      */
     CombatEntry createCombatEntry(LivingEntity entity, DamageSource damageSource, float damage);
 
     /**
-     * Creates a new combat entry
+     * Creates a new combat entry.
      *
-     * @param damageSource damage source
-     * @param damage damage amount
+     * @param damageSource     damage source
+     * @param damage           damage amount
      * @param fallLocationType fall location type
-     * @param fallDistance fall distance
+     * @param fallDistance     fall distance
      * @return combat entry
      */
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
@@ -87,4 +86,3 @@ public interface InternalAPIBridge {
      */
     Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
 }
-
