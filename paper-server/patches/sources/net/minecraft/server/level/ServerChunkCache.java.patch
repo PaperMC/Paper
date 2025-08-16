@@ -172,21 +172,46 @@
 +        boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
          int _int = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
          List<MobCategory> filteredSpawningCategories;
-         if (_boolean && (this.spawnEnemies || this.spawnFriendlies)) {
+-        if (_boolean && (this.spawnEnemies || this.spawnFriendlies)) {
 -            boolean flag = this.level.getLevelData().getGameTime() % 400L == 0L;
 -            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnState, this.spawnFriendlies, this.spawnEnemies, flag);
-+            // Paper start - PlayerNaturallySpawnCreaturesEvent
++        // Paper start - PlayerNaturallySpawnCreaturesEvent
++        if (this.spawnEnemies || this.spawnFriendlies) { // Paper - move down _boolean to fix #12827
 +            for (ServerPlayer entityPlayer : this.level.players()) {
 +                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, entityPlayer.getBukkitEntity().getViewDistance());
 +                chunkRange = Math.min(chunkRange, 8);
 +                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
-+                entityPlayer.playerNaturallySpawnedEvent.callEvent();
++                if (_boolean) entityPlayer.playerNaturallySpawnedEvent.callEvent(); // Paper - fix #12827
 +            }
 +            // Paper end - PlayerNaturallySpawnCreaturesEvent
 +            boolean flag = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
 +            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnState, this.spawnFriendlies, this.spawnEnemies, flag, this.level); // CraftBukkit
          } else {
              filteredSpawningCategories = List.of();
+         }
+@@ -408,7 +_,7 @@
+             profiler.popPush("tickSpawningChunks");
+ 
+             for (LevelChunk levelChunk : list) {
+-                this.tickSpawningChunk(levelChunk, timeInhabited, filteredSpawningCategories, spawnState);
++                this.tickSpawningChunk(levelChunk, timeInhabited, filteredSpawningCategories, spawnState, _boolean); // Paper - fix #12827
+             }
+         } finally {
+             list.clear();
+@@ -423,9 +_,12 @@
+         }
+     }
+ 
+-    private void tickSpawningChunk(LevelChunk chunk, long timeInhabited, List<MobCategory> spawnCategories, NaturalSpawner.SpawnState spawnState) {
++    // Paper start - fix #12827
++    private void tickSpawningChunk(LevelChunk chunk, long timeInhabited, List<MobCategory> spawnCategories, NaturalSpawner.SpawnState spawnState, boolean shouldSpawnMobs) {
++        chunk.incrementInhabitedTime(timeInhabited); // Paper - move up
++        if (!shouldSpawnMobs) return;
+         ChunkPos pos = chunk.getPos();
+-        chunk.incrementInhabitedTime(timeInhabited);
++        // Paper end - fix #12827
+         if (this.distanceManager.inEntityTickingRange(pos.toLong())) {
+             this.level.tickThunder(chunk);
          }
 @@ -547,8 +_,13 @@
  
