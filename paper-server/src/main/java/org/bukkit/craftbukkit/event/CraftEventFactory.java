@@ -185,6 +185,7 @@ import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
+import org.bukkit.event.entity.EntitySpinAttackEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -1545,7 +1546,7 @@ public class CraftEventFactory {
 
     public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
         if (!(leashed instanceof final Entity leashedEntity)) return false;
-        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+        return !callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).isCancelled();
     }
 
     public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
@@ -1559,9 +1560,14 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
+    public static boolean callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
         PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
-        player.level().getCraftServer().getPluginManager().callEvent(event);
+        return event.callEvent();
+    }
+
+    public static boolean callEntitySpinAttackEvent(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.entity.LivingEntity target) {
+        EntitySpinAttackEvent event = new EntitySpinAttackEvent(entity.getBukkitLivingEntity(), target.getBukkitLivingEntity());
+        return event.callEvent();
     }
 
     public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) { // Paper - custom shear drops

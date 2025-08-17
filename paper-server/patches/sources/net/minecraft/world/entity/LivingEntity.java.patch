@@ -1540,6 +1540,28 @@
                  this.doPush(entity1);
              }
          }
+@@ -2954,6 +_,21 @@
+     protected void checkAutoSpinAttack(AABB boundingBoxBeforeSpin, AABB boundingBoxAfterSpin) {
+         AABB aabb = boundingBoxBeforeSpin.minmax(boundingBoxAfterSpin);
+         List<Entity> entities = this.level().getEntities(this, aabb);
++        // Paper start - allow customising which entities are attacked
++        entities.removeIf(entity -> {
++            // Filter out non-living entities properly without breaking
++            // horizontal collisions
++            if (!(entity instanceof LivingEntity)) return true;
++
++            // Avoid colliding with entities that are not visible
++            if (this instanceof ServerPlayer player) {
++                if (!player.getBukkitEntity().canSee(entity.getBukkitEntity())) return true;
++            }
++
++            // Emit an event to customise whether the collision should occur
++            return !CraftEventFactory.callEntitySpinAttackEvent(this, (LivingEntity) entity);
++        });
++        // Paper end - allow customising which entities are attacked
+         if (!entities.isEmpty()) {
+             for (Entity entity : entities) {
+                 if (entity instanceof LivingEntity) {
 @@ -2987,9 +_,16 @@
  
      @Override
