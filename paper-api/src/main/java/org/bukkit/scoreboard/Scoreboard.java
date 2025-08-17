@@ -242,6 +242,7 @@ public interface Scoreboard {
      * @apiNote use {@link #getScores(ScoreHolder)}
      */
     @ApiStatus.Obsolete(since = "1.21.8")
+    @NotNull
     default Set<Score> getScores(@NotNull OfflinePlayer player) {
         return this.getScores((ScoreHolder) player);
     }
