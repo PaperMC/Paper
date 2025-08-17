@@ -158,16 +158,16 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
 
+    @NotNull
+    private static Attribute getAttribute(@NotNull String key) {
+        return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
+    }
+
     /**
      * {@return the sentiment of this attribute}
      */
     @NotNull
     Sentiment getSentiment();
-    
-    @NotNull
-    private static Attribute getAttribute(@NotNull String key) {
-        return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
-    }
 
     /**
      * @param name of the attribute.
@@ -197,8 +197,11 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * whether it is supposed to be a positive, neutral, or negative attribute.
      */
     enum Sentiment {
+        // Start generate - AttributeSentiment
+        // @GeneratedFrom 1.21.8
         POSITIVE,
         NEUTRAL,
         NEGATIVE;
+        // End generate - AttributeSentiment
     }
 }
