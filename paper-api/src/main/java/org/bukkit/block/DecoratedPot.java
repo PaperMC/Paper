@@ -69,7 +69,7 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      *
      * @param style the animation style
      */
-    public void startWobble(@org.jspecify.annotations.NonNull Wobble style);
+    public void startWobble(@NotNull WobbleStyle style);
 
     /**
      * A side on a decorated pot. Sides are relative to the facing state of a
