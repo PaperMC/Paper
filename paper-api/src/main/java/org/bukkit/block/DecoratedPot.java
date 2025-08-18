@@ -83,9 +83,9 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
     }
 
     /**
-     * An animation style of decorated pot.
+     * Style a DecoratedPot can wobble in.
      */
-    public static enum Wobble {
+    public static enum WobbleStyle {
         POSITIVE,
         NEGATIVE
     }
