@@ -64,14 +64,12 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
     @NotNull
     public DecoratedPotInventory getSnapshotInventory();
 
-    // Paper start - expose wobble animation
     /**
      * Run the specified animation on the decorated pot.
      *
      * @param style the animation style
      */
-    public void startWobble(@NotNull Wobble style);
-    // Paper end - expose wobble animation
+    public void startWobble(@org.jspecify.annotations.NonNull Wobble style);
 
     /**
      * A side on a decorated pot. Sides are relative to the facing state of a
@@ -84,7 +82,6 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
         FRONT
     }
 
-    // Paper start - expose wobble animation
     /**
      * An animation style of decorated pot.
      */
@@ -92,5 +89,4 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
         POSITIVE,
         NEGATIVE
     }
-    // Paper end - expose wobble animation
 }
