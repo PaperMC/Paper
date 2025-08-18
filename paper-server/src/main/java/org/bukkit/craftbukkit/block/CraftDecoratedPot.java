@@ -132,7 +132,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
     }
 
     @Override
-    public void startWobble(@NotNull final Wobble style) {
+    public void startWobble(@org.jspecify.annotations.NonNull final Wobble style) {
         Preconditions.checkArgument(style != null, "style must not be null");
 
         DecoratedPotBlockEntity.WobbleStyle originalStyle = switch (style) {
