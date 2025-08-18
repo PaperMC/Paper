@@ -97,7 +97,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.BRUSHABLE_BLOCK, CraftBrushableBlock.class, CraftBrushableBlock::new);
         register(BlockEntityType.CALIBRATED_SCULK_SENSOR, CraftCalibratedSculkSensor.class, CraftCalibratedSculkSensor::new);
         register(BlockEntityType.CAMPFIRE, CraftCampfire.class, CraftCampfire::new);
-        register(BlockEntityType.CHEST, CraftChest.class, CraftChest::new);
+        register(BlockEntityType.CHEST, CraftChest.class, CraftChestChest::new);
         register(BlockEntityType.CHISELED_BOOKSHELF, CraftChiseledBookshelf.class, CraftChiseledBookshelf::new);
         register(BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new);
         register(BlockEntityType.COMPARATOR, CraftComparator.class, CraftComparator::new);
@@ -130,7 +130,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new);
         register(BlockEntityType.TEST_BLOCK, CraftTestBlock.class, CraftTestBlock::new);
         register(BlockEntityType.TEST_INSTANCE_BLOCK, CraftTestInstanceBlock.class, CraftTestInstanceBlock::new);
-        register(BlockEntityType.TRAPPED_CHEST, CraftChest.class, CraftChest::new);
+        register(BlockEntityType.TRAPPED_CHEST, CraftChest.class, CraftTrappedChest::new);
         register(BlockEntityType.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new);
         register(BlockEntityType.VAULT, CraftVault.class, CraftVault::new);
         // End generate - CraftBlockEntityStates
