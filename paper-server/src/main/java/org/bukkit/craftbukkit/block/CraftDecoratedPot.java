@@ -18,6 +18,7 @@ import org.bukkit.block.DecoratedPot;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDecoratedPot;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.inventory.DecoratedPotInventory;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEntity> implements DecoratedPot {
 
@@ -129,4 +130,18 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
     public CraftDecoratedPot copy(Location location) {
         return new CraftDecoratedPot(this, location);
     }
+
+    // Paper start - expose wobble animation
+    @Override
+    public void startWobble(@NotNull final Wobble style) {
+        Preconditions.checkArgument(style != null, "style must not be null");
+
+        DecoratedPotBlockEntity.WobbleStyle originalStyle = switch (style) {
+            case POSITIVE -> DecoratedPotBlockEntity.WobbleStyle.POSITIVE;
+            case NEGATIVE -> DecoratedPotBlockEntity.WobbleStyle.NEGATIVE;
+            default -> throw new IllegalArgumentException("Unexpected value: " + style);
+        };
+        this.getBlockEntity().wobble(originalStyle);
+    }
+    // Paper end - expose wobble animation
 }
