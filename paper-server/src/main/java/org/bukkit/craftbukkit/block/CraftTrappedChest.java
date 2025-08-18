@@ -5,7 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.TrappedChest;
 import org.checkerframework.common.value.qual.IntRange;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftTrappedChest extends CraftChest<TrappedChestBlockEntity> implements TrappedChest {
 

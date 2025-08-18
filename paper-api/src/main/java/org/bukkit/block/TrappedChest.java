@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.checkerframework.common.value.qual.IntRange;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a Trapped Chest.
@@ -31,5 +32,5 @@ public interface TrappedChest extends Chest {
      *
      * @param power the forced power level (0–15), or {@code null} to disable forcing
      */
-    void setForcedPower(@org.jspecify.annotations.Nullable @IntRange(from = 0, to = 15) Integer power);
+    void setForcedPower(@Nullable @IntRange(from = 0, to = 15) Integer power);
 }
