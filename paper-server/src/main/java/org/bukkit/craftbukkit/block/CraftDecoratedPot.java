@@ -131,7 +131,6 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         return new CraftDecoratedPot(this, location);
     }
 
-    // Paper start - expose wobble animation
     @Override
     public void startWobble(@NotNull final Wobble style) {
         Preconditions.checkArgument(style != null, "style must not be null");
@@ -143,5 +142,4 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         };
         this.getBlockEntity().wobble(originalStyle);
     }
-    // Paper end - expose wobble animation
 }
