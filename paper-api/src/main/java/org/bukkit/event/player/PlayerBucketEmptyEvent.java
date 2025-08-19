@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,6 +13,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player empties a bucket
+ * <p>
+ *     Note that this event is not called when the player empties a powdered snow bucket.
+ *     Use {@link BlockPlaceEvent} for that.
+ * </p>
  */
 public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
 
