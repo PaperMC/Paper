@@ -2,8 +2,10 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TrappedChestBlockEntity;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.TrappedChest;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,9 +49,17 @@ public class CraftTrappedChest extends CraftChest<TrappedChestBlockEntity> imple
         int from = this.getBlockEntity().getSignal();
         int to = this.getSnapshot().getSignal();
 
+        if (from != to) {
+            BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(getNMSWorld(), getPosition(), from, to);
+            if (event.getNewCurrent() != to) {
+                this.getSnapshot().setForcedSignal(event.getNewCurrent());
+                to = event.getNewCurrent();
+            }
+        }
+
         boolean result = super.update(force, applyPhysics);
 
-        if (result && from != to) {
+        if (result && this.isPlaced() && this.getType() == Material.TRAPPED_CHEST && from != to) {
             this.getBlockEntity().updateRedStone(getNMSWorld(), getPosition(), getHandle(), from, to);
         }
 
