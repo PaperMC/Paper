@@ -1,8 +1,9 @@
-package org.bukkit.event.entity;
+package io.papermc.paper.event.entity;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,6 +42,17 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
         return this.target;
     }
 
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     * <p>
+     * It should be noted that both the client and server independently check
+     * for a spin attack. Cancelling this on the server means the animation is not
+     * interrupted and no attack is performed, but the client will still collide
+     * and bounce away.
+     *
+     * @param cancelled {@code true} if you wish to cancel this event
+     */
     @Override
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;

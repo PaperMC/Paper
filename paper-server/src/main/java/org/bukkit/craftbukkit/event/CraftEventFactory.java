@@ -185,7 +185,6 @@ import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
-import org.bukkit.event.entity.EntityAttemptSpinAttackEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -1562,11 +1561,6 @@ public class CraftEventFactory {
 
     public static boolean callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
         PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
-        return event.callEvent();
-    }
-
-    public static boolean callEntityAttemptSpinAttackEvent(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.entity.LivingEntity target) {
-        EntityAttemptSpinAttackEvent event = new EntityAttemptSpinAttackEvent(entity.getBukkitLivingEntity(), target.getBukkitLivingEntity());
         return event.callEvent();
     }
 
