@@ -42,7 +42,15 @@ public final class PaperConsole extends SimpleTerminalConsole {
 
     @Override
     protected void runCommand(String command) {
-        this.server.handleConsoleInput(command, this.server.createCommandSourceStack());
+        // terminals interpret pressing [enter] and pasting a multi-line string differently,
+        // the latter makes the line reader read it as a single line - and we don't want that
+        // https://github.com/PaperMC/Paper/issues/13006
+        for (String line : command.split("\n")) {
+            if (line.isEmpty()) {
+                continue;
+            }
+            this.server.handleConsoleInput(line, this.server.createCommandSourceStack());
+        }
     }
 
     @Override
