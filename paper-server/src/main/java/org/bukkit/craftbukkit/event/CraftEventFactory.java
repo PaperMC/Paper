@@ -185,7 +185,7 @@ import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
-import org.bukkit.event.entity.EntitySpinAttackEvent;
+import org.bukkit.event.entity.EntityAttemptSpinAttackEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -1565,8 +1565,8 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static boolean callEntitySpinAttackEvent(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.entity.LivingEntity target) {
-        EntitySpinAttackEvent event = new EntitySpinAttackEvent(entity.getBukkitLivingEntity(), target.getBukkitLivingEntity());
+    public static boolean callEntityAttemptSpinAttackEvent(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.entity.LivingEntity target) {
+        EntityAttemptSpinAttackEvent event = new EntityAttemptSpinAttackEvent(entity.getBukkitLivingEntity(), target.getBukkitLivingEntity());
         return event.callEvent();
     }
 

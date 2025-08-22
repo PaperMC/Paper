@@ -7,9 +7,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a {@link LivingEntity} performs a spin attack.
+ * Called when a {@link LivingEntity} attempts to perform an automatic spin attack
+ * against a target entity.
  */
-public class EntitySpinAttackEvent extends EntityEvent implements Cancellable {
+public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -18,7 +19,7 @@ public class EntitySpinAttackEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntitySpinAttackEvent(@NotNull LivingEntity entity, @NotNull LivingEntity target) {
+    public EntityAttemptSpinAttackEvent(@NotNull LivingEntity entity, @NotNull LivingEntity target) {
         super(entity);
         this.target = target;
     }
