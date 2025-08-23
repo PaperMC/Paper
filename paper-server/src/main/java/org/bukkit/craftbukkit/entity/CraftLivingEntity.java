@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -41,6 +42,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.Waypoint;
+import net.minecraft.world.waypoints.WaypointStyleAsset;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
 import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
@@ -1110,15 +1112,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setWaypointColor(final Color color) {
-        getHandle().waypointIcon().color = Optional.ofNullable(color).map(Color::asARGB);
+        final Optional<Integer> mewColor = Optional.ofNullable(color).map(Color::asARGB);
+        if (Objects.equals(getHandle().waypointIcon().color, mewColor)) return;
+
+        getHandle().waypointIcon().color = mewColor;
         updateWaypoint();
     }
 
     @Override
     public void setWaypointStyle(final Key key) {
-        getHandle().waypointIcon().style = key == null
+        final ResourceKey<WaypointStyleAsset> newKey = key == null
             ? WaypointStyleAssets.DEFAULT
-            : ResourceKey.create(WaypointStyleAssets.ROOT_ID, PaperAdventure.asVanilla(key));
+            : PaperAdventure.asVanilla(WaypointStyleAssets.ROOT_ID, key);
+        if (Objects.equals(getHandle().waypointIcon().style, newKey)) return;
+
+        getHandle().waypointIcon().style = newKey;
         updateWaypoint();
     }
 
