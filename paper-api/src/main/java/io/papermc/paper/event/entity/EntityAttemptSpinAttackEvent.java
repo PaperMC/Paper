@@ -48,8 +48,6 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
      * for a spin attack. Cancelling this on the server means the animation is not
      * interrupted and no attack is performed, but the client will still collide
      * and bounce away.
-     *
-     * @param cancelled {@inheritDoc}
      */
     @Override
     public void setCancelled(boolean cancelled) {
