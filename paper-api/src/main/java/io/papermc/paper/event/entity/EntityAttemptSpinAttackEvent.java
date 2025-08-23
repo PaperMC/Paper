@@ -5,12 +5,13 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a {@link LivingEntity} attempts to perform an automatic spin attack
  * against a target entity.
  */
+@NullMarked
 public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -20,13 +21,12 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityAttemptSpinAttackEvent(@NotNull LivingEntity entity, @NotNull LivingEntity target) {
+    public EntityAttemptSpinAttackEvent(final LivingEntity entity, final LivingEntity target) {
         super(entity);
         this.target = target;
     }
 
     @Override
-    @NotNull
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;
     }
@@ -37,21 +37,19 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
      *
      * @return the entity being attacked
      */
-    @NotNull
     public LivingEntity getTarget() {
         return this.target;
     }
 
     /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
+     * {@inheritDoc}
      * <p>
      * It should be noted that both the client and server independently check
      * for a spin attack. Cancelling this on the server means the animation is not
      * interrupted and no attack is performed, but the client will still collide
      * and bounce away.
      *
-     * @param cancelled {@code true} if you wish to cancel this event
+     * @param cancelled {@inheritDoc}
      */
     @Override
     public void setCancelled(boolean cancelled) {
@@ -64,12 +62,10 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
     }
 
     @Override
-    @NotNull
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
