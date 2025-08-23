@@ -1513,7 +1513,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Sets the color of the waypoint icon.
      *
      * @param color the new color to apply to the waypoint icon, or {@code null} to use the default color.
-     *              While the color may contain alpha values, the client does not recieve them.
+     *              While the color may contain alpha values, the client does not receive them.
      * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
      */
     void setWaypointColor(@Nullable Color color);
@@ -1532,7 +1532,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Gets the current color of the waypoint icon, if any.
      *
      * @return the icon's color, or {@code null} if the default color is used.
-     *         While the color may contain alpha values, the client does not recieve them.
+     *         While the color may contain alpha values, the client does not receive them.
      * @see #setWaypointColor(Color)
      * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
      */
