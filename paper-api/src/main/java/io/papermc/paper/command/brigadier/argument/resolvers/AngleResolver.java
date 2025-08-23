@@ -22,7 +22,7 @@ public interface AngleResolver {
      * command source stack.
      *
      * @param sourceStack source stack
-     * @return resolved angle
+     * @return the resolved angle in degrees.
      */
     float resolve(CommandSourceStack sourceStack) throws CommandSyntaxException;
 }

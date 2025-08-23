@@ -186,7 +186,15 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
         return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
             result -> (block, loadChunk) -> {
-                return result.test(new BlockInWorld(((CraftWorld) block.getWorld()).getHandle(), CraftLocation.toBlockPosition(block.getLocation()), loadChunk));
+                final BlockInWorld blockInWorld = new BlockInWorld(
+                    ((CraftWorld) block.getWorld()).getHandle(),
+                    CraftLocation.toBlockPosition(block.getLocation()),
+                    loadChunk
+                );
+                // Get state lazy loads the state, will remain null if chunk is unloaded.
+                if (blockInWorld.getState() == null) return BlockInWorldPredicate.Result.UNLOADED_CHUNK;
+
+                return result.test(blockInWorld) ? BlockInWorldPredicate.Result.TRUE : BlockInWorldPredicate.Result.FALSE;
             }
         );
     }
