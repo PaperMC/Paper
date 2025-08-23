@@ -58,7 +58,7 @@ public interface BlockInWorldPredicate {
         ;
 
         /**
-         * Converts the result into am approximated boolean representation.
+         * Converts the result into an approximated boolean representation.
          * Specifically, the following mappings are applied:
          * <ul>
          * <li>{@link #TRUE} -> {@code true}</li>
