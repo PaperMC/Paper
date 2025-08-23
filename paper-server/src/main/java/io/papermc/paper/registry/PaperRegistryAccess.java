@@ -97,12 +97,12 @@ public class PaperRegistryAccess implements RegistryAccess {
         return registry;
     }
 
-    public <M> void registerReloadableRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry) {
-        this.registerRegistry(resourceKey, registry, true);
+    public <M> void registerReloadableRegistry(final net.minecraft.core.Registry<M> registry) {
+        this.registerRegistry(registry, true);
     }
 
-    public <M> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry) {
-        this.registerRegistry(resourceKey, registry, false);
+    public <M> void registerRegistry(final net.minecraft.core.Registry<M> registry) {
+        this.registerRegistry(registry, false);
     }
 
     public <M> void lockReferenceHolders(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey) {
@@ -115,8 +115,8 @@ public class PaperRegistryAccess implements RegistryAccess {
     }
 
     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
-    private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry, final boolean replace) {
-        final RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
+    private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final net.minecraft.core.Registry<M> registry, final boolean replace) {
+        final RegistryEntry<M, B> entry = PaperRegistries.getEntry(registry.key());
         if (entry == null) { // skip registries that don't have API entries
             return;
         }
@@ -129,7 +129,7 @@ public class PaperRegistryAccess implements RegistryAccess {
                 // if the registry holder is delayed, and the entry is marked as "delayed", then load the holder with the CraftRegistry instance that wraps the actual nms Registry.
                 ((RegistryHolder.Delayed<B, R>) registryHolder).loadFrom(delayedEntry, registry);
             } else {
-                throw new IllegalArgumentException(resourceKey + " has already been created");
+                throw new IllegalArgumentException(registry.key() + " has already been created");
             }
         }
     }

@@ -18,6 +18,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PaperRegistriesRewriter extends SearchReplaceRewriter {
 
+
     private void appendEntry(String indent, StringBuilder builder, RegistryEntry<?> entry, boolean canBeDelayed, boolean apiOnly) {
         builder.append(indent);
         builder.append("start");
@@ -52,9 +53,18 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
                 builder.append(".serializationUpdater(").append(Types.FIELD_RENAME.simpleName()).append('.').append(entry.fieldRename()).append(")");
             }
 
-            if (entry.apiRegistryBuilderImpl() != null) {
-                builder.append(".writable(");
+            if (entry.apiRegistryBuilderImpl() != null && entry.modificationApiSupport() != null) {
+                switch (entry.modificationApiSupport()) {
+                    case WRITABLE -> builder.append(".writable(");
+                    case ADDABLE -> builder.append(".addable(");
+                    case MODIFIABLE -> builder.append(".modifiable(");
+                    case NONE -> builder.append(".create(");
+                }
                 builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(entry.apiRegistryBuilderImpl()).resolve(this.classResolver))).append("::new");
+                if (entry.modificationApiSupport() == RegistryEntry.RegistryModificationApiSupport.NONE) {
+                    builder.append(", ");
+                    builder.append(Types.REGISTRY_MODIFICATION_API_SUPPORT.dottedNestedName()).append(".NONE");
+                }
                 builder.append(')');
             } else {
                 builder.append(".build()");

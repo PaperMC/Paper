@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
-@ApiStatus.Experimental
+@GeneratedFrom("1.21.8")
 public final class ItemTypeTagKeys {
     /**
      * {@code #minecraft:acacia_logs}
@@ -600,6 +598,27 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> HANGING_SIGNS = create(key("hanging_signs"));
+
+    /**
+     * {@code #minecraft:happy_ghast_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> HAPPY_GHAST_FOOD = create(key("happy_ghast_food"));
+
+    /**
+     * {@code #minecraft:happy_ghast_tempt_items}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> HAPPY_GHAST_TEMPT_ITEMS = create(key("happy_ghast_tempt_items"));
+
+    /**
+     * {@code #minecraft:harnesses}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> HARNESSES = create(key("harnesses"));
 
     /**
      * {@code #minecraft:head_armor}
@@ -1268,7 +1287,6 @@ public final class ItemTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<ItemType> create(final Key key) {
         return TagKey.create(RegistryKey.ITEM, key);
     }

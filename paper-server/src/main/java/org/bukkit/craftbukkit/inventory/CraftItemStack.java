@@ -268,15 +268,13 @@ public final class CraftItemStack extends ItemStack {
     public void addUnsafeEnchantment(Enchantment enchant, int level) {
         Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        // Paper start
         if (this.handle == null) {
             return;
         }
 
         EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
             mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
-        });
-        // Paper end
+        }, true);
     }
 
     @Override
@@ -579,7 +577,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value));
+        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
     }
 
     @Override

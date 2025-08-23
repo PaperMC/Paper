@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import io.papermc.paper.event.entity.FishHookStateChangeEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
@@ -12,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Thrown when a player is fishing
+ *
+ * <p>If you want to monitor a fishhooks state transition, you can use {@link FishHookStateChangeEvent}.</p>
  */
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
 

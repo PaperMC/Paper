@@ -71,7 +71,7 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
         boolean isInterface = Objects.requireNonNull(this.fieldClass.knownClass()).isInterface();
         Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(registry));
-        Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).iterator();
+        Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(Formatting.HOLDER_ORDER).iterator();
 
         while (referenceIterator.hasNext()) {
             Holder.Reference<T> reference = referenceIterator.next();

@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
@@ -19,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -296,16 +298,42 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets if the entity has visual fire (it will always appear to be on fire).
      *
+     * @deprecated This method doesn't allow visually extinguishing a burning entity,
+     * use {@link #setVisualFire(TriState)} instead
      * @param fire whether visual fire is enabled
      */
+    @Deprecated
     void setVisualFire(boolean fire);
+
+    /**
+     * Sets if the entity has visual fire (it will always appear to be on fire).
+     * <ul>
+     *     <li>{@link TriState#NOT_SET} – will revert the entity's visual fire to default</li>
+     *     <li>{@link TriState#TRUE} – will make the entity appear to be on fire</li>
+     *     <li>{@link TriState#FALSE} – will make the entity appear to be not on fire</li>
+     * </ul>
+     *
+     * @param fire a TriState value representing the state of the visual fire.
+     */
+    void setVisualFire(@NotNull TriState fire);
 
     /**
      * Gets if the entity has visual fire (it will always appear to be on fire).
      *
+     * @deprecated This method can't properly reflect the three possible states of visual fire,
+     * use {@link #getVisualFire()} instead
      * @return whether visual fire is enabled
      */
+    @Deprecated
     boolean isVisualFire();
+
+    /**
+     * Retrieves the visual fire state of the entity.
+     *
+     * @return A TriState indicating the current visual fire state.
+     */
+    @NotNull
+    TriState getVisualFire();
 
     /**
      * Returns the entity's current freeze ticks (amount of ticks the entity has
@@ -510,6 +538,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return True if there was a passenger.
      */
     public boolean eject();
+
+    /**
+     * Gets the {@link ItemStack} that a player would select / create (in creative mode)
+     * when using the pick block action on this entity.
+     *
+     * @return item stack result or an empty item stack
+     */
+    @NotNull
+    ItemStack getPickItemStack();
 
     /**
      * Returns the distance this entity has fallen

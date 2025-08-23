@@ -2,14 +2,19 @@ package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
+import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
+import io.papermc.paper.datacomponent.item.blocksattacks.PaperDamageReduction;
+import io.papermc.paper.datacomponent.item.blocksattacks.PaperItemDamageFunction;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import java.util.Optional;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -28,6 +33,16 @@ public record PaperBlocksAttacks(
     @Override
     public float disableCooldownScale() {
         return this.impl.disableCooldownScale();
+    }
+
+    @Override
+    public List<DamageReduction> damageReductions() {
+        return this.impl.damageReductions().stream().map(PaperDamageReduction::new).map(paperDamageReduction -> ((DamageReduction) paperDamageReduction)).toList();
+    }
+
+    @Override
+    public ItemDamageFunction itemDamage() {
+        return new PaperItemDamageFunction(this.impl.itemDamage());
     }
 
     @Override
@@ -50,8 +65,8 @@ public record PaperBlocksAttacks(
 
         private float blockDelaySeconds;
         private float disableCooldownScale = 1.0F;
-        //private List<DamageReduction> damageReductions = List.of();
-        //private ItemDamageFunction itemDamage = ItemDamageFunction.DEFAULT;
+        private List<DamageReduction> damageReductions = new ObjectArrayList<>();
+        private ItemDamageFunction itemDamage = new PaperItemDamageFunction(net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT);
         private @Nullable TagKey<DamageType> bypassedBy;
         private @Nullable Key blockSound;
         private @Nullable Key disableSound;
@@ -70,15 +85,23 @@ public record PaperBlocksAttacks(
             return this;
         }
 
-        //@Override
-        //public Builder addDamageReduction(final DamageReduction reduction) {
-        //    return null;
-        //}
+        @Override
+        public Builder addDamageReduction(final DamageReduction reduction) {
+            this.damageReductions.add(reduction);
+            return this;
+        }
 
-        //@Override
-        //public Builder itemDamage(final ItemDamageFunction function) {
-        //    return null;
-        //}
+        @Override
+        public Builder damageReductions(final List<DamageReduction> reductions) {
+            this.damageReductions = new ObjectArrayList<>(reductions);
+            return this;
+        }
+
+        @Override
+        public Builder itemDamage(final ItemDamageFunction function) {
+            this.itemDamage = function;
+            return this;
+        }
 
         @Override
         public Builder bypassedBy(@Nullable final TagKey<DamageType> bypassedBy) {
@@ -87,29 +110,24 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public Builder blockSound(@Nullable final Key sound) {
+        public Builder blockSound(final @Nullable Key sound) {
             this.blockSound = sound;
             return this;
         }
 
         @Override
-        public Builder disableSound(@Nullable final Key sound) {
+        public Builder disableSound(final @Nullable Key sound) {
             this.disableSound = sound;
             return this;
         }
-
-        //@Override
-        //public Builder damageReductions(final List<DamageReduction> reductions) {
-        //    return null;
-        //}
 
         @Override
         public BlocksAttacks build() {
             return new PaperBlocksAttacks(new net.minecraft.world.item.component.BlocksAttacks(
                 this.blockDelaySeconds,
                 this.disableCooldownScale,
-                List.of(), // TODO
-                net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT, // TODO
+                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).getHandle()).toList(),
+                ((PaperItemDamageFunction) this.itemDamage).getHandle(),
                 Optional.ofNullable(this.bypassedBy).map(PaperRegistries::toNms),
                 Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
                 Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)

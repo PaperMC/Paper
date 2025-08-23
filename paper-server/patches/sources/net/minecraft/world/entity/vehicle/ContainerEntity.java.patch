@@ -1,32 +1,32 @@
 --- a/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/net/minecraft/world/entity/vehicle/ContainerEntity.java
 @@ -60,12 +_,12 @@
-     default void addChestVehicleSaveData(CompoundTag tag, HolderLookup.Provider levelRegistry) {
+     default void addChestVehicleSaveData(ValueOutput output) {
          if (this.getContainerLootTable() != null) {
-             tag.putString("LootTable", this.getContainerLootTable().location().toString());
-+            this.lootableData().saveNbt(tag); // Paper
+             output.putString("LootTable", this.getContainerLootTable().location().toString());
++            this.lootableData().saveNbt(output); // Paper
              if (this.getContainerLootTableSeed() != 0L) {
-                 tag.putLong("LootTableSeed", this.getContainerLootTableSeed());
+                 output.putLong("LootTableSeed", this.getContainerLootTableSeed());
              }
 -        } else {
--            ContainerHelper.saveAllItems(tag, this.getItemStacks(), levelRegistry);
+-            ContainerHelper.saveAllItems(output, this.getItemStacks());
          }
-+        ContainerHelper.saveAllItems(tag, this.getItemStacks(), levelRegistry); // Paper - always save the items, table may still remain
++        ContainerHelper.saveAllItems(output, this.getItemStacks()); // Paper - always save the items, table may still remain
      }
  
-     default void readChestVehicleSaveData(CompoundTag tag, HolderLookup.Provider levelRegistry) {
+     default void readChestVehicleSaveData(ValueInput input) {
 @@ -73,7 +_,12 @@
-         ResourceKey<LootTable> resourceKey = tag.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+         ResourceKey<LootTable> resourceKey = input.read("LootTable", LootTable.KEY_CODEC).orElse(null);
          this.setContainerLootTable(resourceKey);
-         this.setContainerLootTableSeed(tag.getLongOr("LootTableSeed", 0L));
+         this.setContainerLootTableSeed(input.getLongOr("LootTableSeed", 0L));
 -        if (resourceKey == null) {
 +        // Paper start - LootTable API
 +        if (this.getContainerLootTable() != null) {
-+            this.lootableData().loadNbt(tag);
++            this.lootableData().loadNbt(input);
 +        }
 +        // Paper end - LootTable API
 +        if (true || resourceKey == null) { // Paper - always read the items, table may still remain
-             ContainerHelper.loadAllItems(tag, this.getItemStacks(), levelRegistry);
+             ContainerHelper.loadAllItems(input, this.getItemStacks());
          }
      }
 @@ -89,19 +_,27 @@

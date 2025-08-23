@@ -10,10 +10,10 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public record APICommandMeta(@Nullable PluginMeta pluginMeta, @Nullable String description, List<String> aliases, @Nullable String helpCommandNamespace, boolean serverSideOnly) {
+public record APICommandMeta(@Nullable PluginMeta pluginMeta, @Nullable String description, List<String> aliases, @Nullable String helpCommandNamespace) {
 
     public APICommandMeta(final @Nullable PluginMeta pluginMeta, final @Nullable String description) {
-        this(pluginMeta, description, Collections.emptyList(), null, false);
+        this(pluginMeta, description, Collections.emptyList(), null);
     }
 
     public APICommandMeta {
@@ -26,6 +26,6 @@ public record APICommandMeta(@Nullable PluginMeta pluginMeta, @Nullable String d
     }
 
     public APICommandMeta withAliases(List<String> registeredAliases) {
-        return new APICommandMeta(this.pluginMeta, this.description, List.copyOf(registeredAliases), this.helpCommandNamespace, this.serverSideOnly);
+        return new APICommandMeta(this.pluginMeta, this.description, List.copyOf(registeredAliases), this.helpCommandNamespace);
     }
 }

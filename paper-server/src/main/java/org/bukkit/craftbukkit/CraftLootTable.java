@@ -39,7 +39,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null || minecraft.location().getPath().isEmpty()) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft)); // Paper - fix some NamespacedKey parsing
+        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
     }
 
     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {

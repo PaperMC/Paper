@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.destroystokyo.paper.entity.villager.Reputation;
 import com.google.common.base.Preconditions;
-import java.util.Locale;
+import io.papermc.paper.util.OldEnumHolderable;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -14,11 +14,9 @@ import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -164,7 +162,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 
-    public static class CraftType implements Type, Handleable<VillagerType> {
+    public static class CraftType extends OldEnumHolderable<Type, VillagerType> implements Type {
         private static int count = 0;
 
         public static Type minecraftToBukkit(VillagerType minecraft) {
@@ -172,7 +170,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         public static Type minecraftHolderToBukkit(Holder<VillagerType> minecraft) {
-            return CraftType.minecraftToBukkit(minecraft.value());
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.VILLAGER_TYPE);
         }
 
         public static VillagerType bukkitToMinecraft(Type bukkit) {
@@ -180,80 +178,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         public static Holder<VillagerType> bukkitToMinecraftHolder(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_TYPE);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
-        private final NamespacedKey key;
-        private final VillagerType villagerType;
-        private final String name;
-        private final int ordinal;
-
-        public CraftType(NamespacedKey key, VillagerType villagerType) {
-            this.key = key;
-            this.villagerType = villagerType;
-            // For backwards compatibility, minecraft values will still return the uppercase name without the namespace,
-            // in case plugins use for example the name as key in a config file to receive type specific values.
-            // Custom types will return the key with namespace. For a plugin this should look than like a new type
-            // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
-            if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-                this.name = key.getKey().toUpperCase(Locale.ROOT);
-            } else {
-                this.name = key.toString();
-            }
-            this.ordinal = CraftType.count++;
-        }
-
-        @Override
-        public VillagerType getHandle() {
-            return this.villagerType;
-        }
-
-        @Override
-        public NamespacedKey getKey() {
-            return this.key;
-        }
-
-        @Override
-        public int compareTo(Type type) {
-            return this.ordinal - type.ordinal();
-        }
-
-        @Override
-        public String name() {
-            return this.name;
-        }
-
-        @Override
-        public int ordinal() {
-            return this.ordinal;
-        }
-
-        @Override
-        public String toString() {
-            // For backwards compatibility
-            return this.name();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            }
-
-            if (!(other instanceof CraftType)) {
-                return false;
-            }
-
-            return this.getKey().equals(((Type) other).getKey());
-        }
-
-        @Override
-        public int hashCode() {
-            return this.getKey().hashCode();
+        public CraftType(final Holder<VillagerType> holder){
+            super(holder, count++);
         }
     }
 
-    public static class CraftProfession implements Profession, Handleable<VillagerProfession> {
+    public static class CraftProfession extends OldEnumHolderable<Profession, VillagerProfession> implements Profession {
         private static int count = 0;
 
         public static Profession minecraftHolderToBukkit(Holder<VillagerProfession> minecraft) {
@@ -261,7 +194,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_PROFESSION);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {
@@ -272,73 +205,8 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
-        private final NamespacedKey key;
-        private final VillagerProfession villagerProfession;
-        private final String name;
-        private final int ordinal;
-
-        public CraftProfession(NamespacedKey key, VillagerProfession villagerProfession) {
-            this.key = key;
-            this.villagerProfession = villagerProfession;
-            // For backwards compatibility, minecraft values will still return the uppercase name without the namespace,
-            // in case plugins use for example the name as key in a config file to receive profession specific values.
-            // Custom professions will return the key with namespace. For a plugin this should look than like a new profession
-            // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
-            if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-                this.name = key.getKey().toUpperCase(Locale.ROOT);
-            } else {
-                this.name = key.toString();
-            }
-            this.ordinal = CraftProfession.count++;
-        }
-
-        @Override
-        public VillagerProfession getHandle() {
-            return this.villagerProfession;
-        }
-
-        @Override
-        public NamespacedKey getKey() {
-            return this.key;
-        }
-
-        @Override
-        public int compareTo(Profession profession) {
-            return this.ordinal - profession.ordinal();
-        }
-
-        @Override
-        public String name() {
-            return this.name;
-        }
-
-        @Override
-        public int ordinal() {
-            return this.ordinal;
-        }
-
-        @Override
-        public String toString() {
-            // For backwards compatibility
-            return this.name();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            }
-
-            if (!(other instanceof CraftProfession)) {
-                return false;
-            }
-
-            return this.getKey().equals(((Profession) other).getKey());
-        }
-
-        @Override
-        public int hashCode() {
-            return this.getKey().hashCode();
+        public CraftProfession(final Holder<VillagerProfession> holder) {
+            super(holder, count++);
         }
     }
 
@@ -379,5 +247,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     @Override
     public void clearReputations() {
         getHandle().getGossips().gossips.clear();
+    }
+
+    @Override
+    public void updateDemand() {
+        getHandle().updateDemand();
+    }
+
+    @Override
+    public void restock() {
+        getHandle().restock();
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/RandomizableContainer.java
 +++ b/net/minecraft/world/RandomizableContainer.java
-@@ -26,7 +_,7 @@
+@@ -27,7 +_,7 @@
  
      void setLootTable(@Nullable ResourceKey<LootTable> lootTable);
  
@@ -9,25 +9,25 @@
          this.setLootTable(lootTable);
          this.setLootTableSeed(seed);
      }
-@@ -49,8 +_,9 @@
-     default boolean tryLoadLootTable(CompoundTag tag) {
-         ResourceKey<LootTable> resourceKey = tag.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+@@ -50,8 +_,9 @@
+     default boolean tryLoadLootTable(ValueInput input) {
+         ResourceKey<LootTable> resourceKey = input.read("LootTable", LootTable.KEY_CODEC).orElse(null);
          this.setLootTable(resourceKey);
-+        if (this.lootableData() != null && resourceKey != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
-         this.setLootTableSeed(tag.getLongOr("LootTableSeed", 0L));
++        if (this.lootableData() != null && resourceKey != null) this.lootableData().loadNbt(input); // Paper - LootTable API
+         this.setLootTableSeed(input.getLongOr("LootTableSeed", 0L));
 -        return resourceKey != null;
 +        return resourceKey != null && this.lootableData() == null; // Paper - only track the loot table if there is chance for replenish
      }
  
-     default boolean trySaveLootTable(CompoundTag tag) {
-@@ -59,26 +_,42 @@
+     default boolean trySaveLootTable(ValueOutput output) {
+@@ -60,26 +_,42 @@
              return false;
          } else {
-             tag.store("LootTable", LootTable.KEY_CODEC, lootTable);
-+            if (this.lootableData() != null) this.lootableData().saveNbt(tag); // Paper - LootTable API
+             output.store("LootTable", LootTable.KEY_CODEC, lootTable);
++            if (this.lootableData() != null) this.lootableData().saveNbt(output); // Paper - LootTable API
              long lootTableSeed = this.getLootTableSeed();
              if (lootTableSeed != 0L) {
-                 tag.putLong("LootTableSeed", lootTableSeed);
+                 output.putLong("LootTableSeed", lootTableSeed);
              }
  
 -            return true;
@@ -65,7 +65,7 @@
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -87,4 +_,17 @@
+@@ -88,4 +_,17 @@
              lootTable1.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }

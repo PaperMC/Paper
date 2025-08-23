@@ -27,18 +27,14 @@
  
      public ServerExplosion(
          ServerLevel level,
-@@ -60,12 +_,13 @@
-     ) {
-         this.level = level;
-         this.source = source;
--        this.radius = radius;
-+        this.radius = (float) Math.max(radius, 0.0); // CraftBukkit - clamp bad values
-         this.center = center;
-         this.fire = fire;
+@@ -66,6 +_,10 @@
          this.blockInteraction = blockInteraction;
          this.damageSource = damageSource == null ? level.damageSources().explosion(this) : damageSource;
          this.damageCalculator = damageCalculator == null ? this.makeDamageCalculator(source) : damageCalculator;
-+        this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
++        // Paper start - add yield
++        this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F;
++        this.yield = Double.isFinite(this.yield) ? this.yield : 0; // Paper - Don't allow infinite default yields
++        // Paper end - add yield
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
@@ -201,7 +197,7 @@
              this.level
                  .getBlockState(blockPos)
                  .onExplosionHit(this.level, blockPos, this, (itemStack, blockPos1) -> addOrAppendStack(list, itemStack, blockPos1));
-@@ -236,12 +_,21 @@
+@@ -236,7 +_,11 @@
      private void createFire(List<BlockPos> blocks) {
          for (BlockPos blockPos : blocks) {
              if (this.level.random.nextInt(3) == 0 && this.level.getBlockState(blockPos).isAir() && this.level.getBlockState(blockPos.below()).isSolidRender()) {
@@ -214,17 +210,7 @@
              }
          }
      }
- 
-     public void explode() {
-+        // CraftBukkit start
-+        if (this.radius < 0.1F) {
-+            return;
-+        }
-+        // CraftBukkit end
-         this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
-         List<BlockPos> list = this.calculateExplodedPositions();
-         this.hurtEntities();
-@@ -339,4 +_,86 @@
+@@ -338,4 +_,86 @@
              }
          }
      }

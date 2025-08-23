@@ -6,7 +6,7 @@ import net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect;
 
 public record PaperPlaySound(
     PlaySoundConsumeEffect impl
-) implements ConsumeEffect.PlaySound, PaperConsumableEffectImpl<PlaySoundConsumeEffect> {
+) implements ConsumeEffect.PlaySound, PaperConsumableEffect<PlaySoundConsumeEffect> {
 
     @Override
     public Key sound() {

@@ -29,10 +29,13 @@ public interface Armadillo extends Animals {
      * Represents the current state of the armadillo.
      */
     enum State {
+        // Start generate - ArmadilloState
+        // @GeneratedFrom 1.21.8
         IDLE,
         ROLLING,
         SCARED,
         UNROLLING;
+        // End generate - ArmadilloState
     }
 
 }

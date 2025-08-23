@@ -116,6 +116,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -302,7 +303,6 @@ public final class CraftServer implements Server {
     public CraftDataPackManager dataPackManager;
     private final CraftServerTickManager serverTickManager;
     private final CraftServerLinks serverLinks;
-    public boolean playerCommandState;
     private boolean printSaveWarning;
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
@@ -613,7 +613,6 @@ public final class CraftServer implements Server {
             // Spigot start - Allow vanilla commands to be forced to be the main command
             this.commandMap.setFallbackCommands();
             // Spigot end
-            this.commandMap.registerServerAliases();
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
             if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
@@ -974,62 +973,38 @@ public final class CraftServer implements Server {
         return this.playerList;
     }
 
-    // NOTE: Should only be called from DedicatedServer.ah()
-    public boolean dispatchServerCommand(CommandSender sender, ConsoleInput serverCommand) {
-        if (sender instanceof Conversable) {
-            Conversable conversable = (Conversable) sender;
-
-            if (conversable.isConversing()) {
-                conversable.acceptConversationInput(serverCommand.msg);
-                return true;
-            }
-        }
-        try {
-            this.playerCommandState = true;
-            return this.dispatchCommand(sender, serverCommand.msg);
-        } catch (Exception ex) {
-            this.getLogger().log(Level.WARNING, "Unexpected exception while parsing console command \"" + serverCommand.msg + '"', ex);
-            return false;
-        } finally {
-            this.playerCommandState = false;
-        }
-    }
-
     @Override
-    public boolean dispatchCommand(CommandSender sender, String commandLine) {
-        Preconditions.checkArgument(sender != null, "sender cannot be null");
+    public boolean dispatchCommand(CommandSender rawSender, String commandLine) {
+        Preconditions.checkArgument(rawSender != null, "sender cannot be null");
         Preconditions.checkArgument(commandLine != null, "commandLine cannot be null");
         org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + commandLine); // Spigot // Paper - Include command in error message
+        CommandSourceStack sourceStack = VanillaCommandWrapper.getListener(rawSender);
 
-        if (this.commandMap.dispatch(sender, commandLine)) {
-            return true;
-        }
-
-        return this.dispatchCommand(VanillaCommandWrapper.getListener(sender), commandLine);
-    }
-
-    public boolean dispatchCommand(CommandSourceStack sourceStack, String commandLine) {
+        String command = StringUtils.normalizeSpace(commandLine.trim());
+        
         net.minecraft.commands.Commands commands = this.getHandle().getServer().getCommands();
         com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = commands.getDispatcher();
-        com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(commandLine, sourceStack);
+        com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(command, sourceStack);
 
         CommandSender sender = sourceStack.getBukkitSender();
-        String[] args = org.apache.commons.lang3.StringUtils.split(commandLine, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
+        String[] args = org.apache.commons.lang3.StringUtils.split(command, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
         Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
 
         try {
-            commands.performCommand(results, commandLine, commandLine, true);
+            if (results.getContext().getNodes().isEmpty()) {
+                return false;
+            }
+            Commands.validateParseResults(results);
+            commands.performCommand(results, command, true);
+            return true;
         } catch (CommandException ex) {
             new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw ex;
         } catch (Throwable ex) {
-            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
+            String msg = "Unhandled exception executing '" + command + "' in " + target;
             new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw new CommandException(msg, ex);
         }
-        // Paper end
-
-        return false;
     }
 
     @Override
@@ -2296,6 +2271,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public boolean forcesDefaultGameMode() {
+        return this.console.getProperties().forceGameMode;
+    }
+
+    @Override
     public ConsoleCommandSender getConsoleSender() {
         return this.console.console;
     }
@@ -2604,7 +2584,7 @@ public final class CraftServer implements Server {
     }
 
     public void checkSaveState() {
-        if (this.playerCommandState || this.printSaveWarning || this.console.autosavePeriod <= 0) {
+        if (this.printSaveWarning || this.console.autosavePeriod <= 0) {
             return;
         }
         this.printSaveWarning = true;

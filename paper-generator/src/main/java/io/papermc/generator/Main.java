@@ -1,6 +1,5 @@
 package io.papermc.generator;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.mojang.logging.LogUtils;
 import io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
@@ -48,7 +47,7 @@ public class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"--sourceset"}, required = true)
     Path sourceSet;
 
-    @CommandLine.Option(names = {"-cp", "--classpath"}, split = ":", required = true)
+    @CommandLine.Option(names = {"-cp", "--classpath"}, split = "[;:]", required = true)
     Set<Path> classpath;
 
     @CommandLine.Option(names = {"--rewrite"})
@@ -84,11 +83,11 @@ public class Main implements Callable<Integer> {
                 resourceManager,
                 layers,
                 pendingTags,
-                FeatureFlags.VANILLA_SET,
+                FeatureFlags.REGISTRY.allFlags(),
                 Commands.CommandSelection.DEDICATED,
-                0,
-                MoreExecutors.directExecutor(),
-                MoreExecutors.directExecutor()
+                Commands.LEVEL_GAMEMASTERS,
+                Runnable::run,
+                Runnable::run
             ).whenComplete((result, ex) -> {
                 if (ex != null) {
                     resourceManager.close();

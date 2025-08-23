@@ -94,8 +94,8 @@ public class YamlSerializationTest {
               count: 1
               components:
                 minecraft:unbreakable: '{}'
-                minecraft:enchantments: '{"minecraft:sharpness":2}'
                 minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:unbreakable"]}'
+                minecraft:enchantments: '{"minecraft:sharpness":2}'
               schema_version: 1
             """.formatted(Bukkit.getUnsafe().getDataVersion()));
     }

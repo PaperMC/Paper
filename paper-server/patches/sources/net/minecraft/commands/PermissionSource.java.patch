@@ -1,0 +1,26 @@
+--- a/net/minecraft/commands/PermissionSource.java
++++ b/net/minecraft/commands/PermissionSource.java
+@@ -9,9 +_,22 @@
+         return this.hasPermission(2);
+     }
+ 
+-    public record Check<T extends PermissionSource>(@Override int requiredLevel) implements PermissionCheck<T> {
++    // Paper start - Vanilla Command permission checking & expose restricted API
++    interface RestrictedMarker { }
++
++    public record Check<T extends PermissionSource>(@Override int requiredLevel, java.util.concurrent.atomic.AtomicReference<com.mojang.brigadier.tree.CommandNode<CommandSourceStack>> vanillaNode) implements PermissionCheck<T> {
++        public Check(int requiredLevel) {
++            this(requiredLevel, new java.util.concurrent.atomic.AtomicReference<>());
++        }
++    // Paper end - Vanilla Command permission checking & expose restricted API
+         @Override
+         public boolean test(T source) {
++            // Paper start - Vanilla Command permission checking
++            com.mojang.brigadier.tree.CommandNode<CommandSourceStack> currentCommand = vanillaNode.get();
++            if (currentCommand != null && source instanceof CommandSourceStack commandSourceStack) {
++                return commandSourceStack.hasPermission(this.requiredLevel, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
++            }
++            // Paper end - Vanilla Command permission checking
+             return source.hasPermission(this.requiredLevel);
+         }
+     }

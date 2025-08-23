@@ -48,7 +48,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
     // Paper start - byte array serialization
     // Paper - move to PersistentDataContainerView
     /**
-     * Read values from a serialised byte array into this
+     * Read values from a serialized byte array into this
      * {@link PersistentDataContainer} instance.
      *
      * @param bytes the byte array to read from
@@ -59,7 +59,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
     void readFromBytes(byte @NotNull [] bytes, boolean clear) throws java.io.IOException;
 
     /**
-     * Read values from a serialised byte array into this
+     * Read values from a serialized byte array into this
      * {@link PersistentDataContainer} instance.
      * This method has the same effect as
      * <code>PersistentDataContainer#readFromBytes(bytes, true)</code>

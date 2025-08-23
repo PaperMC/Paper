@@ -99,28 +99,18 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param bukkit the bukkit representation
      * @return the minecraft representation of the bukkit value
      */
-    public static <B extends Keyed, M> M bukkitToMinecraft(B bukkit) {
+    @SuppressWarnings("unchecked")
+    public static <B extends Keyed, M> M bukkitToMinecraft(final B bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
         return ((Handleable<M>) bukkit).getHandle();
     }
 
-    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<net.minecraft.core.Registry<M>> registryKey) {
+    @SuppressWarnings("unchecked")
+    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(final B bukkit) {
         Preconditions.checkArgument(bukkit != null);
-        // Paper start - support direct Holder
-        if (bukkit instanceof io.papermc.paper.util.Holderable<?>) {
-            return ((io.papermc.paper.util.Holderable<M>) bukkit).getHolder();
-        }
-        // Paper end - support direct Holder
 
-        net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
-
-        if (registry.wrapAsHolder(CraftRegistry.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<M> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
+        return ((Holderable<M>) bukkit).getHolder();
     }
 
     // Paper start - fixup upstream being dum
@@ -205,7 +195,8 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             return cached;
         }
 
-        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(CraftNamespacedKey.toMinecraft(namespacedKey));
+        // Important to use the ResourceKey<?> "get" method below because it will work before registry is frozen
+        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         final Holder.Reference<M> holder;
         if (holderOptional.isPresent()) {
             holder = holderOptional.get();
@@ -215,12 +206,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             // to create something to fill the API constant fields, so we create a dummy reference holder.
             holder = Holder.Reference.createStandAlone(this.invalidHolderOwner, MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         } else {
-            holder = null;
-        }
-        final B bukkit = this.createBukkit(holder);
-        if (bukkit == null) {
             return null;
         }
+        final B bukkit = this.createBukkit(holder);
 
         this.cache.put(namespacedKey, bukkit);
 
@@ -250,10 +238,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     public B createBukkit(Holder<M> minecraft) {
-        if (minecraft == null) {
-            return null;
-        }
-
         return this.minecraftToBukkit.createBukkit(minecraft);
     }
 

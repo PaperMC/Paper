@@ -3,11 +3,12 @@ package io.papermc.paper.configuration;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
-import io.papermc.paper.configuration.serializer.collections.MapSerializer;
+import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
@@ -192,15 +193,14 @@ public class WorldConfiguration extends ConfigurationPart {
                 }
             }
 
-            @MapSerializer.ThrowExceptions
-            public Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
+            public @ThrowExceptions Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
                 map.put(EntityType.SNOWBALL, IntOr.Disabled.DISABLED);
                 map.put(EntityType.LLAMA_SPIT, IntOr.Disabled.DISABLED);
             });
 
             @PostProcess
             public void precomputeDespawnDistances() throws SerializationException {
-                for (Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
+                for (final Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
                     final MobCategory category = entry.getKey();
                     final DespawnRangePair range = entry.getValue();
                     range.hard().preComputed(category.getDespawnDistance(), category.getSerializedName());
@@ -512,6 +512,11 @@ public class WorldConfiguration extends ConfigurationPart {
             map.put(EntityType.SMALL_FIREBALL, -1);
         });
         public boolean flushRegionsOnSave = false;
+
+        @PostProcess
+        private void postProcess() {
+            FeatureHooks.setPlayerChunkUnloadDelay(this.delayChunkUnloadsBy.ticks());
+        }
     }
 
     public FishingTimeRange fishingTimeRange;
@@ -569,6 +574,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public int shieldBlockingDelay = 5;
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
+        public boolean allowRemoteEnderDragonRespawning = false;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT

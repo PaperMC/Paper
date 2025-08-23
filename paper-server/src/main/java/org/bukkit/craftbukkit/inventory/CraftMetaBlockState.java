@@ -17,8 +17,10 @@ import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
@@ -144,12 +146,17 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         final BlockVector legacyPosition = SerializableMeta.getObject(BlockVector.class, map, "blockPosition", true);
         if (legacyPosition != null) {
             this.blockEntityTag = this.blockEntityTag.update(blockEntityTag -> {
-                if (blockEntityTag.isEmpty()) {
-                    BlockEntity.addEntityType(blockEntityTag, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
+                try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+                    () -> "blockEntityTag", LOGGER
+                )) {
+                    final TagValueOutput output = TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getMinecraftRegistry(), blockEntityTag);
+                    if (blockEntityTag.isEmpty()) {
+                        BlockEntity.addEntityType(output, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
+                    }
+                    output.putInt("x", legacyPosition.getBlockX());
+                    output.putInt("y", legacyPosition.getBlockY());
+                    output.putInt("z", legacyPosition.getBlockZ());
                 }
-                blockEntityTag.putInt("x", legacyPosition.getBlockX());
-                blockEntityTag.putInt("y", legacyPosition.getBlockY());
-                blockEntityTag.putInt("z", legacyPosition.getBlockZ());
             });
         }
         // Paper end - general item meta fixes - parse spigot legacy position and merge into block entity tag
@@ -164,7 +171,14 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         final CompoundTag nbt = this.blockEntityTag.copyTag();
         if (!nbt.isEmpty()) {
             if (nbt.getString("id").isEmpty()) {
-                BlockEntity.addEntityType(nbt, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
+                try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+                    () -> "CraftMetaBlockState#apply", LOGGER
+                )) {
+                    BlockEntity.addEntityType(
+                        TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getMinecraftRegistry(), nbt),
+                        java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType()))
+                    );
+                }
             }
             tag.put(CraftMetaBlockState.BLOCK_ENTITY_TAG, CustomData.of(nbt));
         }

@@ -1,19 +1,18 @@
 package io.papermc.paper.registry.set;
 
+import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.util.Collection;
 import java.util.Iterator;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A collection of anonymous values relating to a registry. These
  * are values of the same type as the registry, but will not be found
- * in the registry, hence, anonymous.
+ * in the registry, hence, anonymous. Created via {@link RegistrySet#valueSet(io.papermc.paper.registry.RegistryKey, Iterable)} or
+ * in the context of a {@link io.papermc.paper.registry.RegistryBuilder},
+ * there are methods to create them like {@link DialogRegistryEntry.Builder#registryValueSet()}.
  * @param <T> registry value type
  */
-@ApiStatus.Experimental
-@NullMarked
 public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
 
     @Override

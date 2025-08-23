@@ -11,11 +11,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.BlockNBTComponent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -106,23 +109,35 @@ class AdventureCodecsTest {
     }
 
     @ParameterizedTest(name = PARAMETERIZED_NAME)
-    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE"})
+    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE", "SHOW_DIALOG", "CUSTOM"})
     void testClickEvent(final ClickEvent.Action action) {
-        final ClickEvent event = ClickEvent.clickEvent(action, action.name().equals("OPEN_URL") ? "https://google.com" : "1337");
-        final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow();
+        final ClickEvent event = switch (action) {
+            case OPEN_URL -> openUrl("https://google.com");
+            case RUN_COMMAND -> ClickEvent.runCommand("/say hello");
+            case SUGGEST_COMMAND -> suggestCommand("/suggest hello");
+            case CHANGE_PAGE -> ClickEvent.changePage(2);
+            case COPY_TO_CLIPBOARD -> ClickEvent.copyToClipboard("clipboard content");
+            case CUSTOM -> ClickEvent.custom(key("test"), BinaryTagHolder.binaryTagHolder("3"));
+            case SHOW_DIALOG, OPEN_FILE -> throw new IllegalArgumentException();
+        };
+        final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow(() -> new RuntimeException("Failed to encode ClickEvent: " + event));
         final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
         assertEquals(event.action().toString(), nms.action().getSerializedName());
         switch (nms) {
-            case net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI uri) ->
-                assertEquals(event.value(), uri.toString());
+            case net.minecraft.network.chat.ClickEvent.OpenUrl(URI uri) ->
+                assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), uri.toString());
             case net.minecraft.network.chat.ClickEvent.SuggestCommand(String command) ->
-                assertEquals(event.value(), command);
+                assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), command);
             case net.minecraft.network.chat.ClickEvent.RunCommand(String command) ->
-                assertEquals(event.value(), command);
+                assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), command);
             case net.minecraft.network.chat.ClickEvent.CopyToClipboard(String value) ->
-                assertEquals(event.value(), value);
+                assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), value);
             case net.minecraft.network.chat.ClickEvent.ChangePage(int page) ->
-                assertEquals(event.value(), String.valueOf(page));
+                assertEquals(((ClickEvent.Payload.Int) event.payload()).integer(), page);
+            case net.minecraft.network.chat.ClickEvent.Custom(ResourceLocation id, Optional<Tag> payload) -> {
+                assertEquals(((ClickEvent.Payload.Custom) event.payload()).key().toString(), id.toString());
+                assertEquals(((ClickEvent.Payload.Custom) event.payload()).nbt(), payload.orElseThrow().asString());
+            }
             default -> throw new AssertionError("Unexpected ClickEvent type: " + nms.getClass());
         }
     }
@@ -294,10 +309,10 @@ class AdventureCodecsTest {
                 .clickEvent(openUrl("https://github.com"))
                 .build(),
             style()
-                .hoverEvent(HoverEvent.showEntity(HoverEvent.ShowEntity.showEntity(
-                    Key.key(Key.MINECRAFT_NAMESPACE, "pig"),
+                .hoverEvent(showEntity(HoverEvent.ShowEntity.showEntity(
+                    key(Key.MINECRAFT_NAMESPACE, "pig"),
                     UUID.randomUUID(),
-                    Component.text("Dolores", TextColor.color(0x0a1ab9))
+                    text("Dolores", color(0x0a1ab9))
                 )))
                 .build()
         );

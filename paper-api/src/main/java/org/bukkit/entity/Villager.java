@@ -172,7 +172,7 @@ public interface Villager extends AbstractVillager {
     interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - VillagerType
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.8
         Type DESERT = getType("desert");
 
         Type JUNGLE = getType("jungle");
@@ -224,7 +224,7 @@ public interface Villager extends AbstractVillager {
     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
         // Start generate - VillagerProfession
-        // @GeneratedFrom 1.21.5
+        // @GeneratedFrom 1.21.8
         /**
          * Armorer profession. Wears a black apron. Armorers primarily trade for
          * iron armor, chainmail armor, and sometimes diamond armor.
@@ -391,4 +391,21 @@ public interface Villager extends AbstractVillager {
      * reputation regardless of its impact and the player associated.
      */
     public void clearReputations();
+
+    /**
+     * Updates the demand for Villager offers.
+     * Demand can rise and fall based on how often offers are traded.
+     * They can fall when an item is not traded for a while, or rise when the item is resupplied next.
+     * Demand is used to calculate the price of items in the Villager's offers.
+     * <br>
+     * <b>Note: Demand is stored per item and not per Villager.</b>
+     */
+    public void updateDemand();
+
+    /**
+     * Resets uses of all offers for the Villager. This also internally calls {@link #updateDemand()}.
+     * Calling this will trigger a {@link org.bukkit.event.entity.VillagerReplenishTradeEvent} for each offer that is restocked.
+     * Demand is still updated even if all events are canceled.
+     */
+    public void restock();
 }

@@ -127,7 +127,7 @@ public enum Particle implements Keyed {
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
     /**
-     * Uses {@link Color} as DataType (with alpha support)
+     * Uses {@link Color} as DataType
      */
     TINTED_LEAVES("tinted_leaves", Color.class),
     EGG_CRACK("egg_crack"),

@@ -32,12 +32,12 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Get a list of all blocks to be removed by the sponge.
+     * Get a list of all blocks to be cleared by the sponge.
      * <br>
      * This list is mutable and contains the blocks in their removed state, i.e.
-     * having a type of {@link Material#AIR}.
+     * having a type of {@link Material#AIR} or not waterlogged.
      *
-     * @return list of the to be removed blocks.
+     * @return list of the cleared blocks.
      */
     @NotNull
     public List<BlockState> getBlocks() {

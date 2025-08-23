@@ -20,6 +20,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -31,14 +32,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 @ApiStatus.Internal
-@NullMarked
 interface VanillaArgumentProvider {
 
-    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
-        .findFirst();
+    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class, VanillaArgumentProvider.class.getClassLoader()).findFirst();
 
     static VanillaArgumentProvider provider() {
         return PROVIDER.orElseThrow();
@@ -67,6 +65,8 @@ interface VanillaArgumentProvider {
     ArgumentType<ItemStackPredicate> itemStackPredicate();
 
     ArgumentType<NamedTextColor> namedColor();
+
+    ArgumentType<TextColor> hexColor();
 
     ArgumentType<Component> component();
 

@@ -1,10 +1,14 @@
 package io.papermc.paper;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.Random;
+import java.util.function.Predicate;
 import net.minecraft.Optionull;
+import net.minecraft.commands.PermissionSource;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IdMap;
 import net.minecraft.core.registries.Registries;
@@ -28,7 +32,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Random;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -83,6 +86,18 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(
             damageSource, damage, fallLocation, fallDistance
         ));
+    }
+
+    @Override
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, PermissionSource.RestrictedMarker {
+            @Override
+            public boolean test(final CommandSourceStack commandSourceStack) {
+                return this.predicate.test(commandSourceStack);
+            }
+        }
+
+        return new RestrictedPredicate(predicate);
     }
 
     @Override

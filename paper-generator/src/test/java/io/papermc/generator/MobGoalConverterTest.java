@@ -25,7 +25,7 @@ public class MobGoalConverterTest {
 
         List<String> missingClasses = new ArrayList<>();
         for (Class<Mob> nmsClass : classes) {
-            if (!MobGoalNames.bukkitMap.containsKey(nmsClass)) {
+            if (!MobGoalNames.BUKKIT_BRIDGE.containsKey(nmsClass)) {
                 missingClasses.add(nmsClass.getCanonicalName());
             }
         }

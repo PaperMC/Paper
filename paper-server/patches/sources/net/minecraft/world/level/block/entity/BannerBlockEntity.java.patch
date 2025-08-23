@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
-@@ -52,7 +_,7 @@
-     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-         super.saveAdditional(tag, registries);
-         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
+@@ -50,7 +_,7 @@
+     @Override
+     protected void saveAdditional(ValueOutput output) {
+         super.saveAdditional(output);
 -        if (!this.patterns.equals(BannerPatternLayers.EMPTY)) {
 +        if (!this.patterns.equals(BannerPatternLayers.EMPTY) || serialisingForNetwork.get()) { // Paper - always send patterns to client
-             tag.store("patterns", BannerPatternLayers.CODEC, registryOps, this.patterns);
+             output.store("patterns", BannerPatternLayers.CODEC, this.patterns);
          }
  
-@@ -64,7 +_,7 @@
-         super.loadAdditional(tag, registries);
-         this.name = parseCustomNameSafe(tag.get("CustomName"), registries);
-         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
--        this.patterns = tag.read("patterns", BannerPatternLayers.CODEC, registryOps).orElse(BannerPatternLayers.EMPTY);
-+        this.setPatterns(tag.read("patterns", BannerPatternLayers.CODEC, registryOps).orElse(BannerPatternLayers.EMPTY)); // CraftBukkit - apply limits
+@@ -61,7 +_,7 @@
+     protected void loadAdditional(ValueInput input) {
+         super.loadAdditional(input);
+         this.name = parseCustomNameSafe(input, "CustomName");
+-        this.patterns = input.read("patterns", BannerPatternLayers.CODEC).orElse(BannerPatternLayers.EMPTY);
++        this.setPatterns(input.read("patterns", BannerPatternLayers.CODEC).orElse(BannerPatternLayers.EMPTY)); // CraftBukkit - apply limits
      }
  
      @Override
-@@ -72,9 +_,18 @@
+@@ -69,9 +_,18 @@
          return ClientboundBlockEntityDataPacket.create(this);
      }
  
@@ -37,7 +37,7 @@
      }
  
      public BannerPatternLayers getPatterns() {
-@@ -94,7 +_,7 @@
+@@ -91,7 +_,7 @@
      @Override
      protected void applyImplicitComponents(DataComponentGetter componentGetter) {
          super.applyImplicitComponents(componentGetter);
@@ -46,9 +46,9 @@
          this.name = componentGetter.get(DataComponents.CUSTOM_NAME);
      }
  
-@@ -110,4 +_,13 @@
-         tag.remove("patterns");
-         tag.remove("CustomName");
+@@ -107,4 +_,13 @@
+         output.discard("patterns");
+         output.discard("CustomName");
      }
 +
 +    // CraftBukkit start

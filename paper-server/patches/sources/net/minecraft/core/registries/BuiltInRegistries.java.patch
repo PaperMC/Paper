@@ -1,32 +1,26 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -311,6 +_,17 @@
-     );
+@@ -325,6 +_,11 @@
+     public static final Registry<MapCodec<? extends DialogBody>> DIALOG_BODY_TYPE = registerSimple(Registries.DIALOG_BODY_TYPE, DialogBodyTypes::bootstrap);
      public static final Registry<Consumer<GameTestHelper>> TEST_FUNCTION = registerSimple(Registries.TEST_FUNCTION, BuiltinTestFunctions::bootstrap);
      public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
 +    // Paper start - add built-in registry conversions
-+    public static final io.papermc.paper.registry.data.util.Conversions BUILT_IN_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(new net.minecraft.resources.RegistryOps.RegistryInfoLookup() {
-+        @Override
-+        public <T> java.util.Optional<net.minecraft.resources.RegistryOps.RegistryInfo<T>> lookup(final ResourceKey<? extends Registry<? extends T>> registryRef) {
-+            final Registry<T> registry = net.minecraft.server.RegistryLayer.STATIC_ACCESS.lookupOrThrow(registryRef);
-+            return java.util.Optional.of(
-+                new net.minecraft.resources.RegistryOps.RegistryInfo<>(registry, registry, Lifecycle.experimental())
-+            );
-+        }
-+    });
++    public static final io.papermc.paper.registry.data.util.Conversions STATIC_ACCESS_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(
++        new net.minecraft.resources.RegistryOps.HolderLookupAdapter(net.minecraft.server.RegistryLayer.STATIC_ACCESS)
++    );
 +    // Paper end - add built-in registry conversions
  
      private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> key, BuiltInRegistries.RegistryBootstrap<T> bootstrap) {
          return internalRegister(key, new MappedRegistry<>(key, Lifecycle.stable(), false), bootstrap);
-@@ -336,6 +_,7 @@
+@@ -350,6 +_,7 @@
          ResourceKey<? extends Registry<T>> key, R registry, BuiltInRegistries.RegistryBootstrap<T> bootstrap
      ) {
          Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
-+        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry.key(), registry); // Paper - initialize API registry
++        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry); // Paper - initialize API registry
          ResourceLocation resourceLocation = key.location();
          LOADERS.put(resourceLocation, () -> bootstrap.run(registry));
          WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN);
-@@ -343,16 +_,34 @@
+@@ -357,16 +_,34 @@
      }
  
      public static void bootStrap() {
@@ -61,11 +55,11 @@
          });
      }
  
-@@ -361,6 +_,7 @@
+@@ -375,6 +_,7 @@
  
          for (Registry<?> registry : REGISTRY) {
              bindBootstrappedTagsToEmpty(registry);
-+            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), BUILT_IN_CONVERSIONS); // Paper
++            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), STATIC_ACCESS_CONVERSIONS); // Paper
              registry.freeze();
          }
      }

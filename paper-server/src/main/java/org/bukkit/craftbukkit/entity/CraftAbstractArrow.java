@@ -173,6 +173,12 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     public void setHitSound(org.bukkit.Sound sound) {
         this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
     }
+
+    // Override to ensure the entity data flag is set; otherwise, the isNoPhysics() method always returns false
+    @Override
+    public void setNoPhysics(final boolean noPhysics) {
+        this.getHandle().setNoPhysics(noPhysics);
+    }
     // Paper end
 
     // Paper start - Fix PickupStatus getting reset - Copy of CraftProjectile#setShooter, calling setOwner(Entity,boolean)
