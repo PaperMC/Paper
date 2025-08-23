@@ -23,6 +23,7 @@
 
 package com.destroystokyo.paper;
 
+import java.util.Objects;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -38,19 +39,32 @@ import org.bukkit.Tag;
 public class MaterialTags {
 
     private static NamespacedKey keyFor(String key) {
-        //noinspection deprecation
         return new NamespacedKey("paper", key + "_settag");
     }
-    public static final MaterialSetTag ARROWS = new MaterialSetTag(keyFor("arrows"))
-        .endsWith("ARROW")
-        .ensureSize("ARROWS", 3).lock();
+
+    private static MaterialSetTag replacedBy(Tag<Material> vanillaTag) {
+        return replacedBy(vanillaTag, Objects.requireNonNull(vanillaTag).key().value());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static MaterialSetTag replacedBy(Tag<Material> vanillaTag, String legacyKey) {
+        Objects.requireNonNull(vanillaTag);
+        return new MaterialSetTag(keyFor(legacyKey)).add(vanillaTag).lock();
+    }
+
+    /**
+     * @deprecated in favour of {@link Tag#ITEMS_ARROWS}
+     */
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag ARROWS = replacedBy(Tag.ITEMS_ARROWS);
 
     /**
      * Covers all colors of beds.
+     *
+     * @deprecated in favour of {@link Tag#BEDS}
      */
-    public static final MaterialSetTag BEDS = new MaterialSetTag(keyFor("beds"))
-        .endsWith("_BED")
-        .ensureSize("BEDS", 16).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag BEDS = replacedBy(Tag.BEDS);
 
     /**
      * Covers all bucket items.
@@ -61,9 +75,11 @@ public class MaterialTags {
 
     /**
      * Covers coal and charcoal.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_COALS}
      */
-    public static final MaterialSetTag COALS = new MaterialSetTag(keyFor("coals"))
-        .add(Material.COAL, Material.CHARCOAL).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag COALS = replacedBy(Tag.ITEMS_COALS);
 
     /**
      * Covers both cobblestone wall variants.
@@ -87,10 +103,11 @@ public class MaterialTags {
 
     /**
      * Covers all colors of concrete powder.
+     *
+     * @deprecated in favour of {@link Tag#CONCRETE_POWDER}
      */
-    public static final MaterialSetTag CONCRETE_POWDER = new MaterialSetTag(keyFor("concrete_powder"))
-        .endsWith("_CONCRETE_POWDER")
-        .ensureSize("CONCRETE_POWDER", 16).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag CONCRETE_POWDER = replacedBy(Tag.CONCRETE_POWDER);
 
     /**
      * Covers the two types of cooked fish.
@@ -100,10 +117,11 @@ public class MaterialTags {
 
     /**
      * Covers all variants of doors.
+     *
+     * @deprecated in favour of {@link Tag#DOORS}
      */
-    public static final MaterialSetTag DOORS = new MaterialSetTag(keyFor("doors"))
-        .endsWith("_DOOR")
-        .ensureSize("DOORS", 21).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag DOORS = replacedBy(Tag.DOORS);
 
     /**
      * Covers all dyes.
@@ -114,17 +132,19 @@ public class MaterialTags {
 
     /**
      * Covers all variants of gates.
+     *
+     * @deprecated in favour of {@link Tag#FENCE_GATES}
      */
-    public static final MaterialSetTag FENCE_GATES = new MaterialSetTag(keyFor("fence_gates"))
-        .endsWith("_GATE")
-        .ensureSize("FENCE_GATES", 12).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag FENCE_GATES = replacedBy(Tag.FENCE_GATES);
 
     /**
      * Covers all variants of fences.
+     *
+     * @deprecated in favour of {@link Tag#FENCES}
      */
-    public static final MaterialSetTag FENCES = new MaterialSetTag(keyFor("fences"))
-        .endsWith("_FENCE")
-        .ensureSize("FENCES", 13).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag FENCES = replacedBy(Tag.FENCES);
 
     /**
      * Covers all variants of fish buckets.
@@ -133,7 +153,7 @@ public class MaterialTags {
         .add(Material.COD_BUCKET, Material.PUFFERFISH_BUCKET, Material.SALMON_BUCKET, Material.TROPICAL_FISH_BUCKET).lock();
 
     /**
-     * Covers the non-colored glass and 16 stained glass (not panes).
+     * Covers the non-colored glass and 16 stained glasses (not panes).
      */
     public static final MaterialSetTag GLASS = new MaterialSetTag(keyFor("glass"))
         .endsWith("_GLASS")
@@ -214,10 +234,11 @@ public class MaterialTags {
     /**
      * Covers all ores.
      */
+    @SuppressWarnings("unchecked")
     public static final MaterialSetTag ORES = new MaterialSetTag(keyFor("ores"))
-        .add(Material.ANCIENT_DEBRIS)
-        .endsWith("_ORE")
-        .ensureSize("ORES", 19).lock();
+        .add(Tag.COAL_ORES, Tag.COPPER_ORES, Tag.IRON_ORES, Tag.GOLD_ORES,
+            Tag.LAPIS_ORES, Tag.REDSTONE_ORES, Tag.DIAMOND_ORES, Tag.EMERALD_ORES)
+        .add(Material.ANCIENT_DEBRIS, Material.NETHER_QUARTZ_ORE).lock();
 
     /**
      * Covers all piston typed items and blocks including the piston head and moving piston.
@@ -235,10 +256,11 @@ public class MaterialTags {
 
     /**
      * Covers all wooden pressure plates and the weighted pressure plates and the stone pressure plate.
+     *
+     * @deprecated in favour of {@link Tag#PRESSURE_PLATES}
      */
-    public static final MaterialSetTag PRESSURE_PLATES = new MaterialSetTag(keyFor("pressure_plates"))
-        .endsWith("_PRESSURE_PLATE")
-        .ensureSize("PRESSURE_PLATES", 16).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag PRESSURE_PLATES = replacedBy(Tag.PRESSURE_PLATES);
 
     /**
      * Covers the variants of prismarine blocks.
@@ -298,10 +320,11 @@ public class MaterialTags {
 
     /**
      * Covers the non-colored and colored shulker boxes.
+     *
+     * @deprecated in favour of {@link Tag#SHULKER_BOXES}
      */
-    public static final MaterialSetTag SHULKER_BOXES = new MaterialSetTag(keyFor("shulker_boxes"))
-        .endsWith("SHULKER_BOX")
-        .ensureSize("SHULKER_BOXES", 17).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag SHULKER_BOXES = replacedBy(Tag.SHULKER_BOXES);
 
     /**
      * Covers zombie, creeper, skeleton, dragon, and player heads.
@@ -335,43 +358,43 @@ public class MaterialTags {
 
     /**
      * Covers all variants of trapdoors.
+     *
+     * @deprecated in favour of {@link Tag#TRAPDOORS}
      */
-    public static final MaterialSetTag TRAPDOORS = new MaterialSetTag(keyFor("trapdoors"))
-        .endsWith("_TRAPDOOR")
-        .ensureSize("TRAPDOORS", 21).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag TRAPDOORS = replacedBy(Tag.TRAPDOORS);
 
     /**
      * Covers all wood variants of doors.
+     *
+     * @deprecated in favour of {@link Tag#WOODEN_DOORS}
      */
-    public static final MaterialSetTag WOODEN_DOORS = new MaterialSetTag(keyFor("wooden_doors"))
-        .endsWith("_DOOR")
-        .not(Material.IRON_DOOR)
-        .notContains("COPPER")
-        .ensureSize("WOODEN_DOORS", 12).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag WOODEN_DOORS = replacedBy(Tag.WOODEN_DOORS);
 
     /**
      * Covers all wood variants of fences.
+     *
+     * @deprecated in favour of {@link Tag#WOODEN_FENCES}
      */
-    public static final MaterialSetTag WOODEN_FENCES = new MaterialSetTag(keyFor("wooden_fences"))
-        .endsWith("_FENCE")
-        .not(Material.NETHER_BRICK_FENCE)
-        .ensureSize("WOODEN_FENCES", 12).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag WOODEN_FENCES = replacedBy(Tag.WOODEN_FENCES);
 
     /**
      * Covers all wood variants of trapdoors.
+     *
+     * @deprecated in favour of {@link Tag#WOODEN_TRAPDOORS}
      */
-    public static final MaterialSetTag WOODEN_TRAPDOORS = new MaterialSetTag(keyFor("wooden_trapdoors"))
-        .endsWith("_TRAPDOOR")
-        .not(Material.IRON_TRAPDOOR)
-        .notContains("COPPER")
-        .ensureSize("WOODEN_TRAPDOORS", 12).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag WOODEN_TRAPDOORS = replacedBy(Tag.WOODEN_TRAPDOORS);
 
     /**
      * Covers the wood variants of gates.
+     *
+     * @deprecated in favour of {@link Tag#FENCE_GATES}
      */
-    public static final MaterialSetTag WOODEN_GATES = new MaterialSetTag(keyFor("wooden_gates"))
-        .endsWith("_GATE")
-        .ensureSize("WOODEN_GATES", 12).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag WOODEN_GATES = replacedBy(Tag.FENCE_GATES, "wooden_gates");
 
     /**
      * Covers the variants of purpur.
@@ -382,10 +405,11 @@ public class MaterialTags {
 
     /**
      * Covers the variants of signs.
+     *
+     * @deprecated in favour of {@link Tag#ALL_SIGNS}
      */
-    public static final MaterialSetTag SIGNS = new MaterialSetTag(keyFor("signs"))
-        .endsWith("_SIGN")
-        .ensureSize("SIGNS", 48).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag SIGNS = replacedBy(Tag.ALL_SIGNS, "signs");
 
     /**
      * Covers the variants of a regular torch.
@@ -424,96 +448,113 @@ public class MaterialTags {
 
     /**
      * Covers the variants of rails.
+     *
+     * @deprecated in favour of {@link Tag#RAILS}
      */
-    public static final MaterialSetTag RAILS = new MaterialSetTag(keyFor("rails"))
-        .endsWith("RAIL")
-        .ensureSize("RAILS", 4).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag RAILS = replacedBy(Tag.RAILS);
 
     /**
      * Covers the variants of swords.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_SWORDS}
      */
-    public static final MaterialSetTag SWORDS = new MaterialSetTag(keyFor("swords"))
-        .endsWith("_SWORD")
-        .ensureSize("SWORDS", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag SWORDS = replacedBy(Tag.ITEMS_SWORDS);
 
     /**
      * Covers the variants of shovels.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_SHOVELS}
      */
-    public static final MaterialSetTag SHOVELS = new MaterialSetTag(keyFor("shovels"))
-        .endsWith("_SHOVEL")
-        .ensureSize("SHOVELS", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag SHOVELS = replacedBy(Tag.ITEMS_SHOVELS);
 
     /**
      * Covers the variants of pickaxes.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_PICKAXES}
      */
-    public static final MaterialSetTag PICKAXES = new MaterialSetTag(keyFor("pickaxes"))
-        .endsWith("_PICKAXE")
-        .ensureSize("PICKAXES", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag PICKAXES = replacedBy(Tag.ITEMS_PICKAXES);
 
     /**
      * Covers the variants of axes.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_AXES}
      */
-    public static final MaterialSetTag AXES = new MaterialSetTag(keyFor("axes"))
-        .endsWith("_AXE")
-        .ensureSize("AXES", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag AXES = replacedBy(Tag.ITEMS_AXES);
 
     /**
      * Covers the variants of hoes.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_HOES}
      */
-    public static final MaterialSetTag HOES = new MaterialSetTag(keyFor("hoes"))
-        .endsWith("_HOE")
-        .ensureSize("HOES", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag HOES = replacedBy(Tag.ITEMS_HOES);
 
     /**
      * Covers the variants of helmets.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_HEAD_ARMOR}
      */
-    public static final MaterialSetTag HELMETS = new MaterialSetTag(keyFor("helmets"))
-        .endsWith("_HELMET")
-        .ensureSize("HELMETS", 7).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag HELMETS = replacedBy(Tag.ITEMS_HEAD_ARMOR, "helmets");
 
     /**
      * Covers the variants of items that can be equipped in the helmet slot.
+     *
+     * @deprecated any item can be equippable with the right data component set on it
      */
+    @Deprecated(since = "1.21.8")
+    @SuppressWarnings("unchecked")
     public static final MaterialSetTag HEAD_EQUIPPABLE = new MaterialSetTag(keyFor("head_equippable"))
-        .endsWith("_HELMET")
-        .add(SKULLS)
-        .add(Material.CARVED_PUMPKIN)
-        .ensureSize("HEAD_EQUIPPABLE", 22).lock();
+        .add(Tag.ITEMS_HEAD_ARMOR, Tag.ITEMS_SKULLS)
+        .add(Material.CARVED_PUMPKIN).lock();
 
     /**
      * Covers the variants of chestplate.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_CHEST_ARMOR}
      */
-    public static final MaterialSetTag CHESTPLATES = new MaterialSetTag(keyFor("chestplates"))
-        .endsWith("_CHESTPLATE")
-        .ensureSize("CHESTPLATES", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag CHESTPLATES = replacedBy(Tag.ITEMS_CHEST_ARMOR, "chestplates");
 
     /**
      * Covers the variants of items that can be equipped in the chest slot.
+     *
+     * @deprecated any item can be equippable with the right data component set on it
      */
+    @Deprecated(since = "1.21.8")
+    @SuppressWarnings("unchecked")
     public static final MaterialSetTag CHEST_EQUIPPABLE = new MaterialSetTag(keyFor("chest_equippable"))
-        .endsWith("_CHESTPLATE")
-        .add(Material.ELYTRA)
-        .ensureSize("CHEST_EQUIPPABLE", 7).lock();
+        .add(Tag.ITEMS_CHEST_ARMOR)
+        .add(Material.ELYTRA).lock();
 
     /**
      * Covers the variants of leggings.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_LEG_ARMOR}
      */
-    public static final MaterialSetTag LEGGINGS = new MaterialSetTag(keyFor("leggings"))
-        .endsWith("_LEGGINGS")
-        .ensureSize("LEGGINGS", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag LEGGINGS = replacedBy(Tag.ITEMS_LEG_ARMOR, "leggings");
 
     /**
      * Covers the variants of boots.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_FOOT_ARMOR}
      */
-    public static final MaterialSetTag BOOTS = new MaterialSetTag(keyFor("boots"))
-        .endsWith("_BOOTS")
-        .ensureSize("BOOTS", 6).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag BOOTS = replacedBy(Tag.ITEMS_FOOT_ARMOR, "boots");
 
     /**
      * Covers all variants of armor.
      */
-    public static final MaterialSetTag ARMOR = new MaterialSetTag(keyFor("armor")).add(HELMETS, CHESTPLATES, LEGGINGS, BOOTS)
-        .ensureSize("ARMOR", 25).lock();
+    @SuppressWarnings("unchecked")
+    public static final MaterialSetTag ARMOR = new MaterialSetTag(keyFor("armor"))
+        .add(Tag.ITEMS_HEAD_ARMOR, Tag.ITEMS_CHEST_ARMOR, Tag.ITEMS_LEG_ARMOR, Tag.ITEMS_FOOT_ARMOR)
+        .lock();
 
     /**
      * Covers the variants of bows.
@@ -521,21 +562,27 @@ public class MaterialTags {
     public static final MaterialSetTag BOWS = new MaterialSetTag(keyFor("bows"))
         .add(Material.BOW)
         .add(Material.CROSSBOW)
-        .ensureSize("BOWS", 2).lock();
+        .lock();
 
     /**
      * Covers the variants of player-throwable projectiles (not requiring a bow or any other "assistance").
      */
+    @SuppressWarnings("unchecked")
     public static final MaterialSetTag THROWABLE_PROJECTILES = new MaterialSetTag(keyFor("throwable_projectiles"))
-        .add(Material.EGG, Material.SNOWBALL, Material.SPLASH_POTION, Material.TRIDENT, Material.ENDER_PEARL, Material.EXPERIENCE_BOTTLE, Material.FIREWORK_ROCKET).lock();
+        .add(Tag.ITEMS_EGGS)
+        .add(Material.SNOWBALL, Material.SPLASH_POTION, Material.LINGERING_POTION,
+            Material.TRIDENT, Material.ENDER_PEARL, Material.EXPERIENCE_BOTTLE, Material.FIREWORK_ROCKET,
+            Material.WIND_CHARGE)
+        .lock();
 
     /**
-     * Covers materials that can be colored, such as wool, shulker boxes, stained glass etc.
+     * Covers materials that can be colored, such as wool, shulker boxes, stained glasses etc.
      */
     @SuppressWarnings("unchecked")
     public static final MaterialSetTag COLORABLE = new MaterialSetTag(keyFor("colorable"))
-        .add(Tag.WOOL, Tag.CARPETS).add(SHULKER_BOXES, STAINED_GLASS, STAINED_GLASS_PANES, CONCRETES, BEDS).lock();
-    //.ensureSize("COLORABLE", 81).lock(); unit test don't have the vanilla item tags, so counts don't line up for real
+        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS)
+        .add(STAINED_GLASS, STAINED_GLASS_PANES, CONCRETES)
+        .lock();
 
     /**
      * Covers the variants of coral.
@@ -561,15 +608,11 @@ public class MaterialTags {
 
     /**
      * Covers all items that can be enchanted from the enchantment table or anvil.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_ENCHANTABLE_VANISHING} and other similar enchantable tags
      */
-    public static final MaterialSetTag ENCHANTABLE = new MaterialSetTag(keyFor("enchantable"))
-        .add(PICKAXES, SWORDS, SHOVELS, AXES, HOES, HELMETS, CHEST_EQUIPPABLE, LEGGINGS, BOOTS, BOWS)
-        .add(Material.TRIDENT, Material.SHIELD, Material.FISHING_ROD, Material.SHEARS,
-            Material.FLINT_AND_STEEL, Material.CARROT_ON_A_STICK, Material.WARPED_FUNGUS_ON_A_STICK,
-            Material.BRUSH, Material.CARVED_PUMPKIN, Material.COMPASS, Material.SKELETON_SKULL,
-            Material.WITHER_SKELETON_SKULL, Material.PLAYER_HEAD, Material.ZOMBIE_HEAD,
-            Material.CREEPER_HEAD, Material.DRAGON_HEAD, Material.PIGLIN_HEAD, Material.MACE)
-        .ensureSize("ENCHANTABLE", 76).lock();
+    @Deprecated(since = "1.21.8")
+    public static final MaterialSetTag ENCHANTABLE = replacedBy(Tag.ITEMS_ENCHANTABLE_VANISHING, "enchantable"); // this tag already cover the others
 
     /**
      * Covers the variants of raw ores.
