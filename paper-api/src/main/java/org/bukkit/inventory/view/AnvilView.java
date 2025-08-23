@@ -2,16 +2,16 @@ package org.bukkit.inventory.view;
 
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * anvil view data.
  */
+@NullMarked
 public interface AnvilView extends InventoryView {
 
-    @NotNull
     @Override
     AnvilInventory getTopInventory();
 
@@ -66,7 +66,6 @@ public interface AnvilView extends InventoryView {
      */
     void setMaximumRepairCost(int levels);
 
-    // Paper start - bypass anvil level restrictions
     /**
      * Returns whether this view will bypass the vanilla enchantment level restriction
      * when applying enchantments to an item or not.
@@ -88,5 +87,8 @@ public interface AnvilView extends InventoryView {
      * @see AnvilView#bypassesEnchantmentLevelRestriction()
      */
     void bypassEnchantmentLevelRestriction(boolean bypassEnchantmentLevelRestriction);
-    // Paper end - bypass anvil level restrictions
+
+    boolean keepLevels();
+
+    public void setKeepLevelsWithRestriction(boolean keepLevels);
 }
