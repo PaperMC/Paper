@@ -1100,7 +1100,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Color getWaypointColor() {
-        return getHandle().waypointIcon().color.map(Color::fromRGB).orElse(null);
+        return getHandle().waypointIcon().color.map(Color::fromARGB).orElse(null);
     }
 
     @Override
@@ -1110,16 +1110,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setWaypointColor(final Color color) {
-        final Waypoint.Icon icon = getHandle().waypointIcon();
-        icon.color = Optional.ofNullable(color).map(Color::asRGB);
-        ((ServerLevel) getHandle().level()).getWaypointManager().updateWaypoint(getHandle());
+        getHandle().waypointIcon().color = Optional.ofNullable(color).map(Color::asARGB);
         updateWaypoint();
     }
 
     @Override
     public void setWaypointStyle(final Key key) {
-        final Waypoint.Icon icon = getHandle().waypointIcon();
-        icon.style = key == null ? WaypointStyleAssets.DEFAULT : ResourceKey.create(WaypointStyleAssets.ROOT_ID, PaperAdventure.asVanilla(key));
+        getHandle().waypointIcon().style = key == null
+            ? WaypointStyleAssets.DEFAULT
+            : ResourceKey.create(WaypointStyleAssets.ROOT_ID, PaperAdventure.asVanilla(key));
         updateWaypoint();
     }
 

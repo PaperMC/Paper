@@ -1502,23 +1502,21 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Sets the visual style of the waypoint icon using the specified {@link Key}.
      * <p>
-     * Passing {@code null} will reset the style to the default.
-     * <p>
      * Minecraft has the keys "minecraft:bowtie" and "minecraft:default" built in.
      *
      * @param key the key representing the style, or {@code null} to use the default style
      * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
      */
-    void setWaypointStyle(@org.jspecify.annotations.Nullable Key key);
+    void setWaypointStyle(@Nullable Key key);
 
     /**
      * Sets the color of the waypoint icon.
-     * <p>
-     * Passing {@code null} will remove any custom color and use the default.
      *
-     * @param color the new color to apply to the waypoint icon, or {@code null} to use the default color
+     * @param color the new color to apply to the waypoint icon, or {@code null} to use the default color.
+     *              While the color may contain alpha values, the client does not recieve them.
+     * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
      */
-    void setWaypointColor(@org.jspecify.annotations.Nullable Color color);
+    void setWaypointColor(@Nullable Color color);
 
     /**
      * Gets the current visual style of the waypoint icon.
@@ -1532,8 +1530,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Gets the current color of the waypoint icon, if any.
      *
-     * @return the icon's color, or {@code null} if the default color is used
+     * @return the icon's color, or {@code null} if the default color is used.
+     *         While the color may contain alpha values, the client does not recieve them.
+     * @see #setWaypointColor(Color)
+     * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
      */
-    @org.jspecify.annotations.Nullable
+    @Nullable
     Color getWaypointColor();
 }
