@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
@@ -1102,8 +1104,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public NamespacedKey getWaypointStyle() {
-        return CraftNamespacedKey.fromMinecraft(getHandle().waypointIcon().style.location());
+    public Key getWaypointStyle() {
+        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.location());
     }
 
     @Override
@@ -1115,9 +1117,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public void setWaypointStyle(final NamespacedKey key) {
+    public void setWaypointStyle(final Key key) {
         final Waypoint.Icon icon = getHandle().waypointIcon();
-        icon.style = key == null ? WaypointStyleAssets.DEFAULT : ResourceKey.create(WaypointStyleAssets.ROOT_ID, CraftNamespacedKey.toMinecraft(key));
+        icon.style = key == null ? WaypointStyleAssets.DEFAULT : ResourceKey.create(WaypointStyleAssets.ROOT_ID, PaperAdventure.asVanilla(key));
         updateWaypoint();
     }
 

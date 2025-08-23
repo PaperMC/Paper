@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
+import io.papermc.paper.world.damagesource.FallLocationType;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -1498,15 +1500,16 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @NotNull CombatTracker getCombatTracker();
 
     /**
-     * Sets the visual style of the waypoint icon using the specified {@link NamespacedKey}.
+     * Sets the visual style of the waypoint icon using the specified {@link Key}.
      * <p>
      * Passing {@code null} will reset the style to the default.
      * <p>
-     * minecraft has the keys, "minecraft:bowtie" and "minecraft:default" built in.
+     * Minecraft has the keys "minecraft:bowtie" and "minecraft:default" built in.
      *
-     * @param key the namespaced key representing the style, or {@code null} to use the default style
+     * @param key the key representing the style, or {@code null} to use the default style
+     * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
      */
-    void setWaypointStyle(@org.jspecify.annotations.Nullable NamespacedKey key);
+    void setWaypointStyle(@org.jspecify.annotations.Nullable Key key);
 
     /**
      * Sets the color of the waypoint icon.
@@ -1520,9 +1523,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Gets the current visual style of the waypoint icon.
      *
-     * @return the {@link NamespacedKey} representing the icon's style
+     * @return the {@link Key} representing the icon's style
+     * @see #setWaypointStyle(Key)
+     * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
      */
-    NamespacedKey getWaypointStyle();
+    Key getWaypointStyle();
 
     /**
      * Gets the current color of the waypoint icon, if any.
