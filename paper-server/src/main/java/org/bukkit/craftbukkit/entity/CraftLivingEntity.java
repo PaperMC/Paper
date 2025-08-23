@@ -1191,10 +1191,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setWaypointColor(final Color color) {
-        final Optional<Integer> mewColor = Optional.ofNullable(color).map(Color::asARGB);
-        if (Objects.equals(getHandle().waypointIcon().color, mewColor)) return;
+        final Optional<Integer> newColor = Optional.ofNullable(color).map(Color::asARGB);
+        if (Objects.equals(getHandle().waypointIcon().color, newColor)) return;
 
-        getHandle().waypointIcon().color = mewColor;
+        getHandle().waypointIcon().color = newColor;
         updateWaypoint();
     }
 
