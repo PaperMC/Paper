@@ -1525,6 +1525,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @see #setWaypointStyle(Key)
      * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
      */
+    @NotNull
     Key getWaypointStyle();
 
     /**
