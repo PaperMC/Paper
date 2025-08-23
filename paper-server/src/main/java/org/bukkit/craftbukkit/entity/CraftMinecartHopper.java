@@ -1,10 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.vehicle.MinecartHopper;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.inventory.Inventory;
+import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public class CraftMinecartHopper extends CraftMinecartContainer implements HopperMinecart, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
 
@@ -44,4 +47,18 @@ public class CraftMinecartHopper extends CraftMinecartContainer implements Hoppe
     public void setPickupCooldown(int cooldown) {
         throw new UnsupportedOperationException("Hopper minecarts don't have cooldowns");
     }
+
+    @Override
+    public void setTransferAmount(@Nullable final Integer transferAmount) {
+        if (transferAmount != null) {
+            Preconditions.checkArgument(transferAmount > 0, "Hopper transfer amount cannot be less than 1");
+        }
+        this.getHandle().setTransferAmount(transferAmount);
+    }
+
+    @Override
+    public Optional<Integer> getTransferAmount() {
+        return this.getHandle().getTransferAmount();
+    }
+
 }

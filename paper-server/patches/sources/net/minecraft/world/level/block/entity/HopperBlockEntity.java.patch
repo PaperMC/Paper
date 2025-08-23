@@ -1,12 +1,17 @@
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-@@ -38,6 +_,40 @@
+@@ -38,6 +_,45 @@
      private long tickedGameTime;
      private Direction facing;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
++
++    // Paper start - Allow you to set the number of items that a hopper moves
++    @org.jspecify.annotations.Nullable
++    private Integer transferAmount = null;
++    // Paper end - Allow you to set the number of items that a hopper moves
 +
 +    @Override
 +    public List<ItemStack> getContents() {
@@ -41,6 +46,26 @@
      public HopperBlockEntity(BlockPos pos, BlockState blockState) {
          super(BlockEntityType.HOPPER, pos, blockState);
          this.facing = blockState.getValue(HopperBlock.FACING);
+@@ -52,6 +_,7 @@
+         }
+ 
+         this.cooldownTime = input.getIntOr("TransferCooldown", -1);
++        this.transferAmount = input.getInt("TransferAmount").orElse(null); // Paper - Allow you to set the number of items that a hopper moves
+     }
+ 
+     @Override
+@@ -62,6 +_,11 @@
+         }
+ 
+         output.putInt("TransferCooldown", this.cooldownTime);
++        // Paper start - Allow you to set the number of items that a hopper moves
++        if (this.transferAmount != null) {
++            output.putInt("TransferAmount", this.transferAmount);
++        }
++        // Paper end - Allow you to set the number of items that a hopper moves
+     }
+ 
+     @Override
 @@ -98,7 +_,14 @@
          blockEntity.tickedGameTime = level.getGameTime();
          if (!blockEntity.isOnCooldown()) {
@@ -305,3 +330,22 @@
          Block block = state.getBlock();
          if (block instanceof WorldlyContainerHolder) {
              return ((WorldlyContainerHolder)block).getContainer(state, level, pos);
+@@ -413,6 +_,18 @@
+     public boolean isGridAligned() {
+         return true;
+     }
++
++    // Paper start - Allow you to set the number of items that a hopper moves
++    @Override
++    public void setTransferAmount(@org.jspecify.annotations.Nullable final Integer transferAmount) {
++        this.transferAmount = transferAmount;
++    }
++
++    @Override
++    public java.util.Optional<Integer> getTransferAmount() {
++        return java.util.Optional.ofNullable(this.transferAmount);
++    }
++    // Paper end - Allow you to set the number of items that a hopper moves
+ 
+     public void setCooldown(int cooldownTime) {
+         this.cooldownTime = cooldownTime;
