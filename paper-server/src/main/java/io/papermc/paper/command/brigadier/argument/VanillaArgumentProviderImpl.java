@@ -2,6 +2,7 @@ package io.papermc.paper.command.brigadier.argument;
 
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ForwardingSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.mojang.brigadier.StringReader;
@@ -232,13 +233,26 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
-    public ArgumentType<Set<Axis>> axes() {
+    public ArgumentType<AxisSet> axes() {
+        final class AxisSetImpl extends ForwardingSet<Axis> implements AxisSet {
+            private final EnumSet<Axis> inner;
+
+            public AxisSetImpl(final EnumSet<Axis> inner) {
+                this.inner = inner;
+            }
+
+            @Override
+            protected Set<Axis> delegate() {
+                return this.inner;
+            }
+        }
+
         return this.wrap(SwizzleArgument.swizzle(), (result) -> {
             final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
                 bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
             }
-            return bukkitAxes;
+            return new AxisSetImpl(bukkitAxes);
         });
     }
 

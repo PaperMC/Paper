@@ -70,7 +70,7 @@ interface VanillaArgumentProvider {
     
     ArgumentType<AngleResolver> angle();
 
-    ArgumentType<Set<Axis>> axes();
+    ArgumentType<AxisSet> axes();
 
     ArgumentType<BlockState> blockState();
 

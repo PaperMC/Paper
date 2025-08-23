@@ -196,7 +196,7 @@ public final class ArgumentTypes {
      * @see org.bukkit.Axis
      */
     @ApiStatus.Experimental
-    public static ArgumentType<Set<Axis>> axes() {
+    public static ArgumentType<AxisSet> axes() {
         return provider().axes();
     }
 
