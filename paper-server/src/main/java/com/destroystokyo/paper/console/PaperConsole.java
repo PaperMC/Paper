@@ -4,13 +4,19 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.console.BrigadierCompletionMatcher;
 import io.papermc.paper.console.BrigadierConsoleParser;
 import io.papermc.paper.util.PaperCacheDir;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.minecraft.server.dedicated.DedicatedServer;
+import net.minecraft.util.StringUtil;
 import net.minecrell.terminalconsole.SimpleTerminalConsole;
 import org.bukkit.craftbukkit.command.ConsoleCommandCompleter;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 
 public final class PaperConsole extends SimpleTerminalConsole {
+
+    private static final ComponentLogger LOGGER = ComponentLogger.logger(PaperConsole.class);
 
     private final DedicatedServer server;
 
@@ -46,12 +52,24 @@ public final class PaperConsole extends SimpleTerminalConsole {
         // terminals interpret pressing [enter] and pasting a multi-line string differently,
         // the latter makes the line reader read it as a single line - and we don't want that
         // https://github.com/PaperMC/Paper/issues/13006
-        for (String line : command.split("\n")) {
-            if (line.isEmpty()) {
-                continue;
-            }
-            this.server.handleConsoleInput(line, this.server.createCommandSourceStack());
-        }
+        command.lines()
+            .filter(line -> !line.isEmpty())
+            .forEach(line -> {
+                for (char character : line.toCharArray()) {
+                    if (!StringUtil.isAllowedChatCharacter(character)) {
+                        LOGGER.info(
+                            Component.text()
+                                .append(Component.text("Illegal console input character: 0x"))
+                                .append(Component.text(Integer.toHexString(character)))
+                                .color(NamedTextColor.RED)
+                                .build()
+                        );
+                        return;
+                    }
+                }
+
+                this.server.handleConsoleInput(line, this.server.createCommandSourceStack());
+            });
     }
 
     @Override
