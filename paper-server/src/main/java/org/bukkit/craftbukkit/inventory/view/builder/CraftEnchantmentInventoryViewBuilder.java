@@ -9,32 +9,43 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.EnchantingTableBlockEntity;
 import org.bukkit.inventory.view.EnchantmentView;
+import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
+import org.jspecify.annotations.NullMarked;
 
-public class CraftEnchantmentInventoryViewBuilder extends CraftAbstractLocationInventoryViewBuilder<EnchantmentView> {
+@NullMarked
+public class CraftEnchantmentInventoryViewBuilder extends CraftLocationInventoryViewBuilder<EnchantmentView> {
 
     public CraftEnchantmentInventoryViewBuilder(final MenuType<?> handle) {
-        super(handle);
+        super(handle, null);
+    }
+
+    @Override
+    public LocationInventoryViewBuilder<EnchantmentView> copy() {
+        final CraftEnchantmentInventoryViewBuilder builder = new CraftEnchantmentInventoryViewBuilder(super.handle);
+        builder.title = super.title;
+        builder.checkReachable = super.checkReachable;
+        builder.bukkitLocation = super.bukkitLocation;
+        return builder;
     }
 
     @Override
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
-        if (this.world == null) {
-            this.world = player.level();
+        setupLocation(); // prevents state from being corrupted since the builder mutates this
+        if (super.position == null) {
+            super.position = player.blockPosition();
+            super.world = player.level();
+
+            super.defaultTitle = new EnchantingTableBlockEntity(super.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
+            return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(super.world, super.position));
         }
 
-        if (this.position == null) {
-            this.position = player.blockPosition();
-            super.defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
-            return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(this.world, this.position));
-        }
-
-        final BlockEntity entity = this.world.getBlockEntity(position);
+        final BlockEntity entity = super.world.getBlockEntity(position);
         if (entity instanceof final EnchantingTableBlockEntity enchantingBlockEntity) {
             super.defaultTitle = enchantingBlockEntity.getDisplayName();
         } else {
-            super.defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
+            super.defaultTitle = new EnchantingTableBlockEntity(super.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
         }
 
-        return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(this.world, this.position));
+        return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(super.world, super.position));
     }
 }
