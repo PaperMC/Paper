@@ -61,13 +61,13 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu, AnvilInventory
     }
 
     @Override
-    public boolean keepLevels() {
-        return this.container.keepLevels;
+    public boolean shouldOverrideLevelsInRestriction() {
+        return this.container.shouldOverrideLevelsInRestriction;
     }
 
     @Override
-    public void setKeepLevelsWithRestriction(final boolean keepLevels) {
-        this.container.keepLevels = keepLevels;
+    public void shouldOverrideLevelsInRestriction(final boolean shouldOverrideLevelsInRestriction) {
+        this.container.shouldOverrideLevelsInRestriction = shouldOverrideLevelsInRestriction;
     }
 
     public void updateFromLegacy(CraftInventoryAnvil legacy) {

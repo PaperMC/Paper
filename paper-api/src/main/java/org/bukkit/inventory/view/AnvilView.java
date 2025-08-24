@@ -88,7 +88,22 @@ public interface AnvilView extends InventoryView {
      */
     void bypassEnchantmentLevelRestriction(boolean bypassEnchantmentLevelRestriction);
 
-    boolean keepLevels();
+    /**
+     * Returns whether this view will override the vanilla enchantment level to {@link org.bukkit.enchantments.Enchantment#getMaxLevel()}
+     * when combining enchantments to an item or not.
+     * <br>
+     * <b>Only is considered when {@link #bypassesEnchantmentLevelRestriction()} is {@code true}</b>
+     * <br>
+     * By default, vanilla will limit enchantments applied to items to the respective
+     * {@link org.bukkit.enchantments.Enchantment#getMaxLevel()}, even if the applied enchantment itself is above said
+     * limit.
+     * Disabling this limit via {@link AnvilView#shouldOverrideLevelsInRestriction(boolean)} allows for, e.g., enchanted
+     * books with enchantments up to the limit to be applied fully, even if their enchantments are beyond the limit.
+     *
+     * @return {@code true} if this view should override levels if are upper the max.
+     * @see #bypassesEnchantmentLevelRestriction()
+     */
+    boolean shouldOverrideLevelsInRestriction();
 
-    public void setKeepLevelsWithRestriction(boolean keepLevels);
+    public void shouldOverrideLevelsInRestriction(boolean keepLevels);
 }
