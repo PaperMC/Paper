@@ -1145,12 +1145,30 @@
          }
  
          if (flag) {
-@@ -2191,7 +_,9 @@
+@@ -2185,13 +_,26 @@
+             if (equippable != null
+                 && equippable.canBeSheared()
+                 && (!EnchantmentHelper.has(itemBySlot, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE) || player.isCreative())) {
++                // Paper start - call PlayerShearEntityEvent
++                List<ItemStack> drops = List.of(itemBySlot);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, mob, stack, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) {
++                        continue;
++                    }
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                }
++                // Paper end - call PlayerShearEntityEvent
++
+                 stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+                 Vec3 average = this.dimensions.attachments().getAverage(EntityAttachment.PASSENGER);
+                 mob.setItemSlotAndDropWhenKilled(equipmentSlot, ItemStack.EMPTY);
                  this.gameEvent(GameEvent.SHEAR, player);
                  this.playSound(equippable.shearingSound().value());
                  if (this.level() instanceof ServerLevel serverLevel) {
+-                    this.spawnAtLocation(serverLevel, itemBySlot, average);
 +                    this.forceDrops = true; // Paper
-                     this.spawnAtLocation(serverLevel, itemBySlot, average);
++                    drops.forEach(drop -> this.spawnAtLocation(serverLevel, drop, average)); // Paper call PlayerShearEntityEvent
 +                    this.forceDrops = false; // Paper
                      CriteriaTriggers.PLAYER_SHEARED_EQUIPMENT.trigger((ServerPlayer)player, itemBySlot, mob);
                  }
