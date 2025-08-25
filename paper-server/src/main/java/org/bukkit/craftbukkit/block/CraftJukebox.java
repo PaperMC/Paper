@@ -85,7 +85,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
         JukeboxBlockEntity snapshot = this.getSnapshot();
         snapshot.setSongItemWithoutPlaying(nms, snapshot.getSongPlayer().getTicksSinceSongStarted());
 
-        this.data = this.data.setValue(JukeboxBlock.HAS_RECORD, !nms.isEmpty());
+        this.data = this.data.trySetValue(JukeboxBlock.HAS_RECORD, !nms.isEmpty());
     }
 
     @Override
