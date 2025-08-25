@@ -20,6 +20,7 @@ public class EntityDeathEvent extends EntityEvent implements Cancellable {
     private final DamageSource damageSource;
     private final List<ItemStack> drops;
     private int dropExp = 0;
+    private int rewardExp;
 
     private double reviveHealth = 0;
     private boolean shouldPlayDeathSound;
@@ -37,10 +38,16 @@ public class EntityDeathEvent extends EntityEvent implements Cancellable {
 
     @ApiStatus.Internal
     public EntityDeathEvent(@NotNull final LivingEntity livingEntity, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp) {
+        this(livingEntity, damageSource, drops, droppedExp, droppedExp);
+    }
+
+    @ApiStatus.Internal
+    public EntityDeathEvent(@NotNull final LivingEntity livingEntity, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int rewardedExp) {
         super(livingEntity);
         this.damageSource = damageSource;
         this.drops = drops;
         this.dropExp = droppedExp;
+        this.rewardExp = rewardedExp;
     }
 
     @NotNull
@@ -81,6 +88,28 @@ public class EntityDeathEvent extends EntityEvent implements Cancellable {
      */
     public void setDroppedExp(int exp) {
         this.dropExp = exp;
+        this.rewardExp = exp;
+    }
+
+    /**
+     * Gets how much EXP should be rewarded to the player for this death.
+     * <p>
+     * @return Amount of EXP to reward.
+     */
+    public int getRewardExp() {
+        return rewardExp;
+    }
+
+    /**
+     * Sets how much EXP should be rewarded to the player for this death.
+     * <p>
+     * This does not indicate how much EXP should be dropped from the entity in
+     * question, merely how much should be rewarded to the player.
+     *
+     * @param rewardExp Amount of EXP to reward.
+     */
+    public void setRewardExp(int rewardExp) {
+        this.rewardExp = rewardExp;
     }
 
     /**
