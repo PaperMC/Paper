@@ -135,7 +135,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
         /**
          * When the player changes their gamemode using the F3+F4 game mode switcher.
          */
-        SWITCH_GAMEMODE,
+        HOTKEY_GAMEMODE,
         /**
          * This cause is only used if a plugin fired their own
          * {@link PlayerGameModeChangeEvent} and did not include a
