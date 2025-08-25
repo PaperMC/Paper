@@ -14,13 +14,13 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.inventory.Inventory;
 
-public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest {
+public abstract class CraftChest<T extends ChestBlockEntity> extends CraftLootable<T> implements Chest {
 
-    public CraftChest(World world, ChestBlockEntity blockEntity) {
+    public CraftChest(World world, T blockEntity) {
         super(world, blockEntity);
     }
 
-    protected CraftChest(CraftChest state, Location location) {
+    protected CraftChest(CraftChest<T> state, Location location) {
         super(state, location);
     }
 
@@ -84,14 +84,10 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
     }
 
     @Override
-    public CraftChest copy() {
-        return new CraftChest(this, null);
-    }
+    public abstract CraftChest<T> copy();
 
     @Override
-    public CraftChest copy(Location location) {
-        return new CraftChest(this, location);
-    }
+    public abstract CraftChest<T> copy(Location location);
 
     // Paper start - More Lidded Block API
     @Override
