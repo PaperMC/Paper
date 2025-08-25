@@ -515,6 +515,7 @@ public class WorldConfiguration extends ConfigurationPart {
             map.put(EntityType.SMALL_FIREBALL, -1);
         });
         public boolean flushRegionsOnSave = false;
+        public IntOr.Disabled randomTickBatching = IntOr.Disabled.DISABLED;
 
         @PostProcess
         private void postProcess() {
