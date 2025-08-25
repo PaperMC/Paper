@@ -15,6 +15,7 @@ import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.event.player.PlayerPreTeleportEvent;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
@@ -1375,6 +1376,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
                 allFlags.add(flag);
             }
         }
+
+        // Paper start - Add PlayerPreTeleportEvent
+        // Create & Call the PlayerPreTeleportEvent.
+        PlayerPreTeleportEvent preTeleportEvent = new PlayerPreTeleportEvent(this, location, cause, allFlags); // Paper - PreTeleport API
+        this.server.getPluginManager().callEvent(preTeleportEvent);
+        // Paper end - Add PlayerPreTeleportEvent
+
         boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
         boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Paper end - Teleport API
