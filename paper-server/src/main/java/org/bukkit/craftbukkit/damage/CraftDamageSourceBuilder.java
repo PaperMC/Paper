@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.damage;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.damage.DamageContext;
 import org.bukkit.Location;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -12,6 +13,7 @@ public class CraftDamageSourceBuilder implements DamageSource.Builder {
     private Entity causingEntity;
     private Entity directEntity;
     private Location damageLocation;
+    private DamageContext damageContext;
 
     public CraftDamageSourceBuilder(DamageType damageType) {
         Preconditions.checkArgument(damageType != null, "DamageType cannot be null");
@@ -40,11 +42,18 @@ public class CraftDamageSourceBuilder implements DamageSource.Builder {
     }
 
     @Override
+    public DamageSource.Builder withDamageContext(DamageContext damageContext) {
+        Preconditions.checkArgument(damageContext != null, "Damage context cannot be null");
+        this.damageContext = damageContext;
+        return this;
+    }
+
+    @Override
     public DamageSource build() {
         if (this.causingEntity != null && this.directEntity == null) {
             throw new IllegalArgumentException("Direct entity must be set if causing entity is set");
         }
 
-        return CraftDamageSource.buildFromBukkit(this.damageType, this.causingEntity, this.directEntity, this.damageLocation);
+        return CraftDamageSource.buildFromBukkit(this.damageType, this.causingEntity, this.directEntity, this.damageLocation, this.damageContext);
     }
 }
