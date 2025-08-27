@@ -15,16 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftMusicInstrument extends MusicInstrument implements io.papermc.paper.util.Holderable<Instrument> {
 
-    public static MusicInstrument minecraftToBukkit(Instrument minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.INSTRUMENT);
-    }
-
     public static MusicInstrument minecraftHolderToBukkit(Holder<Instrument> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.INSTRUMENT); // Paper - switch to Holder
-    }
-
-    public static Instrument bukkitToMinecraft(MusicInstrument bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<Instrument> bukkitToMinecraftHolder(MusicInstrument bukkit) {
