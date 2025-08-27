@@ -50,16 +50,28 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
     @Nullable
     @Override
     public PathResult findPath(Location loc) {
+        return this.findPath(loc, 0);
+    }
+
+    @Nullable
+    @Override
+    public PathResult findPath(Location loc, int accuracy) {
         Preconditions.checkArgument(loc != null, "Location can not be null");
-        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
+        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), accuracy);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Nullable
     @Override
     public PathResult findPath(LivingEntity target) {
+        return this.findPath(target, 0);
+    }
+
+    @Nullable
+    @Override
+    public PathResult findPath(LivingEntity target, int accuracy) {
         Preconditions.checkArgument(target != null, "Target can not be null");
-        Path path = this.entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
+        Path path = this.entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), accuracy);
         return path != null ? new PaperPathResult(path) : null;
     }
 
