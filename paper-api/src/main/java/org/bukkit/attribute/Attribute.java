@@ -164,6 +164,12 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     }
 
     /**
+     * {@return the sentiment of this attribute}
+     */
+    @NotNull
+    Sentiment getSentiment();
+
+    /**
      * @param name of the attribute.
      * @return the attribute with the given name.
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
@@ -184,5 +190,18 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
         return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
+    }
+
+    /**
+     * An attribute sentiment describes the intent behind the attribute, meaning
+     * whether it is supposed to be a positive, neutral, or negative attribute.
+     */
+    enum Sentiment {
+        // Start generate - AttributeSentiment
+        // @GeneratedFrom 1.21.8
+        POSITIVE,
+        NEUTRAL,
+        NEGATIVE;
+        // End generate - AttributeSentiment
     }
 }

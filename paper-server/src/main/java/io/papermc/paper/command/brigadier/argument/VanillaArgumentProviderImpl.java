@@ -2,6 +2,7 @@ package io.papermc.paper.command.brigadier.argument;
 
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ForwardingSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.mojang.brigadier.StringReader;
@@ -12,16 +13,22 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.command.brigadier.position.ColumnBlockPositionImpl;
+import io.papermc.paper.command.brigadier.position.ColumnFinePositionImpl;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.math.Rotation;
 import io.papermc.paper.registry.PaperRegistries;
@@ -31,7 +38,9 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -42,6 +51,7 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.AngleArgument;
 import net.minecraft.commands.arguments.ColorArgument;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -63,21 +73,28 @@ import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.TimeArgument;
 import net.minecraft.commands.arguments.UuidArgument;
+import net.minecraft.commands.arguments.blocks.BlockPredicateArgument;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
+import net.minecraft.commands.arguments.coordinates.SwizzleArgument;
+import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Keyed;
@@ -88,11 +105,14 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftHeightMap;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
@@ -155,6 +175,32 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
+    public ArgumentType<ColumnBlockPositionResolver> columnBlockPosition() {
+        return this.wrap(ColumnPosArgument.columnPos(), (result) -> sourceStack -> {
+            final BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
+
+            return new ColumnBlockPositionImpl(pos.getX(), pos.getZ());
+        });
+    }
+
+    @Override
+    public ArgumentType<BlockInWorldPredicate> blockInWorldPredicate() {
+        return this.wrap(BlockPredicateArgument.blockPredicate(PaperCommands.INSTANCE.getBuildContext()),
+            result -> (block, loadChunk) -> {
+                final BlockInWorld blockInWorld = new BlockInWorld(
+                    ((CraftWorld) block.getWorld()).getHandle(),
+                    CraftLocation.toBlockPosition(block.getLocation()),
+                    loadChunk
+                );
+                // Get state lazy loads the state, will remain null if chunk is unloaded.
+                if (blockInWorld.getState() == null) return BlockInWorldPredicate.Result.UNLOADED_CHUNK;
+
+                return result.test(blockInWorld) ? BlockInWorldPredicate.Result.TRUE : BlockInWorldPredicate.Result.FALSE;
+            }
+        );
+    }
+
+    @Override
     public ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
         return this.wrap(Vec3Argument.vec3(centerIntegers), (result) -> sourceStack -> {
             final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
@@ -164,11 +210,49 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     @Override
+    public ArgumentType<ColumnFinePositionResolver> columnFinePosition(final boolean centerIntegers) {
+        return this.wrap(Vec2Argument.vec2(centerIntegers), (result) -> sourceStack -> {
+            final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
+
+            return new ColumnFinePositionImpl(vec3.x(), vec3.z());
+        });
+    }
+
+    @Override
     public ArgumentType<RotationResolver> rotation() {
         return this.wrap(RotationArgument.rotation(), (result) -> sourceStack -> {
             final Vec2 vec2 = result.getRotation((CommandSourceStack) sourceStack);
 
             return Rotation.rotation(vec2.y, vec2.x);
+        });
+    }
+
+    @Override
+    public ArgumentType<AngleResolver> angle() {
+        return this.wrap(AngleArgument.angle(), (result) -> sourceStack -> result.getAngle((CommandSourceStack) sourceStack));
+    }
+
+    @Override
+    public ArgumentType<AxisSet> axes() {
+        final class AxisSetImpl extends ForwardingSet<Axis> implements AxisSet {
+            private final EnumSet<Axis> inner;
+
+            public AxisSetImpl(final EnumSet<Axis> inner) {
+                this.inner = inner;
+            }
+
+            @Override
+            protected Set<Axis> delegate() {
+                return this.inner;
+            }
+        }
+
+        return this.wrap(SwizzleArgument.swizzle(), (result) -> {
+            final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
+            for (final Direction.Axis nmsAxis : result) {
+                bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
+            }
+            return new AxisSetImpl(bukkitAxes);
         });
     }
 
