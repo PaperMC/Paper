@@ -10,7 +10,7 @@ import net.minecraft.commands.PermissionSource;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
-import io.papermc.paper.entity.PaperPoiType;
+import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;

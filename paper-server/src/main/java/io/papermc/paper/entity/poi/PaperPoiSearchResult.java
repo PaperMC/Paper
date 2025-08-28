@@ -1,8 +1,5 @@
-package io.papermc.paper.util;
+package io.papermc.paper.entity.poi;
 
-import io.papermc.paper.entity.PaperPoiType;
-import io.papermc.paper.entity.poi.PoiSearchResult;
-import io.papermc.paper.entity.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiRecord;
 import org.bukkit.Location;
 import org.bukkit.World;

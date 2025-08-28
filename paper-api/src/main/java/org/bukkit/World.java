@@ -1,9 +1,8 @@
 package org.bukkit;
 
+import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import io.papermc.paper.entity.poi.PoiSearchResult;
-import org.bukkit.generator.ChunkGenerator;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
