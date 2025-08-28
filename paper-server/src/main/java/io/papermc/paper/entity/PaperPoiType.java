@@ -1,17 +1,13 @@
 package io.papermc.paper.entity;
 
-import com.google.common.base.Preconditions;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.HolderableBase;
-import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -38,7 +34,7 @@ public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.v
     }
 
     @Override
-    public boolean is(final @NotNull BlockData data) {
+    public boolean is(final BlockData data) {
         return this.getHandle().is(((CraftBlockData) data).getState());
     }
 
@@ -47,26 +43,17 @@ public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.v
         return this.getHandle().maxTickets() != 0;
     }
 
-    public record PaperOccupancy(PoiManager.Occupancy handle) implements Occupancy, Handleable<PoiManager.Occupancy> {
-        public static PoiManager.Occupancy bukkitToMinecraft(final Occupancy bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return ((PaperOccupancy) bukkit).handle();
+    public record PaperOccupancy(PoiManager.Occupancy handle) implements Occupancy {
+        public static PoiManager.Occupancy bukkitToMinecraft(final Occupancy occupancy) {
+            return ((PaperOccupancy) occupancy).handle();
         }
 
-        public static Occupancy minecraftToBukkit(final PoiManager.Occupancy minecraft) {
-            Preconditions.checkArgument(minecraft != null);
-
-            return switch (minecraft) {
+        public static Occupancy minecraftToBukkit(final PoiManager.Occupancy occupancy) {
+            return switch (occupancy) {
                 case ANY -> Occupancy.ANY;
                 case HAS_SPACE -> Occupancy.HAS_SPACE;
                 case IS_OCCUPIED -> Occupancy.IS_OCCUPIED;
             };
-        }
-
-        @Override
-        public PoiManager.Occupancy getHandle() {
-            return this.handle();
         }
     }
 }

@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.PaperPoiType;
-import io.papermc.paper.entity.PoiType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;

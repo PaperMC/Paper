@@ -7,17 +7,15 @@ import com.google.common.base.Predicates;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.entity.PaperPoiType;
-import io.papermc.paper.entity.PoiType;
-import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.entity.poi.PoiSearchResult;
+import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.util.PaperPoiSearchResult;
-import io.papermc.paper.util.PoiSearchResult;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
@@ -2359,19 +2356,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(origin != null, "Location cannot be null");
         Preconditions.checkArgument(origin.getWorld().equals(this), "The provided location must be in the same world");
         Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
-        Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
         Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
+        Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
 
         final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> nms = PaperPoiType.bukkitToMinecraftHolder(poiType);
         final PoiManager.Occupancy nmsOccupancy = PaperPoiType.PaperOccupancy.bukkitToMinecraft(occupancy);
-        final BlockPos nmsBlockPos = CraftLocation.toBlockPosition(origin);
-        Optional<Pair<Holder<net.minecraft.world.entity.ai.village.poi.PoiType>, BlockPos>> found = getHandle().getPoiManager().findClosestWithType((holder) -> holder.is(nms), nmsBlockPos, radius, nmsOccupancy);
-        if (found.isEmpty()) {
-            return null;
-        }
+        final BlockPos sourcePos = CraftLocation.toBlockPosition(origin);
 
-        final Pair<Holder<net.minecraft.world.entity.ai.village.poi.PoiType>, BlockPos> unwrap = found.get();
-        return CraftLocation.toBukkit(unwrap.getSecond(), this);
+        return this.getHandle().getPoiManager().findClosestWithType(holder -> holder.is(nms), sourcePos, radius, nmsOccupancy)
+            .map(found -> CraftLocation.toBukkit(found.getSecond(), this))
+            .orElse(null);
     }
 
     @Override
@@ -2382,14 +2376,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
         Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
 
-        final Predicate<Holder<net.minecraft.world.entity.ai.village.poi.PoiType>> nmsWrapper = (type) -> poiTypePredicate.test(PaperPoiType.minecraftHolderToBukkit(type));
+        final Predicate<Holder<net.minecraft.world.entity.ai.village.poi.PoiType>> predicate = type -> poiTypePredicate.test(PaperPoiType.minecraftHolderToBukkit(type));
         final PoiManager.Occupancy nmsOccupancy = PaperPoiType.PaperOccupancy.bukkitToMinecraft(occupancy);
-        final BlockPos nmsBlockpos = CraftLocation.toBlockPosition(origin);
-        return getHandle().getPoiManager().getInRange(nmsWrapper, nmsBlockpos, radius, nmsOccupancy)
-                .map(record -> (PoiSearchResult) new PaperPoiSearchResult(
-                        PaperPoiType.minecraftHolderToBukkit(record.getPoiType()),
-                        CraftLocation.toBukkit(record.getPos(), this)))
-                .toList();
+        final BlockPos sourcePos = CraftLocation.toBlockPosition(origin);
+
+        return this.getHandle().getPoiManager().getInRange(predicate, sourcePos, radius, nmsOccupancy)
+            .map(record -> PaperPoiSearchResult.from(record, this))
+            .toList();
+        /*
+        with Moonrise:
+        List<PoiRecord> ret = new ArrayList<>();
+        PoiAccess.findAnyPoiRecords(this.getHandle().getPoiManager(), predicate, $ -> true, sourcePos, radius, nmsOccupancy, false, Integer.MAX_VALUE, ret);
+        return ret.stream().map(record -> PaperPoiSearchResult.from(record, this)).toList();
+        */
     }
 
     @Override

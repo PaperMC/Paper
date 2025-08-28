@@ -11,7 +11,7 @@ import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import io.papermc.paper.entity.PaperPoiType;
-import io.papermc.paper.entity.PoiType;
+import io.papermc.paper.entity.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
@@ -53,6 +53,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
+    public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
+        return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
+    }
+
+    @Override
     public CombatEntry createCombatEntry(
         final DamageSource damageSource,
         final float damage,
@@ -88,9 +93,5 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         }
 
         return new RestrictedPredicate(predicate);
-    }
-
-    public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
-        return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
     }
 }

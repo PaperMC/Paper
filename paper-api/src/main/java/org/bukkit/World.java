@@ -1,8 +1,8 @@
 package org.bukkit;
 
-import io.papermc.paper.entity.PoiType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import io.papermc.paper.util.PoiSearchResult;
+import io.papermc.paper.entity.poi.PoiSearchResult;
 import org.bukkit.generator.ChunkGenerator;
 import java.io.File;
 import java.nio.file.Path;
@@ -30,7 +30,6 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
-import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
@@ -46,10 +45,10 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Range;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
@@ -4153,37 +4152,66 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Finds the nearest point of interest closest to the given location
+     * without any occupancy restriction.
+     *
+     * @param origin where to start looking for a new point of interest at
+     * @param poiType the poi type to find
+     * @param radius the radius
+     * @return a location at the nearest PoiType or {@code null} if no poi was found
+     */
+    @Nullable
+    default Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Positive int radius) {
+        return this.locateNearestPoi(origin, poiType, radius, PoiType.Occupancy.ANY);
+    }
+
+    /**
+     * Finds the nearest point of interest closest to the given location.
      * <p>
-     * {@link PoiType} that return false for {@link PoiType#hasOccupants()}
+     * {@link PoiType} that return {@code false} for {@link PoiType#hasOccupants()}
      * may not behave as expected for given occupancies other than
-     * {@link PoiType.Occupancy#ANY}
+     * {@link PoiType.Occupancy#ANY}.
      *
      * @param origin where to start looking for a new point of interest at
      * @param poiType the poi type to find
      * @param radius the radius
      * @param occupancy the current required occupancy of the point of interest
-     * @return a location at the nearest PoiType or null if no poi was found
+     * @return a location at the nearest PoiType or {@code null} if no poi was found
      */
     @Nullable
-    Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Range(from = 1, to = Integer.MAX_VALUE) int radius, @NotNull PoiType.Occupancy occupancy);
+    Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Positive int radius, @NotNull PoiType.Occupancy occupancy);
 
     /**
      * Finds all valid {@link PoiType} in the provided radius and returns them
-     * in a list format
+     * in a list format without any occupancy restriction.
+     *
+     * @param origin the center point of the radius
+     * @param poiTypePredicate the predicate to test whether a PoiType
+     *                         can be collected into the result
+     * @param radius           the radius
+     * @return a list of search results containing all found Poi's in the range
+     */
+    @NotNull
+    default List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Positive int radius) {
+        return this.locateAllPoiInRange(origin, poiTypePredicate, radius, PoiType.Occupancy.ANY);
+    }
+
+    /**
+     * Finds all valid {@link PoiType} in the provided radius and returns them
+     * in a list format.
      * <p>
      * {@link PoiType} that return false for {@link PoiType#hasOccupants()}
      * may not behave as expected for given occupancies other than
-     * {@link PoiType.Occupancy#ANY}
+     * {@link PoiType.Occupancy#ANY}.
      *
      * @param origin the center point of the radius
-     * @param poiTypePredicate the predicate to test whether or not a PoiType
+     * @param poiTypePredicate the predicate to test whether a PoiType
      *                         can be collected into the result
      * @param radius           the radius
      * @param occupancy the current required occupancy of the point of interest
      * @return a list of search results containing all found Poi's in the range
      */
     @NotNull
-    List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Range(from = 1, to = Integer.MAX_VALUE) int radius, @NotNull PoiType.Occupancy occupancy);
+    List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Positive int radius, @NotNull PoiType.Occupancy occupancy);
 
     /**
      * Gets the coordinate scaling of this world.

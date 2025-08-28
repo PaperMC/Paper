@@ -3,7 +3,7 @@ package io.papermc.paper;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
-import io.papermc.paper.entity.PoiType;
+import io.papermc.paper.entity.poi.PoiType;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
@@ -47,7 +47,7 @@ public interface InternalAPIBridge {
     DamageEffect getDamageEffect(String key);
 
     /**
-     * Creates a occupancy instance for the passed enum entry name.
+     * Creates an occupancy instance for the passed enum entry name.
      *
      * @param enumNameEntry the enum entry
      * @return the occupancy

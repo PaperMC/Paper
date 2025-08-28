@@ -159,14 +159,14 @@ public final class RegistryEntries {
         entry(Registries.BLOCK, Blocks.class, BlockType.class),
         entry(Registries.ITEM, Items.class, ItemType.class),
         entry(Registries.VILLAGER_PROFESSION, VillagerProfession.class, Villager.Profession.class),
-        entry(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, io.papermc.paper.entity.PoiType.class),
         entry(Registries.VILLAGER_TYPE, VillagerType.class, Villager.Type.class),
         entry(Registries.MAP_DECORATION_TYPE, MapDecorationTypes.class, MapCursor.Type.class),
         entry(Registries.MENU, net.minecraft.world.inventory.MenuType.class, MenuType.class),
         entry(Registries.ATTRIBUTE, Attributes.class, Attribute.class).serializationUpdater("ATTRIBUTE_RENAME"),
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
-        entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of")
+        entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
+        entry(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, io.papermc.paper.entity.poi.PoiType.class, "Paper")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(

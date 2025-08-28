@@ -1,6 +1,6 @@
-package io.papermc.paper.util;
+package io.papermc.paper.entity.poi;
 
-import io.papermc.paper.entity.PoiType;
+import java.util.function.Predicate;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.jspecify.annotations.NullMarked;
@@ -8,13 +8,14 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the result of searching for a point of interest.
  *
- * @see World#locateNearestPoi(Location, PoiType, int, PoiType.Occupancy)
+ * @see World#locateAllPoiInRange(Location, Predicate, int)
+ * @see World#locateAllPoiInRange(Location, Predicate, int, PoiType.Occupancy)
  */
 @NullMarked
 public interface PoiSearchResult {
 
     /**
-     * Returns the {@link PoiType}
+     * Returns the {@link PoiType}.
      *
      * @return the {@link PoiType}
      */
