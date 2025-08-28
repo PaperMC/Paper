@@ -469,9 +469,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * is still valid.
      *
      * @return Bed Location if has slept in one, otherwise null.
-     * @see #getPotentialRespawnLocation()
      * @deprecated Misleading name. This method also returns the location of
-     * respawn anchors.
+     * respawn anchors, use {@link Player#getRespawnLocation(boolean)} with
+     * loadLocationAndValidate = false instead
      */
     @Nullable
     @Deprecated(since = "1.21.4")

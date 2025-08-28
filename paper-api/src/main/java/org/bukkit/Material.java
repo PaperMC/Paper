@@ -145,7 +145,7 @@ import org.jetbrains.annotations.Nullable;
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
     // Start generate - Items
-    // @GeneratedFrom 1.21.7
+    // @GeneratedFrom 1.21.8
     ACACIA_BOAT(-1, 1),
     ACACIA_CHEST_BOAT(-1, 1),
     AIR(-1),
@@ -612,7 +612,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
     // End generate - Items
     // Start generate - Blocks
-    // @GeneratedFrom 1.21.7
+    // @GeneratedFrom 1.21.8
     ACACIA_BUTTON(-1, Switch.class),
     ACACIA_DOOR(-1, Door.class),
     ACACIA_FENCE(-1, Fence.class),

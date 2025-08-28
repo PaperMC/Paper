@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.Jukebox;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public class CraftJukebox extends CraftBlockData implements Jukebox {
     private static final BooleanProperty HAS_RECORD = JukeboxBlock.HAS_RECORD;
 

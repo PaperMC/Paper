@@ -1,11 +1,9 @@
-package io.papermc.paper.configuration.serializer.collections;
+package io.papermc.paper.configuration.serializer.collection.map;
 
 import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,56 +34,54 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
     private final boolean clearInvalids;
     private final TypeSerializer<Map<?, ?>> fallback;
 
-    public MapSerializer(boolean clearInvalids) {
+    public MapSerializer(final boolean clearInvalids) {
         this.clearInvalids = clearInvalids;
         this.fallback = requireNonNull(TypeSerializerCollection.defaults().get(TYPE), "Could not find default Map<?, ?> serializer");
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface ThrowExceptions {}
-
     @Override
-    public Map<?, ?> deserialize(AnnotatedType annotatedType, ConfigurationNode node) throws SerializationException {
+    public Map<?, ?> deserialize(final AnnotatedType annotatedType, final ConfigurationNode node) throws SerializationException {
         if (annotatedType.isAnnotationPresent(ThrowExceptions.class)) {
             return this.fallback.deserialize(annotatedType, node);
         }
         final Map<Object, Object> map = new LinkedHashMap<>();
         final Type type = annotatedType.getType();
         if (node.isMap()) {
-            if (!(type instanceof ParameterizedType parameterizedType)) {
+            if (!(annotatedType instanceof final AnnotatedParameterizedType annotatedParameterizedType)) {
                 throw new SerializationException(type, "Raw types are not supported for collections");
             }
-            if (parameterizedType.getActualTypeArguments().length != 2) {
+            if (annotatedParameterizedType.getAnnotatedActualTypeArguments().length != 2) {
                 throw new SerializationException(type, "Map expected two type arguments!");
             }
-            final Type key = parameterizedType.getActualTypeArguments()[0];
-            final Type value = parameterizedType.getActualTypeArguments()[1];
-            final @Nullable TypeSerializer<?> keySerializer = node.options().serializers().get(key);
-            final @Nullable TypeSerializer<?> valueSerializer = node.options().serializers().get(value);
+            final AnnotatedType key = annotatedParameterizedType.getAnnotatedActualTypeArguments()[0];
+            final AnnotatedType value = annotatedParameterizedType.getAnnotatedActualTypeArguments()[1];
+            final TypeSerializer<?> keySerializer = node.options().serializers().get(key);
+            final TypeSerializer<?> valueSerializer = node.options().serializers().get(value);
             if (keySerializer == null) {
                 throw new SerializationException(type, "No type serializer available for key type " + key);
             }
             if (valueSerializer == null) {
                 throw new SerializationException(type, "No type serializer available for value type " + value);
             }
+            final boolean writeKeyBack = key.isAnnotationPresent(WriteKeyBack.class);
 
             final BasicConfigurationNode keyNode = BasicConfigurationNode.root(node.options());
             final Set<Object> keysToClear = new HashSet<>();
-            for (Map.Entry<Object, ? extends ConfigurationNode> ent : node.childrenMap().entrySet()) {
-                final @Nullable Object deserializedKey = deserialize(key, keySerializer, "key", keyNode.set(ent.getKey()), node.path());
-                final @Nullable Object deserializedValue = deserialize(value, valueSerializer, "value", ent.getValue(), ent.getValue().path());
+            for (final Map.Entry<Object, ? extends ConfigurationNode> ent : node.childrenMap().entrySet()) {
+                final Object deserializedKey = this.deserialize(key.getType(), keySerializer, "key", keyNode.set(ent.getKey()), node.path());
+                final Object deserializedValue = this.deserialize(value.getType(), valueSerializer, "value", ent.getValue(), ent.getValue().path());
                 if (deserializedKey == null || deserializedValue == null) {
                     continue;
                 }
-                if (keySerializer instanceof WriteBack) {
-                    if (serialize(key, keySerializer, deserializedKey, "key", keyNode, node.path()) && !ent.getKey().equals(requireNonNull(keyNode.raw(), "Key must not be null!"))) {
+                if (writeKeyBack) {
+                    if (this.serialize(key.getType(), keySerializer, deserializedKey, "key", keyNode, node.path()) && !ent.getKey().equals(requireNonNull(keyNode.raw(), "Key must not be null!"))) {
                         keysToClear.add(ent.getKey());
                     }
                 }
                 map.put(deserializedKey, deserializedValue);
             }
-            if (keySerializer instanceof WriteBack) { // supports cleaning keys which deserialize to the same value
-                for (Object keyToClear : keysToClear) {
+            if (writeKeyBack) { // supports cleaning keys which deserialize to the same value
+                for (final Object keyToClear : keysToClear) {
                     node.node(keyToClear).raw(null);
                 }
             }
@@ -93,10 +89,10 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
         return map;
     }
 
-    private @Nullable Object deserialize(Type type, TypeSerializer<?> serializer, String mapPart, ConfigurationNode node, NodePath path) {
+    private @Nullable Object deserialize(final Type type, final TypeSerializer<?> serializer, final String mapPart, final ConfigurationNode node, final NodePath path) {
         try {
             return serializer.deserialize(type, node);
-        } catch (SerializationException ex) {
+        } catch (final SerializationException ex) {
             ex.initPath(node::path);
             LOGGER.error("Could not deserialize {} {} into {} at {}: {}", mapPart, node.raw(), type, path, ex.rawMessage());
         }
@@ -104,22 +100,22 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
     }
 
     @Override
-    public void serialize(AnnotatedType annotatedType, @Nullable Map<?, ?> obj, ConfigurationNode node) throws SerializationException {
+    public void serialize(final AnnotatedType annotatedType, final @Nullable Map<?, ?> obj, final ConfigurationNode node) throws SerializationException {
         if (annotatedType.isAnnotationPresent(ThrowExceptions.class)) {
             this.fallback.serialize(annotatedType, obj, node);
             return;
         }
         final Type type = annotatedType.getType();
-        if (!(type instanceof ParameterizedType parameterizedType)) {
+        if (!(annotatedType instanceof final AnnotatedParameterizedType annotatedParameterizedType)) {
             throw new SerializationException(type, "Raw types are not supported for collections");
         }
-        if (parameterizedType.getActualTypeArguments().length != 2) {
+        if (annotatedParameterizedType.getAnnotatedActualTypeArguments().length != 2) {
             throw new SerializationException(type, "Map expected two type arguments!");
         }
-        final Type key = parameterizedType.getActualTypeArguments()[0];
-        final Type value = parameterizedType.getActualTypeArguments()[1];
-        final @Nullable TypeSerializer<?> keySerializer = node.options().serializers().get(key);
-        final @Nullable TypeSerializer<?> valueSerializer = node.options().serializers().get(value);
+        final AnnotatedType key = annotatedParameterizedType.getAnnotatedActualTypeArguments()[0];
+        final AnnotatedType value = annotatedParameterizedType.getAnnotatedActualTypeArguments()[1];
+        final TypeSerializer<?> keySerializer = node.options().serializers().get(key);
+        final TypeSerializer<?> valueSerializer = node.options().serializers().get(value);
 
         if (keySerializer == null) {
             throw new SerializationException(type, "No type serializer available for key type " + key);
@@ -135,22 +131,22 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
             final Set<Object> unvisitedKeys;
             if (node.empty()) {
                 node.raw(Collections.emptyMap());
-                unvisitedKeys = Collections.emptySet();
+                unvisitedKeys = new HashSet<>();
             } else {
                 unvisitedKeys = new HashSet<>(node.childrenMap().keySet());
             }
             final BasicConfigurationNode keyNode = BasicConfigurationNode.root(node.options());
-            for (Map.Entry<?, ?> ent : obj.entrySet()) {
-                if (!serialize(key, keySerializer, ent.getKey(), "key", keyNode, node.path())) {
+            for (final Map.Entry<?, ?> ent : obj.entrySet()) {
+                if (!this.serialize(key.getType(), keySerializer, ent.getKey(), "key", keyNode, node.path())) {
                     continue;
                 }
                 final Object keyObj = requireNonNull(keyNode.raw(), "Key must not be null!");
                 final ConfigurationNode child = node.node(keyObj);
-                serialize(value, valueSerializer, ent.getValue(), "value", child, child.path());
+                this.serialize(value.getType(), valueSerializer, ent.getValue(), "value", child, child.path());
                 unvisitedKeys.remove(keyObj);
             }
             if (this.clearInvalids) {
-                for (Object unusedChild : unvisitedKeys) {
+                for (final Object unusedChild : unvisitedKeys) {
                     node.removeChild(unusedChild);
                 }
             }
@@ -158,11 +154,11 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private boolean serialize(Type type, TypeSerializer serializer, Object object, String mapPart, ConfigurationNode node, NodePath path) {
+    private boolean serialize(final Type type, final TypeSerializer serializer, final Object object, final String mapPart, final ConfigurationNode node, final NodePath path) {
         try {
             serializer.serialize(type, object, node);
             return true;
-        } catch (SerializationException ex) {
+        } catch (final SerializationException ex) {
             ex.initPath(node::path);
             LOGGER.error("Could not serialize {} {} from {} at {}: {}", mapPart, object, type, path, ex.rawMessage());
         }
@@ -170,13 +166,11 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
     }
 
     @Override
-    public @Nullable Map<?, ?> emptyValue(AnnotatedType specificType, ConfigurationOptions options) {
+    public @Nullable Map<?, ?> emptyValue(final AnnotatedType specificType, final ConfigurationOptions options) {
         if (specificType.isAnnotationPresent(ThrowExceptions.class)) {
             return this.fallback.emptyValue(specificType, options);
         }
         return new LinkedHashMap<>();
     }
 
-    public interface WriteBack { // marker interface
-    }
 }

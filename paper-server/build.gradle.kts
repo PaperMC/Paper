@@ -11,13 +11,13 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.3"
+    id("io.papermc.fill.gradle") version "1.0.7"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.7+build.2")
+    mache("io.papermc:mache:1.21.8+build.2")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -134,7 +134,7 @@ dependencies {
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
-    implementation("net.kyori:adventure-text-serializer-ansi:4.23.0") // Keep in sync with adventureVersion from Paper-API build file
+    implementation("net.kyori:adventure-text-serializer-ansi")
     runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*
@@ -154,8 +154,7 @@ dependencies {
     implementation("io.netty:netty-codec-haproxy:4.1.118.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.8")
-    implementation("org.spongepowered:configurate-yaml:4.2.0-20250225.064233-199")
-    implementation("org.spongepowered:configurate-core:4.2.0-20250225.064233-204") // Pinned dependency of above pinned yaml snapshot.
+    implementation("org.spongepowered:configurate-yaml:4.2.0")
 
     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
     runtimeOnly("commons-lang:commons-lang:2.6")
@@ -165,10 +164,6 @@ dependencies {
     implementation("com.googlecode.json-simple:json-simple:1.1.1") { // change to runtimeOnly once Timings is removed
         isTransitive = false // includes junit
     }
-
-    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
     testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")

@@ -18,6 +18,7 @@ import io.papermc.paper.util.PaperPoiSearchResult;
 import io.papermc.paper.util.PoiSearchResult;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -120,6 +121,7 @@ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
+import org.bukkit.craftbukkit.util.CraftDifficulty;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
@@ -1317,12 +1319,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setDifficulty(Difficulty difficulty) {
-        this.getHandle().getServer().setDifficulty(this.getHandle(), net.minecraft.world.Difficulty.byId(difficulty.getValue()), true); // Paper - per level difficulty; don't skip other difficulty-changing logic
+        this.getHandle().getServer().setDifficulty(this.getHandle(), CraftDifficulty.toMinecraft(difficulty), null, true);
     }
 
     @Override
     public Difficulty getDifficulty() {
-        return Difficulty.getByValue(this.getHandle().getDifficulty().ordinal());
+        return CraftDifficulty.toBukkit(this.getHandle().getDifficulty());
     }
 
     @Override
@@ -1615,8 +1617,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public File getWorldFolder() {
-        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
+    public Path getWorldPath() {
+        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).getParent();
     }
 
     @Override

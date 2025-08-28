@@ -50,7 +50,7 @@ public record ItemDialogBodyImpl(
 
         @Override
         public ItemDialogBody.Builder height(final int height) {
-            Preconditions.checkArgument(this.width >= 1 && this.width <= 256, "Width must be between 1 and 256");
+            Preconditions.checkArgument(height >= 1 && height <= 256, "Height must be between 1 and 256");
             this.height = height;
             return this;
         }

@@ -48,6 +48,7 @@ import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.Statistic;
 import org.bukkit.Tag;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
@@ -129,6 +130,7 @@ public final class Rewriters {
             .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Salmon.Variant.class))
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
+            .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
@@ -187,7 +189,7 @@ public final class Rewriters {
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            // .register("ItemType", ItemType.class, new ItemTypeRewriter()) - disable for now, lynx want the generic type
+            // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())

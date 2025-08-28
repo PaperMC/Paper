@@ -5,7 +5,9 @@ import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import io.papermc.paper.registry.set.RegistrySet;
 import java.util.List;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -35,7 +37,12 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      * @return a new instance
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static DialogListType dialogList(final RegistrySet<Dialog> dialogs, final @Nullable ActionButton exitAction, final int columns, final int buttonWidth) {
+    static DialogListType dialogList(
+        final RegistrySet<Dialog> dialogs,
+        final @Nullable ActionButton exitAction,
+        final @Positive int columns,
+        final @Range(from = 1, to = 1024) int buttonWidth
+    ) {
         return dialogList(dialogs).exitAction(exitAction).columns(columns).buttonWidth(buttonWidth).build();
     }
 
@@ -59,7 +66,11 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      * @return a new instance
      */
     @Contract(value = "_, _, _ -> new", pure = true)
-    static MultiActionType multiAction(final List<ActionButton> actions, final @Nullable ActionButton exitAction, final int columns) {
+    static MultiActionType multiAction(
+        final List<ActionButton> actions,
+        final @Nullable ActionButton exitAction,
+        final @Positive int columns
+    ) {
         return multiAction(actions).exitAction(exitAction).columns(columns).build();
     }
 
@@ -104,7 +115,11 @@ public sealed interface DialogType permits ConfirmationType, DialogListType, Mul
      * @return a new instance
      */
     @Contract(value = "_, _, _ -> new", pure = true)
-    static ServerLinksType serverLinks(final @Nullable ActionButton exitAction, final int columns, final int buttonWidth) {
+    static ServerLinksType serverLinks(
+        final @Nullable ActionButton exitAction,
+        final @Positive int columns,
+        final @Range(from = 1, to = 1024) int buttonWidth
+    ) {
         return DialogInstancesProvider.instance().serverLinks(exitAction, columns, buttonWidth);
     }
 }

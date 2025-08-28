@@ -30,7 +30,7 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
         final CommonDialogData common = internal.common();
         this.dialogBase = conversions.convert(common, PaperDialogCodecs.DIALOG_BASE_CODEC, CommonDialogData.MAP_CODEC.codec());
 
-        this.dialogType = PaperDialogs.extractSpecialty(internal, conversions);
+        this.dialogType = PaperDialogs.extractType(internal, conversions);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
 
     @Override
     public DialogType type() {
-        return asConfigured(this.dialogType, "dialogSpecialty");
+        return asConfigured(this.dialogType, "dialogType");
     }
 
     public static final class PaperBuilder extends PaperDialogRegistryEntry implements Builder, PaperRegistryBuilder<Dialog, io.papermc.paper.dialog.Dialog> {
@@ -62,7 +62,7 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
 
         @Override
         public Builder type(final DialogType dialogType) {
-            this.dialogType = asArgument(dialogType, "dialogSpecialty");
+            this.dialogType = asArgument(dialogType, "dialogType");
             return this;
         }
 

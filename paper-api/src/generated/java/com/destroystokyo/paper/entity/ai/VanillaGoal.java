@@ -68,7 +68,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.7")
+@GeneratedFrom("1.21.8")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> HORSE_RANDOM_STAND = create("horse_random_stand", AbstractHorse.class);
 

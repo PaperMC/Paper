@@ -94,7 +94,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     //<editor-fold desc="ItemTypes" defaultstate="collapsed">
     // Start generate - ItemType
-    // @GeneratedFrom 1.21.7-rc1
+    // @GeneratedFrom 1.21.8
     ItemType.Typed<ItemMeta> ACACIA_BOAT = getItemType("acacia_boat");
 
     ItemType.Typed<ItemMeta> ACACIA_BUTTON = getItemType("acacia_button");

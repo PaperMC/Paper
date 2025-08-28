@@ -29,8 +29,8 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
         final @Nullable PlainMessageDialogBody description,
         final boolean showDecorations,
         final boolean showTooltip,
-        final int width,
-        final int height
+        final @Range(from = 1, to = 256) int width,
+        final @Range(from = 1, to = 256) int height
     ) {
         return item(item)
             .description(description)
@@ -58,7 +58,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      * @param contents the contents of the message
      * @return a new plain message body instance
      */
-    @Contract(pure = true, value = "_, -> new")
+    @Contract(pure = true, value = "_ -> new")
     static PlainMessageDialogBody plainMessage(final Component contents) {
         return DialogInstancesProvider.instance().plainMessageDialogBody(contents);
     }

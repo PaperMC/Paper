@@ -52,7 +52,7 @@ public non-sealed interface ItemDialogBody extends DialogBody {
      * @return the width
      */
     @Contract(pure = true)
-    int width();
+    @Range(from = 1, to = 256) int width();
 
     /**
      * The height of the item body.
@@ -60,7 +60,7 @@ public non-sealed interface ItemDialogBody extends DialogBody {
      * @return the height
      */
     @Contract(pure = true)
-    int height();
+    @Range(from = 1, to = 256) int height();
 
     /**
      * A builder for an item dialog body.
