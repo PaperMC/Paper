@@ -1,6 +1,5 @@
-package io.papermc.paper.entity;
+package io.papermc.paper.entity.poi;
 
-import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
