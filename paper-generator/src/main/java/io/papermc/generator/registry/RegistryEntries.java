@@ -189,7 +189,7 @@ public final class RegistryEntries {
         entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class).writableApiRegistryBuilder(CowVariantRegistryEntry.Builder.class, "PaperCowVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
-        entry(Registries.TRIAL_SPAWNER_CONFIG, TrialSpawnerConfigs.class, TrialSpawnerConfig.class, "Paper").allowDirect().writableApiRegistryBuilder(TrialSpawnerConfigRegistryEntry.Builder.class, "PaperTrialSpawnerConfigRegistryEntry.PaperBuilder")
+        entry(Registries.TRIAL_SPAWNER_CONFIG, TrialSpawnerConfigs.class, TrialSpawnerConfig.class, "Paper").allowDirect().preload(io.papermc.paper.block.TrialSpawnerConfigs.class).writableApiRegistryBuilder(TrialSpawnerConfigRegistryEntry.Builder.class, "PaperTrialSpawnerConfigRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
