@@ -53,7 +53,9 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
      * Sets the loot that will be dispensed.
      *
      * @param dispensedLoot new loot to dispense
+     * @deprecated in favour of {@link io.papermc.paper.event.server.LootTableRollEvent#setLoot(List)}
      */
+    @Deprecated(since = "1.21.8")
     public void setDispensedLoot(@Nullable List<ItemStack> dispensedLoot) {
         this.dispensedLoot = dispensedLoot == null ? new ArrayList<>() : dispensedLoot;
     }
