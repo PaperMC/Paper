@@ -18,7 +18,7 @@ public final class BlockEntityMapping {
         .put("CraftFurnace", "CraftFurnaceFurnace")
         .put("CraftMobSpawner", "CraftCreatureSpawner")
         .put("CraftPiston", "CraftMovingPiston")
-        .put("CraftTrappedChest", "CraftChest") // not really a rename
+        .put("CraftChest", "CraftChestChest")
         .buildOrThrow();
 
     public static final Map<ResourceKey<BlockEntityType<?>>, String> MAPPING;
