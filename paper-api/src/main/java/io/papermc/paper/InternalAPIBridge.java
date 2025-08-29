@@ -3,16 +3,16 @@ package io.papermc.paper;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.function.Predicate;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scoreboard.Criteria;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -86,5 +86,13 @@ public interface InternalAPIBridge {
      * @return wrapped predicate
      */
     Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
+
+    /**
+     * Gets the criteria for the non-stat built-in scoreboard criteria.
+     *
+     * @param key the key
+     * @return the criteria
+     */
+    Criteria getCriteria(final String key);
 }
 
