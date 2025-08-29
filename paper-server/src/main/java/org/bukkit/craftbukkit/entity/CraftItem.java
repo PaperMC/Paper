@@ -41,7 +41,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setPickupDelay(int delay) {
-        this.getHandle().pickupDelay = Math.min(delay, Short.MAX_VALUE);
+        this.getHandle().pickupDelay = Math.clamp(Short.MIN_VALUE, delay, Short.MAX_VALUE);
     }
 
     @Override
