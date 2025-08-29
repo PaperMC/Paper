@@ -47,65 +47,36 @@
          GameProfile gameProfile = player.getGameProfile();
          GameProfileCache profileCache = this.server.getProfileCache();
          String string;
-@@ -149,20 +_,66 @@
+@@ -149,20 +_,31 @@
          }
  
          try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
 -            Optional<ValueInput> optional1 = this.load(player, scopedCollector);
 -            ResourceKey<Level> resourceKey = optional1.<ResourceKey<Level>>flatMap(valueInput -> valueInput.read("Dimension", Level.RESOURCE_KEY_CODEC))
 -                .orElse(Level.OVERWORLD);
+-            ServerLevel level = this.server.getLevel(resourceKey);
+-            ServerLevel serverLevel;
+-            if (level == null) {
+-                LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", resourceKey);
 +            Optional<ValueInput> optional1 = this.load(player, scopedCollector); final Optional<ValueInput> loadedPlayerData = optional1; // Paper - OBFHELPER
 +            // CraftBukkit start - Better rename detection
 +            if (loadedPlayerData.isPresent()) {
 +                string = loadedPlayerData.flatMap(t -> t.child("bukkit")).flatMap(t -> t.getString("lastKnownName")).orElse(string);
 +            }
 +            // CraftBukkit end
-+            // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
-+            ResourceKey<Level> resourceKey = null; // Paper
-+            boolean[] invalidPlayerWorld = {false};
-+            bukkitData: if (loadedPlayerData.isPresent()) {
-+                // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
-+                final org.bukkit.World bWorld;
-+                final ValueInput playerData = loadedPlayerData.get();
-+                // TODO maybe convert this to a codec and use compoundTag#read, we need silent variants of that method first.
-+                final Optional<Long> worldUUIDMost = playerData.getLong("WorldUUIDMost");
-+                final Optional<Long> worldUUIDLeast = playerData.getLong("WorldUUIDLeast");
-+                final java.util.Optional<String> worldName = playerData.getString("world");
-+                if (worldUUIDMost.isPresent() && worldUUIDLeast.isPresent()) {
-+                    bWorld = org.bukkit.Bukkit.getServer().getWorld(new UUID(worldUUIDMost.get(), worldUUIDLeast.get()));
-+                } else if (worldName.isPresent()) { // Paper - legacy bukkit world name
-+                    bWorld = org.bukkit.Bukkit.getServer().getWorld(worldName.get());
-+                } else {
-+                    break bukkitData; // if neither of the bukkit data points exist, proceed to the vanilla migration section
-+                }
-+                if (bWorld != null) {
-+                    resourceKey = ((org.bukkit.craftbukkit.CraftWorld) bWorld).getHandle().dimension();
-+                } else {
-+                    resourceKey = Level.OVERWORLD;
-+                    invalidPlayerWorld[0] = true;
-+                }
-+            }
-+            if (resourceKey == null) { // only run the vanilla logic if we haven't found a world from the bukkit data
-+                // Below is the vanilla way of getting the dimension, this is for migration from vanilla servers
-+                resourceKey = loadedPlayerData.<ResourceKey<Level>>flatMap(
-+                        compoundTag -> {
-+                            Optional<ResourceKey<Level>> result = compoundTag.read("Dimension", Level.RESOURCE_KEY_CODEC);
-+                            invalidPlayerWorld[0] = result.isEmpty(); // reset to main world spawn if no valid world is found
-+                            return result;
-+                        }
-+                    )
-+                    .orElse(Level.OVERWORLD); // revert to vanilla default main world, this isn't an "invalid world" since no player data existed
-+            }
-+            // Paper end
-             ServerLevel level = this.server.getLevel(resourceKey);
-             ServerLevel serverLevel;
-             if (level == null) {
-                 LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", resourceKey);
++            // Paper start - use bukkit supplied world UUID & reset to main world spawn if no valid world is found
++            Optional<ResourceKey<Level>> resourceKey = loadedPlayerData.flatMap(this::getPlayerLevelKey);
++            ResourceKey<Level> effectiveResourceKey = resourceKey.orElse(Level.OVERWORLD);
++            ServerLevel serverLevel = this.server.getLevel(effectiveResourceKey);
++            boolean invalidPlayerWorld = resourceKey.isEmpty();
++            if (serverLevel == null) {
++                LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", effectiveResourceKey);
                  serverLevel = this.server.overworld();
-+                invalidPlayerWorld[0] = true; // Paper - reset to main world if no world with parsed value is found
-             } else {
-                 serverLevel = level;
+-            } else {
+-                serverLevel = level;
++                invalidPlayerWorld = true; // reset to main world if no world with parsed value is found
              }
++            // Paper end
  
 +            // Paper start - Entity#getEntitySpawnReason
 +            if (loadedPlayerData.isEmpty()) {
@@ -114,7 +85,7 @@
 +            // Paper end - Entity#getEntitySpawnReason
              player.setServerLevel(serverLevel);
 -            if (optional1.isEmpty()) {
-+            if (loadedPlayerData.isEmpty() || invalidPlayerWorld[0]) { // Paper - reset to main world spawn if first spawn or invalid world
++            if (loadedPlayerData.isEmpty() || invalidPlayerWorld) { // Paper - reset to main world spawn if first spawn or invalid world
                  player.snapTo(
                      player.adjustSpawnLocation(serverLevel, serverLevel.getSharedSpawnPos()).getBottomCenter(), serverLevel.getSharedSpawnAngle(), 0.0F
                  );
@@ -339,9 +310,27 @@
              }
  
              @Override
-@@ -319,56 +_,136 @@
+@@ -318,57 +_,154 @@
+         return optional;
      }
  
++    // Paper start
++    public Optional<ResourceKey<Level>> getPlayerLevelKey(ValueInput playerData) {
++        // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
++        // TODO maybe convert this to a codec and use compoundTag#read, we need silent variants of that method first.
++        Optional<UUID> worldUuid = playerData.getLong("WorldUUIDMost").flatMap(most -> playerData.getLong("WorldUUIDLeast").map(least -> new UUID(most, least)));
++        if (worldUuid.isPresent()) return Optional.ofNullable(this.cserver.getWorld(worldUuid.get())).map(it -> ((org.bukkit.craftbukkit.CraftWorld) it).getHandle().dimension());
++
++        // legacy bukkit world name
++        Optional<String> worldName = playerData.getString("world");
++        if (worldName.isPresent()) return Optional.ofNullable(this.cserver.getWorld(worldName.get())).map(it -> ((org.bukkit.craftbukkit.CraftWorld) it).getHandle().dimension());
++
++        // only run the vanilla logic if we haven't found a world from the bukkit data
++        // Below is the vanilla way of getting the dimension, this is for migration from vanilla servers
++        return playerData.read(ServerPlayer.TAG_DIMENSION, Level.RESOURCE_KEY_CODEC);
++    }
++    // Paper end
++
      protected void save(ServerPlayer player) {
 +        if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
          this.playerIo.save(player);
