@@ -3129,7 +3129,7 @@ public final class CraftServer implements Server {
     @Override
     public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
         Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
-        if (player != null) return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
+        if (player != null) return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player).clone();
 
         return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
     }
@@ -3142,7 +3142,7 @@ public final class CraftServer implements Server {
         }
 
         if (java.util.Objects.equals(uuid, player.getUniqueId()) && java.util.Objects.equals(name, player.getName())) {
-            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
+            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player).clone();
         }
 
         final com.destroystokyo.paper.profile.CraftPlayerProfile profile = new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
