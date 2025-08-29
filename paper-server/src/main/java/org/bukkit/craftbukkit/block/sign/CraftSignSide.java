@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Nullable;
 public class CraftSignSide implements SignSide {
 
     // Lazily initialized only if requested:
-    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
-    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
+    private java.util.List<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
+    private java.util.List<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
     private SignText signText;
 
     public CraftSignSide(SignText signText) {
@@ -41,7 +41,7 @@ public class CraftSignSide implements SignSide {
             return;
         }
         // Lazy initialization:
-        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.getMessages(false)));
+        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(this.signText.getMessages(false));
         this.originalLines = new java.util.ArrayList<>(this.lines);
     }
 
