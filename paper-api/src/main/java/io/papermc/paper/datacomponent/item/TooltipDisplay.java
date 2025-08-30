@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.DataComponentType;
 import org.jetbrains.annotations.ApiStatus;
@@ -11,7 +12,7 @@ import java.util.Set;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface TooltipDisplay {
+public interface TooltipDisplay extends BuildableDataComponent<TooltipDisplay, TooltipDisplay.Builder> {
 
     /**
      * Returns a new builder for creating a TooltipDisplay.
@@ -42,5 +43,8 @@ public interface TooltipDisplay {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hiddenComponents(Set<DataComponentType> components);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder setHiddenComponents(Set<DataComponentType> components);
     }
 }

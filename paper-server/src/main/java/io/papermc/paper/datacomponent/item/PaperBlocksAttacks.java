@@ -61,6 +61,18 @@ public record PaperBlocksAttacks(
         return this.impl.disableSound().map(holder -> PaperAdventure.asAdventure(holder.value().location())).orElse(null);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .blockDelaySeconds(this.blockDelaySeconds())
+            .disableCooldownScale(this.disableCooldownScale())
+            .damageReductions(this.damageReductions())
+            .itemDamage(this.itemDamage())
+            .bypassedBy(this.bypassedBy())
+            .blockSound(this.blockSound())
+            .disableSound(this.disableSound());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private float blockDelaySeconds;

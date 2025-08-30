@@ -43,6 +43,15 @@ public record PaperCustomModelData(
         return MCUtil.transformUnmodifiable(this.impl.colors(), color -> Color.fromRGB(color & 0x00FFFFFF)); // skip alpha channel
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .setFloats(this.floats())
+            .setFlags(this.flags())
+            .setStrings(this.strings())
+            .setColors(this.colors());
+    }
+
     static final class BuilderImpl implements CustomModelData.Builder {
 
         private final FloatList floats = new FloatArrayList();
@@ -66,6 +75,16 @@ public record PaperCustomModelData(
         }
 
         @Override
+        public Builder setFloats(final List<Float> floats) {
+            for (Float f : floats) {
+                Preconditions.checkArgument(f != null, "Float cannot be null");
+            }
+            this.floats.clear();
+            this.floats.addAll(floats);
+            return this;
+        }
+
+        @Override
         public Builder addFlag(final boolean flag) {
             this.flags.add(flag);
             return this;
@@ -76,6 +95,16 @@ public record PaperCustomModelData(
             for (Boolean flag : flags) {
                 Preconditions.checkArgument(flag != null, "Flag cannot be null");
             }
+            this.flags.addAll(flags);
+            return this;
+        }
+
+        @Override
+        public Builder setFlags(final List<Boolean> flags) {
+            for (Boolean flag : flags) {
+                Preconditions.checkArgument(flag != null, "Flag cannot be null");
+            }
+            this.flags.clear();
             this.flags.addAll(flags);
             return this;
         }
@@ -94,6 +123,13 @@ public record PaperCustomModelData(
         }
 
         @Override
+        public Builder setStrings(final List<String> strings) {
+            this.strings.clear();
+            strings.forEach(this::addString);
+            return this;
+        }
+
+        @Override
         public Builder addColor(final Color color) {
             Preconditions.checkArgument(color != null, "Color cannot be null");
             this.colors.add(color.asRGB());
@@ -102,6 +138,13 @@ public record PaperCustomModelData(
 
         @Override
         public Builder addColors(final List<Color> colors) {
+            colors.forEach(this::addColor);
+            return this;
+        }
+
+        @Override
+        public Builder setColors(final List<Color> colors) {
+            this.colors.clear();
             colors.forEach(this::addColor);
             return this;
         }

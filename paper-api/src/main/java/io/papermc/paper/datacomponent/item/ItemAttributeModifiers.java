@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.attribute.AttributeModifierDisplay;
 import java.util.List;
@@ -18,7 +19,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemAttributeModifiers {
+public interface ItemAttributeModifiers extends BuildableDataComponent<ItemAttributeModifiers, ItemAttributeModifiers.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static ItemAttributeModifiers.Builder itemAttributes() {
