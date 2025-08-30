@@ -24,7 +24,7 @@ public record PaperDeathProtection(
 
     @Override
     public Builder toBuilder() {
-        return new BuilderImpl().setEffects(this.deathEffects());
+        return new BuilderImpl().effects(this.deathEffects());
     }
 
     static final class BuilderImpl implements Builder {
@@ -46,7 +46,7 @@ public record PaperDeathProtection(
         }
 
         @Override
-        public Builder setEffects(final List<ConsumeEffect> effects) {
+        public Builder effects(final List<ConsumeEffect> effects) {
             effects.clear();
             for (final ConsumeEffect effect : effects) {
                 this.effects.add(PaperConsumableEffect.toNms(effect));

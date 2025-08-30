@@ -158,7 +158,7 @@ public interface WrittenBookContent extends BuildableDataComponent<WrittenBookCo
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setPages(List<? extends ComponentLike> pages);
+        Builder pages(List<? extends ComponentLike> pages);
 
         /**
          * Adds a filterable page to this book.
@@ -188,6 +188,6 @@ public interface WrittenBookContent extends BuildableDataComponent<WrittenBookCo
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setFilteredPages(List<Filtered<? extends ComponentLike>> pages);
+        Builder filteredPages(List<Filtered<? extends ComponentLike>> pages);
     }
 }

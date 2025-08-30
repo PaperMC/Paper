@@ -33,7 +33,7 @@ public record PaperTooltipDisplay(
     public Builder toBuilder() {
         return new BuilderImpl()
             .hideTooltip(this.hideTooltip())
-            .setHiddenComponents(this.hiddenComponents());
+            .hiddenComponents(this.hiddenComponents());
     }
 
     static final class BuilderImpl implements Builder {
@@ -54,13 +54,13 @@ public record PaperTooltipDisplay(
         }
 
         @Override
-        public Builder hiddenComponents(final Set<DataComponentType> components) {
+        public Builder addHiddenComponents(final Set<DataComponentType> components) {
             this.hiddenComponents.addAll(components);
             return this;
         }
 
         @Override
-        public Builder setHiddenComponents(final Set<DataComponentType> components) {
+        public Builder hiddenComponents(final Set<DataComponentType> components) {
             this.hiddenComponents.clear();
             this.hiddenComponents.addAll(components);
             return this;

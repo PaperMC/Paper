@@ -71,6 +71,6 @@ public interface ItemAdventurePredicate extends BuildableDataComponent<ItemAdven
          * @see #predicates()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setPredicates(List<BlockPredicate> predicates);
+        Builder predicates(List<BlockPredicate> predicates);
     }
 }

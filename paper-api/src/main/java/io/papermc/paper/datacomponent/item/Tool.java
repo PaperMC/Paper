@@ -173,6 +173,6 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setRules(Collection<Rule> rules);
+        Builder rules(Collection<Rule> rules);
     }
 }

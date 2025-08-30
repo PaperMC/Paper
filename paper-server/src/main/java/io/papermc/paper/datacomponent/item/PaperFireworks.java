@@ -33,7 +33,7 @@ public record PaperFireworks(
     public Builder toBuilder() {
         return new BuilderImpl()
             .flightDuration(this.flightDuration())
-            .setEffects(this.effects());
+            .effects(this.effects());
     }
 
     static final class BuilderImpl implements Fireworks.Builder {
@@ -73,7 +73,7 @@ public record PaperFireworks(
         }
 
         @Override
-        public Builder setEffects(final List<FireworkEffect> effects) {
+        public Builder effects(final List<FireworkEffect> effects) {
             Preconditions.checkArgument(
                 effects.size() <= net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
                 "Cannot have more than %s effects, had %s",

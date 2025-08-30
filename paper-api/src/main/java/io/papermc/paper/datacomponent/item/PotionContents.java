@@ -145,6 +145,6 @@ public interface PotionContents extends BuildableDataComponent<PotionContents, P
          * @see #customEffects()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setCustomEffects(List<PotionEffect> effects);
+        Builder customEffects(List<PotionEffect> effects);
     }
 }

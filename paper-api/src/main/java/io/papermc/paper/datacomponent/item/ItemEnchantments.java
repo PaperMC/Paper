@@ -74,6 +74,6 @@ public interface ItemEnchantments extends BuildableDataComponent<ItemEnchantment
          * @see #enchantments()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder set(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
+        Builder enchantments(Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments);
     }
 }

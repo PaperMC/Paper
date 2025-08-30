@@ -90,6 +90,6 @@ public interface Fireworks extends BuildableDataComponent<Fireworks, Fireworks.B
          * @see #effects()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setEffects(List<FireworkEffect> effects);
+        Builder effects(List<FireworkEffect> effects);
     }
 }

@@ -72,6 +72,6 @@ public interface SuspiciousStewEffects extends BuildableDataComponent<Suspicious
          * @see #effects()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder set(Collection<SuspiciousEffectEntry> entries);
+        Builder effects(Collection<SuspiciousEffectEntry> entries);
     }
 }

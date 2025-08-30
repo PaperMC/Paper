@@ -71,6 +71,6 @@ public interface BundleContents extends BuildableDataComponent<BundleContents, B
          * @see #contents()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder set(List<ItemStack> stacks);
+        Builder stacks(List<ItemStack> stacks);
     }
 }

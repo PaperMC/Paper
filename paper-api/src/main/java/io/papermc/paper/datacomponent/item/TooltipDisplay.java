@@ -42,9 +42,9 @@ public interface TooltipDisplay extends BuildableDataComponent<TooltipDisplay, T
         Builder addHiddenComponents(DataComponentType... components);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hiddenComponents(Set<DataComponentType> components);
+        Builder addHiddenComponents(Set<DataComponentType> components);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setHiddenComponents(Set<DataComponentType> components);
+        Builder hiddenComponents(Set<DataComponentType> components);
     }
 }

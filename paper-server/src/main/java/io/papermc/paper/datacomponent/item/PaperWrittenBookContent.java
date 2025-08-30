@@ -61,7 +61,7 @@ public record PaperWrittenBookContent(
         return new BuilderImpl(this.title(), this.author())
             .generation(this.generation())
             .resolved(this.resolved())
-            .setPages(this.pages().stream()
+            .pages(this.pages().stream()
                 .map(Filtered::filtered)
                 .filter(Objects::nonNull)
                 .toList());
@@ -163,7 +163,7 @@ public record PaperWrittenBookContent(
         }
 
         @Override
-        public Builder setPages(final List<? extends ComponentLike> pages) {
+        public Builder pages(final List<? extends ComponentLike> pages) {
             this.pages.clear();
             for (final ComponentLike page : pages) {
                 final Component component = page.asComponent();
@@ -193,7 +193,7 @@ public record PaperWrittenBookContent(
         }
 
         @Override
-        public Builder setFilteredPages(final List<Filtered<? extends ComponentLike>> pages) {
+        public Builder filteredPages(final List<Filtered<? extends ComponentLike>> pages) {
             this.pages.clear();
             pages.forEach(this::addFilteredPage);
             return this;

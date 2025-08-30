@@ -71,6 +71,6 @@ public interface ChargedProjectiles extends BuildableDataComponent<ChargedProjec
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder set(List<ItemStack> stacks);
+        Builder stacks(List<ItemStack> stacks);
     }
 }

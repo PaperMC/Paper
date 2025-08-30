@@ -46,10 +46,10 @@ public record PaperCustomModelData(
     @Override
     public Builder toBuilder() {
         return new BuilderImpl()
-            .setFloats(this.floats())
-            .setFlags(this.flags())
-            .setStrings(this.strings())
-            .setColors(this.colors());
+            .floats(this.floats())
+            .flags(this.flags())
+            .strings(this.strings())
+            .colors(this.colors());
     }
 
     static final class BuilderImpl implements CustomModelData.Builder {
@@ -75,11 +75,11 @@ public record PaperCustomModelData(
         }
 
         @Override
-        public Builder setFloats(final List<Float> floats) {
+        public Builder floats(final List<Float> floats) {
+            this.floats.clear();
             for (Float f : floats) {
                 Preconditions.checkArgument(f != null, "Float cannot be null");
             }
-            this.floats.clear();
             this.floats.addAll(floats);
             return this;
         }
@@ -100,11 +100,11 @@ public record PaperCustomModelData(
         }
 
         @Override
-        public Builder setFlags(final List<Boolean> flags) {
+        public Builder flags(final List<Boolean> flags) {
+            this.flags.clear();
             for (Boolean flag : flags) {
                 Preconditions.checkArgument(flag != null, "Flag cannot be null");
             }
-            this.flags.clear();
             this.flags.addAll(flags);
             return this;
         }
@@ -123,7 +123,7 @@ public record PaperCustomModelData(
         }
 
         @Override
-        public Builder setStrings(final List<String> strings) {
+        public Builder strings(final List<String> strings) {
             this.strings.clear();
             strings.forEach(this::addString);
             return this;
@@ -143,7 +143,7 @@ public record PaperCustomModelData(
         }
 
         @Override
-        public Builder setColors(final List<Color> colors) {
+        public Builder colors(final List<Color> colors) {
             this.colors.clear();
             colors.forEach(this::addColor);
             return this;

@@ -46,7 +46,7 @@ public record PaperChargedProjectiles(
         }
 
         @Override
-        public Builder set(final List<ItemStack> stacks) {
+        public Builder stacks(final List<ItemStack> stacks) {
             items.clear();
             stacks.forEach(this::add);
             return this;

@@ -45,6 +45,6 @@ public interface DeathProtection extends BuildableDataComponent<DeathProtection,
         Builder addEffects(List<ConsumeEffect> effects);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setEffects(List<ConsumeEffect> effects);
+        Builder effects(List<ConsumeEffect> effects);
     }
 }

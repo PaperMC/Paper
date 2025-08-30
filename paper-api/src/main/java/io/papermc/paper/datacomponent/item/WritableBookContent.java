@@ -66,7 +66,7 @@ public interface WritableBookContent extends BuildableDataComponent<WritableBook
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setPages(List<String> pages);
+        Builder pages(List<String> pages);
 
         /**
          * Adds a filterable page that can be written to for this builder.
@@ -96,6 +96,6 @@ public interface WritableBookContent extends BuildableDataComponent<WritableBook
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder setFilteredPages(List<Filtered<String>> pages);
+        Builder filteredPages(List<Filtered<String>> pages);
     }
 }

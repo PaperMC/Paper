@@ -33,7 +33,7 @@ public record PaperItemAdventurePredicate(
 
     @Override
     public Builder toBuilder() {
-        return new BuilderImpl().setPredicates(this.predicates());
+        return new BuilderImpl().predicates(this.predicates());
     }
 
     static final class BuilderImpl implements ItemAdventurePredicate.Builder {
@@ -57,7 +57,7 @@ public record PaperItemAdventurePredicate(
         }
 
         @Override
-        public Builder setPredicates(final List<BlockPredicate> predicates) {
+        public Builder predicates(final List<BlockPredicate> predicates) {
             this.predicates.clear();
             predicates.forEach(this::addPredicate);
             return this;

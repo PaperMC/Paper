@@ -26,7 +26,7 @@ public record PaperWritableBookContent(
 
     @Override
     public Builder toBuilder() {
-        return new BuilderImpl().setFilteredPages(this.pages());
+        return new BuilderImpl().filteredPages(this.pages());
     }
 
     static final class BuilderImpl implements WritableBookContent.Builder {
@@ -71,7 +71,7 @@ public record PaperWritableBookContent(
         }
 
         @Override
-        public Builder setPages(final List<String> pages) {
+        public Builder pages(final List<String> pages) {
             this.pages.clear();
             validatePageCount(0, pages.size());
             for (final String page : pages) {
@@ -106,7 +106,7 @@ public record PaperWritableBookContent(
         }
 
         @Override
-        public Builder setFilteredPages(final List<Filtered<String>> pages) {
+        public Builder filteredPages(final List<Filtered<String>> pages) {
             this.pages.clear();
             validatePageCount(0, pages.size());
             for (final Filtered<String> page : pages) {

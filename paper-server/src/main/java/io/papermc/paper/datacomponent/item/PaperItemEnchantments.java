@@ -39,7 +39,7 @@ public record PaperItemEnchantments(
 
     @Override
     public Builder toBuilder() {
-        return new BuilderImpl().set(this.enchantments());
+        return new BuilderImpl().enchantments(this.enchantments());
     }
 
     static final class BuilderImpl implements ItemEnchantments.Builder {
@@ -65,7 +65,7 @@ public record PaperItemEnchantments(
         }
 
         @Override
-        public Builder set(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
+        public Builder enchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
             this.enchantments.clear();
             enchantments.forEach(this::add);
             return this;

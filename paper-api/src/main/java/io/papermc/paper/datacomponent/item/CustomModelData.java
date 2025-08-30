@@ -91,7 +91,7 @@ public interface CustomModelData extends BuildableDataComponent<CustomModelData,
          * @see #floats()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        CustomModelData.Builder setFloats(List<Float> floats);
+        CustomModelData.Builder floats(List<Float> floats);
 
         /**
          * Adds a flag to this custom model data.
@@ -121,7 +121,7 @@ public interface CustomModelData extends BuildableDataComponent<CustomModelData,
          * @see #flags()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        CustomModelData.Builder setFlags(List<Boolean> flags);
+        CustomModelData.Builder flags(List<Boolean> flags);
 
         /**
          * Adds a string to this custom model data.
@@ -151,7 +151,7 @@ public interface CustomModelData extends BuildableDataComponent<CustomModelData,
          * @see #strings()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        CustomModelData.Builder setStrings(List<String> strings);
+        CustomModelData.Builder strings(List<String> strings);
 
         /**
          * Adds a color to this custom model data.
@@ -181,6 +181,6 @@ public interface CustomModelData extends BuildableDataComponent<CustomModelData,
          * @see #colors()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        CustomModelData.Builder setColors(List<Color> colors);
+        CustomModelData.Builder colors(List<Color> colors);
     }
 }

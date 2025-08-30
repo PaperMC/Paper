@@ -62,6 +62,5 @@ public interface BannerPatternLayers extends BuildableDataComponent<BannerPatter
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<Pattern> patterns);
-
     }
 }

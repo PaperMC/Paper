@@ -27,7 +27,7 @@ public record PaperSuspiciousStewEffects(
 
     @Override
     public Builder toBuilder() {
-        return new BuilderImpl().set(this.effects());
+        return new BuilderImpl().effects(this.effects());
     }
 
     static final class BuilderImpl implements Builder {
@@ -50,7 +50,7 @@ public record PaperSuspiciousStewEffects(
         }
 
         @Override
-        public Builder set(final Collection<SuspiciousEffectEntry> entries) {
+        public Builder effects(final Collection<SuspiciousEffectEntry> entries) {
             this.effects.clear();
             entries.forEach(this::add);
             return this;

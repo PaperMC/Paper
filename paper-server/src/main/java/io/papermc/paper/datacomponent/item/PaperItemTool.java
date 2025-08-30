@@ -67,7 +67,7 @@ public record PaperItemTool(
         return new BuilderImpl()
             .damagePerBlock(this.damagePerBlock())
             .defaultMiningSpeed(this.defaultMiningSpeed())
-            .setRules(this.rules())
+            .rules(this.rules())
             .canDestroyBlocksInCreative(this.canDestroyBlocksInCreative());
     }
 
@@ -114,7 +114,7 @@ public record PaperItemTool(
         }
 
         @Override
-        public Builder setRules(final Collection<Rule> rules) {
+        public Builder rules(final Collection<Rule> rules) {
             this.rules.clear();
             rules.forEach(this::addRule);
             return this;

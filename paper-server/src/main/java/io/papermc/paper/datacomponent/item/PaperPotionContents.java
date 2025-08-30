@@ -69,7 +69,7 @@ public record PaperPotionContents(
             .potion(this.potion())
             .customColor(this.customColor())
             .customName(this.customName())
-            .setCustomEffects(this.customEffects());
+            .customEffects(this.customEffects());
     }
 
     static final class BuilderImpl implements PotionContents.Builder {
@@ -111,7 +111,7 @@ public record PaperPotionContents(
         }
 
         @Override
-        public Builder setCustomEffects(final List<PotionEffect> effects) {
+        public Builder customEffects(final List<PotionEffect> effects) {
             this.customEffects.clear();
             effects.forEach(this::addCustomEffect);
             return this;
