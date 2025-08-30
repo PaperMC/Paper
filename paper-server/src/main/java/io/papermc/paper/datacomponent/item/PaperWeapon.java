@@ -22,6 +22,13 @@ public record PaperWeapon(
         return this.impl.disableBlockingForSeconds();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .itemDamagePerAttack(this.itemDamagePerAttack())
+            .disableBlockingForSeconds(this.disableBlockingForSeconds());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private int itemDamagePerAttack = 1;
