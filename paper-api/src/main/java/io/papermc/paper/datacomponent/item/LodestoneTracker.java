@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.Location;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface LodestoneTracker {
+public interface LodestoneTracker extends BuildableDataComponent<LodestoneTracker, LodestoneTracker.Builder> {
 
     @Contract(value = "_, _ -> new", pure = true)
     static LodestoneTracker lodestoneTracker(final @Nullable Location location, final boolean tracked) {

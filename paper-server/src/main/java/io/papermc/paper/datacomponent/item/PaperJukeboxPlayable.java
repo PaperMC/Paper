@@ -18,6 +18,11 @@ public record PaperJukeboxPlayable(
         return CraftJukeboxSong.minecraftHolderToBukkit(this.impl.song());
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.jukeboxSong());
+    }
+
     static final class BuilderImpl implements JukeboxPlayable.Builder {
 
         private JukeboxSong song;

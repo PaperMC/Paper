@@ -17,6 +17,11 @@ public record PaperMapItemColor(
         return Color.fromRGB(this.impl.rgb() & 0x00FFFFFF); // skip alpha channel
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().color(this.color());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private Color color = Color.fromRGB(net.minecraft.world.item.component.MapItemColor.DEFAULT.rgb());

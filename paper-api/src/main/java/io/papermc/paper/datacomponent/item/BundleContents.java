@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.inventory.ItemStack;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface BundleContents {
+public interface BundleContents extends BuildableDataComponent<BundleContents, BundleContents.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static BundleContents bundleContents(final List<ItemStack> contents) {
@@ -61,5 +62,15 @@ public interface BundleContents {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<ItemStack> stacks);
+
+        /**
+         * Sets items to this builder.
+         *
+         * @param stacks items
+         * @return the builder for chaining
+         * @see #contents()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder stacks(List<ItemStack> stacks);
     }
 }

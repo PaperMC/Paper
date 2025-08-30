@@ -22,6 +22,11 @@ public record PaperItemContainerContents(
         return MCUtil.transformUnmodifiable(this.impl.items, optional -> optional.map(CraftItemStack::asBukkitCopy).orElse(ItemStack.empty()));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.contents());
+    }
+
     static final class BuilderImpl implements ItemContainerContents.Builder {
 
         private final List<net.minecraft.world.item.ItemStack> items = new ObjectArrayList<>();
@@ -50,6 +55,22 @@ public record PaperItemContainerContents(
             MCUtil.addAndConvert(this.items, items, item -> {
                 Preconditions.checkArgument(item != null, "Cannot pass null item!");
                 return CraftItemStack.asNMSCopy(item);
+            });
+            return this;
+        }
+
+        @Override
+        public Builder stacks(final List<ItemStack> stacks) {
+            this.items.clear();
+            Preconditions.checkArgument(
+                stacks.size() <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
+                "Cannot have more than %s items, had %s",
+                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
+                stacks.size()
+            );
+            MCUtil.addAndConvert(this.items, stacks, stack -> {
+                Preconditions.checkArgument(stack != null, "Cannot pass null item!");
+                return CraftItemStack.asNMSCopy(stack);
             });
             return this;
         }

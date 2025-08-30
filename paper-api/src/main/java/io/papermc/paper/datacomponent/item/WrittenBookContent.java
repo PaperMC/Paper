@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.text.Filtered;
 import java.util.List;
@@ -19,7 +20,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface WrittenBookContent extends BookLike {
+public interface WrittenBookContent extends BookLike, BuildableDataComponent<WrittenBookContent, WrittenBookContent.Builder> {
 
     @Contract(value = "_, _ -> new", pure = true)
     static WrittenBookContent.Builder writtenBookContent(final String title, final String author) {
@@ -143,12 +144,22 @@ public interface WrittenBookContent extends BookLike {
         /**
          * Adds pages to this book.
          *
-         * @param page the pages
+         * @param pages the pages
          * @return the builder for chaining
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addPages(List<? extends ComponentLike> page);
+        Builder addPages(List<? extends ComponentLike> pages);
+
+        /**
+         * Sets pages to this book.
+         *
+         * @param pages the pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder pages(List<? extends ComponentLike> pages);
 
         /**
          * Adds a filterable page to this book.
@@ -169,5 +180,15 @@ public interface WrittenBookContent extends BookLike {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addFilteredPages(List<Filtered<? extends ComponentLike>> pages);
+
+        /**
+         * Sets filterable pages to this book.
+         *
+         * @param pages the pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder filteredPages(List<Filtered<? extends ComponentLike>> pages);
     }
 }

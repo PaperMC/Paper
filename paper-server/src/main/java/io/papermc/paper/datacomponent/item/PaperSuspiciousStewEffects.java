@@ -25,6 +25,11 @@ public record PaperSuspiciousStewEffects(
         return MCUtil.transformUnmodifiable(this.impl.effects(), entry -> create(CraftPotionEffectType.minecraftHolderToBukkit(entry.effect()), entry.duration()));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().effects(this.effects());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final List<net.minecraft.world.item.component.SuspiciousStewEffects.Entry> effects = new ObjectArrayList<>();
@@ -40,6 +45,13 @@ public record PaperSuspiciousStewEffects(
 
         @Override
         public Builder addAll(final Collection<SuspiciousEffectEntry> entries) {
+            entries.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public Builder effects(final Collection<SuspiciousEffectEntry> entries) {
+            this.effects.clear();
             entries.forEach(this::add);
             return this;
         }

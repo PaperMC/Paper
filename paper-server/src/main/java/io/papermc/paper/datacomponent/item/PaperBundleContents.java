@@ -21,6 +21,11 @@ public record PaperBundleContents(
         return this.impl.itemCopyStream().map(CraftItemStack::asBukkitCopy).toList();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.contents());
+    }
+
     static final class BuilderImpl implements BundleContents.Builder {
 
         private final List<net.minecraft.world.item.ItemStackTemplate> items = new ObjectArrayList<>();
@@ -36,6 +41,13 @@ public record PaperBundleContents(
         @Override
         public BundleContents.Builder addAll(final List<ItemStack> items) {
             items.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public Builder stacks(final List<ItemStack> stacks) {
+            items.clear();
+            stacks.forEach(this::add);
             return this;
         }
 
