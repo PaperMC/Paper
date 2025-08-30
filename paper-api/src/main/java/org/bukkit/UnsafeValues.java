@@ -3,10 +3,12 @@ package org.bukkit;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.List;
+import java.util.Map;
+import net.kyori.adventure.key.Key;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -23,7 +25,6 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -81,7 +82,48 @@ public interface UnsafeValues {
      * @param advancement representation of the advancement
      * @return the loaded advancement or null if an error occurred
      */
-    Advancement loadAdvancement(NamespacedKey key, String advancement);
+    default Advancement loadAdvancement(NamespacedKey key, String advancement) {
+        return loadAdvancement(key, advancement, true);
+    }
+    
+    /**
+     * Load an advancement represented by the specified string into the server.
+     * The advancement format is governed by Minecraft and has no specified
+     * layout.
+     * <br>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * <br>
+     * Loaded advancements will only be stored and persisted across server restarts
+     * and reloads, if the {@code persist} parameter is set to true. 
+     * <br>
+     * Callers should be prepared for {@link Exception} to be thrown.
+     *
+     * @param key the unique advancement key
+     * @param advancement representation of the advancement
+     * @param persist whether to store this advancement in the bukkit datapack for persistence
+     * @return the loaded advancement or null if an error occurred
+     */
+    default Advancement loadAdvancement(Key key, String advancement, boolean persist) {
+        return loadAdvancements(Map.of(key, advancement), persist).getFirst();
+    }
+
+    /**
+     * Load multiple advancements represented by the specified strings into the server.
+     * The advancement format is governed by Minecraft and has no specified
+     * layout.
+     * <br>
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * <br>
+     * Loaded advancements will only be stored and persisted across server restarts
+     * and reloads, if the {@code persist} parameter is set to true. 
+     * <br>
+     * Callers should be prepared for {@link Exception} to be thrown.
+     *
+     * @param advancements the advancements to register. The key is the unique advancement key and the value is the advancement's JSON representation
+     * @param persist whether to store this advancement in the bukkit datapack for persistence
+     * @return list of all successfully loaded advancements
+     */
+    List<Advancement> loadAdvancements(Map<Key, String> advancements, boolean persist);
 
     /**
      * Delete an advancement which was loaded and saved by
