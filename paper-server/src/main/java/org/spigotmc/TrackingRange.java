@@ -32,7 +32,7 @@ public final class TrackingRange {
 
         if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
             // Exempt ender dragon
-            return ((ServerLevel) entity.level()).getChunkSource().chunkMap.serverViewDistance;
+            return ((ServerLevel) entity.level()).getChunkSource().chunkMap.serverViewDistance << 4;
         }
 
         switch (entity.activationType) {
