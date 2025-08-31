@@ -133,7 +133,7 @@ public interface Display extends Entity {
     public float getDisplayHeight();
 
     /**
-     * Sets the height if this display.
+     * Sets the height of this display.
      *
      * @param height new height
      */

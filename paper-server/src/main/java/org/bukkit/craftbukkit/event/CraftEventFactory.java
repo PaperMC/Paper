@@ -1559,9 +1559,9 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
+    public static boolean callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
         PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
-        player.level().getCraftServer().getPluginManager().callEvent(event);
+        return event.callEvent();
     }
 
     public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) { // Paper - custom shear drops
@@ -1700,10 +1700,10 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel level, BlockPos pos, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot) {
+    public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel level, BlockPos pos, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot, LootTable lootTable) {
         List<org.bukkit.inventory.ItemStack> craftItemStacks = rewardLoot.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
 
-        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks);
+        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks, lootTable.craftLootTable);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -1816,10 +1816,10 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static boolean handlePlayerRecipeListUpdateEvent(net.minecraft.world.entity.player.Player player, ResourceLocation recipe) {
-        PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipe));
-        Bukkit.getPluginManager().callEvent(event);
-        return !event.isCancelled();
+    public static PlayerRecipeDiscoverEvent callPlayerRecipeListUpdateEvent(net.minecraft.world.entity.player.Player player, RecipeHolder<?> recipeHolder) {
+        PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().location()), recipeHolder.value().showNotification());
+        event.callEvent();
+        return event;
     }
 
     public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining, boolean cancelled) {

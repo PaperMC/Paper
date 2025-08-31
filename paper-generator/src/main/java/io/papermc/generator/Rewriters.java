@@ -48,6 +48,7 @@ import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.Statistic;
 import org.bukkit.Tag;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
@@ -129,6 +130,7 @@ public final class Rewriters {
             .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Salmon.Variant.class))
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
+            .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
