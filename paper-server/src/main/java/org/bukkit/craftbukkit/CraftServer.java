@@ -1266,7 +1266,6 @@ public final class CraftServer implements Server {
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
 
         ResourceKey<LevelStem> actualDimension = switch (creator.environment()) {
-            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
             case NORMAL -> LevelStem.OVERWORLD;
             case NETHER -> LevelStem.NETHER;
             case THE_END -> LevelStem.END;
