@@ -1,5 +1,13 @@
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -197,7 +_,6 @@
+ import net.minecraft.world.level.block.entity.StructureBlockEntity;
+ import net.minecraft.world.level.block.entity.TestBlockEntity;
+ import net.minecraft.world.level.block.entity.TestInstanceBlockEntity;
+-import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.storage.TagValueOutput;
+ import net.minecraft.world.phys.AABB;
 @@ -208,6 +_,38 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import org.slf4j.Logger;
@@ -1290,10 +1298,11 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel serverLevel = this.player.level();
-@@ -1315,6 +_,48 @@
+@@ -1315,7 +_,49 @@
                      this.player.absSnapRotationTo(f, f1);
                  }
  
+-                if (this.player.gameMode.useItem(this.player, serverLevel, itemInHand, hand) instanceof InteractionResult.Success success
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
 +                double x = this.player.getX();
@@ -1336,9 +1345,10 @@
 +                }
 +                // CraftBukkit end
 +
-                 if (this.player.gameMode.useItem(this.player, serverLevel, itemInHand, hand) instanceof InteractionResult.Success success
++                if (CraftEventFactory.callPlayerPostInteractEvent(this.player, this.player.gameMode.useItem(this.player, serverLevel, itemInHand, hand), hand, new io.papermc.paper.interact.PaperInteractionType.UseItem(itemInHand)) instanceof InteractionResult.Success success // Paper - PlayerPostInteractEvent
                      && success.swingSource() == InteractionResult.SwingSource.SERVER) {
                      this.player.swing(hand, true);
+                 }
 @@ -1330,7 +_,7 @@
              for (ServerLevel serverLevel : this.server.getAllLevels()) {
                  Entity entity = packet.getEntity(serverLevel);
@@ -1865,7 +1875,7 @@
 +                                        return;
 +                                    }
 +                                    // CraftBukkit end
-+                                    InteractionResult result = entityInteraction.run(ServerGamePacketListenerImpl.this.player, target, hand);
++                                    InteractionResult result = CraftEventFactory.callPlayerPostInteractEvent(ServerGamePacketListenerImpl.this.player, entityInteraction.run(ServerGamePacketListenerImpl.this.player, target, hand), hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnEntity(target, itemStack)); // Paper - PlayerPostInteractEvent
 +
 +                                    if (result instanceof InteractionResult.Success success // CraftBukkit
 +                                    ) {
