@@ -1936,7 +1936,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the players total amount of experience points he collected to reach the current level and level progress.
      *
      * <p>This method differs from {@link #getTotalExperience()} in that this method always returns an
-     * up-to-date value that reflects the players{@link #getLevel() level} and {@link #getExp() level progress}</p>
+     * up-to-date value that reflects the player's {@link #getLevel() level} and {@link #getExp() level progress}</p>
      *
      * @return Current total experience points
      * @see #getLevel()
