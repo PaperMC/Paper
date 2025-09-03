@@ -575,6 +575,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public DoubleOr.Default maxLeashDistance = DoubleOr.Default.USE_DEFAULT;
         public boolean disableSprintInterruptionOnAttack = false;
         public int shieldBlockingDelay = 5;
+        public boolean disableProjectileInaccuracy = false;
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
         public boolean allowRemoteEnderDragonRespawning = false;
