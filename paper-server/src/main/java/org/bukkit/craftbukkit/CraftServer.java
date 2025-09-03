@@ -14,6 +14,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -981,7 +982,7 @@ public final class CraftServer implements Server {
         CommandSourceStack sourceStack = VanillaCommandWrapper.getListener(rawSender);
 
         String command = StringUtils.normalizeSpace(commandLine.trim());
-        
+
         net.minecraft.commands.Commands commands = this.getHandle().getServer().getCommands();
         com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = commands.getDispatcher();
         com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(command, sourceStack);
@@ -1261,11 +1262,15 @@ public final class CraftServer implements Server {
             biomeProvider = this.getBiomeProvider(name);
         }
 
+        WorldLoader.DataLoadContext context = this.console.worldLoader;
+        RegistryAccess.Frozen registryAccess = context.datapackDimensions();
+        net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+
         ResourceKey<LevelStem> actualDimension = switch (creator.environment()) {
             case NORMAL -> LevelStem.OVERWORLD;
             case NETHER -> LevelStem.NETHER;
             case THE_END -> LevelStem.END;
-            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
+            case CUSTOM -> MCUtil.toResourceKey(Registries.LEVEL_STEM, creator.key());
         };
 
         LevelStorageSource.LevelStorageAccess levelStorageAccess;
@@ -1318,9 +1323,6 @@ public final class CraftServer implements Server {
         boolean hardcore = creator.hardcore();
 
         PrimaryLevelData primaryLevelData;
-        WorldLoader.DataLoadContext context = this.console.worldLoader;
-        RegistryAccess.Frozen registryAccess = context.datapackDimensions();
-        net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
         if (dataTag != null) {
             LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
                 dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
@@ -1377,7 +1379,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             dimensionKey = net.minecraft.world.level.Level.END;
         } else {
-            dimensionKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
+            dimensionKey = MCUtil.toResourceKey(Registries.DIMENSION, creator.key());
         }
 
         // If set to not keep spawn in memory (changed from default) then adjust rule accordingly
