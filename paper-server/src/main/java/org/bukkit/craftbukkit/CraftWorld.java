@@ -6,13 +6,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.entity.poi.PaperPoiSearchResult;
+import io.papermc.paper.entity.poi.PaperPoiType;
+import io.papermc.paper.entity.poi.PoiSearchResult;
+import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +60,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.raid.Raids;
@@ -2345,6 +2349,46 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), CraftLocation.toBukkit(found.getFirst(), this));
+    }
+
+    @Override
+    public Location locateNearestPoi(@NotNull final Location origin, @NotNull final PoiType poiType, final int radius, final PoiType.@NotNull Occupancy occupancy) {
+        Preconditions.checkArgument(origin != null, "Location cannot be null");
+        Preconditions.checkArgument(origin.getWorld().equals(this), "The provided location must be in the same world");
+        Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
+        Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
+        Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
+
+        final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> nms = PaperPoiType.bukkitToMinecraftHolder(poiType);
+        final PoiManager.Occupancy nmsOccupancy = PaperPoiType.PaperOccupancy.bukkitToMinecraft(occupancy);
+        final BlockPos sourcePos = CraftLocation.toBlockPosition(origin);
+
+        return this.getHandle().getPoiManager().findClosestWithType(holder -> holder.is(nms), sourcePos, radius, nmsOccupancy)
+            .map(found -> CraftLocation.toBukkit(found.getSecond(), this))
+            .orElse(null);
+    }
+
+    @Override
+    public @NotNull List<PoiSearchResult> locateAllPoiInRange(@NotNull final Location origin, @NotNull final Predicate<PoiType> poiTypePredicate, final int radius, final PoiType.@NotNull Occupancy occupancy) {
+        Preconditions.checkArgument(origin != null, "Location cannot be null");
+        Preconditions.checkArgument(origin.getWorld().equals(this), "The provided location must be in the same world");
+        Preconditions.checkArgument(poiTypePredicate != null, "The predicate filter must not be null");
+        Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
+        Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
+
+        final Predicate<Holder<net.minecraft.world.entity.ai.village.poi.PoiType>> predicate = type -> poiTypePredicate.test(PaperPoiType.minecraftHolderToBukkit(type));
+        final PoiManager.Occupancy nmsOccupancy = PaperPoiType.PaperOccupancy.bukkitToMinecraft(occupancy);
+        final BlockPos sourcePos = CraftLocation.toBlockPosition(origin);
+
+        return this.getHandle().getPoiManager().getInRange(predicate, sourcePos, radius, nmsOccupancy)
+            .map(record -> PaperPoiSearchResult.from(record, this))
+            .toList();
+        /*
+        with Moonrise:
+        List<PoiRecord> ret = new ArrayList<>();
+        PoiAccess.findAnyPoiRecords(this.getHandle().getPoiManager(), predicate, $ -> true, sourcePos, radius, nmsOccupancy, false, Integer.MAX_VALUE, ret);
+        return ret.stream().map(record -> PaperPoiSearchResult.from(record, this)).toList();
+        */
     }
 
     @Override
