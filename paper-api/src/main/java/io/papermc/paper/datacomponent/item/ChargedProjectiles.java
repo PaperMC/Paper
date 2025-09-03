@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.inventory.ItemStack;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ChargedProjectiles {
+public interface ChargedProjectiles extends BuildableDataComponent<ChargedProjectiles, ChargedProjectiles.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static ChargedProjectiles chargedProjectiles(final List<ItemStack> projectiles) {
@@ -61,5 +62,15 @@ public interface ChargedProjectiles {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(List<ItemStack> stacks);
+
+        /**
+         * Sets the projectiles to be loaded in this builder.
+         *
+         * @param stacks projectiles
+         * @return the builder for chaining
+         * @see #projectiles()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder stacks(List<ItemStack> stacks);
     }
 }

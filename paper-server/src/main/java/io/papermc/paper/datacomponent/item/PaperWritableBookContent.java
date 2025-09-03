@@ -24,6 +24,11 @@ public record PaperWritableBookContent(
         return MCUtil.transformUnmodifiable(this.impl.pages(), input -> Filtered.of(input.raw(), input.filtered().orElse(null)));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().filteredPages(this.pages());
+    }
+
     static final class BuilderImpl implements WritableBookContent.Builder {
 
         private final List<Filterable<String>> pages = new ObjectArrayList<>();
@@ -66,6 +71,17 @@ public record PaperWritableBookContent(
         }
 
         @Override
+        public Builder pages(final List<String> pages) {
+            this.pages.clear();
+            validatePageCount(0, pages.size());
+            for (final String page : pages) {
+                validatePageLength(page);
+                this.pages.add(Filterable.passThrough(page));
+            }
+            return this;
+        }
+
+        @Override
         public WritableBookContent.Builder addFilteredPage(final Filtered<String> page) {
             validatePageLength(page.raw());
             if (page.filtered() != null) {
@@ -79,6 +95,20 @@ public record PaperWritableBookContent(
         @Override
         public WritableBookContent.Builder addFilteredPages(final List<Filtered<String>> pages) {
             validatePageCount(this.pages.size(), pages.size());
+            for (final Filtered<String> page : pages) {
+                validatePageLength(page.raw());
+                if (page.filtered() != null) {
+                    validatePageLength(page.filtered());
+                }
+                this.pages.add(new Filterable<>(page.raw(), Optional.ofNullable(page.filtered())));
+            }
+            return this;
+        }
+
+        @Override
+        public Builder filteredPages(final List<Filtered<String>> pages) {
+            this.pages.clear();
+            validatePageCount(0, pages.size());
             for (final Filtered<String> page : pages) {
                 validatePageLength(page.raw());
                 if (page.filtered() != null) {
