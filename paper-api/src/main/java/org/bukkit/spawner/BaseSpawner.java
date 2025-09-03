@@ -3,6 +3,7 @@ package org.bukkit.spawner;
 import java.util.Collection;
 import java.util.List;
 import org.bukkit.block.CreatureSpawner;
+import org.bukkit.block.TrialSpawner;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.entity.EntitySnapshot;
