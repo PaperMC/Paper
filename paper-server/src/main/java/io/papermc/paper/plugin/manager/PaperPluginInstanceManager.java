@@ -311,8 +311,10 @@ class PaperPluginInstanceManager {
         }
 
         try {
-            for (World world : this.server.getWorlds()) {
-                world.removePluginChunkTickets(plugin);
+            if (!this.server.isStopping()) {
+                for (World world : this.server.getWorlds()) {
+                    world.removePluginChunkTickets(plugin);
+                }
             }
         } catch (Throwable ex) {
             this.handlePluginException("Error occurred (in the plugin loader) while removing chunk tickets for " + pluginName + " (Is it up to date?)", ex, plugin); // Paper
