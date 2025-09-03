@@ -6645,10 +6645,10 @@ index 0000000000000000000000000000000000000000..32d498fac143f40124dc69fa0cf566f1
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterItemStackToDataComponents.java b/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterItemStackToDataComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5c5b711406f63a3e35ae7e5bfbf1d306bee4f1c
+index 0000000000000000000000000000000000000000..6bf5f41325e33064a94496afaa931ee4593604c7
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterItemStackToDataComponents.java
-@@ -0,0 +1,1244 @@
+@@ -0,0 +1,1254 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.itemstack;
 +
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
@@ -6945,7 +6945,12 @@ index 0000000000000000000000000000000000000000..d5c5b711406f63a3e35ae7e5bfbf1d30
 +                    continue;
 +                }
 +
-+                newEnchantments.setInt(id, Mth.clamp(level.intValue(), 0, 0xFF));
++                final int clampedLvl = Mth.clamp(level.intValue(), 0, 0xFF);
++                if (clampedLvl <= 0) {
++                    continue;
++                }
++
++                newEnchantments.setInt(id, clampedLvl);
 +            }
 +
 +            if (!newEnchantments.isEmpty() || hideToolTip) {
@@ -6968,18 +6973,23 @@ index 0000000000000000000000000000000000000000..d5c5b711406f63a3e35ae7e5bfbf1d30
 +        final MapType display = transientItem.tag.getMap("display");
 +
 +        if (display != null) {
-+            final Object name = display.getGeneric("Name");
-+            if (name != null) {
-+                display.remove("Name");
-+
++            final String name = display.getString("Name");
++            display.remove("Name");
++            if (name != null && ComponentUtils.isValidJson(name)) {
 +                transientItem.componentSetGeneric("minecraft:custom_name", name);
 +            }
 +
-+            final Object lore = display.getGeneric("Lore");
++            final ListType lore = display.getList("Lore", ObjectType.STRING);
++            display.remove("Lore");
 +            if (lore != null) {
-+                display.remove("Lore");
-+
-+                transientItem.componentSetGeneric("minecraft:lore", lore);
++                final ListType validLore = type.createEmptyList();
++                for (int i = 0, len = lore.size(); i < len; ++i) {
++                    final String loreEntry = lore.getString(i);
++                    if (ComponentUtils.isValidJson(loreEntry)) {
++                        validLore.addString(loreEntry);
++                    }
++                }
++                transientItem.componentSetGeneric("minecraft:lore", validLore);
 +            }
 +        }
 +
@@ -9824,10 +9834,10 @@ index 0000000000000000000000000000000000000000..8467d4849f9988da3d79620337be8e12
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/util/ComponentUtils.java b/ca/spottedleaf/dataconverter/minecraft/util/ComponentUtils.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..17ded002b5546de8be4a5238c20ccfda460a98bb
+index 0000000000000000000000000000000000000000..a27d0f67558d68563bd99ff1886e8bc50ef99d0a
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/util/ComponentUtils.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,91 @@
 +package ca.spottedleaf.dataconverter.minecraft.util;
 +
 +import com.google.gson.JsonElement;
@@ -9906,6 +9916,15 @@ index 0000000000000000000000000000000000000000..17ded002b5546de8be4a5238c20ccfda
 +        }
 +
 +        return createPlainTextComponent(input);
++    }
++
++    public static boolean isValidJson(final String input) {
++        try {
++            JsonParser.parseString(input);
++            return true;
++        } catch (final JsonParseException ex) {
++            return false;
++        }
 +    }
 +
 +    private ComponentUtils() {}
@@ -32585,7 +32604,7 @@ index 6536dc08c80170f5679acedd65cd2b9f6ad3fb3a..294cd15a796ad25823c8ccf98fbfae46
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 8a18b0d926f80bab09a478b9d34ec914e5f76795..3527c39f3f95832d52aeda6205bbbb7161ecaf66 100644
+index ca1090f32193bbe2ec4a5886a1868b8f54c30ec2..530a753043f6673dbca3b95ad59cf3b1b482741a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -305,6 +305,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
