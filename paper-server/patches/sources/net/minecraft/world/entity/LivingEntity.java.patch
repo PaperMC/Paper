@@ -18,12 +18,13 @@
  public abstract class LivingEntity extends Entity implements Attackable, WaypointTransmitter {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
-@@ -264,11 +_,25 @@
+@@ -264,11 +_,26 @@
      );
      protected final EntityEquipment equipment;
      private Waypoint.Icon locatorBarIcon = new Waypoint.Icon();
 +    // CraftBukkit start
 +    public int expToDrop;
++    public int expToReward;
 +    public List<DefaultDrop> drops = new java.util.ArrayList<>(); // Paper - Restore vanilla drops behavior
 +    public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
 +    public boolean collides = true;
@@ -796,7 +797,7 @@
              if (killCredit != null) {
                  killCredit.awardKillScore(this, damageSource);
              }
-@@ -1431,68 +_,141 @@
+@@ -1431,68 +_,142 @@
              }
  
              if (!this.level().isClientSide && this.hasCustomName()) {
@@ -840,6 +841,7 @@
 +                    }
                      this.gameEvent(GameEvent.ENTITY_DIE);
 -                    this.dropAllDeathLoot(serverLevel, damageSource);
++                    if (!this.wasExperienceConsumed()) this.dropExperience((ServerLevel) this.level(), damageSource.getEntity()); // Paper - exp fix
 +                } else {
 +                    this.dead = false;
 +                    this.setHealth((float) deathEvent.getReviveHealth());
@@ -908,6 +910,7 @@
          }
  
 -        this.dropEquipment(level);
+-        this.dropExperience(level, damageSource.getEntity());
 +        // CraftBukkit start - Call death event // Paper start - call advancement triggers with correct entity equipment
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, damageSource, this.drops, () -> {
 +            final LivingEntity killer = this.getKillCredit();
@@ -919,7 +922,7 @@
 +        this.drops = new java.util.ArrayList<>();
 +        // this.dropEquipment(level); // CraftBukkit - moved up
 +        // CraftBukkit end
-         this.dropExperience(level, damageSource.getEntity());
++        // this.dropExperience(level, damageSource.getEntity()); // Paper - exp fix - moved up
 +        return deathEvent; // Paper
      }
  
