@@ -60,6 +60,16 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu, AnvilInventory
         this.container.bypassEnchantmentLevelRestriction = bypassEnchantmentLevelRestriction;
     }
 
+    @Override
+    public boolean shouldOverrideLevelsInRestriction() {
+        return this.container.shouldOverrideLevelsInRestriction;
+    }
+
+    @Override
+    public void shouldOverrideLevelsInRestriction(final boolean shouldOverrideLevelsInRestriction) {
+        this.container.shouldOverrideLevelsInRestriction = shouldOverrideLevelsInRestriction;
+    }
+
     public void updateFromLegacy(CraftInventoryAnvil legacy) {
         if (legacy.isRepairCostSet()) {
             this.setRepairCost(legacy.getRepairCost());
