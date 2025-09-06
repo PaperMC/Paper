@@ -2,6 +2,8 @@ package io.papermc.paper.command.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.ComponentLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -11,6 +13,8 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import static java.util.Objects.requireNonNull;
 
 public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
 
@@ -26,14 +30,12 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    @NonNull
-    default CommandSender getSender() {
+    default @NonNull CommandSender getSender() {
         return this.getHandle().getBukkitSender();
     }
 
     @Override
-    @Nullable
-    default Entity getExecutor() {
+    default @Nullable Entity getExecutor() {
         net.minecraft.world.entity.Entity nmsEntity = this.getHandle().getEntity();
         if (nmsEntity == null) {
             return null;
@@ -43,9 +45,27 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    default CommandSourceStack withExecutor(@NonNull Entity executor) {
+    default @NonNull CommandSourceStack withExecutor(@NonNull Entity executor) {
         Preconditions.checkNotNull(executor, "Executor cannot be null.");
         return this.getHandle().withEntity(((CraftEntity) executor).getHandle());
+    }
+
+    @Override
+    default void sendToTarget(final @NonNull ComponentLike message) {
+        requireNonNull(message, "message");
+        this.getHandle().sendSystemMessage(PaperAdventure.asVanilla(message.asComponent()));
+    }
+
+    @Override
+    default void sendSuccess(final @NonNull ComponentLike message, final boolean allowInformingAdmins) {
+        requireNonNull(message, "message");
+        this.getHandle().sendSuccess(() -> PaperAdventure.asVanilla(message.asComponent()), allowInformingAdmins);
+    }
+
+    @Override
+    default void sendFailure(final @NonNull ComponentLike message) {
+        requireNonNull(message, "message");
+        this.getHandle().sendFailure(PaperAdventure.asVanilla(message.asComponent()), false);
     }
 
     // OLD METHODS
