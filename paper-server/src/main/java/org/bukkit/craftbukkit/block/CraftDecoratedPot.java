@@ -138,7 +138,6 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         DecoratedPotBlockEntity.WobbleStyle originalStyle = switch (style) {
             case POSITIVE -> DecoratedPotBlockEntity.WobbleStyle.POSITIVE;
             case NEGATIVE -> DecoratedPotBlockEntity.WobbleStyle.NEGATIVE;
-            default -> throw new IllegalArgumentException("Unexpected value: " + style);
         };
         this.getBlockEntity().wobble(originalStyle);
     }
