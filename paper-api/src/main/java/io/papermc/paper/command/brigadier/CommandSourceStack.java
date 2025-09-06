@@ -77,7 +77,7 @@ public interface CommandSourceStack {
      *
      * @param message the message to send
      */
-    void sendSystemMessage(ComponentLike message);
+    void sendToTarget(ComponentLike message);
 
     /**
      * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
