@@ -111,6 +111,7 @@ public interface CommandSourceStack {
 
     /**
      * Sends a system message indicating a failed command execution to the {@link #getSender()}.
+     * Does not apply red styling to the message as vanilla does to allow for custom failure message styling.
      *
      * <p>Respects vanilla semantics for accepting failure output and suppressed output environments.</p>
      *
