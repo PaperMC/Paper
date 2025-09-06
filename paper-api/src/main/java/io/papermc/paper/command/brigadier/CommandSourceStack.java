@@ -10,9 +10,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
-import java.util.function.Supplier;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * The command source type for Brigadier commands registered using Paper API.
@@ -86,28 +83,13 @@ public interface CommandSourceStack {
      * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
      * according to vanilla semantics.
      *
-     * @param message the message to send
-     * @param allowInformingAdmins whether admins and console may be informed of this success
-     * @see #sendSuccess(Supplier, boolean) for further details
-     */
-    default void sendSuccess(ComponentLike message, boolean allowInformingAdmins) {
-        requireNonNull(message, "message");
-        this.sendSuccess(() -> message, allowInformingAdmins);
-    }
-
-    /**
-     * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
-     * according to vanilla semantics.
-     *
      * <p>This currently includes checking for environments with suppressed output,
      * {@link GameRule#SEND_COMMAND_FEEDBACK}, and {@link GameRule#LOG_ADMIN_COMMANDS}.</p>
      *
-     * <p>If no message is sent (due to the above reasons or otherwise) the message supplier will not be invoked.</p>
-     *
-     * @param messageSupplier the message to send
+     * @param message the message to send
      * @param allowInformingAdmins whether admins and console may be informed of this success
      */
-    void sendSuccess(Supplier<ComponentLike> messageSupplier, boolean allowInformingAdmins);
+    void sendSuccess(ComponentLike message, boolean allowInformingAdmins);
 
     /**
      * Sends a system message indicating a failed command execution to the {@link #getSender()}.

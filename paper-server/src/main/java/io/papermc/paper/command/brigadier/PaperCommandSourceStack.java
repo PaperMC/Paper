@@ -13,7 +13,6 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -58,11 +57,9 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    default void sendSuccess(final @NonNull Supplier<@NonNull ComponentLike> messageSupplier, final boolean allowInformingAdmins) {
-        requireNonNull(messageSupplier, "messageSupplier");
-        this.getHandle().sendSuccess(() -> {
-            return PaperAdventure.asVanilla(requireNonNull(messageSupplier.get(), "messageSupplier.get()").asComponent());
-        }, allowInformingAdmins);
+    default void sendSuccess(final @NonNull ComponentLike message, final boolean allowInformingAdmins) {
+        requireNonNull(message, "message");
+        this.getHandle().sendSuccess(() -> PaperAdventure.asVanilla(message.asComponent()), allowInformingAdmins);
     }
 
     @Override
