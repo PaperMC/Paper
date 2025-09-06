@@ -67,6 +67,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a server implementation.
@@ -1583,6 +1584,19 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public HelpMap getHelpMap();
+
+    /**
+     * Creates an Inventory for a Menu.
+     * <p>
+     * These inventories can NOT be opened with {@link Player#openInventory(Inventory)},
+     * instead need to be used on {@link org.bukkit.inventory.view.builder.InventorySupport}
+     * on a valid InventorySupported InventoryViewBuilder
+     *
+     * @param owner the owner
+     * @param size the size
+     * @return this inventory
+     */
+    Inventory createMenuInventory(@Nullable InventoryHolder owner, int size);
 
     /**
      * Creates an empty inventory with the specified type. If the type
