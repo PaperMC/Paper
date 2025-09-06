@@ -18,12 +18,14 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.player.PlayerPostInteractEvent;
+import io.papermc.paper.interact.InteractionType;
+import io.papermc.paper.interact.PaperInteractionResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +34,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -2114,5 +2117,20 @@ public class CraftEventFactory {
         }
 
         return disconnectReason;
+    }
+
+    public static InteractionResult callPlayerPostInteractEvent(ServerPlayer player, InteractionResult result, InteractionHand hand, InteractionType interactionType) {
+        io.papermc.paper.interact.InteractionResult paperResult = switch (result) {
+            case InteractionResult.Fail r -> new PaperInteractionResult.Fail(r);
+            case InteractionResult.Pass p -> new PaperInteractionResult.Pass(p);
+            case InteractionResult.Success s -> new PaperInteractionResult.Success(s);
+            case InteractionResult.TryEmptyHandInteraction t -> new PaperInteractionResult.TryEmptyHandInteraction(t);
+        };
+
+        new PlayerPostInteractEvent(
+            player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), interactionType, paperResult
+        ).callEvent();
+
+        return result;
     }
 }
