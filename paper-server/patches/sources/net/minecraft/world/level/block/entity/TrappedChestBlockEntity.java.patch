@@ -1,0 +1,75 @@
+--- a/net/minecraft/world/level/block/entity/TrappedChestBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/TrappedChestBlockEntity.java
+@@ -14,14 +_,68 @@
+         super(BlockEntityType.TRAPPED_CHEST, pos, blockState);
+     }
+ 
+-    @Override
+-    protected void signalOpenCount(Level level, BlockPos pos, BlockState state, int eventId, int eventParam) {
+-        super.signalOpenCount(level, pos, state, eventId, eventParam);
+-        if (eventId != eventParam) {
++    // Paper start - TrappedChest Signal Api
++    private @org.jetbrains.annotations.Nullable Integer forcedSignal = null;
++
++    @Override
++    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
++        super.saveAdditional(output);
++        if (this.forcedSignal != null) {
++            output.putInt("Paper.ForcedSignal", this.forcedSignal);
++        }
++    }
++
++    @Override
++    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
++        super.loadAdditional(input);
++        this.forcedSignal = input.getInt("Paper.ForcedSignal").orElse(null);
++    }
++
++    public @org.jetbrains.annotations.Nullable Integer getForcedSignal() {
++        return forcedSignal;
++    }
++
++    public void setForcedSignal(@org.jetbrains.annotations.Nullable Integer forcedSignal) {
++        if (forcedSignal == null) {
++            this.forcedSignal = null;
++            return;
++        }
++
++        this.forcedSignal = Math.max(0, Math.min(15, forcedSignal));
++    }
++
++    public int getSignal() {
++        if (this.forcedSignal != null)
++            return this.forcedSignal;
++        return this.openersCounter.getOpenerCount();
++    }
++
++    public static int getSignal(net.minecraft.world.level.BlockGetter level, BlockPos pos) {
++        BlockState blockState = level.getBlockState(pos);
++        if (blockState.hasBlockEntity()) {
++            BlockEntity blockEntity = level.getBlockEntity(pos);
++            if (blockEntity instanceof TrappedChestBlockEntity) {
++                return ((TrappedChestBlockEntity) blockEntity).getSignal();
++            }
++        }
++
++        return 0;
++    }
++
++    public void updateRedStone(Level level, BlockPos pos, BlockState state, int from, int to) {
++        if (from != to) {
+             Orientation orientation = ExperimentalRedstoneUtils.initialOrientation(level, state.getValue(TrappedChestBlock.FACING).getOpposite(), Direction.UP);
+             Block block = state.getBlock();
+             level.updateNeighborsAt(pos, block, orientation);
+             level.updateNeighborsAt(pos.below(), block, orientation);
+         }
+     }
++
++    @Override
++    protected void signalOpenCount(Level level, BlockPos pos, BlockState state, int eventId, int eventParam) {
++        super.signalOpenCount(level, pos, state, eventId, eventParam);
++        updateRedStone(level, pos, state, eventId, eventParam);
++    }
++
++    // Paper end - TrappedChest Signal Api
+ }
