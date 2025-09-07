@@ -16,7 +16,7 @@ public class PlayerTradeEvent extends PlayerPurchaseEvent {
 
     @ApiStatus.Internal
     public PlayerTradeEvent(final Player player, final AbstractVillager villager, final MerchantRecipe trade, final boolean rewardExp, final boolean increaseTradeUses) {
-        super(player, trade, rewardExp, increaseTradeUses);
+        super(player, villager, trade, rewardExp, increaseTradeUses);
         this.villager = villager;
     }
 
