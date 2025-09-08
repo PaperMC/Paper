@@ -27,6 +27,10 @@ public interface Item extends Entity, io.papermc.paper.entity.Frictional { // Pa
 
     /**
      * Gets the delay before this Item is available to be picked up by players
+     * <p>
+     * If the value is 0, the item can be picked up immediately.
+     * If the value is negative or {@link Short#MAX_VALUE} (32767), the item cannot be picked up at all.
+     * Otherwise, the value is the number of ticks before the item can be picked up.
      *
      * @return Remaining delay
      */
@@ -34,7 +38,11 @@ public interface Item extends Entity, io.papermc.paper.entity.Frictional { // Pa
 
     /**
      * Sets the delay before this Item is available to be picked up by players
-     *
+     * <p>
+     * If the value is 0, the item can be picked up immediately.
+     * If the value is negative or {@link Short#MAX_VALUE} (32767), the item cannot be picked up at all.
+     * Otherwise, the value is the number of ticks before the item can be picked up.
+     * 
      * @param delay New delay
      */
     public void setPickupDelay(int delay);
