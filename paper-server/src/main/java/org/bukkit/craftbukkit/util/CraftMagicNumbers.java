@@ -12,6 +12,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import io.papermc.paper.entity.EntitySerializationFlag;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.Commands;
@@ -56,6 +58,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -859,5 +862,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
+    }
+
+    @Override
+    public ItemStack deserializeItemHover(final HoverEvent.ShowItem itemHover) {
+        if (itemHover.dataComponents().isEmpty()) {
+            return ItemStack.of(Registry.MATERIAL.getOrThrow(itemHover.item()), itemHover.count());
+        }
+        return new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.getOrThrow(PaperAdventure.asVanilla(Registries.ITEM, itemHover.item())), itemHover.count(), PaperAdventure.asVanilla(itemHover.dataComponents())).asBukkitMirror();
     }
 }
