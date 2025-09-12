@@ -44,7 +44,11 @@ public class VelocityProxy {
 
         try {
             final Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(GlobalConfiguration.get().proxies.velocity.secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+            String forwardingSecret = System.getenv("VELOCITY_FORWARDING_SECRET");
+            if (forwardingSecret == null || forwardingSecret.isEmpty()) {
+                forwardingSecret = GlobalConfiguration.get().proxies.velocity.secret;
+            }
+            mac.init(new SecretKeySpec(forwardingSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
             final byte[] mySignature = mac.doFinal(data);
             if (!MessageDigest.isEqual(signature, mySignature)) {
                 return false;
