@@ -194,7 +194,6 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild, final String userAgent) {
-
         try {
             final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + build.minecraftVersionId()).toURL();
             final HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
