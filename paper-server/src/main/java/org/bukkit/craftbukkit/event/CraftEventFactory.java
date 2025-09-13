@@ -100,6 +100,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -1941,6 +1942,10 @@ public class CraftEventFactory {
         EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
 
         Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled() && event.getTo() != null) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for EntityTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
 
         return event;
     }

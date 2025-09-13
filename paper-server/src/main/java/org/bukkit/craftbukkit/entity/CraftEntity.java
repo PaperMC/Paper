@@ -48,6 +48,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -295,6 +296,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
         // Paper end
         Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(location)), "location is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
         location.checkFinite();
         // Paper start - Teleport passenger API
         Set<io.papermc.paper.entity.TeleportFlag> flagSet = new HashSet<>(List.of(flags)); // Wrap into list while multiple old flags link to the same new one
@@ -316,11 +318,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // Paper start - fix teleport event not being called
-        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
-            this, this.getLocation(), location);
+        org.bukkit.event.entity.EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this.getHandle(), location);
         // cancelling the event is handled differently for players and entities,
         // entities just stop teleporting, players will still teleport to the "from" location of the event
-        if (!event.callEvent() || event.getTo() == null) {
+        if (event.isCancelled() || event.getTo() == null) {
             return false;
         }
         location = event.getTo();
