@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -348,7 +349,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see DataComponentType
      */
-    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
+    /**
+     * Creative mode tabs.
+     *
+     * @see CreativeModeTab
+     */
+    Registry<CreativeModeTab> CREATIVE_MODE_TAB = registryFor(RegistryKey.CREATIVE_MODE_TAB);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
