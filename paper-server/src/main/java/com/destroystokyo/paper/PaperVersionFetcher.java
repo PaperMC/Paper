@@ -68,7 +68,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     public static void getUpdateStatusStartupMessage() {
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
         final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
-        Optional<String> newVersion = Optional.empty();
+        final Optional<String> newVersion = fetchMinecraftVersionList(build, userAgent);
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
@@ -77,13 +77,11 @@ public class PaperVersionFetcher implements VersionFetcher {
         } else {
             if (buildNumber.isPresent()) {
                 distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent);
-                newVersion = fetchMinecraftVersionList(build, userAgent);
             } else {
                 final Optional<String> gitBranch = build.gitBranch();
                 final Optional<String> gitCommit = build.gitCommit();
                 if (gitBranch.isPresent() && gitCommit.isPresent()) {
                     distance = fetchDistanceFromGitHub(REPOSITORY, gitBranch.get(), gitCommit.get());
-                    newVersion = fetchMinecraftVersionList(build, userAgent);
                 }
             }
 
@@ -142,16 +140,16 @@ public class PaperVersionFetcher implements VersionFetcher {
         final String currentVersion = build.minecraftVersionId();
 
         try {
+            final Gson gson = new Gson();
             final URL versionsUrl = URI.create("https://fill.papermc.io/v3/projects/paper").toURL();
             final HttpURLConnection connection = (HttpURLConnection) versionsUrl.openConnection();
             connection.setRequestProperty("User-Agent", userAgent);
             connection.setRequestProperty("Accept", "application/json");
 
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+                final JsonObject json = gson.fromJson(reader, JsonObject.class);
                 final JsonObject versions = json.getAsJsonObject("versions");
                 final List<String> versionList = new ArrayList<>();
-
                 for (final String key : versions.keySet()) {
                     final JsonArray versionsArray = versions.getAsJsonArray(key);
                     for (final JsonElement versionElement : versionsArray) {
@@ -171,7 +169,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                         connection2.setRequestProperty("Accept", "application/json");
 
                         try (final BufferedReader buildReader = new BufferedReader(new InputStreamReader(connection2.getInputStream(), StandardCharsets.UTF_8))) {
-                            final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
+                            final JsonObject buildJson = gson.fromJson(buildReader, JsonObject.class);
                             final String channel = buildJson.get("channel").getAsString();
                             if ("STABLE".equals(channel)) {
                                 return Optional.of(latestVersion);
@@ -189,7 +187,6 @@ public class PaperVersionFetcher implements VersionFetcher {
         } catch (final IOException e) {
             LOGGER.error("Error while parsing version list", e);
         }
-
         return Optional.empty();
     }
 
