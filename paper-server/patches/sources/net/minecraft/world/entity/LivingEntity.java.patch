@@ -1540,6 +1540,40 @@
                  this.doPush(entity1);
              }
          }
+@@ -2954,16 +_,32 @@
+     protected void checkAutoSpinAttack(AABB boundingBoxBeforeSpin, AABB boundingBoxAfterSpin) {
+         AABB aabb = boundingBoxBeforeSpin.minmax(boundingBoxAfterSpin);
+         List<Entity> entities = this.level().getEntities(this, aabb);
++        int skippedAttackedEntitiesCounter = 0; // Paper - entity attempt spin attack event / hidden entities - count entities that are retroactively not part of the list
+         if (!entities.isEmpty()) {
+             for (Entity entity : entities) {
++                // Paper start - entity attempt spin attack event / hidden entities - skip hidden entities
++                if (this instanceof final ServerPlayer serverPlayer && !serverPlayer.getBukkitEntity().canSee(entity.getBukkitEntity())) {
++                    ++skippedAttackedEntitiesCounter;
++                    continue;
++                }
++                // Paper end - entity attempt spin attack event / hidden entities - skip hidden entities
+                 if (entity instanceof LivingEntity) {
++                    // Paper start - entity attempt spin attack event / hidden entities - skip hidden entities
++                    if (!new io.papermc.paper.event.entity.EntityAttemptSpinAttackEvent(
++                        getBukkitLivingEntity(),
++                        ((LivingEntity) entity).getBukkitLivingEntity()
++                    ).callEvent()) {
++                        ++skippedAttackedEntitiesCounter;
++                        continue;
++                    }
++                    // Paper end - entity attempt spin attack event / hidden entities - skip hidden entities
+                     this.doAutoAttackOnTouch((LivingEntity)entity);
+                     this.autoSpinAttackTicks = 0;
+                     this.setDeltaMovement(this.getDeltaMovement().scale(-0.2));
+                     break;
+                 }
+             }
+-        } else if (this.horizontalCollision) {
++        } if (this.horizontalCollision && skippedAttackedEntitiesCounter == entities.size()) { // Paper - entity attempt spin attack event - only check if above list was either empty (size is 0, counter is 0 because of it) or filled completely with skipped entities.
+             this.autoSpinAttackTicks = 0;
+         }
+ 
 @@ -2987,9 +_,16 @@
  
      @Override

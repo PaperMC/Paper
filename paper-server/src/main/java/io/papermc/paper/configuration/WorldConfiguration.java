@@ -31,6 +31,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.minecraft.Util;
@@ -331,6 +332,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
             @Comment("Adds a cooldown to bees being released after a failed release, which can occur if the hive is blocked or it being night.")
             public boolean cooldownFailedBeehiveReleases = true;
+            @Comment("The delay before retrying POI acquisition when entity navigation is stuck. This will reduce pathfinding performance impact. Measured in ticks.")
+            public IntOr.Disabled stuckEntityPoiRetryDelay = new IntOr.Disabled(OptionalInt.of(200));
         }
 
         public TrackingRangeY trackingRangeY;
@@ -574,6 +577,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public int shieldBlockingDelay = 5;
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
+        public boolean allowRemoteEnderDragonRespawning = false;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
