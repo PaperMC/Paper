@@ -296,6 +296,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
         // Paper end
         Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "world of location cannot be null");
         Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(location)), "location is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
         location.checkFinite();
         // Paper start - Teleport passenger API
