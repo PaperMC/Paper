@@ -42,8 +42,7 @@ public class PaperVersionFetcher implements VersionFetcher {
     private static final int DISTANCE_ERROR = -1;
     private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
-    public static final String REPOSITORY = "PaperMC/Paper";
-    private static boolean newVersionAvailable;
+    private static final String REPOSITORY = "PaperMC/Paper";
 
     @Override
     public long getCacheTime() {
@@ -66,9 +65,10 @@ public class PaperVersionFetcher implements VersionFetcher {
         return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
     }
 
-    public static void getUpdateStatusStartupMessage(final String repo, final ServerBuildInfo build) {
+    public static void getUpdateStatusStartupMessage() {
+        final ServerBuildInfo build = ServerBuildInfo.buildInfo();
         final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
-        @Nullable String newVersion = null;
+        Optional<String> newVersion = Optional.empty();
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
@@ -82,31 +82,29 @@ public class PaperVersionFetcher implements VersionFetcher {
                 final Optional<String> gitBranch = build.gitBranch();
                 final Optional<String> gitCommit = build.gitCommit();
                 if (gitBranch.isPresent() && gitCommit.isPresent()) {
-                    distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
+                    distance = fetchDistanceFromGitHub(REPOSITORY, gitBranch.get(), gitCommit.get());
                     newVersion = fetchMinecraftVersionList(build, userAgent);
                 }
             }
 
             switch (distance) {
                 case DISTANCE_ERROR -> COMPONENT_LOGGER.error(text("*** Error obtaining version information! Cannot fetch version info ***"));
-                case 0 -> {
-                    if (newVersionAvailable) {
-                        COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionId() + ")", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text("However, there is a new Minecraft version available on the downloads page (" + newVersion + ")!", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text("It is recommended that you download it as soon as possible", NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
-                        COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
-                    }
-                }
+                case 0 -> newVersion.ifPresent(newRelease -> {
+                    COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionId() + ")", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(text("However, there is a new Minecraft version available on the downloads page (" + newRelease + ")!", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(text("It is recommended that you download it as soon as possible", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
+                });
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 default -> {
-                    if (!newVersionAvailable) {
-                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
-                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
-                    } else {
+                    if (newVersion.isPresent()) {
                         COMPONENT_LOGGER.error(text("*** You are running an outdated version of Minecraft which is " + distance + " builds behind!"));
                         COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
+                    } else {
+                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
                     }
                 }
             };
@@ -140,7 +138,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         };
     }
 
-    private static @Nullable String fetchMinecraftVersionList(final ServerBuildInfo build, final String userAgent) {
+    private static Optional<String> fetchMinecraftVersionList(final ServerBuildInfo build, final String userAgent) {
         final String currentVersion = build.minecraftVersionId();
 
         try {
@@ -163,7 +161,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
                 for (String latestVersion : versionList) {
                     if (latestVersion.equals(currentVersion)) {
-                        return null;
+                        return Optional.empty();
                     }
 
                     try {
@@ -176,8 +174,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                             final JsonObject buildJson = new Gson().fromJson(buildReader, JsonObject.class);
                             final String channel = buildJson.get("channel").getAsString();
                             if ("STABLE".equals(channel)) {
-                                newVersionAvailable = true;
-                                return latestVersion;
+                                return Optional.of(latestVersion);
                             }
                         } catch (final JsonSyntaxException ex) {
                             LOGGER.error("Error parsing json from Paper's downloads API", ex);
@@ -193,7 +190,7 @@ public class PaperVersionFetcher implements VersionFetcher {
             LOGGER.error("Error while parsing version list", e);
         }
 
-        return null;
+        return Optional.empty();
     }
 
     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild, final String userAgent) {
