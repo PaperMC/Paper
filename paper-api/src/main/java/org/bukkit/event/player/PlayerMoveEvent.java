@@ -137,9 +137,10 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    private void validateLocation(@NotNull Location loc) {
+    private void validateLocation(Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
         Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
+        loc.checkFinite();
     }
 
     @NotNull
