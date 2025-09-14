@@ -1,7 +1,6 @@
 package com.destroystokyo.paper;
 
 import com.destroystokyo.paper.util.VersionFetcher;
-import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -29,7 +28,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.slf4j.Logger;
 import java.util.List;
-import java.util.ArrayList;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
@@ -68,13 +66,13 @@ public class PaperVersionFetcher implements VersionFetcher {
     public static void getUpdateStatusStartupMessage() {
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
         final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
-        final Optional<String> newVersion = fetchMinecraftVersionList(build, userAgent);
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
             COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
         } else {
+            final Optional<String> newVersion = fetchMinecraftVersionList(build, userAgent);
             if (buildNumber.isPresent()) {
                 distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent);
             } else {
@@ -149,15 +147,13 @@ public class PaperVersionFetcher implements VersionFetcher {
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject json = gson.fromJson(reader, JsonObject.class);
                 final JsonObject versions = json.getAsJsonObject("versions");
-                final List<String> versionList = new ArrayList<>();
-                for (final String key : versions.keySet()) {
-                    final JsonArray versionsArray = versions.getAsJsonArray(key);
-                    for (final JsonElement versionElement : versionsArray) {
-                        versionList.add(versionElement.getAsString());
-                    }
-                }
+                final List<String> versionList = versions.keySet().stream()
+                    .map(versions::getAsJsonArray)
+                    .flatMap(array -> StreamSupport.stream(array.spliterator(), false))
+                    .map(JsonElement::getAsString)
+                    .toList();
 
-                for (String latestVersion : versionList) {
+                for (final String latestVersion : versionList) {
                     if (latestVersion.equals(currentVersion)) {
                         return Optional.empty();
                     }
