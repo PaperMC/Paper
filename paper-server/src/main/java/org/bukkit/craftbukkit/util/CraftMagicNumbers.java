@@ -867,7 +867,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public ItemStack deserializeItemHover(final HoverEvent.ShowItem itemHover) {
         if (itemHover.dataComponents().isEmpty()) {
-            return ItemStack.of(Registry.MATERIAL.getOrThrow(itemHover.item()), itemHover.count());
+            return Registry.ITEM.getOrThrow(itemHover.item()).createItemStack(itemHover.count());
         }
         return new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.getOrThrow(PaperAdventure.asVanilla(Registries.ITEM, itemHover.item())), itemHover.count(), PaperAdventure.asVanilla(itemHover.dataComponents())).asBukkitMirror();
     }
