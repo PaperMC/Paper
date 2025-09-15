@@ -96,7 +96,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 default -> {
                     if (newVersion.isPresent()) {
-                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of Minecraft which is " + distance + " builds behind!"));
+                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of Minecraft which is " + distance + " build(s) behind!"));
                         COMPONENT_LOGGER.error(text("*** Please download the latest version from " + DOWNLOAD_PAGE + " ***"));
                     } else {
                         COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
