@@ -31,10 +31,10 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 43d38cf26224919cd53d7479753d658f4ab40dbc..4eb07097986aac67421dd8e6a17cc5436da91187 100644
+index 07c2e2170af5820acdcb64f2c7978845c31641a1..984db72272d552c7210bd6f437ea88694ddd2828 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -53,6 +53,7 @@ public class RegionFile implements AutoCloseable {
+@@ -68,6 +68,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          this.info = info;
          this.path = path;
          this.version = version;
@@ -42,7 +42,7 @@ index 43d38cf26224919cd53d7479753d658f4ab40dbc..4eb07097986aac67421dd8e6a17cc543
          if (!Files.isDirectory(externalFileDir)) {
              throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
          } else {
-@@ -423,4 +424,75 @@ public class RegionFile implements AutoCloseable {
+@@ -467,4 +468,75 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      interface CommitOp {
          void run() throws IOException;
      }
@@ -119,11 +119,11 @@ index 43d38cf26224919cd53d7479753d658f4ab40dbc..4eb07097986aac67421dd8e6a17cc543
 +    // Paper end
  }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 5ac84d6b47e7fdc16e1c09b739829de3d316bf5b..763879cdc389fc4d80135b38aa96a5bec448ae9e 100644
+index 263ab4a8056ed9115c293484fef13e6f485dcf6d..283f73e633e32585530458545bf54fc6a644c830 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -47,6 +47,43 @@ public final class RegionFileStorage implements AutoCloseable {
-         }
+@@ -237,6 +237,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         // Paper end - rewrite chunk system
      }
  
 +    // Paper start
@@ -166,7 +166,7 @@ index 5ac84d6b47e7fdc16e1c09b739829de3d316bf5b..763879cdc389fc4d80135b38aa96a5be
      @Nullable
      public CompoundTag read(ChunkPos chunkPos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -55,6 +92,12 @@ public final class RegionFileStorage implements AutoCloseable {
+@@ -245,6 +282,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              return null;
          }
          // CraftBukkit end
@@ -179,11 +179,11 @@ index 5ac84d6b47e7fdc16e1c09b739829de3d316bf5b..763879cdc389fc4d80135b38aa96a5be
  
          CompoundTag var4;
          try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
-@@ -90,6 +133,7 @@ public final class RegionFileStorage implements AutoCloseable {
-         } else {
-             try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
-                 NbtIo.write(chunkData, chunkDataOutputStream);
-+                regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
+@@ -287,6 +330,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+             } else {
+                 try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
+                     NbtIo.write(chunkData, chunkDataOutputStream);
++                    regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
+                 }
              }
          }
-     }
