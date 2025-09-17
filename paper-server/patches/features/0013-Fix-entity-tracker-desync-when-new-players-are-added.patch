@@ -29,10 +29,10 @@ client will not tick the entity and thus not lerp the entity
 from its old position to its new position.
 
 diff --git a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
-index db31989ebe3d7021cfd2311439e9a00f819b0841..1373977b339405ef59bb3ea03d195285c96dd3fe 100644
+index 2a86ca1de6920017be6cd4a3a5251e892067f07c..f571ff64ae1007f8f0632febd2dcca7056a29b3c 100644
 --- a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
-@@ -42,9 +42,11 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
+@@ -38,9 +38,11 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
          this(
              entity.getId(),
              entity.getUUID(),
@@ -48,22 +48,22 @@ index db31989ebe3d7021cfd2311439e9a00f819b0841..1373977b339405ef59bb3ea03d195285
              serverEntity.getLastSentYRot(),
              entity.getType(),
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 61692c07dfb75ca0c19f603aafc96c0817861107..56a1d081a28e8b38384cfca732b103462693e322 100644
+index 7090096a00d113b27c1c9bd27bf27de7cb971b04..8eaf962c917b41d354226bd1007da697cf85b970 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -1278,6 +1278,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                         this.serverEntity.addPairing(player);
+@@ -1319,6 +1319,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                         ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
                          }
                          // Paper end - entity tracking events
 +                        this.serverEntity.onPlayerAdd(); // Paper - fix desync when a player is added to the tracker
                      }
-                 } else if (this.seenBy.remove(player.connection)) {
-                     this.serverEntity.removePairing(player);
+                 } else {
+                     this.removePlayer(player);
 diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
-index 3d5a8163a7dd78a195b77c4aaebdee2dc3dee64b..e96d4dee14c05f2fa329bfb1588ec795d4e3d730 100644
+index d1212c03ce935caa30dbb373b7fe1e1dfc229809..ec3387677fae5610e1a029d6a07c0bfa69d2568e 100644
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
-@@ -103,6 +103,13 @@ public class ServerEntity {
+@@ -88,6 +88,13 @@ public class ServerEntity {
          this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
      }
  
@@ -77,7 +77,7 @@ index 3d5a8163a7dd78a195b77c4aaebdee2dc3dee64b..e96d4dee14c05f2fa329bfb1588ec795
      public void sendChanges() {
          // Paper start - optimise collisions
          if (((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)this.entity).moonrise$isHardColliding()) {
-@@ -141,7 +148,7 @@ public class ServerEntity {
+@@ -129,7 +136,7 @@ public class ServerEntity {
              this.sendDirtyEntityData();
          }
  
@@ -86,7 +86,7 @@ index 3d5a8163a7dd78a195b77c4aaebdee2dc3dee64b..e96d4dee14c05f2fa329bfb1588ec795
              byte b = Mth.packDegrees(this.entity.getYRot());
              byte b1 = Mth.packDegrees(this.entity.getXRot());
              boolean flag = Math.abs(b - this.lastSentYRot) >= 1 || Math.abs(b1 - this.lastSentXRot) >= 1;
-@@ -176,7 +183,7 @@ public class ServerEntity {
+@@ -164,7 +171,7 @@ public class ServerEntity {
                  long l1 = this.positionCodec.encodeY(vec3);
                  long l2 = this.positionCodec.encodeZ(vec3);
                  boolean flag5 = l < -32768L || l > 32767L || l1 < -32768L || l1 > 32767L || l2 < -32768L || l2 > 32767L;
@@ -95,7 +95,7 @@ index 3d5a8163a7dd78a195b77c4aaebdee2dc3dee64b..e96d4dee14c05f2fa329bfb1588ec795
                      || flag5
                      || this.teleportDelay > 400
                      || this.wasRiding
-@@ -245,6 +252,7 @@ public class ServerEntity {
+@@ -233,6 +240,7 @@ public class ServerEntity {
              }
  
              this.entity.hasImpulse = false;
