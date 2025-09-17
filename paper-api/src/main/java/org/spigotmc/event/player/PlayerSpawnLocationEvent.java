@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent}.
  */
 @Warning(value = true, reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.")
-@Deprecated(since = "1.21.9")
+@Deprecated(since = "1.21.9", forRemoval = true)
 public class PlayerSpawnLocationEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private Location spawnLocation;
