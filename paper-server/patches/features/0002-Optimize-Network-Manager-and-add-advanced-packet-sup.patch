@@ -28,10 +28,10 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866a23399eb 100644
+index b763de1149e4c6e09400faa89bb899d6611a55d4..73efdf094dc98ef0a2e84c4e040fdaf1106adbe8 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -85,7 +85,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -84,7 +84,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
      private volatile boolean sendLoginDisconnect = true;
@@ -41,8 +41,8 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
      public SocketAddress address;
      // Spigot start
 @@ -147,6 +147,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     public @Nullable java.util.Optional<net.minecraft.network.chat.Component> legacySavedLoginEventResultOverride; // Paper - playerloginevent
-     public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLoginEventLegacy; // Paper - playerloginevent
+     public boolean handledLegacyLoginEvent; // Paper - playerloginevent
+     public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
      public @Nullable org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper
 +    // Paper start - Optimize network
 +    public boolean isPending = true;
@@ -54,7 +54,7 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
 @@ -421,11 +425,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     public void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
+     public void send(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush) {
 -        if (this.isConnected()) {
 -            this.flushQueue();
 +        // Paper start - Optimize network: Handle oversized packets better
@@ -67,14 +67,14 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
 +        if (connected && (InnerUtil.canSendImmediate(this, packet)
 +            || (io.papermc.paper.util.MCUtil.isMainThread() && packet.isReady() && this.pendingActions.isEmpty()
 +            && (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())))) {
-             this.sendPacket(packet, channelFutureListener, flag);
+             this.sendPacket(packet, sendListener, flush);
          } else {
--            this.pendingActions.add(connection -> connection.sendPacket(packet, channelFutureListener, flag));
+-            this.pendingActions.add(connection -> connection.sendPacket(packet, sendListener, flush));
 +            // Write the packets to the queue, then flush - antixray hooks there already
 +            final java.util.List<Packet<?>> extraPackets = InnerUtil.buildExtraPackets(packet);
 +            final boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 +            if (!hasExtraPackets) {
-+                this.pendingActions.add(new PacketSendAction(packet, channelFutureListener, flag));
++                this.pendingActions.add(new PacketSendAction(packet, sendListener, flush));
 +            } else {
 +                final java.util.List<PacketSendAction> actions = new java.util.ArrayList<>(1 + extraPackets.size());
 +                actions.add(new PacketSendAction(packet, null, false)); // Delay the future listener until the end of the extra packets
@@ -82,7 +82,7 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
 +                for (int i = 0, len = extraPackets.size(); i < len;) {
 +                    final Packet<?> extraPacket = extraPackets.get(i);
 +                    final boolean end = ++i == len;
-+                    actions.add(new PacketSendAction(extraPacket, end ? channelFutureListener : null, end)); // Append listener to the end
++                    actions.add(new PacketSendAction(extraPacket, end ? sendListener : null, end)); // Append listener to the end
 +                }
 +
 +                this.pendingActions.addAll(actions);
@@ -105,7 +105,7 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
 @@ -448,21 +479,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, boolean flag) {
+     private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush) {
 +        // Paper start - Optimize network
 +        final net.minecraft.server.level.ServerPlayer player = this.getPlayer();
 +        if (!this.isConnected()) {
@@ -115,11 +115,11 @@ index fbd98db86677983891a8c6f3582fc189a9be6aa4..d1b9417e936cafaaff17b2988058c866
 +        try {
 +        final ChannelFuture channelFuture;
 +        // Paper end - Optimize network
-         if (channelFutureListener != null) {
--            ChannelFuture channelFuture = flag ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
-+            channelFuture = flag ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - Optimize network
-             channelFuture.addListener(channelFutureListener);
-         } else if (flag) {
+         if (sendListener != null) {
+-            ChannelFuture channelFuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
++            channelFuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - Optimize network
+             channelFuture.addListener(sendListener);
+         } else if (flush) {
 -            this.channel.writeAndFlush(packet, this.channel.voidPromise());
 +            channelFuture = this.channel.writeAndFlush(packet, this.channel.voidPromise()); // Paper - Optimize network
          } else {
@@ -373,10 +373,10 @@ index 65ff8b9112ec76eeac48c679044fc02ae7d4ffeb..e4789584cbe43959681a8522c66eab58
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index b873af7183d9b1aabc87e63d254a4326f17b21c9..7de11ba404f0b60e7f7b7c16954811a343688219 100644
+index 16719b3eaec6fc261d227f47e82afc0506a6524d..deefad689070750a3ae033a3e54dd8f5c849e794 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -66,11 +66,13 @@ public class ServerConnectionListener {
+@@ -67,11 +67,13 @@ public class ServerConnectionListener {
  
      // Paper start - prevent blocking on adding a new connection while the server is ticking
      private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -390,7 +390,7 @@ index b873af7183d9b1aabc87e63d254a4326f17b21c9..7de11ba404f0b60e7f7b7c16954811a3
          }
      }
      // Paper end - prevent blocking on adding a new connection while the server is ticking
-@@ -120,6 +122,7 @@ public class ServerConnectionListener {
+@@ -121,6 +123,7 @@ public class ServerConnectionListener {
                                      } catch (ChannelException var5) {
                                      }
  
