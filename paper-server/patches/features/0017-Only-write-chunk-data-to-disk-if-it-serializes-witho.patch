@@ -45,10 +45,10 @@ index 984db72272d552c7210bd6f437ea88694ddd2828..dea2823a9d1d69dcb0a4759d8ea9b301
          public void close() throws IOException {
              ByteBuffer byteBuffer = ByteBuffer.wrap(this.buf, 0, this.count);
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 50bbd8c778bfa9fc9ce93ed09a6fe4dc1f516d51..e9c7e56343238cfce3f4a3c658f2983ca1ef3f0e 100644
+index 283f73e633e32585530458545bf54fc6a644c830..5133590b1a8c7035a949b85ceefa904b583e4e7f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -15,6 +15,7 @@ import net.minecraft.util.ExceptionCollector;
+@@ -16,6 +16,7 @@ import net.minecraft.util.ExceptionCollector;
  import net.minecraft.world.level.ChunkPos;
  
  public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
@@ -56,7 +56,7 @@ index 50bbd8c778bfa9fc9ce93ed09a6fe4dc1f516d51..e9c7e56343238cfce3f4a3c658f2983c
      public static final String ANVIL_EXTENSION = ".mca";
      private static final int MAX_CACHE_SIZE = 256;
      public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
-@@ -119,11 +120,24 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -120,11 +121,24 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          // (and, the regionfile parameter is unused for writing until the write call)
          final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData writeData = ((ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile)regionFile).moonrise$startWrite(compound, pos);
  
@@ -81,15 +81,15 @@ index 50bbd8c778bfa9fc9ce93ed09a6fe4dc1f516d51..e9c7e56343238cfce3f4a3c658f2983c
  
          return writeData;
      }
-@@ -326,9 +340,17 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
-         if (chunkData == null) {
-             regionFile.clear(chunkPos);
-         } else {
--            try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
+@@ -328,9 +342,17 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+             if (chunkData == null) {
+                 regionFile.clear(chunkPos);
+             } else {
+-                try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
 +            DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos); // Paper - Only write if successful
 +            try { // Paper - Only write if successful
-                 NbtIo.write(chunkData, chunkDataOutputStream);
-                 regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
+                     NbtIo.write(chunkData, chunkDataOutputStream);
+                     regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
 +                // Paper start - don't write garbage data to disk if writing serialization fails
 +                chunkDataOutputStream.close();
 +            } catch (final RegionFileSizeException ex) {
@@ -97,10 +97,10 @@ index 50bbd8c778bfa9fc9ce93ed09a6fe4dc1f516d51..e9c7e56343238cfce3f4a3c658f2983c
 +                final int maxSize = RegionFile.MAX_CHUNK_SIZE / (1024 * 1024);
 +                LOGGER.error("Chunk at (" + chunkPos.x + "," + chunkPos.z + ") in regionfile '" + regionFile.getPath().toString() + "' exceeds max size of " + maxSize + "MiB, it has been deleted from disk.");
 +                // Paper end - don't write garbage data to disk if writing serialization fails
+                 }
              }
          }
-     }
-@@ -370,4 +392,13 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -373,4 +395,13 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
      public RegionStorageInfo info() {
          return this.info;
      }
