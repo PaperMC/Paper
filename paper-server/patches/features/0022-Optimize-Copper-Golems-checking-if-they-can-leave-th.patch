@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 17 Sep 2025 14:28:08 -0700
+Subject: [PATCH] Optimize Copper Golems checking if they can leave the queue
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
+index ba4cc3e25fb177ddbe530e0ed49c58a9f535b301..09148c9696c639cc8596cf3f4388a14b91846b64 100644
+--- a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
++++ b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
+@@ -120,14 +120,35 @@ public class TransportItemsBetweenContainers extends Behavior<PathfinderMob> {
+ 
+     @Override
+     protected void tick(ServerLevel level, PathfinderMob owner, long gameTime) {
+-        boolean flag = this.updateInvalidTarget(level, owner);
++        // Paper start - optimize checking if we can leave the queue
++        boolean invalidTarget = false;
++        boolean didFullCheck = false;
++        if (this.target == null) {
++            invalidTarget = this.updateInvalidTarget(level, owner, true);
++            didFullCheck = true;
++        }
+         if (this.target == null) {
+             this.stop(level, owner, gameTime);
+-        } else if (!flag) {
++        } else if (!invalidTarget) {
++            if (!didFullCheck) {
++                if (owner.tickCount % 60 == 0) {
++                    // Avoid getting stuck in queue forever if the path becomes invalid while we wait, but the container is still valid
++                    invalidTarget = this.updateInvalidTarget(level, owner, true);
++                    didFullCheck = true;
++                } else {
++                    invalidTarget = this.updateInvalidTarget(level, owner, false);
++                }
++            }
++            if (!invalidTarget) {
+             if (this.state.equals(TransportItemsBetweenContainers.TransportItemState.QUEUING)) {
+                 this.onQueuingForTarget(this.target, level, owner);
+             }
++            }
++            if (!this.state.equals(TransportItemsBetweenContainers.TransportItemState.QUEUING) && !didFullCheck) {
++                invalidTarget = invalidTarget || this.updateInvalidTarget(level, owner, true);
++            }
+ 
++            if (!invalidTarget) {
+             if (this.state.equals(TransportItemsBetweenContainers.TransportItemState.TRAVELLING)) {
+                 this.onTravelToTarget(this.target, level, owner);
+             }
+@@ -135,11 +156,13 @@ public class TransportItemsBetweenContainers extends Behavior<PathfinderMob> {
+             if (this.state.equals(TransportItemsBetweenContainers.TransportItemState.INTERACTING)) {
+                 this.onReachedTarget(this.target, level, owner);
+             }
++            }
++            // Paper end - optimize checking if we can leave the queue
+         }
+     }
+ 
+-    private boolean updateInvalidTarget(ServerLevel serverLevel, PathfinderMob pathfinderMob) {
+-        if (!this.hasValidTarget(serverLevel, pathfinderMob)) {
++    private boolean updateInvalidTarget(ServerLevel serverLevel, PathfinderMob pathfinderMob, boolean createPath) { // Paper - optimize checking if we can leave the queue
++        if (!this.hasValidTarget(serverLevel, pathfinderMob, createPath)) { // Paper - optimize checking if we can leave the queue
+             this.stopTargetingCurrentTarget(pathfinderMob);
+             Optional<TransportItemsBetweenContainers.TransportItemTarget> targetBlockPosition = this.getTargetBlockPosition(serverLevel, pathfinderMob);
+             if (targetBlockPosition.isPresent()) {
+@@ -303,10 +326,14 @@ public class TransportItemsBetweenContainers extends Behavior<PathfinderMob> {
+         return transportItemTarget.blockEntity instanceof BaseContainerBlockEntity baseContainerBlockEntity && baseContainerBlockEntity.isLocked();
+     }
+ 
+-    private boolean hasValidTarget(Level level, PathfinderMob mob) {
++    private boolean hasValidTarget(Level level, PathfinderMob mob, boolean createPath) { // Paper - optimize checking if we can leave the queue
+         boolean flag = this.target != null && this.isWantedBlock(mob, this.target.state) && this.targetHasNotChanged(level, this.target);
+         if (flag && !this.isTargetBlocked(level, this.target)) {
+-            Path path = mob.getNavigation().getPath() == null ? mob.getNavigation().createPath(this.target.pos, 0) : mob.getNavigation().getPath();
++            // Paper start - optimize checking if we can leave the queue
++            Path path = mob.getNavigation().getPath();
++            if (path == null && !createPath) return true;
++            if (path == null) path = mob.getNavigation().createPath(this.target.pos, 0);
++            // Paper end - optimize checking if we can leave the queue
+             Vec3 positionToReachTargetFrom = this.getPositionToReachTargetFrom(path, mob);
+             boolean isWithinTargetDistance = this.isWithinTargetDistance(getInteractionRange(mob), this.target, level, mob, positionToReachTargetFrom);
+             boolean flag1 = path == null && !isWithinTargetDistance;
