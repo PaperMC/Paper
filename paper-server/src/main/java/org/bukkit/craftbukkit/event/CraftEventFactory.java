@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.entity.TeleportFlag;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -100,6 +101,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -242,6 +244,7 @@ import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
 import org.bukkit.event.raid.RaidFinishEvent;
 import org.bukkit.event.raid.RaidSpawnWaveEvent;
@@ -1941,6 +1944,21 @@ public class CraftEventFactory {
         EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
 
         Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled() && event.getTo() != null) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for EntityTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
+
+        return event;
+    }
+
+    public static PlayerTeleportEvent callPlayerTeleportEvent(Player player, Location from, Location to, PlayerTeleportEvent.TeleportCause cause, Set<TeleportFlag.Relative> teleportFlags) {
+        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to, cause, teleportFlags);
+        event.callEvent();
+
+        if (!event.isCancelled()) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for PlayerTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
 
         return event;
     }

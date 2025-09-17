@@ -44,8 +44,10 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      * Sets the location that this entity moved from
      *
      * @param from New location this entity moved from
+     * @throws IllegalArgumentException if the location is not finite
      */
     public void setFrom(@NotNull Location from) {
+        from.checkFinite();
         this.from = from.clone();
     }
 
@@ -63,9 +65,15 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      * Sets the location that this entity moved to
      *
      * @param to New Location this entity moved to
+     * @throws IllegalArgumentException if the location is not finite
      */
     public void setTo(@Nullable Location to) {
-        this.to = to != null ? to.clone() : null;
+        if (to != null) {
+            to.checkFinite();
+            this.to = to.clone();
+        } else {
+            this.to = null;
+        }
     }
 
     @Override

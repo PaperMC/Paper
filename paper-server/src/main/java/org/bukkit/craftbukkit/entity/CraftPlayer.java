@@ -1378,8 +1378,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
         boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Paper end - Teleport API
-        Preconditions.checkArgument(location != null, "location");
-        Preconditions.checkArgument(location.getWorld() != null, "location.world");
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "world of location cannot be null");
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(location)), "location is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
         // Paper start - Teleport passenger API
         // Don't allow teleporting between worlds while keeping passengers
         if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
@@ -1412,8 +1413,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // To = Players new Location if Teleport is Successful
         Location to = location;
         // Create & Call the Teleport Event.
-        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
-        this.server.getPluginManager().callEvent(event);
+        PlayerTeleportEvent event = CraftEventFactory.callPlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
 
         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
         if (event.isCancelled()) {
@@ -1432,6 +1432,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         from = event.getFrom();
         // Grab the new To Location dependent on whether the event was cancelled.
         to = event.getTo();
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(to)), "destination for PlayerTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
         // Grab the To and From World Handles.
         ServerLevel fromWorld = ((CraftWorld) from.getWorld()).getHandle();
         ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
