@@ -5,6 +5,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
@@ -95,5 +96,7 @@ public interface InternalAPIBridge {
 
     @Contract(value = "-> new", pure = true)
     SkinParts.Mutable allSkinParts();
+
+    Component defaultMannequinDescription();
 }
 

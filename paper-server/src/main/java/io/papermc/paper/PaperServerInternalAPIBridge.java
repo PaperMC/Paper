@@ -2,6 +2,7 @@ package io.papermc.paper;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
@@ -9,9 +10,11 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.PermissionSource;
 import net.minecraft.world.damagesource.FallLocation;
+import net.minecraft.world.entity.decoration.Mannequin;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
@@ -99,5 +102,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public SkinParts.Mutable allSkinParts() {
         return new PaperSkinParts.Mutable(net.minecraft.world.entity.decoration.Mannequin.ALL_LAYERS);
+    }
+
+    @Override
+    public Component defaultMannequinDescription() {
+        return PaperAdventure.asAdventure(Mannequin.DEFAULT_DESCRIPTION);
     }
 }

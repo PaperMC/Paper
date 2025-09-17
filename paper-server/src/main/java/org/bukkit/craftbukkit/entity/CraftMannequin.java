@@ -2,11 +2,15 @@ package org.bukkit.craftbukkit.entity;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import net.kyori.adventure.text.Component;
 import net.minecraft.world.entity.Avatar;
+import net.minecraft.world.entity.HumanoidArm;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Mannequin;
+import org.bukkit.inventory.MainHand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.Objects;
@@ -42,5 +46,42 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     public void setSkinParts(final SkinParts parts) {
         Objects.requireNonNull(parts, "parts");
         this.getHandle().getEntityData().set(Avatar.DATA_PLAYER_MODE_CUSTOMISATION, (byte) parts.getRaw());
+    }
+
+    @Override
+    public boolean isImmovable() {
+        return this.getHandle().getImmovable();
+    }
+
+    @Override
+    public void setImmovable(final boolean immovable) {
+        this.getHandle().setImmovable(immovable);
+    }
+
+    @Override
+    public @Nullable Component getDescription() {
+        final var mc = this.getHandle().getDescription();
+        return mc == null ? null : PaperAdventure.asAdventure(mc);
+    }
+
+    @Override
+    public void setDescription(final @Nullable Component description) {
+        if (description == null) {
+            this.getHandle().setHideDescription(true);
+        } else {
+            this.getHandle().setDescription(PaperAdventure.asVanilla(description));
+            this.getHandle().setHideDescription(false);
+        }
+    }
+
+    @Override
+    public MainHand getMainHand() {
+        return this.getHandle().getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT;
+    }
+
+    @Override
+    public void setMainHand(final MainHand hand) {
+        Objects.requireNonNull(hand, "hand");
+        this.getHandle().setMainArm(hand == MainHand.LEFT ? HumanoidArm.LEFT : HumanoidArm.RIGHT);
     }
 }
