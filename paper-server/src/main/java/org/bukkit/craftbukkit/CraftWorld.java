@@ -338,11 +338,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean setSpawnLocation(Location location) {
         Preconditions.checkArgument(location != null, "location");
 
-        return this.equals(location.getWorld()) ? this.setSpawnLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ(), location.getYaw()) : false;
+        return this.equals(location.getWorld()) ? this.setSpawnLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ(), location.getYaw(), location.getPitch()) : false;
     }
 
-    @Override
-    public boolean setSpawnLocation(int x, int y, int z, float yaw) {
+    private boolean setSpawnLocation(int x, int y, int z, float yaw, float pitch) {
         try {
             Location previousLocation = this.getSpawnLocation();
 
@@ -353,17 +352,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                         new BlockPos(x, y, z)
                     ),
                     Mth.wrapDegrees(yaw),
-                    0.0F
+                    Mth.wrapDegrees(pitch)
                 )
             );
 
             this.server.getServer().updateEffectiveRespawnData();
             new SpawnChangeEvent(this, previousLocation).callEvent();
-
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public boolean setSpawnLocation(int x, int y, int z, float yaw) {
+        return this.setSpawnLocation(x, y, z, yaw, 0);
     }
 
     @Override
