@@ -1996,6 +1996,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the default spawn {@link Location} of this world
      *
      * @return The spawn location of this world
+     * @see Server#getRespawnWorld()
      */
     @NotNull
     public Location getSpawnLocation();
@@ -2007,6 +2008,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param location The {@link Location} to set the spawn for this world at.
      * @return True if it was successfully set.
+     * @see Server#setRespawnWorld(World)
      */
     public boolean setSpawnLocation(@NotNull Location location);
 
@@ -2018,6 +2020,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z coordinate
      * @param yaw the yaw
      * @return True if it was successfully set.
+     * @see Server#setRespawnWorld(World)
      */
     public boolean setSpawnLocation(int x, int y, int z, float yaw);
 
@@ -2028,6 +2031,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param y Y coordinate
      * @param z Z coordinate
      * @return True if it was successfully set.
+     * @see Server#setRespawnWorld(World)
      */
     public boolean setSpawnLocation(int x, int y, int z);
 

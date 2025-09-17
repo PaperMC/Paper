@@ -764,6 +764,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean unloadWorld(@NotNull World world, boolean save);
 
     /**
+     * Gets the world that players respawn in.
+     *
+     * @return the world that players respawn in
+     * @see World#getSpawnLocation()
+     */
+    public @NotNull World getRespawnWorld();
+
+    /**
+     * Sets the world that players respawn in.
+     *
+     * @param world the world that players should respawn in
+     * @see World#setSpawnLocation(Location)
+     */
+    public void setRespawnWorld(@NotNull World world);
+
+    /**
      * Gets the world with the given name.
      *
      * @param name the name of the world to retrieve

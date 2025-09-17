@@ -1401,6 +1401,19 @@ public final class CraftServer implements Server {
         return true;
     }
 
+    @Override
+    public World getRespawnWorld() {
+        return this.console.findRespawnDimension().getWorld();
+    }
+
+    @Override
+    public void setRespawnWorld(final World world) {
+        Preconditions.checkArgument(world != null, "world cannot be null");
+
+        this.console.overworld().serverLevelData.respawnDimension = ((CraftWorld) world).getHandle().dimension();
+        this.console.updateEffectiveRespawnData();
+    }
+
     public DedicatedServer getServer() {
         return this.console;
     }
