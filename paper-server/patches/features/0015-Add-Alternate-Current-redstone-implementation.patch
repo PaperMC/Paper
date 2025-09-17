@@ -2326,19 +2326,19 @@ index 0000000000000000000000000000000000000000..298076a0db4e6ee6e4775ac43bf749d9
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index f9c96bbdc54e68b9216b7f8662bfae03012d2866..34b7769663e235b93c6388ab0c92c00f0297e42f 100644
+index 48f329459ce627ebdb652d678ae6853fb09a8ac4..74f5f7155beb5d60fa8d8b65126062b9869db1dd 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -213,6 +213,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-     public final java.util.UUID uuid;
+@@ -221,6 +221,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
      public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
      public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +    private final alternate.current.wire.WireHandler wireHandler = new alternate.current.wire.WireHandler(this); // Paper - optimize redstone (Alternate Current)
  
      @Override
      public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
-@@ -2591,6 +2592,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         return this.chunkSource.getGenerator().getSeaLevel();
+@@ -2659,6 +2660,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         return this.debugSynchronizers;
      }
  
 +    // Paper start - optimize redstone (Alternate Current)
@@ -2352,11 +2352,11 @@ index f9c96bbdc54e68b9216b7f8662bfae03012d2866..34b7769663e235b93c6388ab0c92c00f
          @Override
          public void onCreated(Entity entity) {
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f286dd9996590e5d448ca809c34b6f640203e274..c41df4b1fff1f65532256e835dc30fadbb4f8c8b 100644
+index 9cd8c1c6fd1d2e054714eec9eb799857731d07ad..b29fbdabc36b0f0d8ebac1248bf1fd9a7cb26e4a 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -2093,6 +2093,17 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
-         return 0;
+@@ -2077,6 +2077,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         return this.palettedContainerFactory;
      }
  
 +    // Paper start - optimize redstone (Alternate Current)
@@ -2374,7 +2374,7 @@ index f286dd9996590e5d448ca809c34b6f640203e274..c41df4b1fff1f65532256e835dc30fad
          NONE("none"),
          BLOCK("block"),
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd81c6f9df 100644
+index 697979259c1d10db915b6dba3648e925b51b4d38..7d7e7a87f5c9bbd9535bf2105e05d7abf08fc3dc 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -265,7 +265,7 @@ public class RedStoneWireBlock extends Block {
@@ -2389,7 +2389,7 @@ index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd
 @@ -347,7 +347,13 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-         if (!oldState.is(state.getBlock()) && !level.isClientSide) {
+         if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
 -            this.updateSurroundingRedstone(level, pos, state, null, true); // Paper - Optimize redstone
 +            // Paper start - optimize redstone - replace call to updatePowerStrength
 +            if (level.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.ALTERNATE_CURRENT) {
@@ -2419,7 +2419,7 @@ index 50eceaed6907a596c0c1cd87f5927e07d33a5dbb..1943a6aad888647953e2d9dbbeedb0bd
 @@ -387,9 +399,15 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
-         if (!level.isClientSide) {
+         if (!level.isClientSide()) {
 +            // Paper start - optimize redstone (Alternate Current)
 +            // Alternate Current handles breaking of redstone wires in the WireHandler.
 +            if (level.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.ALTERNATE_CURRENT) {
