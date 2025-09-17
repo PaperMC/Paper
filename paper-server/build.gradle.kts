@@ -32,6 +32,10 @@ paperweight {
         packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
 
+    updatingMinecraft {
+        oldPaperCommit = "29c8822d90899c89d2689338e81a98f690bcba12" // 1.21.8 main
+    }
+
     reobfPackagesToFix.addAll(
         "co.aikar.timings",
         "com.destroystokyo.paper",
