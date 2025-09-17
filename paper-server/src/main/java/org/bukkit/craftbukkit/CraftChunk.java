@@ -11,14 +11,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
@@ -395,9 +392,8 @@ public class CraftChunk implements Chunk {
         byte[][] skyLight = new byte[hSection][];
         byte[][] emitLight = new byte[hSection][];
         boolean[] empty = new boolean[hSection];
-        Registry<net.minecraft.world.level.biome.Biome> registry = world.getHandle().registryAccess().lookupOrThrow(Registries.BIOME);
         PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[hSection] : null;
-        Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = PalettedContainer.codecRO(registry.asHolderIdMap(), registry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, registry.getOrThrow(Biomes.PLAINS));
+        Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = world.getHandle().palettedContainerFactory().biomeContainerCodec();
 
         for (int i = 0; i < hSection; i++) {
             blockIDs[i] = CraftChunk.emptyBlockIDs;

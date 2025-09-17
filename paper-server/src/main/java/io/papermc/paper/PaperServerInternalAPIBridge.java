@@ -1,6 +1,10 @@
 package io.papermc.paper;
 
+import com.destroystokyo.paper.PaperSkinParts;
+import com.destroystokyo.paper.SkinParts;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
@@ -85,5 +89,15 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         }
 
         return new RestrictedPredicate(predicate);
+    }
+
+    @Override
+    public ResolvableProfile defaultMannequinProfile() {
+        return new PaperResolvableProfile(net.minecraft.world.entity.decoration.Mannequin.DEFAULT_PROFILE);
+    }
+
+    @Override
+    public SkinParts.Mutable allSkinParts() {
+        return new PaperSkinParts.Mutable(net.minecraft.world.entity.decoration.Mannequin.ALL_LAYERS);
     }
 }

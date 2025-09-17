@@ -503,4 +503,5 @@ public final class PaperAdventure {
         return AdventureCodecs.STYLE_MAP_CODEC.codec()
             .parse(ops, encoded).getOrThrow(IllegalStateException::new);
     }
+
 }

@@ -31,7 +31,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.pointer.PointersSupplier;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.particles.ParticleTypes;
@@ -42,6 +44,7 @@ import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
@@ -71,6 +74,7 @@ import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -134,6 +138,7 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
+import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -325,9 +330,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Location getSpawnLocation() {
-        BlockPos spawn = this.world.getSharedSpawnPos();
-        float yaw = this.world.getSharedSpawnAngle();
-        return CraftLocation.toBukkit(spawn, this, yaw, 0);
+        final LevelData.RespawnData respawnData = this.world.serverLevelData.getRespawnData();
+        return CraftLocation.toBukkit(respawnData.pos(), this, respawnData.yaw(), respawnData.pitch());
     }
 
     @Override
@@ -338,16 +342,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public boolean setSpawnLocation(int x, int y, int z, float angle) {
+    public boolean setSpawnLocation(int x, int y, int z, float yaw) {
         try {
-            // Location previousLocation = this.getSpawnLocation(); // Paper - Call SpawnChangeEvent; moved to nms.ServerLevel
-            this.world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use ServerLevel#setDefaultSpawnPos
+            Location previousLocation = this.getSpawnLocation();
 
-            // Paper start - Call SpawnChangeEvent; move to nms.ServerLevel
-            // Notify anyone who's listening.
-            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
-            // server.getPluginManager().callEvent(event);
-            // Paper end - Call SpawnChangeEvent
+            this.world.serverLevelData.setSpawn(
+                new LevelData.RespawnData(
+                    GlobalPos.of(
+                        ResourceKey.create(Registries.DIMENSION, this.world.dimension().location()),
+                        new BlockPos(x, y, z)
+                    ),
+                    Mth.wrapDegrees(yaw),
+                    0.0F
+                )
+            );
+
+            this.server.getServer().updateEffectiveRespawnData();
+            new SpawnChangeEvent(this, previousLocation).callEvent();
 
             return true;
         } catch (Exception e) {
@@ -900,7 +911,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         net.minecraft.world.entity.Entity entity = (source == null) ? null : ((CraftEntity) source).getHandle();
-        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, configurator).wasCanceled; // Paper - expand explosion API
+        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, Level.DEFAULT_EXPLOSION_BLOCK_PARTICLES, SoundEvents.GENERIC_EXPLODE, configurator).wasCanceled; // Paper - expand explosion API
     }
     // Paper start
     @Override
@@ -1400,12 +1411,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean getPVP() {
-        return this.world.pvpMode;
+        return this.world.pvpMode.toBooleanOrElseGet(() -> this.world.getGameRules().getBoolean(GameRules.RULE_PVP));
     }
 
     @Override
     public void setPVP(boolean pvp) {
-        this.world.pvpMode = pvp;
+        if (this.world.getGameRules().getBoolean(GameRules.RULE_PVP) == pvp) {
+            return;
+        }
+        this.world.pvpMode = TriState.byBoolean(pvp);
     }
 
     public void playEffect(Player player, Effect effect, int data) {
@@ -1574,20 +1588,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getSeaLevel() {
         return this.world.getSeaLevel();
-    }
-
-    @Override
-    public boolean getKeepSpawnInMemory() {
-        return this.getGameRuleValue(GameRule.SPAWN_CHUNK_RADIUS) > 0;
-    }
-
-    @Override
-    public void setKeepSpawnInMemory(boolean keepLoaded) {
-        if (keepLoaded) {
-            this.setGameRule(GameRule.SPAWN_CHUNK_RADIUS, this.getGameRuleDefault(GameRule.SPAWN_CHUNK_RADIUS));
-        } else {
-            this.setGameRule(GameRule.SPAWN_CHUNK_RADIUS, 0);
-        }
     }
 
     @Override
@@ -1942,7 +1942,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         ChunkMap.TrackedEntity entityTracker = this.getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
-            entityTracker.broadcastAndSend(packet);
+            entityTracker.sendToTrackingPlayersAndSelf(packet);
         }
     }
     // Paper start - Adventure
@@ -1963,7 +1963,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         ChunkMap.TrackedEntity entityTracker = this.getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
-            entityTracker.broadcastAndSend(packet);
+            entityTracker.sendToTrackingPlayersAndSelf(packet);
         }
     }
 

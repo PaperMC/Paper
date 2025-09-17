@@ -9,6 +9,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -31,7 +32,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     // Paper start
     @Override
-    org.bukkit.inventory.EntityEquipment getEquipment();
+    EntityEquipment getEquipment();
     // Paper end
 
     /**

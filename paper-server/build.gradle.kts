@@ -17,7 +17,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.8+build.2")
+    mache("io.papermc:mache:1.21.9-pre1+build.2")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -27,7 +27,7 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = true
+        enabled = false
         buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
         packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
@@ -134,7 +134,8 @@ dependencies {
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
-    implementation("net.kyori:adventure-text-serializer-ansi")
+    // implementation("net.kyori:adventure-text-serializer-ansi") TODO 1.21.9 dev
+    implementation("io.papermc.adventure:adventure-text-serializer-ansi") // TODO 1.21.9 dev
     runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*

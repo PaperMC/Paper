@@ -23,7 +23,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public boolean shouldDespawnInPeaceful() {
-        return this.getHandle().shouldActuallyDespawnInPeaceful();
+        return this.getHandle().shouldDespawnInPeaceful();
     }
 
     @Override

@@ -55,7 +55,9 @@ interface RemovedConfigurations {
         path("entities", "mob-effects", "undead-immune-to-certain-effects"),
         path("entities", "entities-target-with-follow-range"),
         path("environment", "disable-teleportation-suffocation-check"),
-        path("misc", "light-queue-size")
+        path("misc", "light-queue-size"),
+        path("spawn", "keep-spawn-loaded"),
+        path("spawn", "keep-spawn-loaded-range")
     };
     // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
     // in the world default config for compatibility with old worlds being migrated to use the gamerule

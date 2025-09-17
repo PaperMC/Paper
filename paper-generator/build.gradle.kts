@@ -109,6 +109,7 @@ fun TaskContainer.registerGenerationTask(
     group = "generation"
     dependsOn(project.tasks.test)
     javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
+    maxHeapSize = "2G"
     inputs.property("gameVersion", gameVersion)
     inputs.dir(layout.projectDirectory.dir("src/main/java")).withPathSensitivity(PathSensitivity.RELATIVE)
     mainClass.set("io.papermc.generator.Main")

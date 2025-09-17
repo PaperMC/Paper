@@ -50,7 +50,6 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
-import org.bukkit.packs.DataPackManager;
 import org.bukkit.packs.ResourcePack;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
@@ -241,8 +240,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     /**
      * Gets whether this server allows the Nether or not.
+     * Separate from the portal game rule.
      *
      * @return whether this server allows the Nether or not
+     * @see GameRule#ALLOW_ENTERING_NETHER_USING_PORTALS
      */
     public boolean getAllowNether();
 
@@ -268,16 +269,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public List<String> getInitialDisabledPacks();
-
-    /**
-     * Get the DataPack Manager.
-     *
-     * @deprecated use {@link #getDatapackManager()}
-     * @return the manager
-     */
-    @NotNull
-    @Deprecated(forRemoval = true, since = "1.20") // Paper
-    public DataPackManager getDataPackManager();
 
     /**
      * Get the ServerTick Manager.
@@ -1219,11 +1210,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
-     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
-     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
-     * via events or third-party plugin APIs.
      */
-    @Deprecated(since = "1.21.4", forRemoval = true)
     public void setSpawnRadius(int value);
 
     /**

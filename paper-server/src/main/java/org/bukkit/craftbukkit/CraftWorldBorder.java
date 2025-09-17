@@ -29,7 +29,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void reset() {
-        this.getHandle().applySettings(net.minecraft.world.level.border.WorldBorder.DEFAULT_SETTINGS);
+        this.getHandle().applySettings(net.minecraft.world.level.border.WorldBorder.Settings.DEFAULT);
     }
 
     @Override
@@ -83,12 +83,12 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public double getDamageBuffer() {
-        return this.handle.getDamageSafeZone();
+        return this.handle.getSafeZone();
     }
 
     @Override
     public void setDamageBuffer(double blocks) {
-        this.handle.setDamageSafeZone(blocks);
+        this.handle.setSafeZone(blocks);
     }
 
     @Override

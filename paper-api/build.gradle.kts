@@ -57,13 +57,21 @@ dependencies {
         exclude("com.google.guava", "guava")
     }
 
-    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
-    apiAndDocs("net.kyori:adventure-api")
-    apiAndDocs("net.kyori:adventure-text-minimessage")
-    apiAndDocs("net.kyori:adventure-text-serializer-gson")
-    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
-    apiAndDocs("net.kyori:adventure-text-serializer-plain")
-    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+    // TODO 1.21.9 dev
+    //apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
+    //apiAndDocs("net.kyori:adventure-api")
+    //apiAndDocs("net.kyori:adventure-text-minimessage")
+    //apiAndDocs("net.kyori:adventure-text-serializer-gson")
+    //apiAndDocs("net.kyori:adventure-text-serializer-legacy")
+    //apiAndDocs("net.kyori:adventure-text-serializer-plain")
+    //apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+    api(platform("io.papermc.adventure:adventure-bom:mc1.21.9-dev-SNAPSHOT"))
+    api("io.papermc.adventure:adventure-api")
+    api("io.papermc.adventure:adventure-text-minimessage")
+    api("io.papermc.adventure:adventure-text-serializer-gson")
+    api("io.papermc.adventure:adventure-text-serializer-legacy")
+    api("io.papermc.adventure:adventure-text-serializer-plain")
+    api("io.papermc.adventure:adventure-text-logger-slf4j")
 
     api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
     implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")

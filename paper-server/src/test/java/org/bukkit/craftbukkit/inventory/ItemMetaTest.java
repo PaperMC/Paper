@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
@@ -386,6 +387,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new CompoundTag();
+                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ARMOR_STAND).toString());
                     meta.entityTag.putBoolean("Small", true);
                     meta.setInvisible(true); // Paper
                     cleanStack.setItemMeta(meta);
@@ -404,6 +406,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
                     meta.entityTag = new CompoundTag();
+                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ITEM_FRAME).toString());
                     meta.entityTag.putBoolean("Invisible", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;

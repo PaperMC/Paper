@@ -499,7 +499,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             }
         }
 
-        if (!entityTypeData.entityType().isEnabledByFeature(this.getHandle().getMinecraftWorld().getWorld())) {
+        if (!this.isEnabled(entityTypeData.entityType())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
         }
 

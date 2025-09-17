@@ -25,7 +25,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedFrom("1.21.9-pre1")
 public final class EnchantmentTagKeys {
     /**
      * {@code #minecraft:curse}

@@ -520,7 +520,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(passenger != null, "Entity passenger cannot be null");
         Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
 
-        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true);
+        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true, true);
     }
 
     @Override

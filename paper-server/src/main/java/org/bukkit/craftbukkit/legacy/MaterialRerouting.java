@@ -63,7 +63,6 @@ import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.material.MaterialData;
-import org.bukkit.packs.DataPackManager;
 import org.bukkit.scoreboard.Criteria;
 
 public class MaterialRerouting {
@@ -420,10 +419,6 @@ public class MaterialRerouting {
 
     public static StonecuttingRecipe setInput(StonecuttingRecipe stonecuttingRecipe, Material material) {
         return stonecuttingRecipe.setInput(MaterialRerouting.transformToItemType(material));
-    }
-
-    public static boolean isEnabledByFeature(DataPackManager dataPackManager, Material material, World world) {
-        return dataPackManager.isEnabledByFeature(MaterialRerouting.transformToItemType(material), world);
     }
 
     @RerouteStatic("org/bukkit/scoreboard/Criteria")

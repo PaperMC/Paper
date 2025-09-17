@@ -4,15 +4,19 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.profile.PlayerTextures;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
 
 /**
  * Represents a players profile for the game, such as UUID, Name, and textures.
  */
 @NullMarked
-public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
+public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerHeadObjectContents.SkinSource {
 
     /**
      * @return The players name, if set
@@ -251,4 +255,19 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      */
     @Override
     PlayerProfile clone();
+
+    @Override
+    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.@NotNull Builder builder) {
+        if (this.getProperties().isEmpty() && (this.getName() != null) != (this.getId() != null)) {
+            if (this.getId() != null) {
+                builder.id(this.getId());
+            } else {
+                builder.name(this.getName());
+            }
+            return;
+        }
+        builder.id(this.getId())
+            .name(this.getName())
+            .profileProperties(this.getProperties().stream().map(prop -> property(prop.getName(), prop.getValue(), prop.getSignature())).toList());
+    }
 }

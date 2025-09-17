@@ -266,17 +266,7 @@ public class CraftEventFactory {
 
     // helper methods
     private static boolean canBuild(Level world, Player player, int x, int z) {
-        int spawnSize = Bukkit.getServer().getSpawnRadius();
-
-        if (world.dimension() != Level.OVERWORLD) return true;
-        if (spawnSize <= 0) return true;
-        if (((CraftServer) Bukkit.getServer()).getHandle().getOps().isEmpty()) return true;
-        if (player.isOp()) return true;
-
-        BlockPos spawnPos = world.getSharedSpawnPos();
-
-        int distanceFromSpawn = Math.max(Math.abs(x - spawnPos.getX()), Math.abs(z - spawnPos.getZ()));
-        return distanceFromSpawn > spawnSize;
+        return world.mayInteract(((CraftPlayer) player).getHandle(), new BlockPos(x, 0, z));
     }
 
     public static boolean callPlayerSignOpenEvent(net.minecraft.world.entity.player.Player player, SignBlockEntity signBlockEntity, boolean front, PlayerSignOpenEvent.Cause cause) {

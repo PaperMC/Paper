@@ -18,8 +18,8 @@ public enum Particle implements Keyed {
     ENCHANTED_HIT("enchanted_hit"),
     SMOKE("smoke"),
     LARGE_SMOKE("large_smoke"),
-    EFFECT("effect"),
-    INSTANT_EFFECT("instant_effect"),
+    EFFECT("effect", Spell.class),
+    INSTANT_EFFECT("instant_effect", Spell.class),
     /**
      * Uses {@link Color} as DataType (with alpha support)
      */
@@ -53,7 +53,7 @@ public enum Particle implements Keyed {
     BLOCK("block", BlockData.class),
     RAIN("rain"),
     ELDER_GUARDIAN("elder_guardian"),
-    DRAGON_BREATH("dragon_breath"),
+    DRAGON_BREATH("dragon_breath", Float.class),
     END_ROD("end_rod"),
     DAMAGE_INDICATOR("damage_indicator"),
     SWEEP_ATTACK("sweep_attack"),
@@ -73,7 +73,7 @@ public enum Particle implements Keyed {
     CAMPFIRE_COSY_SMOKE("campfire_cosy_smoke"),
     CAMPFIRE_SIGNAL_SMOKE("campfire_signal_smoke"),
     COMPOSTER("composter"),
-    FLASH("flash"),
+    FLASH("flash", Color.class),
     FALLING_LAVA("falling_lava"),
     LANDING_LAVA("landing_lava"),
     FALLING_WATER("falling_water"),
@@ -161,7 +161,9 @@ public enum Particle implements Keyed {
     /**
      * Uses {@link BlockData} as DataType
      */
-    BLOCK_MARKER("block_marker", BlockData.class);
+    BLOCK_MARKER("block_marker", BlockData.class),
+    COPPER_FIRE_FLAME("copper_fire_flame"),
+    ;
 
     private final NamespacedKey key;
     private final Class<?> dataType;
@@ -317,6 +319,35 @@ public enum Particle implements Keyed {
          */
         public int getDuration() {
             return duration;
+        }
+    }
+
+    public static class Spell {
+
+        private final Color color;
+        private final float power;
+
+        public Spell(@NotNull Color color, float power) {
+            this.color = color;
+            this.power = power;
+        }
+
+        /**
+         * The color of the particles to be displayed.
+         *
+         * @return particle color
+         */
+        public @NotNull Color getColor() {
+            return color;
+        }
+
+        /**
+         * The power of the particles to be displayed.
+         *
+         * @return particle power
+         */
+        public float getPower() {
+            return power;
         }
     }
 }

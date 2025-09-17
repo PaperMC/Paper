@@ -23,8 +23,15 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedFrom("1.21.9-pre1")
 public final class EntityTypeTagKeys {
+    /**
+     * {@code #minecraft:accepts_iron_golem_gift}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> ACCEPTS_IRON_GOLEM_GIFT = create(key("accepts_iron_golem_gift"));
+
     /**
      * {@code #minecraft:aquatic}
      *
@@ -108,6 +115,20 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> CAN_WEAR_HORSE_ARMOR = create(key("can_wear_horse_armor"));
+
+    /**
+     * {@code #minecraft:candidate_for_iron_golem_gift}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANDIDATE_FOR_IRON_GOLEM_GIFT = create(key("candidate_for_iron_golem_gift"));
+
+    /**
+     * {@code #minecraft:cannot_be_pushed_onto_boats}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANNOT_BE_PUSHED_ONTO_BOATS = create(key("cannot_be_pushed_onto_boats"));
 
     /**
      * {@code #minecraft:deflects_projectiles}

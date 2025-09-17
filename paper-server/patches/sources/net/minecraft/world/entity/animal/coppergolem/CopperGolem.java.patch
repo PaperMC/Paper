@@ -1,0 +1,72 @@
+--- a/net/minecraft/world/entity/animal/coppergolem/CopperGolem.java
++++ b/net/minecraft/world/entity/animal/coppergolem/CopperGolem.java
+@@ -216,7 +_,15 @@
+         Level level = this.level();
+         if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
+             if (level instanceof ServerLevel serverLevel) {
+-                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
++                // Paper start
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) return InteractionResult.PASS;
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                }
++                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops);
++                // Paper end
+                 this.gameEvent(GameEvent.SHEAR, player);
+                 itemInHand.hurtAndBreak(1, player, hand);
+             }
+@@ -424,12 +_,32 @@
+     }
+ 
+     @Override
+-    public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears) {
++    // Paper start
++    public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears, java.util.List<ItemStack> drops) {
+         level.playSound(null, this, SoundEvents.COPPER_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
+-        ItemStack itemBySlot = this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA);
+         this.setItemSlot(EQUIPMENT_SLOT_ANTENNA, ItemStack.EMPTY);
+-        this.spawnAtLocation(level, itemBySlot, 1.5F);
+-    }
++        for (int i = 0; i < drops.size(); i++) {
++            this.forceDrops = true;
++            this.spawnAtLocation(level, drops.get(i), 1.5F);
++            this.forceDrops = false;
++        }
++    }
++
++    @Override
++    public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears) {
++        this.shear(level, soundSource, shears, this.generateDefaultDrops(level, shears));
++    }
++
++    @Override
++    public java.util.List<net.minecraft.world.item.ItemStack> generateDefaultDrops(final net.minecraft.server.level.ServerLevel serverLevel, final net.minecraft.world.item.ItemStack shears) {
++        if (!this.readyForShearing()) {
++            return java.util.Collections.emptyList();
++        }
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(1);
++        drops.add(this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA).copy());
++        return drops;
++    }
++    // Paper end
+ 
+     @Override
+     public boolean readyForShearing() {
+@@ -443,9 +_,13 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
+-        super.actuallyHurt(level, damageSource, amount);
++    // CraftBukkit start - void -> boolean
++    protected boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++        if (!damageResult) return false;
++        // CraftBukkit end
+         this.setState(CopperGolemState.IDLE);
++        return true; // CraftBukkit
+     }
+ 
+     @Override

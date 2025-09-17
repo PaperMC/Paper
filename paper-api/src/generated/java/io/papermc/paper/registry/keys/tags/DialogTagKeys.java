@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedFrom("1.21.9-pre1")
 public final class DialogTagKeys {
     /**
      * {@code #minecraft:pause_screen_additions}

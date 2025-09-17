@@ -1,22 +1,22 @@
 --- a/net/minecraft/world/level/border/WorldBorder.java
 +++ b/net/minecraft/world/level/border/WorldBorder.java
-@@ -31,6 +_,7 @@
+@@ -34,6 +_,7 @@
+     double centerZ;
      int absoluteMaxSize = 29999984;
-     private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
-     public static final WorldBorder.Settings DEFAULT_SETTINGS = new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 15, 5.999997E7F, 0L, 0.0);
+     WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
 +    public net.minecraft.server.level.ServerLevel world; // CraftBukkit
  
      public boolean isWithinBounds(BlockPos pos) {
          return this.isWithinBounds(pos.getX(), pos.getZ());
-@@ -44,6 +_,20 @@
+@@ -47,6 +_,20 @@
          return this.isWithinBounds(chunkPos.getMinBlockX(), chunkPos.getMinBlockZ()) && this.isWithinBounds(chunkPos.getMaxBlockX(), chunkPos.getMaxBlockZ());
      }
  
 +    // Paper start - Bound treasure maps to world border
 +    private final BlockPos.MutableBlockPos mutPos = new BlockPos.MutableBlockPos();
 +
-+    public boolean isBlockInBounds(int chunkX, int chunkZ) {
-+        this.mutPos.set(chunkX, 64, chunkZ);
++    public boolean isBlockInBounds(int x, int z) {
++        this.mutPos.set(x, 64, z);
 +        return this.isWithinBounds(this.mutPos);
 +    }
 +
@@ -29,7 +29,7 @@
      public boolean isWithinBounds(AABB box) {
          return this.isWithinBounds(box.minX, box.minZ, box.maxX - 1.0E-5F, box.maxZ - 1.0E-5F);
      }
-@@ -142,6 +_,14 @@
+@@ -135,6 +_,14 @@
      }
  
      public void setCenter(double x, double z) {
@@ -44,7 +44,7 @@
          this.centerX = x;
          this.centerZ = z;
          this.extent.onCenterChange();
-@@ -164,6 +_,17 @@
+@@ -158,6 +_,17 @@
      }
  
      public void setSize(double size) {
@@ -60,9 +60,9 @@
 +        }
 +        // Paper end - Add worldborder events
          this.extent = new WorldBorder.StaticBorderExtent(size);
+         this.setDirty();
  
-         for (BorderChangeListener borderChangeListener : this.getListeners()) {
-@@ -172,6 +_,20 @@
+@@ -167,6 +_,20 @@
      }
  
      public void lerpSizeBetween(double oldSize, double newSize, long time) {
@@ -83,7 +83,7 @@
          this.extent = (WorldBorder.BorderExtent)(oldSize == newSize
              ? new WorldBorder.StaticBorderExtent(newSize)
              : new WorldBorder.MovingBorderExtent(oldSize, newSize, time));
-@@ -186,6 +_,7 @@
+@@ -182,6 +_,7 @@
      }
  
      public void addListener(BorderChangeListener listener) {
@@ -91,11 +91,11 @@
          this.listeners.add(listener);
      }
  
-@@ -385,6 +_,7 @@
- 
+@@ -379,6 +_,7 @@
          @Override
          public WorldBorder.BorderExtent update() {
-+            if (world != null && this.getLerpRemainingTime() <= 0L) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
-             return (WorldBorder.BorderExtent)(this.getLerpRemainingTime() <= 0L ? WorldBorder.this.new StaticBorderExtent(this.to) : this);
-         }
- 
+             if (this.getLerpTime() <= 0L) {
++                if (world != null) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
+                 WorldBorder.this.setDirty();
+                 return WorldBorder.this.new StaticBorderExtent(this.to);
+             } else {

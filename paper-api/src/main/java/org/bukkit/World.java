@@ -2016,10 +2016,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param x X coordinate
      * @param y Y coordinate
      * @param z Z coordinate
-     * @param angle the angle
+     * @param yaw the yaw
      * @return True if it was successfully set.
      */
-    public boolean setSpawnLocation(int x, int y, int z, float angle);
+    public boolean setSpawnLocation(int x, int y, int z, float yaw);
 
     /**
      * Sets the spawn location of the world
@@ -2400,14 +2400,18 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
+     * @deprecated use {@link GameRule#PVP} instead
      */
+    @Deprecated(since = "1.21.9")
     public boolean getPVP();
 
     /**
      * Sets the PVP setting for this world.
      *
      * @param pvp True/False whether PVP should be Enabled.
+     * @deprecated use {@link GameRule#PVP} instead
      */
+    @Deprecated(since = "1.21.9")
     public void setPVP(boolean pvp);
 
     /**
@@ -2800,10 +2804,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * or not.
      *
      * @return true if the world's spawn area will be kept loaded into memory.
-     * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
+     * @deprecated No longer functional since 1.21.9, the vanilla server does not have the concept of spawn chunks anymore.
      */
-    @Deprecated(since = "1.20.5")
-    public boolean getKeepSpawnInMemory();
+    @Deprecated(since = "1.20.5", forRemoval = true)
+    default boolean getKeepSpawnInMemory() {
+        return false;
+    }
 
     /**
      * Sets whether the world's spawn area should be kept loaded into memory
@@ -2811,10 +2817,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param keepLoaded if true then the world's spawn area will be kept
      *     loaded into memory.
-     * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
+     * @deprecated No longer functional since 1.21.9, the vanilla server does not have the concept of spawn chunks anymore.
      */
-    @Deprecated(since = "1.20.5")
-    public void setKeepSpawnInMemory(boolean keepLoaded);
+    @Deprecated(since = "1.20.5", forRemoval = true)
+    default void setKeepSpawnInMemory(boolean keepLoaded) {
+
+    }
 
     /**
      * Gets whether or not the world will automatically save

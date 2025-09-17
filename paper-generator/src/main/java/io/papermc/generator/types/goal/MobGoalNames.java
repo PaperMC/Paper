@@ -237,6 +237,7 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         map.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class); // close enough
         map.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         map.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
+        map.put(net.minecraft.world.entity.animal.coppergolem.CopperGolem.class, org.bukkit.entity.CopperGolem.class);
         //</editor-fold>
     });
 

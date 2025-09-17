@@ -48,7 +48,6 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
-import org.bukkit.packs.DataPackManager;
 import org.bukkit.packs.ResourcePack;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
@@ -326,18 +325,6 @@ public final class Bukkit {
     @NotNull
     public static List<String> getInitialDisabledPacks() {
         return server.getInitialDisabledPacks();
-    }
-
-    /**
-     * Get the DataPack Manager.
-     *
-     * @deprecated use {@link #getDatapackManager()}
-     * @return the manager
-     */
-    @NotNull
-    @Deprecated(forRemoval = true, since = "1.20")
-    public static DataPackManager getDataPackManager() {
-        return server.getDataPackManager();
     }
 
     /**
