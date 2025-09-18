@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
@@ -11,7 +11,7 @@ import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftBanner extends CraftBlockData implements Rotatable {
     private static final IntegerProperty ROTATION = BannerBlock.ROTATION;
 

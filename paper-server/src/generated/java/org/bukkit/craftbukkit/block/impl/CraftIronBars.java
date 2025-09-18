@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +15,7 @@ import org.bukkit.block.data.type.Fence;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftIronBars extends CraftBlockData implements Fence {
     private static final BooleanProperty WATERLOGGED = IronBarsBlock.WATERLOGGED;
 

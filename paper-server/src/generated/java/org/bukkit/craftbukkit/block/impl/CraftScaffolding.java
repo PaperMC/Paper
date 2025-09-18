@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block.impl;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.ScaffoldingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Scaffolding;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftScaffolding extends CraftBlockData implements Scaffolding {
     private static final BooleanProperty BOTTOM = ScaffoldingBlock.BOTTOM;
 

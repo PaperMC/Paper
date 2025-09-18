@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftSculkSensor extends CraftBlockData implements SculkSensor {
     private static final IntegerProperty POWER = SculkSensorBlock.POWER;
 

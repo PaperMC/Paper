@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.block.impl;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.WeatheringLanternBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.type.Lantern;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftWeatheringLantern extends CraftBlockData implements Lantern {
     private static final BooleanProperty HANGING = WeatheringLanternBlock.HANGING;
 

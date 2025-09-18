@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 public interface Tag<T extends Keyed> extends Keyed {
 
     // Start generate - Tag
-    // @GeneratedFrom 1.21.9-pre1
     String REGISTRY_BLOCKS = "blocks";
 
     Tag<Material> ACACIA_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("acacia_logs"), Material.class);

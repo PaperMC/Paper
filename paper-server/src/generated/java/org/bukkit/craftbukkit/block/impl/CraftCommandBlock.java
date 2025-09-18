@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
@@ -11,7 +11,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.CommandBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftCommandBlock extends CraftBlockData implements CommandBlock {
     private static final BooleanProperty CONDITIONAL = net.minecraft.world.level.block.CommandBlock.CONDITIONAL;
 

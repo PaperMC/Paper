@@ -96,7 +96,7 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
     private TypeSpec.Builder propertyHolder() {
         TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(this.className)
             .addModifiers(PUBLIC)
-            .addAnnotation(Annotations.GENERATED_FROM)
+            .addAnnotation(Annotations.GENERATED_CLASS)
             .superclass(Types.CRAFT_BLOCK_DATA)
             .addSuperinterface(this.baseClass);
 

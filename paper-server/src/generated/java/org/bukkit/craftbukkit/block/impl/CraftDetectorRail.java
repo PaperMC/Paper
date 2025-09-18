@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.world.level.block.DetectorRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftDetectorRail extends CraftBlockData implements RedstoneRail {
     private static final BooleanProperty POWERED = DetectorRailBlock.POWERED;
 

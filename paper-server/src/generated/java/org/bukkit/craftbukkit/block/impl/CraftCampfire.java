@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.CampfireBlock;
@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Campfire;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftCampfire extends CraftBlockData implements Campfire {
     private static final EnumProperty<Direction> FACING = CampfireBlock.FACING;
 

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Map;
 import java.util.stream.Collectors;
 import net.minecraft.world.level.block.MossyCarpetBlock;
@@ -14,7 +14,7 @@ import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftMossyCarpet extends CraftBlockData implements MossyCarpet {
     private static final BooleanProperty BASE = MossyCarpetBlock.BASE;
 

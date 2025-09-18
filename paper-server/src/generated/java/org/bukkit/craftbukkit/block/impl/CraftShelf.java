@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.ShelfBlock;
@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Shelf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftShelf extends CraftBlockData implements Shelf {
     private static final EnumProperty<Direction> FACING = ShelfBlock.FACING;
 

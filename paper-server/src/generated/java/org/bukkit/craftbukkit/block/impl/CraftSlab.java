@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.9-pre1")
+@GeneratedClass
 public class CraftSlab extends CraftBlockData implements Slab {
     private static final EnumProperty<SlabType> TYPE = SlabBlock.TYPE;
 

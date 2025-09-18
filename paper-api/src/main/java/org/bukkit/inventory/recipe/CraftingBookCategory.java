@@ -6,7 +6,6 @@ package org.bukkit.inventory.recipe;
 public enum CraftingBookCategory {
 
     // Start generate - CraftingBookCategory
-    // @GeneratedFrom 1.21.9-pre1
     BUILDING,
     REDSTONE,
     EQUIPMENT,
