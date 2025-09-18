@@ -553,7 +553,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Gets if this item has a custom item model.
      *
-     * @return if a item_model is set
+     * @return if an item_model is set
      */
     boolean hasItemModel();
 
@@ -835,7 +835,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Checks if the equippable is set.
      *
-     * @return if a equippable is set
+     * @return if an equippable is set
      */
     boolean hasEquippable();
 

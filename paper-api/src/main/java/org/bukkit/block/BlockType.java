@@ -2626,7 +2626,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     boolean isBurnable();
 
     /**
-     * Check if the block type is occludes light in the lighting engine.
+     * Check if the block type occludes light in the lighting engine.
      * <p>
      * Generally speaking, most full blocks will occlude light. Non-full blocks are
      * not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific

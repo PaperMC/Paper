@@ -11,7 +11,7 @@ public interface Vex extends Monster {
     /**
      * Gets the charging state of this entity.
      *
-     * When this entity is charging it will having a glowing red texture.
+     * When this entity is charging it will have a glowing red texture.
      *
      * @return charging state
      */
@@ -20,7 +20,7 @@ public interface Vex extends Monster {
     /**
      * Sets the charging state of this entity.
      *
-     * When this entity is charging it will having a glowing red texture.
+     * When this entity is charging it will have a glowing red texture.
      *
      * @param charging new state
      */

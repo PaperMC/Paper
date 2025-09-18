@@ -26,7 +26,7 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("FirstInput");
         assertEquals("SecondPrompt", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("FirstInput");
         assertEquals("SecondPrompt", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("bananas");
         assertEquals("bananas", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ConversationTest {
         conversation.begin();
         assertEquals("bye", forWhom.lastSentMessage);
         assertEquals(conversation, forWhom.begunConversation);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     private class FirstPrompt extends StringPrompt {

@@ -264,7 +264,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<? super BlockState> statePredicate);
 
     /**
-     * Creates a entity at the given {@link Location}
+     * Creates an entity at the given {@link Location}
      *
      * @param location The location to spawn the entity
      * @param type The entity to spawn
@@ -291,7 +291,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *                      to the entity will be made.
      *                      Notably only entities that extend the
      *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomisation logic for their spawn.
+     *                      randomization logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
      * @return the spawned entity instance.
@@ -439,7 +439,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *                      to the entity will be made.
      *                      Notably only entities that extend the
      *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomisation logic for their spawn.
+     *                      randomization logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
      * @param function      the function to be run before the entity is spawned.

@@ -29,21 +29,21 @@ public class BlockStateTest {
             if (block instanceof EntityBlock) {
                 assertTrue(isCraftBlockEntityState, material + " has BlockState of type " + blockStateType.getName() + ", but expected subtype of CraftBlockEntityState");
 
-                // check tile entity type
+                // check block entity type
                 BlockEntity blockEntity = ((EntityBlock) block).newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
-                BlockEntity materialTileEntity = CraftBlockStates.createNewBlockEntity(material);
+                BlockEntity materialBlockEntity = CraftBlockStates.createNewBlockEntity(material);
 
                 if (blockEntity == null) {
                     if (CraftBlockStates.isBlockEntityOptional(material)) {
                         continue;
                     }
-                    fail(material + " has no tile entity, it be added to CraftBlockStates#isTileEntityOptional");
+                    fail(material + " has no block entity, it be added to CraftBlockStates#isBlockEntityOptional");
                 }
 
-                assertNotNull(materialTileEntity, material + " has no tile entity expected tile entity of type " + blockEntity.getClass());
-                assertSame(materialTileEntity.getClass(), blockEntity.getClass(), material + " has unexpected tile entity type, expected " + blockEntity.getClass() + " but got " + blockEntity.getClass());
+                assertNotNull(materialBlockEntity, material + " has no block entity expected block entity of type " + blockEntity.getClass());
+                assertSame(materialBlockEntity.getClass(), blockEntity.getClass(), material + " has unexpected block entity type, expected " + blockEntity.getClass() + " but got " + blockEntity.getClass());
             } else {
-                assertFalse(isCraftBlockEntityState, material + " has unexpected CraftBlockEntityState subytype " + blockStateType.getName() + " (but is not a tile)");
+                assertFalse(isCraftBlockEntityState, material + " has unexpected CraftBlockEntityState subtype " + blockStateType.getName() + " (but is not a block entity)");
             }
         }
     }

@@ -18,7 +18,13 @@ public enum Particle implements Keyed {
     ENCHANTED_HIT("enchanted_hit"),
     SMOKE("smoke"),
     LARGE_SMOKE("large_smoke"),
+    /**
+     * Uses {@link Spell} as DataType
+     */
     EFFECT("effect", Spell.class),
+    /**
+     * Uses {@link Spell} as DataType
+     */
     INSTANT_EFFECT("instant_effect", Spell.class),
     /**
      * Uses {@link Color} as DataType (with alpha support)
@@ -53,6 +59,9 @@ public enum Particle implements Keyed {
     BLOCK("block", BlockData.class),
     RAIN("rain"),
     ELDER_GUARDIAN("elder_guardian"),
+    /**
+     * Uses {@link Float} as DataType, for the power of the breath
+     */
     DRAGON_BREATH("dragon_breath", Float.class),
     END_ROD("end_rod"),
     DAMAGE_INDICATOR("damage_indicator"),
@@ -73,6 +82,9 @@ public enum Particle implements Keyed {
     CAMPFIRE_COSY_SMOKE("campfire_cosy_smoke"),
     CAMPFIRE_SIGNAL_SMOKE("campfire_signal_smoke"),
     COMPOSTER("composter"),
+    /**
+     * Uses {@link Color} as DataType
+     */
     FLASH("flash", Color.class),
     FALLING_LAVA("falling_lava"),
     LANDING_LAVA("landing_lava"),

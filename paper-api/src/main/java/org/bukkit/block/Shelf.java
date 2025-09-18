@@ -6,6 +6,7 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface Shelf extends TileStateInventoryHolder {
+
     @Override
     ShelfInventory getInventory();
 

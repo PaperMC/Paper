@@ -228,7 +228,7 @@ public final class BlockStateMapping {
                 } else if (specialBlock == BigDripleafStemBlock.class) {
                     api = Dripleaf.class;
                 } else if (IronBarsBlock.class.isAssignableFrom(specialBlock)) {
-                    api = Fence.class; // for glass pane (regular) and iron bars
+                    api = Fence.class; // for glass pane (regular) and iron/copper bars
                 } else if (specialBlock == MultifaceBlock.class) {
                     api = ResinClump.class;
                 }

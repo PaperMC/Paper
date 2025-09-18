@@ -954,7 +954,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param memoryKey memory to access
      * @param <T> the type of the return value
-     * @return a instance of the memory section value or null if not present
+     * @return an instance of the memory section value or null if not present
      */
     @Nullable
     <T> T getMemory(@NotNull MemoryKey<T> memoryKey);

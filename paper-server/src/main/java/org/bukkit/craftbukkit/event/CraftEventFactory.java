@@ -518,8 +518,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, net.minecraft.world.entity.LivingEntity coverted, EntityTransformEvent.TransformReason transformReason) {
-        return CraftEventFactory.callEntityTransformEvent(original, Collections.singletonList(coverted), transformReason);
+    public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, net.minecraft.world.entity.LivingEntity converted, EntityTransformEvent.TransformReason transformReason) {
+        return CraftEventFactory.callEntityTransformEvent(original, Collections.singletonList(converted), transformReason);
     }
 
     public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, List<net.minecraft.world.entity.LivingEntity> convertedList, EntityTransformEvent.TransformReason convertType) {

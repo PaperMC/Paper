@@ -1109,7 +1109,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * This callback will be executed on synchronously on the main thread.
      *
-     * Timing and order this callback is fired is intentionally not defined and
+     * Timing and order this callback is fired is intentionally not defined
      * and subject to change.
      *
      * @deprecated Use either the Future or the Consumer based methods
@@ -1809,7 +1809,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param direction the ray direction
      * @param maxDistance the maximum distance
      * @param raySize entity bounding boxes will be uniformly expanded (or
-     *     shrinked) by this value before doing collision checks
+     *     shrunk) by this value before doing collision checks
      * @param filter only entities that fulfill this predicate are considered,
      *     or <code>null</code> to consider all entities
      * @return the closest ray trace hit result, or <code>null</code> if there
@@ -1967,7 +1967,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param ignorePassableBlocks whether to ignore passable but collidable
      *     blocks (ex. tall grass, signs, fluids, ..)
      * @param raySize entity bounding boxes will be uniformly expanded (or
-     *     shrinked) by this value before doing collision checks
+     *     shrunk) by this value before doing collision checks
      * @param filter only entities that fulfill this predicate are considered,
      *     or <code>null</code> to consider all entities
      * @param canCollide predicate for blocks the ray can potentially collide
@@ -2484,7 +2484,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *                      to the entity will be made.
      *                      Notably only entities that extend the
      *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomisation logic for their spawn.
+     *                      randomization logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
      * @param function      the function to be run before the entity is spawned.

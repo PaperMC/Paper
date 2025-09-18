@@ -330,7 +330,7 @@ public class CraftBlockData implements BlockData {
                 } else {
                     Property<?> newState = instance.getStateDefinition().getProperty(name);
 
-                    Preconditions.checkState(state == newState, "State mistmatch %s,%s", state, newState);
+                    Preconditions.checkState(state == newState, "State mismatch %s,%s", state, newState);
                 }
             }
         }

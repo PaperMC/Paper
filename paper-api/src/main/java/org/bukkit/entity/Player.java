@@ -288,7 +288,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Retrieves a cookie from this player.
      *
-     * @param key the key identifying the cookie cookie
+     * @param key the key identifying the cookie
      * @return a {@link CompletableFuture} that will be completed when the
      * Cookie response is received or otherwise available. If the cookie is not
      * set in the client, the {@link CompletableFuture} will complete with a
@@ -299,7 +299,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Stores a cookie in this player's client.
      *
-     * @param key the key identifying the cookie cookie
+     * @param key the key identifying the cookie
      * @param value the data to store in the cookie
      * @throws IllegalStateException if a cookie cannot be stored at this time
      */
@@ -1840,7 +1840,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public int getExpCooldown();
 
     /**
-     * Sets the player's cooldown between picking up experience orbs..
+     * Sets the player's cooldown between picking up experience orbs.
      *
      * <strong>Note:</strong> Setting this to 0 allows the player to pick up
      * instantly, but setting this to a negative value will cause the player to
@@ -2191,10 +2191,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server textures on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>The request is send with "null" as the hash. This might result
+     * <li>The request is sent with "null" as the hash. This might result
      *     in newer versions not loading the pack correctly.
      * </ul>
      *
@@ -2224,10 +2224,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>The request is send with empty string as the hash. This might result
+     * <li>The request is sent with empty string as the hash. This might result
      *     in newer versions not loading the pack correctly.
      * </ul>
      *
@@ -2260,7 +2260,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>The request is sent with empty string as the hash when the hash is
@@ -2302,7 +2302,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2348,7 +2348,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2395,7 +2395,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2441,7 +2441,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2489,7 +2489,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2538,7 +2538,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2587,7 +2587,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -2633,7 +2633,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no effect on them.
      * <li>To remove a resource pack you can use
      *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
      * </ul>
@@ -2666,7 +2666,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no effect on them.
      * <li>To remove a resource pack you can use
      *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
      * </ul>
@@ -2700,7 +2700,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no effect on them.
      * <li>To remove a resource pack you can use
      *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
      * </ul>
@@ -2735,7 +2735,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no effect on them.
      * <li>To remove a resource pack you can use
      *     {@link #removeResourcePacks(UUID, UUID...)} or {@link #clearResourcePacks()}.
      * </ul>
@@ -2809,7 +2809,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them. Use the
+     *     case this method will have no effect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
      * <li>To remove a resource pack you can use
@@ -3820,7 +3820,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     // Paper start - Add chunk view API
     /**
-     * Gets the a set of chunk keys for all chunks that have been sent to the player.
+     * Gets the set of chunk keys for all chunks that have been sent to the player.
      *
      * @return an immutable set of chunk keys
      * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy

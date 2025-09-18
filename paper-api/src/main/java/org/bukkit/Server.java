@@ -2249,7 +2249,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz);
 
     /**
-     * Gets a all tags which have been defined within the server.
+     * Gets all tags which have been defined within the server.
      * <br>
      * Server implementations are allowed to handle only the registries
      * indicated in {@link Tag}.
@@ -2506,7 +2506,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <p>
      * E.g. if the player 'jeb_' is currently playing on the server, calling {@code createProfile(null, "JEB_")} will
      * yield a profile with the name 'jeb_', their uuid and their textures.
-     * To bypass this pre-population on an case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
+     * To bypass this pre-population on a case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
      * <p>
      *
      * The name comparison will compare the {@link String#toLowerCase()} version of both the passed name parameter and

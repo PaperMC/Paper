@@ -857,7 +857,7 @@ public final class CraftServer implements Server {
         return this.playerList.isUsingWhitelist();
     }
 
-    // NOTE: Temporary calls through to server.properies until its replaced
+    // NOTE: Temporary calls through to server.properties until its replaced
     private DedicatedServerProperties getProperties() {
         return this.console.getProperties();
     }
@@ -964,7 +964,7 @@ public final class CraftServer implements Server {
         CommandSourceStack sourceStack = VanillaCommandWrapper.getListener(rawSender);
 
         String command = StringUtils.normalizeSpace(commandLine.trim());
-        
+
         net.minecraft.commands.Commands commands = this.getHandle().getServer().getCommands();
         com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = commands.getDispatcher();
         com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(command, sourceStack);
