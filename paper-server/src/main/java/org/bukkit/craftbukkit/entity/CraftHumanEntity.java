@@ -179,7 +179,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return null;
         }
 
-        return CraftLocation.toBukkit(respawnConfig.respawnData().pos(), level.getWorld(), respawnConfig.respawnData().yaw(), respawnConfig.respawnData().pitch());
+        return CraftLocation.toBukkit(respawnConfig.respawnData().pos(), level, respawnConfig.respawnData().yaw(), respawnConfig.respawnData().pitch());
     }
 
     @Override

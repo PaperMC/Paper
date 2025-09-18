@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
@@ -13,7 +14,6 @@ import org.bukkit.entity.Mannequin;
 import org.bukkit.inventory.MainHand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Objects;
 
 @NullMarked
 public class CraftMannequin extends CraftLivingEntity implements Mannequin {
@@ -33,7 +33,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
     @Override
     public void setResolvableProfile(final ResolvableProfile profile) {
-        Objects.requireNonNull(profile, "profile");
+        Preconditions.checkArgument(profile != null, "profile cannot be null");
         this.getHandle().setProfile(((PaperResolvableProfile) profile).getHandle());
     }
 
@@ -44,7 +44,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
     @Override
     public void setSkinParts(final SkinParts parts) {
-        Objects.requireNonNull(parts, "parts");
+        Preconditions.checkArgument(parts != null, "parts cannot be null");
         this.getHandle().getEntityData().set(Avatar.DATA_PLAYER_MODE_CUSTOMISATION, (byte) parts.getRaw());
     }
 
@@ -81,7 +81,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
     @Override
     public void setMainHand(final MainHand hand) {
-        Objects.requireNonNull(hand, "hand");
+        Preconditions.checkArgument(hand != null, "hand cannot be null");
         this.getHandle().setMainArm(hand == MainHand.LEFT ? HumanoidArm.LEFT : HumanoidArm.RIGHT);
     }
 }

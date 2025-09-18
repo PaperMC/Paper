@@ -371,11 +371,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         if (level == null) return null;
 
         if (!loadLocationAndValidate) {
-            return CraftLocation.toBukkit(respawnConfig.respawnData().pos(), level.getWorld(), respawnConfig.respawnData().yaw(), respawnConfig.respawnData().pitch());
+            return CraftLocation.toBukkit(respawnConfig.respawnData().pos(), level, respawnConfig.respawnData().yaw(), respawnConfig.respawnData().pitch());
         }
 
         return ServerPlayer.findRespawnAndUseSpawnBlock(level, respawnConfig, false)
-            .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level.getWorld(), resolvedPos.yaw(), resolvedPos.pitch()))
+            .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level, resolvedPos.yaw(), resolvedPos.pitch()))
             .orElse(null);
     }
 

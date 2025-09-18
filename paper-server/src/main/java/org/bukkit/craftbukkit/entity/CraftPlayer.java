@@ -1535,11 +1535,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (world == null) return null;
 
         if (!loadLocationAndValidate) {
-            return CraftLocation.toBukkit(respawnData.pos(), world.getWorld(), respawnData.yaw(), respawnData.pitch());
+            return CraftLocation.toBukkit(respawnData.pos(), world, respawnData.yaw(), respawnData.pitch());
         }
 
         return ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, false)
-            .map(pos -> CraftLocation.toBukkit(pos.position(), world.getWorld(), pos.yaw(), pos.pitch()))
+            .map(pos -> CraftLocation.toBukkit(pos.position(), world, pos.yaw(), pos.pitch()))
             .orElse(null);
     }
 
@@ -3155,8 +3155,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public <T> void sendTitlePart(final net.kyori.adventure.title.TitlePart<T> part, T value) {
-        java.util.Objects.requireNonNull(part, "part");
-        java.util.Objects.requireNonNull(value, "value");
+        Preconditions.checkArgument(part != null, "part cannot be null");
+        Preconditions.checkArgument(value != null, "value cannot be null");
         if (part == net.kyori.adventure.title.TitlePart.TITLE) {
             final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla((net.kyori.adventure.text.Component) value));
             this.getHandle().connection.send(tp);
