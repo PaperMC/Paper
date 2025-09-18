@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551aa0fc586 100644
+index 7da21009375f58b84607298e1c28281e6a3e2c34..f6583cd0e500e5f76c24ed6371c2505ec00a1f65 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -606,6 +606,7 @@ public class ServerGamePacketListenerImpl
+@@ -612,6 +612,7 @@ public class ServerGamePacketListenerImpl
                  }
  
                  rootVehicle.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
@@ -17,13 +17,13 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                  double verticalDelta = d4;
                  d3 = d - rootVehicle.getX();
                  d4 = d1 - rootVehicle.getY();
-@@ -617,12 +618,21 @@ public class ServerGamePacketListenerImpl
+@@ -623,12 +624,21 @@ public class ServerGamePacketListenerImpl
                  d7 = d3 * d3 + d4 * d4 + d5 * d5;
                  boolean flag1 = false;
                  if (d7 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
 -                    flag1 = true;
 +                    flag1 = true; // Paper - diff on change, this should be moved wrongly
-                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", rootVehicle.getName().getString(), this.player.getName().getString(), Math.sqrt(d7));
+                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", rootVehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(d7));
                  }
  
 -                if (flag1 && serverLevel.noCollision(rootVehicle, boundingBox)
@@ -42,7 +42,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                      rootVehicle.absSnapTo(x, y, z, f, f1);
                      this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
                      rootVehicle.removeLatestMovementRecording();
-@@ -701,9 +711,32 @@ public class ServerGamePacketListenerImpl
+@@ -707,9 +717,32 @@ public class ServerGamePacketListenerImpl
      }
  
      private boolean noBlocksAround(Entity entity) {
@@ -78,7 +78,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
      }
  
      @Override
-@@ -1479,7 +1512,7 @@ public class ServerGamePacketListenerImpl
+@@ -1484,7 +1517,7 @@ public class ServerGamePacketListenerImpl
                                      }
                                  }
  
@@ -87,7 +87,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                                  d3 = d - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                                  d4 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
                                  d5 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
-@@ -1518,6 +1551,7 @@ public class ServerGamePacketListenerImpl
+@@ -1523,6 +1556,7 @@ public class ServerGamePacketListenerImpl
                                  boolean flag1 = this.player.verticalCollisionBelow;
                                  this.player.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
                                  this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -95,7 +95,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                                  // Paper start - prevent position desync
                                  if (this.awaitingPositionFromClient != null) {
                                      return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1550,7 +1584,17 @@ public class ServerGamePacketListenerImpl
+@@ -1555,7 +1589,17 @@ public class ServerGamePacketListenerImpl
                                  }
  
                                  // Paper start - Add fail move event
@@ -114,7 +114,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                                  if (!allowMovement) {
                                      io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
                                              toX, toY, toZ, toYaw, toPitch, false);
-@@ -1686,7 +1730,7 @@ public class ServerGamePacketListenerImpl
+@@ -1691,7 +1735,7 @@ public class ServerGamePacketListenerImpl
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
@@ -123,7 +123,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(
                      this.awaitingPositionFromClient.x,
-@@ -1705,6 +1749,33 @@ public class ServerGamePacketListenerImpl
+@@ -1710,6 +1754,34 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -154,6 +154,7 @@ index 39a706ae5be3681c32c297c73d57b9bcf56638d4..c8dfd7fdaabc047eec05f1b78c97b551
 +        return false;
 +    }
 +    // Paper end - optimise out extra getCubes
-     private boolean isEntityCollidingWithAnythingNew(LevelReader levelReader, Entity entity, AABB aabb, double d, double d1, double d2) {
-         AABB aabb1 = entity.getBoundingBox().move(d - entity.getX(), d1 - entity.getY(), d2 - entity.getZ());
-         Iterable<VoxelShape> preMoveCollisions = levelReader.getPreMoveCollisions(entity, aabb1.deflate(1.0E-5F), aabb.getBottomCenter());
++
+     private boolean isEntityCollidingWithAnythingNew(LevelReader level, Entity entity, AABB box, double x, double y, double z) {
+         AABB aabb = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
+         Iterable<VoxelShape> preMoveCollisions = level.getPreMoveCollisions(entity, aabb.deflate(1.0E-5F), box.getBottomCenter());
