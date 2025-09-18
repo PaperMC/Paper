@@ -7,6 +7,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.Component;
+import net.minecraft.Optionull;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.HumanoidArm;
 import org.bukkit.craftbukkit.CraftServer;
@@ -27,7 +28,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     }
 
     @Override
-    public io.papermc.paper.datacomponent.item.@Nullable ResolvableProfile getResolvableProfile() {
+    public io.papermc.paper.datacomponent.item.ResolvableProfile getResolvableProfile() {
         return new PaperResolvableProfile(this.getHandle().getProfile());
     }
 
@@ -60,8 +61,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
     @Override
     public @Nullable Component getDescription() {
-        final var mc = this.getHandle().getDescription();
-        return mc == null ? null : PaperAdventure.asAdventure(mc);
+        return Optionull.map(this.getHandle().getDescription(), PaperAdventure::asAdventure);
     }
 
     @Override

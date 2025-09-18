@@ -441,10 +441,11 @@ public class MaterialTags {
 
     /**
      * Covers the variants of lanterns.
+     *
+     * @deprecated in favour of {@link Tag#LANTERNS}
      */
-    public static final MaterialSetTag LANTERNS = new MaterialSetTag(keyFor("lanterns"))
-        .add(Material.LANTERN, Material.SOUL_LANTERN)
-        .ensureSize("LANTERNS", 2).lock();
+    @Deprecated(since = "1.21.9")
+    public static final MaterialSetTag LANTERNS = replacedBy(Tag.LANTERNS);
 
     /**
      * Covers the variants of rails.

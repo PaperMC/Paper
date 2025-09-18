@@ -10,6 +10,7 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.papermc.paper.profile.MutablePropertyMap;
 import net.minecraft.Util;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.StringUtil;
@@ -233,7 +234,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
                 }
             } else {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(StandardCharsets.UTF_8)), name);
+                profile = new GameProfile(UUIDUtil.createOfflinePlayerUUID(name), name);
             }
             if (profile != null) {
                 // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
