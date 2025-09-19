@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DriedGhast;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftDriedGhast extends CraftBlockData implements DriedGhast {
     private static final EnumProperty<Direction> FACING = DriedGhastBlock.FACING;

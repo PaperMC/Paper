@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.data.type.Crafter;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftCrafter extends CraftBlockData implements Crafter {
     private static final BooleanProperty CRAFTING = CrafterBlock.CRAFTING;

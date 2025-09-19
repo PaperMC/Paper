@@ -15,7 +15,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Fire;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftFire extends CraftBlockData implements Fire {
     private static final IntegerProperty AGE = FireBlock.AGE;

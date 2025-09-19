@@ -6,7 +6,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftLiquid extends CraftBlockData implements Levelled {
     private static final IntegerProperty LEVEL = LiquidBlock.LEVEL;

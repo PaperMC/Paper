@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftDetectorRail extends CraftBlockData implements RedstoneRail {
     private static final BooleanProperty POWERED = DetectorRailBlock.POWERED;

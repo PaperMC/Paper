@@ -14,7 +14,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Fence;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftIronBars extends CraftBlockData implements Fence {
     private static final BooleanProperty WATERLOGGED = IronBarsBlock.WATERLOGGED;

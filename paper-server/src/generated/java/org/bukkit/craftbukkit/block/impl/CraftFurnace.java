@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Furnace;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftFurnace extends CraftBlockData implements Furnace {
     private static final EnumProperty<Direction> FACING = FurnaceBlock.FACING;

@@ -8,7 +8,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftMangrovePropagule extends CraftBlockData implements MangrovePropagule {
     private static final IntegerProperty AGE = MangrovePropaguleBlock.AGE;

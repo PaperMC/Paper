@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Cocoa;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftCocoa extends CraftBlockData implements Cocoa {
     private static final IntegerProperty AGE = CocoaBlock.AGE;

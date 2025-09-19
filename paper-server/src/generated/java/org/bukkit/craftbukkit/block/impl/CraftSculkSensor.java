@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftSculkSensor extends CraftBlockData implements SculkSensor {
     private static final IntegerProperty POWER = SculkSensorBlock.POWER;

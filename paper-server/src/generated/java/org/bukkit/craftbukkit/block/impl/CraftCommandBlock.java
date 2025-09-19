@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.CommandBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftCommandBlock extends CraftBlockData implements CommandBlock {
     private static final BooleanProperty CONDITIONAL = net.minecraft.world.level.block.CommandBlock.CONDITIONAL;

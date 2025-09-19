@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Beehive;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftBeehive extends CraftBlockData implements Beehive {
     private static final EnumProperty<Direction> FACING = BeehiveBlock.FACING;

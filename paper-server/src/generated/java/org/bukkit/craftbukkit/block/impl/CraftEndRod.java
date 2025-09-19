@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Directional;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftEndRod extends CraftBlockData implements Directional {
     private static final EnumProperty<Direction> FACING = EndRodBlock.FACING;

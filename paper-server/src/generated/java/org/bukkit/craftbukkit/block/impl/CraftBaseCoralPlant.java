@@ -6,7 +6,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftBaseCoralPlant extends CraftBlockData implements Waterlogged {
     private static final BooleanProperty WATERLOGGED = BaseCoralPlantBlock.WATERLOGGED;

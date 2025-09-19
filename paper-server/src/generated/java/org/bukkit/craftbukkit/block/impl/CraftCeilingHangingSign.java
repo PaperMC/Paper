@@ -11,7 +11,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.HangingSign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftCeilingHangingSign extends CraftBlockData implements HangingSign {
     private static final BooleanProperty ATTACHED = CeilingHangingSignBlock.ATTACHED;

@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Lectern;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftLectern extends CraftBlockData implements Lectern {
     private static final EnumProperty<Direction> FACING = LecternBlock.FACING;

@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftSeaPickle extends CraftBlockData implements SeaPickle {
     private static final IntegerProperty PICKLES = SeaPickleBlock.PICKLES;

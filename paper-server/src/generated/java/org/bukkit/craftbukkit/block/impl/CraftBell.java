@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Bell;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftBell extends CraftBlockData implements Bell {
     private static final EnumProperty<BellAttachType> ATTACHMENT = BellBlock.ATTACHMENT;

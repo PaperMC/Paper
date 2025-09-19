@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Repeater;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftRepeater extends CraftBlockData implements Repeater {
     private static final IntegerProperty DELAY = RepeaterBlock.DELAY;

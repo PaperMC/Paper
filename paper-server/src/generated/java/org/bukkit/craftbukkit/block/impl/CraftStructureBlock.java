@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.StructureMode;
 import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftStructureBlock extends CraftBlockData implements StructureBlock {
     private static final EnumProperty<StructureMode> MODE = net.minecraft.world.level.block.StructureBlock.MODE;

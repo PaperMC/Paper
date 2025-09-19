@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Campfire;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftCampfire extends CraftBlockData implements Campfire {
     private static final EnumProperty<Direction> FACING = CampfireBlock.FACING;

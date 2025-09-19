@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Scaffolding;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftScaffolding extends CraftBlockData implements Scaffolding {
     private static final BooleanProperty BOTTOM = ScaffoldingBlock.BOTTOM;

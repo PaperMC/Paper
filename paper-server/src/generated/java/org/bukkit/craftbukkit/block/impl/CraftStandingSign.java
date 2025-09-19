@@ -11,7 +11,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftStandingSign extends CraftBlockData implements Sign {
     private static final IntegerProperty ROTATION = StandingSignBlock.ROTATION;

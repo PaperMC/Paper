@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Dripleaf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftBigDripleafStem extends CraftBlockData implements Dripleaf {
     private static final EnumProperty<Direction> FACING = BigDripleafStemBlock.FACING;

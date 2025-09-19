@@ -1,5 +1,6 @@
 package io.papermc.generator;
 
+import com.destroystokyo.paper.ClientOption;
 import io.papermc.generator.registry.RegistryBootstrapper;
 import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
@@ -34,8 +35,10 @@ import javax.lang.model.SourceVersion;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
@@ -131,6 +134,20 @@ public final class Rewriters {
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
+            .register(ClientOption.class, composite(
+                holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
+                    @Override
+                    protected EnumValue.Builder rewriteEnumValue(ChatVisiblity visibility) {
+                        return super.rewriteEnumValue(visibility).argument(quoted(visibility.getKey()));
+                    }
+                }.reachEnd(false)),
+                holder("ParticleVisibility", ClientOption.ParticleVisibility.class, new EnumCloneRewriter<>(ParticleStatus.class) {
+                    @Override
+                    protected EnumValue.Builder rewriteEnumValue(ParticleStatus status) {
+                        return super.rewriteEnumValue(status).argument(quoted(status.getKey()));
+                    }
+                })
+            ))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override

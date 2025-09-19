@@ -71,7 +71,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
         return classBuilder(this.className)
             .addModifiers(PUBLIC, FINAL)
             .addJavadoc(Javadocs.getVersionDependentClassHeader("keys", "{@link $T#$L}"), RegistryKey.class, this.entry.registryKeyField())
-            .addAnnotations(Annotations.CLASS_HEADER)
+            .addAnnotations(Annotations.CONSTANTS_HEADER)
             .addMethod(MethodSpec.constructorBuilder()
                 .addModifiers(PRIVATE)
                 .build()

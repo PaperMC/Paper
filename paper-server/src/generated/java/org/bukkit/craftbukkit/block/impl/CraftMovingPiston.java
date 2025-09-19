@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.PistonType;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.TechnicalPiston;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftMovingPiston extends CraftBlockData implements TechnicalPiston {
     private static final EnumProperty<Direction> FACING = MovingPistonBlock.FACING;

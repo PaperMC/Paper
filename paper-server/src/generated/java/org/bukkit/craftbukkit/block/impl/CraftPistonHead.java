@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.PistonType;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftPistonHead extends CraftBlockData implements PistonHead {
     private static final EnumProperty<Direction> FACING = PistonHeadBlock.FACING;

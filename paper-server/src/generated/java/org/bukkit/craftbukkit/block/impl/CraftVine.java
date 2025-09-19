@@ -14,7 +14,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftVine extends CraftBlockData implements MultipleFacing {
     private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = VineBlock.PROPERTY_BY_DIRECTION.entrySet().stream()

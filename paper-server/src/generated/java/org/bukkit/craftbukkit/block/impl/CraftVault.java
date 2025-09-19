@@ -13,7 +13,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Vault;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftVault extends CraftBlockData implements Vault {
     private static final EnumProperty<Direction> FACING = VaultBlock.FACING;

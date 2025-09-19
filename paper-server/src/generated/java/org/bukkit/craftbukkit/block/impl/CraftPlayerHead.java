@@ -11,7 +11,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Skull;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftPlayerHead extends CraftBlockData implements Skull {
     private static final BooleanProperty POWERED = PlayerHeadBlock.POWERED;

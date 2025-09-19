@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftWallHangingSign extends CraftBlockData implements WallHangingSign {
     private static final EnumProperty<Direction> FACING = WallHangingSignBlock.FACING;

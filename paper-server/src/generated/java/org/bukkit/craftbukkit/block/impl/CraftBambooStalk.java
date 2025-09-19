@@ -9,7 +9,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Bamboo;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftBambooStalk extends CraftBlockData implements Bamboo {
     private static final IntegerProperty AGE = BambooStalkBlock.AGE;

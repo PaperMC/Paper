@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.DaylightDetector;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftDaylightDetector extends CraftBlockData implements DaylightDetector {
     private static final BooleanProperty INVERTED = DaylightDetectorBlock.INVERTED;

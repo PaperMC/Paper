@@ -13,7 +13,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.ChiseledBookshelf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftChiseledBookShelf extends CraftBlockData implements ChiseledBookshelf {
     private static final EnumProperty<Direction> FACING = ChiseledBookShelfBlock.FACING;

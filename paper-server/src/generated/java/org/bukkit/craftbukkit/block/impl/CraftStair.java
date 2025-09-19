@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.StairsShape;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftStair extends CraftBlockData implements Stairs {
     private static final EnumProperty<Direction> FACING = StairBlock.FACING;

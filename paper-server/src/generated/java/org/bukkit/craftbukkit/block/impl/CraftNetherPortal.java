@@ -10,7 +10,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.Axis;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftNetherPortal extends CraftBlockData implements Orientable {
     private static final EnumProperty<Direction.Axis> AXIS = NetherPortalBlock.AXIS;

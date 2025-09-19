@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.CopperGolemStatue;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftWeatheringCopperGolemStatue extends CraftBlockData implements CopperGolemStatue {
     private static final EnumProperty<net.minecraft.world.level.block.CopperGolemStatueBlock.Pose> POSE = WeatheringCopperGolemStatueBlock.POSE;

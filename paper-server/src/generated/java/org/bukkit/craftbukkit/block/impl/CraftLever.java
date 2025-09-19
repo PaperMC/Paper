@@ -12,7 +12,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftLever extends CraftBlockData implements Switch {
     private static final EnumProperty<AttachFace> FACE = LeverBlock.FACE;

@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DecoratedPot;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftDecoratedPot extends CraftBlockData implements DecoratedPot {
     private static final BooleanProperty CRACKED = DecoratedPotBlock.CRACKED;

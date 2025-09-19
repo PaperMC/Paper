@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.TestBlockMode;
 import org.bukkit.block.data.type.TestBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftTestBlock extends CraftBlockData implements TestBlock {
     private static final EnumProperty<TestBlockMode> MODE = net.minecraft.world.level.block.TestBlock.MODE;

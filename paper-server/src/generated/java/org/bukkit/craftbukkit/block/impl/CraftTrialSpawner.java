@@ -9,7 +9,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftTrialSpawner extends CraftBlockData implements TrialSpawner {
     private static final BooleanProperty OMINOUS = TrialSpawnerBlock.OMINOUS;

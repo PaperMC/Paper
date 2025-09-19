@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftFlowerBed extends CraftBlockData implements FlowerBed {
     private static final EnumProperty<Direction> FACING = FlowerBedBlock.FACING;

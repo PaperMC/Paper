@@ -13,7 +13,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @GeneratedClass
 public class CraftMossyCarpet extends CraftBlockData implements MossyCarpet {
     private static final BooleanProperty BASE = MossyCarpetBlock.BASE;
