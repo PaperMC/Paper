@@ -369,7 +369,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.STABLE
+        channel = BuildChannel.ALPHA
 
         downloads {
             register("server:default") {
