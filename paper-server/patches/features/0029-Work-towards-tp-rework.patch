@@ -162,7 +162,7 @@ index 37725b943f43923a0ccb322257062e60482fad78..5b28f5a5112672fd202cc8b98e10c23c
      }
  
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..f30765026277f22dcb7a04bee66c9f20a3693dd3 100644
+index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..d731c15f674061d165756d9f81cf11032f754b33 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -585,68 +585,42 @@ public abstract class PlayerList {
@@ -310,6 +310,14 @@ index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..f30765026277f22dcb7a04bee66c9f20
 -                                level.getRandom().nextLong()
 -                            )
 -                        );
+-                }
+-                // Paper start - Add PlayerPostRespawnEvent
+-                if (!teleportTransition.missingRespawnBlock()) {
+-                    if (blockState.is(net.minecraft.tags.BlockTags.BEDS)) {
+-                        isBedSpawn = true;
+-                    } else if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
+-                        isAnchorSpawn = true;
+-                    }
 +                            .send(
 +                                    new ClientboundSoundPacket(
 +                                            SoundEvents.RESPAWN_ANCHOR_DEPLETE,
@@ -323,14 +331,6 @@ index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..f30765026277f22dcb7a04bee66c9f20
 +                                    )
 +                            );
                  }
--                // Paper start - Add PlayerPostRespawnEvent
--                if (!teleportTransition.missingRespawnBlock()) {
--                    if (blockState.is(net.minecraft.tags.BlockTags.BEDS)) {
--                        isBedSpawn = true;
--                    } else if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
--                        isAnchorSpawn = true;
--                    }
--                }
 -                // Paper end - Add PlayerPostRespawnEvent
              }
          }
@@ -386,6 +386,17 @@ index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..f30765026277f22dcb7a04bee66c9f20
  
          return serverPlayer;
      }
+@@ -1030,6 +983,10 @@ public abstract class PlayerList {
+         player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
+         player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+         player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
++        // Paper start
++        player.connection.send(new ClientboundSetChunkCacheRadiusPacket(level.spigotConfig.viewDistance)); // Spigot
++        player.connection.send(new ClientboundSetSimulationDistancePacket(level.spigotConfig.simulationDistance)); // Spigot
++        // Paper end
+         if (level.isRaining()) {
+             // CraftBukkit start - handle player weather
+             // player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
 index ddad5d4362cbae0f6f4d19954ebcaf57f68792b1..838bd433f3362d5a4bba3dcfb623eeaef5d4adf9 100644
 --- a/net/minecraft/world/entity/Entity.java
