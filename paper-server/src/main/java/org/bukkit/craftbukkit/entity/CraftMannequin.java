@@ -24,7 +24,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
     @Override
     public net.minecraft.world.entity.decoration.Mannequin getHandle() {
-        return (net.minecraft.world.entity.decoration.Mannequin) super.getHandle();
+        return (net.minecraft.world.entity.decoration.Mannequin) this.entity;
     }
 
     @Override

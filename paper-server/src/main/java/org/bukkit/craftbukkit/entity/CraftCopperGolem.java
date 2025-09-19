@@ -11,6 +11,6 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
 
     @Override
     public net.minecraft.world.entity.animal.coppergolem.CopperGolem getHandle() {
-        return (net.minecraft.world.entity.animal.coppergolem.CopperGolem) super.getHandle();
+        return (net.minecraft.world.entity.animal.coppergolem.CopperGolem) this.entity;
     }
 }
