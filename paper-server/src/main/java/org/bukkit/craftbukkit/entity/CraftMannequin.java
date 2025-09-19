@@ -28,12 +28,12 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     }
 
     @Override
-    public io.papermc.paper.datacomponent.item.ResolvableProfile getResolvableProfile() {
+    public io.papermc.paper.datacomponent.item.ResolvableProfile getProfile() {
         return new PaperResolvableProfile(this.getHandle().getProfile());
     }
 
     @Override
-    public void setResolvableProfile(final ResolvableProfile profile) {
+    public void setProfile(final ResolvableProfile profile) {
         Preconditions.checkArgument(profile != null, "profile cannot be null");
         this.getHandle().setProfile(((PaperResolvableProfile) profile).getHandle());
     }

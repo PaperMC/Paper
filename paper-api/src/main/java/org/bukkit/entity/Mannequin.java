@@ -35,14 +35,14 @@ public interface Mannequin extends LivingEntity {
      *
      * @return the resolvable profile
      */
-    ResolvableProfile getResolvableProfile();
+    ResolvableProfile getProfile();
 
     /**
      * Sets the resolvable profile for this mannequin.
      *
      * @param profile the new resolvable profile
      */
-    void setResolvableProfile(ResolvableProfile profile);
+    void setProfile(ResolvableProfile profile);
 
     /**
      * Gets a copy of the current skin part options for this mannequin.
