@@ -197,16 +197,18 @@
      public boolean isSpectator() {
          return false;
      }
-@@ -362,7 +_,7 @@
+@@ -362,20 +_,28 @@
      }
  
      public boolean addTag(String tag) {
 -        return this.tags.size() < 1024 && this.tags.add(tag);
++        org.bukkit.craftbukkit.event.CraftEventFactory.callScoreboardTagsChangeEvent(this, tag, io.papermc.paper.event.entity.ScoreboardTagsChangeEvent.Change.ADD); // Paper - add ScoreboardTagsChangeEvent
 +        return this.tags.add(tag); // Paper - fully limit tag size - replace set impl
      }
  
      public boolean removeTag(String tag) {
-@@ -370,12 +_,18 @@
++        org.bukkit.craftbukkit.event.CraftEventFactory.callScoreboardTagsChangeEvent(this, tag, io.papermc.paper.event.entity.ScoreboardTagsChangeEvent.Change.REMOVE); // Paper - add ScoreboardTagsChangeEvent
+         return this.tags.remove(tag);
      }
  
      public void kill(ServerLevel level) {
@@ -848,7 +850,7 @@
              Vec2 vec2 = input.read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
              this.setDeltaMovement(Math.abs(vec31.x) > 10.0 ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 ? 0.0 : vec31.z);
              this.hasImpulse = true;
-@@ -1988,7 +_,20 @@
+@@ -1988,10 +_,23 @@
                  this.setNoGravity(input.getBooleanOr("NoGravity", false));
                  this.setGlowingTag(input.getBooleanOr("Glowing", false));
                  this.setTicksFrozen(input.getIntOr("TicksFrozen", 0));
@@ -869,7 +871,11 @@
 +                // Paper end
                  this.customData = input.read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
                  this.tags.clear();
-                 input.read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
+-                input.read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
++                input.read("Tags", TAG_LIST_CODEC).ifPresent(tags::addAll);
+                 this.readAdditionalSaveData(input);
+                 if (this.repositionEntityAfterLoad()) {
+                     this.reapplyPosition();
 @@ -1999,6 +_,59 @@
              } else {
                  throw new IllegalStateException("Entity has invalid rotation");

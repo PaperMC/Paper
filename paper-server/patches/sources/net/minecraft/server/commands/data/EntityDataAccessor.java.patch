@@ -1,0 +1,32 @@
+--- a/net/minecraft/server/commands/data/EntityDataAccessor.java
++++ b/net/minecraft/server/commands/data/EntityDataAccessor.java
+@@ -4,7 +_,9 @@
+ import com.mojang.brigadier.context.CommandContext;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
++import com.mojang.serialization.Codec;
+ import com.mojang.logging.LogUtils;
++import java.util.List;
+ import java.util.Locale;
+ import java.util.UUID;
+ import java.util.function.Function;
+@@ -39,6 +_,7 @@
+             return builder.then(Commands.literal("entity").then(action.apply(Commands.argument(argumentName, EntityArgument.entity()))));
+         }
+     };
++    private static final Codec<List<String>> TAG_LIST_CODEC = Codec.STRING.sizeLimitedListOf(1024); // Paper - add ScoreboardTagsChangeEvent
+     private final Entity entity;
+ 
+     public EntityDataAccessor(Entity entity) {
+@@ -54,6 +_,11 @@
+ 
+             try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(this.entity.problemPath(), LOGGER)) {
+                 this.entity.load(TagValueInput.create(scopedCollector, this.entity.registryAccess(), other));
++                // Paper start - add ScoreboardTagsChangeEvent
++                other.read("Tags", TAG_LIST_CODEC).ifPresent(tags -> {
++                    org.bukkit.craftbukkit.event.CraftEventFactory.callScoreboardTagsChangeEvent(this.entity, tags, io.papermc.paper.event.entity.ScoreboardTagsChangeEvent.Change.SET);
++                });
++                // Paper end - add ScoreboardTagsChangeEvent
+                 this.entity.setUUID(uuid);
+             }
+         }
