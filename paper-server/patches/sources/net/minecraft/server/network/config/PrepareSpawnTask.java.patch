@@ -5,18 +5,18 @@
      private PrepareSpawnTask.State state;
  
 -    public PrepareSpawnTask(MinecraftServer server, NameAndId nameAndId) {
-+    // Paper start
++    // Paper start - passthrough profile and packet listener
 +    private final com.mojang.authlib.GameProfile profile;
 +    private final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener;
 +    public PrepareSpawnTask(MinecraftServer server, com.mojang.authlib.GameProfile profile, net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener) {
++        this.profile = profile;
++        this.listener = listener;
++    // Paper end - passthrough profile and packet listener
          this.server = server;
 -        this.nameAndId = nameAndId;
 -        this.loadListener = server.getLevelLoadListener();
-+        this.profile = profile;
-+        this.listener = listener;
-+        this.nameAndId = new net.minecraft.server.players.NameAndId(profile);
-+        this.loadListener = LevelLoadListener.noop(); // this is already a no-op on dedicated server, but we moved it to Level
-+    // Paper end
++        this.nameAndId = new net.minecraft.server.players.NameAndId(profile); // Paper - passthrough profile and packet listener - create from profile
++        this.loadListener = LevelLoadListener.noop(); // Paper - per level load listener - this is already a no-op on dedicated server, but we moved it to Level
      }
  
      @Override
@@ -77,7 +77,7 @@
 +                }
 +            }
 +            final ServerLevel serverLevel = serverLevel1;
-+            // Paper end
++            // Paper end - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
              CompletableFuture<Vec3> completableFuture = savedPosition.position()
                  .map(CompletableFuture::completedFuture)
                  .orElseGet(() -> PlayerSpawnFinder.findSpawn(serverLevel, respawnData.pos()));
@@ -152,7 +152,7 @@
              ChunkPos chunkPos = new ChunkPos(BlockPos.containing(this.spawnPosition));
              this.spawnLevel.waitForEntities(chunkPos, 3);
 -            ServerPlayer serverPlayer = new ServerPlayer(PrepareSpawnTask.this.server, this.spawnLevel, cookie.gameProfile(), cookie.clientInformation());
-+            // Paper start
++            // Paper start - configuration api - possibly use legacy saved server player instance
 +            ServerPlayer serverPlayer;
 +            if (connection.savedPlayerForLegacyEvents != null) {
 +                serverPlayer = connection.savedPlayerForLegacyEvents;
@@ -164,7 +164,7 @@
 +            } else {
 +                serverPlayer = new ServerPlayer(PrepareSpawnTask.this.server, this.spawnLevel, cookie.gameProfile(), cookie.clientInformation());
 +            }
-+            // Paper end
++            // Paper end - configuration api - possibly use legacy saved server player instance
  
              ServerPlayer var7;
              try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(serverPlayer.problemPath(), PrepareSpawnTask.LOGGER)) {
