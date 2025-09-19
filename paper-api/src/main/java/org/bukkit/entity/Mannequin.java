@@ -6,7 +6,6 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.MainHand;
-import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -14,12 +13,11 @@ import org.jspecify.annotations.Nullable;
 public interface Mannequin extends LivingEntity {
 
     /**
-     * Creates a default mannequin profile.
+     * Returns the default mannequin profile.
      *
-     * @return a new default mannequin profile
+     * @return the default mannequin profile
      */
-    @Contract(value = "-> new", pure = true)
-    static ResolvableProfile createDefaultProfile() {
+    static ResolvableProfile defaultProfile() {
         return InternalAPIBridge.get().defaultMannequinProfile();
     }
 

@@ -91,7 +91,6 @@ public interface InternalAPIBridge {
      */
     Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
 
-    @Contract(value = "-> new", pure = true)
     ResolvableProfile defaultMannequinProfile();
 
     @Contract(value = "-> new", pure = true)
