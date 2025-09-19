@@ -1,0 +1,400 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 19 Sep 2025 11:50:59 -0400
+Subject: [PATCH] Work towards tp rework
+
+
+diff --git a/net/minecraft/server/commands/TeleportCommand.java b/net/minecraft/server/commands/TeleportCommand.java
+index 69cb4dc58bb300dad99bbebb6a66def92369e66f..9efc00ce74e0c0f1b67e907620fd1c6a07c2c166 100644
+--- a/net/minecraft/server/commands/TeleportCommand.java
++++ b/net/minecraft/server/commands/TeleportCommand.java
+@@ -263,30 +263,7 @@ public class TeleportCommand {
+             float f1 = relatives.contains(Relative.X_ROT) ? xRot - target.getXRot() : xRot;
+             float f2 = Mth.wrapDegrees(f);
+             float f3 = Mth.wrapDegrees(f1);
+-            // CraftBukkit start - Teleport event
+-            boolean result;
+-            if (target instanceof final net.minecraft.server.level.ServerPlayer player) {
+-                result = player.teleportTo(level, d, d1, d2, relatives, f2, f3, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND);
+-            } else {
+-                org.bukkit.Location to = new org.bukkit.Location(level.getWorld(), d, d1, d2, f2, f3);
+-                org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
+-                level.getCraftServer().getPluginManager().callEvent(event);
+-                if (event.isCancelled() || event.getTo() == null) { // Paper
+-                    return;
+-                }
+-                to = event.getTo(); // Paper - actually track new location
+-
+-                d = to.getX();
+-                d1 = to.getY();
+-                d2 = to.getZ();
+-                f2 = to.getYaw();
+-                f3 = to.getPitch();
+-                level = ((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle();
+-
+-                result = target.teleportTo(level, d, d1, d2, relatives, f2, f3, true);
+-            }
+-
+-            if (result) {
++            if (target.teleportTo(level, d, d1, d2, relatives, f2, f3, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND)) { // Paper - teleport cause
+                 // CraftBukkit end
+                 if (lookAt != null) {
+                     lookAt.perform(source, target);
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 014f9f489104bf3f22945f2c8f0f338b2095b18c..df0185ad6ce01afea6fa1a457f2772c89ea0dfaa 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -1320,7 +1320,15 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     }
+ 
+     // CraftBukkit start
++    public record RespawnPosResult(TeleportTransition transition, boolean isBedSpawn, boolean isAnchorSpawn) {
++
++    }
+     public @Nullable TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
++        RespawnPosResult res = findRespawnPositionAndUseSpawnBlockDetailed(useCharge, postTeleportTransition, respawnReason);
++        return res == null ? null : res.transition;
++    }
++
++    public @Nullable RespawnPosResult findRespawnPositionAndUseSpawnBlockDetailed(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
+         TeleportTransition teleportTransition;
+         boolean isBedSpawn = false;
+         boolean isAnchorSpawn = false;
+@@ -1336,9 +1344,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+                 isBedSpawn = respawnPosAngle.isBedSpawn();
+                 isAnchorSpawn = respawnPosAngle.isAnchorSpawn();
+                 consumeAnchorCharge = respawnPosAngle.consumeAnchorCharge();
+-                teleportTransition = new TeleportTransition(
+-                    level, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), respawnPosAngle.pitch(), postTeleportTransition
+-                );
++                teleportTransition = new TeleportTransition(level, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), 0.0F, postTeleportTransition);
+                 // CraftBukkit end
+             } else {
+                 teleportTransition = TeleportTransition.missingRespawnBlock(this, postTeleportTransition); // CraftBukkit
+@@ -1348,15 +1354,15 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         }
+         // CraftBukkit start
+         if (respawnReason == null) {
+-            return teleportTransition;
++            return new RespawnPosResult(teleportTransition, isBedSpawn, isAnchorSpawn);
+         }
+ 
+         org.bukkit.entity.Player respawnPlayer = this.getBukkitEntity();
+         org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(
+-            teleportTransition.position(),
+-            teleportTransition.newLevel(),
+-            teleportTransition.yRot(),
+-            teleportTransition.xRot()
++                teleportTransition.position(),
++                teleportTransition.newLevel().getWorld(),
++                teleportTransition.yRot(),
++                teleportTransition.xRot()
+         );
+ 
+         // Paper start - respawn flags
+@@ -1383,17 +1389,21 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         // Paper end - consume anchor charge if location hasn't changed
+         location = respawnEvent.getRespawnLocation();
+ 
+-        return new TeleportTransition(
+-            ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
+-            org.bukkit.craftbukkit.util.CraftLocation.toVec3(location),
+-            teleportTransition.deltaMovement(),
+-            location.getYaw(),
+-            location.getPitch(),
+-            teleportTransition.missingRespawnBlock(),
+-            teleportTransition.asPassenger(),
+-            teleportTransition.relatives(),
+-            teleportTransition.postTeleportTransition(),
+-            teleportTransition.cause()
++        return new RespawnPosResult(
++                new TeleportTransition(
++                        ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
++                        org.bukkit.craftbukkit.util.CraftLocation.toVec3(location),
++                        teleportTransition.deltaMovement(),
++                        location.getYaw(),
++                        location.getPitch(),
++                        teleportTransition.missingRespawnBlock(),
++                        teleportTransition.asPassenger(),
++                        teleportTransition.relatives(),
++                        teleportTransition.postTeleportTransition(),
++                        teleportTransition.cause()
++                ),
++                isBedSpawn,
++                isAnchorSpawn
+         );
+         // CraftBukkit end
+     }
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 37725b943f43923a0ccb322257062e60482fad78..5b28f5a5112672fd202cc8b98e10c23c221d3e83 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -677,7 +677,7 @@ public class ServerGamePacketListenerImpl
+ 
+                     // If the event is cancelled we move the player back to their old location.
+                     if (event.isCancelled()) {
+-                        this.teleport(from);
++                        this.internalTeleport(from);
+                         return;
+                     }
+ 
+@@ -1655,7 +1655,7 @@ public class ServerGamePacketListenerImpl
+ 
+                                         // If the event is cancelled we move the player back to their old location.
+                                         if (event.isCancelled()) {
+-                                            this.teleport(from);
++                                            this.internalTeleport(from);
+                                             return;
+                                         }
+ 
+@@ -1842,11 +1842,11 @@ public class ServerGamePacketListenerImpl
+         return !event.isCancelled(); // CraftBukkit - Return event status
+     }
+ 
+-    public void teleport(Location dest) {
++    public void internalTeleport(Location dest) {
+         this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch());
+     }
+ 
+-    private void internalTeleport(double d0, double d1, double d2, float f, float f1) {
++    public void internalTeleport(double d0, double d1, double d2, float f, float f1) {
+         this.internalTeleport(new PositionMoveRotation(new Vec3(d0, d1, d2), Vec3.ZERO, f, f1), Collections.emptySet());
+     }
+ 
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index c720bf4686c88732f8f1c1e076ce72160cbf6c5c..f30765026277f22dcb7a04bee66c9f20a3693dd3 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -585,68 +585,42 @@ public abstract class PlayerList {
+         return !set.isEmpty();
+     }
+ 
+-    // CraftBukkit start
+-    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
+-        return this.respawn(player, keepInventory, reason, eventReason, null);
+-    }
+-
+-    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, @Nullable org.bukkit.Location location) {
+-        player.stopRiding(); // CraftBukkit
+-        // TeleportTransition teleportTransition = player.findRespawnPositionAndUseSpawnBlock(!keepInventory, TeleportTransition.DO_NOTHING);
++    // Paper start - respawn event
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason,  @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
++        ServerPlayer.RespawnPosResult result = player.findRespawnPositionAndUseSpawnBlockDetailed(!keepInventory, TeleportTransition.DO_NOTHING, eventReason);
++        // Paper start - Add PlayerPostRespawnEvent
++        if (result == null) { // Paper - Add PlayerPostRespawnEvent - diff on change - spigot early returns if respawn pos is null, that is how they handle disconnected player in respawn event
++            return player;
++        }
++        TeleportTransition teleportTransition = result.transition();
++        Level fromLevel = player.level();
++        // Paper end
+         this.players.remove(player);
+-        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
++        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Paper
+         player.level().removePlayerImmediately(player, reason);
+-        // ServerLevel level = teleportTransition.newLevel();
+-        // ServerPlayer serverPlayer = new ServerPlayer(this.server, level, player.getGameProfile(), player.clientInformation());
+-        ServerPlayer serverPlayer = player;
+-        Level fromWorld = player.level();
+-        player.wonGame = false;
+-        // CraftBukkit end
++        ServerLevel level = teleportTransition.newLevel();
++        ServerPlayer serverPlayer = player; // Paper: TODO
+         serverPlayer.connection = player.connection;
+         serverPlayer.restoreFrom(player, keepInventory);
+         serverPlayer.setId(player.getId());
+         serverPlayer.setMainArm(player.getMainArm());
+-        // CraftBukkit - not required, just copies old location into reused entity
+-        // if (!teleportTransition.missingRespawnBlock()) {
+-        //     serverPlayer.copyRespawnPosition(player);
+-        // }
++        if (!teleportTransition.missingRespawnBlock()) {
++            serverPlayer.copyRespawnPosition(player);
++        }
+ 
+         for (String string : player.getTags()) {
+             serverPlayer.addTag(string);
+         }
+-        // Paper start - Add PlayerPostRespawnEvent
+-        boolean isBedSpawn = false;
+-        boolean isRespawn = false;
+-        boolean isAnchorSpawn = false;
+-        // Paper end - Add PlayerPostRespawnEvent
+-
+-        // CraftBukkit start - fire PlayerRespawnEvent
+-        TeleportTransition teleportTransition;
+-        if (location == null) {
+-            teleportTransition = player.findRespawnPositionAndUseSpawnBlock(!keepInventory, TeleportTransition.DO_NOTHING, eventReason);
+-
+-            if (!keepInventory) player.reset(); // SPIGOT-4785
+-           // Paper start - Add PlayerPostRespawnEvent
+-           if (teleportTransition == null) return player; // Early exit, mirrors belows early return for disconnected players in respawn event
+-           isRespawn = true;
+-           location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(teleportTransition.position(), teleportTransition.newLevel(), teleportTransition.yRot(), teleportTransition.xRot());
+-           // Paper end - Add PlayerPostRespawnEvent
+-        } else {
+-            teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
+-        }
+-        // Spigot start
+-        if (teleportTransition == null) { // Paper - Add PlayerPostRespawnEvent - diff on change - spigot early returns if respawn pos is null, that is how they handle disconnected player in respawn event
+-            return player;
+-        }
+-        // Spigot end
+-        ServerLevel level = teleportTransition.newLevel();
++        if (!keepInventory) player.reset(); // Paper
++
++        Vec3 vec3 = teleportTransition.position();
++        // Paper start
+         serverPlayer.spawnIn(level);
+         serverPlayer.unsetRemoved();
+         serverPlayer.setShiftKeyDown(false);
+-        Vec3 vec3 = teleportTransition.position();
+         serverPlayer.forceSetPositionRotation(vec3.x, vec3.y, vec3.z, teleportTransition.yRot(), teleportTransition.xRot());
+-        level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3.x()) >> 4, net.minecraft.util.Mth.floor(vec3.z()) >> 4), 1); // Paper - post teleport ticket type
+-        // CraftBukkit end
++        level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3.x()) >> 4, net.minecraft.util.Mth.floor(vec3.z()) >> 4), 1);
++        // Paper end
+         if (teleportTransition.missingRespawnBlock()) {
+             serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
+             serverPlayer.setRespawnPosition(null, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
+@@ -656,25 +630,25 @@ public abstract class PlayerList {
+         ServerLevel serverLevel = serverPlayer.level();
+         LevelData levelData = serverLevel.getLevelData();
+         serverPlayer.connection.send(new ClientboundRespawnPacket(serverPlayer.createCommonSpawnInfo(serverLevel), b));
+-        // serverPlayer.connection.teleport(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), serverPlayer.getYRot(), serverPlayer.getXRot());
+-        serverPlayer.connection.send(new ClientboundSetChunkCacheRadiusPacket(serverLevel.spigotConfig.viewDistance)); // Spigot
+-        serverPlayer.connection.send(new ClientboundSetSimulationDistancePacket(serverLevel.spigotConfig.simulationDistance)); // Spigot
+-        serverPlayer.connection.teleport(org.bukkit.craftbukkit.util.CraftLocation.toBukkit(serverPlayer.position(), serverLevel, serverPlayer.getYRot(), serverPlayer.getXRot())); // CraftBukkit
++        serverPlayer.connection.internalTeleport(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), serverPlayer.getYRot(), serverPlayer.getXRot());
+         serverPlayer.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
+         serverPlayer.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
+         serverPlayer.connection
+-            .send(new ClientboundSetExperiencePacket(serverPlayer.experienceProgress, serverPlayer.totalExperience, serverPlayer.experienceLevel));
++                .send(new ClientboundSetExperiencePacket(serverPlayer.experienceProgress, serverPlayer.totalExperience, serverPlayer.experienceLevel));
+         this.sendActivePlayerEffects(serverPlayer);
+         this.sendLevelInfo(serverPlayer, level);
+         this.sendPlayerPermissionLevel(serverPlayer);
+-        if (!serverPlayer.connection.isDisconnected()) {
+-            level.addRespawnedPlayer(serverPlayer);
+-            this.players.add(serverPlayer);
+-            this.playersByName.put(serverPlayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT), serverPlayer); // Spigot
+-            this.playersByUUID.put(serverPlayer.getUUID(), serverPlayer);
+-        }
+-        // serverPlayer.initInventoryMenu();
++        level.addRespawnedPlayer(serverPlayer);
++        this.players.add(serverPlayer);
++        this.playersByName.put(serverPlayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT), serverPlayer); // Paper
++        this.playersByUUID.put(serverPlayer.getUUID(), serverPlayer);
++        serverPlayer.initInventoryMenu();
+         serverPlayer.setHealth(serverPlayer.getHealth());
++        // Paper start - Once we not reuse the player entity we can remove this.
++        // But we have to resend the player info as its not marked as dirty
++        this.sendAllPlayerInfo(player); // Update health
++        player.onUpdateAbilities(); // Update inventory, etc
++        // Paper end
+         ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
+         if (!keepInventory && respawnConfig != null) {
+             LevelData.RespawnData respawnData = respawnConfig.respawnData();
+@@ -684,65 +658,44 @@ public abstract class PlayerList {
+                 BlockState blockState = level1.getBlockState(blockPos);
+                 if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
+                     serverPlayer.connection
+-                        .send(
+-                            new ClientboundSoundPacket(
+-                                SoundEvents.RESPAWN_ANCHOR_DEPLETE,
+-                                SoundSource.BLOCKS,
+-                                blockPos.getX(),
+-                                blockPos.getY(),
+-                                blockPos.getZ(),
+-                                1.0F,
+-                                1.0F,
+-                                level.getRandom().nextLong()
+-                            )
+-                        );
++                            .send(
++                                    new ClientboundSoundPacket(
++                                            SoundEvents.RESPAWN_ANCHOR_DEPLETE,
++                                            SoundSource.BLOCKS,
++                                            blockPos.getX(),
++                                            blockPos.getY(),
++                                            blockPos.getZ(),
++                                            1.0F,
++                                            1.0F,
++                                            level.getRandom().nextLong()
++                                    )
++                            );
+                 }
+-                // Paper start - Add PlayerPostRespawnEvent
+-                if (!teleportTransition.missingRespawnBlock()) {
+-                    if (blockState.is(net.minecraft.tags.BlockTags.BEDS)) {
+-                        isBedSpawn = true;
+-                    } else if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
+-                        isAnchorSpawn = true;
+-                    }
+-                }
+-                // Paper end - Add PlayerPostRespawnEvent
+             }
+         }
+-        // Added from changeDimension
+-        this.sendAllPlayerInfo(player); // Update health, etc...
+-        player.onUpdateAbilities();
+-        for (MobEffectInstance mobEffect : player.getActiveEffects()) {
+-            player.connection.send(new ClientboundUpdateMobEffectPacket(player.getId(), mobEffect, false)); // blend = false
+-        }
+-
+-        // Fire advancement trigger
+-        player.triggerDimensionChangeTriggers(level);
+-
+-        // Don't fire on respawn
+-        if (fromWorld != level) {
+-            org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent(player.getBukkitEntity(), fromWorld.getWorld());
+-            this.server.server.getPluginManager().callEvent(event);
+-        }
+ 
++        // Paper start
+         // Save player file again if they were disconnected
+         if (player.connection.isDisconnected()) {
+             this.save(player);
+         }
++        // Its possible for respawn to be in a diff dimension
++        if (fromLevel != level) {
++            org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent(player.getBukkitEntity(), fromLevel.getWorld());
++            this.server.server.getPluginManager().callEvent(event);
++            player.triggerDimensionChangeTriggers(level);
++        }
+ 
+-        // Paper start - Add PlayerPostRespawnEvent
+-        if (isRespawn) {
+-            new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(
++        // Call post respawn event
++        new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(
+                 player.getBukkitEntity(),
+-                location,
+-                isBedSpawn,
+-                isAnchorSpawn,
++                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3),
++                result.isBedSpawn(),
++                result.isAnchorSpawn(),
+                 teleportTransition.missingRespawnBlock(),
+                 eventReason
+-            ).callEvent();
+-        }
+-        // Paper end - Add PlayerPostRespawnEvent
+-
+-        // CraftBukkit end
++        ).callEvent();
++        // Paper end
+ 
+         return serverPlayer;
+     }
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index ddad5d4362cbae0f6f4d19954ebcaf57f68792b1..838bd433f3362d5a4bba3dcfb623eeaef5d4adf9 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -4087,6 +4087,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+                 leashable.dropLeash(); // Paper drop lead
+             }
+             // Paper end - Fix item duplication and teleport issues
++            entityx.portalProcess = null; // SPIGOT-7785: there is no need to carry this over as it contains the old world/location and we might run into trouble if there is a portal in the same spot in both worlds
+             entityx.restoreFrom(this);
+             this.removeAfterChangingDimensions();
+             entityx.teleportSetPosition(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());

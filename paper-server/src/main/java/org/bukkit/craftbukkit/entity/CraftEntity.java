@@ -292,58 +292,53 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        // Paper end
+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
+        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
+        if (flags.length == 0) {
+            relativeArguments = Set.of();
+        } else {
+            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
+        }
+        // Paper end - Teleport API
         Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
-        // Paper start - Teleport passenger API
-        Set<io.papermc.paper.entity.TeleportFlag> flagSet = new HashSet<>(List.of(flags)); // Wrap into list while multiple old flags link to the same new one
-        boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
-        // Don't allow teleporting between worlds while keeping passengers
-        if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+
+        Entity entity = this.getHandle();
+
+        if (entity.isRemoved()) {
             return false;
         }
 
-        // Don't allow to teleport between worlds if remaining on vehicle
-        if (!dismount && this.entity.isPassenger() && location.getWorld() != this.getWorld()) {
-            return false;
-        }
-        // Paper end
-
-        if ((!retainPassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
+        if (entity instanceof ServerPlayer serverPlayer && serverPlayer.connection == null) {
             return false;
         }
 
-        // Paper start - fix teleport event not being called
-        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
-            this, this.getLocation(), location);
-        // cancelling the event is handled differently for players and entities,
-        // entities just stop teleporting, players will still teleport to the "from" location of the event
-        if (!event.callEvent() || event.getTo() == null) {
-            return false;
-        }
-        location = event.getTo();
-        // Paper end
-
-        // If this entity is riding another entity, we must dismount before teleporting.
-        if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
-
-        // Let the server handle cross world teleports
-        if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
-            // Prevent teleportation to an other world during world generation
-            Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
-            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getYaw(), location.getPitch(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
-            return true;
+        final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
+        for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
+            nms.add(deltaRelativeToNMS(bukkit));
         }
 
-        // entity.snapTo() throws no event, and so cannot be cancelled
-        this.entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
+        return this.entity.teleport(new TeleportTransition(
+                ((CraftWorld) location.getWorld()).getHandle(),
+                CraftLocation.toVec3(location),
+                Vec3.ZERO,
+                location.getYaw(),
+                location.getPitch(),
+                nms,
+                TeleportTransition.DO_NOTHING,
+                TeleportCause.PLUGIN
+        )) != null;
+    }
 
-        // Ensure passengers of entity are teleported
-        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
 
-        return true;
+    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
+        return switch (apiFlag) {
+            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
+            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
+            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
+            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+        };
     }
 
     @Override

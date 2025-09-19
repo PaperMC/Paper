@@ -83,7 +83,10 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
     /**
      * Represents flags that effect the entity's state on
      * teleportation.
+     * <p>
+     * As of 1.21.9, this is now the default behavior for these.
      */
+    @Deprecated(since = "1.21.9", forRemoval = true)
     enum EntityState implements TeleportFlag {
         /**
          * If all passengers should not be required to be removed prior to teleportation.
