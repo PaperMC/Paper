@@ -1,7 +1,9 @@
 package org.spigotmc.event.player;
 
 import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.Warning;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
@@ -29,7 +31,8 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
     /**
      * Gets player's spawn location.
      * If the player {@link Player#hasPlayedBefore()}, it's going to default to the location inside player.dat file.
-     * For new players, the default spawn location is spawn of the main Bukkit world.
+     * For new players, the default spawn location is the {@link World#getSpawnLocation() spawn location}
+     * of the {@link Server#getRespawnWorld() respawn world}.
      *
      * @return the spawn location
      */

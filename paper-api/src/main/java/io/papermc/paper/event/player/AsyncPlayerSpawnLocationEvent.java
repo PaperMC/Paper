@@ -2,6 +2,8 @@ package io.papermc.paper.event.player;
 
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import org.bukkit.Location;
+import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -41,8 +43,9 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
 
     /**
      * Gets player's spawn location.
-     * If the player {@link Player#hasPlayedBefore()}, it's going to default to the location inside player.dat file.
-     * For new players, the default spawn location is spawn of the main Bukkit world.
+     * If the player has played on this server before, it's going to default to the location inside player.dat file.
+     * For new players, the default spawn location is the {@link World#getSpawnLocation() spawn location}
+     * of the {@link Server#getRespawnWorld() respawn world}.
      *
      * @return the spawn location
      */
