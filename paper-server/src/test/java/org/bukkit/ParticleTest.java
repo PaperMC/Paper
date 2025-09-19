@@ -223,11 +223,11 @@ public class ParticleTest {
 
     private <T extends ParticleOptions> void testFloat(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
         if (bukkit == Particle.SCULK_CHARGE) {
-            float role = 0.1205f;
-            SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, role, SculkChargeParticleOptions.class);
+            float roll = 0.1205f;
+            SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, roll, SculkChargeParticleOptions.class);
 
-            assertEquals(role, param.roll(), 0.001, String.format("""
-                    Float role for particle %s do not match.
+            assertEquals(roll, param.roll(), 0.001, String.format("""
+                    Float roll for particle %s do not match.
                     Did something change in the implementation or minecraft?
                     """, bukkit.getKey()));
         } else if (bukkit == Particle.DRAGON_BREATH) {

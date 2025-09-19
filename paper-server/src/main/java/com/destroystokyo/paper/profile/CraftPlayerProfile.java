@@ -234,10 +234,10 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
                 }
             } else {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-                profile = new GameProfile(UUIDUtil.createOfflinePlayerUUID(name), name);
+                profile = UUIDUtil.createOfflineProfile(name);
             }
             if (profile != null) {
-                // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
+                // if old has it, assume it's newer, so overwrite, else use cached if it was set and ours wasn't
                 GameProfile copy = new GameProfile(profile.id(), profile.name(), new MutablePropertyMap()); // Don't mutate profiles in the cache
                 copy.properties().putAll(profile.properties());
                 copyProfileProperties(this.profile, copy);
@@ -256,7 +256,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
             }
             if (profile != null) {
                 if (this.profile.name().isEmpty()) {
-                    // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
+                    // if old has it, assume it's newer, so overwrite, else use cached if it was set and ours wasn't
                     GameProfile copy = new GameProfile(profile.id(), profile.name(), new MutablePropertyMap()); // Don't mutate profiles in the cache
                     copy.properties().putAll(profile.properties());
                     copyProfileProperties(this.profile, copy);

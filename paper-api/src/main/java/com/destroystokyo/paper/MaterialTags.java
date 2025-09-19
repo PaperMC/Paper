@@ -433,11 +433,18 @@ public class MaterialTags {
         .ensureSize("SOUL_TORCH", 2).lock();
 
     /**
+     * Covers the variants of a copper torch.
+     */
+    public static final MaterialSetTag COPPER_TORCH = new MaterialSetTag(keyFor("copper_torch"))
+        .add(Material.COPPER_TORCH, Material.COPPER_WALL_TORCH)
+        .ensureSize("COPPER_TORCH", 2).lock();
+
+    /**
      * Covers the variants of torches.
      */
     public static final MaterialSetTag TORCHES = new MaterialSetTag(keyFor("torches"))
-        .add(TORCH, REDSTONE_TORCH, SOUL_TORCH)
-        .ensureSize("TORCHES", 6).lock();
+        .add(TORCH, REDSTONE_TORCH, SOUL_TORCH, COPPER_TORCH)
+        .ensureSize("TORCHES", 8).lock();
 
     /**
      * Covers the variants of lanterns.

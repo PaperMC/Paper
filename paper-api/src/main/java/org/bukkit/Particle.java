@@ -43,7 +43,7 @@ public enum Particle implements Keyed {
     LAVA("lava"),
     CLOUD("cloud"),
     /**
-     * Uses {@link Particle.DustOptions} as DataType
+     * Uses {@link DustOptions} as DataType
      */
     DUST("dust", DustOptions.class),
     ITEM_SNOWBALL("item_snowball"),
@@ -128,7 +128,7 @@ public enum Particle implements Keyed {
     SONIC_BOOM("sonic_boom"),
     SCULK_SOUL("sculk_soul"),
     /**
-     * Uses {@link Float} as DataType
+     * Uses {@link Float} as DataType, the angle in radians
      */
     SCULK_CHARGE("sculk_charge", Float.class),
     SCULK_CHARGE_POP("sculk_charge_pop"),

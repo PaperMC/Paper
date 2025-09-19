@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.profile.PlayerTextures;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -55,7 +54,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
      * This will build a snapshot of the current texture data once
      * requested inside PlayerTextures.
      *
-     * @return the textures, not <code>null</code>
+     * @return the textures
      */
     @Override
     PlayerTextures getTextures();
@@ -63,14 +62,14 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     /**
      * Copies the given textures.
      *
-     * @param textures the textures to copy, or <code>null</code> to clear the
+     * @param textures the textures to copy, or {@code null} to clear the
      * textures
      */
     @Override
     void setTextures(@Nullable PlayerTextures textures);
 
     /**
-     * @return A Mutable set of this players properties, such as textures.
+     * @return A Mutable set of this player's properties, such as textures.
      * Values specified here are subject to implementation details.
      */
     Set<ProfileProperty> getProperties();
@@ -257,7 +256,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
     PlayerProfile clone();
 
     @Override
-    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.@NotNull Builder builder) {
+    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
         if (this.getProperties().isEmpty() && (this.getName() != null) != (this.getId() != null)) {
             if (this.getId() != null) {
                 builder.id(this.getId());

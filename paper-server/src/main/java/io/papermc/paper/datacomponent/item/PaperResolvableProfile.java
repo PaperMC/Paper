@@ -22,7 +22,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.PlayerSkin;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
@@ -69,7 +68,7 @@ public record PaperResolvableProfile(
     }
 
     @Override
-    public void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.@NotNull Builder builder) {
+    public void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
         if (this.dynamic()) {
             if (this.uuid() != null) {
                 builder.id(this.uuid());
