@@ -15,11 +15,12 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -209,7 +_,6 @@
+@@ -209,7 +_,7 @@
      private MinecraftServer.TimeProfiler debugCommandProfiler;
      private boolean debugCommandProfilerDelayStart;
      private ServerConnectionListener connection;
 -    private final LevelLoadListener levelLoadListener;
++    // Paper - per world load listener - moved LevelLoadListener to ServerLevel
      @Nullable
      private ServerStatus status;
      @Nullable
@@ -98,7 +99,7 @@
          Thread serverThread,
          LevelStorageSource.LevelStorageAccess storageSource,
          PackRepository packRepository,
-@@ -303,18 +_,18 @@
+@@ -303,18 +_,19 @@
          LevelLoadListener levelLoadListener
      ) {
          super("Server");
@@ -117,6 +118,7 @@
 +            // this.connection = new ServerConnectionListener(this); // Spigot
              this.tickRateManager = new ServerTickRateManager(this);
 -            this.levelLoadListener = levelLoadListener;
++            // Paper - per level load listener - move LevelLoadListener to ServerLevel
              this.storageSource = storageSource;
              this.playerDataStorage = storageSource.createPlayerStorage();
              this.fixerUpper = fixerUpper;
@@ -184,7 +186,7 @@
          }
      }
  
-+    // Paper start
++    // Paper start - rework world loading process
 +    protected void initPostWorld() {
 +        // Paper start - Configurable player collision; Handle collideRule team for player collision toggle
 +        final ServerScoreboard scoreboard = this.getScoreboard();
@@ -210,7 +212,7 @@
 +        this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
 +        this.connection.acceptConnections();
 +    }
-+    // Paper end
++    // Paper end - rework world loading process
 +
      protected void forceDifficulty() {
      }
@@ -309,22 +311,22 @@
 +        }
 +        this.initWorldBorder(serverLevelData, serverLevel);
 +        this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(serverLevel.getWorld()));
-+        // Paper end - rework world loading process
++    // Paper end - rework world loading process
          if (!serverLevelData.isInitialized()) {
              try {
 -                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, this.levelLoadListener);
-+                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, serverLevel.levelLoadListener); // Paper
++                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, serverLevel.levelLoadListener); // Paper - per world level load listener
                  serverLevelData.setInitialized(true);
                  if (isDebugWorld) {
                      this.setupDebugLevel(this.worldData);
-@@ -436,44 +_,21 @@
+@@ -436,38 +_,16 @@
          }
  
          GlobalPos globalPos = this.selectLevelLoadFocusPos();
 -        this.levelLoadListener.updateFocus(globalPos.dimension(), new ChunkPos(globalPos.pos()));
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
-+        serverLevel.levelLoadListener.updateFocus(globalPos.dimension(), new ChunkPos(globalPos.pos())); // Paper
++        serverLevel.levelLoadListener.updateFocus(globalPos.dimension(), new ChunkPos(globalPos.pos())); // Paper - per world load listener
 +        if (serverLevelData.getCustomBossEvents() != null) { // Paper - rework world loading process
 +            this.getCustomBossEvents().load(serverLevelData.getCustomBossEvents(), this.registryAccess()); // Paper - rework world loading process
          }
@@ -359,18 +361,11 @@
 +        // Paper start - rework world loading process
 +    }
 +    private void initWorldBorder(net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, ServerLevel serverLevel) {
++        final ServerLevel serverLevel1 = serverLevel; // Rename for below code
++        // Paper end - rework world loading process
              Optional<WorldBorder.Settings> legacyWorldBorderSettings = serverLevelData.getLegacyWorldBorderSettings();
              if (legacyWorldBorderSettings.isPresent()) {
                  WorldBorder.Settings settings = legacyWorldBorderSettings.get();
--                DimensionDataStorage dataStorage1 = serverLevel1.getDataStorage();
-+                DimensionDataStorage dataStorage1 = serverLevel.getDataStorage();
-                 if (dataStorage1.get(WorldBorder.TYPE) == null) {
--                    double coordinateScale = serverLevel1.dimensionType().coordinateScale();
-+                    double coordinateScale = serverLevel.dimensionType().coordinateScale();
-+                    // Paper end - rework world loading process
-                     WorldBorder.Settings settings1 = new WorldBorder.Settings(
-                         settings.centerX() / coordinateScale,
-                         settings.centerZ() / coordinateScale,
 @@ -488,16 +_,14 @@
                      dataStorage1.set(WorldBorder.TYPE, settings1.toWorldBorder());
                  }
@@ -388,8 +383,8 @@
 -        }
 +        // Paper start - rework world loading process
 +        serverLevel.getWorldBorder().world = serverLevel;
-+            serverLevel.getWorldBorder().setAbsoluteMaxSize(this.getAbsoluteMaxWorldSize());
-+            this.getPlayerList().addWorldborderListener(serverLevel);
++        serverLevel.getWorldBorder().setAbsoluteMaxSize(this.getAbsoluteMaxWorldSize());
++        this.getPlayerList().addWorldborderListener(serverLevel);
 +        // Paper end - rework world loading process
      }
  
@@ -448,21 +443,21 @@
          }
  
 -        this.levelLoadListener.start(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.totalChunks());
-+        serverLevel.levelLoadListener.start(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.totalChunks()); // Paper
++        serverLevel.levelLoadListener.start(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.totalChunks()); // Paper - per world load listener
  
          do {
 -            this.levelLoadListener.update(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.readyChunks(), chunkLoadCounter.totalChunks());
 -            this.nextTickTimeNanos = Util.getNanos() + PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
 -            this.waitUntilNextTick();
-+            serverLevel.levelLoadListener.update(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.readyChunks(), chunkLoadCounter.totalChunks()); // Paper
++            serverLevel.levelLoadListener.update(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS, chunkLoadCounter.readyChunks(), chunkLoadCounter.totalChunks()); // Paper - per world load listener
 +            this.executeModerately(); // CraftBukkit
          } while (chunkLoadCounter.pendingChunks() > 0);
  
 -        this.levelLoadListener.finish(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS);
 -        this.updateMobSpawningFlags();
-+        serverLevel.levelLoadListener.finish(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS); // Paper
-         this.updateEffectiveRespawnData();
++        serverLevel.levelLoadListener.finish(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS); // Paper - per world load listener
 +        serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && serverLevel.getGameRules().getBoolean(GameRules.RULE_SPAWN_MONSTERS)); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+         this.updateEffectiveRespawnData();
 +        this.forceTicks = false; // CraftBukkit
 +        serverLevel.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 +        new org.bukkit.event.world.WorldLoadEvent(serverLevel.getWorld()).callEvent(); // Paper - call WorldLoadEvent
@@ -964,12 +959,12 @@
  
 -    private void updateEffectiveRespawnData() {
 -        LevelData.RespawnData respawnData = this.worldData.overworldData().getRespawnData();
-+    // Paper start
++    // Paper start - per world respawn data - read "server global" respawn data from overworld dimension reference
 +    public void updateEffectiveRespawnData() {
          ServerLevel serverLevel = this.findRespawnDimension();
 +        LevelData.RespawnData respawnData = serverLevel.serverLevelData.getRespawnData();
 +        respawnData = respawnData.withLevel(serverLevel.dimension());
-+        // Paper end
++    // Paper end - per world respawn data - read "server global" respawn data from overworld dimension reference
          this.effectiveRespawnData = serverLevel.getWorldBorderAdjustedRespawnData(respawnData);
      }
  
@@ -1211,12 +1206,12 @@
      public ServerLevel findRespawnDimension() {
 -        LevelData.RespawnData respawnData = this.getWorldData().overworldData().getRespawnData();
 -        ResourceKey<Level> resourceKey = respawnData.dimension();
-+        ResourceKey<Level> resourceKey = ((net.minecraft.world.level.storage.PrimaryLevelData) this.getWorldData().overworldData()).respawnDimension; // Paper
++        ResourceKey<Level> resourceKey = ((net.minecraft.world.level.storage.PrimaryLevelData) this.getWorldData().overworldData()).respawnDimension; // Paper - per world respawn data - read "server global" respawn data from overworld dimension reference
          ServerLevel level = this.getLevel(resourceKey);
          return level != null ? level : this.overworld();
      }
  
-+    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - set through Level
++    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - per world respawn data - set through Level
      public void setRespawnData(LevelData.RespawnData respawnData) {
          ServerLevelData serverLevelData = this.worldData.overworldData();
          LevelData.RespawnData respawnData1 = serverLevelData.getRespawnData();
@@ -1269,10 +1264,10 @@
          LOGGER.debug("Received custom click action {} with payload {}", id, payload.orElse(null));
      }
  
-+    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper
++    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - per level load listener
      public LevelLoadListener getLevelLoadListener() {
 -        return this.levelLoadListener;
-+        throw new UnsupportedOperationException(); // Paper
++        throw new UnsupportedOperationException(); // Paper - per level load listener
      }
  
      public boolean setAutoSave(boolean flag) {
@@ -1280,10 +1275,10 @@
          return false;
      }
  
-+    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - replace all calls
++    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - per level gamerules - replace all calls
      public void onGameRuleChanged(String string, GameRules.Value<?> value) {
 -        this.notificationManager().onGameRuleChanged(string, value);
-+        throw new UnsupportedOperationException(); // Paper - replace callers
++        throw new UnsupportedOperationException(); // Paper - per level gamerules - replace callers
      }
  
      public boolean acceptsTransfers() {
