@@ -82,7 +82,6 @@ import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -625,7 +624,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             }
 
             launch.projectileSource = this;
-            launch.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported
             launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
@@ -734,15 +732,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else {
             return this.getHandle().bukkitPickUpLoot;
         }
-    }
-
-    @Override
-    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-        if (this.getHealth() == 0) {
-            return false;
-        }
-
-        return super.teleport(location, cause);
     }
 
     @Override

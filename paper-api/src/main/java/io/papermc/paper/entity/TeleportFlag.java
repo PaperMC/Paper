@@ -7,19 +7,17 @@ import org.bukkit.event.player.PlayerTeleportEvent;
  * Represents a flag that can be set on teleportation that may
  * slightly modify the behavior.
  *
- * @see EntityState
  * @see Relative
  */
 public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 
     /**
-     * Note: These flags only work on {@link org.bukkit.entity.Player} entities.
-     * <p>
-     * Relative flags enable a player to not lose their velocity in the flag-specific axis/context when teleporting.
+     * Relative flags enable an entity to not lose their velocity in the flag-specific axis/context when teleporting.
      *
      * @apiNote The relative flags exposed in the API do *not* mirror all flags known to vanilla, as relative flags concerning
      * the position are non-applicable given teleports always expect an absolute location.
      * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
+     * @see org.bukkit.entity.Entity#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
      */
     enum Relative implements TeleportFlag {
         /**
@@ -40,6 +38,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
         VELOCITY_ROTATION;
         /**
          * Configures the player to not lose velocity in their x axis during the teleport.
+         *
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_X} instead.
@@ -48,6 +47,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
         public static final Relative X = VELOCITY_X;
         /**
          * Configures the player to not lose velocity in their y axis during the teleport.
+         *
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_Y} instead.
@@ -56,6 +56,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
         public static final Relative Y = VELOCITY_Y;
         /**
          * Configures the player to not lose velocity in their z axis during the teleport.
+         *
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_Z} instead.
@@ -83,7 +84,11 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
     /**
      * Represents flags that effect the entity's state on
      * teleportation.
+     *
+     * @deprecated as of 1.21.9, this is now the default behavior without
+     * any additional flags required
      */
+    @Deprecated(since = "1.21.9", forRemoval = true)
     enum EntityState implements TeleportFlag {
         /**
          * If all passengers should not be required to be removed prior to teleportation.

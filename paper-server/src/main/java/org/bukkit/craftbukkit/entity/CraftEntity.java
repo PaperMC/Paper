@@ -8,7 +8,7 @@ import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.TeleportFlag;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -19,6 +19,7 @@ import net.kyori.adventure.util.TriState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -287,63 +288,61 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
-        // Paper start - Teleport passenger API
-        return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
+        return teleport(location, cause, new TeleportFlag[0]);
     }
 
     @Override
-    public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        // Paper end
+    public boolean teleport(Location location, TeleportCause cause, TeleportFlag... flags) {
         Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
-        // Paper start - Teleport passenger API
-        Set<io.papermc.paper.entity.TeleportFlag> flagSet = new HashSet<>(List.of(flags)); // Wrap into list while multiple old flags link to the same new one
-        boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
-        // Don't allow teleporting between worlds while keeping passengers
-        if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+
+        return this.teleport0(location, cause, flags);
+    }
+
+    protected boolean teleport0(Location location, TeleportCause cause, TeleportFlag... flags) {
+        Entity entity = this.getHandle();
+        if (!entity.isAlive() || !entity.valid) {
             return false;
         }
 
-        // Don't allow to teleport between worlds if remaining on vehicle
-        if (!dismount && this.entity.isPassenger() && location.getWorld() != this.getWorld()) {
-            return false;
-        }
-        // Paper end
-
-        if ((!retainPassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
-            return false;
+        final Set<net.minecraft.world.entity.Relative> relativeFlags = EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
+        for (final TeleportFlag flag : flags) {
+            if (flag instanceof TeleportFlag.Relative relativeFlag) {
+                relativeFlags.add(deltaRelativeToNMS(relativeFlag));
+            }
         }
 
-        // Paper start - fix teleport event not being called
-        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
-            this, this.getLocation(), location);
-        // cancelling the event is handled differently for players and entities,
-        // entities just stop teleporting, players will still teleport to the "from" location of the event
-        if (!event.callEvent() || event.getTo() == null) {
-            return false;
-        }
-        location = event.getTo();
-        // Paper end
+        return this.entity.teleport(new TeleportTransition(
+            ((CraftWorld) location.getWorld()).getHandle(),
+            CraftLocation.toVec3(location),
+            Vec3.ZERO,
+            location.getYaw(),
+            location.getPitch(),
+            relativeFlags,
+            TeleportTransition.DO_NOTHING,
+            cause
+        )) != null;
+    }
 
-        // If this entity is riding another entity, we must dismount before teleporting.
-        if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
+    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(TeleportFlag.Relative apiFlag) {
+        return switch (apiFlag) {
+            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
+            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
+            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
+            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+        };
+    }
 
-        // Let the server handle cross world teleports
-        if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
-            // Prevent teleportation to an other world during world generation
-            Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
-            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getYaw(), location.getPitch(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
-            return true;
-        }
-
-        // entity.snapTo() throws no event, and so cannot be cancelled
-        this.entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
-
-        // Ensure passengers of entity are teleported
-        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
-
-        return true;
+    public static @Nullable TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+        return switch (nmsFlag) {
+            case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
+            case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;
+            case DELTA_Z -> TeleportFlag.Relative.VELOCITY_Z;
+            case ROTATE_DELTA -> TeleportFlag.Relative.VELOCITY_ROTATION;
+            case X, Y, Z, Y_ROT, X_ROT -> null;
+        };
     }
 
     @Override
@@ -1114,27 +1113,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     // Paper start - more teleport API / async chunk API
     @Override
     public CompletableFuture<Boolean> teleportAsync(final Location location, final TeleportCause cause, final TeleportFlag... teleportFlags) {
-        Preconditions.checkArgument(location != null, "location");
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
         Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
 
         ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
-        CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
+        CompletableFuture<Boolean> ret = new CompletableFuture<>();
 
         world.loadChunksForMoveAsync(this.getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()),
-            this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL, (list) -> {
+            this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL, (chunks) -> {
                 MinecraftServer.getServer().scheduleOnMain(() -> {
                     final ServerChunkCache chunkCache = world.getChunkSource();
-                    for (final net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
-                        chunkCache.addTicketAtLevel(TicketType.POST_TELEPORT, chunk.getPos(), 33);
+                    for (final net.minecraft.world.level.chunk.ChunkAccess chunk : chunks) {
+                        chunkCache.addTicketAtLevel(TicketType.POST_TELEPORT, chunk.getPos(), ChunkLevel.FULL_CHUNK_LEVEL);
                     }
                     try {
-                        ret.complete(CraftEntity.this.teleport(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
+                        ret.complete(CraftEntity.this.teleport0(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
                     } catch (Throwable throwable) {
-                        if (throwable instanceof ThreadDeath) {
-                            throw (ThreadDeath)throwable;
-                        }
-                        MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
+                        MinecraftServer.LOGGER.error("Failed to teleport entity {}", CraftEntity.this, throwable);
                         ret.completeExceptionally(throwable);
                     }
                 });

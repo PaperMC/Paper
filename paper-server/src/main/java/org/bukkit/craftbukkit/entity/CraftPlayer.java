@@ -198,7 +198,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHideEntityEvent;
 import org.bukkit.event.player.PlayerShowEntityEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
@@ -1293,135 +1292,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-        // Paper start - Teleport API
-        return this.teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
-    }
-
-    @Override
     public void lookAt(org.bukkit.entity.@NonNull Entity entity, @NonNull LookAnchor playerAnchor, @NonNull LookAnchor entityAnchor) {
         this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
     }
 
-    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
-        return switch (apiFlag) {
-            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
-            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
-            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
-            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
-        };
-    }
-
-    public static @org.jetbrains.annotations.Nullable io.papermc.paper.entity.TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
-        return switch (nmsFlag) {
-            case DELTA_X -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_X;
-            case DELTA_Y -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Y;
-            case DELTA_Z -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Z;
-            case ROTATE_DELTA -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_ROTATION;
-            default -> null;
-        };
-    }
-
     @Override
-    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
-        Set<io.papermc.paper.entity.TeleportFlag> allFlags;
-        if (flags.length == 0) {
-            relativeArguments = Set.of();
-            allFlags = Set.of();
-        } else {
-            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-            allFlags = new HashSet<>();
-            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
-                if (flag instanceof final io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
-                    relativeArguments.add(relativeTeleportFlag);
-                }
-                allFlags.add(flag);
-            }
-        }
-        boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
-        // Paper end - Teleport API
-        Preconditions.checkArgument(location != null, "location");
-        Preconditions.checkArgument(location.getWorld() != null, "location.world");
-        // Paper start - Teleport passenger API
-        // Don't allow teleporting between worlds while keeping passengers
-        if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+    protected boolean teleport0(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
+        if (this.getHandle().connection == null) {
             return false;
         }
-
-        // Don't allow to teleport between worlds if remaining on vehicle
-        if (!dismount && entity.isPassenger() && location.getWorld() != this.getWorld()) {
-            return false;
-        }
-        // Paper end
-        location.checkFinite();
-
-        ServerPlayer entity = this.getHandle();
-
-        if (this.getHealth() == 0 || entity.isRemoved()) {
-            return false;
-        }
-
-        if (entity.connection == null) {
-            return false;
-        }
-
-        if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
-            return false;
-        }
-
-        // From = Players current Location
-        Location from = this.getLocation();
-        // To = Players new Location if Teleport is Successful
-        Location to = location;
-        // Create & Call the Teleport Event.
-        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
-        this.server.getPluginManager().callEvent(event);
-
-        // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
-        if (event.isCancelled()) {
-            return false;
-        }
-
-        // If this player is riding another entity, we must dismount before teleporting.
-        if (dismount) entity.stopRiding(); // Paper - Teleport API
-
-        // SPIGOT-5509: Wakeup, similar to riding
-        if (this.isSleeping()) {
-            this.wakeup(false);
-        }
-
-        // Update the From Location
-        from = event.getFrom();
-        // Grab the new To Location dependent on whether the event was cancelled.
-        to = event.getTo();
-        // Grab the To and From World Handles.
-        ServerLevel fromWorld = ((CraftWorld) from.getWorld()).getHandle();
-        ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
-
-        // Close any foreign inventory
-        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu && !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_OPEN_INVENTORY)) { // Paper
-            this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper - Inventory close reason
-        }
-
-        // Check if the fromWorld and toWorld are the same.
-        if (fromWorld == toWorld) {
-            // Paper start - Teleport API
-            final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
-            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
-                nms.add(deltaRelativeToNMS(bukkit));
-            }
-            entity.connection.internalTeleport(new net.minecraft.world.entity.PositionMoveRotation(
-                io.papermc.paper.util.MCUtil.toVec3(to), net.minecraft.world.phys.Vec3.ZERO, to.getYaw(), to.getPitch()
-            ), nms);
-            // Paper end - Teleport API
-        } else {
-            entity.portalProcess = null; // SPIGOT-7785: there is no need to carry this over as it contains the old world/location and we might run into trouble if there is a portal in the same spot in both worlds
-            // The respawn reason should never be used if the passed location is non null.
-            this.server.getHandle().respawn(entity, true, Entity.RemovalReason.CHANGED_DIMENSION, null, to);
-        }
-        return true;
+        return super.teleport0(location, cause, flags);
     }
 
     @Override
