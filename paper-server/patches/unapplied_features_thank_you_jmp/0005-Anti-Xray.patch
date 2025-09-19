@@ -572,3 +572,28 @@ index 8fed864ae237b6d2073eb1dc680430319038341a..179c78a42ab7fef23750dea4f13e625f
      private static final Palette.Factory LINEAR_PALETTE_FACTORY = LinearPalette::create;
      private static final Palette.Factory HASHMAP_PALETTE_FACTORY = HashMapPalette::create;
      static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 8f5647fe76f7b6244ba85983b1ca35ca9414f834..84840f50d1bcebc7b0bdb1d2f79b53fd6fc98abb 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -140,6 +140,7 @@ public record SerializableChunkData(
+ 
+     @Nullable
+     public static SerializableChunkData parse(LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory palettedContainerFactory, CompoundTag tag) {
++        net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) levelHeightAccessor; // Paper - Anti-Xray This is is seemingly only called from ChunkMap, where, we have a server level. We'll fight this later if needed.
+         if (tag.getString("Status").isEmpty()) {
+             return null;
+         } else {
+@@ -200,9 +201,11 @@ public record SerializableChunkData(
+                     int byteOr = compoundTag.getByteOr("Y", (byte)0);
+                     LevelChunkSection levelChunkSection;
+                     if (byteOr >= levelHeightAccessor.getMinSectionY() && byteOr <= levelHeightAccessor.getMaxSectionY()) {
++                        final BlockState[] presetBlockStates = serverLevel.chunkPacketBlockController.getPresetBlockStates(serverLevel, chunkPos, byteOr); // Paper - Anti-Xray - Add preset block states
++                        final Codec<PalettedContainer<BlockState>> blockStateCodec = presetBlockStates == null ? codec1 : PalettedContainer.codecRW(BlockState.CODEC, palettedContainerFactory.blockStatesStrategy(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), presetBlockStates); // Paper - Anti-Xray
+                         PalettedContainer<BlockState> palettedContainer = compoundTag.getCompound("block_states")
+                             .map(
+-                                compoundTag1 -> codec1.parse(NbtOps.INSTANCE, compoundTag1)
++                                compoundTag1 -> blockStateCodec.parse(NbtOps.INSTANCE, compoundTag1) // Paper - Anti-Xray
+                                     .promotePartial(string -> logErrors(chunkPos, byteOr, string))
+                                     .getOrThrow(SerializableChunkData.ChunkReadException::new)
+                             )
