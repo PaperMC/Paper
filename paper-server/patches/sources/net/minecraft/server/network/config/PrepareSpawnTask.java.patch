@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java
 +++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
-@@ -37,10 +_,16 @@
+@@ -37,10 +_,17 @@
      @Nullable
      private PrepareSpawnTask.State state;
  
@@ -8,6 +8,7 @@
 +    // Paper start - passthrough profile and packet listener
 +    private final com.mojang.authlib.GameProfile profile;
 +    private final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener;
++    private boolean newPlayer;
 +    public PrepareSpawnTask(MinecraftServer server, com.mojang.authlib.GameProfile profile, net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener) {
 +        this.profile = profile;
 +        this.listener = listener;
@@ -20,11 +21,12 @@
      }
  
      @Override
-@@ -50,15 +_,56 @@
+@@ -50,15 +_,57 @@
                  .getPlayerList()
                  .loadPlayerData(this.nameAndId)
                  .map(compoundTag -> TagValueInput.create(scopedCollector, this.server.registryAccess(), compoundTag));
 +            // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
++            this.newPlayer = optional.isEmpty(); // New players don't have saved data!
 +            net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> resourceKey = null; // Paper
 +            boolean[] invalidPlayerWorld = {false};
 +            bukkitData: if (optional.isPresent()) {
@@ -97,7 +99,7 @@
          private final ChunkLoadCounter chunkLoadCounter = new ChunkLoadCounter();
  
          Preparing(final ServerLevel spawnLevel, final CompletableFuture<Vec3> spawnPosition, final Vec2 spawnAngle) {
-@@ -137,6 +_,49 @@
+@@ -137,6 +_,50 @@
              } else {
                  Vec3 vec3 = this.spawnPosition.join();
                  if (this.chunkLoadFuture == null) {
@@ -127,7 +129,8 @@
 +                        this.eventFuture = CompletableFuture.supplyAsync(() -> {
 +                            io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
 +                                PrepareSpawnTask.this.listener.paperConnection,
-+                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3final, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y)
++                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3final, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
++                                PrepareSpawnTask.this.newPlayer
 +                            );
 +                            ev.callEvent();
 +                            return ev.getSpawnLocation();
