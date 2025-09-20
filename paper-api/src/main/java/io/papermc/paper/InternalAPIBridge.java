@@ -57,7 +57,7 @@ public interface InternalAPIBridge {
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
-     
+
     /**
      * Creates a new combat entry.
      * <p>

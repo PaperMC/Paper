@@ -12,7 +12,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,10 +87,8 @@ import org.bukkit.Difficulty;
 import org.bukkit.Effect;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
-import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
 import org.bukkit.Sound;
@@ -163,7 +160,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftWorld extends CraftRegionAccessor implements World {
-    public static final int CUSTOM_DIMENSION_OFFSET = 10;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
     private static final PointersSupplier<World> POINTERS_SUPPLIER = PointersSupplier.<World>builder()
         .resolving(net.kyori.adventure.identity.Identity.NAME, World::getName)
@@ -176,7 +172,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final CraftServer server = (CraftServer) Bukkit.getServer();
     private final @Nullable ChunkGenerator generator;
     private final @Nullable BiomeProvider biomeProvider;
-    private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
+    private final List<BlockPopulator> populators = new ArrayList<>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
@@ -369,14 +365,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.setSpawnLocation(x, y, z, yaw, 0);
     }
 
-    @Override
-    public boolean setSpawnLocation(int x, int y, int z) {
-        return this.setSpawnLocation(x, y, z, 0.0F);
-    }
     // Paper start
     private static void warnUnsafeChunk(String reason, int x, int z) {
         // if any chunk coord is outside of 30 million blocks
-        int max = (30_000_000 / 16) + 625;
+        int max = (Level.MAX_LEVEL_SIZE / 16) + 625;
         if (x > max || z > max || x < -max || z < -max) {
             Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
             if (plugin != null) {
@@ -461,21 +453,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return raw;
         }
         return Arrays.copyOf(raw, size);
-    }
-
-    @Override
-    public void loadChunk(int x, int z) {
-        this.loadChunk(x, z, true);
-    }
-
-    @Override
-    public boolean unloadChunk(Chunk chunk) {
-        return this.unloadChunk(chunk.getX(), chunk.getZ());
-    }
-
-    @Override
-    public boolean unloadChunk(int x, int z) {
-        return this.unloadChunk(x, z, true);
     }
 
     @Override
@@ -680,16 +657,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public org.bukkit.entity.Item dropItem(Location loc, ItemStack item) {
-        return this.dropItem(loc, item, null);
-    }
-
-    @Override
-    public org.bukkit.entity.Item dropItem(Location loc, ItemStack item, Consumer<? super org.bukkit.entity.Item> function) {
-        Preconditions.checkArgument(loc != null, "Location cannot be null");
+    public org.bukkit.entity.Item dropItem(Location location, ItemStack item, Consumer<? super org.bukkit.entity.Item> function) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
-        ItemEntity entity = new ItemEntity(this.world, loc.getX(), loc.getY(), loc.getZ(), CraftItemStack.asNMSCopy(item));
+        ItemEntity entity = new ItemEntity(this.world, location.getX(), location.getY(), location.getZ(), CraftItemStack.asNMSCopy(item));
         org.bukkit.entity.Item itemEntity = (org.bukkit.entity.Item) entity.getBukkitEntity();
         entity.pickupDelay = 10;
         if (function != null) {
@@ -700,31 +672,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item) {
-        return this.dropItemNaturally(loc, item, null);
-    }
-
-    @Override
-    public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item, Consumer<? super org.bukkit.entity.Item> function) {
-        Preconditions.checkArgument(loc != null, "Location cannot be null");
+    public org.bukkit.entity.Item dropItemNaturally(Location location, ItemStack item, Consumer<? super org.bukkit.entity.Item> function) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
         double xs = Mth.nextDouble(this.world.random, -0.25D, 0.25D);
         double ys = Mth.nextDouble(this.world.random, -0.25D, 0.25D) - ((double) EntityType.ITEM.getHeight() / 2.0D);
         double zs = Mth.nextDouble(this.world.random, -0.25D, 0.25D);
-        loc = loc.clone().add(xs, ys, zs);
-        return this.dropItem(loc, item, function);
+        location = location.clone().add(xs, ys, zs);
+        return this.dropItem(location, item, function);
     }
 
     @Override
-    public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
-        return this.spawnArrow(loc, velocity, speed, spread, Arrow.class);
-    }
-
-    @Override
-    public <T extends AbstractArrow> T spawnArrow(Location loc, Vector velocity, float speed, float spread, Class<T> clazz) {
-        Preconditions.checkArgument(loc != null, "Location cannot be null");
-        Preconditions.checkArgument(velocity != null, "Vector cannot be null");
+    public <T extends AbstractArrow> T spawnArrow(Location location, Vector direction, float speed, float spread, Class<T> clazz) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(direction != null, "Vector cannot be null");
         Preconditions.checkArgument(clazz != null, "clazz Entity for the arrow cannot be null");
 
         net.minecraft.world.entity.projectile.AbstractArrow arrow;
@@ -739,8 +701,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
         }
 
-        arrow.snapTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
-        arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
+        arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, spread);
         this.world.addFreshEntity(arrow);
         return (T) arrow.getBukkitEntity();
     }
@@ -883,27 +845,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public boolean createExplosion(double x, double y, double z, float power) {
-        return this.createExplosion(x, y, z, power, false, true);
-    }
-
-    @Override
-    public boolean createExplosion(double x, double y, double z, float power, boolean setFire) {
-        return this.createExplosion(x, y, z, power, setFire, true);
-    }
-
-    @Override
-    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks) {
-        return this.createExplosion(x, y, z, power, setFire, breakBlocks, null);
-    }
-
-    @Override
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
-    // Paper start - expand explosion API
+        // Paper start - expand explosion API
         return this.createExplosion(x, y, z, power, setFire, breakBlocks, source, null);
     }
-    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
-    // Paper end - expand explosion API
+
+    private boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
+        // Paper end - expand explosion API
         net.minecraft.world.level.Level.ExplosionInteraction explosionType;
         if (!breakBlocks) {
             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.NONE; // Don't break blocks
@@ -924,21 +872,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper end
 
     @Override
-    public boolean createExplosion(Location loc, float power) {
-        return this.createExplosion(loc, power, false);
-    }
-
-    @Override
-    public boolean createExplosion(Location loc, float power, boolean setFire) {
-        return this.createExplosion(loc, power, setFire, true);
-    }
-
-    @Override
-    public boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks) {
-        return this.createExplosion(loc, power, setFire, breakBlocks, null);
-    }
-
-    @Override
     public boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks, Entity source) {
         Preconditions.checkArgument(loc != null, "Location is null");
         Preconditions.checkArgument(this.equals(loc.getWorld()), "Location not in world");
@@ -949,16 +882,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public @NotNull Environment getEnvironment() {
         return this.environment;
-    }
-
-    @Override
-    public Block getBlockAt(Location location) {
-        return this.getBlockAt(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    @Override
-    public Chunk getChunkAt(Location location) {
-        return this.getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
 
     @Override
@@ -984,35 +907,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public Block getHighestBlockAt(int x, int z) {
-        return this.getBlockAt(x, this.getHighestBlockYAt(x, z), z);
-    }
-
-    @Override
-    public Block getHighestBlockAt(Location location) {
-        return this.getHighestBlockAt(location.getBlockX(), location.getBlockZ());
-    }
-
-    @Override
     public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
         warnUnsafeChunk("getting a faraway chunk", x >> 4, z >> 4); // Paper
         // Transient load for this tick
         return this.world.getChunk(x >> 4, z >> 4).getHeight(CraftHeightMap.toNMS(heightMap), x, z);
-    }
-
-    @Override
-    public Block getHighestBlockAt(int x, int z, org.bukkit.HeightMap heightMap) {
-        return this.getBlockAt(x, this.getHighestBlockYAt(x, z, heightMap), z);
-    }
-
-    @Override
-    public Block getHighestBlockAt(Location location, org.bukkit.HeightMap heightMap) {
-        return this.getHighestBlockAt(location.getBlockX(), location.getBlockZ(), heightMap);
-    }
-
-    @Override
-    public Biome getBiome(int x, int z) {
-        return this.getBiome(x, 0, z);
     }
 
     @Override
@@ -1028,28 +926,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (this.world.hasChunkAt(pos)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkAt(pos);
 
-            if (chunk != null) {
-                chunk.setBiome(x >> 2, y >> 2, z >> 2, bb);
-
-                chunk.markUnsaved(); // SPIGOT-2890
-            }
+            chunk.setBiome(x >> 2, y >> 2, z >> 2, bb);
+            chunk.markUnsaved(); // SPIGOT-2890
         }
-    }
-
-    @Override
-    public double getTemperature(int x, int z) {
-        return this.getTemperature(x, 0, z);
     }
 
     @Override
     public double getTemperature(int x, int y, int z) {
         BlockPos pos = new BlockPos(x, y, z);
         return this.world.getNoiseBiome(x >> 2, y >> 2, z >> 2).value().getTemperature(pos, this.world.getSeaLevel());
-    }
-
-    @Override
-    public double getHumidity(int x, int z) {
-        return this.getHumidity(x, 0, z);
     }
 
     @Override
@@ -1080,22 +965,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
-        return this.getNearbyEntities(location, x, y, z, null);
-    }
-
-    @Override
     public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z, Predicate<? super Entity> filter) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(this.equals(location.getWorld()), "Location cannot be in a different world");
 
         BoundingBox aabb = BoundingBox.of(location, x, y, z);
         return this.getNearbyEntities(aabb, filter);
-    }
-
-    @Override
-    public Collection<Entity> getNearbyEntities(BoundingBox boundingBox) {
-        return this.getNearbyEntities(boundingBox, null);
     }
 
     @Override
@@ -1118,31 +993,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance) {
-        return this.rayTraceEntities(start, direction, maxDistance, null);
-    }
-
-    @Override
-    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize) {
-        return this.rayTraceEntities(start, direction, maxDistance, raySize, null);
-    }
-
-    @Override
-    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, Predicate<? super Entity> filter) {
-        return this.rayTraceEntities(start, direction, maxDistance, 0.0D, filter);
-    }
-
-    @Override
-    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
-        // Paper start - Add predicate for blocks when raytracing
-        return rayTraceEntities((io.papermc.paper.math.Position) start, direction, maxDistance, raySize, filter);
-    }
-
     public RayTraceResult rayTraceEntities(io.papermc.paper.math.Position start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
         Preconditions.checkArgument(start != null, "Location start cannot be null");
         Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
         Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
-        // Paper end - Add predicate for blocks when raytracing
 
         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
         direction.checkFinite();
@@ -1181,27 +1035,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance) {
-        return this.rayTraceBlocks(start, direction, maxDistance, FluidCollisionMode.NEVER, false);
-    }
-
-    @Override
-    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
-        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, false);
-    }
-
-    @Override
-    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
-        // Paper start - Add predicate for blocks when raytracing
-        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
-    }
-
-    @Override
     public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<? super Block> canCollide) {
         Preconditions.checkArgument(start != null, "Location start cannot be null");
         Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
         Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
-        // Paper end - Add predicate for blocks when raytracing
 
         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
         direction.checkFinite();
@@ -1222,15 +1059,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
-        // Paper start - Add predicate for blocks when raytracing
-        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
-    }
-
-    @Override
     public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
         RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
-        // Paper end - Add predicate for blocks when raytracing
         Vector startVec = null;
         double blockHitDistance = maxDistance;
 
@@ -1423,20 +1253,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return;
         }
         this.world.pvpMode = TriState.byBoolean(pvp);
-    }
-
-    public void playEffect(Player player, Effect effect, int data) {
-        this.playEffect(player.getLocation(), effect, data, 0);
-    }
-
-    @Override
-    public void playEffect(Location location, Effect effect, int data) {
-        this.playEffect(location, effect, data, 64);
-    }
-
-    @Override
-    public <T> void playEffect(Location loc, Effect effect, T data) {
-        this.playEffect(loc, effect, data, 64);
     }
 
     @Override
@@ -1663,83 +1479,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    @Deprecated
-    public long getTicksPerAnimalSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.ANIMAL, ticksPerAnimalSpawns);
-    }
-
-    @Override
-    @Deprecated
-    public long getTicksPerMonsterSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.MONSTER);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.MONSTER, ticksPerMonsterSpawns);
-    }
-
-    @Override
-    @Deprecated
-    public long getTicksPerWaterSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerWaterSpawns(int ticksPerWaterSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.WATER_ANIMAL, ticksPerWaterSpawns);
-    }
-
-    @Override
-    @Deprecated
-    public long getTicksPerWaterAmbientSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerWaterAmbientSpawns(int ticksPerWaterAmbientSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.WATER_AMBIENT, ticksPerWaterAmbientSpawns);
-    }
-
-    @Override
-    @Deprecated
-    public long getTicksPerWaterUndergroundCreatureSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE, ticksPerWaterUndergroundCreatureSpawns);
-    }
-
-    @Override
-    @Deprecated
-    public long getTicksPerAmbientSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns) {
-        this.setTicksPerSpawns(SpawnCategory.AMBIENT, ticksPerAmbientSpawns);
-    }
-
-    @Override
     public void setTicksPerSpawns(SpawnCategory spawnCategory, int ticksPerCategorySpawn) {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
 
-        this.world.ticksPerSpawnCategory.put(spawnCategory, (long) ticksPerCategorySpawn);
+        this.world.ticksPerSpawnCategory.put(spawnCategory, ticksPerCategorySpawn);
     }
 
     @Override
@@ -1771,90 +1515,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    @Deprecated
-    public int getMonsterSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.MONSTER);
-    }
-
-    @Override
-    @Deprecated
-    public void setMonsterSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.MONSTER, limit);
-    }
-
-    @Override
-    @Deprecated
-    public int getAnimalSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public void setAnimalSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.ANIMAL, limit);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterAnimalSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public void setWaterAnimalSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.WATER_ANIMAL, limit);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterAmbientSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public void setWaterAmbientSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.WATER_AMBIENT, limit);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterUndergroundCreatureSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE);
-    }
-
-    @Override
-    @Deprecated
-    public void setWaterUndergroundCreatureSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE, limit);
-    }
-
-    @Override
-    @Deprecated
-    public int getAmbientSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public void setAmbientSpawnLimit(int limit) {
-        this.setSpawnLimit(SpawnCategory.AMBIENT, limit);
-    }
-
-    @Override
     public int getSpawnLimit(SpawnCategory spawnCategory) {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
 
-        // Paper start - Add mobcaps commands
         return this.getSpawnLimitUnsafe(spawnCategory);
     }
+
     public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
         int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
         if (limit < 0) {
             limit = this.server.getSpawnLimitUnsafe(spawnCategory);
-            // Paper end - Add mobcaps commands
         }
         return limit;
     }
@@ -1868,23 +1539,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note) {
-        this.playSound(loc, instrument.getSound(), org.bukkit.SoundCategory.RECORDS, 3f, note.getPitch());
-    }
-
-    @Override
-    public void playSound(Location loc, Sound sound, float volume, float pitch) {
-        this.playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
-    public void playSound(Location loc, String sound, float volume, float pitch) {
-        this.playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());;
+        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());
     }
 
     @Override
@@ -1915,16 +1571,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         ClientboundSoundPacket packet = new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), SoundSource.valueOf(category.name()), x, y, z, volume, pitch, seed);
         this.world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
-    }
-
-    @Override
-    public void playSound(Entity entity, Sound sound, float volume, float pitch) {
-        this.playSound(entity, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
-    public void playSound(Entity entity, String sound, float volume, float pitch) {
-        this.playSound(entity, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
     }
 
     @Override
@@ -2134,78 +1780,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void spawnParticle(Particle particle, Location location, int count) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count) {
-        this.spawnParticle(particle, x, y, z, count, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, data);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, T data) {
-        this.spawnParticle(particle, x, y, z, count, 0, 0, 0, data);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, data);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1, data);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
-    }
-
-    @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
         this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, false);
     }
 
     @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data, force);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        // Paper start - Particle API
-        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
-    }
-    @Override
     public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        // Paper end - Particle API
         data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
@@ -2288,7 +1868,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.locateNearestStructure(origin, List.of(structure), radius, findUnexplored);
     }
 
-    public StructureSearchResult locateNearestStructure(Location origin, List<Structure> structures, int radius, boolean findUnexplored) {
+    private StructureSearchResult locateNearestStructure(Location origin, List<Structure> structures, int radius, boolean findUnexplored) {
         BlockPos originPos = BlockPos.containing(origin.getX(), origin.getY(), origin.getZ());
         List<Holder<net.minecraft.world.level.levelgen.structure.Structure>> holders = new ArrayList<>();
 
@@ -2325,11 +1905,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         getHandle().gameEvent(sourceEntity != null ? ((CraftEntity) sourceEntity).getHandle(): null, net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(gameEvent.getKey())).orElseThrow(), org.bukkit.craftbukkit.util.CraftVector.toBlockPos(position));
     }
     // Paper end
-
-    @Override
-    public BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes) {
-        return this.locateNearestBiome(origin, radius, 32, 64, biomes);
-    }
 
     @Override
     public BiomeSearchResult locateNearestBiome(Location origin, int radius, int horizontalInterval, int verticalInterval, Biome... biomes) {
@@ -2407,8 +1982,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public PersistentDataContainer getPersistentDataContainer() {
         return this.persistentDataContainer;
     }
-
-    // Paper - replace feature flag API
 
     public void storeBukkitValues(CompoundTag c) {
         if (!this.persistentDataContainer.isEmpty()) {

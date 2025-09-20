@@ -488,7 +488,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
-     * @see #getTagValues(TagKey) 
+     * @see #getTagValues(TagKey)
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);

@@ -3,12 +3,10 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import com.mojang.logging.LogUtils;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
@@ -58,7 +56,6 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.Villager;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
@@ -75,11 +72,9 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
-    private static final Logger LOGGER = LogUtils.getClassLogger();
     private CraftInventoryPlayer inventory;
     private final CraftInventory enderChest;
     protected final PermissibleBase perm = new PermissibleBase(this);
@@ -489,13 +484,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public InventoryView openMerchant(Villager villager, boolean force) {
-        Preconditions.checkNotNull(villager, "villager cannot be null");
-
-        return this.openMerchant((Merchant) villager, force);
-    }
-
-    @Override
     public InventoryView openMerchant(Merchant merchant, boolean force) {
         Preconditions.checkNotNull(merchant, "merchant cannot be null");
 
@@ -647,11 +635,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public void setCooldown(Material material, int ticks) {
-        this.setCooldown(new ItemStack(material), ticks);
-    }
-
-    @Override
     public boolean hasCooldown(ItemStack item) {
         Preconditions.checkArgument(item != null, "Item cannot be null");
 
@@ -706,18 +689,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public boolean discoverRecipe(NamespacedKey recipe) {
-        return this.discoverRecipes(Arrays.asList(recipe)) != 0;
-    }
-
-    @Override
     public int discoverRecipes(Collection<NamespacedKey> recipes) {
         return this.getHandle().awardRecipes(this.bukkitKeysToMinecraftRecipes(recipes));
-    }
-
-    @Override
-    public boolean undiscoverRecipe(NamespacedKey recipe) {
-        return this.undiscoverRecipes(Arrays.asList(recipe)) != 0;
     }
 
     @Override

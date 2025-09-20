@@ -268,16 +268,6 @@ public class CraftChunk implements Chunk {
     }
 
     @Override
-    public ChunkSnapshot getChunkSnapshot() {
-        return this.getChunkSnapshot(true, false, false);
-    }
-
-    @Override
-    public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
-        return getChunkSnapshot(includeMaxBlockY, includeBiome, includeBiomeTempRain, true);
-    }
-
-    @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData) {
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 

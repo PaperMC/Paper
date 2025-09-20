@@ -489,7 +489,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerAnimalSpawns();
+    default int getTicksPerAnimalSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.ANIMAL);
+    }
 
     /**
      * Gets the default ticks per monster spawns value.
@@ -512,7 +514,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerMonsterSpawns();
+    default int getTicksPerMonsterSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.MONSTER);
+    }
 
     /**
      * Gets the default ticks per water mob spawns value.
@@ -534,7 +538,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerWaterSpawns();
+    default int getTicksPerWaterSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.WATER_ANIMAL);
+    }
 
     /**
      * Gets the default ticks per water ambient mob spawns value.
@@ -556,7 +562,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerWaterAmbientSpawns();
+    default int getTicksPerWaterAmbientSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.WATER_AMBIENT);
+    }
 
     /**
      * Gets the default ticks per water underground creature spawns value.
@@ -578,7 +586,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerWaterUndergroundCreatureSpawns();
+    default int getTicksPerWaterUndergroundCreatureSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE);
+    }
 
     /**
      * Gets the default ticks per ambient mob spawns value.
@@ -600,7 +610,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    public int getTicksPerAmbientSpawns();
+    default int getTicksPerAmbientSpawns() {
+        return this.getTicksPerSpawns(SpawnCategory.AMBIENT);
+    }
 
     /**
      * Gets the default ticks per {@link SpawnCategory} spawns value.
@@ -868,7 +880,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @Deprecated // Paper
     @NotNull
-    public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType);
+    default ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType) {
+        return this.createExplorerMap(world, location, structureType, 100, true);
+    }
 
     /**
      * Create a new explorer map targeting the closest nearby structure of a
@@ -1008,7 +1022,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
-    boolean addRecipe(@Nullable Recipe recipe);
+    default boolean addRecipe(@Nullable Recipe recipe) {
+        return this.addRecipe(recipe, false);
+    }
 
     // Paper start - method to send recipes immediately
     /**
@@ -1091,7 +1107,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player);
+    default ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player) {
+        return this.craftItemResult(craftingMatrix, world, player).getResult();
+    }
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1112,7 +1130,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
+    default ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
+        return this.craftItemResult(craftingMatrix, world).getResult();
+    }
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1189,7 +1209,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
      */
-    public boolean removeRecipe(@NotNull NamespacedKey key);
+    default boolean removeRecipe(@NotNull NamespacedKey key) {
+        return this.removeRecipe(key, false);
+    }
 
     // Paper start - method to resend recipes
     /**
@@ -1532,7 +1554,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return {@code true} if the default gamemode is being forced, {@code false} otherwise
      */
     boolean forcesDefaultGameMode();
-    
+
     /**
      * Gets a {@link ConsoleCommandSender} that may be used as an input source
      * for this server.
@@ -1764,7 +1786,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getMonsterSpawnLimit();
+    default int getMonsterSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.MONSTER);
+    }
 
     /**
      * Gets user-specified limit for number of animals that can spawn in a
@@ -1774,7 +1798,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getAnimalSpawnLimit();
+    default int getAnimalSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.ANIMAL);
+    }
 
     /**
      * Gets user-specified limit for number of water animals that can spawn in
@@ -1784,7 +1810,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getWaterAnimalSpawnLimit();
+    default int getWaterAnimalSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.WATER_ANIMAL);
+    }
 
     /**
      * Gets user-specified limit for number of water ambient mobs that can spawn
@@ -1794,7 +1822,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getWaterAmbientSpawnLimit();
+    default int getWaterAmbientSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.WATER_AMBIENT);
+    }
 
     /**
      * Get user-specified limit for number of water creature underground that can spawn
@@ -1803,7 +1833,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getWaterUndergroundCreatureSpawnLimit();
+    default int getWaterUndergroundCreatureSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE);
+    }
 
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in
@@ -1813,7 +1845,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    int getAmbientSpawnLimit();
+    default int getAmbientSpawnLimit() {
+        return this.getSpawnLimit(SpawnCategory.AMBIENT);
+    }
 
     /**
      * Gets user-specified limit for number of {@link SpawnCategory} mobs that can spawn in

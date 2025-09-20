@@ -577,7 +577,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         }
         this.getHandle().listName = name.equals(this.getName()) ? null : CraftChatMessage.fromStringOrNull(name);
         if (this.getHandle().connection == null) return; // Paper - Updates are possible before the player has fully joined
-        for (ServerPlayer player : (List<ServerPlayer>) this.server.getHandle().players) {
+        for (ServerPlayer player : this.server.getHandle().players) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this.getHandle()));
             }
@@ -647,13 +647,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void kickPlayer(String message) {
         org.spigotmc.AsyncCatcher.catchOp("player kick"); // Spigot
         this.getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message, true), org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN); // Paper - kick event cause
-    }
-
-    private static final net.kyori.adventure.text.Component DEFAULT_KICK_COMPONENT = net.kyori.adventure.text.Component.translatable("multiplayer.disconnect.kicked");
-
-    @Override
-    public void kick() {
-        this.kick(DEFAULT_KICK_COMPONENT);
     }
 
     @Override
@@ -765,11 +758,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void playNote(Location loc, byte instrument, byte note) {
-        this.playNote(loc, Instrument.getByType(instrument), new Note(note));
-    }
-
-    @Override
     public void playNote(Location loc, Instrument instrument, Note note) {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
         Preconditions.checkArgument(instrument != null, "Instrument cannot be null");
@@ -785,16 +773,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         final float pitch = noteBlockInstrument.isTunable() ? note.getPitch() : 1.0f;
         // Paper end
         this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));
-    }
-
-    @Override
-    public void playSound(Location loc, Sound sound, float volume, float pitch) {
-        this.playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
-    public void playSound(Location loc, String sound, float volume, float pitch) {
-        this.playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
     }
 
     @Override
@@ -831,16 +809,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void playSound(org.bukkit.entity.Entity entity, Sound sound, float volume, float pitch) {
-        this.playSound(entity, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
-    public void playSound(org.bukkit.entity.Entity entity, String sound, float volume, float pitch) {
-        this.playSound(entity, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
-    }
-
-    @Override
     public void playSound(org.bukkit.entity.Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
         this.playSound(entity, sound, category, volume, pitch, this.getHandle().random.nextLong());
     }
@@ -874,21 +842,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(soundEffectHolder, categoryNMS, craftEntity.getHandle(), volume, pitch, seed);
         this.getHandle().connection.send(packet);
-    }
-
-    @Override
-    public void stopSound(Sound sound) {
-        this.stopSound(sound, null);
-    }
-
-    @Override
-    public void stopSound(String sound) {
-        this.stopSound(sound, null);
-    }
-
-    @Override
-    public void stopSound(Sound sound, org.bukkit.SoundCategory category) {
-        this.stopSound(sound.getKey().getKey(), category);
     }
 
     @Override
@@ -1023,11 +976,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         public ChunkSectionChanges() {
             this(new ShortArraySet(), new ArrayList<>());
         }
-    }
-
-    @Override
-    public void sendBlockDamage(Location loc, float progress) {
-        this.sendBlockDamage(loc, progress, this.getEntityId());
     }
 
     @Override
@@ -1544,21 +1492,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void setBedSpawnLocation(Location location) {
-        this.setBedSpawnLocation(location, false);
-    }
-
-    @Override
-    public void setRespawnLocation(Location location) {
-        this.setRespawnLocation(location, false);
-    }
-
-    @Override
-    public void setBedSpawnLocation(Location location, boolean override) {
-        this.setRespawnLocation(location, override);
-    }
-
-    @Override
     public void setRespawnLocation(Location location, boolean override) {
         if (location == null) {
             this.getHandle().setRespawnPosition(null, false, PlayerSetSpawnEvent.Cause.PLUGIN);
@@ -1996,11 +1929,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void hidePlayer(Plugin plugin, Player player) {
-        this.hideEntity(plugin, player);
-    }
-
-    @Override
     public void hideEntity(Plugin plugin, org.bukkit.entity.Entity entity) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         Preconditions.checkArgument(plugin.isEnabled(), "Plugin (%s) cannot be disabled", plugin.getName());
@@ -2083,11 +2011,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void showPlayer(Plugin plugin, Player player) {
-        this.showEntity(plugin, player);
-    }
-
-    @Override
     public void showEntity(Plugin plugin, org.bukkit.entity.Entity entity) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         // Don't require that plugin be enabled. A plugin must be allowed to call
@@ -2127,23 +2050,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     private void trackAndShowEntity(org.bukkit.entity.Entity entity) {
-        // Paper start - uuid override
         this.trackAndShowEntity(entity, null);
     }
+
     private void trackAndShowEntity(org.bukkit.entity.Entity entity, final @Nullable UUID uuidOverride) {
-        // Paper end
-        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
+        ChunkMap tracker = this.getHandle().level().getChunkSource().chunkMap;
         Entity other = ((CraftEntity) entity).getHandle();
 
         if (other instanceof ServerPlayer) {
             ServerPlayer otherPlayer = (ServerPlayer) other;
-            // Paper start - uuid override
             UUID original = null;
             if (uuidOverride != null) {
                 original = otherPlayer.getUUID();
                 otherPlayer.setUUID(uuidOverride);
             }
-            // Paper end
             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer), this.getHandle())); // Paper - Add Listing API for Player
             if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
         }
@@ -2284,7 +2204,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("name", this.getName());
 
@@ -2402,31 +2322,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private void sendCustomPayload(ResourceLocation id, byte[] message) {
         ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
         this.getHandle().connection.send(packet);
-    }
-
-    @Override
-    public void setTexturePack(String url) {
-        this.setResourcePack(url);
-    }
-
-    @Override
-    public void setResourcePack(String url) {
-        this.setResourcePack(url, (byte[]) null);
-    }
-
-    @Override
-    public void setResourcePack(String url, byte @Nullable [] hash) {
-        this.setResourcePack(url, hash, false);
-    }
-
-    @Override
-    public void setResourcePack(String url, byte @Nullable [] hash, String prompt) {
-        this.setResourcePack(url, hash, prompt, false);
-    }
-
-    @Override
-    public void setResourcePack(String url, byte @Nullable [] hash, boolean force) {
-        this.setResourcePack(url, hash, (String) null, force);
     }
 
     @Override
@@ -2620,7 +2515,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         return true;
     }
 
-    public void disconnect(String reason) {
+    public void disconnect() {
         this.conversationTracker.abandonAllConversations();
         this.perm.clearPermissions();
     }
@@ -2688,7 +2583,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public float getFlySpeed() {
-        return (float) this.getHandle().getAbilities().flyingSpeed * 2f;
+        return this.getHandle().getAbilities().flyingSpeed * 2f;
     }
 
     @Override
@@ -2864,79 +2759,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void resetTitle() {
-        ClientboundClearTitlesPacket packetReset = new ClientboundClearTitlesPacket(true);
-        this.getHandle().connection.send(packetReset);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, Location location, int count) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count) {
-        this.spawnParticle(particle, x, y, z, count, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, data);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, T data) {
-        this.spawnParticle(particle, x, y, z, count, 0, 0, 0, data);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, data);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1, data);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
-    }
-
-    @Override
-    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, false);
-    }
-
-    @Override
-    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data, force);
+        ClientboundClearTitlesPacket packet = new ClientboundClearTitlesPacket(true);
+        this.getHandle().connection.send(packet);
     }
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
-        this.getHandle().connection.send(packetplayoutworldparticles);
+        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
+        this.getHandle().connection.send(packet);
     }
 
     @Override
@@ -3003,11 +2833,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         this.getInventory().setItemInMainHand(book);
         this.getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.InteractionHand.MAIN_HAND);
         this.getInventory().setItemInMainHand(hand);
-    }
-
-    @Override
-    public void openSign(Sign sign) {
-        this.openSign(sign, Side.FRONT);
     }
 
     @Override

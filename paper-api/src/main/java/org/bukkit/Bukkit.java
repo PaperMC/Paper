@@ -1717,7 +1717,7 @@ public final class Bukkit {
     public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
     }
-    
+
     /**
      * Gets whether the default gamemode is being enforced.
      *

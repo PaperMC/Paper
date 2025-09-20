@@ -210,7 +210,6 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerLoadEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -885,42 +884,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
-    public int getTicksPerAnimalSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public int getTicksPerMonsterSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.MONSTER);
-    }
-
-    @Override
-    @Deprecated
-    public int getTicksPerWaterSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public int getTicksPerWaterAmbientSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public int getTicksPerWaterUndergroundCreatureSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE);
-    }
-
-    @Override
-    @Deprecated
-    public int getTicksPerAmbientSpawns() {
-        return this.getTicksPerSpawns(SpawnCategory.AMBIENT);
-    }
-
-    @Override
     public int getTicksPerSpawns(SpawnCategory spawnCategory) {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
@@ -1479,14 +1442,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipe(Recipe recipe) {
-        // Paper start - API for updating recipes on clients
-        return this.addRecipe(recipe, false);
-    }
-
-    @Override
     public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
-        // Paper end - API for updating recipes on clients
         CraftRecipe toAdd;
         if (recipe instanceof CraftRecipe) {
             toAdd = (CraftRecipe) recipe;
@@ -1580,11 +1536,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public ItemStack craftItem(ItemStack[] craftingMatrix, World world, Player player) {
-        return this.craftItemResult(craftingMatrix, world, player).getResult();
-    }
-
-    @Override
     public ItemCraftResult craftItemResult(ItemStack[] craftingMatrix, World world, Player player) {
         Preconditions.checkArgument(world != null, "world cannot be null");
         Preconditions.checkArgument(player != null, "player cannot be null");
@@ -1614,11 +1565,6 @@ public final class CraftServer implements Server {
         net.minecraft.world.item.ItemStack result = CraftEventFactory.callPreCraftEvent(craftingContainer, craftResult, itemstack, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe);
 
         return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), craftingContainer);
-    }
-
-    @Override
-    public ItemStack craftItem(ItemStack[] craftingMatrix, World world) {
-        return this.craftItemResult(craftingMatrix, world).getResult();
     }
 
     @Override
@@ -1709,14 +1655,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean removeRecipe(NamespacedKey recipeKey) {
-        // Paper start - API for updating recipes on clients
-        return this.removeRecipe(recipeKey, false);
-    }
-
-    @Override
     public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
-        // Paper end - API for updating recipes on clients
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
         // Paper start - resend recipes on successful removal
@@ -1900,11 +1839,6 @@ public final class CraftServer implements Server {
         BlockPos spawn = level.getLevelData().getRespawnData().pos();
         MapId newId = MapItem.createNewSavedData(level, spawn.getX(), spawn.getZ(), 3, false, false, level.dimension());
         return level.getMapData(newId).mapView;
-    }
-
-    @Override
-    public ItemStack createExplorerMap(World world, Location location, StructureType structureType) {
-        return this.createExplorerMap(world, location, structureType, 100, true);
     }
 
     @Override
@@ -2359,42 +2293,6 @@ public final class CraftServer implements Server {
     @Override
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
-    }
-
-    @Override
-    @Deprecated
-    public int getMonsterSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.MONSTER);
-    }
-
-    @Override
-    @Deprecated
-    public int getAnimalSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterAnimalSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_ANIMAL);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterAmbientSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_AMBIENT);
-    }
-
-    @Override
-    @Deprecated
-    public int getWaterUndergroundCreatureSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE);
-    }
-
-    @Override
-    @Deprecated
-    public int getAmbientSpawnLimit() {
-        return this.getSpawnLimit(SpawnCategory.AMBIENT);
     }
 
     @Override
