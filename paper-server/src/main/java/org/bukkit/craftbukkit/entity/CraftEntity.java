@@ -292,12 +292,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags;
-        if (flags.length == 0) {
-            relativeFlags = Set.of();
-        } else {
-            relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-        }
         Preconditions.checkArgument(location != null, "location cannot be null");
         Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
@@ -312,8 +306,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
-        for (final io.papermc.paper.entity.TeleportFlag.Relative flag : relativeFlags) {
-            nms.add(deltaRelativeToNMS(flag));
+        for (final io.papermc.paper.entity.TeleportFlag flag : flags) {
+            if (flag instanceof TeleportFlag.Relative relativeFlag) {
+                nms.add(deltaRelativeToNMS(relativeFlag));
+            }
         }
 
         return this.entity.teleport(new TeleportTransition(
