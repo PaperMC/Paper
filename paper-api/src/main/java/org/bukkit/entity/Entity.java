@@ -386,7 +386,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isInvisible();
 
     /**
-     * Sets this entities no physics status.
+     * Sets this entity no physics status.
      *
      * @param noPhysics boolean indicating if the entity should not have physics.
      */

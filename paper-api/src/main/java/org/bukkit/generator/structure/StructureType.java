@@ -16,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 public abstract class StructureType implements Keyed {
 
     // Start generate - StructureType
-    // @GeneratedFrom 1.21.8
     public static final StructureType BURIED_TREASURE = getStructureType("buried_treasure");
 
     public static final StructureType DESERT_PYRAMID = getStructureType("desert_pyramid");

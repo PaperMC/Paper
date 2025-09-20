@@ -1,6 +1,6 @@
 package ca.spottedleaf.moonrise.common.util;
 
-import ca.spottedleaf.concurrentutil.executor.thread.PrioritisedThreadPool;
+import ca.spottedleaf.concurrentutil.executor.thread.BalancedPrioritisedThreadPool;
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
@@ -12,7 +12,9 @@ public final class MoonriseCommon {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
-    public static final PrioritisedThreadPool WORKER_POOL = new PrioritisedThreadPool(
+    public static final long WORKER_QUEUE_HOLD_TIME = (long)(20.0e6); // 20ms
+    public static final BalancedPrioritisedThreadPool WORKER_POOL = new BalancedPrioritisedThreadPool(
+        WORKER_QUEUE_HOLD_TIME,
             new Consumer<>() {
                 private final AtomicInteger idGenerator = new AtomicInteger();
 
@@ -29,13 +31,8 @@ public final class MoonriseCommon {
                 }
             }
     );
-    public static final long WORKER_QUEUE_HOLD_TIME = (long)(20.0e6); // 20ms
-    public static final int CLIENT_DIVISION = 0;
-    public static final PrioritisedThreadPool.ExecutorGroup RENDER_EXECUTOR_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(CLIENT_DIVISION, 0);
-    public static final int SERVER_DIVISION = 1;
-    public static final PrioritisedThreadPool.ExecutorGroup PARALLEL_GEN_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
-    public static final PrioritisedThreadPool.ExecutorGroup RADIUS_AWARE_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
-    public static final PrioritisedThreadPool.ExecutorGroup LOAD_GROUP         = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
+    public static final BalancedPrioritisedThreadPool.OrderedStreamGroup CLIENT_GROUP = MoonriseCommon.WORKER_POOL.createOrderedStreamGroup();
+    public static final BalancedPrioritisedThreadPool.OrderedStreamGroup SERVER_GROUP = MoonriseCommon.WORKER_POOL.createOrderedStreamGroup();
 
     public static void adjustWorkerThreads(final int configWorkerThreads, final int configIoThreads) {
         int defaultWorkerThreads = Runtime.getRuntime().availableProcessors() / 2;
@@ -60,7 +57,9 @@ public final class MoonriseCommon {
         LOGGER.info(PlatformHooks.get().getBrand() + " is using " + workerThreads + " worker threads, " + ioThreads + " I/O threads");
     }
 
-    public static final PrioritisedThreadPool IO_POOL = new PrioritisedThreadPool(
+    public static final long IO_QUEUE_HOLD_TIME = (long)(25.0e6); // 25ms
+    public static final BalancedPrioritisedThreadPool IO_POOL = new BalancedPrioritisedThreadPool(
+        IO_QUEUE_HOLD_TIME,
             new Consumer<>() {
                 private final AtomicInteger idGenerator = new AtomicInteger();
 
@@ -77,9 +76,8 @@ public final class MoonriseCommon {
                 }
             }
     );
-    public static final long IO_QUEUE_HOLD_TIME = (long)(100.0e6); // 100ms
-    public static final PrioritisedThreadPool.ExecutorGroup CLIENT_PROFILER_IO_GROUP = IO_POOL.createExecutorGroup(CLIENT_DIVISION, 0);
-    public static final PrioritisedThreadPool.ExecutorGroup SERVER_REGION_IO_GROUP = IO_POOL.createExecutorGroup(SERVER_DIVISION, 0);
+    public static final BalancedPrioritisedThreadPool.OrderedStreamGroup CLIENT_IO_GROUP = IO_POOL.createOrderedStreamGroup();
+    public static final BalancedPrioritisedThreadPool.OrderedStreamGroup SERVER_IO_GROUP = IO_POOL.createOrderedStreamGroup();
 
     public static void haltExecutors() {
         MoonriseCommon.WORKER_POOL.shutdown(false);

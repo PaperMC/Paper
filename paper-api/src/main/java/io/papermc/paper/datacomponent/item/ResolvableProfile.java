@@ -6,6 +6,7 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -15,12 +16,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Holds player profile data that can be resolved to a {@link PlayerProfile}.
+ *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#PROFILE
  */
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ResolvableProfile {
+public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
 
     @Contract(value = "_ -> new", pure = true)
     static ResolvableProfile resolvableProfile(final PlayerProfile profile) {
@@ -33,27 +35,53 @@ public interface ResolvableProfile {
     }
 
     @Contract(pure = true)
-    @Nullable UUID uuid();
+    @Nullable
+    UUID uuid();
 
     @Contract(pure = true)
-    @Nullable String name();
+    @Nullable
+    String name();
 
     @Contract(pure = true)
-    @Unmodifiable Collection<ProfileProperty> properties();
+    @Unmodifiable
+    Collection<ProfileProperty> properties();
 
     /**
-     * Produces an updated player profile based on this.
+     * Whether this resolvable profile was marked as dynamic.
      * <p>
-     * This tries to produce a completed profile by filling in missing
-     * properties (name, unique id, textures, etc.), and updates existing
-     * properties (e.g. name, textures, etc.) to their official and up-to-date
-     * values. This operation does not alter the current profile, but produces a
-     * new updated {@link PlayerProfile}.
-     * <p>
-     * If no player exists for the unique id or name of this profile, this
-     * operation yields a profile that is equal to the current profile, which
-     * might not be complete.
-     * <p>
+     * A dynamic resolvable profile is required to either have a non-null {@link #uuid()} or {@link #name()}
+     * and will be resolved by the client via a network call.
+     * A dynamic profile will also not include any properties.
+     *
+     * @return {@code true} if this profile is marked as dynamic, {@code false} otherwise.
+     */
+    @Contract(pure = true)
+    boolean dynamic();
+
+    /**
+     * Produces an updated player profile based on this {@link ResolvableProfile}, mirroring client behavior.
+     *
+     * <ul>
+     *     <li>
+     *         For {@link #dynamic()} profiles:
+     *
+     *         <p>This tries to produce a completed profile by filling in missing
+     *         properties (name, unique id, textures, etc.), and updates existing
+     *         properties (e.g. name) to their official and up-to-date
+     *         values. This operation does not alter the current profile, but produces a
+     *         new updated {@link PlayerProfile}.</p>
+     *
+     *         <p>If no player exists for the unique id or name of this profile, this
+     *         operation yields a profile that is equal to the current profile, which
+     *         might not be complete.</p>
+     *     </li>
+     *     <li>
+     *         For static (non-{@link #dynamic()}) profiles:
+     *         <p>Completes with a profile containing all of {@link #properties()} exactly,
+     *         and null {@link #name()}/{@link #uuid()} replaced by filler values.</p>
+     *     </li>
+     * </ul>
+     *
      * This is an asynchronous operation: Updating the profile can result in an
      * outgoing connection in another thread in order to fetch the latest
      * profile properties. The returned {@link CompletableFuture} will be

@@ -229,7 +229,7 @@ public class ShapelessRecipe extends CraftingRecipe {
 
     /**
      * Removes multiple instances of an ingredient from the list. If there are
-     * less instances then specified, all will be removed. If the data value
+     * fewer instances then specified, all will be removed. If the data value
      * is -1, only ingredients with a -1 data value will be removed.
      *
      * @param count The number of copies to remove.
@@ -261,7 +261,7 @@ public class ShapelessRecipe extends CraftingRecipe {
 
     /**
      * Removes multiple instances of an ingredient from the list. If there are
-     * less instances then specified, all will be removed. If the data value
+     * fewer instances then specified, all will be removed. If the data value
      * is -1, only ingredients with a -1 data value will be removed.
      *
      * @param count The number of copies to remove.

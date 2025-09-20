@@ -1,15 +1,10 @@
 package io.papermc.generator.rewriter.types.simple;
 
 import com.google.common.collect.ImmutableMap;
+import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
-import io.papermc.generator.utils.ClassHelper;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.typewriter.preset.model.EnumValue;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -102,28 +97,6 @@ public class StatisticRewriter {
             EntityType.class, "ENTITY"
         );
 
-        private static final Map<StatType<?>, Class<?>> FIELD_GENERIC_TYPE;
-
-        static {
-            final Map<StatType<?>, Class<?>> map = new IdentityHashMap<>();
-
-            try {
-                for (Field field : Stats.class.getDeclaredFields()) {
-                    if (field.getType() != StatType.class) {
-                        continue;
-                    }
-
-                    if (ClassHelper.isStaticConstant(field, Modifier.PUBLIC)) {
-                        java.lang.reflect.Type genericType = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-                        map.put((StatType<?>) field.get(null), ClassHelper.eraseType(genericType));
-                    }
-                }
-            } catch (ReflectiveOperationException ex) {
-                throw new RuntimeException(ex);
-            }
-            FIELD_GENERIC_TYPE = Collections.unmodifiableMap(map);
-        }
-
         public Type() {
             super(Registries.STAT_TYPE, false);
         }
@@ -136,7 +109,7 @@ public class StatisticRewriter {
 
         @Override
         protected EnumValue.Builder rewriteEnumValue(Holder.Reference<StatType<?>> reference) {
-            Class<?> genericType = FIELD_GENERIC_TYPE.get(reference.value());
+            Class<?> genericType = RegistryEntries.byRegistryKey(reference.value().getRegistry().key()).elementClass();
             if (!TYPE_MAPPING.containsKey(genericType)) {
                 throw new IllegalStateException("Unable to translate stat type generic " + genericType.getCanonicalName() + " into the api!");
             }

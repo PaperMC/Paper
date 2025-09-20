@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.BigDripleafStemBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CommandBlock;
+import net.minecraft.world.level.block.CopperGolemStatueBlock;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.NoteBlock;
@@ -54,6 +55,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.block.state.properties.RedstoneSide;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
+import net.minecraft.world.level.block.state.properties.SideChainPart;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.state.properties.StructureMode;
@@ -81,6 +83,7 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Segmentable;
+import org.bukkit.block.data.SideChaining;
 import org.bukkit.block.data.Snowable;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Bamboo;
@@ -89,6 +92,7 @@ import org.bukkit.block.data.type.Bell;
 import org.bukkit.block.data.type.BigDripleaf;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Comparator;
+import org.bukkit.block.data.type.CopperGolemStatue;
 import org.bukkit.block.data.type.CreakingHeart;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.Dripleaf;
@@ -204,16 +208,18 @@ public final class BlockStateMapping {
 
             Class<? extends org.bukkit.block.data.BlockData> api = ClassHelper.classOr("org.bukkit.block.data.type." + apiName, null);
             if (api == null) {
-                Class<?> directParent = specialBlock.getSuperclass();
-                if (specialBlocks.containsKey(directParent)) {
-                    // if the properties are the same then always consider the parent
-                    // check deeper in the tree?
-                    if (specialBlocks.get(directParent).equals(entry.getValue())) {
-                        String parentApiName = formatApiName(directParent);
-                        parentApiName = Formatting.stripWordOfCamelCaseName(parentApiName, "Base", true);
-                        parentApiName = API_RENAMES.getOrDefault(parentApiName, parentApiName);
-                        api = ClassHelper.classOr("org.bukkit.block.data.type." + parentApiName, api);
+                Class<?> parent = specialBlock.getSuperclass();
+                while (parent != Object.class && api == null) {
+                    if (specialBlocks.containsKey(parent)) {
+                        // Consider any parents with matching properties
+                        if (specialBlocks.get(parent).equals(entry.getValue())) {
+                            String parentApiName = formatApiName(parent);
+                            parentApiName = Formatting.stripWordOfCamelCaseName(parentApiName, "Base", true);
+                            parentApiName = API_RENAMES.getOrDefault(parentApiName, parentApiName);
+                            api = ClassHelper.classOr("org.bukkit.block.data.type." + parentApiName, api);
+                        }
                     }
+                    parent = parent.getSuperclass();
                 }
             }
             if (api == null) { // todo remove this part
@@ -221,8 +227,8 @@ public final class BlockStateMapping {
                     api = Furnace.class; // for smoker and blast furnace
                 } else if (specialBlock == BigDripleafStemBlock.class) {
                     api = Dripleaf.class;
-                } else if (specialBlock == IronBarsBlock.class) {
-                    api = Fence.class; // for glass pane (regular) and iron bars
+                } else if (IronBarsBlock.class.isAssignableFrom(specialBlock)) {
+                    api = Fence.class; // for glass pane (regular) and iron/copper bars
                 } else if (specialBlock == MultifaceBlock.class) {
                     api = ResinClump.class;
                 }
@@ -261,6 +267,7 @@ public final class BlockStateMapping {
         .put(BlockStateProperties.SNOWY, Snowable.class)
         .put(BlockStateProperties.WATERLOGGED, Waterlogged.class)
         .put(BlockStateProperties.SEGMENT_AMOUNT, Segmentable.class)
+        .put(BlockStateProperties.SIDE_CHAIN_PART, SideChaining.class)
         .buildOrThrow();
 
     private static final Map<Property<?>, Class<? extends org.bukkit.block.data.BlockData>> MAIN_PROPERTY_TO_DATA = Map.of(
@@ -296,6 +303,8 @@ public final class BlockStateMapping {
         .put(VaultState.class, Vault.State.class)
         .put(CreakingHeartState.class, CreakingHeart.State.class)
         .put(TestBlockMode.class, org.bukkit.block.data.type.TestBlock.Mode.class)
+        .put(CopperGolemStatueBlock.Pose.class, CopperGolemStatue.Pose.class)
+        .put(SideChainPart.class, SideChaining.ChainPart.class)
         .buildOrThrow();
 
     public static @Nullable Class<? extends org.bukkit.block.data.BlockData> getBestSuitedApiClass(Class<?> block) {

@@ -8,14 +8,17 @@
  
      Projectile(EntityType<? extends Projectile> entityType, Level level) {
          super(entityType, level);
-@@ -55,7 +_,20 @@
+@@ -51,12 +_,25 @@
+ 
+     protected void setOwner(@Nullable EntityReference<Entity> owner) {
+         this.owner = owner;
++        this.refreshProjectileSource(false); // Paper
+     }
  
      public void setOwner(@Nullable Entity owner) {
-         this.setOwner(owner != null ? new EntityReference<>(owner) : null);
--    }
-+        this.refreshProjectileSource(false); // Paper
-+    }
-+
+         this.setOwner(EntityReference.of(owner));
+     }
+ 
 +    // Paper start - Refresh ProjectileSource for projectiles
 +    public void refreshProjectileSource(boolean fillCache) {
 +        if (fillCache) {
@@ -27,9 +30,10 @@
 +        }
 +    }
 +    // Paper end - Refresh ProjectileSource for projectiles
- 
++
      @Nullable
      @Override
+     public Entity getOwner() {
 @@ -84,6 +_,7 @@
      @Override
      protected void readAdditionalSaveData(ValueInput input) {
@@ -55,13 +59,13 @@
      @Override
 @@ -171,7 +_,12 @@
      public static <T extends Projectile> T spawnProjectileFromRotation(
-         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy
+         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy
      ) {
 -        return spawnProjectile(
 +        // Paper start - PlayerLaunchProjectileEvent
-+        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, innaccuracy).spawn();
++        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, inaccuracy).spawn();
 +    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy) {
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy) {
 +        return spawnProjectileDelayed(
 +        // Paper end - PlayerLaunchProjectileEvent
              factory.create(level, owner, spawnedFrom),
@@ -151,21 +155,6 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-@@ -251,7 +_,13 @@
-     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity entity, @Nullable Entity owner, boolean deflectedByPlayer) {
-         deflection.deflect(this, entity, this.random);
-         if (!this.level().isClientSide) {
--            this.setOwner(owner);
-+            // Paper start - Fix PickupStatus getting reset
-+            if (this instanceof AbstractArrow arrow) {
-+                arrow.setOwner(owner, false);
-+            } else {
-+                this.setOwner(owner);
-+            }
-+            // Paper end - Fix PickupStatus getting reset
-             this.onDeflection(entity, deflectedByPlayer);
-         }
- 
 @@ -287,15 +_,35 @@
      }
  

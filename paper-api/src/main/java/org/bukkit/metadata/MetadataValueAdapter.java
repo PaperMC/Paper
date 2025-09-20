@@ -13,7 +13,12 @@ import org.jetbrains.annotations.Nullable;
  * This provides all the conversion functions for MetadataValue so that
  * writing an implementation of MetadataValue is as simple as implementing
  * value() and invalidate().
+ *
+ * @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
+ * removed. It is recommended that when wanting persistent metadata, you use {@link org.bukkit.persistence.PersistentDataContainer}.
+ * If you want temporary values on an entity, just use the entity lifecycle events. (See {@link com.destroystokyo.paper.event.entity.EntityAddToWorldEvent}0
  */
+@Deprecated
 public abstract class MetadataValueAdapter implements MetadataValue {
     protected final WeakReference<Plugin> owningPlugin;
 

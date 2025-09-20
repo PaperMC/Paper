@@ -227,7 +227,7 @@ public enum Effect {
      */
     BAT_TAKEOFF(1025, Type.SOUND),
     /**
-     * The sound/particles caused by a end gateway spawning
+     * The sound/particles caused by an end gateway spawning
      */
     END_GATEWAY_SPAWN(3000, Type.VISUAL),
     /**

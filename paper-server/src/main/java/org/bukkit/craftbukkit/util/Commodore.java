@@ -375,6 +375,9 @@ public class Commodore {
                                     case "SCUTE":
                                         name = "TURTLE_SCUTE";
                                         break;
+                                    case "CHAIN":
+                                        name = "IRON_CHAIN";
+                                        break;
                                 }
                             }
 

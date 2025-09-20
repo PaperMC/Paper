@@ -153,7 +153,7 @@ class PaperPluginInstanceManager {
         return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(new JavaPlugin[0]);
     }
 
-    // Plugins are disabled in order like this inorder to "rougly" prevent
+    // Plugins are disabled in order like this inorder to "roughly" prevent
     // their dependencies unloading first. But, eh.
     public void disablePlugins() {
         Plugin[] plugins = this.getPlugins();

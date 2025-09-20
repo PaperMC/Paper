@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.PigVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
@@ -15,7 +16,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
 
     protected PigVariant.@Nullable ModelType model;
-    protected net.minecraft.core.@Nullable ClientAsset clientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;

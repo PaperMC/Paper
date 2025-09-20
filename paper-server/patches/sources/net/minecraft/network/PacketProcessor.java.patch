@@ -1,0 +1,45 @@
+--- a/net/minecraft/network/PacketProcessor.java
++++ b/net/minecraft/network/PacketProcessor.java
+@@ -44,8 +_,29 @@
+         this.closed = true;
+     }
+ 
++    // Paper start - detailed watchdog information
++    public static final java.util.concurrent.ConcurrentLinkedDeque<PacketListener> packetProcessing = new java.util.concurrent.ConcurrentLinkedDeque<>();
++    static final java.util.concurrent.atomic.AtomicLong totalMainThreadPacketsProcessed = new java.util.concurrent.atomic.AtomicLong();
++
++    public static long getTotalProcessedPackets() {
++        return totalMainThreadPacketsProcessed.get();
++    }
++
++    public static java.util.List<PacketListener> getCurrentPacketProcessors() {
++        java.util.List<PacketListener> listeners = new java.util.ArrayList<>(4);
++        for (PacketListener listener : packetProcessing) {
++            listeners.add(listener);
++        }
++
++        return listeners;
++    }
++    // Paper end - detailed watchdog information
++
+     record ListenerAndPacket<T extends PacketListener>(T listener, Packet<T> packet) {
+         public void handle() {
++            packetProcessing.push(this.listener); // Paper - detailed watchdog information
++            try { // Paper - detailed watchdog information
++            if (this.listener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // Paper - Don't handle sync packets for kicked players
+             if (this.listener.shouldHandleMessage(this.packet)) {
+                 try {
+                     this.packet.handle(this.listener);
+@@ -59,6 +_,12 @@
+             } else {
+                 PacketProcessor.LOGGER.debug("Ignoring packet due to disconnection: {}", this.packet);
+             }
++            // Paper start - detailed watchdog information
++            } finally {
++                totalMainThreadPacketsProcessed.getAndIncrement();
++                packetProcessing.pop();
++            }
++            // Paper end - detailed watchdog information
+         }
+     }
+ }

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a player selects a banner patten in a loom inventory.
+ * Called when a player selects a banner pattern in a loom inventory.
  */
 @NullMarked
 public class PlayerLoomPatternSelectEvent extends PlayerEvent implements Cancellable {

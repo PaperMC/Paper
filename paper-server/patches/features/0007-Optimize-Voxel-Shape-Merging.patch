@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 May 2020 22:35:09 -0400
+Subject: [PATCH] Optimize Voxel Shape Merging
+
+This method shows up as super hot in profiler, and also a high "self" time.
+
+Upon analyzing, it appears most usages of this method fall down to the final
+else statement of the nasty ternary.
+
+Upon even further analyzation, it appears then the majority of those have a
+consistent list 1.... One with Infinity head and Tails.
+
+First optimization is to detect these infinite states and immediately return that
+VoxelShapeMergerList so we can avoid testing the rest for most cases.
+
+Break the method into 2 to help the JVM promote inlining of this fast path.
+
+Then it was also noticed that VoxelShapeMergerList constructor is also a hotspot
+with a high self time...
+
+Well, knowing that in most cases our list 1 is actualy the same value, it allows
+us to know that with an infinite list1, the result on the merger is essentially
+list2 as the final values.
+
+This let us analyze the 2 potential states (Infinite with 2 sources or 4 sources)
+and compute a deterministic result for the MergerList values.
+
+Additionally, this lets us avoid even allocating new objects for this too, further
+reducing memory usage.
+
+diff --git a/net/minecraft/world/phys/shapes/IndirectMerger.java b/net/minecraft/world/phys/shapes/IndirectMerger.java
+index 60b56a5086b8aad0fad693f686b89138b3a4c80d..5b079ec43c259368d0eed4e8385880712abda4f7 100644
+--- a/net/minecraft/world/phys/shapes/IndirectMerger.java
++++ b/net/minecraft/world/phys/shapes/IndirectMerger.java
+@@ -10,12 +10,32 @@ public class IndirectMerger implements IndexMerger {
+     private final int[] firstIndices;
+     private final int[] secondIndices;
+     private final int resultLength;
++    // Paper start
++    private static final int[] INFINITE_B_1 = {1, 1};
++    private static final int[] INFINITE_B_0 = {0, 0};
++    private static final int[] INFINITE_C = {0, 1};
++    // Paper end
+ 
+     public IndirectMerger(DoubleList lower, DoubleList upper, boolean excludeUpper, boolean excludeLower) {
+         double d = Double.NaN;
+         int size = lower.size();
+         int size1 = upper.size();
+         int i = size + size1;
++        // Paper start - optimize common path of infinity doublelist
++        double tail = lower.getDouble(size - 1);
++        double head = lower.getDouble(0);
++        if (head == Double.NEGATIVE_INFINITY && tail == Double.POSITIVE_INFINITY && !excludeUpper && !excludeLower && (size == 2 || size == 4)) {
++            this.result = upper.toDoubleArray();
++            this.resultLength = upper.size();
++            if (size == 2) {
++                this.firstIndices = INFINITE_B_0;
++            } else {
++                this.firstIndices = INFINITE_B_1;
++            }
++            this.secondIndices = INFINITE_C;
++            return;
++        }
++        // Paper end
+         this.result = new double[i];
+         this.firstIndices = new int[i];
+         this.secondIndices = new int[i];
+diff --git a/net/minecraft/world/phys/shapes/Shapes.java b/net/minecraft/world/phys/shapes/Shapes.java
+index 881455dd3d576528adc68e00c00eb2819ccd4f0c..3205cc111b1165cd98705bb70d65c858961abc33 100644
+--- a/net/minecraft/world/phys/shapes/Shapes.java
++++ b/net/minecraft/world/phys/shapes/Shapes.java
+@@ -347,9 +347,22 @@ public final class Shapes {
+     }
+ 
+     @VisibleForTesting
+-    protected static IndexMerger createIndexMerger(int size, DoubleList list1, DoubleList list2, boolean excludeUpper, boolean excludeLower) {
++    private static IndexMerger createIndexMerger(int size, DoubleList list1, DoubleList list2, boolean excludeUpper, boolean excludeLower) { // Paper - private
++        // Paper start - fast track the most common scenario
++        // doublelist is usually a DoubleArrayList with Infinite head/tails that falls to the final else clause
++        // This is actually the most common path, so jump to it straight away
++        if (list1.getDouble(0) == Double.NEGATIVE_INFINITY && list1.getDouble(list1.size() - 1) == Double.POSITIVE_INFINITY) {
++            return new IndirectMerger(list1, list2, excludeUpper, excludeLower);
++        }
++        // Split out rest to hopefully inline the above
++        return lessCommonMerge(size, list1, list2, excludeUpper, excludeLower);
++    }
++
++    private static IndexMerger lessCommonMerge(int size, DoubleList list1, DoubleList list2, boolean excludeUpper, boolean excludeLower) {
++        // Paper end - fast track the most common scenario
+         int i = list1.size() - 1;
+         int i1 = list2.size() - 1;
++        // Paper note - Rewrite below as optimized order if instead of nasty ternary
+         if (list1 instanceof CubePointRange && list2 instanceof CubePointRange) {
+             long l = lcm(i, i1);
+             if (size * l <= 256L) {
+@@ -357,14 +370,21 @@ public final class Shapes {
+             }
+         }
+ 
+-        if (list1.getDouble(i) < list2.getDouble(0) - 1.0E-7) {
++        // Paper start - Identical happens more often than Disjoint
++        if (i == i1 && Objects.equals(list1, list2)) {
++            if (list1 instanceof IdenticalMerger) {
++                return (IndexMerger) list1;
++            } else if (list2 instanceof IdenticalMerger) {
++                return (IndexMerger) list2;
++            }
++            return new IdenticalMerger(list1);
++        } else if (list1.getDouble(i) < list2.getDouble(0) - 1.0E-7) {
++            // Paper end - Identical happens more often than Disjoint
+             return new NonOverlappingMerger(list1, list2, false);
+         } else if (list2.getDouble(i1) < list1.getDouble(0) - 1.0E-7) {
+             return new NonOverlappingMerger(list2, list1, true);
+         } else {
+-            return (IndexMerger)(i == i1 && Objects.equals(list1, list2)
+-                ? new IdenticalMerger(list1)
+-                : new IndirectMerger(list1, list2, excludeUpper, excludeLower));
++            return new IndirectMerger(list1, list2, excludeUpper, excludeLower); // Paper - Identical happens more often than Disjoint
+         }
+     }
+ 

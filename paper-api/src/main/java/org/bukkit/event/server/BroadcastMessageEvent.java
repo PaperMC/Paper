@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Event triggered for server broadcast messages such as from
- * {@link org.bukkit.Server#broadcast(Component)} (String, String)}.
+ * {@link org.bukkit.Server#broadcast(Component)}.
  * <p>
  * This event behaves similarly to {@link io.papermc.paper.event.player.AsyncChatEvent} in that it
  * should be async if fired from an async thread. Please see that event for

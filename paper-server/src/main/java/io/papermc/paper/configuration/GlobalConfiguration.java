@@ -29,7 +29,7 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): upgrade packet to use ids
+    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
@@ -360,6 +360,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
         @Comment("See Fix MC-163962; prevent villager demand from going negative.")
         public boolean preventNegativeVillagerDemand = false;
+        @Comment("Whether the nether dimension is enabled and will be loaded.")
+        public boolean enableNether = true;
     }
 
     public BlockUpdates blockUpdates;

@@ -25,7 +25,7 @@ public class PaperDatapackManager implements DatapackManager {
     }
 
     @Override
-    public @Nullable Datapack getPack(final @NonNull String name) {
+    public @Nullable Datapack getPack(final String name) {
         final @Nullable Pack pack = this.repository.getPack(name);
         if (pack == null) {
             return null;

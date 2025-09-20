@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link InventoryHolder}.
  * <p>
  * This event is NOT currently called when an entity's loot table has been
- * generated (use {@link EntityDeathEvent#getDrops()}, but WILL be called by
+ * generated (use {@link EntityDeathEvent#getDrops()}), but WILL be called by
  * plugins invoking
  * {@link LootTable#fillInventory(org.bukkit.inventory.Inventory, java.util.Random, LootContext)}.
  */

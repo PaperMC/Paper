@@ -1,5 +1,8 @@
 package io.papermc.paper.adventure;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
@@ -25,6 +28,7 @@ import net.kyori.adventure.text.EntityNBTComponent;
 import net.kyori.adventure.text.KeybindComponent;
 import net.kyori.adventure.text.NBTComponent;
 import net.kyori.adventure.text.NBTComponentBuilder;
+import net.kyori.adventure.text.ObjectComponent;
 import net.kyori.adventure.text.ScoreComponent;
 import net.kyori.adventure.text.SelectorComponent;
 import net.kyori.adventure.text.StorageNBTComponent;
@@ -39,6 +43,9 @@ import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
+import net.kyori.adventure.text.object.SpriteObjectContents;
 import net.kyori.adventure.util.Index;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.core.UUIDUtil;
@@ -56,12 +63,14 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.intellij.lang.annotations.Subst;
 
 import static com.mojang.serialization.Codec.recursive;
+import static com.mojang.serialization.codecs.RecordCodecBuilder.create;
 import static com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec;
 import static java.util.function.Function.identity;
 import static net.kyori.adventure.text.Component.text;
@@ -308,9 +317,86 @@ public final class AdventureCodecs {
         });
     });
 
-    static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
+    static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.MAP_CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
+
+    static final ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends ObjectComponent>> OBJECT_CONTENTS_MAPPER = new ExtraCodecs.LateBoundIdMapper<>();
+    static final MapCodec<ObjectComponent> SPRITE_OBJECT_CODEC = mapCodec(instance -> instance.group(
+            KEY_CODEC.optionalFieldOf("atlas", SpriteObjectContents.DEFAULT_ATLAS).forGetter(obj -> ((SpriteObjectContents) obj.contents()).atlas()),
+            KEY_CODEC.fieldOf("sprite").forGetter(obj -> ((SpriteObjectContents) obj.contents()).sprite())
+        )
+        .apply(instance, (atlas, sprite) -> {
+            return Component.object(ObjectContents.sprite(atlas, sprite));
+        }));
+    static final Codec<ObjectComponent> PLAYER_OBJECT_PLAYER_CODEC = create(instance -> instance.group(
+        Codec.mapEither(ExtraCodecs.STORED_GAME_PROFILE, ResolvableProfile.Partial.MAP_CODEC).xmap(
+            either -> {
+                return either.map(gameProfile -> {
+                    return Component.object(
+                        ObjectContents.playerHead()
+                            .name(gameProfile.name())
+                            .id(gameProfile.id())
+                            .profileProperties(
+                                gameProfile.properties().entries().stream()
+                                    .map(entry -> PlayerHeadObjectContents.property(entry.getValue().name(), entry.getValue().value(), entry.getValue().signature()))
+                                    .toList()
+                            )
+                            .build()
+                    );
+                }, partial -> {
+                    return Component.object(
+                        ObjectContents.playerHead()
+                            .name(partial.name().orElse(null))
+                            .id(partial.id().orElse(null))
+                            .profileProperties(
+                                partial.properties().entries().stream()
+                                    .map(entry -> PlayerHeadObjectContents.property(entry.getValue().name(), entry.getValue().value(), entry.getValue().signature()))
+                                    .toList()
+                            )
+                            .build()
+                    );
+                });
+            },
+            objectComponent -> {
+                final PlayerHeadObjectContents contents = (PlayerHeadObjectContents) objectComponent.contents();
+                return Either.right(new ResolvableProfile.Partial(
+                    Optional.ofNullable(contents.name()),
+                    Optional.ofNullable(contents.id()),
+                    new PropertyMap(contents.profileProperties().stream()
+                        .map(prop -> new Property(prop.name(), prop.value(), prop.signature()))
+                        .collect(ImmutableListMultimap.toImmutableListMultimap(Property::name, Function.identity())))
+                ));
+            }
+        ).forGetter(obj -> obj),
+        KEY_CODEC.optionalFieldOf("texture").forGetter(obj -> Optional.ofNullable(((PlayerHeadObjectContents) obj.contents()).texture()))
+    ).apply(instance, (player, texture) -> player.contents(
+        ((PlayerHeadObjectContents) player.contents()).toBuilder()
+            .texture(texture.orElse(null))
+            .build()
+    )));
+    static final MapCodec<ObjectComponent> PLAYER_OBJECT_CODEC = mapCodec(instance -> instance.group(
+        PLAYER_OBJECT_PLAYER_CODEC.fieldOf("player").forGetter(obj -> obj),
+        Codec.BOOL.optionalFieldOf("hat", true).forGetter(obj -> ((PlayerHeadObjectContents) obj.contents()).hat())
+    ).apply(instance, (player, hat) -> player.contents(
+        ((PlayerHeadObjectContents) player.contents()).toBuilder()
+            .hat(hat)
+            .build()
+    )));
+    static {
+        OBJECT_CONTENTS_MAPPER.put("atlas", SPRITE_OBJECT_CODEC);
+        OBJECT_CONTENTS_MAPPER.put("player", PLAYER_OBJECT_CODEC);
+    }
+    static final MapCodec<ObjectComponent> OBJECT_COMPONENT_MAP_CODEC = ComponentSerialization.createLegacyComponentMatcher(OBJECT_CONTENTS_MAPPER, objectComponent -> {
+        if (objectComponent.contents() instanceof SpriteObjectContents) {
+            return SPRITE_OBJECT_CODEC;
+        } else if (objectComponent.contents() instanceof PlayerHeadObjectContents) {
+            return PLAYER_OBJECT_CODEC;
+        } else {
+            throw new IllegalArgumentException("Unknown ObjectContents type " + objectComponent.contents().getClass());
+        }
+    }, "object");
+
     static final MapCodec<ScoreComponent> SCORE_COMPONENT_INNER_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(
-        s -> Component.score(s.name().map(SelectorPattern::pattern, Function.identity()), s.objective()),
+        s -> Component.score(s.name().map(SelectorPattern::pattern, identity()), s.objective()),
         s -> new ScoreContents(SelectorPattern.parse(s.name()).<Either<SelectorPattern, String>>map(Either::left).result().orElse(Either.right(s.name())), s.objective())
     ); // TODO we might want to ask adventure for a nice way we can avoid parsing and flattening the SelectorPattern on every conversion.
     static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = SCORE_COMPONENT_INNER_MAP_CODEC.fieldOf("score");
@@ -367,7 +453,13 @@ public final class AdventureCodecs {
     static final DataSourceType<BlockDataSource> BLOCK_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("block").forGetter(BlockDataSource::posPattern)).apply(instance, BlockDataSource::new)), "block");
     static final DataSourceType<EntityDataSource> ENTITY_DATA_SOURCE_TYPE = new DataSourceType<>(mapCodec((instance) -> instance.group(Codec.STRING.fieldOf("entity").forGetter(EntityDataSource::selectorPattern)).apply(instance, EntityDataSource::new)), "entity");
 
-    static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(new DataSourceType<?>[]{ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE}, DataSourceType::codec, NbtComponentDataSource::type, "source");
+    private static final ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends NbtComponentDataSource>> NBT_COMPONENT_DATA_SOURCE_MAPPER = new ExtraCodecs.LateBoundIdMapper<>();
+    static {
+        for (final DataSourceType<?> type : List.of(ENTITY_DATA_SOURCE_TYPE, BLOCK_DATA_SOURCE_TYPE, STORAGE_DATA_SOURCE_TYPE)) {
+            NBT_COMPONENT_DATA_SOURCE_MAPPER.put(type.id(), type.codec());
+        }
+    }
+    static final MapCodec<NbtComponentDataSource> NBT_COMPONENT_DATA_SOURCE_CODEC = ComponentSerialization.createLegacyComponentMatcher(NBT_COMPONENT_DATA_SOURCE_MAPPER, source -> source.type().codec(), "source");
 
     record DataSourceType<D extends NbtComponentDataSource>(MapCodec<D> codec, String id) implements StringRepresentable {
         @Override
@@ -408,16 +500,21 @@ public final class AdventureCodecs {
     static final ComponentType<TextComponent> PLAIN = new ComponentType<>(TEXT_COMPONENT_MAP_CODEC, TextComponent.class::isInstance, "text");
     static final ComponentType<TranslatableComponent> TRANSLATABLE = new ComponentType<>(TRANSLATABLE_COMPONENT_MAP_CODEC, TranslatableComponent.class::isInstance, "translatable");
     static final ComponentType<KeybindComponent> KEYBIND = new ComponentType<>(KEYBIND_COMPONENT_MAP_CODEC, KeybindComponent.class::isInstance, "keybind");
+    static final ComponentType<ObjectComponent> OBJECT = new ComponentType<>(OBJECT_COMPONENT_MAP_CODEC, ObjectComponent.class::isInstance, "object");
     static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
     static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
     static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
 
     static Codec<Component> createCodec(final Codec<Component> selfCodec) {
-        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, SCORE, SELECTOR, NBT};
-        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(types, ComponentType::codec, component -> {
+        final ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends Component>> lateBoundIdMapper = new ExtraCodecs.LateBoundIdMapper<>();
+        final ComponentType<?>[] types = new ComponentType<?>[]{PLAIN, TRANSLATABLE, KEYBIND, OBJECT, SCORE, SELECTOR, NBT};
+        for (final ComponentType<?> type : types) {
+            lateBoundIdMapper.put(type.id(), type.codec());
+        }
+        final MapCodec<Component> legacyCodec = ComponentSerialization.createLegacyComponentMatcher(lateBoundIdMapper, component -> {
             for (final ComponentType<?> type : types) {
                 if (type.test().test(component)) {
-                    return type;
+                    return type.codec();
                 }
             }
             throw new IllegalStateException("Unexpected component type " + component);

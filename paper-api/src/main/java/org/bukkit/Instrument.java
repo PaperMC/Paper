@@ -52,7 +52,7 @@ public enum Instrument {
      */
     XYLOPHONE(0x9, Sound.BLOCK_NOTE_BLOCK_XYLOPHONE),
     /**
-     * Iron Xylophone is normally played when a note block is on top of a iron block.
+     * Iron Xylophone is normally played when a note block is on top of an iron block.
      */
     IRON_XYLOPHONE(0xA, Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE),
     /**
@@ -64,7 +64,7 @@ public enum Instrument {
      */
     DIDGERIDOO(0xC, Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO),
     /**
-     * Bit is normally played when a note block is on top of a emerald block.
+     * Bit is normally played when a note block is on top of an emerald block.
      */
     BIT(0xD, Sound.BLOCK_NOTE_BLOCK_BIT),
     /**

@@ -52,7 +52,7 @@ public interface Pathfinder {
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
      * result in the pathfinding automatically updating to follow the target Entity.
      * <p>
-     * However, this behavior is not guaranteed, and is subject to the games behavior.
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
      *
      * @param target the Entity to navigate to
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
@@ -90,7 +90,7 @@ public interface Pathfinder {
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
      * result in the pathfinding automatically updating to follow the target Entity.
      * <p>
-     * However, this behavior is not guaranteed, and is subject to the games behavior.
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
      *
      * @param target the Entity to navigate to
      * @return If the pathfinding was successfully started
@@ -106,7 +106,7 @@ public interface Pathfinder {
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
      * result in the pathfinding automatically updating to follow the target Entity.
      * <p>
-     * However, this behavior is not guaranteed, and is subject to the games behavior.
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
      *
      * @param target the Entity to navigate to
      * @param speed  Speed multiplier to navigate at, where 1 is 'normal'

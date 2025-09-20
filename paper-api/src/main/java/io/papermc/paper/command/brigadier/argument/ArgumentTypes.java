@@ -110,7 +110,7 @@ public final class ArgumentTypes {
 
     /**
      * A column block position argument.
-     * 
+     *
      * @return column block position argument
      */
     @ApiStatus.Experimental
@@ -120,7 +120,7 @@ public final class ArgumentTypes {
 
     /**
      * A block predicate argument.
-     * 
+     *
      * @return block predicate argument
      */
     @ApiStatus.Experimental

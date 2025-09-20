@@ -10,7 +10,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SignItem;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.level.block.AbstractChestBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.CopperGolemStatueBlock;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.ShelfBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ArmorMeta;
@@ -187,6 +192,8 @@ public final class CraftItemMetas {
                 || itemType == ItemType.IRON_LEGGINGS || itemType == ItemType.IRON_BOOTS
                 || itemType == ItemType.NETHERITE_HELMET || itemType == ItemType.NETHERITE_CHESTPLATE
                 || itemType == ItemType.NETHERITE_LEGGINGS || itemType == ItemType.NETHERITE_BOOTS
+                || itemType == ItemType.COPPER_HELMET || itemType == ItemType.COPPER_CHESTPLATE
+                || itemType == ItemType.COPPER_LEGGINGS || itemType == ItemType.COPPER_BOOTS
                 || itemType == ItemType.TURTLE_HELMET) {
             return CraftItemMetas.asType(CraftItemMetas.ARMOR_META_DATA);
         }
@@ -226,30 +233,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.KNOWLEDGE_BOOK) {
             return CraftItemMetas.asType(CraftItemMetas.KNOWLEDGE_BOOK_META_DATA);
         }
-        if (itemType == ItemType.FURNACE || itemType == ItemType.CHEST
-                || itemType == ItemType.TRAPPED_CHEST || itemType == ItemType.JUKEBOX
-                || itemType == ItemType.DISPENSER || itemType == ItemType.DROPPER
-                || itemHandle instanceof SignItem || itemType == ItemType.SPAWNER
-                || itemType == ItemType.BREWING_STAND || itemType == ItemType.ENCHANTING_TABLE
-                || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
-                || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
-                || itemType == ItemType.DAYLIGHT_DETECTOR || itemType == ItemType.HOPPER
-                || itemType == ItemType.COMPARATOR || itemType == ItemType.STRUCTURE_BLOCK
-                || blockHandle instanceof ShulkerBoxBlock
-                || itemType == ItemType.ENDER_CHEST || itemType == ItemType.BARREL
-                || itemType == ItemType.BELL || itemType == ItemType.BLAST_FURNACE
-                || itemType == ItemType.CAMPFIRE || itemType == ItemType.SOUL_CAMPFIRE
-                || itemType == ItemType.JIGSAW || itemType == ItemType.LECTERN
-                || itemType == ItemType.SMOKER || itemType == ItemType.BEEHIVE
-                || itemType == ItemType.BEE_NEST || itemType == ItemType.SCULK_CATALYST
-                || itemType == ItemType.SCULK_SHRIEKER || itemType == ItemType.SCULK_SENSOR
-                || itemType == ItemType.CALIBRATED_SCULK_SENSOR || itemType == ItemType.CHISELED_BOOKSHELF
-                || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
-                || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
-                || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT
-                || itemType == ItemType.CREAKING_HEART || itemType == ItemType.TEST_BLOCK
-                || itemType == ItemType.TEST_INSTANCE_BLOCK || itemHandle instanceof BedItem
-                || itemType == ItemType.CONDUIT) {
+        if (blockHandle instanceof EntityBlock) {
             return CraftItemMetas.asType(CraftItemMetas.BLOCK_STATE_META_DATA);
         }
         if (itemType == ItemType.SHIELD) {

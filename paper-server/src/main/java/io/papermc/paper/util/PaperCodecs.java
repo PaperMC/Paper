@@ -25,11 +25,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class PaperCodecs {
 
-    public static final Codec<TriState> TRI_STATE_CODEC = Codec.STRING.comapFlatMap(s -> {
+    public static final Codec<TriState> TRI_STATE_CODEC = Codec.STRING.comapFlatMap(name -> {
         try {
-            return DataResult.success(TriState.valueOf(s));
-        } catch (Exception e) {
-            return DataResult.error(() -> "Unknown TriState value: " + s);
+            return DataResult.success(TriState.valueOf(name));
+        } catch (IllegalArgumentException e) {
+            return DataResult.error(() -> "Unknown TriState value: " + name);
         }
     }, TriState::name);
 

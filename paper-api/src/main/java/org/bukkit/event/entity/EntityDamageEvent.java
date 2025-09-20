@@ -249,7 +249,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * raw {@link EntityDamageEvent#getDamage()}.
          */
         BASE,
-        INVULNERABILITY_REDUCTION, // Paper - fix invulnerability reduction in EntityDamageEvent - needs to be right under BASE as its the first reduction all others are based on
+        INVULNERABILITY_REDUCTION, // Paper - fix invulnerability reduction in EntityDamageEvent - needs to be right under BASE as it's the first reduction all others are based on
         /**
          * This represents the damage increased by freezing status.
          */
