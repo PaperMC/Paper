@@ -764,12 +764,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
         if (this.getHealth() == 0) {
             return false;
         }
 
-        return super.teleport(location, cause);
+        return super.teleport(location, cause, flags);
     }
 
     @Override

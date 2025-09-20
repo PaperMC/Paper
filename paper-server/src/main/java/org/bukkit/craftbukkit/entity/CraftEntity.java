@@ -8,7 +8,6 @@ import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.TeleportFlag;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -287,11 +286,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
-        return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
+        return teleport(location, cause, new TeleportFlag[0]);
     }
 
     @Override
-    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, TeleportFlag... flags) {
         Preconditions.checkArgument(location != null, "location cannot be null");
         Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
@@ -301,12 +300,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        if (entity instanceof ServerPlayer player && player.connection == null) {
-            return false;
-        }
-
         final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
-        for (final io.papermc.paper.entity.TeleportFlag flag : flags) {
+        for (final TeleportFlag flag : flags) {
             if (flag instanceof TeleportFlag.Relative relativeFlag) {
                 nms.add(deltaRelativeToNMS(relativeFlag));
             }
@@ -325,12 +320,22 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
 
-    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
+    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(TeleportFlag.Relative apiFlag) {
         return switch (apiFlag) {
             case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
             case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
             case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
             case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+        };
+    }
+
+    public static @Nullable TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+        return switch (nmsFlag) {
+            case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
+            case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;
+            case DELTA_Z -> TeleportFlag.Relative.VELOCITY_Z;
+            case ROTATE_DELTA -> TeleportFlag.Relative.VELOCITY_ROTATION;
+            default -> null;
         };
     }
 

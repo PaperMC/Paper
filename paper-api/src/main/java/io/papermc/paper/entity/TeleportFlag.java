@@ -13,13 +13,12 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 
     /**
-     * Note: These flags only work on {@link org.bukkit.entity.Player} entities.
-     * <p>
-     * Relative flags enable a player to not lose their velocity in the flag-specific axis/context when teleporting.
+     * Relative flags enable an entity to not lose their velocity in the flag-specific axis/context when teleporting.
      *
      * @apiNote The relative flags exposed in the API do *not* mirror all flags known to vanilla, as relative flags concerning
      * the position are non-applicable given teleports always expect an absolute location.
      * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
+     * @see org.bukkit.entity.Entity#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
      */
     enum Relative implements TeleportFlag {
         /**
