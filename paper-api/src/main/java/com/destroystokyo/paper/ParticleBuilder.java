@@ -465,7 +465,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param r red color component
      * @param g green color component
@@ -478,7 +478,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      * <p>
      * This method detects if the provided color integer is in RGB or ARGB format.
      * If the alpha channel is zero, it treats the color as RGB. Otherwise, it treats it as ARGB.
@@ -497,7 +497,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param a alpha color component
      * @param r red color component
