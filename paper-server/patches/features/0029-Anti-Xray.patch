@@ -5,10 +5,10 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 0401636064e47889a58445f6c5c12f7044254696..62aaf4af679bb4868e8566532a6faa89e02451b4 100644
+index 0401636064e47889a58445f6c5c12f7044254696..fb4a93ba6e585da2e2fc555e702f1aaead6f62ea 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -52,20 +52,26 @@ public final class FeatureHooks {
+@@ -52,20 +52,25 @@ public final class FeatureHooks {
      }
  
      public static LevelChunkSection createSection(final PalettedContainerFactory palettedContainerFactory, final Level level, final ChunkPos chunkPos, final int chunkSection) {
@@ -17,7 +17,7 @@ index 0401636064e47889a58445f6c5c12f7044254696..62aaf4af679bb4868e8566532a6faa89
      }
  
      public static void sendChunkRefreshPackets(final List<ServerPlayer> playersInRange, final LevelChunk chunk) {
-         final ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null);
+-        final ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null);
 +        // Paper start - Anti-Xray
 +        final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
          for (final ServerPlayer player : playersInRange) {
@@ -521,10 +521,21 @@ index c22482b9a660d38b83850454f711faf44085a751..1ecb9d409df91089b334303ff6a6e1b8
          }
  
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerFactory.java b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..de27d94ac4b5408ceb5ecf724e51314fe7dd25f5 100644
+index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..f7440347e38ff79134f97d94b2346d3b4a9a6d9d 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-@@ -38,10 +38,16 @@ public record PalettedContainerFactory(
+@@ -29,19 +29,25 @@ public record PalettedContainerFactory(
+         return new PalettedContainerFactory(
+             strategy,
+             blockState,
+-            PalettedContainer.codecRW(BlockState.CODEC, strategy, blockState),
++            PalettedContainer.codecRW(BlockState.CODEC, strategy, blockState, null), // Paper - Anti-Xray
+             strategy1,
+             orThrow,
+             PalettedContainer.codecRO(registry.holderByNameCodec(), strategy1, orThrow)
+-            , PalettedContainer.codecRW(registry.holderByNameCodec(), strategy1, orThrow) // Paper
++            , PalettedContainer.codecRW(registry.holderByNameCodec(), strategy1, orThrow, null) // Paper // Anti-Xray
+         );
      }
  
      public PalettedContainer<BlockState> createForBlockStates() {
@@ -533,8 +544,8 @@ index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..de27d94ac4b5408ceb5ecf724e51314f
 +        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, null);
 +    }
 +
-+    public PalettedContainer<BlockState> createForBlockStates(net.minecraft.world.level.Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
-+        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, level == null || level.chunkPacketBlockController == null ? null : level.chunkPacketBlockController.getPresetBlockStates(level, chunkPos, chunkSectionY));
++    public PalettedContainer<BlockState> createForBlockStates(net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
++        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, level == null ? null : level.chunkPacketBlockController.getPresetBlockStates(level, chunkPos, chunkSectionY));
      }
  
      public PalettedContainer<Holder<Biome>> createForBiomes() {
