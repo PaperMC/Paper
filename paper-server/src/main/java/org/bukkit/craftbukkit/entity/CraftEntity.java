@@ -287,47 +287,44 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
-        // Paper start - Teleport passenger API
         return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
     }
 
     @Override
     public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
+        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags;
         if (flags.length == 0) {
-            relativeArguments = Set.of();
+            relativeFlags = Set.of();
         } else {
-            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
+            relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
         }
-        // Paper end - Teleport API
         Preconditions.checkArgument(location != null, "location cannot be null");
         Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
 
         Entity entity = this.getHandle();
-
         if (entity.isRemoved()) {
             return false;
         }
 
-        if (entity instanceof ServerPlayer serverPlayer && serverPlayer.connection == null) {
+        if (entity instanceof ServerPlayer player && player.connection == null) {
             return false;
         }
 
         final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
-        for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
-            nms.add(deltaRelativeToNMS(bukkit));
+        for (final io.papermc.paper.entity.TeleportFlag.Relative flag : relativeFlags) {
+            nms.add(deltaRelativeToNMS(flag));
         }
 
         return this.entity.teleport(new TeleportTransition(
-                ((CraftWorld) location.getWorld()).getHandle(),
-                CraftLocation.toVec3(location),
-                Vec3.ZERO,
-                location.getYaw(),
-                location.getPitch(),
-                nms,
-                TeleportTransition.DO_NOTHING,
-                TeleportCause.PLUGIN
+            ((CraftWorld) location.getWorld()).getHandle(),
+            CraftLocation.toVec3(location),
+            Vec3.ZERO,
+            location.getYaw(),
+            location.getPitch(),
+            nms,
+            TeleportTransition.DO_NOTHING,
+            TeleportCause.PLUGIN
         )) != null;
     }
 
