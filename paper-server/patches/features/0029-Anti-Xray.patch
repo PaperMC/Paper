@@ -521,10 +521,10 @@ index c22482b9a660d38b83850454f711faf44085a751..1ecb9d409df91089b334303ff6a6e1b8
          }
  
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerFactory.java b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..f7440347e38ff79134f97d94b2346d3b4a9a6d9d 100644
+index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..02ca9f89e11de05d162d5a4c5c355176fbe40dfe 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-@@ -29,19 +29,25 @@ public record PalettedContainerFactory(
+@@ -29,19 +29,31 @@ public record PalettedContainerFactory(
          return new PalettedContainerFactory(
              strategy,
              blockState,
@@ -545,7 +545,13 @@ index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..f7440347e38ff79134f97d94b2346d3b
 +    }
 +
 +    public PalettedContainer<BlockState> createForBlockStates(net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
-+        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, level == null ? null : level.chunkPacketBlockController.getPresetBlockStates(level, chunkPos, chunkSectionY));
++        net.minecraft.world.level.block.state.BlockState[] states = null;
++        if (level != null
++            // This check is needed because of a circular reference in ChunkPacketBlockControllerAntiXray when creating an empty chunk section
++            && level.chunkPacketBlockController != null) {
++            states = level.chunkPacketBlockController.getPresetBlockStates(level, chunkPos, chunkSectionY);
++        }
++        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, states);
      }
  
      public PalettedContainer<Holder<Biome>> createForBiomes() {
