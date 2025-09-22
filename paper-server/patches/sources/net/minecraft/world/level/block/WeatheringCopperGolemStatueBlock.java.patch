@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/WeatheringCopperGolemStatueBlock.java
 +++ b/net/minecraft/world/level/block/WeatheringCopperGolemStatueBlock.java
-@@ -58,14 +_,18 @@
+@@ -58,16 +_,21 @@
                      return InteractionResult.PASS;
                  }
  
@@ -14,11 +14,15 @@
 -                stack.hurtAndBreak(1, player, hand.asEquipmentSlot());
                  if (copperGolem != null) {
 +                    // Paper start - call EntityChangeBlockEvent
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, Blocks.AIR.defaultBlockState())) {
++                    BlockState newState = level.getFluidState(pos).createLegacyBlock();
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
 +                        return InteractionResult.PASS;
 +                    }
 +                    stack.hurtAndBreak(1, player, hand.asEquipmentSlot()); // Paper - moved after event
-+                    // Paper end - call EntityChangeBlockEvent
                      level.addFreshEntity(copperGolem);
-                     level.removeBlock(pos, false);
+-                    level.removeBlock(pos, false);
++                    level.setBlock(pos, newState, 3);
++                    // Paper end - call EntityChangeBlockEvent
                      return InteractionResult.SUCCESS;
+                 }
+             }
