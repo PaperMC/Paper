@@ -32,11 +32,15 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
 
     @Override
     public Oxidizing getOxidizing() {
-        final long value = this.getHandle().nextWeatheringTick;
+        long value = this.getHandle().nextWeatheringTick;
         if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.UNSET_WEATHERING_TICK) {
             return Oxidizing.unset();
         } else if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.IGNORE_WEATHERING_TICK) {
             return Oxidizing.waxed();
+        }
+        if (value < 0) {
+            // If someone set the entity data negative externally - the behavior is effectively the same as 0 (check is <= gameTime)
+            value = 0;
         }
         return Oxidizing.atTime(value);
     }
