@@ -151,6 +151,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public ResolvableProfile.SkinPatchBuilder skinPatch() {
+        return new PaperResolvableProfile.SkinPatchBuilderImpl();
+    }
+
+    @Override
     public ResolvableProfile resolvableProfile(final PlayerProfile profile) {
         return PaperResolvableProfile.toApi(profile);
     }
