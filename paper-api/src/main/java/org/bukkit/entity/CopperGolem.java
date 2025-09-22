@@ -1,9 +1,11 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.entity.Shearable;
 import io.papermc.paper.world.WeatheringCopperState;
 import org.bukkit.World;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -72,7 +74,8 @@ public interface CopperGolem extends Golem, Shearable {
          * @return new AtTime instance
          * @see World#getGameTime()
          */
-        static AtTime atTime(long time) {
+        static AtTime atTime(@Range(from = 0, to = Long.MAX_VALUE) final long time) {
+            Preconditions.checkArgument(time >= 0, "time must be non-negative");
             return new AtTimeImpl(time);
         }
 
@@ -112,6 +115,7 @@ public interface CopperGolem extends Golem, Shearable {
              * @return the absolute game time of the next weathering event
              * @see World#getGameTime()
              */
+            @Range(from = 0, to = Long.MAX_VALUE)
             long time();
         }
 
