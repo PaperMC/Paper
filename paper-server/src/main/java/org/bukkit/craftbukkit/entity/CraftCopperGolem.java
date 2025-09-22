@@ -29,4 +29,26 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
         Preconditions.checkArgument(state != null, "state cannot be null");
         this.getHandle().setWeatherState(WeatheringCopper.WeatherState.valueOf(state.name()));
     }
+
+    @Override
+    public Oxidizing getOxidizing() {
+        final long value = this.getHandle().nextWeatheringTick;
+        if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.UNSET_WEATHERING_TICK) {
+            return Oxidizing.unset();
+        } else if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.IGNORE_WEATHERING_TICK) {
+            return Oxidizing.waxed();
+        }
+        return Oxidizing.atTime(value);
+    }
+
+    @Override
+    public void setOxidizing(final Oxidizing oxidizing) {
+        Preconditions.checkArgument(oxidizing != null, "oxidizing cannot be null");
+        switch (oxidizing) {
+            case Oxidizing.Waxed waxed -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.coppergolem.CopperGolem.IGNORE_WEATHERING_TICK;
+            case Oxidizing.Unset unset -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.coppergolem.CopperGolem.UNSET_WEATHERING_TICK;
+            case Oxidizing.AtTime atTime -> this.getHandle().nextWeatheringTick = atTime.time();
+            default -> throw new IllegalStateException("Unexpected value: " + oxidizing);
+        }
+    }
 }
