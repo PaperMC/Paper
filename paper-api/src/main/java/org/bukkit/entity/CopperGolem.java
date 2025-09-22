@@ -43,7 +43,7 @@ public interface CopperGolem extends Golem, Shearable {
      * <ul>
      *     <li>{@link Oxidizing.Waxed}: the golem is waxed and will not oxidize further</li>
      *     <li>{@link Oxidizing.Unset}: the golem is not waxed but has not yet had its next weathering event 'scheduled'</li>
-     *     <li>{@link Oxidizing.AtTime}: the absolute world time of the next weathering event</li>
+     *     <li>{@link Oxidizing.AtTime}: the absolute game time of the next weathering event</li>
      * </ul>
      */
     sealed interface Oxidizing permits Oxidizing.Waxed, Oxidizing.Unset, Oxidizing.AtTime {
@@ -68,9 +68,9 @@ public interface CopperGolem extends Golem, Shearable {
         /**
          * Creates a new {@link AtTime} instance with the given time.
          *
-         * @param time the absolute world time of the next weathering event
+         * @param time the absolute game time of the next weathering event
          * @return new AtTime instance
-         * @see World#getFullTime()
+         * @see World#getGameTime()
          */
         static AtTime atTime(long time) {
             return new AtTimeImpl(time);
@@ -101,16 +101,16 @@ public interface CopperGolem extends Golem, Shearable {
         }
 
         /**
-         * AtTime oxidizing state - the absolute world time of the next weathering event.
+         * AtTime oxidizing state - the absolute game time of the next weathering event.
          *
          * @see #atTime(long)
          */
         sealed interface AtTime extends Oxidizing permits AtTimeImpl {
             /**
-             * Gets the absolute world time of the next weathering event.
+             * Gets the absolute game time of the next weathering event.
              *
-             * @return the absolute world time of the next weathering event
-             * @see World#getFullTime()
+             * @return the absolute game time of the next weathering event
+             * @see World#getGameTime()
              */
             long time();
         }
