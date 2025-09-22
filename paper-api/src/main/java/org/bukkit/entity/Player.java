@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import com.destroystokyo.paper.ClientOption;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -3617,24 +3618,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     <T> T getClientOption(ClientOption<T> option);
     // Paper end - client option API
 
-    // Paper start - elytra boost API
     /**
      * Boost a Player that's {@link #isGliding()} using a {@link Firework}.
      * If the creation of the entity is cancelled, no boosting is done.
      * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param firework The {@link Material#FIREWORK_ROCKET} to boost the player with
+     * @param boosterItem The itemstack to boost the player with
      * @return The {@link Firework} boosting the Player or null if the spawning of the entity was cancelled
-     * @throws IllegalArgumentException if {@link #isGliding()} is false
-     * or if the {@code firework} isn't a {@link Material#FIREWORK_ROCKET}
+     * @throws IllegalStateException if {@link #isGliding()} is false
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
      * check if the player is gliding or not.
      */
-    default @Nullable Firework boostElytra(final ItemStack firework) {
-        com.google.common.base.Preconditions.checkState(this.isGliding(), "Player must be gliding");
-        return this.fireworkBoost(firework);
+    @Deprecated(since = "1.20.5")
+    default @Nullable Firework boostElytra(final ItemStack boosterItem) {
+        Preconditions.checkState(this.isGliding(), "Player must be gliding");
+        return this.fireworkBoost(boosterItem);
     }
-    // Paper end - elytra boost API
 
     // Paper start - sendOpLevel API
     /**
