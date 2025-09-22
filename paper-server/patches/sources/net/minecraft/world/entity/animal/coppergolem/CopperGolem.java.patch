@@ -17,7 +17,32 @@
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemInHand.hurtAndBreak(1, player, hand);
              }
-@@ -296,7 +_,7 @@
+@@ -283,20 +_,27 @@
+ 
+     private void turnToStatue(ServerLevel level) {
+         BlockPos blockPos = this.blockPosition();
+-        level.setBlock(
+-            blockPos,
++        // Paper start - call EntityChangeBlockEvent
++        //level.setBlock(
++        //    blockPos,
++        BlockState newState =
+             Blocks.OXIDIZED_COPPER_GOLEM_STATUE
+                 .defaultBlockState()
+                 .setValue(
+                     CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
+                 )
+-                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot())),
+-            3
+-        );
++                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
++        //    3
++        //);
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockPos, newState)) {
++            return;
++        }
++        level.setBlock(blockPos, newState, 3);
++        // Paper end - call EntityChangeBlockEvent
          if (level.getBlockEntity(blockPos) instanceof CopperGolemStatueBlockEntity copperGolemStatueBlockEntity) {
              copperGolemStatueBlockEntity.createStatue(this);
              this.dropPreservedEquipment(level);
