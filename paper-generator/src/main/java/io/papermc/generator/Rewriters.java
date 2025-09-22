@@ -136,6 +136,7 @@ public final class Rewriters {
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
+            .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
             .register(ClientOption.class, composite(
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
@@ -212,7 +213,6 @@ public final class Rewriters {
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
-            .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
             .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());
         RegistryBootstrapper.bootstrapApi(sourceSet);
     }
