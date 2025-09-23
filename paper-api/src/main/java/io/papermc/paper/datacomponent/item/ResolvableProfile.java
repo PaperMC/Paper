@@ -115,6 +115,7 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     /**
      * Override rendering options for a {@link ResolvableProfile}.
      */
+    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SkinPatch {
 
@@ -181,6 +182,7 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     /**
      * Builder for {@link SkinPatch}.
      */
+    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SkinPatchBuilder extends DataComponentBuilder<SkinPatch> {
         /**
