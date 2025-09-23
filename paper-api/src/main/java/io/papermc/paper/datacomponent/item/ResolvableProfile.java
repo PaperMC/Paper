@@ -6,7 +6,10 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
+import org.bukkit.profile.PlayerTextures;
 import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -101,6 +104,125 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     CompletableFuture<PlayerProfile> resolve();
 
     /**
+     * Gets the skin patch used by the client for rendering. Overrides any values
+     * resolved from the profile.
+     *
+     * @return the skin patch
+     */
+    @Contract(pure = true)
+    SkinPatch skinPatch();
+
+    /**
+     * Override rendering options for a {@link ResolvableProfile}.
+     */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
+    interface SkinPatch {
+
+        /**
+         * Returns the empty skin patch that does not override anything.
+         *
+         * @return the empty skin patch
+         */
+        static SkinPatch empty() {
+            final class Holder {
+                static final SkinPatch INSTANCE = ItemComponentTypesBridge.bridge().skinPatch().build();
+            }
+            return Holder.INSTANCE;
+        }
+
+        /**
+         * Creates a new builder for a skin patch.
+         *
+         * @return new skin patch builder
+         */
+        @Contract(value = "-> new", pure = true)
+        static SkinPatchBuilder skinPatch() {
+            return ItemComponentTypesBridge.bridge().skinPatch();
+        }
+
+        /**
+         * Gets the body texture key.
+         *
+         * @return the body texture key, or {@code null} if not set
+         */
+        @Nullable Key body();
+
+        /**
+         * Gets the cape texture key.
+         *
+         * @return the cape texture key, or {@code null} if not set
+         */
+        @Nullable Key cape();
+
+        /**
+         * Gets the elytra texture key.
+         *
+         * @return the elytra texture key, or {@code null} if not set
+         */
+        @Nullable Key elytra();
+
+        /**
+         * Gets the skin model.
+         *
+         * @return the skin model, or {@code null} if not set
+         */
+        PlayerTextures.@Nullable SkinModel model();
+
+        /**
+         * Returns if this skin patch does not override any values.
+         *
+         * @return {@code true} if this skin patch is empty
+         */
+        default boolean isEmpty() {
+            return this.body() == null && this.cape() == null && this.elytra() == null && this.model() == null;
+        }
+    }
+
+    /**
+     * Builder for {@link SkinPatch}.
+     */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
+    interface SkinPatchBuilder extends DataComponentBuilder<SkinPatch> {
+        /**
+         * Sets the body texture key.
+         *
+         * @param body the body texture key, or {@code null} to unset it
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        SkinPatchBuilder body(@Nullable Key body);
+
+        /**
+         * Sets the cape texture key.
+         *
+         * @param cape the cape texture key, or {@code null} to unset it
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        SkinPatchBuilder cape(@Nullable Key cape);
+
+        /**
+         * Sets the elytra texture key.
+         *
+         * @param elytra the elytra texture key, or {@code null} to unset it
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        SkinPatchBuilder elytra(@Nullable Key elytra);
+
+        /**
+         * Sets the skin model.
+         *
+         * @param model the skin model, or {@code null} to unset it
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        SkinPatchBuilder model(PlayerTextures.@Nullable SkinModel model);
+    }
+
+    /**
      * Builder for {@link ResolvableProfile}.
      */
     @ApiStatus.Experimental
@@ -147,5 +269,25 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addProperties(Collection<ProfileProperty> properties);
+
+        /**
+         * Sets the skin patch for this profile.
+         *
+         * @param patch the skin patch
+         * @return the builder for chaining
+         * @see #skinPatch()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder skinPatch(SkinPatch patch);
+
+        /**
+         * Configures the skin patch for this profile.
+         *
+         * @param configure the configuration consumer
+         * @return the builder for chaining
+         * @see #skinPatch()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder skinPatch(Consumer<SkinPatchBuilder> configure);
     }
 }
