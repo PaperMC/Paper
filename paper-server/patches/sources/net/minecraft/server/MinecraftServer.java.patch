@@ -557,17 +557,17 @@
 @@ -718,6 +_,14 @@
      }
  
-     public void halt(boolean waitForServer) {
+     public void halt(boolean waitForShutdown) {
 +        // Paper start - allow passing of the intent to restart
-+        this.safeShutdown(waitForServer, false);
++        this.safeShutdown(waitForShutdown, false);
 +    }
-+    public void safeShutdown(boolean waitForServer, boolean isRestarting) {
++    public void safeShutdown(boolean waitForShutdown, boolean isRestarting) {
 +        this.isRestarting = isRestarting;
 +        this.hasLoggedStop = true; // Paper - Debugging
 +        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
 +        // Paper end
          this.running = false;
-         if (waitForServer) {
+         if (waitForShutdown) {
              try {
 @@ -728,6 +_,57 @@
          }
@@ -1066,10 +1066,10 @@
              int i = 0;
  
              for (ServerPlayer serverPlayer : this.getPlayerList().getPlayers()) {
--                if (serverPlayer.setGameMode(gameType)) {
+-                if (serverPlayer.setGameMode(gameMode)) {
 -                    i++;
 +                // Paper start - Expand PlayerGameModeChangeEvent
-+                org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null);
++                org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null);
 +                if (event != null && event.isCancelled()) {
 +                    continue;
                  }
@@ -1270,14 +1270,14 @@
 +        throw new UnsupportedOperationException(); // Paper - per level load listener
      }
  
-     public boolean setAutoSave(boolean flag) {
+     public boolean setAutoSave(boolean autoSave) {
 @@ -2118,8 +_,9 @@
          return false;
      }
  
 +    @io.papermc.paper.annotation.DoNotUse @Deprecated(forRemoval = true) // Paper - per level gamerules - replace all calls
-     public void onGameRuleChanged(String string, GameRules.Value<?> value) {
--        this.notificationManager().onGameRuleChanged(string, value);
+     public void onGameRuleChanged(String gameRule, GameRules.Value<?> value) {
+-        this.notificationManager().onGameRuleChanged(gameRule, value);
 +        throw new UnsupportedOperationException(); // Paper - per level gamerules - replace callers
      }
  

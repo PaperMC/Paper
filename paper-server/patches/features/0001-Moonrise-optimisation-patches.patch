@@ -23222,7 +23222,7 @@ index 5bc77b86acf26c2d66f16bdfb30342b998509f77..4715a60760c2c9079313db9016000bfb
          }
      }
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index ebb64becd971e423f79f86ea1d234ba4c0c03132..a1be25abe298760951be8ebdb51ab13262ae1552 100644
+index e7510be12644b2edd966c538c84379a3d5fe89b5..8d299a75c80fddc61a2aa4dc5b0dc5948aef5a0d 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
 @@ -301,6 +301,7 @@ public class Main {
@@ -23234,7 +23234,7 @@ index ebb64becd971e423f79f86ea1d234ba4c0c03132..a1be25abe298760951be8ebdb51ab132
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 3c09d7fa308c28127a4cc6478a1cc0653d3cd602..d5722dd4a5007b4ed2f1cd0d5cdc01582500abd7 100644
+index 2749b4b99d7af67782742422e14b5eb88bcf0040..1cbb659b3f85c17f3e5cfac45df31daf2aa1811d 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -177,7 +177,7 @@ import net.minecraft.world.phys.Vec2;
@@ -23336,11 +23336,11 @@ index 3c09d7fa308c28127a4cc6478a1cc0653d3cd602..d5722dd4a5007b4ed2f1cd0d5cdc0158
 @@ -779,6 +850,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public abstract boolean shouldRconBroadcast();
  
-     public boolean saveAllChunks(boolean suppressLog, boolean flush, boolean forced) {
+     public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
 +        // Paper start - add close param
-+        return this.saveAllChunks(suppressLog, flush, forced, false);
++        return this.saveAllChunks(suppressLogs, flush, force, false);
 +    }
-+    public boolean saveAllChunks(boolean suppressLog, boolean flush, boolean forced, boolean close) {
++    public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force, boolean close) {
 +        // Paper end - add close param
          boolean flag = false;
  
@@ -23349,8 +23349,8 @@ index 3c09d7fa308c28127a4cc6478a1cc0653d3cd602..d5722dd4a5007b4ed2f1cd0d5cdc0158
                  LOGGER.info("Saving chunks for level '{}'/{}", serverLevel, serverLevel.dimension().location());
              }
  
--            serverLevel.save(null, flush, SharedConstants.DEBUG_DONT_SAVE_WORLD || serverLevel.noSave && !forced);
-+            serverLevel.save(null, flush, SharedConstants.DEBUG_DONT_SAVE_WORLD || serverLevel.noSave && !forced, close); // Paper - add close param
+-            serverLevel.save(null, flush, SharedConstants.DEBUG_DONT_SAVE_WORLD || serverLevel.noSave && !force);
++            serverLevel.save(null, flush, SharedConstants.DEBUG_DONT_SAVE_WORLD || serverLevel.noSave && !force, close); // Paper - add close param
              flag = true;
          }
  
@@ -23440,7 +23440,7 @@ index 3c09d7fa308c28127a4cc6478a1cc0653d3cd602..d5722dd4a5007b4ed2f1cd0d5cdc0158
      // CraftBukkit start
      public boolean isDebugging() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 5d5c932b6030325c72992da349bff683f8d67bde..d02148de64cdfc8e2646f205b60aee629d052bb6 100644
+index 3ca8af88675b741aea89a016974fe74f14442212..9b3894ec6d458a8d7ed8078fb51193c5dfa1641c 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -553,7 +553,33 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -23959,7 +23959,7 @@ index e823b8aac00158892538083bc877ccf99895909a..7d871318065f19540748363809de8265
      private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 8404d6e7f6033cacf5cd2f837f4da5137cb91fe3..31a0d431dde1acd0fad788faec093837bdce4991 100644
+index c8263d60f1602e2a1979eaede3bb27c3be25989b..6814794c74af8a5ed0ebbc709f46928ad97d18fc 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -102,7 +102,7 @@ import net.minecraft.world.phys.Vec3;
@@ -25041,12 +25041,12 @@ index 8404d6e7f6033cacf5cd2f837f4da5137cb91fe3..31a0d431dde1acd0fad788faec093837
 +        // Paper - rewrite chunk system
      }
  
-     public void forEachReadyToSendChunk(Consumer<LevelChunk> consumer) {
+     public void forEachReadyToSendChunk(Consumer<LevelChunk> action) {
 -        for (ChunkHolder chunkHolder : this.visibleChunkMap.values()) {
 +        for (ChunkHolder chunkHolder : ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getOldChunkHolders()) { // Paper - rewrite chunk system
              LevelChunk chunkToSend = chunkHolder.getChunkToSend();
              if (chunkToSend != null) {
-                 consumer.accept(chunkToSend);
+                 action.accept(chunkToSend);
 @@ -1350,14 +1106,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
@@ -26348,7 +26348,7 @@ index b682fffdcbfa23ffe33bc7cf808eb2dab32bfb2f..4d21e56bbdf399b2ca8015699198f044
      }
  }
 diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
-index 44fe2fb79d59d47d8313ce7f910cc5cbde6edc59..d1212c03ce935caa30dbb373b7fe1e1dfc229809 100644
+index 9dbb7c744030fb8d6891780a0928c8cca2a2b68d..f019f1330f9f1e6aa98ef3f914833769cbadea16 100644
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
 @@ -89,6 +89,11 @@ public class ServerEntity {
@@ -26364,7 +26364,7 @@ index 44fe2fb79d59d47d8313ce7f910cc5cbde6edc59..d1212c03ce935caa30dbb373b7fe1e1d
          if (!passengers.equals(this.lastPassengers)) {
              this.synchronizer
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 0710b7f7dd78515dab062ae57015370a7c6a5bd9..4ec6aea8214014a021163890438979be5a7a4059 100644
+index 46125a58e48a2ff91843b4696b9fd71c76b5565f..85457d03bf13a10076fdd7fe7e5f11da98b85db7 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -175,7 +175,7 @@ import net.minecraft.world.ticks.LevelTicks;
@@ -27139,7 +27139,7 @@ index 0710b7f7dd78515dab062ae57015370a7c6a5bd9..4ec6aea8214014a021163890438979be
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index dc8f0b47fb202eff9a49c46a299e90e9897d302e..254897887570326d04d4574b965b390cc95c42d8 100644
+index 3248ba770f6c1f69b476ca8380b99bcb073c2632..0b41d4c924b77fe46089b2e5a0ebc92014a1f143 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -201,7 +201,7 @@ import net.minecraft.world.scores.Team;
@@ -27824,10 +27824,10 @@ index 4367d84309e6dbae6637cb465332896304db5b5a..384289f5d898fef2f791edcbe0716ed0
                      PrepareSpawnTask.this.loadListener.updateFocus(this.spawnLevel.dimension(), chunkPos);
                  }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 73b1a17dc8cd9cbe495e3c3417b30851a90e2531..73b09d2d83dca60a584acf790df98dd188f2cc6c 100644
+index 3629e0b4396cd1f9c3fa93699443afb8cca623e6..05621e00508d17a327819cf1e42d5895ba2ac950 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -1232,7 +1232,7 @@ public abstract class PlayerList {
+@@ -1234,7 +1234,7 @@ public abstract class PlayerList {
  
      public void setViewDistance(int viewDistance) {
          this.viewDistance = viewDistance;
@@ -27836,7 +27836,7 @@ index 73b1a17dc8cd9cbe495e3c3417b30851a90e2531..73b09d2d83dca60a584acf790df98dd1
  
          for (ServerLevel serverLevel : this.server.getAllLevels()) {
              if (serverLevel != null) {
-@@ -1243,7 +1243,7 @@ public abstract class PlayerList {
+@@ -1245,7 +1245,7 @@ public abstract class PlayerList {
  
      public void setSimulationDistance(int simulationDistance) {
          this.simulationDistance = simulationDistance;
@@ -28219,7 +28219,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 26ac6fbf82851269ff2f2ef14d7a8178063f32f7..bb350767df481677b55809dcdce3d3255705e98f 100644
+index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd7e190312 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -149,7 +149,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -28471,7 +28471,7 @@ index 26ac6fbf82851269ff2f2ef14d7a8178063f32f7..bb350767df481677b55809dcdce3d325
      public Entity(EntityType<?> entityType, Level level) {
          this.type = entityType;
 @@ -1368,35 +1474,77 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
-         return list.isEmpty() ? d : -Shapes.collide(Direction.Axis.Y, boundingBox, list, -d);
+         return list.isEmpty() ? distance : -Shapes.collide(Direction.Axis.Y, boundingBox, list, -distance);
      }
  
 -    private Vec3 collide(Vec3 vec) {
@@ -28959,7 +28959,7 @@ index 26ac6fbf82851269ff2f2ef14d7a8178063f32f7..bb350767df481677b55809dcdce3d325
  
      @Override
 diff --git a/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index da07c448b34734a35e35e022ade9b45b9d89503f..89e55c85a131bfc4ef1d9d6113ad6bc736dd5e21 100644
+index 2cd34cb6ecec5f6cae5c6bfad0ba7ce691114181..6e5b4592829006d0439c9d4d6e47a43d524e8e10 100644
 --- a/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -40,12 +40,137 @@ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
@@ -29165,7 +29165,7 @@ index da07c448b34734a35e35e022ade9b45b9d89503f..89e55c85a131bfc4ef1d9d6113ad6bc7
      }
  
 diff --git a/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index a8260c936dfed6143b73dfd7584ff292865aef64..adc79ce5191b5554c88d52878e4a357e2102d332 100644
+index 0eb8a5528bed7b5d4cd06e6128c4f14ff0f2bd7a..a391aa269e935ca003c6f0ba447ea7eb29834a7e 100644
 --- a/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -25,13 +25,27 @@ import net.minecraft.util.VisibleForDebug;
@@ -29347,7 +29347,7 @@ index 300f3ed58109219d97846082941b860585f66fed..9175a7e4e6076626cb46144c5858c2f2
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 9a7f2d92e57e714e45eae93cfa3e6b67a739e076..99c4b9be7620c892723d9bd6b7db9f11bc225559 100644
+index 5e8db9d219fea856445300ca01a3580f5375b069..f3ec8253aefeacebfd98023724e1116b8454fcd4 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -81,6 +81,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -30236,7 +30236,7 @@ index 9a7f2d92e57e714e45eae93cfa3e6b67a739e076..99c4b9be7620c892723d9bd6b7db9f11
      }
 +    // Paper end - rewrite chunk system
  
-     public <T extends Entity> boolean hasEntities(EntityTypeTest<Entity, T> entityTypeTest, AABB aabb, Predicate<? super T> predicate) {
+     public <T extends Entity> boolean hasEntities(EntityTypeTest<Entity, T> entityTypeTest, AABB bounds, Predicate<? super T> predicate) {
          Profiler.get().incrementCounter("hasEntities");
 diff --git a/net/minecraft/world/level/LevelReader.java b/net/minecraft/world/level/LevelReader.java
 index c59f2c0634e3ebb11b8f6bc09020f951cb602f9b..0842fd6488c8b27d98c4344e1244996b4c0e9912 100644
@@ -31290,7 +31290,7 @@ index 5ad3b49fcf3d25e2309c29cf9fbc9a049402fde9..dff1c4fa389d5168bd9ec1aff4c7e4bc
  
          public Block getBlock() {
 diff --git a/net/minecraft/world/level/block/state/StateHolder.java b/net/minecraft/world/level/block/state/StateHolder.java
-index 7a585970f52ef9cab172bf60c7607551a643c0b3..9b9842462b210b0407279ee8a8e9ccecf3ead005 100644
+index e9bf5e2c43ff0945c8f2eb40ed381ac061abd0d4..040919c61ed29b3eda73b5d0f8ed905011e969a4 100644
 --- a/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/net/minecraft/world/level/block/state/StateHolder.java
 @@ -15,7 +15,7 @@ import java.util.stream.Collectors;
@@ -31454,7 +31454,7 @@ index 7a585970f52ef9cab172bf60c7607551a643c0b3..9b9842462b210b0407279ee8a8e9ccec
 +        // Paper end - optimise blockstate property access
      }
  
-     protected static <O, S extends StateHolder<O, S>> Codec<S> codec(Codec<O> propertyMap, Function<O, S> holderFunction) {
+     protected static <O, S extends StateHolder<O, S>> Codec<S> codec(Codec<O> ownerCodec, Function<O, S> defaultStateGetter) {
 diff --git a/net/minecraft/world/level/block/state/properties/BooleanProperty.java b/net/minecraft/world/level/block/state/properties/BooleanProperty.java
 index 40c83ff614169be8ab988f3ab476eca93acee28d..654f14e0fd1920ec94300649719c2460918899e2 100644
 --- a/net/minecraft/world/level/block/state/properties/BooleanProperty.java
@@ -31953,7 +31953,7 @@ index 07510a0a76e7f43e83725bbaeab589a34a484816..e03d7404c11a8cb537820ccb02bda4a4
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index dfacc72af2caaa9f33704be3afe89c8f64393c97..bb32e2125605c7e793666205fc8356beb8627696 100644
+index 4994a01ec81bed352387af1673ab8802f8845d0f..c2f5c9156fc5b993ce9a0659583075cb4f6ae1da 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -62,7 +62,7 @@ import net.minecraft.world.ticks.LevelChunkTicks;
@@ -32350,7 +32350,7 @@ index 36b197c56b53e2f093d5cbe4d5eefe8e68274c3b..d5a3342c4e65e7c3e6b690ada5bae8c3
  
      public void readBiomes(FriendlyByteBuf buffer) {
 diff --git a/net/minecraft/world/level/chunk/LinearPalette.java b/net/minecraft/world/level/chunk/LinearPalette.java
-index 46d44ad581c65a0ef04d34e9940059952c7cb328..408549dfa52229afd1deafbfbe8b67b71b259cc2 100644
+index 9cb170fa65cbba127cd0c75fcf1ecf7ac3c8ece7..9aa55456d18ffa3ad5cc300ed321582b2a7af1d1 100644
 --- a/net/minecraft/world/level/chunk/LinearPalette.java
 +++ b/net/minecraft/world/level/chunk/LinearPalette.java
 @@ -7,11 +7,18 @@ import net.minecraft.network.FriendlyByteBuf;
@@ -32370,11 +32370,11 @@ index 46d44ad581c65a0ef04d34e9940059952c7cb328..408549dfa52229afd1deafbfbe8b67b7
 +    }
 +    // Paper end - optimise palette reads
 +
-     private LinearPalette(int i, List<T> list) {
-         this.values = (T[])(new Object[1 << i]);
-         this.bits = i;
+     private LinearPalette(int bits, List<T> values) {
+         this.values = (T[])(new Object[1 << bits]);
+         this.bits = bits;
 diff --git a/net/minecraft/world/level/chunk/Palette.java b/net/minecraft/world/level/chunk/Palette.java
-index e7cda77a08ace9867e3b4c9bded605eacfa79325..ad16ad67d7a77bc40de15073b8354511715256f6 100644
+index 71b7eff39ee2ce756fe20be1d37fbacba3334c5e..86a104653476213278c0f05a86fee7ca69e5a630 100644
 --- a/net/minecraft/world/level/chunk/Palette.java
 +++ b/net/minecraft/world/level/chunk/Palette.java
 @@ -5,7 +5,7 @@ import java.util.function.Predicate;
@@ -32387,7 +32387,7 @@ index e7cda77a08ace9867e3b4c9bded605eacfa79325..ad16ad67d7a77bc40de15073b8354511
  
      boolean maybeHas(Predicate<T> filter);
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154dad3db5a 100644
+index f45d361c089124cddadcc5acf24479a84c8f5a08..b6cfe03710e2c3813e0cc7000b8d20b7ca344086 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -24,7 +24,7 @@ import net.minecraft.util.ZeroBitStorage;
@@ -32399,7 +32399,7 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
      private final Strategy<T> strategy;
      //private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
  
-@@ -62,20 +62,50 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -65,20 +65,50 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              );
      }
  
@@ -32430,9 +32430,9 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
 +    }
 +    // Paper end - optimise palette reads
 +
-     private PalettedContainer(Strategy<T> strategy, Configuration configuration, BitStorage bitStorage, Palette<T> palette) {
+     private PalettedContainer(Strategy<T> strategy, Configuration configuration, BitStorage storage, Palette<T> palette) {
          this.strategy = strategy;
-         this.data = new PalettedContainer.Data<>(configuration, bitStorage, palette);
+         this.data = new PalettedContainer.Data<>(configuration, storage, palette);
 +        this.updateData(this.data); // Paper - optimise palette reads
      }
  
@@ -32442,15 +32442,15 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
 +        this.updateData(this.data); // Paper - optimise palette reads
      }
  
-     public PalettedContainer(T object, Strategy<T> strategy) {
+     public PalettedContainer(T defaultValue, Strategy<T> strategy) {
          this.strategy = strategy;
          this.data = this.createOrReuseData(null, 0);
-         this.data.palette.idFor(object, this);
+         this.data.palette.idFor(defaultValue, this);
 +        this.updateData(this.data); // Paper - optimise palette reads
      }
  
      private PalettedContainer.Data<T> createOrReuseData(@Nullable PalettedContainer.Data<T> data, int bits) {
-@@ -97,6 +127,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -100,6 +130,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          PalettedContainer.Data<T> data1 = this.createOrReuseData(data, bits);
          data1.copyFrom(data.palette, data.storage);
          this.data = data1;
@@ -32458,7 +32458,7 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
          return data1.palette.idFor(objectAdded, PaletteResize.noResizeExpected());
      }
  
-@@ -118,9 +149,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -121,9 +152,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
      private T getAndSet(int index, T state) {
@@ -32474,7 +32474,7 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
      }
  
      public synchronized void set(int x, int y, int z, T state) { // Paper - synchronize
-@@ -143,9 +177,11 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -146,9 +180,11 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return this.get(this.strategy.getIndex(x, y, z));
      }
  
@@ -32489,7 +32489,7 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
      }
  
      @Override
-@@ -165,6 +201,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -168,6 +204,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              data.palette.read(buffer, this.strategy.globalMap());
              buffer.readFixedSizeLongArray(data.storage.getRaw());
              this.data = data;
@@ -32497,7 +32497,7 @@ index 94197ffe2499be676305a86a34c58459041e5d88..8dd5af561fac1fbc6b89b8b53918d154
          } finally {
              this.release();
          }
-@@ -314,7 +351,44 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -317,7 +354,44 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          void accept(T state, int count);
      }
  
@@ -32557,7 +32557,7 @@ index 57493dca58b4344fce66dcb9f82228ef4e46bcac..4846ab41592014e45cd6e4f5ff12dbd6
                      }
                  }
 diff --git a/net/minecraft/world/level/chunk/SingleValuePalette.java b/net/minecraft/world/level/chunk/SingleValuePalette.java
-index 7e380c3707360744094f8090bc8e58450b26eccd..d13d3a43b078896fab7bea06ae892a5f3dbd8209 100644
+index 664802bedd4d1ba0aac2d55bc1ab55872044b8db..981a6157b4f3dcdc6e8e5de0da1b11a3096cb2b9 100644
 --- a/net/minecraft/world/level/chunk/SingleValuePalette.java
 +++ b/net/minecraft/world/level/chunk/SingleValuePalette.java
 @@ -8,10 +8,22 @@ import net.minecraft.network.FriendlyByteBuf;
@@ -32581,9 +32581,9 @@ index 7e380c3707360744094f8090bc8e58450b26eccd..d13d3a43b078896fab7bea06ae892a5f
 +    }
 +    // Paper end - optimise palette reads
 +
-     public SingleValuePalette(List<T> list) {
-         if (list.size() > 0) {
-             Validate.isTrue(list.size() <= 1, "Can't initialize SingleValuePalette with %d values.", (long)list.size());
+     public SingleValuePalette(List<T> values) {
+         if (values.size() > 0) {
+             Validate.isTrue(values.size() <= 1, "Can't initialize SingleValuePalette with %d values.", (long)values.size());
 @@ -29,6 +41,11 @@ public class SingleValuePalette<T> implements Palette<T> {
              return resizeHandler.onResize(1, state);
          } else {
