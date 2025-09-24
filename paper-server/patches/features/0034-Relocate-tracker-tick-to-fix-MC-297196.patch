@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexandra-Myers <bia416cat@gmail.com>
+Date: Tue, 23 Sep 2025 21:09:21 -0400
+Subject: [PATCH] Relocate tracker tick to fix MC-297196
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index eb352aa4296abc3ed4cf31c590bc0be66daf4de3..f34855a5c758c372a538ac6f418e3f351b1011fe 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -999,7 +999,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     // Paper start - optimise entity tracker
+-    private void newTrackerTick() {
++    protected void newTrackerTick() {
+         final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+ 
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
+@@ -1022,7 +1022,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     protected void tick() {
+         // Paper start - optimise entity tracker
+         if (true) {
+-            this.newTrackerTick();
++            // Paper - implement MC-297196 fix
+             return;
+         }
+         // Paper end - optimise entity tracker
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index dda8d38ef61672cc714d9e5a475f9b0412ed5ff9..b0e65690567a630b8c1d8647e0c86bb5073f708a 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -821,6 +821,10 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+         profilerFiller.push("entityManagement");
+         // Paper - rewrite chunk system
++        // Paper start - implement MC-297196 fix
++        profilerFiller.popPush("tracker");
++        this.getChunkSource().chunkMap.newTrackerTick();
++        // Paper end - implement MC-297196 fix
+         profilerFiller.pop();
+     }
+ 
