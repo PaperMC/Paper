@@ -36,6 +36,7 @@ public interface Skull extends TileState {
      * Checks to see if the skull has an owner
      *
      * @return true if the skull has an owner
+     * @deprecated Use {@link #getProfile()} {@code != null}.
      */
     @Deprecated(since = "1.21.9")
     public boolean hasOwner();
