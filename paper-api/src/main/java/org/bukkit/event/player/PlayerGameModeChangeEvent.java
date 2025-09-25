@@ -62,7 +62,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
     }
 
     /**
-     * <b>Only valid if the cause of the gamemode change was directly due to a command.</b>
+     * <b>Only valid if the gamemode change was caused by a command or the gamemode switcher.</b>
      * Gets the message shown to the command user if the event is cancelled
      * as a notification that a player's gamemode was not changed.
      *
@@ -75,7 +75,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
 
     /**
      * Sets the message shown to the command user if the event was cancelled.
-     * <b>The message is only shown to cancelled events that are directly called by a command
+     * <b>The message is only shown to cancelled events that are called by a command or the gamemode switcher
      * not by a plugin or a player joining with the wrong gamemode.</b>
      *
      * @param message the error message shown to the command user, {@code null} to show no message.
