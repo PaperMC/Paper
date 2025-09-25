@@ -19,12 +19,16 @@ public interface Weapon {
     }
 
     /**
-     * The damage that the weapon deals per attack.
+     * Amount of durability to remove each time the weapon is used to attack.
+     *
+     * @return durability
      */
     int itemDamagePerAttack();
 
     /**
      * The number of seconds that blocking is disabled.
+     *
+     * @return seconds
      */
     float disableBlockingForSeconds();
 
