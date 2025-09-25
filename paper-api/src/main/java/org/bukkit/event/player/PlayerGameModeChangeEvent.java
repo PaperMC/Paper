@@ -129,7 +129,8 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
          */
         HARDCORE_DEATH,
         /**
-         * A player changed their gamemode using the gamemode switcher (F3+F4, F3+N).
+         * A player changed their gamemode using the gamemode switcher (F3+F4)
+         * or spectator hotkey (F3+N).
          */
         GAMEMODE_SWITCHER,
         /**
