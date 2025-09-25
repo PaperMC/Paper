@@ -129,6 +129,10 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
          */
         HARDCORE_DEATH,
         /**
+         * A player changed their gamemode using the gamemode switcher (F3+F4, F3+N).
+         */
+        GAMEMODE_SWITCHER,
+        /**
          * This cause is only used if a plugin fired their own
          * {@link PlayerGameModeChangeEvent} and did not include a
          * cause. Can usually be ignored.
