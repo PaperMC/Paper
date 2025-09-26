@@ -8286,10 +8286,10 @@ index 0000000000000000000000000000000000000000..80f13315e8c7c0e3c82ab98f92387f56
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bfca9c60f7f8457dfc0a641671d92ed6ef6fcb21
+index 0000000000000000000000000000000000000000..57f11ed1c8dfe7a10fddc53bcd2abc8cac29b2f4
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,1048 @@
+@@ -0,0 +1,1044 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.PrioritisedExecutor;
@@ -8357,10 +8357,6 @@ index 0000000000000000000000000000000000000000..bfca9c60f7f8457dfc0a641671d92ed6
 +public final class ChunkTaskScheduler {
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
-+
-+    public static void init(final boolean useParallelGen) {
-+        LOGGER.info("Chunk system is using population gen parallelism: " + true);
-+    }
 +
 +    public static final TicketType CHUNK_LOAD = ChunkSystemTicketType.create("chunk_system:chunk_load", Long::compareTo);
 +    private static final AtomicLong CHUNK_LOAD_IDS = new AtomicLong();
@@ -22427,7 +22423,7 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f7044254696 100644
+index 079bec88884e48c55707c0f97ed0f4d2c37d3eff..c38629dab63b0f7f9a3864e069f3226917639bf7 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,9 @@
@@ -22440,7 +22436,7 @@ index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f70
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
-@@ -32,16 +35,20 @@ public final class FeatureHooks {
+@@ -32,13 +35,16 @@ public final class FeatureHooks {
  
      // this includes non-accessible entities
      public static Iterable<Entity> getAllEntities(final net.minecraft.server.level.ServerLevel world) {
@@ -22452,17 +22448,13 @@ index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f70
 +        ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.setUnloadDelay(ticks); // Paper - rewrite chunk system
      }
  
-     public static void initChunkTaskScheduler(final boolean useParallelGen) {
-+        ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen); // Paper - Chunk system
-     }
- 
      public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
 +        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());  // Paper - rewrite chunk system
      }
  
      public static LevelChunkSection createSection(final PalettedContainerFactory palettedContainerFactory, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -62,111 +69,58 @@ public final class FeatureHooks {
+@@ -59,111 +65,58 @@ public final class FeatureHooks {
      }
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -22595,7 +22587,7 @@ index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f70
  
              org.bukkit.Chunk chunk = null;
              for (net.minecraft.server.level.Ticket ticket : tickets) {
-@@ -186,15 +140,15 @@ public final class FeatureHooks {
+@@ -183,15 +136,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -22614,7 +22606,7 @@ index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f70
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -212,35 +166,31 @@ public final class FeatureHooks {
+@@ -209,35 +162,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
@@ -22656,9 +22648,7 @@ index 9560711786c42daf524975211282872995ea49d0..0401636064e47889a58445f6c5c12f70
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
--}
-\ No newline at end of file
-+}
+ }
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd01fba0fc
@@ -23234,7 +23224,7 @@ index e7510be12644b2edd966c538c84379a3d5fe89b5..8d299a75c80fddc61a2aa4dc5b0dc594
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 59cc59e6f6d558fed89f4838ef9bf83d3daaa0f8..57f61c5e8df42a1c62192db367d073f088807d51 100644
+index 843229c35e5c198f335d47d520e6391c4569237f..a38d52b5b3c16b054332d38c44dfe28f91206284 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -177,7 +177,7 @@ import net.minecraft.world.phys.Vec2;
@@ -27139,7 +27129,7 @@ index 9f88fafefa490be098b6d45cb55ae290fb435246..f79dfe4d6431de334d890759bbb84d44
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 3248ba770f6c1f69b476ca8380b99bcb073c2632..0b41d4c924b77fe46089b2e5a0ebc92014a1f143 100644
+index b40fd308a93295f52392cf8d05673a8455667f85..be318510a571de3064b3b13187456049bbb52cdf 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -201,7 +201,7 @@ import net.minecraft.world.scores.Team;
