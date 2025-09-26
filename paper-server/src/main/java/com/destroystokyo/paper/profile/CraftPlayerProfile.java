@@ -98,7 +98,11 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     }
 
     public GameProfile getGameProfile() {
-        return new GameProfile(this.profile.id(), this.profile.name(), new PropertyMap(this.profile.properties()));
+        return this.buildGameProfile();
+    }
+
+    public GameProfile getGameProfileUnsafe() {
+        return this.profile;
     }
 
     @Nullable
@@ -178,7 +182,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 
     @Override
     public @NotNull GameProfile buildGameProfile() {
-        return new GameProfile(this.profile.id(), this.profile.name(), this.profile.properties());
+        return new GameProfile(this.profile.id(), this.profile.name(), new PropertyMap(this.profile.properties()));
     }
 
     @Override
@@ -287,7 +291,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
                 copyProfileProperties(result.profile(), this.profile, true);
             }
             if (this.isComplete()) {
-                GameProfile copy = new GameProfile(this.profile.id(), this.profile.name(), this.profile.properties()); // Guard mutating profiles in the cache
+                GameProfile copy = new GameProfile(this.profile.id(), this.profile.name(), new PropertyMap(this.profile.properties())); // Guard mutating profiles in the cache
                 server.services().paper().filledProfileCache().add(copy);
             }
         }

@@ -2924,7 +2924,7 @@ public final class CraftServer implements Server {
         }
 
         final com.destroystokyo.paper.profile.CraftPlayerProfile profile = new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
-        profile.getGameProfile().properties().putAll(((CraftPlayer) player).getHandle().getGameProfile().properties());
+        profile.getGameProfileUnsafe().properties().putAll(((CraftPlayer) player).getHandle().getGameProfile().properties());
         return profile;
     }
 
