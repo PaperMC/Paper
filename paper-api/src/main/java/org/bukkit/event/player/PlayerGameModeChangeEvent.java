@@ -65,12 +65,8 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * <b>Only valid if the cause of the gamemode change was directly due to a command.</b>
      * Gets the message shown to the command user if the event is cancelled
      * as a notification that a player's gamemode was not changed.
-     * <p>
-     * This returns {@code null} if the gamemode change was due to a plugin, or a
-     * player joining the game with a gamemode not equal to the server default gamemode
-     * and {@code force-gamemode} is set to {@code true}.
      *
-     * @return the error message shown to the command user, {@code null} if not directly caused by a command
+     * @return the error message shown to the command user, {@code null} by default
      */
     @Nullable
     public Component cancelMessage() {

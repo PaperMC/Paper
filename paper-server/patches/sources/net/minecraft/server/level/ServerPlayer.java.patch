@@ -1260,13 +1260,13 @@
          if (flag) {
              this.setYHeadRot(relativeMovements.contains(Relative.Y_ROT) ? this.getYHeadRot() + yaw : yaw);
          }
-@@ -1687,9 +_,17 @@
+@@ -1687,9 +_,19 @@
      }
  
      public boolean setGameMode(GameType gameMode) {
 +        // Paper start - Expand PlayerGameModeChangeEvent
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
-+        return event == null ? false : event.isCancelled();
++        return event != null && !event.isCancelled();
 +    }
 +    @Nullable
 +    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
@@ -1274,9 +1274,11 @@
 -        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
 -            return false;
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
-+        if (event == null || event.isCancelled()) {
++        if (event == null) {
 +            return null;
-+        // Paper end - Expand PlayerGameModeChangeEvent
++        } else if (event.isCancelled()) {
++            return event; // need to return the event for the cancel message
++            // Paper end - Expand PlayerGameModeChangeEvent
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
