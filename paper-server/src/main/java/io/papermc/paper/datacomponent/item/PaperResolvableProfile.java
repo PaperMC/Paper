@@ -232,17 +232,17 @@ public record PaperResolvableProfile(
         @Override
         public ResolvableProfile build() {
             if (this.propertyMap.isEmpty() && (this.uuid == null) != (this.name == null)) {
+                return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile.Dynamic(
+                    this.name != null ? Either.left(this.name) : Either.right(this.uuid),
+                    this.skinPatch.asVanilla()
+                ));
+            } else {
                 return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile.Static(
                     Either.right(new net.minecraft.world.item.component.ResolvableProfile.Partial(
                         Optional.ofNullable(this.name),
                         Optional.ofNullable(this.uuid),
                         new PropertyMap(this.propertyMap)
                     )),
-                    this.skinPatch.asVanilla()
-                ));
-            } else {
-                return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile.Dynamic(
-                    this.name != null ? Either.left(this.name) : Either.right(this.uuid),
                     this.skinPatch.asVanilla()
                 ));
             }

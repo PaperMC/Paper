@@ -126,7 +126,7 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
          */
         static SkinPatch empty() {
             final class Holder {
-                static final SkinPatch INSTANCE = ItemComponentTypesBridge.bridge().skinPatch().build();
+                static final SkinPatch INSTANCE = ItemComponentTypesBridge.bridge().emptySkinPatch();
             }
             return Holder.INSTANCE;
         }
