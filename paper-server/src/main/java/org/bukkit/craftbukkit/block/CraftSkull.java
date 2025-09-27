@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.block;
 
+import com.destroystokyo.paper.profile.SharedPlayerProfile;
 import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
@@ -51,6 +53,23 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (owner != null) {
             this.profile = owner;
         }
+    }
+
+    @Override
+    public io.papermc.paper.datacomponent.item.ResolvableProfile getProfile() {
+        if (this.profile == null) {
+            return null;
+        }
+        return new PaperResolvableProfile(this.profile);
+    }
+
+    @Override
+    public void setProfile(final io.papermc.paper.datacomponent.item.ResolvableProfile profile) {
+        if (profile == null) {
+            this.profile = null;
+            return;
+        }
+        this.profile = ((PaperResolvableProfile) profile).getHandle();
     }
 
     @Override
@@ -138,7 +157,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (profile == null) {
             this.profile = null;
         } else {
-            this.profile = ((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildResolvableProfile(); // Paper
+            this.profile = ((SharedPlayerProfile) profile).buildResolvableProfile(); // Paper
         }
     }
 
