@@ -977,16 +977,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public int getShieldBlockingDelay() {
-        return this.getHandle().shieldBlockingDelay;
-    }
-
-    @Override
-    public void setShieldBlockingDelay(int delay) {
-        this.getHandle().shieldBlockingDelay = delay;
-    }
-
-    @Override
     public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
         Preconditions.checkArgument(hand != null, "hand must not be null");
         this.getHandle().startUsingItem(CraftEquipmentSlot.getHand(hand));

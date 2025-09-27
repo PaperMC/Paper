@@ -1085,15 +1085,22 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Get the delay (in ticks) before blocking is effective for this entity
      *
      * @return Delay in ticks
+     * @deprecated no longer applicable, check the blocks_attacks component on the shield
      */
-    int getShieldBlockingDelay();
+    @Deprecated(since = "1.21.9")
+    default int getShieldBlockingDelay() {
+        return 5;
+    }
 
     /**
      * Set the delay (in ticks) before blocking is effective for this entity
      *
      * @param delay Delay in ticks
+     * @deprecated no longer applicable, use the blocks_attacks component on the shield
      */
-    void setShieldBlockingDelay(int delay);
+    @Deprecated(since = "1.21.9")
+    default void setShieldBlockingDelay(int delay) {
+    }
 
     /**
      * Retrieves the sideways movement direction of the entity.
