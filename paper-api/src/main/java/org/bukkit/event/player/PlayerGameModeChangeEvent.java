@@ -62,7 +62,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
     }
 
     /**
-     * <b>Only valid if the cause of the gamemode change was directly due to a command.</b>
+     * <b>Only valid if the gamemode change was caused by the {@code /gamemode} command or the gamemode switcher.</b>
      * Gets the message shown to the command user if the event is cancelled
      * as a notification that a player's gamemode was not changed.
      *
@@ -75,8 +75,8 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
 
     /**
      * Sets the message shown to the command user if the event was cancelled.
-     * <b>The message is only shown to cancelled events that are directly called by a command
-     * not by a plugin or a player joining with the wrong gamemode.</b>
+     * <b>The message is only shown to cancelled events that are called by the {@code /gamemode} command
+     * or the gamemode switcher.</b>
      *
      * @param message the error message shown to the command user, {@code null} to show no message.
      */
@@ -128,6 +128,11 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
          * changed to {@link GameMode#SPECTATOR}.
          */
         HARDCORE_DEATH,
+        /**
+         * A player changed their gamemode using the gamemode switcher (F3+F4)
+         * or spectator hotkey (F3+N).
+         */
+        GAMEMODE_SWITCHER,
         /**
          * This cause is only used if a plugin fired their own
          * {@link PlayerGameModeChangeEvent} and did not include a
