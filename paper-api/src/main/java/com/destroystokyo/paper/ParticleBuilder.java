@@ -422,7 +422,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param color the new particle color
      * @return a reference to this object.
@@ -435,33 +435,37 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Sets the particle Color and size.
-     * Only valid for particles with a data type of {@link Particle.DustOptions}.
+     * Sets the particle Color and size or power.
+     * Only valid for particles with a data type of {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param color the new particle color
-     * @param size  the size of the particle
+     * @param value the size or power of the particle
      * @return a reference to this object.
      */
-    public ParticleBuilder color(final @Nullable Color color, final float size) {
-        if (this.particle.getDataType() != Particle.DustOptions.class && color != null) {
-            throw new IllegalStateException("The combination of Color and size cannot be set on this particle type.");
+    public ParticleBuilder color(final @Nullable Color color, final float value) {
+        if (this.particle.getDataType() != Particle.DustOptions.class && this.particle.getDataType() != Particle.Spell.class && color != null) {
+            throw new IllegalStateException("The combination of Color and float value cannot be set on this particle type.");
         }
 
         // We don't officially support reusing these objects, but here we go
         if (color == null) {
-            if (this.data instanceof Particle.DustOptions) {
+            if (this.data instanceof Particle.DustOptions || this.data instanceof Particle.Spell) {
                 return this.data(null);
             } else {
                 return this;
             }
         }
 
-        return this.data(new Particle.DustOptions(color, size));
+        if (this.particle.getDataType() == Particle.DustOptions.class) {
+            return this.data(new Particle.DustOptions(color, value));
+        } else {
+            return this.data(new Particle.Spell(color, value));
+        }
     }
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param r red color component
      * @param g green color component
@@ -474,7 +478,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      * <p>
      * This method detects if the provided color integer is in RGB or ARGB format.
      * If the alpha channel is zero, it treats the color as RGB. Otherwise, it treats it as ARGB.
@@ -493,7 +497,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * Sets the particle Color.
-     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
+     * Only valid for particles with a data type of {@link Color}, {@link Particle.DustOptions} or {@link Particle.Spell}.
      *
      * @param a alpha color component
      * @param r red color component
