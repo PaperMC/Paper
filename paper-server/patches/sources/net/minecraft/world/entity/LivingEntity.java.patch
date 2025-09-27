@@ -628,7 +628,7 @@
              if (flag2) {
                  this.lastDamageSource = damageSource;
                  this.lastDamageStamp = this.level().getGameTime();
-@@ -1275,6 +_,12 @@
+@@ -1275,10 +_,17 @@
      }
  
      public float applyItemBlocking(ServerLevel level, DamageSource damageSource, float damageAmount) {
@@ -641,6 +641,12 @@
          if (damageAmount <= 0.0F) {
              return 0.0F;
          } else {
+-            ItemStack itemBlockingWith = this.getItemBlockingWith();
++            // Paper - Add EntityBlockingDelayCheckEvent
++            ItemStack itemBlockingWith = this.getItemBlockingWith(io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason.APPLY_ITEM_BLOCKED);
+             if (itemBlockingWith == null) {
+                 return 0.0F;
+             } else {
 @@ -1299,10 +_,12 @@
                          }
  
@@ -655,7 +661,7 @@
  
                          return f;
                      }
-@@ -1313,6 +_,59 @@
+@@ -1313,6 +_,67 @@
          }
      }
  
@@ -664,7 +670,8 @@
 +        if (damageAmount <= 0.0F) {
 +            return false;
 +        } else {
-+            ItemStack itemBlockingWith = this.getItemBlockingWith();
++            // Paper - Add EntityBlockingDelayCheckEvent
++            ItemStack itemBlockingWith = this.getItemBlockingWith(io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason.CAN_BLOCK_ATTACK);
 +            if (itemBlockingWith == null) {
 +                return false;
 +            } else {
@@ -694,12 +701,19 @@
 +            acos = (float) Math.PI;
 +        }
 +
-+        BlocksAttacks blocksAttacks = this.getItemBlockingWith().get(DataComponents.BLOCKS_ATTACKS);
++        // Paper - Add EntityBlockingDelayCheckEvent
++        ItemStack itemBlockingWith = this.getItemBlockingWith(io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason.RESOLVE_BLOCKED_DAMAGE);
++        if (itemBlockingWith == null) return 0.0F;
++
++        BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
++        if (blocksAttacks == null) return 0.0F;
++
 +        return blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
 +    }
 +
 +    public void blockingItemEffects(ServerLevel level, DamageSource damageSource, float f) {
-+        ItemStack itemBlockingWith = this.getItemBlockingWith();
++        // Paper - Add EntityBlockingDelayCheckEvent
++        ItemStack itemBlockingWith = this.getItemBlockingWith(io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason.BLOCKING_ITEM_EFFECTS);
 +        if (itemBlockingWith == null) return;
 +
 +        BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
@@ -1771,7 +1785,7 @@
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
-@@ -3347,7 +_,10 @@
+@@ -3347,22 +_,40 @@
          }
  
          this.useItem = ItemStack.EMPTY;
@@ -1782,11 +1796,45 @@
 +        // Paper end - lag compensate eating
      }
  
++    // Paper start - Add EntityBlockingDelayCheckEvent
      public boolean isBlocking() {
-@@ -3371,6 +_,60 @@
-         }
+-        return this.getItemBlockingWith() != null;
++        return this.getItemBlockingWith(io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason.IS_BLOCKING) != null;
      }
  
+     @Nullable
+     public ItemStack getItemBlockingWith() {
++        return this.getItemBlockingWith(null);
++    }
++
++    @Nullable
++    public ItemStack getItemBlockingWith(@Nullable io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent.Reason reason) {
+         if (!this.isUsingItem()) {
+             return null;
+         } else {
+             BlocksAttacks blocksAttacks = this.useItem.get(DataComponents.BLOCKS_ATTACKS);
+             if (blocksAttacks != null) {
+                 int i = this.useItem.getItem().getUseDuration(this.useItem, this) - this.useItemRemaining;
+-                if (i >= blocksAttacks.blockDelayTicks()) {
++                int d = blocksAttacks.blockDelayTicks();
++                if (reason != null) {
++                    io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent event = new io.papermc.paper.event.entity.EntityBlockingDelayCheckEvent(getBukkitLivingEntity(), this.useItem.getBukkitStack(), i, blocksAttacks.blockDelayTicks(), reason);
++                    event.callEvent();
++                    d = event.getBlockingDelay();
++                    if (this.useItem.get(DataComponents.BLOCKS_ATTACKS) == null) {
++                        return null; // Blocks attacks component removed during event, maybe?
++                    }
++                }
++                if (i >= d) {
+                     return this.useItem;
+                 }
+             }
+@@ -3370,6 +_,61 @@
+             return null;
+         }
+     }
++    // Paper end - Add EntityBlockingDelayCheckEvent
++
 +    // CraftBukkit start
 +    @Override
 +    public float getBukkitYaw() {
@@ -1840,10 +1888,9 @@
 +        return result;
 +    }
 +    // Paper end
-+
+ 
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
-     }
 @@ -3389,6 +_,12 @@
      }
  
