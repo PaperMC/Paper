@@ -1,9 +1,11 @@
 package com.destroystokyo.paper.proxy;
 
-import io.papermc.paper.configuration.GlobalConfiguration;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.net.InetAddresses;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import java.net.InetAddress;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -61,19 +63,20 @@ public class VelocityProxy {
     }
 
     public static GameProfile createProfile(final FriendlyByteBuf buf) {
-        final GameProfile profile = new GameProfile(buf.readUUID(), buf.readUtf(16));
-        readProperties(buf, profile);
-        return profile;
+        return new GameProfile(buf.readUUID(), buf.readUtf(16), readProperties(buf));
     }
 
-    private static void readProperties(final FriendlyByteBuf buf, final GameProfile profile) {
+    private static PropertyMap readProperties(final FriendlyByteBuf buf) {
+        final ImmutableMultimap.Builder<String, Property> propertiesBuilder = ImmutableMultimap.builder();
         final int properties = buf.readVarInt();
         for (int i1 = 0; i1 < properties; i1++) {
             final String name = buf.readUtf(Short.MAX_VALUE);
             final String value = buf.readUtf(Short.MAX_VALUE);
             final String signature = buf.readBoolean() ? buf.readUtf(Short.MAX_VALUE) : null;
-            profile.getProperties().put(name, new Property(name, value, signature));
+            propertiesBuilder.put(name, new Property(name, value, signature));
         }
+        final ImmutableMultimap<String, Property> propertiesMap = propertiesBuilder.build();
+        return new PropertyMap(propertiesMap);
     }
 
     public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {

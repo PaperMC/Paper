@@ -1,9 +1,7 @@
 package org.bukkit.persistence;
 
-import java.util.Set;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This interface represents a map like object, capable of storing custom tags

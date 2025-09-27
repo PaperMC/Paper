@@ -78,7 +78,7 @@ public class HelpYamlReader {
                 ConfigurationSection section = indexTopics.getConfigurationSection(topicName);
                 String shortText = ChatColor.translateAlternateColorCodes(this.ALT_COLOR_CODE, section.getString("shortText", ""));
                 String preamble = ChatColor.translateAlternateColorCodes(this.ALT_COLOR_CODE, section.getString("preamble", ""));
-                String permission = ChatColor.translateAlternateColorCodes(this.ALT_COLOR_CODE, section.getString("permission", ""));
+                String permission = section.getString("permission", "");
                 List<String> commands = section.getStringList("commands");
                 topics.add(new CustomIndexHelpTopic(this.server.getHelpMap(), topicName, shortText, permission, commands, preamble));
             }

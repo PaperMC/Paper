@@ -104,7 +104,7 @@ public interface Damageable extends Entity {
      * to that value.
      * <p>
      * Note: An entity with a health bar ({@link Player}, {@link EnderDragon},
-     * {@link Wither}, etc...} will have their bar scaled accordingly.
+     * {@link Wither}, etc...) will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
      * @deprecated use {@link Attribute#MAX_HEALTH}.

@@ -12,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 public abstract class GameEvent implements Keyed {
 
     // Start generate - GameEvent
-    // @GeneratedFrom 1.21.8
     public static final GameEvent BLOCK_ACTIVATE = getEvent("block_activate");
 
     public static final GameEvent BLOCK_ATTACH = getEvent("block_attach");

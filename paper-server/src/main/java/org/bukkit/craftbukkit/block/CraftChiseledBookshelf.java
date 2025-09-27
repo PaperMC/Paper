@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.world.level.block.ChiseledBookShelfBlock;
+import net.minecraft.world.level.block.SelectableSlotContainer;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.minecraft.world.phys.Vec2;
 import org.bukkit.Location;
@@ -73,11 +73,12 @@ public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookSh
         return CraftChiseledBookshelf.getHitSlot(faceVector);
     }
 
-    private static int getHitSlot(Vec2 vec2f) {
-        int i = vec2f.y >= 0.5F ? 0 : 1;
-        int j = ChiseledBookShelfBlock.getSection(vec2f.x);
-
-        return j + i * 3;
+    private static int getHitSlot(Vec2 vec2) {
+        final int rows = 2;
+        final int columns = 3;
+        final int row = SelectableSlotContainer.getSection(1.0F - vec2.y, rows);
+        final int column = SelectableSlotContainer.getSection(vec2.x, columns);
+        return column + row * columns;
     }
 
     @Override

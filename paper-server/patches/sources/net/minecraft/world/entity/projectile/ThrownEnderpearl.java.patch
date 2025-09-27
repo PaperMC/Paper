@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
 +++ b/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
-@@ -119,11 +_,21 @@
+@@ -104,11 +_,21 @@
                  Vec3 vec3 = this.oldPosition();
                  if (owner instanceof ServerPlayer serverPlayer) {
                      if (serverPlayer.connection.isAcceptingMessages()) {
@@ -14,17 +14,17 @@
 +                            return;
 +                        }
 +                        // CraftBukkit end
-                         if (this.random.nextFloat() < 0.05F && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                         if (this.random.nextFloat() < 0.05F && serverLevel.isSpawningMonsters()) {
                              Endermite endermite = EntityType.ENDERMITE.create(serverLevel, EntitySpawnReason.TRIGGERED);
                              if (endermite != null) {
 -                                endermite.snapTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
 -                                serverLevel.addFreshEntity(endermite);
 +                                endermite.snapTo(preTeleportX, preTeleportY, preTeleportZ, preTeleportYRot, preTeleportXRot); // Paper - spawn endermite at pre teleport position as teleport has been moved up
-+                                serverLevel.addFreshEntity(endermite, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
++                                serverLevel.addFreshEntity(endermite, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENDER_PEARL); // Paper - add reason
                              }
                          }
  
-@@ -131,15 +_,17 @@
+@@ -116,15 +_,17 @@
                              owner.setPortalCooldown();
                          }
  
@@ -48,7 +48,7 @@
                          }
  
                          this.playSound(serverLevel, vec3);
-@@ -155,9 +_,9 @@
+@@ -140,9 +_,9 @@
                      this.playSound(serverLevel, vec3);
                  }
  
@@ -60,16 +60,16 @@
              }
          }
      }
-@@ -178,7 +_,7 @@
-         if (owner instanceof ServerPlayer serverPlayer
-             && !owner.isAlive()
-             && serverPlayer.level().getGameRules().getBoolean(GameRules.RULE_ENDER_PEARLS_VANISH_ON_DEATH)) {
--            this.discard();
-+            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-         } else {
-             super.tick();
-         }
-@@ -205,7 +_,7 @@
+@@ -165,7 +_,7 @@
+                 && !entity.isAlive()
+                 && !serverPlayer.wonGame
+                 && serverPlayer.level().getGameRules().getBoolean(GameRules.RULE_ENDER_PEARLS_VANISH_ON_DEATH)) {
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+             } else {
+                 super.tick();
+             }
+@@ -195,7 +_,7 @@
      public Entity teleport(TeleportTransition teleportTransition) {
          Entity entity = super.teleport(teleportTransition);
          if (entity != null) {
@@ -78,7 +78,7 @@
          }
  
          return entity;
-@@ -213,7 +_,7 @@
+@@ -203,7 +_,7 @@
  
      @Override
      public boolean canTeleport(Level fromLevel, Level toLevel) {

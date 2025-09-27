@@ -11,6 +11,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +29,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @see #getComputedBiome(int, int, int)
      */
     @NotNull
-    Biome getBiome(@NotNull Location location);
+    default Biome getBiome(@NotNull Location location) {
+        return this.getBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
 
     /**
      * Gets the {@link Biome} at the given coordinates.
@@ -70,7 +73,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param location the location of the biome
      * @param biome New Biome type for this block
      */
-    void setBiome(@NotNull Location location, @NotNull Biome biome);
+    default void setBiome(@NotNull Location location, @NotNull Biome biome) {
+        this.setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
+    }
 
     /**
      * Sets the {@link Biome} for the given block coordinates
@@ -89,7 +94,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return Block state at the given location
      */
     @NotNull
-    BlockState getBlockState(@NotNull Location location);
+    default BlockState getBlockState(@NotNull Location location) {
+        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
 
     /**
      * Gets the {@link BlockState} at the given coordinates.
@@ -144,7 +151,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return Block data at the given location
      */
     @NotNull
-    BlockData getBlockData(@NotNull Location location);
+    default BlockData getBlockData(@NotNull Location location) {
+        return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
 
     /**
      * Gets the {@link BlockData} at the given coordinates.
@@ -164,7 +173,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return Material at the given coordinates
      */
     @NotNull
-    Material getType(@NotNull Location location);
+    default Material getType(@NotNull Location location) {
+        return this.getType(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
 
     /**
      * Gets the type of the block at the given coordinates.
@@ -183,7 +194,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param location The location of the block
      * @param blockData The block data to set the block to
      */
-    void setBlockData(@NotNull Location location, @NotNull BlockData blockData);
+    default void setBlockData(@NotNull Location location, @NotNull BlockData blockData) {
+        this.setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
+    }
 
     /**
      * Sets the {@link BlockData} at the given coordinates.
@@ -201,7 +214,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param location The location of the block
      * @param material The type to set the block to
      */
-    void setType(@NotNull Location location, @NotNull Material material);
+    default void setType(@NotNull Location location, @NotNull Material material) {
+        this.setType(location.getBlockX(), location.getBlockY(), location.getBlockZ(), material);
+    }
 
     /**
      * Sets the {@link Material} at the given coordinates.
@@ -211,7 +226,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param z Z-coordinate of the block
      * @param material The type to set the block to
      */
-    void setType(int x, int y, int z, @NotNull Material material);
+    default void setType(int x, int y, int z, @NotNull Material material) {
+        this.setBlockData(x, y, z, material.createBlockData());
+    }
 
     /**
      * Creates a tree at the given {@link Location}
@@ -264,14 +281,16 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<? super BlockState> statePredicate);
 
     /**
-     * Creates a entity at the given {@link Location}
+     * Creates an entity at the given {@link Location}
      *
      * @param location The location to spawn the entity
      * @param type The entity to spawn
      * @return Resulting Entity of this method
      */
     @NotNull
-    Entity spawnEntity(@NotNull Location location, @NotNull EntityType type);
+    default Entity spawnEntity(@NotNull Location location, @NotNull EntityType type) {
+        return this.spawn(location, type.getEntityClass());
+    }
 
     /**
      * Creates a new entity at the given {@link Location}.
@@ -291,7 +310,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *                      to the entity will be made.
      *                      Notably only entities that extend the
      *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomisation logic for their spawn.
+     *                      randomization logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
      * @return the spawned entity instance.
@@ -367,7 +386,9 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *     {@link Entity} requested cannot be spawned
      */
     @NotNull
-    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz) throws IllegalArgumentException;
+    default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz) throws IllegalArgumentException {
+        return this.spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
+    }
 
     /**
      * Spawn an entity of a specific class at the given {@link Location}, with
@@ -439,7 +460,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *                      to the entity will be made.
      *                      Notably only entities that extend the
      *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomisation logic for their spawn.
+     *                      randomization logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
      * @param function      the function to be run before the entity is spawned.

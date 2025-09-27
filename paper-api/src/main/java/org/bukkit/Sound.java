@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
-import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The sounds listed in this interface are present in the default server
  * or can be enabled via a {@link FeatureFlag}.
- * There may be additional sounds present in the server, for example from a {@link DataPack}
+ * There may be additional sounds present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
  * which can be accessed via {@link Registry#SOUNDS}.
  * <p>
  * <b>WARNING:</b> At any time, sounds may be added/removed from this interface or even
@@ -24,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
-    // @GeneratedFrom 1.21.8
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
 
     Sound AMBIENT_BASALT_DELTAS_LOOP = getSound("ambient.basalt_deltas.loop");
@@ -465,9 +463,31 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_COPPER_BULB_TURN_ON = getSound("block.copper_bulb.turn_on");
 
+    Sound BLOCK_COPPER_CHEST_CLOSE = getSound("block.copper_chest.close");
+
+    Sound BLOCK_COPPER_CHEST_OPEN = getSound("block.copper_chest.open");
+
+    Sound BLOCK_COPPER_CHEST_OXIDIZED_CLOSE = getSound("block.copper_chest_oxidized.close");
+
+    Sound BLOCK_COPPER_CHEST_OXIDIZED_OPEN = getSound("block.copper_chest_oxidized.open");
+
+    Sound BLOCK_COPPER_CHEST_WEATHERED_CLOSE = getSound("block.copper_chest_weathered.close");
+
+    Sound BLOCK_COPPER_CHEST_WEATHERED_OPEN = getSound("block.copper_chest_weathered.open");
+
     Sound BLOCK_COPPER_DOOR_CLOSE = getSound("block.copper_door.close");
 
     Sound BLOCK_COPPER_DOOR_OPEN = getSound("block.copper_door.open");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_BREAK = getSound("block.copper_golem_statue.break");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_FALL = getSound("block.copper_golem_statue.fall");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_HIT = getSound("block.copper_golem_statue.hit");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_PLACE = getSound("block.copper_golem_statue.place");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_STEP = getSound("block.copper_golem_statue.step");
 
     Sound BLOCK_COPPER_GRATE_BREAK = getSound("block.copper_grate.break");
 
@@ -1283,6 +1303,28 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_SCULK_VEIN_STEP = getSound("block.sculk_vein.step");
 
+    Sound BLOCK_SHELF_ACTIVATE = getSound("block.shelf.activate");
+
+    Sound BLOCK_SHELF_BREAK = getSound("block.shelf.break");
+
+    Sound BLOCK_SHELF_DEACTIVATE = getSound("block.shelf.deactivate");
+
+    Sound BLOCK_SHELF_FALL = getSound("block.shelf.fall");
+
+    Sound BLOCK_SHELF_HIT = getSound("block.shelf.hit");
+
+    Sound BLOCK_SHELF_MULTI_SWAP = getSound("block.shelf.multi_swap");
+
+    Sound BLOCK_SHELF_PLACE = getSound("block.shelf.place");
+
+    Sound BLOCK_SHELF_PLACE_ITEM = getSound("block.shelf.place_item");
+
+    Sound BLOCK_SHELF_SINGLE_SWAP = getSound("block.shelf.single_swap");
+
+    Sound BLOCK_SHELF_STEP = getSound("block.shelf.step");
+
+    Sound BLOCK_SHELF_TAKE_ITEM = getSound("block.shelf.take_item");
+
     Sound BLOCK_SHROOMLIGHT_BREAK = getSound("block.shroomlight.break");
 
     Sound BLOCK_SHROOMLIGHT_FALL = getSound("block.shroomlight.fall");
@@ -1826,6 +1868,44 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_COD_FLOP = getSound("entity.cod.flop");
 
     Sound ENTITY_COD_HURT = getSound("entity.cod.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_DEATH = getSound("entity.copper_golem.death");
+
+    Sound ENTITY_COPPER_GOLEM_HURT = getSound("entity.copper_golem.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_ITEM_DROP = getSound("entity.copper_golem.item_drop");
+
+    Sound ENTITY_COPPER_GOLEM_ITEM_NO_DROP = getSound("entity.copper_golem.item_no_drop");
+
+    Sound ENTITY_COPPER_GOLEM_NO_ITEM_GET = getSound("entity.copper_golem.no_item_get");
+
+    Sound ENTITY_COPPER_GOLEM_NO_ITEM_NO_GET = getSound("entity.copper_golem.no_item_no_get");
+
+    Sound ENTITY_COPPER_GOLEM_SHEAR = getSound("entity.copper_golem.shear");
+
+    Sound ENTITY_COPPER_GOLEM_SPAWN = getSound("entity.copper_golem.spawn");
+
+    Sound ENTITY_COPPER_GOLEM_SPIN = getSound("entity.copper_golem.spin");
+
+    Sound ENTITY_COPPER_GOLEM_STEP = getSound("entity.copper_golem.step");
+
+    Sound ENTITY_COPPER_GOLEM_BECOME_STATUE = getSound("entity.copper_golem_become_statue");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_DEATH = getSound("entity.copper_golem_oxidized.death");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_HURT = getSound("entity.copper_golem_oxidized.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_SPIN = getSound("entity.copper_golem_oxidized.spin");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_STEP = getSound("entity.copper_golem_oxidized.step");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_DEATH = getSound("entity.copper_golem_weathered.death");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_HURT = getSound("entity.copper_golem_weathered.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_SPIN = getSound("entity.copper_golem_weathered.spin");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_STEP = getSound("entity.copper_golem_weathered.step");
 
     Sound ENTITY_COW_AMBIENT = getSound("entity.cow.ambient");
 
@@ -3155,6 +3235,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_ARMOR_EQUIP_CHAIN = getSound("item.armor.equip_chain");
 
+    Sound ITEM_ARMOR_EQUIP_COPPER = getSound("item.armor.equip_copper");
+
     Sound ITEM_ARMOR_EQUIP_DIAMOND = getSound("item.armor.equip_diamond");
 
     Sound ITEM_ARMOR_EQUIP_ELYTRA = getSound("item.armor.equip_elytra");
@@ -3476,6 +3558,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound UI_TOAST_IN = getSound("ui.toast.in");
 
     Sound UI_TOAST_OUT = getSound("ui.toast.out");
+
+    Sound WEATHER_END_FLASH = getSound("weather.end_flash");
 
     Sound WEATHER_RAIN = getSound("weather.rain");
 

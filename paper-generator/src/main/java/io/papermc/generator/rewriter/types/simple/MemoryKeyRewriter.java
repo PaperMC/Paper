@@ -95,7 +95,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
             this.apiMemoryType = memoryType;
         }
 
-        return "%s<%s>".formatted(this.fieldClass.simpleName(), this.importCollector.getShortName(this.apiMemoryType));
+        return "%s<%s>".formatted(this.registryEntry.apiClass().getSimpleName(), this.importCollector.getShortName(this.apiMemoryType));
     }
 
     @Override
@@ -107,7 +107,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
     @Override
     protected String rewriteFieldValue(Holder.Reference<MemoryModuleType<?>> reference) {
         return "new %s<>(%s.minecraft(%s), %s.class)".formatted(
-            this.fieldClass.simpleName(),
+            this.registryEntry.apiClass().getSimpleName(),
             NamespacedKey.class.getSimpleName(),
             quoted(reference.key().location().getPath()),
             this.apiMemoryType.getSimpleName() // assume the type is already import (see above in rewriteFieldType)

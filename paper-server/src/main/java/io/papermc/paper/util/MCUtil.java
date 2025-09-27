@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
 
@@ -154,16 +155,22 @@ public final class MCUtil {
 
     /**
      * Converts a NMS World/Vector to Bukkit Location
+     *
+     * @deprecated use CraftLocation methods instead
      */
+    @Deprecated
     public static Location toLocation(Level world, Vec3 pos) {
-        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z());
+        return CraftLocation.toBukkit(pos, world);
     }
 
     /**
      * Converts a NMS World/Vector to Bukkit Location
+     *
+     * @deprecated use CraftLocation methods instead
      */
+    @Deprecated
     public static Location toLocation(Level world, Vec3 pos, float yaw, float pitch) {
-        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z(), yaw, pitch);
+        return CraftLocation.toBukkit(pos, world, yaw, pitch);
     }
 
     public static BlockPos toBlockPos(Position pos) {

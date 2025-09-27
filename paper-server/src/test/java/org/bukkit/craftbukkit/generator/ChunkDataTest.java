@@ -36,21 +36,21 @@ public class ChunkDataTest {
 
     @Test
     public void testMinHeight() {
-        OldCraftChunkData data = new OldCraftChunkData(-128, 128, RegistryHelper.getBiomes());
+        OldCraftChunkData data = new OldCraftChunkData(-128, 128, RegistryHelper.palettedContainerFactory());
         assertTrue(this.testSetBlock(data, 0, -256, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Could not set block below min height");
         assertTrue(this.testSetBlock(data, 0, -64, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Could set block above min height");
     }
 
     @Test
     public void testMaxHeight() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 128, RegistryHelper.getBiomes());
+        OldCraftChunkData data = new OldCraftChunkData(0, 128, RegistryHelper.palettedContainerFactory());
         assertTrue(this.testSetBlock(data, 0, 128, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Could not set block above max height");
         assertTrue(this.testSetBlock(data, 0, 127, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Could set block below max height");
     }
 
     @Test
     public void testBoundsCheckingSingle() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
+        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.palettedContainerFactory());
         assertTrue(this.testSetBlock(data, 0, 0, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Can set block inside chunk bounds");
         assertTrue(this.testSetBlock(data, 15, 255, 15, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Can set block inside chunk bounds");
         assertTrue(this.testSetBlock(data, -1, 0, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
@@ -63,7 +63,7 @@ public class ChunkDataTest {
 
     @Test
     public void testSetRegion() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
+        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.palettedContainerFactory());
         this.testSetRegion(data, -100, 0, -100, 0, 256, 0, ChunkDataTest.RED_WOOL); // exclusively outside
         this.testSetRegion(data, 16, 256, 16, 0, 0, 0, ChunkDataTest.RED_WOOL); // minimum >= maximum
         this.testSetRegion(data, 0, 0, 0, 0, 0, 0, ChunkDataTest.RED_WOOL); // minimum == maximum

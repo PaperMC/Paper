@@ -301,14 +301,34 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
     public static final GameRule<Integer> MINECART_MAX_SPEED = new GameRule<>("minecartMaxSpeed", Integer.class);
 
     /**
-     * The number of chunks around spawn which will be kept loaded at all times.
-     */
-    public static final GameRule<Integer> SPAWN_CHUNK_RADIUS = new GameRule<>("spawnChunkRadius", Integer.class);
-
-    /**
      * Configures if the world uses the locator bar.
      */
     public static final GameRule<Boolean> LOCATOR_BAR = new GameRule<>("locatorBar", Boolean.class);
+
+    /**
+     * Whether player versus player combat is allowed.
+     */
+    public static final GameRule<Boolean> PVP = new GameRule<>("pvp", Boolean.class);
+
+    /**
+     * Whether monsters should naturally spawn.
+     */
+    public static final GameRule<Boolean> SPAWN_MONSTERS = new GameRule<>("spawnMonsters", Boolean.class);
+
+    /**
+     * Whether players can enter the Nether using portals.
+     */
+    public static final GameRule<Boolean> ALLOW_ENTERING_NETHER_USING_PORTALS = new GameRule<>("allowEnteringNetherUsingPortals", Boolean.class);
+
+    /**
+     * Whether command blocks are enabled.
+     */
+    public static final GameRule<Boolean> COMMAND_BLOCKS_ENABLED = new GameRule<>("commandBlocksEnabled", Boolean.class);
+
+    /**
+     * Whether spawner blocks are enabled.
+     */
+    public static final GameRule<Boolean> SPAWNER_BLOCKS_ENABLED = new GameRule<>("spawnerBlocksEnabled", Boolean.class);
 
     // All GameRules instantiated above this for organizational purposes
     private final String name;

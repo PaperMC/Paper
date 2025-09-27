@@ -53,6 +53,7 @@ import org.bukkit.block.data.type.Cocoa;
 import org.bukkit.block.data.type.CommandBlock;
 import org.bukkit.block.data.type.Comparator;
 import org.bukkit.block.data.type.CopperBulb;
+import org.bukkit.block.data.type.CopperGolemStatue;
 import org.bukkit.block.data.type.CoralWallFan;
 import org.bukkit.block.data.type.Crafter;
 import org.bukkit.block.data.type.CreakingHeart;
@@ -107,6 +108,7 @@ import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.block.data.type.SculkShrieker;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
+import org.bukkit.block.data.type.Shelf;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
@@ -145,7 +147,6 @@ import org.jetbrains.annotations.Nullable;
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
     // Start generate - Items
-    // @GeneratedFrom 1.21.8
     ACACIA_BOAT(-1, 1),
     ACACIA_CHEST_BOAT(-1, 1),
     AIR(-1),
@@ -238,7 +239,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     COOKED_RABBIT(-1),
     COOKED_SALMON(-1),
     COOKIE(-1),
+    COPPER_AXE(-1, 1),
+    COPPER_BOOTS(-1, 1),
+    COPPER_CHESTPLATE(-1, 1),
+    COPPER_GOLEM_SPAWN_EGG(-1),
+    COPPER_HELMET(-1, 1),
+    COPPER_HOE(-1, 1),
+    COPPER_HORSE_ARMOR(-1, 1),
     COPPER_INGOT(-1),
+    COPPER_LEGGINGS(-1, 1),
+    COPPER_NUGGET(-1),
+    COPPER_PICKAXE(-1, 1),
+    COPPER_SHOVEL(-1, 1),
+    COPPER_SWORD(-1, 1),
     COW_SPAWN_EGG(-1),
     CREAKING_SPAWN_EGG(-1),
     CREEPER_BANNER_PATTERN(-1, 1),
@@ -612,7 +625,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
     // End generate - Items
     // Start generate - Blocks
-    // @GeneratedFrom 1.21.8
     ACACIA_BUTTON(-1, Switch.class),
     ACACIA_DOOR(-1, Door.class),
     ACACIA_FENCE(-1, Fence.class),
@@ -623,6 +635,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ACACIA_PLANKS(-1),
     ACACIA_PRESSURE_PLATE(-1, Powerable.class),
     ACACIA_SAPLING(-1, Sapling.class),
+    ACACIA_SHELF(-1, Shelf.class),
     ACACIA_SIGN(-1, 16, Sign.class),
     ACACIA_SLAB(-1, Slab.class),
     ACACIA_STAIRS(-1, Stairs.class),
@@ -658,6 +671,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BAMBOO_PLANKS(-1),
     BAMBOO_PRESSURE_PLATE(-1, Powerable.class),
     BAMBOO_SAPLING(-1),
+    BAMBOO_SHELF(-1, Shelf.class),
     BAMBOO_SIGN(-1, 16, Sign.class),
     BAMBOO_SLAB(-1, Slab.class),
     BAMBOO_STAIRS(-1, Stairs.class),
@@ -685,6 +699,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BIRCH_PLANKS(-1),
     BIRCH_PRESSURE_PLATE(-1, Powerable.class),
     BIRCH_SAPLING(-1, Sapling.class),
+    BIRCH_SHELF(-1, Shelf.class),
     BIRCH_SIGN(-1, 16, Sign.class),
     BIRCH_SLAB(-1, Slab.class),
     BIRCH_STAIRS(-1, Stairs.class),
@@ -776,7 +791,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CAVE_AIR(-1),
     CAVE_VINES(-1, CaveVines.class),
     CAVE_VINES_PLANT(-1, CaveVinesPlant.class),
-    CHAIN(-1, Chain.class),
     CHAIN_COMMAND_BLOCK(-1, CommandBlock.class),
     CHERRY_BUTTON(-1, Switch.class),
     CHERRY_DOOR(-1, Door.class),
@@ -788,6 +802,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CHERRY_PLANKS(-1),
     CHERRY_PRESSURE_PLATE(-1, Powerable.class),
     CHERRY_SAPLING(-1, Sapling.class),
+    CHERRY_SHELF(-1, Shelf.class),
     CHERRY_SIGN(-1, 16, Sign.class),
     CHERRY_SLAB(-1, Slab.class),
     CHERRY_STAIRS(-1, Stairs.class),
@@ -830,12 +845,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     COMPARATOR(-1, Comparator.class),
     COMPOSTER(-1, Levelled.class),
     CONDUIT(-1, Waterlogged.class),
+    COPPER_BARS(-1, Fence.class),
     COPPER_BLOCK(-1),
     COPPER_BULB(-1, CopperBulb.class),
+    COPPER_CHAIN(-1, Chain.class),
+    COPPER_CHEST(-1, Chest.class),
     COPPER_DOOR(-1, Door.class),
+    COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     COPPER_GRATE(-1, Waterlogged.class),
+    COPPER_LANTERN(-1, Lantern.class),
     COPPER_ORE(-1),
+    COPPER_TORCH(-1),
     COPPER_TRAPDOOR(-1, TrapDoor.class),
+    COPPER_WALL_TORCH(-1, Directional.class),
     CORNFLOWER(-1),
     CRACKED_DEEPSLATE_BRICKS(-1),
     CRACKED_DEEPSLATE_TILES(-1),
@@ -858,6 +880,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CRIMSON_PLANKS(-1),
     CRIMSON_PRESSURE_PLATE(-1, Powerable.class),
     CRIMSON_ROOTS(-1),
+    CRIMSON_SHELF(-1, Shelf.class),
     CRIMSON_SIGN(-1, 16, Sign.class),
     CRIMSON_SLAB(-1, Slab.class),
     CRIMSON_STAIRS(-1, Stairs.class),
@@ -899,6 +922,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     DARK_OAK_PLANKS(-1),
     DARK_OAK_PRESSURE_PLATE(-1, Powerable.class),
     DARK_OAK_SAPLING(-1, Sapling.class),
+    DARK_OAK_SHELF(-1, Shelf.class),
     DARK_OAK_SIGN(-1, 16, Sign.class),
     DARK_OAK_SLAB(-1, Slab.class),
     DARK_OAK_STAIRS(-1, Stairs.class),
@@ -981,13 +1005,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ENDER_CHEST(-1, EnderChest.class),
     EXPOSED_CHISELED_COPPER(-1),
     EXPOSED_COPPER(-1),
+    EXPOSED_COPPER_BARS(-1, Fence.class),
     EXPOSED_COPPER_BULB(-1, CopperBulb.class),
+    EXPOSED_COPPER_CHAIN(-1, Chain.class),
+    EXPOSED_COPPER_CHEST(-1, Chest.class),
     EXPOSED_COPPER_DOOR(-1, Door.class),
+    EXPOSED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     EXPOSED_COPPER_GRATE(-1, Waterlogged.class),
+    EXPOSED_COPPER_LANTERN(-1, Lantern.class),
     EXPOSED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     EXPOSED_CUT_COPPER(-1),
     EXPOSED_CUT_COPPER_SLAB(-1, Slab.class),
     EXPOSED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    EXPOSED_LIGHTNING_ROD(-1, LightningRod.class),
     FARMLAND(-1, Farmland.class),
     FERN(-1),
     FIRE(-1, Fire.class),
@@ -1066,6 +1096,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     INFESTED_STONE_BRICKS(-1),
     IRON_BARS(-1, Fence.class),
     IRON_BLOCK(-1),
+    IRON_CHAIN(-1, Chain.class),
     IRON_DOOR(-1, Door.class),
     IRON_ORE(-1),
     IRON_TRAPDOOR(-1, TrapDoor.class),
@@ -1082,6 +1113,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     JUNGLE_PLANKS(-1),
     JUNGLE_PRESSURE_PLATE(-1, Powerable.class),
     JUNGLE_SAPLING(-1, Sapling.class),
+    JUNGLE_SHELF(-1, Shelf.class),
     JUNGLE_SIGN(-1, 16, Sign.class),
     JUNGLE_SLAB(-1, Slab.class),
     JUNGLE_STAIRS(-1, Stairs.class),
@@ -1178,6 +1210,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     MANGROVE_PRESSURE_PLATE(-1, Powerable.class),
     MANGROVE_PROPAGULE(-1, MangrovePropagule.class),
     MANGROVE_ROOTS(-1, Waterlogged.class),
+    MANGROVE_SHELF(-1, Shelf.class),
     MANGROVE_SIGN(-1, 16, Sign.class),
     MANGROVE_SLAB(-1, Slab.class),
     MANGROVE_STAIRS(-1, Stairs.class),
@@ -1231,6 +1264,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     OAK_PLANKS(-1),
     OAK_PRESSURE_PLATE(-1, Powerable.class),
     OAK_SAPLING(-1, Sapling.class),
+    OAK_SHELF(-1, Shelf.class),
     OAK_SIGN(-1, 16, Sign.class),
     OAK_SLAB(-1, Slab.class),
     OAK_STAIRS(-1, Stairs.class),
@@ -1260,13 +1294,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     OXEYE_DAISY(-1),
     OXIDIZED_CHISELED_COPPER(-1),
     OXIDIZED_COPPER(-1),
+    OXIDIZED_COPPER_BARS(-1, Fence.class),
     OXIDIZED_COPPER_BULB(-1, CopperBulb.class),
+    OXIDIZED_COPPER_CHAIN(-1, Chain.class),
+    OXIDIZED_COPPER_CHEST(-1, Chest.class),
     OXIDIZED_COPPER_DOOR(-1, Door.class),
+    OXIDIZED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     OXIDIZED_COPPER_GRATE(-1, Waterlogged.class),
+    OXIDIZED_COPPER_LANTERN(-1, Lantern.class),
     OXIDIZED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     OXIDIZED_CUT_COPPER(-1),
     OXIDIZED_CUT_COPPER_SLAB(-1, Slab.class),
     OXIDIZED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    OXIDIZED_LIGHTNING_ROD(-1, LightningRod.class),
     PACKED_ICE(-1),
     PACKED_MUD(-1),
     PALE_HANGING_MOSS(-1, HangingMoss.class),
@@ -1282,6 +1322,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     PALE_OAK_PLANKS(-1),
     PALE_OAK_PRESSURE_PLATE(-1, Powerable.class),
     PALE_OAK_SAPLING(-1, Sapling.class),
+    PALE_OAK_SHELF(-1, Shelf.class),
     PALE_OAK_SIGN(-1, 16, Sign.class),
     PALE_OAK_SLAB(-1, Slab.class),
     PALE_OAK_STAIRS(-1, Stairs.class),
@@ -1528,6 +1569,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SPRUCE_PLANKS(-1),
     SPRUCE_PRESSURE_PLATE(-1, Powerable.class),
     SPRUCE_SAPLING(-1, Sapling.class),
+    SPRUCE_SHELF(-1, Shelf.class),
     SPRUCE_SIGN(-1, 16, Sign.class),
     SPRUCE_SLAB(-1, Slab.class),
     SPRUCE_STAIRS(-1, Stairs.class),
@@ -1623,6 +1665,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WARPED_PLANKS(-1),
     WARPED_PRESSURE_PLATE(-1, Powerable.class),
     WARPED_ROOTS(-1),
+    WARPED_SHELF(-1, Shelf.class),
     WARPED_SIGN(-1, 16, Sign.class),
     WARPED_SLAB(-1, Slab.class),
     WARPED_STAIRS(-1, Stairs.class),
@@ -1634,50 +1677,80 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WATER(-1, Levelled.class),
     WATER_CAULDRON(-1, Levelled.class),
     WAXED_CHISELED_COPPER(-1),
+    WAXED_COPPER_BARS(-1, Fence.class),
     WAXED_COPPER_BLOCK(-1),
     WAXED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_COPPER_CHAIN(-1, Chain.class),
+    WAXED_COPPER_CHEST(-1, Chest.class),
     WAXED_COPPER_DOOR(-1, Door.class),
+    WAXED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     WAXED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_COPPER_LANTERN(-1, Lantern.class),
     WAXED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     WAXED_CUT_COPPER(-1),
     WAXED_CUT_COPPER_SLAB(-1, Slab.class),
     WAXED_CUT_COPPER_STAIRS(-1, Stairs.class),
     WAXED_EXPOSED_CHISELED_COPPER(-1),
     WAXED_EXPOSED_COPPER(-1),
+    WAXED_EXPOSED_COPPER_BARS(-1, Fence.class),
     WAXED_EXPOSED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_EXPOSED_COPPER_CHAIN(-1, Chain.class),
+    WAXED_EXPOSED_COPPER_CHEST(-1, Chest.class),
     WAXED_EXPOSED_COPPER_DOOR(-1, Door.class),
+    WAXED_EXPOSED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     WAXED_EXPOSED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_EXPOSED_COPPER_LANTERN(-1, Lantern.class),
     WAXED_EXPOSED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     WAXED_EXPOSED_CUT_COPPER(-1),
     WAXED_EXPOSED_CUT_COPPER_SLAB(-1, Slab.class),
     WAXED_EXPOSED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_EXPOSED_LIGHTNING_ROD(-1, LightningRod.class),
+    WAXED_LIGHTNING_ROD(-1, LightningRod.class),
     WAXED_OXIDIZED_CHISELED_COPPER(-1),
     WAXED_OXIDIZED_COPPER(-1),
+    WAXED_OXIDIZED_COPPER_BARS(-1, Fence.class),
     WAXED_OXIDIZED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_OXIDIZED_COPPER_CHAIN(-1, Chain.class),
+    WAXED_OXIDIZED_COPPER_CHEST(-1, Chest.class),
     WAXED_OXIDIZED_COPPER_DOOR(-1, Door.class),
+    WAXED_OXIDIZED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     WAXED_OXIDIZED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_OXIDIZED_COPPER_LANTERN(-1, Lantern.class),
     WAXED_OXIDIZED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     WAXED_OXIDIZED_CUT_COPPER(-1),
     WAXED_OXIDIZED_CUT_COPPER_SLAB(-1, Slab.class),
     WAXED_OXIDIZED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_OXIDIZED_LIGHTNING_ROD(-1, LightningRod.class),
     WAXED_WEATHERED_CHISELED_COPPER(-1),
     WAXED_WEATHERED_COPPER(-1),
+    WAXED_WEATHERED_COPPER_BARS(-1, Fence.class),
     WAXED_WEATHERED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_WEATHERED_COPPER_CHAIN(-1, Chain.class),
+    WAXED_WEATHERED_COPPER_CHEST(-1, Chest.class),
     WAXED_WEATHERED_COPPER_DOOR(-1, Door.class),
+    WAXED_WEATHERED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     WAXED_WEATHERED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_WEATHERED_COPPER_LANTERN(-1, Lantern.class),
     WAXED_WEATHERED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     WAXED_WEATHERED_CUT_COPPER(-1),
     WAXED_WEATHERED_CUT_COPPER_SLAB(-1, Slab.class),
     WAXED_WEATHERED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_WEATHERED_LIGHTNING_ROD(-1, LightningRod.class),
     WEATHERED_CHISELED_COPPER(-1),
     WEATHERED_COPPER(-1),
+    WEATHERED_COPPER_BARS(-1, Fence.class),
     WEATHERED_COPPER_BULB(-1, CopperBulb.class),
+    WEATHERED_COPPER_CHAIN(-1, Chain.class),
+    WEATHERED_COPPER_CHEST(-1, Chest.class),
     WEATHERED_COPPER_DOOR(-1, Door.class),
+    WEATHERED_COPPER_GOLEM_STATUE(-1, CopperGolemStatue.class),
     WEATHERED_COPPER_GRATE(-1, Waterlogged.class),
+    WEATHERED_COPPER_LANTERN(-1, Lantern.class),
     WEATHERED_COPPER_TRAPDOOR(-1, TrapDoor.class),
     WEATHERED_CUT_COPPER(-1),
     WEATHERED_CUT_COPPER_SLAB(-1, Slab.class),
     WEATHERED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WEATHERED_LIGHTNING_ROD(-1, LightningRod.class),
     WEEPING_VINES(-1, Ageable.class),
     WEEPING_VINES_PLANT(-1),
     WET_SPONGE(-1),
@@ -3524,22 +3597,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     public String getItemTranslationKey() {
         ItemType type = asItemType();
         return type == null ? null : type.getTranslationKey();
-    }
-
-    /**
-     * Gets if the Material is enabled by the features in a world.
-     *
-     * @param world the world to check
-     * @return true if this material can be used in this World.
-     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
-     */
-    @Deprecated(forRemoval = true, since = "1.20")
-    public boolean isEnabledByFeature(@NotNull World world) {
-        if (isItem()) {
-            return Bukkit.getDataPackManager().isEnabledByFeature(asItemType(), world);
-        }
-
-        return Bukkit.getDataPackManager().isEnabledByFeature(asBlockType(), world);
     }
 
     /**

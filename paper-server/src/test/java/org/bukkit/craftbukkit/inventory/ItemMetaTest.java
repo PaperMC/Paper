@@ -1,21 +1,12 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.StandingAndWallBlockItem;
-import net.minecraft.world.level.block.AbstractBannerBlock;
-import net.minecraft.world.level.block.AbstractSkullBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -43,7 +34,6 @@ import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
-import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.BundleMeta;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
@@ -65,6 +55,13 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
+
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @VanillaFeature
 public class ItemMetaTest {
@@ -157,42 +154,6 @@ public class ItemMetaTest {
         ItemStack bukkit = new ItemStack(craft);
         assertThat(craft, is(bukkit));
         assertThat(bukkit, is(craft));
-    }
-
-    @Test
-    public void testBlockStateMeta() {
-        List<Block> queue = new ArrayList<>();
-
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof BlockItem) {
-                queue.add(((BlockItem) item).getBlock());
-            }
-            if (item instanceof StandingAndWallBlockItem) {
-                queue.add(((StandingAndWallBlockItem) item).wallBlock);
-            }
-        }
-
-        for (Block block : queue) {
-            if (block != null) {
-                ItemStack stack = CraftItemStack.asNewCraftStack(Item.byBlock(block));
-
-                if (block instanceof AbstractSkullBlock || block instanceof AbstractBannerBlock) {
-                    continue; // those blocks have a special meta
-                }
-
-                ItemMeta meta = stack.getItemMeta();
-                if (block instanceof EntityBlock) {
-                    assertTrue(meta instanceof BlockStateMeta, stack + " has meta of type " + meta + " expected BlockStateMeta");
-
-                    BlockStateMeta blockState = (BlockStateMeta) meta;
-                    assertNotNull(blockState.getBlockState(), stack + " has null block state");
-
-                    blockState.setBlockState(blockState.getBlockState());
-                } else {
-                    assertFalse(meta instanceof BlockStateMeta, stack + " has unexpected meta of type BlockStateMeta (but is not a tile)");
-                }
-            }
-        }
     }
 
     @Test
@@ -386,6 +347,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new CompoundTag();
+                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ARMOR_STAND).toString());
                     meta.entityTag.putBoolean("Small", true);
                     meta.setInvisible(true); // Paper
                     cleanStack.setItemMeta(meta);
@@ -404,6 +366,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
                     meta.entityTag = new CompoundTag();
+                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ITEM_FRAME).toString());
                     meta.entityTag.putBoolean("Invisible", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;

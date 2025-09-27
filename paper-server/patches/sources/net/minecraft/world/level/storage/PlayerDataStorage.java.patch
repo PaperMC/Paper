@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
-@@ -32,6 +_,7 @@
+@@ -33,6 +_,7 @@
      }
  
      public void save(Player player) {
@@ -8,43 +8,26 @@
          try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
              TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, player.registryAccess());
              player.saveWithoutId(tagValueOutput);
-@@ -43,30 +_,46 @@
+@@ -44,7 +_,7 @@
              Path path3 = path.resolve(player.getStringUUID() + ".dat_old");
              Util.safeReplaceFile(path2, path1, path3);
          } catch (Exception var11) {
--            LOGGER.warn("Failed to save player data for {}", player.getName().getString());
-+            LOGGER.warn("Failed to save player data for {}", player.getScoreboardName(), var11); // Paper - Print exception
+-            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName());
++            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName(), var11); // Paper - Print exception
          }
      }
  
--    private void backup(Player player, String suffix) {
-+    private void backup(String name, String stringUuid, String suffix) { // CraftBukkit
-         Path path = this.playerDir.toPath();
--        Path path1 = path.resolve(player.getStringUUID() + suffix);
--        Path path2 = path.resolve(player.getStringUUID() + "_corrupted_" + LocalDateTime.now().format(FORMATTER) + suffix);
-+        Path path1 = path.resolve(stringUuid + suffix); // CraftBukkit
-+        Path path2 = path.resolve(stringUuid + "_corrupted_" + LocalDateTime.now().format(FORMATTER) + suffix); // CraftBukkit
-         if (Files.isRegularFile(path1)) {
-             try {
-                 Files.copy(path1, path2, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-             } catch (Exception var7) {
--                LOGGER.warn("Failed to copy the player.dat file for {}", player.getName().getString(), var7);
-+                LOGGER.warn("Failed to copy the player.dat file for {}", name, var7); // CraftBukkit
-             }
-         }
-     }
+@@ -64,9 +_,25 @@
  
--    private Optional<CompoundTag> load(Player player, String suffix) {
--        File file = new File(this.playerDir, player.getStringUUID() + suffix);
-+    private Optional<CompoundTag> load(String name, String stringUuid, String suffix) { // CraftBukkit
-+        File file = new File(this.playerDir, stringUuid + suffix); // CraftBukkit
+     private Optional<CompoundTag> load(NameAndId nameAndId, String suffix) {
+         File file = new File(this.playerDir, nameAndId.id().toString() + suffix);
 +        // Spigot start
 +        boolean usingWrongFile = false;
 +        if (org.bukkit.Bukkit.getOnlineMode() && !file.exists()) { // Paper - Check online mode first
-+            file = new File(this.playerDir, java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString() + suffix);
++            file = new File(this.playerDir, net.minecraft.core.UUIDUtil.createOfflinePlayerUUID(nameAndId.name()) + suffix);
 +            if (file.exists()) {
 +                usingWrongFile = true;
-+                LOGGER.warn("Using offline mode UUID file for player {} as it is the only copy we can find.", name);
++                LOGGER.warn("Using offline mode UUID file for player {} as it is the only copy we can find.", nameAndId.name());
 +            }
 +        }
 +        // Spigot end
@@ -59,49 +42,10 @@
 +                return optional;
 +                // Spigot end
              } catch (Exception var5) {
--                LOGGER.warn("Failed to load player data for {}", player.getName().getString());
-+                LOGGER.warn("Failed to load player data for {}", name); // CraftBukkit
+                 LOGGER.warn("Failed to load player data for {}", nameAndId.name());
              }
-         }
- 
-@@ -74,17 +_,40 @@
-     }
- 
-     public Optional<ValueInput> load(Player player, ProblemReporter problemReporter) {
--        Optional<CompoundTag> optional = this.load(player, ".dat");
-+        // CraftBukkit start
-+        return this.load(player.getName().getString(), player.getStringUUID(), problemReporter).map((tag) -> {
-+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-+                org.bukkit.craftbukkit.entity.CraftPlayer craftPlayer = serverPlayer.getBukkitEntity();
-+                // Only update first played if it is older than the one we have
-+                long modified = new File(this.playerDir, player.getStringUUID() + ".dat").lastModified();
-+                if (modified < craftPlayer.getFirstPlayed()) {
-+                    craftPlayer.setFirstPlayed(modified);
-+                }
-+            }
-+
-+            ValueInput valueInput = TagValueInput.create(problemReporter, player.registryAccess(), tag);
-+            player.load(valueInput); // From below
-+            return valueInput;
-+        });
-+    }
-+
-+    public Optional<CompoundTag> load(String name, String uuid, ProblemReporter problemReporter) {
-+        // CraftBukkit end
-+        Optional<CompoundTag> optional = this.load(name, uuid, ".dat"); // CraftBukkit
-         if (optional.isEmpty()) {
--            this.backup(player, ".dat");
-+            this.backup(name, uuid, ".dat"); // CraftBukkit
-         }
- 
--        return optional.or(() -> this.load(player, ".dat_old")).map(compoundTag -> {
-+        return optional.or(() -> this.load(name, uuid, ".dat_old")).map(compoundTag -> { // CraftBukkit
-             int dataVersion = NbtUtils.getDataVersion(compoundTag, -1);
-             compoundTag = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, compoundTag, dataVersion);
--            ValueInput valueInput = TagValueInput.create(problemReporter, player.registryAccess(), compoundTag);
--            player.load(valueInput);
--            return valueInput;
-+            return compoundTag; // CraftBukkit - handled above
+@@ -86,4 +_,10 @@
+             return DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, compoundTag, dataVersion);
          });
      }
 +

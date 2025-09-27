@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
@@ -11,36 +13,48 @@ public final class CraftLocation {
     private CraftLocation() {
     }
 
-    public static Location toBukkit(Vec3 vec3) {
-        return CraftLocation.toBukkit(vec3, null);
+    public static Location toBukkit(Vec3 pos) {
+        return toBukkit(pos, (World) null);
     }
 
-    public static Location toBukkit(Vec3 vec3, World world) {
-        return CraftLocation.toBukkit(vec3, world, 0.0F, 0.0F);
+    public static Location toBukkit(Vec3 pos, World world) {
+        return toBukkit(pos, world, 0.0F, 0.0F);
     }
 
-    public static Location toBukkit(Vec3 vec3, World world, float yaw, float pitch) {
-        return new Location(world, vec3.x(), vec3.y(), vec3.z(), yaw, pitch);
+    public static Location toBukkit(Vec3 pos, World world, float yaw, float pitch) {
+        return new Location(world, pos.x(), pos.y(), pos.z(), yaw, pitch);
     }
 
-    public static Location toBukkit(BlockPos pos) {
-        return CraftLocation.toBukkit(pos, (World) null);
+    public static Location toBukkit(Vec3 pos, Level level) {
+        return toBukkit(pos, level.getWorld());
     }
 
-    public static Location toBukkit(BlockPos pos, net.minecraft.world.level.Level world) {
-        return CraftLocation.toBukkit(pos, world.getWorld(), 0.0F, 0.0F);
+    public static Location toBukkit(Vec3 pos, Level level, float yaw, float pitch) {
+        return toBukkit(pos, level.getWorld(), yaw, pitch);
     }
 
-    public static Location toBukkit(BlockPos pos, World world) {
-        return CraftLocation.toBukkit(pos, world, 0.0F, 0.0F);
+    public static Location toBukkit(Vec3i pos) {
+        return toBukkit(pos, (World) null);
     }
 
-    public static Location toBukkit(BlockPos pos, World world, float yaw, float pitch) {
+    public static Location toBukkit(Vec3i pos, World world) {
+        return toBukkit(pos, world, 0.0F, 0.0F);
+    }
+
+    public static Location toBukkit(Vec3i pos, World world, float yaw, float pitch) {
         return new Location(world, pos.getX(), pos.getY(), pos.getZ(), yaw, pitch);
     }
 
-    public static Location toBukkit(Node point, net.minecraft.world.level.Level world) {
-        return new Location(world.getWorld(), point.x, point.y, point.z);
+    public static Location toBukkit(Vec3i pos, Level level) {
+        return toBukkit(pos, level.getWorld());
+    }
+
+    public static Location toBukkit(Vec3i pos, Level level, float yaw, float pitch) {
+        return toBukkit(pos, level.getWorld(), yaw, pitch);
+    }
+
+    public static Location toBukkit(Node point, Level level) {
+        return new Location(level.getWorld(), point.x, point.y, point.z);
     }
 
     public static BlockPos toBlockPosition(Location loc) {
