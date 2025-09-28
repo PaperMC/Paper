@@ -461,6 +461,13 @@ public final class MapPalette {
         return colors[index >= 0 ? index : index + 256];
     }
 
+    /**
+     * Gets the closest {@link Color} given a {@link org.bukkit.Color}.
+     *
+     * @param color the {@link org.bukkit.Color} to match against the map palette
+     * @return the nearest {@link Color} from the map palette
+     */
+    @NotNull
     public static Color getNearestColor(@NotNull org.bukkit.Color color) {
         byte b = matchColor(color.getRed(),color.getGreen(),color.getBlue());
         return getColor(b);
