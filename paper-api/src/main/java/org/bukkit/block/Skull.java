@@ -110,7 +110,7 @@ public interface Skull extends TileState {
      *
      * @return the profile of the owning player
      *
-     * @deprecated Use {@link #getPlayerProfile()} instead.
+     * @deprecated Use {@link #getProfile()} instead.
      */
     @Nullable
     @Deprecated // Paper
@@ -128,7 +128,7 @@ public interface Skull extends TileState {
      * @throws IllegalArgumentException if the profile does not contain the
      * necessary information
      *
-     * @deprecated Use {@link #setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile)} instead.
+     * @deprecated Use {@link #setProfile(ResolvableProfile)} instead.
      */
     @Deprecated // Paper
     void setOwnerProfile(@Nullable PlayerProfile profile);
