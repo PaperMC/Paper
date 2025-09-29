@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Fireworks;
 import io.papermc.paper.datacomponent.item.UseCooldown;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameMode;
@@ -1009,16 +1011,31 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Perform a firework boost.
      * <p>
      * This method will only work such that {@link #isGliding()} is true and
-     * the entity is actively gliding with an elytra. Additionally, the supplied
-     * {@code fireworkItemStack} must be a firework rocket. The power of the boost
-     * will directly correlate to {@link FireworkMeta#getPower()}.
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component and also the {@link Fireworks#effects()} its applied.
      *
-     * @param fireworkItemStack the firework item stack to use to glide
+     * @param fireworkItemStack the item stack to use to glide
      * @return the attached {@link Firework}, or null if the entity could not
      * be boosted
-     * @throws IllegalArgumentException if the fireworkItemStack is not a firework
      */
     @Nullable
-    public Firework fireworkBoost(ItemStack fireworkItemStack);
+    Firework fireworkBoost(ItemStack fireworkItemStack);
+
+    /**
+     * Perform a firework boost.
+     * <p>
+     * This method will only work such that {@link #isGliding()} is true and
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component and also the {@link Fireworks#effects()} its applied.
+     *
+     * @return the attached {@link Firework}, or null if the entity could not
+     * be boosted
+     */
+    @Nullable
+    default Firework fireworkBoost() {
+        return this.fireworkBoost(ItemStack.empty());
+    }
 
 }
