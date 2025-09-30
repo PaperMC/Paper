@@ -40,10 +40,11 @@ public interface Weapon {
     interface Builder extends DataComponentBuilder<Weapon> {
 
         /**
-         * Sets the damage per attack.
+         * Controls the amount of durability to remove each time the weapon is used to attack.
          *
-         * @param damage the damage value.
-         * @return the builder for chaining.
+         * @param damage durability to remove
+         * @return the builder for chaining
+         * @see #itemDamagePerAttack()
          */
         Builder itemDamagePerAttack(int damage);
 
