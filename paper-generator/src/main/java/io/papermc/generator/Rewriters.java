@@ -25,6 +25,7 @@ import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -40,6 +41,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.WeatheringCopper;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
@@ -134,6 +136,7 @@ public final class Rewriters {
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
+            .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
             .register(ClientOption.class, composite(
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
