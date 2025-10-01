@@ -7,6 +7,13 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * Called when a {@link CopperGolem} is searching for or validating an existing
+ * target container block to take or put item to.
+ *
+ * <p>This may be called multiple times per golem per tick, so listeners
+ * should be careful to implement checks in an efficient manner.</p>
+ */
 @NullMarked
 public class CopperGolemValidateTargetEvent extends EntityEvent {
     public static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,10 +30,20 @@ public class CopperGolemValidateTargetEvent extends EntityEvent {
         this.block = block;
     }
 
+    /**
+     * Sets if the {@link CopperGolem} is allowed to use {@link #getBlock()} as a target.
+     *
+     * @param allowed whether the target is allowed
+     */
     public void setAllowed(boolean allowed) {
         this.allowed = allowed;
     }
 
+    /**
+     * Gets if the {@link CopperGolem} is allowed to use {@link #getBlock()} as a target.
+     *
+     * @return true if the target is allowed
+     */
     public boolean isAllowed() {
         return this.allowed;
     }
@@ -36,6 +53,11 @@ public class CopperGolemValidateTargetEvent extends EntityEvent {
         return (CopperGolem) super.getEntity();
     }
 
+    /**
+     * Gets the target block the {@link CopperGolem} is validating.
+     *
+     * @return the target block
+     */
     public Block getBlock() {
         return this.block;
     }
