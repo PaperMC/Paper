@@ -1,14 +1,26 @@
 --- a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
 +++ b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
-@@ -323,7 +_,10 @@
+@@ -323,11 +_,22 @@
              } else {
                  boolean flag1 = this.isWantedBlock(mob, transportItemTarget.state)
                      && !this.isPositionAlreadyVisited(visited, unreachable, transportItemTarget, level)
 -                    && !this.isContainerLocked(transportItemTarget);
 +                    // Paper start - CopperGolemFindTargetEvent
 +                    && !this.isContainerLocked(transportItemTarget)
-+                    && new io.papermc.paper.event.entity.CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget.pos)).callEvent();
++                    && this.callValidateEvent(mob, level, transportItemTarget);
 +                    // Paper end - CopperGolemFindTargetEvent
                  return flag1 ? transportItemTarget : null;
              }
          }
+     }
++
++    // Paper start - CopperGolemFindTargetEvent
++    private boolean callValidateEvent(final PathfinderMob mob, final Level level, final TransportItemsBetweenContainers.TransportItemTarget transportItemTarget) {
++        final var event = new io.papermc.paper.event.entity.CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget.pos));
++        event.callEvent();
++        return event.isAllowed();
++    }
++    // Paper end - CopperGolemFindTargetEvent
+ 
+     private boolean isContainerLocked(TransportItemsBetweenContainers.TransportItemTarget target) {
+         return target.blockEntity instanceof BaseContainerBlockEntity baseContainerBlockEntity && baseContainerBlockEntity.isLocked();

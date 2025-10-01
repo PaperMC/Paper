@@ -2,18 +2,17 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.CopperGolem;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CopperGolemValidateTargetEvent extends EntityEvent implements Cancellable {
+public class CopperGolemValidateTargetEvent extends EntityEvent {
     public static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Block block;
-    private boolean cancelled;
+    private boolean allowed = false;
 
     @ApiStatus.Internal
     public CopperGolemValidateTargetEvent(
@@ -24,6 +23,14 @@ public class CopperGolemValidateTargetEvent extends EntityEvent implements Cance
         this.block = block;
     }
 
+    public void setAllowed(boolean allowed) {
+        this.allowed = allowed;
+    }
+
+    public boolean isAllowed() {
+        return this.allowed;
+    }
+
     @Override
     public CopperGolem getEntity() {
         return (CopperGolem) super.getEntity();
@@ -31,16 +38,6 @@ public class CopperGolemValidateTargetEvent extends EntityEvent implements Cance
 
     public Block getBlock() {
         return this.block;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
     }
 
     public static HandlerList getHandlerList() {
