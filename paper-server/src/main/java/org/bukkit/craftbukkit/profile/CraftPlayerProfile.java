@@ -197,7 +197,11 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
     @Override
     public GameProfile buildGameProfile() {
         this.rebuildDirtyProperties();
-        return new GameProfile(this.uniqueId, this.name, new PropertyMap(this.properties));
+        return new GameProfile(
+            this.uniqueId != null ? this.uniqueId : Util.NIL_UUID,
+            this.name != null ? this.name : "",
+            new PropertyMap(this.properties)
+        );
     }
 
     @Override
@@ -205,9 +209,9 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
         this.rebuildDirtyProperties();
         StringBuilder builder = new StringBuilder();
         builder.append("CraftPlayerProfile [uniqueId=");
-        builder.append(this.uniqueId);
+        builder.append(this.getUniqueId());
         builder.append(", name=");
-        builder.append(this.name);
+        builder.append(this.getName());
         builder.append(", properties=");
         builder.append(CraftPlayerProfile.toString(this.properties));
         builder.append("]");
