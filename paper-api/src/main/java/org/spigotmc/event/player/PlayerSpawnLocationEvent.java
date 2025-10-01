@@ -20,7 +20,9 @@ import org.jetbrains.annotations.NotNull;
 @Warning(value = true, reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.")
 @Deprecated(since = "1.21.9", forRemoval = true)
 public class PlayerSpawnLocationEvent extends PlayerEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Location spawnLocation;
 
     public PlayerSpawnLocationEvent(@NotNull final Player player, @NotNull Location spawnLocation) {
@@ -53,11 +55,11 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

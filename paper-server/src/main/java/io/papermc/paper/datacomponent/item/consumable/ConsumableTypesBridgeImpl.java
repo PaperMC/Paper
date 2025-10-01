@@ -40,9 +40,7 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 
     @Override
     public ConsumeEffect.ClearAllStatusEffects clearAllStatusEffects() {
-        return new PaperClearAllStatusEffects(
-            new net.minecraft.world.item.consume_effects.ClearAllStatusEffectsConsumeEffect()
-        );
+        return PaperClearAllStatusEffects.INSTANCE;
     }
 
     @Override

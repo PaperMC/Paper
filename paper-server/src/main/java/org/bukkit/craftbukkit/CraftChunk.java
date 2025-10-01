@@ -109,7 +109,7 @@ public class CraftChunk implements Chunk {
     public Block getBlock(int x, int y, int z) {
         CraftChunk.validateChunkCoordinates(this.level.getMinY(), this.level.getMaxY(), x, y, z);
 
-        return new CraftBlock(this.level, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
+        return CraftBlock.at(this.level, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
     @Override

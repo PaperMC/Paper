@@ -17,13 +17,13 @@ package org.bukkit.metadata;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.TestPlugin;
+import org.bukkit.plugin.BukkitTestPlugin;
 import org.junit.jupiter.api.Test;
 
 /**
  */
 public class MetadataConversionTest {
-    private Plugin plugin = new TestPlugin("x");
+    private Plugin plugin = new BukkitTestPlugin("x");
     private FixedMetadataValue subject;
 
     private void setSubject(Object value) {

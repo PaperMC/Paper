@@ -119,6 +119,9 @@ public interface CopperGolem extends Golem, Shearable {
             long time();
         }
 
+        /**
+         * @hidden
+         */
         @ApiStatus.Internal
         record AtTimeImpl(long time) implements AtTime {}
     }
