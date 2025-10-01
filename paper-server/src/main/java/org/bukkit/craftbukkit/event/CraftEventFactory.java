@@ -18,6 +18,8 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.CopperGolemValidateTargetEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -38,6 +40,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
@@ -2111,5 +2114,16 @@ public class CraftEventFactory {
         }
 
         return disconnectReason;
+    }
+
+    public static boolean callTransporterValidateTarget(final PathfinderMob mob, final Level level, final BlockPos transportItemTarget) {
+        final ItemTransportingEntityValidateTargetEvent event;
+        if (mob.getType() == net.minecraft.world.entity.EntityType.COPPER_GOLEM) {
+            event = new CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget));
+        } else {
+            event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget));
+        }
+        event.callEvent();
+        return event.isAllowed();
     }
 }
