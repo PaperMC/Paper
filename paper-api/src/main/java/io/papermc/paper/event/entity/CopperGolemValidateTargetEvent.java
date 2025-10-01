@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a {@link CopperGolem} is searching for or validating an existing
- * target container block to take or put item to.
+ * target container block for taking or depositing items.
  *
  * <p>This may be called multiple times per golem per tick, so listeners
  * should be careful to implement checks in an efficient manner.</p>
