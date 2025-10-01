@@ -2119,9 +2119,9 @@ public class CraftEventFactory {
     public static boolean callTransporterValidateTarget(final PathfinderMob mob, final Level level, final BlockPos transportItemTarget) {
         final ItemTransportingEntityValidateTargetEvent event;
         if (mob.getType() == net.minecraft.world.entity.EntityType.COPPER_GOLEM) {
-            event = new CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget));
+            event = new CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
         } else {
-            event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), new org.bukkit.craftbukkit.block.CraftBlock(level, transportItemTarget));
+            event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
         }
         event.callEvent();
         return event.isAllowed();
