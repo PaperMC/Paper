@@ -227,6 +227,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         POTION_EFFECT,
         /**
+         * When a copper golem statue is turned back into a copper golem
+         */
+        REANIMATE,
+        /**
          * When a creature is spawned by being rehydrated
          */
         REHYDRATION,
