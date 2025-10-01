@@ -12,7 +12,7 @@ public class CopperGolemValidateTargetEvent extends EntityEvent {
     public static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Block block;
-    private boolean allowed = false;
+    private boolean allowed = true;
 
     @ApiStatus.Internal
     public CopperGolemValidateTargetEvent(
