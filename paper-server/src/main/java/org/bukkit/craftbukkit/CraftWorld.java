@@ -11,6 +11,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
+import io.papermc.paper.world.explosion.PaperExplosionDamageCalculator;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.nio.file.Path;
@@ -34,6 +35,8 @@ import net.kyori.adventure.pointer.PointersSupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -930,6 +933,40 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(this.equals(loc.getWorld()), "Location not in world");
 
         return this.createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source);
+    }
+
+    @Override
+    public boolean createExplosion(final io.papermc.paper.world.explosion.Explosion explosion) {
+        ServerLevel world = ((CraftWorld) explosion.center().getWorld()).getHandle();
+        Level.ExplosionInteraction explosionType;
+        if (!explosion.breakBlocks()) {
+            explosionType = Level.ExplosionInteraction.NONE;
+        } else if (explosion.source() == null) {
+            explosionType = Level.ExplosionInteraction.STANDARD;
+        } else {
+            explosionType = Level.ExplosionInteraction.MOB;
+        }
+
+        net.minecraft.world.entity.Entity entity = explosion.source() == null ? null : ((CraftEntity) explosion.source()).getHandle();
+        return !world.explode0(
+            entity,
+            net.minecraft.world.level.Explosion.getDefaultDamageSource(world, entity),
+            new PaperExplosionDamageCalculator(explosion),
+            explosion.center().x(),
+            explosion.center().y(),
+            explosion.center().z(),
+            explosion.radius(),
+            explosion.setFire(),
+            explosionType,
+            explosion.smallExplosionParticle() == null
+                ? new DustParticleOptions(0, 0.0F)
+                : CraftParticle.createParticleParam(explosion.smallExplosionParticle().particle(), explosion.smallExplosionParticle().data()),
+            explosion.largeExplosionParticle() == null
+                ? new DustParticleOptions(0, 0.0F)
+                : CraftParticle.createParticleParam(explosion.largeExplosionParticle().particle(), explosion.largeExplosionParticle().data()),
+            explosion.sound() == null ? Holder.direct(SoundEvents.EMPTY) : CraftSound.bukkitToMinecraftHolder(explosion.sound()),
+            serverExplosion -> serverExplosion.excludeSourceFromDamage = explosion.excludeSourceFromDamage())
+            .wasCanceled;
     }
 
     @Override
