@@ -16,8 +16,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>This may be called multiple times per entity per tick, so listeners
  * should be careful to implement checks in an efficient manner.</p>
- *
- * @see CopperGolemValidateTargetEvent
  */
 @NullMarked
 public class ItemTransportingEntityValidateTargetEvent extends EntityEvent {

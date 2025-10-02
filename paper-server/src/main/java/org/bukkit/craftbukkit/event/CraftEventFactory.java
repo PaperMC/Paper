@@ -18,7 +18,6 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import io.papermc.paper.event.entity.CopperGolemValidateTargetEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -2120,12 +2119,7 @@ public class CraftEventFactory {
         if (ItemTransportingEntityValidateTargetEvent.getHandlerList().getRegisteredListeners().length == 0) {
             return true; // No listeners, skip event creation
         }
-        final ItemTransportingEntityValidateTargetEvent event;
-        if (mob.getType() == net.minecraft.world.entity.EntityType.COPPER_GOLEM) {
-            event = new CopperGolemValidateTargetEvent((org.bukkit.entity.CopperGolem) mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
-        } else {
-            event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
-        }
+        final ItemTransportingEntityValidateTargetEvent event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
         event.callEvent();
         return event.isAllowed();
     }
