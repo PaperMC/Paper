@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.HumanoidArm;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Mannequin;
+import org.bukkit.entity.Pose;
 import org.bukkit.inventory.MainHand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +26,20 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     @Override
     public net.minecraft.world.entity.decoration.Mannequin getHandle() {
         return (net.minecraft.world.entity.decoration.Mannequin) this.entity;
+    }
+
+    @Override
+    public void setPose(Pose pose, boolean fixed) {
+        Preconditions.checkArgument(pose != null, "pose cannot be null");
+        net.minecraft.world.entity.Pose internalPose = net.minecraft.world.entity.Pose.values()[pose.ordinal()];
+        if (!net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.contains(internalPose)) {
+            throw new IllegalArgumentException("Invalid pose '%s', expected one of: %s".formatted(
+                pose.name(),
+                net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.stream().map(p -> Pose.values()[p.ordinal()]).toList() // name doesn't match
+            ));
+        }
+
+        this.setPose0(internalPose, fixed);
     }
 
     @Override
