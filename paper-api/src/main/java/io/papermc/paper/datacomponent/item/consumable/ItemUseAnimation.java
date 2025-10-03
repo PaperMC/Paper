@@ -8,7 +8,6 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 public enum ItemUseAnimation {
     // Start generate - ItemUseAnimation
-    // @GeneratedFrom 1.21.8
     NONE,
     EAT,
     DRINK,

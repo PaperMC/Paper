@@ -24,7 +24,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
     /**
      * Gets the player's unique id.
      *
-     * @return the player's unique id, or <code>null</code> if not available
+     * @return the player's unique id, or {@code null} if not available
      */
     @Nullable
     @Deprecated(since = "1.18.1") // Paper
@@ -33,7 +33,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
     /**
      * Gets the player name.
      *
-     * @return the player name, or <code>null</code> if not available
+     * @return the player name, or {@code null} if not available
      */
     @Nullable
     String getName();
@@ -41,7 +41,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
     /**
      * Gets the {@link PlayerTextures} of this profile.
      *
-     * @return the textures, not <code>null</code>
+     * @return the textures
      */
     @NotNull
     PlayerTextures getTextures();
@@ -49,7 +49,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
     /**
      * Copies the given textures.
      *
-     * @param textures the textures to copy, or <code>null</code> to clear the
+     * @param textures the textures to copy, or {@code null} to clear the
      * textures
      */
     void setTextures(@Nullable PlayerTextures textures);
@@ -60,7 +60,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
      * A profile is currently considered complete if it has a name, a unique id,
      * and textures.
      *
-     * @return <code>true</code> if this profile is complete
+     * @return {@code true} if this profile is complete
      */
     boolean isComplete();
 

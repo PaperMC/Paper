@@ -69,13 +69,13 @@ public class CraftMinecartTNT extends CraftMinecart implements ExplosiveMinecart
 
     @Override
     public void explode() {
-        this.getHandle().explode(this.getHandle().getDeltaMovement().horizontalDistanceSqr());
+        this.getHandle().explode(null, this.getHandle().getDeltaMovement().horizontalDistanceSqr());
     }
 
     @Override
     public void explode(double power) {
         Preconditions.checkArgument(0 <= power && power <= Mth.square(5), "Power must be in range [0, 25] (got %s)", power);
 
-        this.getHandle().explode(power);
+        this.getHandle().explode(null, power);
     }
 }

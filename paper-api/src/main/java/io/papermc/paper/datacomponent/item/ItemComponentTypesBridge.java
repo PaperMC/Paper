@@ -70,6 +70,10 @@ interface ItemComponentTypesBridge {
 
     ResolvableProfile.Builder resolvableProfile();
 
+    ResolvableProfile.SkinPatchBuilder skinPatch();
+
+    ResolvableProfile.SkinPatch emptySkinPatch();
+
     ResolvableProfile resolvableProfile(PlayerProfile profile);
 
     BannerPatternLayers.Builder bannerPatternLayers();

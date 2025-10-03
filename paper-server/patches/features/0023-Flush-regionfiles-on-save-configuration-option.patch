@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 20 Jan 2025 13:30:34 -0800
+Subject: [PATCH] Flush regionfiles on save configuration option
+
+The windows file system does not write metadata unless
+the FileChannel is explicitly flushed with metaData=true.
+
+Note: Setting SYNC (not DSYNC) on the FileChannel does not appear
+to write the metadata.
+
+Specifically, we are interested in writing the last modified
+timestamp so that fs watchers can detect when RegionFiles are
+modified.
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
+index 8bf690dbd98245453e35cfee718173ef20232eec..b83ccf7bbd134e97e14bfe8331cc9d2a26b9ec9c 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
+@@ -1259,6 +1259,14 @@ public final class MoonriseRegionFileIO {
+ 
+             try {
+                 this.regionDataController.finishWrite(this.chunkX, this.chunkZ, writeData);
++                // Paper start - flush regionfiles on save
++                if (this.world.paperConfig().chunks.flushRegionsOnSave) {
++                    final RegionFile regionFile = this.regionDataController.getCache().moonrise$getRegionFileIfLoaded(this.chunkX, this.chunkZ);
++                    if (regionFile != null) {
++                        regionFile.flush();
++                    } // else: evicted from cache, which should have called flush
++                }
++                // Paper end - flush regionfiles on save
+             } catch (final Throwable thr) {
+                 failedWrite = thr instanceof IOException;
+                 LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
