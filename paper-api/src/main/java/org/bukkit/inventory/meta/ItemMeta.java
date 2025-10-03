@@ -217,7 +217,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @deprecated Use {@link ItemMeta#displayName()} and check if it is instanceof a {@link net.kyori.adventure.text.TranslatableComponent}.
      * @return true if this has a localized name
-     * @deprecated meta no longer exists
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     boolean hasLocalizedName();
@@ -230,7 +229,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @deprecated Use {@link ItemMeta#displayName()} and cast it to a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @return the localized name that is set
-     * @deprecated meta no longer exists
      */
     @NotNull
     @Deprecated(since = "1.20.5", forRemoval = true)
@@ -241,7 +239,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @deprecated Use {@link ItemMeta#displayName(Component)} with a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @param name the name to set
-     * @deprecated meta no longer exists
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     void setLocalizedName(@Nullable String name);
@@ -1085,7 +1082,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     @ApiStatus.Internal
     void setVersion(int version);
 
-    @SuppressWarnings("javadoc")
     @NotNull
     ItemMeta clone();
 

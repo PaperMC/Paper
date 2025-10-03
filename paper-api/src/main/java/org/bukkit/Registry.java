@@ -574,6 +574,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     int size();
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -624,6 +627,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 

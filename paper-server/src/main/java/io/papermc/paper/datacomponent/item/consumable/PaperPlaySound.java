@@ -5,16 +5,11 @@ import net.kyori.adventure.key.Key;
 import net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect;
 
 public record PaperPlaySound(
-    PlaySoundConsumeEffect impl
-) implements ConsumeEffect.PlaySound, PaperConsumableEffect<PlaySoundConsumeEffect> {
+    PlaySoundConsumeEffect internal
+) implements ConsumeEffect.PlaySound, PaperConsumableEffect {
 
     @Override
     public Key sound() {
-        return PaperAdventure.asAdventure(this.impl.sound().value().location());
-    }
-
-    @Override
-    public PlaySoundConsumeEffect getHandle() {
-        return this.impl;
+        return PaperAdventure.asAdventure(this.internal.sound().value().location());
     }
 }

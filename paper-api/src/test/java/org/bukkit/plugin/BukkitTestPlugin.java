@@ -10,12 +10,12 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 
-public class TestPlugin extends PluginBase {
+public class BukkitTestPlugin extends PluginBase {
     private boolean enabled = true;
 
     private final String pluginName;
 
-    public TestPlugin(String pluginName) {
+    public BukkitTestPlugin(String pluginName) {
         this.pluginName = pluginName;
     }
 

@@ -269,7 +269,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     // Paper end - plugin loader api
     // Paper start - oh my goddddd
     /**
-     * Don't use this.
+     * @hidden
      */
     @org.jetbrains.annotations.ApiStatus.Internal
     public PluginDescriptionFile(String rawName, String name, List<String> provides, String main, String classLoaderOf, List<String> depend, List<String> softDepend, List<String> loadBefore, String version, Map<String, Map<String, Object>> commands, String description, List<String> authors, List<String> contributors, String website, String prefix, PluginLoadOrder order, List<Permission> permissions, PermissionDefault defaultPerm, Set<PluginAwareness> awareness, String apiVersion, List<String> libraries) {
@@ -1356,8 +1356,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     }
 
     /**
-     * @return internal use
-     * @apiNote Internal use
+     * @hidden
      */
     @ApiStatus.Internal
     @NotNull

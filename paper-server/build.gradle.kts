@@ -17,7 +17,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.9-rc1+build.1")
+    mache("io.papermc:mache:1.21.9+build.1")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -115,6 +115,7 @@ val alsoShade: Configuration by configurations.creating
 
 val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+    extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
 }
 
 // Configure mockito agent that is needed in newer java versions
@@ -135,7 +136,6 @@ dependencies {
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
-    runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
