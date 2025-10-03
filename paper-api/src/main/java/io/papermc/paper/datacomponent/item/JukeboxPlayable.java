@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.JukeboxSong;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface JukeboxPlayable  {
+public interface JukeboxPlayable extends BuildableDataComponent<JukeboxPlayable, JukeboxPlayable.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
