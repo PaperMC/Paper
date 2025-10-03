@@ -1,6 +1,9 @@
 package io.papermc.paper.plugin.configuration;
 
 import java.util.List;
+import java.util.Locale;
+import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.key.Namespaced;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
@@ -14,7 +17,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface PluginMeta {
+public interface PluginMeta extends Namespaced {
 
     /**
      * Provides the name of the plugin. This name uniquely identifies the plugin amongst all loaded plugins on the
@@ -180,4 +183,10 @@ public interface PluginMeta {
      */
     @Nullable String getAPIVersion();
 
+    @KeyPattern.Namespace
+    @SuppressWarnings("PatternValidation")
+    @Override
+    default String namespace() {
+        return this.getName().toLowerCase(Locale.ROOT);
+    }
 }

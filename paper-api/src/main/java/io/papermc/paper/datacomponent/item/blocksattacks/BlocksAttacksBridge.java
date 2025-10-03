@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.Internal
 interface BlocksAttacksBridge {
 
-    Optional<BlocksAttacksBridge> BRIDGE = ServiceLoader.load(BlocksAttacksBridge.class).findFirst();
+    Optional<BlocksAttacksBridge> BRIDGE = ServiceLoader.load(BlocksAttacksBridge.class, BlocksAttacksBridge.class.getClassLoader()).findFirst();
 
     static BlocksAttacksBridge bridge() {
         return BRIDGE.orElseThrow();

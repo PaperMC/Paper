@@ -649,14 +649,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
 
         Set<EntitySerializationFlag> flags = Set.of(serializationFlags);
-        final boolean serializePassangers = flags.contains(EntitySerializationFlag.PASSENGERS);
+        final boolean serializePassengers = flags.contains(EntitySerializationFlag.PASSENGERS);
         final boolean forceSerialization = flags.contains(EntitySerializationFlag.FORCE);
         final boolean allowPlayerSerialization = flags.contains(EntitySerializationFlag.PLAYER);
         final boolean allowMiscSerialization = flags.contains(EntitySerializationFlag.MISC);
         final boolean includeNonSaveable = allowPlayerSerialization || allowMiscSerialization;
 
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        (serializePassangers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
+        (serializePassengers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
             // Ensure force flag is not needed
             Preconditions.checkArgument(
                 (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
@@ -687,7 +687,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
         )) {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, nmsEntity.registryAccess());
-            if (serializePassangers) {
+            if (serializePassengers) {
                 if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
                     throw new IllegalArgumentException("Couldn't serialize entity");
                 }
@@ -742,7 +742,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     continue;
                 }
                 final net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
-                passengerEntity.startRiding(nmsEntity, true);
+                passengerEntity.startRiding(nmsEntity, true, true);
             }
         });
         return nmsEntity;

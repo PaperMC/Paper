@@ -91,6 +91,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         BUILD_IRONGOLEM,
         /**
+         * When a copper golem is spawned by being built
+         */
+        BUILD_COPPERGOLEM,
+        /**
          * When a wither boss is spawned by being built
          */
         BUILD_WITHER,
@@ -222,6 +226,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          * {@link org.bukkit.potion.PotionType#OOZING}, {@link org.bukkit.potion.PotionType#INFESTED}
          */
         POTION_EFFECT,
+        /**
+         * When a creature is spawned by being rehydrated
+         */
+        REHYDRATION,
         /**
          * When a creature is spawned by plugins
          */

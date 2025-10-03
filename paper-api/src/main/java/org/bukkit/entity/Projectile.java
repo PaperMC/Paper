@@ -104,7 +104,7 @@ public interface Projectile extends Entity {
      * Using this method will result in {@link org.bukkit.event.entity.ProjectileHitEvent} being called.
      * @param entity the entity to hit
      * @see #hitEntity(Entity, org.bukkit.util.Vector)
-     * @see #canHitEntity(Entity) 
+     * @see #canHitEntity(Entity)
      */
     void hitEntity(@org.jetbrains.annotations.NotNull Entity entity);
 
@@ -114,7 +114,7 @@ public interface Projectile extends Entity {
      * @param entity the entity to hit
      * @param vector the direction to hit from
      * @see #hitEntity(Entity)
-     * @see #canHitEntity(Entity) 
+     * @see #canHitEntity(Entity)
      */
     void hitEntity(@org.jetbrains.annotations.NotNull Entity entity, @org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
 

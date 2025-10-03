@@ -1,0 +1,57 @@
+--- a/net/minecraft/server/level/progress/LoggingLevelLoadListener.java
++++ b/net/minecraft/server/level/progress/LoggingLevelLoadListener.java
+@@ -17,17 +_,21 @@
+     private long startTime = Long.MAX_VALUE;
+     private long nextLogTime = Long.MAX_VALUE;
+ 
+-    public LoggingLevelLoadListener(boolean includePlayerChunks) {
++    // Paper start - add level
++    private final net.minecraft.server.level.ServerLevel level;
++    public LoggingLevelLoadListener(boolean includePlayerChunks, net.minecraft.server.level.ServerLevel level) {
++        this.level = level;
++        // Paper end - add level
+         this.includePlayerChunks = includePlayerChunks;
+         this.progressTracker = new LevelLoadProgressTracker(includePlayerChunks);
+     }
+ 
+     public static LoggingLevelLoadListener forDedicatedServer() {
+-        return new LoggingLevelLoadListener(false);
++        return new LoggingLevelLoadListener(false, null); // Paper
+     }
+ 
+     public static LoggingLevelLoadListener forSingleplayer() {
+-        return new LoggingLevelLoadListener(true);
++        return new LoggingLevelLoadListener(true, null); // Paper
+     }
+ 
+     @Override
+@@ -42,10 +_,20 @@
+             this.progressTracker.start(stage, totalChunks);
+             switch (stage) {
+                 case PREPARE_GLOBAL_SPAWN:
++                    // Paper start - log dimension
++                    if (this.level != null) {
++                        LOGGER.info("Selecting spawn point for world '{}'...", this.level.dimension().location());
++                    } else {
+                     LOGGER.info("Selecting global world spawn...");
++                    }
+                     break;
+                 case LOAD_INITIAL_CHUNKS:
++                    if (this.level != null) {
++                        LOGGER.info("Loading {} persistent chunks for world '{}'...", totalChunks, this.level.dimension().location());
++                    } else {
+                     LOGGER.info("Loading {} persistent chunks...", totalChunks);
++                    }
++                    // Paper end - log dimension
+                     break;
+                 case LOAD_PLAYER_CHUNKS:
+                     LOGGER.info("Loading {} chunks for player spawn...", totalChunks);
+@@ -73,7 +_,7 @@
+                 ? LevelLoadListener.Stage.LOAD_PLAYER_CHUNKS
+                 : LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS;
+             if (stage == stage1) {
+-                LOGGER.info("Time elapsed: {} ms", Util.getMillis() - this.startTime);
++                LOGGER.info("Prepared spawn area in {} ms", Util.getMillis() - this.startTime); // Paper
+                 this.nextLogTime = Long.MAX_VALUE;
+                 this.closed = true;
+             }

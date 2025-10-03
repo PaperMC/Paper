@@ -932,7 +932,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
 
         // intersections are behind the start:
         if (tMax < 0.0D) return null;
-        // intersections are to far away:
+        // intersections are too far away:
         if (tMin > maxDistance) {
             return null;
         }

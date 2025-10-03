@@ -4,6 +4,12 @@ import java.util.List;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
+ * removed. It is recommended that when wanting persistent metadata, you use {@link org.bukkit.persistence.PersistentDataContainer}.
+ * If you want temporary values on an entity, just use the entity lifecycle events. (See {@link com.destroystokyo.paper.event.entity.EntityAddToWorldEvent}0
+ */
+@Deprecated
 public interface MetadataStore<T> {
     /**
      * Adds a metadata value to an object.

@@ -59,7 +59,7 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
         }
 
         public static Holder<CatVariant> bukkitToMinecraftHolder(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.CAT_VARIANT);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
         public CraftType(final Holder<CatVariant> holder) {

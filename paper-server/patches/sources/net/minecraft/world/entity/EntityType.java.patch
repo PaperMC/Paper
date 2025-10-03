@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -1155,6 +_,22 @@
+@@ -1265,6 +_,22 @@
          boolean shouldOffsetY,
          boolean shouldOffsetYMore
      ) {
@@ -23,7 +23,7 @@
          Consumer<T> consumer;
          if (spawnedFrom != null) {
              consumer = createDefaultStackConfig(level, spawnedFrom, owner);
-@@ -1162,7 +_,7 @@
+@@ -1272,7 +_,7 @@
              consumer = entity -> {};
          }
  
@@ -32,15 +32,15 @@
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level level, ItemStack stack, @Nullable LivingEntity owner) {
-@@ -1179,19 +_,56 @@
+@@ -1289,19 +_,56 @@
  
      public static <T extends Entity> Consumer<T> appendCustomEntityStackConfig(Consumer<T> consumer, Level level, ItemStack stack, @Nullable LivingEntity owner) {
-         CustomData customData = stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
--        return !customData.isEmpty() ? consumer.andThen(entity -> updateCustomEntityTag(level, owner, entity, customData)) : consumer;
+         TypedEntityData<EntityType<?>> typedEntityData = stack.get(DataComponents.ENTITY_DATA);
+-        return typedEntityData != null ? consumer.andThen(entity -> updateCustomEntityTag(level, owner, entity, typedEntityData)) : consumer;
 +        // CraftBukkit start - SPIGOT-5665
-+        return !customData.isEmpty() ? consumer.andThen(entity -> {
++        return typedEntityData != null ? consumer.andThen(entity -> {
 +            try {
-+                updateCustomEntityTag(level, owner, entity, customData);
++                updateCustomEntityTag(level, owner, entity, typedEntityData);
 +            } catch (Throwable t) {
 +                EntityType.LOGGER.warn("Error loading spawn egg NBT", t);
 +            }
@@ -92,23 +92,21 @@
              if (entity instanceof Mob mob) {
                  mob.playAmbientSound();
              }
-@@ -1247,6 +_,15 @@
-                 if (level.isClientSide
+@@ -1356,6 +_,13 @@
+                 if (level.isClientSide()
                      || !entity.getType().onlyOpCanSetNbt()
-                     || owner instanceof Player player && server.getPlayerList().isOp(player.getGameProfile())) {
+                     || owner instanceof Player player && server.getPlayerList().isOp(player.nameAndId())) {
 +                    // Paper start - filter out protected tags
 +                    if (owner == null || !owner.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
-+                        customData = customData.update((compound) -> {
-+                            for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
-+                                tag.remove(compound);
-+                            }
-+                        });
++                        for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                            tag.remove(data.getUnsafe());
++                        }
 +                    }
 +                    // Paper end - filter out protected tags
-                     customData.loadInto(entity);
+                     data.loadInto(entity);
                  }
              }
-@@ -1318,9 +_,20 @@
+@@ -1427,9 +_,20 @@
      }
  
      public static Optional<Entity> create(ValueInput input, Level level, EntitySpawnReason spawnReason) {
@@ -130,3 +128,28 @@
              () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
          );
      }
+@@ -1588,8 +_,23 @@
+         return this.builtInRegistryHolder;
+     }
+ 
+-    public boolean isAllowedInPeaceful() {
++    // Paper start
++    public final boolean isTypeAllowedInPeaceful() {
+         return this.allowedInPeaceful;
++    }
++    public final boolean isAllowedInPeaceful(@Nullable CompoundTag tag) {
++        if (tag == null || tag.isEmpty()) {
++            return this.isTypeAllowedInPeaceful();
++        }
++        final var input = TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, MinecraftServer.getServer().registryAccess(), tag);
++        final var override = Mob.readDespawnInPeacefulOverride(input);
++        return !override.toBooleanOrElse(!this.isTypeAllowedInPeaceful());
++    }
++    // Audit all vanilla uses of this method to ensure per-entity override API applies where possible
++    @io.papermc.paper.annotation.DoNotUse
++    public final boolean isAllowedInPeaceful() {
++        return this.isTypeAllowedInPeaceful();
++        // Paper end
+     }
+ 
+     private static EntityType.EntityFactory<Boat> boatFactory(Supplier<Item> boatItemGetter) {

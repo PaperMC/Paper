@@ -128,7 +128,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public void setColor(Color color) {
         PotionContents old = this.getHandle().potionContents;
-        this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(color.asRGB()), old.customEffects(), old.customName()));
+        this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.ofNullable(color).map(Color::asRGB), old.customEffects(), old.customName()));
     }
 
     @Override
@@ -233,7 +233,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void setOwnerUniqueId(final java.util.UUID ownerUuid) {
-        this.getHandle().owner = ownerUuid == null ? null : new EntityReference<>(ownerUuid);
+        this.getHandle().owner = ownerUuid == null ? null : EntityReference.of(ownerUuid);
     }
     // Paper end
 }
