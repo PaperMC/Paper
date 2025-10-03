@@ -1,6 +1,7 @@
 package org.bukkit.enchantments;
 
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,10 +37,7 @@ public enum EnchantmentTarget {
     ARMOR {
         @Override
         public boolean includes(@NotNull Material item) {
-            return ARMOR_FEET.includes(item)
-                || ARMOR_LEGS.includes(item)
-                || ARMOR_HEAD.includes(item)
-                || ARMOR_TORSO.includes(item);
+            return Tag.ITEMS_ENCHANTABLE_ARMOR.isTagged(item);
         }
     },
 
@@ -49,12 +47,7 @@ public enum EnchantmentTarget {
     ARMOR_FEET {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.LEATHER_BOOTS)
-                || item.equals(Material.CHAINMAIL_BOOTS)
-                || item.equals(Material.IRON_BOOTS)
-                || item.equals(Material.DIAMOND_BOOTS)
-                || item.equals(Material.GOLDEN_BOOTS)
-                || item.equals(Material.NETHERITE_BOOTS);
+            return Tag.ITEMS_ENCHANTABLE_FOOT_ARMOR.isTagged(item);
         }
     },
 
@@ -64,12 +57,7 @@ public enum EnchantmentTarget {
     ARMOR_LEGS {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.LEATHER_LEGGINGS)
-                || item.equals(Material.CHAINMAIL_LEGGINGS)
-                || item.equals(Material.IRON_LEGGINGS)
-                || item.equals(Material.DIAMOND_LEGGINGS)
-                || item.equals(Material.GOLDEN_LEGGINGS)
-                || item.equals(Material.NETHERITE_LEGGINGS);
+            return Tag.ITEMS_ENCHANTABLE_LEG_ARMOR.isTagged(item);
         }
     },
 
@@ -79,12 +67,7 @@ public enum EnchantmentTarget {
     ARMOR_TORSO {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.LEATHER_CHESTPLATE)
-                || item.equals(Material.CHAINMAIL_CHESTPLATE)
-                || item.equals(Material.IRON_CHESTPLATE)
-                || item.equals(Material.DIAMOND_CHESTPLATE)
-                || item.equals(Material.GOLDEN_CHESTPLATE)
-                || item.equals(Material.NETHERITE_CHESTPLATE);
+            return Tag.ITEMS_ENCHANTABLE_CHEST_ARMOR.isTagged(item);
         }
     },
 
@@ -94,13 +77,7 @@ public enum EnchantmentTarget {
     ARMOR_HEAD {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.LEATHER_HELMET)
-                || item.equals(Material.CHAINMAIL_HELMET)
-                || item.equals(Material.DIAMOND_HELMET)
-                || item.equals(Material.IRON_HELMET)
-                || item.equals(Material.GOLDEN_HELMET)
-                || item.equals(Material.TURTLE_HELMET)
-                || item.equals(Material.NETHERITE_HELMET);
+            return Tag.ITEMS_ENCHANTABLE_HEAD_ARMOR.isTagged(item);
         }
     },
 
@@ -110,12 +87,7 @@ public enum EnchantmentTarget {
     WEAPON {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.WOODEN_SWORD)
-                || item.equals(Material.STONE_SWORD)
-                || item.equals(Material.IRON_SWORD)
-                || item.equals(Material.DIAMOND_SWORD)
-                || item.equals(Material.GOLDEN_SWORD)
-                || item.equals(Material.NETHERITE_SWORD);
+            return Tag.ITEMS_ENCHANTABLE_SWORD.isTagged(item);
         }
     },
 
@@ -125,30 +97,7 @@ public enum EnchantmentTarget {
     TOOL {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.WOODEN_SHOVEL)
-                || item.equals(Material.STONE_SHOVEL)
-                || item.equals(Material.IRON_SHOVEL)
-                || item.equals(Material.DIAMOND_SHOVEL)
-                || item.equals(Material.GOLDEN_SHOVEL)
-                || item.equals(Material.NETHERITE_SHOVEL)
-                || item.equals(Material.WOODEN_PICKAXE)
-                || item.equals(Material.STONE_PICKAXE)
-                || item.equals(Material.IRON_PICKAXE)
-                || item.equals(Material.DIAMOND_PICKAXE)
-                || item.equals(Material.GOLDEN_PICKAXE)
-                || item.equals(Material.NETHERITE_PICKAXE)
-                || item.equals(Material.WOODEN_AXE)
-                || item.equals(Material.STONE_AXE)
-                || item.equals(Material.IRON_AXE)
-                || item.equals(Material.DIAMOND_AXE)
-                || item.equals(Material.GOLDEN_AXE)
-                || item.equals(Material.NETHERITE_AXE)
-                || item.equals(Material.WOODEN_HOE)
-                || item.equals(Material.STONE_HOE)
-                || item.equals(Material.IRON_HOE)
-                || item.equals(Material.DIAMOND_HOE)
-                || item.equals(Material.GOLDEN_HOE)
-                || item.equals(Material.NETHERITE_HOE);
+            return Tag.ITEMS_ENCHANTABLE_MINING_LOOT.isTagged(item);
         }
     },
 
@@ -158,7 +107,7 @@ public enum EnchantmentTarget {
     BOW {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.BOW);
+            return Tag.ITEMS_ENCHANTABLE_BOW.isTagged(item);
         }
     },
 
@@ -168,7 +117,7 @@ public enum EnchantmentTarget {
     FISHING_ROD {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.FISHING_ROD);
+            return Tag.ITEMS_ENCHANTABLE_FISHING.isTagged(item);
         }
     },
 
@@ -178,7 +127,7 @@ public enum EnchantmentTarget {
     BREAKABLE {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.getMaxDurability() > 0 && item.getMaxStackSize() == 1;
+            return Tag.ITEMS_ENCHANTABLE_DURABILITY.isTagged(item);
         }
     },
 
@@ -188,17 +137,7 @@ public enum EnchantmentTarget {
     WEARABLE {
         @Override
         public boolean includes(@NotNull Material item) {
-            return ARMOR.includes(item)
-                    || item.equals(Material.ELYTRA)
-                    || item.equals(Material.CARVED_PUMPKIN)
-                    || item.equals(Material.SKELETON_SKULL)
-                    || item.equals(Material.WITHER_SKELETON_SKULL)
-                    || item.equals(Material.ZOMBIE_HEAD)
-                    || item.equals(Material.PIGLIN_HEAD)
-                    || item.equals(Material.PLAYER_HEAD)
-                    || item.equals(Material.CREEPER_HEAD)
-                    || item.equals(Material.DRAGON_HEAD)
-                    || item.equals(Material.SHIELD);
+            return Tag.ITEMS_ENCHANTABLE_EQUIPPABLE.isTagged(item);
         }
     },
 
@@ -208,7 +147,7 @@ public enum EnchantmentTarget {
     TRIDENT {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.TRIDENT);
+            return Tag.ITEMS_ENCHANTABLE_TRIDENT.isTagged(item);
         }
     },
 
@@ -218,7 +157,7 @@ public enum EnchantmentTarget {
     CROSSBOW {
         @Override
         public boolean includes(@NotNull Material item) {
-            return item.equals(Material.CROSSBOW);
+            return Tag.ITEMS_ENCHANTABLE_CROSSBOW.isTagged(item);
         }
     },
 
@@ -228,7 +167,7 @@ public enum EnchantmentTarget {
     VANISHABLE {
         @Override
         public boolean includes(@NotNull Material item) {
-            return BREAKABLE.includes(item) || (WEARABLE.includes(item) && !item.equals(Material.ELYTRA)) || item.equals(Material.COMPASS);
+            return Tag.ITEMS_ENCHANTABLE_VANISHING.isTagged(item);
         }
     };
 

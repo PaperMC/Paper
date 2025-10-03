@@ -1,34 +1,43 @@
 --- a/net/minecraft/server/players/UserBanListEntry.java
 +++ b/net/minecraft/server/players/UserBanListEntry.java
-@@ -37,19 +_,27 @@
+@@ -17,7 +_,7 @@
+     }
  
-     @Nullable
-     private static GameProfile createGameProfile(JsonObject json) {
--        if (json.has("uuid") && json.has("name")) {
-+        // Spigot start
+     public UserBanListEntry(JsonObject entryData) {
+-        super(NameAndId.fromJson(entryData), entryData);
++        super(parseNameAndId(entryData), entryData);
+     }
+ 
+     @Override
+@@ -33,4 +_,31 @@
+         NameAndId nameAndId = this.getUser();
+         return (Component)(nameAndId != null ? Component.literal(nameAndId.name()) : MESSAGE_UNKNOWN_USER);
+     }
++
++    // Spigot start
++    // This is a modified version of NameAndId.fromJson specifically for UserBanListEntry
++    @Nullable
++    private static NameAndId parseNameAndId(JsonObject json) {
 +        // this whole method has to be reworked to account for the fact Bukkit only accepts UUID bans and gives no way for usernames to be stored!
-+        UUID uuid = null;
++        java.util.UUID uuid = null;
 +        String name = null;
 +        if (json.has("uuid")) {
-             String asString = json.get("uuid").getAsString();
- 
--            UUID uuid;
-             try {
-                 uuid = UUID.fromString(asString);
-             } catch (Throwable var4) {
--                return null;
-             }
- 
--            return new GameProfile(uuid, json.get("name").getAsString());
++            String asString = json.get("uuid").getAsString();
++
++            try {
++                uuid = java.util.UUID.fromString(asString);
++            } catch (Throwable var4) {
++            }
++
 +        }
 +        if (json.has("name")) {
 +            name = json.get("name").getAsString();
 +        }
 +        if (uuid != null || name != null) {
-+            return new GameProfile(uuid, name);
-         } else {
-             return null;
-         }
-+        // Spigot end
-     }
++            return new NameAndId(uuid, name);
++        } else {
++            return null;
++        }
++    }
++    // Spigot end
  }

@@ -72,7 +72,7 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
     public NamespacedKey(@NotNull Plugin plugin, @NotNull String key) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         Preconditions.checkArgument(key != null, "Key cannot be null");
-        this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
+        this.namespace = plugin.namespace();
         this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization

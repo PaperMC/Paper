@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 public class PlayerPickEntityEvent extends PlayerPickItemEvent {
+
     private final Entity entity;
 
     @ApiStatus.Internal
