@@ -23,25 +23,14 @@
  
      private EntitySelector() {
      }
-@@ -27,18 +_,24 @@
-     }
- 
-     public static Predicate<Entity> pushableBy(Entity entity) {
-+        // Paper start - Climbing should not bypass cramming gamerule
-+        return pushable(entity, false);
-+    }
-+
-+    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
-+        // Paper end - Climbing should not bypass cramming gamerule
-         Team team = entity.getTeam();
-         Team.CollisionRule collisionRule = team == null ? Team.CollisionRule.ALWAYS : team.getCollisionRule();
+@@ -32,13 +_,13 @@
          return (Predicate<Entity>)(collisionRule == Team.CollisionRule.NEVER
              ? Predicates.alwaysFalse()
              : NO_SPECTATORS.and(
 -                entity1 -> {
 -                    if (!entity1.isPushable()) {
 +                entity1 -> { final Entity pushedEntity = entity1; // Paper - OBFHELPER
-+                    if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
++                    if (!pushedEntity.isPushable() || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
                          return false;
                      } else if (!entity.level().isClientSide() || entity1 instanceof Player player && player.isLocalPlayer()) {
                          Team team1 = entity1.getTeam();
