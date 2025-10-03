@@ -47,7 +47,6 @@ public final class MemoryKey<T> implements Keyed {
     private static final Map<NamespacedKey, MemoryKey<?>> MEMORY_KEYS = new HashMap<>();
 
     // Start generate - MemoryKey
-    // @GeneratedFrom 1.21.8
     public static final MemoryKey<Boolean> ADMIRING_DISABLED = new MemoryKey<>(NamespacedKey.minecraft("admiring_disabled"), Boolean.class);
 
     public static final MemoryKey<Boolean> ADMIRING_ITEM = new MemoryKey<>(NamespacedKey.minecraft("admiring_item"), Boolean.class);
@@ -121,6 +120,8 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Integer> TEMPTATION_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("temptation_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Integer> TIME_TRYING_TO_REACH_ADMIRE_ITEM = new MemoryKey<>(NamespacedKey.minecraft("time_trying_to_reach_admire_item"), Integer.class);
+
+    public static final MemoryKey<Integer> TRANSPORT_ITEMS_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("transport_items_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Boolean> UNIVERSAL_ANGER = new MemoryKey<>(NamespacedKey.minecraft("universal_anger"), Boolean.class);
 

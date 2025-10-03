@@ -11,7 +11,7 @@ java {
 
 val annotationsVersion = "26.0.2"
 // Keep in sync with paper-server adventure-text-serializer-ansi dep
-val adventureVersion = "4.24.0"
+val adventureVersion = "4.25.0-SNAPSHOT"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.16"
 val log4jVersion = "2.24.1"
@@ -176,6 +176,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://javadoc.io/doc/org.joml/joml/1.10.8/",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
+        /* TODO 1.21.9 dev - adventure release
         "https://jd.advntr.dev/api/$adventureVersion/",
         "https://jd.advntr.dev/key/$adventureVersion/",
         "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
@@ -183,6 +184,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+         */
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
@@ -232,16 +234,4 @@ val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJar
 }
 tasks.check {
     dependsOn(scanJarForBadCalls)
-}
-
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-        mcVersion.set(providers.gradleProperty("mcVersion"))
-        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-        classpath.from(configurations.compileClasspath)
-    }
-    tasks.check {
-        dependsOn(scanJarForOldGeneratedCode)
-    }
 }

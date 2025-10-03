@@ -63,10 +63,6 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends Holdera
 
     @Override
     public String toString() {
-        if (this.name != null) {
-            // TODO remove in next feature release or 1.22
-            return this.name;
-        }
         return this.implToString();
     }
 }

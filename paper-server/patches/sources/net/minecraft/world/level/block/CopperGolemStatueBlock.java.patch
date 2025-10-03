@@ -1,0 +1,28 @@
+--- a/net/minecraft/world/level/block/CopperGolemStatueBlock.java
++++ b/net/minecraft/world/level/block/CopperGolemStatueBlock.java
+@@ -113,15 +_,21 @@
+         if (stack.is(ItemTags.AXES)) {
+             return InteractionResult.PASS;
+         } else {
+-            this.updatePose(level, state, pos, player);
+-            return InteractionResult.SUCCESS;
++            return this.updatePose(level, state, pos, player); // Paper - call EntityChangeBlockEvent
+         }
+     }
+ 
+-    void updatePose(Level level, BlockState state, BlockPos pos, Player player) {
++    // Paper start - call EntityChangeBlockEvent
++    InteractionResult updatePose(Level level, BlockState state, BlockPos pos, Player player) {
++        BlockState newState = state.setValue(POSE, state.getValue(POSE).getNextPose());
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
++            return InteractionResult.PASS;
++        }
+         level.playSound(null, pos, SoundEvents.COPPER_GOLEM_BECOME_STATUE, SoundSource.BLOCKS);
+-        level.setBlock(pos, state.setValue(POSE, state.getValue(POSE).getNextPose()), 3);
++        level.setBlock(pos, newState, 3);
+         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
++        return InteractionResult.SUCCESS;
++        // Paper end - call EntityChangeBlockEvent
+     }
+ 
+     @Override

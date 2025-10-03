@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -47,12 +_,26 @@
-     public ClientInformation clientInformation;
-     @Nullable
+@@ -55,12 +_,26 @@
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
+     @Nullable
+     private PrepareSpawnTask prepareSpawnTask;
 +    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
      public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
@@ -28,21 +28,19 @@
  
      @Override
      protected GameProfile playerProfile() {
-@@ -61,7 +_,12 @@
+@@ -69,6 +_,11 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails details) {
--        LOGGER.info("{} lost connection: {}", this.gameProfile, details.reason().getString());
 +        // Paper start - Debugging
 +        if (this.server.isDebugging()) {
-+            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile.getName(), details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} ({}) lost connection: {}, while in configuration phase {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
 +        } else
 +        // Paper end
-+        LOGGER.info("{} lost connection: {}", this.gameProfile.getName(), details.reason().getString()); // Paper - log name instead of whole profile (as with other similar messages)
-         super.onDisconnect(details);
-     }
- 
-@@ -71,10 +_,15 @@
+         LOGGER.info("{} ({}) lost connection: {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString());
+         if (this.prepareSpawnTask != null) {
+             this.prepareSpawnTask.close();
+@@ -84,10 +_,15 @@
      }
  
      public void startConfiguration() {
@@ -59,15 +57,21 @@
          }
  
          LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = this.server.registries();
-@@ -87,6 +_,7 @@
+@@ -100,11 +_,12 @@
          this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
          this.configurationTasks.add(this.synchronizeRegistriesTask);
          this.addOptionalTasks();
 +        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
+         this.returnToWorld();
+     }
+ 
+     public void returnToWorld() {
+-        this.prepareSpawnTask = new PrepareSpawnTask(this.server, new NameAndId(this.gameProfile));
++        this.prepareSpawnTask = new PrepareSpawnTask(this.server, this.gameProfile, this); // Paper - pass full GameProfile & listener for events
+         this.configurationTasks.add(this.prepareSpawnTask);
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
-     }
-@@ -105,12 +_,14 @@
+@@ -135,12 +_,14 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
@@ -83,40 +87,16 @@
              this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
          }
      }
-@@ -139,16 +_,30 @@
+@@ -174,7 +_,7 @@
                  return;
              }
  
--            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
-+            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
+-            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
++            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
              if (component != null) {
                  this.disconnect(component);
                  return;
-             }
- 
--            ServerPlayer serverPlayer = new ServerPlayer(this.server, this.server.overworld(), this.gameProfile, this.clientInformation);
-+            // Paper start
-+            ServerPlayer serverPlayer;
-+            if (this.connection.savedPlayerForLoginEventLegacy != null) {
-+                serverPlayer = this.connection.savedPlayerForLoginEventLegacy;
-+                // WE have to do this because the player isnt updated properly
-+                serverPlayer.updateOptionsNoEvents(this.clientInformation);
-+            } else {
-+                serverPlayer = new ServerPlayer(this.server, this.server.overworld(), this.gameProfile, this.clientInformation);
-+            }
-+            // Paper end
-             playerList.placeNewPlayer(this.connection, serverPlayer, this.createCookie(this.clientInformation));
-         } catch (Exception var5) {
-             LOGGER.error("Couldn't place player in world", (Throwable)var5);
-+            // Paper start - Debugging
-+            if (this.server.isDebugging()) {
-+                var5.printStackTrace();
-+            }
-+            // Paper end - Debugging
-             this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
-             this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
-         }
-@@ -180,4 +_,29 @@
+@@ -234,4 +_,29 @@
              this.startNextTask();
          }
      }

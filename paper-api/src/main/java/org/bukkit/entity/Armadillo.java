@@ -30,7 +30,6 @@ public interface Armadillo extends Animals {
      */
     enum State {
         // Start generate - ArmadilloState
-        // @GeneratedFrom 1.21.8
         IDLE,
         ROLLING,
         SCARED,

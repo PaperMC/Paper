@@ -19,7 +19,7 @@ public record PaperDeathProtection(
 
     @Override
     public @Unmodifiable List<ConsumeEffect> deathEffects() {
-        return MCUtil.transformUnmodifiable(this.impl.deathEffects(), PaperConsumableEffect::fromNms);
+        return MCUtil.transformUnmodifiable(this.impl.deathEffects(), PaperConsumableEffect::fromVanilla);
     }
 
     static final class BuilderImpl implements Builder {
@@ -28,14 +28,14 @@ public record PaperDeathProtection(
 
         @Override
         public Builder addEffect(final ConsumeEffect effect) {
-            this.effects.add(PaperConsumableEffect.toNms(effect));
+            this.effects.add(PaperConsumableEffect.toVanilla(effect));
             return this;
         }
 
         @Override
         public Builder addEffects(final List<ConsumeEffect> effects) {
             for (final ConsumeEffect effect : effects) {
-                this.effects.add(PaperConsumableEffect.toNms(effect));
+                this.effects.add(PaperConsumableEffect.toVanilla(effect));
             }
             return this;
         }

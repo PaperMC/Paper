@@ -1,27 +1,42 @@
 --- a/net/minecraft/world/level/block/CaveVines.java
 +++ b/net/minecraft/world/level/block/CaveVines.java
-@@ -23,7 +_,23 @@
- 
-     static InteractionResult use(@Nullable Entity entity, BlockState state, Level level, BlockPos pos) {
+@@ -23,6 +_,12 @@
+     static InteractionResult use(Entity entity, BlockState state, Level level, BlockPos pos) {
          if (state.getValue(BERRIES)) {
--            Block.popResource(level, pos, new ItemStack(Items.GLOW_BERRIES, 1));
-+            // CraftBukkit start
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, (BlockState) state.setValue(CaveVines.BERRIES, false))) {
-+                return InteractionResult.SUCCESS;
-+            }
-+
-+            if (entity instanceof net.minecraft.world.entity.player.Player player) {
-+                org.bukkit.event.player.PlayerHarvestBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerHarvestBlockEvent(level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, java.util.Collections.singletonList(new ItemStack(Items.GLOW_BERRIES, 1)));
-+                if (event.isCancelled()) {
-+                    return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
+             if (level instanceof ServerLevel serverLevel) {
++                // CraftBukkit start - call entity change block event
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, state.setValue(CaveVines.BERRIES, false))) {
++                    return InteractionResult.SUCCESS;
 +                }
-+                for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
-+                    Block.popResource(level, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack));
++                // CraftBukkit end - call entity change block event
++                java.util.List<net.minecraft.world.item.ItemStack> drops = new java.util.ArrayList<>(); // Paper - call player harvest block event - store drops from loottable
+                 Block.dropFromBlockInteractLootTable(
+                     serverLevel,
+                     BuiltInLootTables.HARVEST_CAVE_VINE,
+@@ -30,8 +_,25 @@
+                     level.getBlockEntity(pos),
+                     null,
+                     entity,
+-                    (serverLevel1, itemStack) -> Block.popResource(serverLevel1, pos, itemStack)
++                    (serverLevel1, itemStack) -> drops.add(itemStack) // Paper - call player harvest block event - store drops from loottable
+                 );
++                // Paper start - call player harvest block event
++                if (entity instanceof net.minecraft.world.entity.player.Player player) {
++                    org.bukkit.event.player.PlayerHarvestBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerHarvestBlockEvent(
++                        level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, drops
++                    );
++                    if (event.isCancelled()) {
++                        return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
++                    }
++                    for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
++                        Block.popResource(level, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack));
++                    }
++                } else {
++                    for (net.minecraft.world.item.ItemStack itemStack : drops) {
++                        Block.popResource(level, pos, itemStack);
++                    }
 +                }
-+            } else {
-+                Block.popResource(level, pos, new ItemStack(Items.GLOW_BERRIES, 1));
-+            }
-+            // CraftBukkit end
-             float f = Mth.randomBetween(level.random, 0.8F, 1.2F);
-             level.playSound(null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, f);
-             BlockState blockState = state.setValue(BERRIES, false);
++                // Paper end - call player harvest block event
+                 float f = Mth.randomBetween(serverLevel.random, 0.8F, 1.2F);
+                 serverLevel.playSound(null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, f);
+                 BlockState blockState = state.setValue(BERRIES, false);

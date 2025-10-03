@@ -26,18 +26,18 @@ public interface DamageTypeRegistryEntry {
     String messageId();
 
     /**
-     * Provides the amount of hunger exhaustion caused by this damage type.
-     *
-     * @return the exhaustion
-     */
-    float exhaustion();
-
-    /**
      * Provides the {@link DamageScaling} for this damage type.
      *
      * @return the damage scaling
      */
     DamageScaling damageScaling();
+
+    /**
+     * Provides the amount of hunger exhaustion caused by this damage type.
+     *
+     * @return the exhaustion
+     */
+    float exhaustion();
 
     /**
      * Provides the {@link DamageEffect} for this damage type.

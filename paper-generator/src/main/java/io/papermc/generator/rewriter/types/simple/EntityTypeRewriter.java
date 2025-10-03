@@ -169,7 +169,9 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         }
 
         String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, reference.key().location().getPath()); // use the key instead of the internal class name since name match a bit more
-        ClassNamed resolvedClass = this.classNamedView.findFirst(CLASS_RENAMES.getOrDefault(className, className)).resolve(runtime);
+        ClassNamed resolvedClass = this.classNamedView.tryFindFirst(CLASS_RENAMES.getOrDefault(className, className))
+            .orElseThrow(() -> new IllegalStateException("Could not find entity class for " + reference.key().location()))
+            .resolve(runtime);
         Preconditions.checkArgument(org.bukkit.entity.Entity.class.isAssignableFrom(resolvedClass.knownClass()), "Generic type must be an entity");
         return this.importCollector.getShortName(this.classNamedView.findFirst(CLASS_RENAMES.getOrDefault(className, className)).resolve(runtime));
     }

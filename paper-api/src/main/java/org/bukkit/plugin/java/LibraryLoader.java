@@ -35,6 +35,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // Paper start
+/**
+ * @hidden
+ */
 @org.jetbrains.annotations.ApiStatus.Internal
 public class LibraryLoader {
 // Paper end

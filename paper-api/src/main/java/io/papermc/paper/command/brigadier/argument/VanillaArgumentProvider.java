@@ -19,14 +19,12 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -59,15 +57,15 @@ interface VanillaArgumentProvider {
     ArgumentType<PlayerProfileListResolver> playerProfiles();
 
     ArgumentType<BlockPositionResolver> blockPosition();
-    
+
     ArgumentType<ColumnBlockPositionResolver> columnBlockPosition();
 
     ArgumentType<FinePositionResolver> finePosition(boolean centerIntegers);
-    
+
     ArgumentType<ColumnFinePositionResolver> columnFinePosition(boolean centerIntegers);
 
     ArgumentType<RotationResolver> rotation();
-    
+
     ArgumentType<AngleResolver> angle();
 
     ArgumentType<AxisSet> axes();
@@ -102,7 +100,7 @@ interface VanillaArgumentProvider {
     ArgumentType<DoubleRangeProvider> doubleRange();
 
     ArgumentType<World> world();
-    
+
     ArgumentType<GameMode> gameMode();
 
     ArgumentType<HeightMap> heightMap();

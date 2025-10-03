@@ -17,7 +17,7 @@ public enum EquipmentSlot {
      */
     BODY(() -> EquipmentSlotGroup.BODY),
     /**
-     * Only for certain entities such as pigs, horses and striders.
+     * Only for certain entities such as pigs, horses, striders and copper golems.
      */
     SADDLE(() -> EquipmentSlotGroup.SADDLE);
 

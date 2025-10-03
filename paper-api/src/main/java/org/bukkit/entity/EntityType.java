@@ -46,7 +46,6 @@ import org.jetbrains.annotations.Nullable;
 public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - translatable
 
     // Start generate - EntityType
-    // @GeneratedFrom 1.21.8
     ACACIA_BOAT("acacia_boat", AcaciaBoat.class, -1),
     ACACIA_CHEST_BOAT("acacia_chest_boat", AcaciaChestBoat.class, -1),
     ALLAY("allay", Allay.class, -1),
@@ -75,6 +74,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     CHICKEN("chicken", Chicken.class, 93),
     COD("cod", Cod.class, -1),
     COMMAND_BLOCK_MINECART("command_block_minecart", CommandMinecart.class, 40),
+    COPPER_GOLEM("copper_golem", CopperGolem.class, -1),
     COW("cow", Cow.class, 92),
     CREAKING("creaking", Creaking.class, -1),
     CREEPER("creeper", Creeper.class, 50),
@@ -130,6 +130,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     MAGMA_CUBE("magma_cube", MagmaCube.class, 62),
     MANGROVE_BOAT("mangrove_boat", MangroveBoat.class, -1),
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
+    MANNEQUIN("mannequin", Mannequin.class, -1),
     MARKER("marker", Marker.class, -1),
     MINECART("minecart", RideableMinecart.class, 42),
     MOOSHROOM("mooshroom", MushroomCow.class, 96),
@@ -358,16 +359,4 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return org.bukkit.Bukkit.getUnsafe().getDefaultEntityAttributes(this.key);
     }
     // Paper end
-
-    /**
-     * Gets if this EntityType is enabled by feature in a world.
-     *
-     * @param world the world to check
-     * @return true if this EntityType can be used to spawn an Entity for this World.
-     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
-     */
-    @Deprecated(forRemoval = true, since = "1.20")
-    public boolean isEnabledByFeature(@NotNull World world) {
-        return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
-    }
 }
