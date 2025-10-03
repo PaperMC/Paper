@@ -228,6 +228,8 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
         POTION_EFFECT,
         /**
          * When a copper golem statue is turned back into a copper golem
+         *
+         * @apiNote Cancel a event with this reason not avoid the statue to being change, you need to check {@link EntityChangeBlockEvent} for that
          */
         REANIMATE,
         /**
