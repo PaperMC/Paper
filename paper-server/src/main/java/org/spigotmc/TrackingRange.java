@@ -30,6 +30,11 @@ public final class TrackingRange {
             return config.playerTrackingRange;
         }
 
+        if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
+            // Exempt ender dragon
+            return ((ServerLevel) entity.level()).getChunkSource().chunkMap.serverViewDistance << 4;
+        }
+
         switch (entity.activationType) {
             case RAIDER:
             case MONSTER:
@@ -47,10 +52,6 @@ public final class TrackingRange {
         } else if (entity instanceof Display) {
             return config.displayTrackingRange;
         } else {
-            if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
-                // Exempt ender dragon
-                return ((ServerLevel) entity.level()).getChunkSource().chunkMap.serverViewDistance;
-            }
             return config.otherTrackingRange;
         }
     }
