@@ -6,6 +6,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
+import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -14,17 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
-import io.papermc.paper.connection.PlayerConnection;
-import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -1540,8 +1539,8 @@ public class CraftEventFactory {
     }
 
     public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
-        if (!(leashed instanceof final Entity leashedEntity)) return false;
-        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+        if (!(leashed instanceof final Entity leashedEntity)) return true;
+        return !callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).isCancelled();
     }
 
     public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
