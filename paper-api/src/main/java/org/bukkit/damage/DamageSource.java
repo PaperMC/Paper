@@ -1,10 +1,13 @@
 package org.bukkit.damage;
 
+import net.kyori.adventure.pointer.Pointers;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.function.Consumer;
 
 /**
  * Represents a source of damage.
@@ -98,6 +101,15 @@ public interface DamageSource {
     public boolean scalesWithDifficulty();
 
     /**
+     * Gets the {@link Pointers} used for plugin-provided damage context.
+     *
+     * @return the damage context
+     */
+    @ApiStatus.Experimental
+    @NotNull
+    public Pointers getDamageContext();
+
+    /**
      * Create a new {@link DamageSource.Builder}.
      *
      * @param damageType the {@link DamageType} to use
@@ -144,6 +156,17 @@ public interface DamageSource {
          */
         @NotNull
         public Builder withDamageLocation(@NotNull Location location);
+
+        /**
+         * Configures a builder for the {@link net.kyori.adventure.pointer.Pointers} used for plugin-provided damage context.
+         *
+         * @param consumer a consumer
+         * @return this instance. Allows for chained method calls
+         * @see DamageSource#getDamageContext()
+         */
+        @ApiStatus.Experimental
+        @NotNull
+        public Builder withDamageContext(@NotNull Consumer<Pointers.Builder> consumer);
 
         /**
          * Create a new {@link DamageSource} instance using the supplied
