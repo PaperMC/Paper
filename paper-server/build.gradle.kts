@@ -27,9 +27,9 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = false
-        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
-        packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
+        enabled = true
+        buildDataRef = "42d18d4c4653ffc549778dbe223f6994a031d69e"
+        packageVersion = "v1_21_R6" // also needs to be updated in MappingEnvironment
     }
 
     reobfPackagesToFix.addAll(
