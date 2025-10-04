@@ -1,9 +1,13 @@
 package org.bukkit.scoreboard;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -295,9 +299,12 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
      * @see #addEntry(String)
+     * @apiNote use {@link #addEntry(ScoreHolder)}
      */
-    // @Deprecated(since = "1.8.6") // Paper
-    void addPlayer(@NotNull OfflinePlayer player);
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default void addPlayer(@NotNull OfflinePlayer player) {
+        this.addEntry(player);
+    }
 
     /**
      * This puts the specified entry onto this team for the scoreboard.
@@ -307,9 +314,32 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entry the entry to add
      * @throws IllegalStateException if this team has been unregistered
      */
-    void addEntry(@NotNull String entry);
+    default void addEntry(@NotNull String entry) {
+        this.addEntry(ScoreHolder.scoreHolder(entry));
+    }
 
-    // Paper start
+    /**
+     * This puts the specified score holder onto this team for the scoreboard.
+     * <p>
+     * This will remove the entry from any other team on the scoreboard.
+     *
+     * @param holder the score holder to add
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    void addEntry(@NotNull ScoreHolder holder);
+
+    /**
+     * This puts a collection of score holders onto this team for the scoreboard which results in one
+     * packet for the updates rather than a packet-per-holder.
+     * <p>
+     * Score holders on other teams will be removed from their respective teams.
+     *
+     * @param holders the score holders to add
+     * @throws IllegalArgumentException if the holders are null
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    void addScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
+
     /**
      * This puts a collection of entities onto this team for the scoreboard which results in one
      * packet for the updates rather than a packet-per-entity.
@@ -317,11 +347,13 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * Entities on other teams will be removed from their respective teams.
      *
      * @param entities the entities to add
-     * @throws IllegalArgumentException if entities are null
+     * @throws IllegalArgumentException if the holders are null
      * @throws IllegalStateException if this team has been unregistered
+     * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    default void addEntities(@NotNull org.bukkit.entity.Entity @NotNull ...entities) {
-        this.addEntities(java.util.List.of(entities));
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default void addEntities(@NotNull Entity @NotNull ...entities) {
+        this.addScoreHolders(List.of(entities));
     }
 
     /**
@@ -333,21 +365,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entities the entities to add
      * @throws IllegalArgumentException if entities are null
      * @throws IllegalStateException if this team has been unregistered
+     * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    void addEntities(@NotNull java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException;
-
-    /**
-     * This puts a collection of entries onto this team for the scoreboard which results in one
-     * packet for the updates rather than a packet-per-entry.
-     * <p>
-     * Entries on other teams will be removed from their respective teams.
-     *
-     * @param entries the entries to add
-     * @throws IllegalArgumentException if entries are null
-     * @throws IllegalStateException if this team has been unregistered
-     */
-    default void addEntries(@NotNull String... entries) throws IllegalStateException, IllegalArgumentException {
-        this.addEntries(java.util.List.of(entries));
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default void addEntities(@NotNull Collection<Entity> entities) {
+        this.addScoreHolders(entities);
     }
 
     /**
@@ -360,8 +382,21 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entries are null
      * @throws IllegalStateException if this team has been unregistered
      */
-    void addEntries(@NotNull java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException;
-    // Paper end
+    default void addEntries(@NotNull String... entries) {
+        this.addEntries(List.of(entries));
+    }
+
+    /**
+     * This puts a collection of entries onto this team for the scoreboard which results in one
+     * packet for the updates rather than a packet-per-entry.
+     * <p>
+     * Entries on other teams will be removed from their respective teams.
+     *
+     * @param entries the entries to add
+     * @throws IllegalArgumentException if entries are null
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    void addEntries(@NotNull Collection<String> entries);
 
     /**
      * Removes the player from this team.
@@ -370,9 +405,12 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if the player was on this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #removeEntry(String)
+     * @apiNote use {@link #removeEntry(ScoreHolder)}
      */
-    // @Deprecated(since = "1.8.6") // Paper
-    boolean removePlayer(@NotNull OfflinePlayer player);
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean removePlayer(@NotNull OfflinePlayer player) {
+        return this.removeEntry(player);
+    }
 
     /**
      * Removes the entry from this team.
@@ -381,9 +419,30 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if the entry was a part of this team
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean removeEntry(@NotNull String entry);
+    default boolean removeEntry(@NotNull String entry) {
+        return this.removeEntry(ScoreHolder.scoreHolder(entry));
+    }
 
-    // Paper start
+    /**
+     * Removes the score holder from this team.
+     *
+     * @param holder the holder to remove
+     * @return if the entry was a part of this team
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean removeEntry(@NotNull ScoreHolder holder);
+
+    /**
+     * Removes a collection of score holders from this team which results in one
+     * packet for the updates rather than a packet-per-holder.
+     *
+     * @param holders the score holders to remove
+     * @return if any of the holders were a part of this team
+     * @throws IllegalArgumentException if holders is null
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean removeScoreHolders(@NotNull Collection<? extends ScoreHolder> holders);
+
     /**
      * Removes a collection of entities from this team which results in one
      * packet for the updates rather than a packet-per-entity.
@@ -392,9 +451,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
+     * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    default boolean removeEntities(@NotNull org.bukkit.entity.Entity @NotNull ... entities) throws IllegalStateException, IllegalArgumentException {
-        return this.removeEntities(java.util.List.of(entities));
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean removeEntities(@NotNull Entity @NotNull ... entities) {
+        return this.removeScoreHolders(List.of(entities));
     }
 
     /**
@@ -405,20 +466,11 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
+     * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    boolean removeEntities(@NotNull java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException;
-
-    /**
-     * Removes a collection of entries from this team which results in one
-     * packet for the updates rather than a packet-per-entry.
-     *
-     * @param entries the entries to remove
-     * @return if any of the entries were a part of this team
-     * @throws IllegalArgumentException if entries is null
-     * @throws IllegalStateException if this team has been unregistered
-     */
-    default boolean removeEntries(@NotNull String... entries) throws IllegalStateException, IllegalArgumentException {
-        return this.removeEntries(java.util.List.of(entries));
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean removeEntities(@NotNull Collection<Entity> entities) {
+        return this.removeScoreHolders(entities);
     }
 
     /**
@@ -430,8 +482,20 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entries is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean removeEntries(@NotNull java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException;
-    // Paper end
+    default boolean removeEntries(@NotNull String... entries) {
+        return this.removeEntries(List.of(entries));
+    }
+
+    /**
+     * Removes a collection of entries from this team which results in one
+     * packet for the updates rather than a packet-per-entry.
+     *
+     * @param entries the entries to remove
+     * @return if any of the entries were a part of this team
+     * @throws IllegalArgumentException if entries is null
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean removeEntries(@NotNull Collection<String> entries);
 
     /**
      * Unregisters this team from the Scoreboard
@@ -447,9 +511,13 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return true if the player is a member of this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
+     * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    // @Deprecated(since = "1.8.6") // Paper
-    boolean hasPlayer(@NotNull OfflinePlayer player);
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean hasPlayer(@NotNull OfflinePlayer player) {
+        return this.hasEntry(player);
+    }
+
     /**
      * Checks to see if the specified entry is a member of this team.
      *
@@ -457,7 +525,18 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return true if the entry is a member of this team
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean hasEntry(@NotNull String entry);
+    default boolean hasEntry(@NotNull String entry) {
+        return this.hasEntry(ScoreHolder.scoreHolder(entry));
+    }
+
+    /**
+     * Checks to see if the specified score holder is a member of this team.
+     *
+     * @param holder the score holder to search for
+     * @return true if the score holder is a member of this team
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean hasEntry(@NotNull ScoreHolder holder);
 
     /**
      * Get an option for this team
@@ -478,7 +557,6 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      */
     void setOption(@NotNull Option option, @NotNull OptionStatus status);
 
-    // Paper start - improve scoreboard entries
     /**
      * This puts the specified entity onto this team for the scoreboard.
      * <p>
@@ -486,10 +564,14 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param entity the entity to add
      * @throws IllegalArgumentException if entity is null
-     * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalStateException    if this team has been unregistered
+     * @apiNote use {@link #addEntry(ScoreHolder)}
      * @see #addEntry(String)
      */
-    void addEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default void addEntity(@NotNull Entity entity) {
+        this.addEntry(entity);
+    }
 
     /**
      * Removes the entity from this team.
@@ -497,10 +579,14 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entity the entity to remove
      * @return if the entity was on this team
      * @throws IllegalArgumentException if entity is null
-     * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalStateException    if this team has been unregistered
+     * @apiNote use {@link #removeEntry(ScoreHolder)}
      * @see #removeEntry(String)
      */
-    boolean removeEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean removeEntity(@NotNull Entity entity) {
+        return this.removeEntry(entity);
+    }
 
     /**
      * Checks to see if the specified entity is a member of this team.
@@ -510,10 +596,13 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
+     * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    boolean hasEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
-    // Paper end - improve scoreboard entries
-
+    @ApiStatus.Obsolete(since = "1.21.8")
+    default boolean hasEntity(@NotNull Entity entity) {
+        return this.hasEntry(entity);
+    }
+    
     /**
      * Represents an option which may be applied to this team.
      */
