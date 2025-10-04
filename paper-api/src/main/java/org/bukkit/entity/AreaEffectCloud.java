@@ -213,7 +213,7 @@ public interface AreaEffectCloud extends Entity {
      * Removes a custom potion effect from this cloud.
      *
      * @param type the potion effect type to remove
-     * @return true if the an effect was removed as a result of this call
+     * @return true if the effect was removed as a result of this call
      */
     boolean removeCustomEffect(@NotNull PotionEffectType type);
 

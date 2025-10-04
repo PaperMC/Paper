@@ -18,6 +18,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -38,6 +39,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
@@ -63,6 +65,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
+import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -266,17 +269,7 @@ public class CraftEventFactory {
 
     // helper methods
     private static boolean canBuild(Level world, Player player, int x, int z) {
-        int spawnSize = Bukkit.getServer().getSpawnRadius();
-
-        if (world.dimension() != Level.OVERWORLD) return true;
-        if (spawnSize <= 0) return true;
-        if (((CraftServer) Bukkit.getServer()).getHandle().getOps().isEmpty()) return true;
-        if (player.isOp()) return true;
-
-        BlockPos spawnPos = world.getSharedSpawnPos();
-
-        int distanceFromSpawn = Math.max(Math.abs(x - spawnPos.getX()), Math.abs(z - spawnPos.getZ()));
-        return distanceFromSpawn > spawnSize;
+        return world.mayInteract(((CraftPlayer) player).getHandle(), new BlockPos(x, 0, z));
     }
 
     public static boolean callPlayerSignOpenEvent(net.minecraft.world.entity.player.Player player, SignBlockEntity signBlockEntity, boolean front, PlayerSignOpenEvent.Cause cause) {
@@ -528,8 +521,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, net.minecraft.world.entity.LivingEntity coverted, EntityTransformEvent.TransformReason transformReason) {
-        return CraftEventFactory.callEntityTransformEvent(original, Collections.singletonList(coverted), transformReason);
+    public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, net.minecraft.world.entity.LivingEntity converted, EntityTransformEvent.TransformReason transformReason) {
+        return CraftEventFactory.callEntityTransformEvent(original, Collections.singletonList(converted), transformReason);
     }
 
     public static EntityTransformEvent callEntityTransformEvent(net.minecraft.world.entity.LivingEntity original, List<net.minecraft.world.entity.LivingEntity> convertedList, EntityTransformEvent.TransformReason convertType) {
@@ -1166,16 +1159,13 @@ public class CraftEventFactory {
         return event;
     }
 
-    // Paper start - Add orb
-    public static PlayerExpChangeEvent callPlayerExpChangeEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb entityOrb) {
+    public static PlayerExpChangeEvent callPlayerExpChangeEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb entityOrb, int expAmount) {
         Player player = (Player) entity.getBukkitEntity();
         ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
-        int expAmount = source.getExperience();
         PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
-    // Paper end
 
     public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
@@ -1396,9 +1386,15 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockRedstoneEvent callRedstoneChange(Level world, BlockPos pos, int oldCurrent, int newCurrent) {
-        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(world, pos), oldCurrent, newCurrent);
-        world.getCraftServer().getPluginManager().callEvent(event);
+    public static boolean callBinaryRedstoneChange(LevelAccessor level, BlockPos pos, boolean willBePowered) {
+        int oldCurrent = willBePowered ? Redstone.SIGNAL_MIN : Redstone.SIGNAL_MAX;
+        int newCurrent = willBePowered ? Redstone.SIGNAL_MAX : Redstone.SIGNAL_MIN;
+        return callRedstoneChange(level, pos, oldCurrent, newCurrent).getNewCurrent() == newCurrent;
+    }
+
+    public static BlockRedstoneEvent callRedstoneChange(LevelAccessor level, BlockPos pos, int oldCurrent, int newCurrent) {
+        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), oldCurrent, newCurrent); // todo normalize newCurrent change outcome
+        event.callEvent();
         return event;
     }
 
@@ -2117,5 +2113,14 @@ public class CraftEventFactory {
         }
 
         return disconnectReason;
+    }
+
+    public static boolean callTransporterValidateTarget(final PathfinderMob mob, final Level level, final BlockPos transportItemTarget) {
+        if (ItemTransportingEntityValidateTargetEvent.getHandlerList().getRegisteredListeners().length == 0) {
+            return true; // No listeners, skip event creation
+        }
+        final ItemTransportingEntityValidateTargetEvent event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
+        event.callEvent();
+        return event.isAllowed();
     }
 }

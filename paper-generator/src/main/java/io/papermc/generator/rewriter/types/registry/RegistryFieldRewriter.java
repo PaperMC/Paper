@@ -13,6 +13,7 @@ import io.papermc.typewriter.ClassNamed;
 import io.papermc.typewriter.SourceFile;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -72,7 +73,7 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
         boolean isInterface = Objects.requireNonNull(this.fieldClass.knownClass()).isInterface();
         Registry<T> registry = this.registryEntry.registry();
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(registry));
-        Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(Formatting.HOLDER_ORDER).iterator();
+        Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(this.comparator()).iterator();
 
         while (referenceIterator.hasNext()) {
             Holder.Reference<T> reference = referenceIterator.next();
@@ -99,6 +100,10 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
                 builder.append('\n');
             }
         }
+    }
+
+    protected Comparator<? super Holder.Reference<T>> comparator() {
+        return Formatting.HOLDER_ORDER;
     }
 
     protected void rewriteJavadocs(Holder.Reference<T> reference, String replacedContent, String indent, StringBuilder builder) {

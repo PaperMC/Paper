@@ -24,6 +24,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.entity.projectile.LargeFireball;
@@ -90,6 +91,7 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jspecify.annotations.NonNull;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
@@ -98,7 +100,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public CraftLivingEntity(final CraftServer server, final net.minecraft.world.entity.LivingEntity entity) {
         super(server, entity);
 
-        if (entity instanceof Mob || entity instanceof ArmorStand) {
+        if (entity instanceof Mob || entity instanceof ArmorStand || entity instanceof Mannequin) {
             this.equipment = new CraftEntityEquipment(this);
         }
     }
@@ -288,19 +290,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public Block getTargetBlockExact(int maxDistance) {
-        return this.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
-    }
-
-    @Override
     public Block getTargetBlockExact(int maxDistance, FluidCollisionMode fluidCollisionMode) {
         RayTraceResult hitResult = this.rayTraceBlocks(maxDistance, fluidCollisionMode);
         return (hitResult != null ? hitResult.getHitBlock() : null);
-    }
-
-    @Override
-    public RayTraceResult rayTraceBlocks(double maxDistance) {
-        return this.rayTraceBlocks(maxDistance, FluidCollisionMode.NEVER);
     }
 
     @Override
@@ -522,11 +514,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean addPotionEffect(PotionEffect effect) {
-        return this.addPotionEffect(effect, false);
-    }
-
-    @Override
     public boolean addPotionEffect(PotionEffect effect, boolean force) {
         org.spigotmc.AsyncCatcher.catchOp("effect add"); // Paper
         this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
@@ -573,20 +560,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
-        return this.launchProjectile(projectile, null);
-    }
-
-    @Override
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-        // Paper start - launchProjectile consumer
-        return this.launchProjectile(projectile, velocity, null);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, java.util.function.Consumer<? super T> function) {
-        // Paper end - launchProjectile consumer
         Preconditions.checkState(!this.getHandle().generation, "Cannot launch projectile during world generation");
 
         net.minecraft.world.level.Level world = ((CraftWorld) this.getWorld()).getHandle();
@@ -694,7 +669,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkArgument(launch != null, "Projectile (%s) not supported", projectile.getName());
 
         if (velocity != null) {
-            ((T) launch.getBukkitEntity()).setVelocity(velocity);
+            launch.getBukkitEntity().setVelocity(velocity);
         }
         if (function != null) {
             function.accept((T) launch.getBukkitEntity());
@@ -739,7 +714,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public EntityEquipment getEquipment() {
+    public @NonNull EntityEquipment getEquipment() {
         return this.equipment;
     }
 
@@ -787,7 +762,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isGliding() {
-        return this.getHandle().getSharedFlag(7);
+        return this.getHandle().isFallFlying();
     }
 
     @Override
@@ -885,7 +860,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             float actualYaw = yaw + 90;
             ClientboundHurtAnimationPacket packet = new ClientboundHurtAnimationPacket(this.getEntityId(), actualYaw);
 
-            world.getChunkSource().broadcastAndSend(this.getHandle(), packet);
+            world.getChunkSource().sendToTrackingPlayersAndSelf(this.getHandle(), packet);
         }
     }
 
@@ -999,16 +974,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setArrowsStuck(final int arrows) {
         this.getHandle().setArrowCount(arrows);
-    }
-
-    @Override
-    public int getShieldBlockingDelay() {
-        return this.getHandle().shieldBlockingDelay;
-    }
-
-    @Override
-    public void setShieldBlockingDelay(int delay) {
-        this.getHandle().shieldBlockingDelay = delay;
     }
 
     @Override

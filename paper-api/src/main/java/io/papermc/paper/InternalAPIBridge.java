@@ -1,15 +1,19 @@
 package io.papermc.paper;
 
+import com.destroystokyo.paper.SkinParts;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.entity.poi.PoiType;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -95,5 +99,12 @@ public interface InternalAPIBridge {
      * @return wrapped predicate
      */
     Predicate<CommandSourceStack> restricted(Predicate<CommandSourceStack> predicate);
+
+    ResolvableProfile defaultMannequinProfile();
+
+    @Contract(value = "-> new", pure = true)
+    SkinParts.Mutable allSkinParts();
+
+    Component defaultMannequinDescription();
 }
 

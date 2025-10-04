@@ -91,6 +91,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         BUILD_IRONGOLEM,
         /**
+         * When a copper golem is spawned by being built
+         */
+        BUILD_COPPERGOLEM,
+        /**
          * When a wither boss is spawned by being built
          */
         BUILD_WITHER,

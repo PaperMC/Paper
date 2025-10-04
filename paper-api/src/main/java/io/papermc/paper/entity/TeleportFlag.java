@@ -39,7 +39,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          */
         VELOCITY_ROTATION;
         /**
-         * Configures the player to not loose velocity in their x axis during the teleport.
+         * Configures the player to not lose velocity in their x axis during the teleport.
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_X} instead.
@@ -47,7 +47,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
         @Deprecated(since = "1.21.3", forRemoval = true)
         public static final Relative X = VELOCITY_X;
         /**
-         * Configures the player to not loose velocity in their y axis during the teleport.
+         * Configures the player to not lose velocity in their y axis during the teleport.
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_Y} instead.
@@ -55,7 +55,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
         @Deprecated(since = "1.21.3", forRemoval = true)
         public static final Relative Y = VELOCITY_Y;
         /**
-         * Configures the player to not loose velocity in their z axis during the teleport.
+         * Configures the player to not lose velocity in their z axis during the teleport.
          * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
          * ones. As the API does not deal with position relative flags, this name is no longer applicable.
          * Use {@link #VELOCITY_Z} instead.

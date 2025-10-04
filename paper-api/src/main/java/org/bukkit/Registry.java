@@ -495,7 +495,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
-     * @see #getTagValues(TagKey) 
+     * @see #getTagValues(TagKey)
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
@@ -581,6 +581,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     int size();
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -631,6 +634,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 

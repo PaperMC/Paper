@@ -9,7 +9,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Called when a player joins a server
+ * Called when a player joins a server and has been placed in loaded chunks.
+ *
+ * <p>Teleporting the player during this event will result in undefined behavior.
+ * Use {@link io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent} to change the spawn location.</p>
  */
 public class PlayerJoinEvent extends PlayerEvent {
 

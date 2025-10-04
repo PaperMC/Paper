@@ -435,7 +435,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     public Rotation getRotation() {
         return Rotation.rotation(yaw, pitch);
     }
-    
+
     /**
      * Subtracts the location by another.
      *

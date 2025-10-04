@@ -164,7 +164,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         AREA_EFFECT_CLOUD,
         /**
-         * When the entity is hit by an spectral or tipped arrow.
+         * When the entity is hit by a spectral or tipped arrow.
          */
         ARROW,
         /**
