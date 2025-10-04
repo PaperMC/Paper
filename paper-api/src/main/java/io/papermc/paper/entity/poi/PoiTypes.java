@@ -12,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
 public final class PoiTypes {
 
     // Start generate - PoiTypes
-    // @GeneratedFrom 1.21.8
     public static final PoiType ARMORER = get("armorer");
 
     public static final PoiType BEE_NEST = get("bee_nest");
