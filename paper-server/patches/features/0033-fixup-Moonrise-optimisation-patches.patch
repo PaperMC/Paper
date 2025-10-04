@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 4 Oct 2025 11:13:55 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+index 80f13315e8c7c0e3c82ab98f92387f56bb3b6481..e03faa94df6c77ab4f3f5d9ffe107220387a0dde 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+@@ -1472,6 +1472,11 @@ public final class ChunkHolderManager {
+ 
+         boolean ret = false;
+ 
++        if (pendingFullLoadUpdate.isEmpty()) {
++            // avoid allocating changedFullStatus
++            return ret;
++        }
++
+         final List<NewChunkHolder> changedFullStatus = new ArrayList<>();
+ 
+         NewChunkHolder holder;
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
+index 57f11ed1c8dfe7a10fddc53bcd2abc8cac29b2f4..c47e77ceb15948cbd4a2a370738843c02542f6c1 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
+@@ -338,6 +338,17 @@ public final class ChunkTaskScheduler {
+         return this.mainThreadExecutor.executeTask();
+     }
+ 
++    // run only tasks queued before this function was invoked
++    public void executeAllRecentlyQueuedMainThreadTasks() {
++        // note: order of retrieval is important to avoid race conditions
++        final long executed = this.mainThreadExecutor.getTotalTasksExecuted();
++        final long scheduled = this.mainThreadExecutor.getTotalTasksScheduled();
++
++        final long left = scheduled - executed;
++        // may execute more tasks than expected due to recursion
++        for (long i = 0; i < left && this.mainThreadExecutor.executeTask(); ++i);
++    }
++
+     public void raisePriority(final int x, final int z, final Priority priority) {
+         this.chunkHolderManager.raisePriority(x, z, priority);
+     }
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 201e80364daeb02b5aed8327eef5140053b00aa0..20efafc39eb219158c5dc126f527cc009fe15b15 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1126,16 +1126,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             // execute small amounts of other tasks just in case the number of tasks we are
+             // draining is large - chunk system and packet processing may be latency sensitive
+ 
+-            // TODO - Chunk System mid-tick
++            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this).moonrise$executeMidTickTasks(); // Paper - rewrite chunk system
+             this.packetProcessor.executeSinglePacket();
+         }
+         profiler.popPush("moonrise:run_all_packets");
+         while (this.packetProcessor.executeSinglePacket()) {
+             // execute possibly latency sensitive chunk system tasks (see above)
+-            // TODO - Chunk System mid-tick
++            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this).moonrise$executeMidTickTasks(); // Paper - rewrite chunk system
+         }
+         profiler.popPush("moonrise:run_all_chunk");
+-        // TODO - Chunk System tasks
++        // Paper start - rewrite chunk system
++        for (final ServerLevel world : this.getAllLevels()) {
++            profiler.push(world.toString() + " " + world.dimension().location()); // keep same formatting from regular tick, see tickChildren
++
++            // note: legacy tasks may expect a distance manager update
++            profiler.push("moonrise:distance_manager_update");
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.processTicketUpdates();
++            profiler.popPush("moonrise:legacy_chunk_tasks");
++            world.getChunkSource().mainThreadProcessor.executeAllRecentInternalTasks();
++            profiler.popPush("moonrise:chunk_system_tasks");
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().executeAllRecentlyQueuedMainThreadTasks();
++            profiler.pop();
++
++            profiler.pop(); // world name
++        }
++        // Paper end - rewrite chunk system
+         profiler.pop(); // moonrise:run_all_chunk
+         profiler.pop(); // moonrise:run_all_tasks
+ 

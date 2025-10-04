@@ -60,11 +60,7 @@ public class RAMDetails extends JList<String> {
         Vector<String> vector = new Vector<>();
 
         // Follows CraftServer#getTPS
-        double[] tps = new double[] {
-            server.tps1.getAverage(),
-            server.tps5.getAverage(),
-            server.tps15.getAverage()
-        };
+        double[] tps = server.getTPS();
         String[] tpsAvg = new String[tps.length];
 
         for ( int g = 0; g < tps.length; g++) {
@@ -75,14 +71,6 @@ public class RAMDetails extends JList<String> {
         vector.add("Avg tick: " + DECIMAL_FORMAT.format((double)this.server.getAverageTickTimeNanos() / (double) TimeUtil.NANOSECONDS_PER_MILLISECOND) + " ms");
         vector.add("TPS from last 1m, 5m, 15m: " + String.join(", ", tpsAvg));
         setListData(vector);
-    }
-
-    public double getAverage(long[] tickTimes) {
-        long total = 0L;
-        for (long value : tickTimes) {
-            total += value * 1000;
-        }
-        return ((double) total / (double) tickTimes.length) * 1.0E-6D;
     }
 
     private static String format(double tps) {
