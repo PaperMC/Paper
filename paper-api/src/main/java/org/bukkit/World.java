@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.world.explosion.Explosion;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -2457,6 +2458,13 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return false if explosion was canceled, otherwise true
      */
     public boolean createExplosion(@NotNull Location loc, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
+
+    /**
+     * Creates an explosion.
+     * @param explosion The explosion
+     * @return false if explosion was canceled, otherwise true
+     */
+    boolean createExplosion(Explosion explosion);
 
     /**
      * Gets the current PVP setting for this world.
