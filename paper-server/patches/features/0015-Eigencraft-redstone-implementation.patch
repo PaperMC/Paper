@@ -19,12 +19,14 @@ Co-authored-by: egg82 <eggys82@gmail.com>
 
 diff --git a/io/papermc/paper/redstone/RedstoneWireTurbo.java b/io/papermc/paper/redstone/RedstoneWireTurbo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd810b6139
+index 0000000000000000000000000000000000000000..60ed703a07ce87d13ff1db4d20ca76072607926f
 --- /dev/null
 +++ b/io/papermc/paper/redstone/RedstoneWireTurbo.java
-@@ -0,0 +1,954 @@
+@@ -0,0 +1,950 @@
 +package io.papermc.paper.redstone;
 +
++import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.concurrent.ThreadLocalRandom;
@@ -36,11 +38,7 @@ index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.RedStoneWireBlock;
 +import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockRedstoneEvent;
-+
-+import com.google.common.collect.Lists;
-+import com.google.common.collect.Maps;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +
 +public final class RedstoneWireTurbo {
 +    /*
@@ -917,9 +915,7 @@ index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd
 +        // egg82's amendment
 +        // Adding Bukkit's BlockRedstoneEvent - er.. event.
 +        if (i != j) {
-+            BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(worldIn, upd.self), i, j);
-+            worldIn.getCraftServer().getPluginManager().callEvent(event);
-+            j = event.getNewCurrent();
++            j = CraftEventFactory.callRedstoneChange(worldIn, upd.self, i, j).getNewCurrent();
 +        }
 +
 +        if (i != j) {
@@ -978,10 +974,10 @@ index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd
 +    }
 +}
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925b51b4d38 100644
+index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..63c9bec52fad3446ed90f524ee2d540039fa3e78 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -265,6 +265,60 @@ public class RedStoneWireBlock extends Block {
+@@ -265,6 +265,56 @@ public class RedStoneWireBlock extends Block {
          return state.isFaceSturdy(level, pos, Direction.UP) || state.is(Blocks.HOPPER);
      }
  
@@ -1021,12 +1017,8 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
 +        int oldPower = state.getValue(POWER);
 +        int newPower = ((DefaultRedstoneWireEvaluator) evaluator).calculateTargetStrength(level, pos);
 +        if (oldPower != newPower) {
-+            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), oldPower, newPower);
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+
-+            newPower = event.getNewCurrent();
-+
 +            if (level.getBlockState(pos) == state) {
++                newPower = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, oldPower, newPower).getNewCurrent();
 +                state = state.setValue(POWER, newPower);
 +                // [Space Walker] suppress shape updates and emit those manually to
 +                // bypass the new neighbor update stack.
@@ -1042,7 +1034,7 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
      private void updatePowerStrength(Level level, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean updateShape) {
          if (useExperimentalEvaluator(level)) {
              new ExperimentalRedstoneWireEvaluator(this).updatePowerStrength(level, pos, state, orientation, updateShape);
-@@ -293,7 +347,7 @@ public class RedStoneWireBlock extends Block {
+@@ -293,7 +343,7 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
@@ -1051,7 +1043,7 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -310,7 +364,7 @@ public class RedStoneWireBlock extends Block {
+@@ -310,7 +360,7 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -1060,7 +1052,7 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -335,7 +389,7 @@ public class RedStoneWireBlock extends Block {
+@@ -335,7 +385,7 @@ public class RedStoneWireBlock extends Block {
          if (!level.isClientSide()) {
              if (neighborBlock != this || !useExperimentalEvaluator(level)) {
                  if (state.canSurvive(level, pos)) {
@@ -1070,10 +1062,10 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
                      dropResources(state, level, pos);
                      level.removeBlock(pos, false);
 diff --git a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-index 3f6f3ca5a5e412e57fad635f52cd152520d6dca2..abcc144a086a45bf4cfa4d1a33e2ae10952e0da2 100644
+index 497220c206f27233f5b612e7b56726c0ba557f82..ac2d73ddf8ca38fdf010cfe52781fd4a412d92fa 100644
 --- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
 +++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-@@ -44,7 +44,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
+@@ -41,7 +41,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
          }
      }
  
