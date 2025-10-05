@@ -5,10 +5,10 @@ Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 77aa4307fdbe9a52c4d35a7a74282f87a176da5e..853d4603249c19c31d4252fb0e411d5b41b851ad 100644
+index 79b8222848a488704d1eee89cd6255c967378b2c..4b98ac1a7423d9fe569727ef2ce553b1bdc8464a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -886,7 +886,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -922,7 +922,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          boolean var4;
          try {
              this.isSaving = true;
@@ -17,7 +17,7 @@ index 77aa4307fdbe9a52c4d35a7a74282f87a176da5e..853d4603249c19c31d4252fb0e411d5b
              var4 = this.saveAllChunks(suppressLogs, flush, force);
          } finally {
              this.isSaving = false;
-@@ -1471,9 +1471,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1579,9 +1579,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.ticksUntilAutosave--;
@@ -48,9 +48,9 @@ index 77aa4307fdbe9a52c4d35a7a74282f87a176da5e..853d4603249c19c31d4252fb0e411d5b
 +        // Paper end - Incremental chunk and player saving
  
          ProfilerFiller profilerFiller = Profiler.get();
-         this.runAllTasks(); // Paper - move runAllTasks() into full server tick (previously for timings)
+         this.server.spark.executeMainThreadTasks(); // Paper - spark
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 9aa154a7349ffb7b6af167fd84955168dbcd2bd9..5993a9530586e9792691e26d0a0a57febff5b447 100644
+index f609b9707b4265018b19dbc5a0191923035b7723..8891d2a8832a76ef4a0c62f43d0bbf9c68f05016 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -1371,6 +1371,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -81,7 +81,7 @@ index 9aa154a7349ffb7b6af167fd84955168dbcd2bd9..5993a9530586e9792691e26d0a0a57fe
          // Paper start - add close param
          this.save(progress, flush, skipSave, false);
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 0b41d4c924b77fe46089b2e5a0ebc92014a1f143..ff507ab2ec9391e899785fd42150fb4547eac83c 100644
+index be318510a571de3064b3b13187456049bbb52cdf..165e16cafc2787267ceaca637441a13e9bc1826a 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -203,6 +203,7 @@ import org.slf4j.Logger;

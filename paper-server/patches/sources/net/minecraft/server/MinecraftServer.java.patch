@@ -24,7 +24,7 @@
      @Nullable
      private ServerStatus status;
      @Nullable
-@@ -222,17 +_,22 @@
+@@ -222,14 +_,14 @@
      private Map<ResourceKey<Level>, ServerLevel> levels = Maps.newLinkedHashMap();
      private PlayerList playerList;
      private volatile boolean running = true;
@@ -41,15 +41,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-+    // Paper start - Add tick times API and /mspt command
-+    public final TickTimes tickTimes5s = new TickTimes(100);
-+    public final TickTimes tickTimes10s = new TickTimes(200);
-+    public final TickTimes tickTimes60s = new TickTimes(1200);
-+    // Paper end - Add tick times API and /mspt command
-     @Nullable
-     private KeyPair keyPair;
-     @Nullable
-@@ -278,10 +_,37 @@
+@@ -278,10 +_,78 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
@@ -67,9 +59,6 @@
 +    // Spigot start
 +    public static final int TPS = 20;
 +    public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
-+    private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
-+    @Deprecated(forRemoval = true) // Paper
-+    public final double[] recentTps = new double[3];
 +    // Spigot end
 +    public volatile boolean hasFullyShutdown; // Paper - Improved watchdog support
 +    public volatile boolean abnormalExit; // Paper - Improved watchdog support
@@ -78,6 +67,50 @@
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 +    private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
 +    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
++    // Paper start - improve tick loop
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes10s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(5L));
++    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15m = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(15L));
++
++    private final ca.spottedleaf.moonrise.common.time.Schedule tickSchedule = new ca.spottedleaf.moonrise.common.time.Schedule(0L);
++
++    private long lastTickStart;
++    private long currentTickStart;
++    private long scheduledTickStart;
++
++    private void addTickTime(final ca.spottedleaf.moonrise.common.time.TickTime time) {
++        this.tickTimes1s.addDataFrom(time);
++        this.tickTimes5s.addDataFrom(time);
++        this.tickTimes10s.addDataFrom(time);
++        this.tickTimes15s.addDataFrom(time);
++        this.tickTimes1m.addDataFrom(time);
++        this.tickTimes5m.addDataFrom(time);
++        this.tickTimes15m.addDataFrom(time);
++    }
++
++    private static double getTPS(final ca.spottedleaf.moonrise.common.time.TickData tickData, final long timeNow, final long tickInterval) {
++        final ca.spottedleaf.moonrise.common.time.TickData.TickReportData tickReportData = tickData.generateTickReport(null, timeNow, tickInterval);
++        if (tickReportData == null) {
++            return 1.0E9 / (double)tickInterval;
++        }
++
++        return tickReportData.tpsData().segmentAll().average();
++    }
++
++    public double[] getTPS() {
++        final long now = System.nanoTime();
++        final long interval = this.tickRateManager().nanosecondsPerTick();
++        return new double[] {
++            getTPS(this.tickTimes1m, now, interval),
++            getTPS(this.tickTimes5m, now, interval),
++            getTPS(this.tickTimes15m, now, interval)
++        };
++    }
++    // Paper end - improve tick loop
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
          AtomicReference<S> atomicReference = new AtomicReference<>();
@@ -569,65 +602,136 @@
          this.running = false;
          if (waitForShutdown) {
              try {
-@@ -728,6 +_,57 @@
+@@ -728,6 +_,124 @@
          }
      }
  
-+    // Paper start - Further improve server tick loop
-+    private static final long SEC_IN_NANO = 1000000000;
-+    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
-+    private long lastTick = 0;
-+    private long catchupTime = 0;
-+    public final RollingAverage tps1 = new RollingAverage(60);
-+    public final RollingAverage tps5 = new RollingAverage(60 * 5);
-+    public final RollingAverage tps15 = new RollingAverage(60 * 15);
-+
-+    public static class RollingAverage {
-+        private final int size;
-+        private long time;
-+        private java.math.BigDecimal total;
-+        private int index = 0;
-+        private final java.math.BigDecimal[] samples;
-+        private final long[] times;
-+
-+        RollingAverage(int size) {
-+            this.size = size;
-+            this.time = size * SEC_IN_NANO;
-+            this.total = dec(TPS).multiply(dec(SEC_IN_NANO)).multiply(dec(size));
-+            this.samples = new java.math.BigDecimal[size];
-+            this.times = new long[size];
-+            for (int i = 0; i < size; i++) {
-+                this.samples[i] = dec(TPS);
-+                this.times[i] = SEC_IN_NANO;
-+            }
++    // Paper start - improve tick loop
++    private void initTickSchedule() {
++        final long interval;
++        if (this.isPaused() || !this.tickRateManager.isSprinting()) {
++            interval = this.tickRateManager.nanosecondsPerTick();
++        } else {
++            interval = 0L;
 +        }
-+
-+        private static java.math.BigDecimal dec(long t) {
-+            return new java.math.BigDecimal(t);
-+        }
-+        public void add(java.math.BigDecimal x, long t) {
-+            time -= times[index];
-+            total = total.subtract(samples[index].multiply(dec(times[index])));
-+            samples[index] = x;
-+            times[index] = t;
-+            time += t;
-+            total = total.add(x.multiply(dec(t)));
-+            if (++index == size) {
-+                index = 0;
-+            }
-+        }
-+
-+        public double getAverage() {
-+            return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
-+        }
++        this.tickSchedule.setNextPeriod(this.nextTickTimeNanos, interval);
++        this.lastTickStart = ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET;
++        this.scheduledTickStart = this.tickSchedule.getDeadline(interval);
 +    }
-+    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
-+    // Paper end
++
++    private void recordEndOfTick() {
++        final long prevStart = this.lastTickStart;
++        final long currStart = this.currentTickStart;
++        this.lastTickStart = this.currentTickStart;
++        final long scheduledStart = this.scheduledTickStart;
++        this.scheduledTickStart = this.nextTickTimeNanos; // set scheduledStart for next tick
++
++        final long now = Util.getNanos();
++
++        final ca.spottedleaf.moonrise.common.time.TickTime time = new ca.spottedleaf.moonrise.common.time.TickTime(
++            prevStart,
++            scheduledStart,
++            currStart,
++            0L,
++            now,
++            0L,
++            false,
++            true
++        );
++
++        this.addTickTime(time);
++    }
++
++    private void runAllTasksAtTickStart() {
++        this.startMeasuringTaskExecutionTime();
++
++        // note: To avoid possibly spinning forever, only execute tasks that are roughly available at the beginning
++        //       of this call. Packet processing and chunk system tasks are possibly always being queued.
++        final ProfilerFiller profiler = Profiler.get();
++        profiler.push("moonrise:run_all_tasks");
++
++        profiler.push("moonrise:run_all_server");
++        // avoid calling MinecraftServer#pollTask - we just want to execute queued tasks
++        while (super.pollTask()) {
++            // execute small amounts of other tasks just in case the number of tasks we are
++            // draining is large - chunk system and packet processing may be latency sensitive
++
++            // TODO - Chunk System mid-tick
++            this.packetProcessor.executeSinglePacket();
++        }
++        profiler.popPush("moonrise:run_all_packets");
++        while (this.packetProcessor.executeSinglePacket()) {
++            // execute possibly latency sensitive chunk system tasks (see above)
++            // TODO - Chunk System mid-tick
++        }
++        profiler.popPush("moonrise:run_all_chunk");
++        // TODO - Chunk System tasks
++        profiler.pop(); // moonrise:run_all_chunk
++        profiler.pop(); // moonrise:run_all_tasks
++
++        this.finishMeasuringTaskExecutionTime();
++    }
++
++    private void recordTaskExecutionTimeWhileWaiting() {
++        final ProfilerFiller profiler = Profiler.get();
++
++        profiler.push("moonrise:execute_tasks_until_tick");
++        this.waitingForNextTick = true;
++        // implement waitForTasks
++        final boolean isLoggingEnabled = this.isTickTimeLoggingEnabled();
++        try {
++            final long deadline = this.nextTickTimeNanos;
++            for (;;) {
++                final long start = Util.getNanos();
++                if (start - deadline >= 0L) {
++                    // start is ahead of deadline
++                    break;
++                }
++
++                // execute tasks while there are tasks and there is time left
++                // note: we do not need to bypass the task execution check here (like managedBlock) since it checks time
++                while (this.pollTask() && (Util.getNanos() - deadline < 0L));
++
++                final long now = Util.getNanos();
++
++                // record execution time
++                this.addTickTime(
++                    new ca.spottedleaf.moonrise.common.time.TickTime(
++                        ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET, ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET,
++                        start, 0L,
++                        now, 0L,
++                        false,
++                        false
++                    )
++                );
++
++                // wait for unpark or deadline
++                final long toWait = deadline - now;
++                if (toWait > 0L) {
++                    LockSupport.parkNanos("waiting for tick or tasks", toWait);
++                    if (isLoggingEnabled) {
++                        this.idleTimeNanos += Util.getNanos() - now;
++                    }
++                } else {
++                    // done
++                    break;
++                }
++            }
++        } finally {
++            this.waitingForNextTick = false;
++        }
++        profiler.pop();
++    }
++    // Paper end - improve tick loop
 +
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -738,6 +_,36 @@
+@@ -735,26 +_,68 @@
+             }
+ 
+             this.nextTickTimeNanos = Util.getNanos();
++            this.initTickSchedule(); // Paper - improve tick loop
              this.statusIcon = this.loadStatusIcon().orElse(null);
              this.status = this.buildServerStatus();
  
@@ -646,11 +750,6 @@
 +            org.spigotmc.WatchdogThread.tick();
 +            // Paper end
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
-+            Arrays.fill(this.recentTps, 20);
-+            // Paper start - further improve server tick loop
-+            long tickSection = Util.getNanos();
-+            long currentTime;
-+            // Paper end - further improve server tick loop
 +            // Paper start - Add onboarding message for initial server start
 +            if (io.papermc.paper.configuration.GlobalConfiguration.isFirstStart) {
 +                LOGGER.info("*************************************************************************************");
@@ -662,48 +761,75 @@
 +            // Paper end - Add onboarding message for initial server start
 +
              while (this.running) {
-                 long l;
+-                long l;
++                final long tickStart = System.nanoTime(); // Paper - improve tick loop
++                long l; // Paper - improve tick loop - diff on change, expect this to be tick interval
                  if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
-@@ -750,11 +_,30 @@
-                     if (l1 > OVERLOADED_THRESHOLD_NANOS + 20L * l
-                         && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= OVERLOADED_WARNING_INTERVAL_NANOS + 100L * l) {
-                         long l2 = l1 / l;
-+                        if (this.server.getWarnOnOverload()) // CraftBukkit
-                         LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", l1 / TimeUtil.NANOSECONDS_PER_MILLISECOND, l2);
-                         this.nextTickTimeNanos += l2 * l;
-                         this.lastOverloadWarningNanos = this.nextTickTimeNanos;
-                     }
-                 }
-+                // Spigot start
-+                // Paper start - further improve server tick loop
-+                currentTime = Util.getNanos();
-+                if (++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0) {
-+                    final long diff = currentTime - tickSection;
-+                    final java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
-+                    tps1.add(currentTps, diff);
-+                    tps5.add(currentTps, diff);
-+                    tps15.add(currentTps, diff);
+                     l = 0L;
+-                    this.nextTickTimeNanos = Util.getNanos();
+-                    this.lastOverloadWarningNanos = this.nextTickTimeNanos;
++                    this.tickSchedule.setNextPeriod(tickStart, l); // Paper - improve tick loop
+                 } else {
+                     l = this.tickRateManager.nanosecondsPerTick();
+-                    long l1 = Util.getNanos() - this.nextTickTimeNanos;
+-                    if (l1 > OVERLOADED_THRESHOLD_NANOS + 20L * l
+-                        && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= OVERLOADED_WARNING_INTERVAL_NANOS + 100L * l) {
+-                        long l2 = l1 / l;
+-                        LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", l1 / TimeUtil.NANOSECONDS_PER_MILLISECOND, l2);
+-                        this.nextTickTimeNanos += l2 * l;
+-                        this.lastOverloadWarningNanos = this.nextTickTimeNanos;
++                    // Paper start - improve tick loop
++                    // handle catchup logic
++                    final long ticksBehind = Math.max(1L, this.tickSchedule.getPeriodsAhead(l, tickStart));
++                    final long catchup = (long)Math.max(
++                        1,
++                        5 //ConfigHolder.getConfig().tickLoop.catchupTicks.getOrDefault(MoonriseConfig.TickLoop.DEFAULT_CATCHUP_TICKS).intValue()
++                    );
 +
-+                    // Backwards compat with bad plugins
-+                    this.recentTps[0] = tps1.getAverage();
-+                    this.recentTps[1] = tps5.getAverage();
-+                    this.recentTps[2] = tps15.getAverage();
-+                    tickSection = currentTime;
-+                }
-+                // Paper end - further improve server tick loop
-+                // Spigot end
++                    // adjust ticksBehind so that it is not greater-than catchup
++                    if (ticksBehind > catchup) {
++                        final long difference = ticksBehind - catchup;
++                        this.tickSchedule.advanceBy(difference, l);
+                     }
++
++                    // start next tick
++                    this.tickSchedule.advanceBy(1L, l);
++                    // Paper end - improve tick loop
+                 }
++
++                this.nextTickTimeNanos = this.tickSchedule.getDeadline(l);
++                this.lastOverloadWarningNanos = this.nextTickTimeNanos;
++
++                this.currentTickStart = tickStart;
++                ++MinecraftServer.currentTick;
++                // Paper end - improve tick loop
  
                  boolean flag = l == 0L;
                  if (this.debugCommandProfilerDelayStart) {
-@@ -762,6 +_,8 @@
+@@ -762,19 +_,21 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
  
-+                //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
-+                lastTick = currentTime;
-                 this.nextTickTimeNanos += l;
+-                this.nextTickTimeNanos += l;
++                // Paper - improve tick loop - done above
  
                  try (Profiler.Scope scope = Profiler.use(this.createProfiler())) {
+                     ProfilerFiller profilerFiller = Profiler.get();
+                     profilerFiller.push("tick");
+                     this.tickFrame.start();
++                    this.runAllTasksAtTickStart(); // Paper - improve tick loop
+                     this.tickServer(flag ? () -> false : this::haveTime);
+                     this.tickFrame.end();
++                    this.recordEndOfTick(); // Paper - improve tick loop
+                     profilerFiller.popPush("nextTickWait");
+                     this.mayHaveDelayedTasks = true;
+                     this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + l, this.nextTickTimeNanos);
+                     this.startMeasuringTaskExecutionTime();
+-                    this.waitUntilNextTick();
++                    this.recordTaskExecutionTimeWhileWaiting(); // Paper - improve tick loop - record task execution here on MSPT
+                     this.finishMeasuringTaskExecutionTime();
+                     if (flag) {
+                         this.tickRateManager.endTickWork();
 @@ -808,7 +_,7 @@
              } catch (Throwable var64) {
                  LOGGER.error("Exception stopping the server", var64);
@@ -729,7 +855,24 @@
      }
  
      public static boolean throwIfFatalException() {
-@@ -913,6 +_,12 @@
+@@ -887,14 +_,11 @@
+ 
+     protected void waitUntilNextTick() {
+         ProfilerFiller profilerFiller = Profiler.get();
+-        profilerFiller.push("scheduledPacketProcessing");
+-        this.packetProcessor.processQueuedPackets();
+-        profilerFiller.pop();
+-        this.runAllTasks();
++        // Paper - improve tick loop - moved to start of tick
+         this.waitingForNextTick = true;
+ 
+         try {
+-            this.managedBlock(() -> !this.haveTime());
++            this.managedBlock(() -> Util.getNanos() - this.nextTickTimeNanos >= 0L); // Paper - improve tick loop - do not oversleep
+         } finally {
+             this.waitingForNextTick = false;
+         }
+@@ -913,17 +_,23 @@
  
      @Override
      public TickTask wrapRunnable(Runnable runnable) {
@@ -742,6 +885,19 @@
          return new TickTask(this.tickCount, runnable);
      }
  
+     @Override
+     protected boolean shouldRun(TickTask runnable) {
+-        return runnable.getTick() + 3 < this.tickCount || this.haveTime();
++        return runnable.getTick() + 1 < this.tickCount || this.haveTime(); // Paper - improve tick loop - do not stall queued tasks
+     }
+ 
+     @Override
+     public boolean pollTask() {
+-        boolean flag = this.pollTaskInternal();
++        boolean flag = this.packetProcessor.executeSinglePacket() | this.pollTaskInternal(); // Paper - improve tick loop - process packets while waiting inbetween ticks
+         this.mayHaveDelayedTasks = flag;
+         return flag;
+     }
 @@ -932,15 +_,16 @@
          if (super.pollTask()) {
              return true;
@@ -797,7 +953,7 @@
 +                // Paper end - avoid issues with certain tasks not processing during sleep
 +                this.server.spark.executeMainThreadTasks(); // Paper - spark
                  this.tickConnection();
-+                this.server.spark.tickEnd(((double)(System.nanoTime() - lastTick) / 1000000D)); // Paper - spark
++                this.server.spark.tickEnd(((double)(System.nanoTime() - this.currentTickStart) / 1000000D)); // Paper - spark
                  return;
              }
          }
@@ -807,7 +963,7 @@
          this.tickCount++;
          this.tickRateManager.tick();
          this.tickChildren(hasTimeLeft);
-@@ -1017,11 +_,19 @@
+@@ -1017,11 +_,18 @@
          }
  
          this.ticksUntilAutosave--;
@@ -817,28 +973,17 @@
          }
  
          ProfilerFiller profilerFiller = Profiler.get();
-+        this.runAllTasks(); // Paper - move runAllTasks() into full server tick (previously for timings)
 +        this.server.spark.executeMainThreadTasks(); // Paper - spark
 +        // Paper start - Server Tick Events
 +        long endTime = System.nanoTime();
-+        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
-+        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        long remaining = this.nextTickTimeNanos - endTime;
++        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - this.currentTickStart) / 1000000D), remaining).callEvent();
 +        // Paper end - Server Tick Events
-+        this.server.spark.tickEnd(((double)(endTime - lastTick) / 1000000D)); // Paper - spark
++        this.server.spark.tickEnd(((double)(endTime - this.currentTickStart) / 1000000D)); // Paper - spark
          profilerFiller.push("tallying");
          long l = Util.getNanos() - nanos;
          int i1 = this.tickCount % 100;
-@@ -1029,12 +_,17 @@
-         this.aggregatedTickTimesNanos += l;
-         this.tickTimesNanos[i1] = l;
-         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float)l / (float)TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
-+        // Paper start - Add tick times API and /mspt command
-+        this.tickTimes5s.add(this.tickCount, l);
-+        this.tickTimes10s.add(this.tickCount, l);
-+        this.tickTimes60s.add(this.tickCount, l);
-+        // Paper end - Add tick times API and /mspt command
-         this.logTickMethodTime(nanos);
-         profilerFiller.pop();
+@@ -1034,7 +_,7 @@
      }
  
      private void autoSave() {
