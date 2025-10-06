@@ -1,11 +1,14 @@
 package org.bukkit.craftbukkit.profile;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.google.common.collect.ImmutableMultimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.UUID;
+import com.mojang.authlib.properties.PropertyMap;
 import net.minecraft.Util;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -58,8 +61,9 @@ public class PlayerProfileTest {
     private static final String COMPACT_VALUE = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0ZGJmNjA3MDBiOTg4MmMwYzJhZDE5NDNiNTE1Y2MxMTFmMGI0ZTU2MmE5YTM2NjgyNDk1NjM2ZDg0Njc1NCJ9fX0=";
 
     private static CraftPlayerProfile buildPlayerProfile() {
-        GameProfile gameProfile = new GameProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
-        gameProfile.getProperties().put(CraftPlayerTextures.PROPERTY_NAME, new Property(CraftPlayerTextures.PROPERTY_NAME, PlayerProfileTest.VALUE, PlayerProfileTest.SIGNATURE));
+        GameProfile gameProfile = new GameProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME, new PropertyMap(
+            ImmutableMultimap.of(CraftPlayerTextures.PROPERTY_NAME, new Property(CraftPlayerTextures.PROPERTY_NAME, PlayerProfileTest.VALUE, PlayerProfileTest.SIGNATURE))
+        ));
         return new CraftPlayerProfile(gameProfile);
     }
 
@@ -134,8 +138,8 @@ public class PlayerProfileTest {
         Property property = CraftPlayerProfile.getProperty(gameProfile, CraftPlayerTextures.PROPERTY_NAME);
         assertNotNull(property, "Textures property is null");
         assertEquals(PlayerProfileTest.VALUE, property.value(), "Property values are not the same");
-        assertEquals(PlayerProfileTest.NAME, gameProfile.getName(), "Names are not the same");
-        assertEquals(PlayerProfileTest.UNIQUE_ID, gameProfile.getId(), "Unique ids are not the same");
+        assertEquals(PlayerProfileTest.NAME, gameProfile.name(), "Names are not the same");
+        assertEquals(PlayerProfileTest.UNIQUE_ID, gameProfile.id(), "Unique ids are not the same");
         assertTrue(property.hasSignature(), "Signature is missing");
         assertTrue(CraftProfileProperty.hasValidSignature(property), "Signature is not valid");
     }

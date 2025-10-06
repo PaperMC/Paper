@@ -1,9 +1,34 @@
 --- a/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/net/minecraft/util/thread/BlockableEventLoop.java
-@@ -83,6 +_,14 @@
-         }
+@@ -33,6 +_,23 @@
+         MetricsRegistry.INSTANCE.add(this);
      }
  
++    // Paper start
++    public final void executeAllRecentInternalTasks() {
++        final int pending = this.pendingRunnables.size();
++
++        // note: due to possible recursive execution, we may execute more tasks than we want to
++
++        for (int i = 0; i < pending; ++i) {
++            final R run = this.pendingRunnables.poll();
++            if (run == null) {
++                // recursion
++                break;
++            }
++            this.doRunTask(run);
++        }
++    }
++    // Paper end
++
+     protected abstract boolean shouldRun(R runnable);
+ 
+     public boolean isSameThread() {
+@@ -82,6 +_,14 @@
+             task.run();
+         }
+     }
++
 +    // Paper start
 +    public void scheduleOnMain(Runnable runnable) {
 +        // postToMainThread does not work the same as older versions of mc
@@ -11,7 +36,6 @@
 +        this.schedule(this.wrapRunnable(runnable));
 +    }
 +    // Paper end
-+
+ 
      @Override
      public void schedule(R task) {
-         this.pendingRunnables.add(task);

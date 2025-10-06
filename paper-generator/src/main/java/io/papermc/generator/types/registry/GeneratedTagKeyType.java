@@ -1,5 +1,6 @@
 package io.papermc.generator.types.registry;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -7,6 +8,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 import io.papermc.generator.Main;
 import io.papermc.generator.registry.RegistryEntry;
 import io.papermc.generator.types.SimpleGenerator;
@@ -57,7 +59,7 @@ public class GeneratedTagKeyType extends SimpleGenerator {
         return classBuilder(this.className)
             .addModifiers(PUBLIC, FINAL)
             .addJavadoc(Javadocs.getVersionDependentClassHeader("tag keys", "{@link $T#$L}"), RegistryKey.class, this.entry.registryKeyField())
-            .addAnnotations(Annotations.CLASS_HEADER)
+            .addAnnotations(Annotations.CONSTANTS_HEADER)
             .addMethod(MethodSpec.constructorBuilder()
                 .addModifiers(PRIVATE)
                 .build()
@@ -66,7 +68,17 @@ public class GeneratedTagKeyType extends SimpleGenerator {
 
     @Override
     protected TypeSpec getTypeSpec() {
-        TypeName tagKeyType = ParameterizedTypeName.get(TagKey.class, this.entry.apiClass());
+        final TypeName apiType;
+        if (this.entry.genericArgCount() > 0) {
+            final TypeName[] args = new TypeName[this.entry.genericArgCount()];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = WildcardTypeName.subtypeOf(Object.class);
+            }
+            apiType = ParameterizedTypeName.get(ClassName.get(this.entry.apiClass()), args);
+        } else {
+            apiType = ClassName.get(this.entry.apiClass());
+        }
+        TypeName tagKeyType = ParameterizedTypeName.get(ClassName.get(TagKey.class), apiType);
 
         TypeSpec.Builder typeBuilder = this.keyHolderType();
         MethodSpec.Builder createMethod = this.createMethod(tagKeyType);

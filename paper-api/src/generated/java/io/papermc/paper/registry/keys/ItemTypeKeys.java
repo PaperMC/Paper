@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public final class ItemTypeKeys {
     /**
      * {@code minecraft:acacia_boat}
@@ -108,6 +108,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> ACACIA_SAPLING = create(key("acacia_sapling"));
+
+    /**
+     * {@code minecraft:acacia_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> ACACIA_SHELF = create(key("acacia_shelf"));
 
     /**
      * {@code minecraft:acacia_sign}
@@ -432,6 +439,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> BAMBOO_RAFT = create(key("bamboo_raft"));
 
     /**
+     * {@code minecraft:bamboo_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> BAMBOO_SHELF = create(key("bamboo_shelf"));
+
+    /**
      * {@code minecraft:bamboo_sign}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -647,6 +661,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> BIRCH_SAPLING = create(key("birch_sapling"));
+
+    /**
+     * {@code minecraft:birch_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> BIRCH_SHELF = create(key("birch_shelf"));
 
     /**
      * {@code minecraft:birch_sign}
@@ -1433,13 +1454,6 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> CAVE_SPIDER_SPAWN_EGG = create(key("cave_spider_spawn_egg"));
 
     /**
-     * {@code minecraft:chain}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<ItemType> CHAIN = create(key("chain"));
-
-    /**
      * {@code minecraft:chain_command_block}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1564,6 +1578,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> CHERRY_SAPLING = create(key("cherry_sapling"));
+
+    /**
+     * {@code minecraft:cherry_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> CHERRY_SHELF = create(key("cherry_shelf"));
 
     /**
      * {@code minecraft:cherry_sign}
@@ -1993,11 +2014,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> COOKIE = create(key("cookie"));
 
     /**
+     * {@code minecraft:copper_axe}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_AXE = create(key("copper_axe"));
+
+    /**
+     * {@code minecraft:copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_BARS = create(key("copper_bars"));
+
+    /**
      * {@code minecraft:copper_block}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> COPPER_BLOCK = create(key("copper_block"));
+
+    /**
+     * {@code minecraft:copper_boots}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_BOOTS = create(key("copper_boots"));
 
     /**
      * {@code minecraft:copper_bulb}
@@ -2007,11 +2049,46 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> COPPER_BULB = create(key("copper_bulb"));
 
     /**
+     * {@code minecraft:copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_CHAIN = create(key("copper_chain"));
+
+    /**
+     * {@code minecraft:copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_CHEST = create(key("copper_chest"));
+
+    /**
+     * {@code minecraft:copper_chestplate}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_CHESTPLATE = create(key("copper_chestplate"));
+
+    /**
      * {@code minecraft:copper_door}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> COPPER_DOOR = create(key("copper_door"));
+
+    /**
+     * {@code minecraft:copper_golem_spawn_egg}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_GOLEM_SPAWN_EGG = create(key("copper_golem_spawn_egg"));
+
+    /**
+     * {@code minecraft:copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_GOLEM_STATUE = create(key("copper_golem_statue"));
 
     /**
      * {@code minecraft:copper_grate}
@@ -2021,6 +2098,27 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> COPPER_GRATE = create(key("copper_grate"));
 
     /**
+     * {@code minecraft:copper_helmet}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_HELMET = create(key("copper_helmet"));
+
+    /**
+     * {@code minecraft:copper_hoe}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_HOE = create(key("copper_hoe"));
+
+    /**
+     * {@code minecraft:copper_horse_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_HORSE_ARMOR = create(key("copper_horse_armor"));
+
+    /**
      * {@code minecraft:copper_ingot}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -2028,11 +2126,60 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> COPPER_INGOT = create(key("copper_ingot"));
 
     /**
+     * {@code minecraft:copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_LANTERN = create(key("copper_lantern"));
+
+    /**
+     * {@code minecraft:copper_leggings}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_LEGGINGS = create(key("copper_leggings"));
+
+    /**
+     * {@code minecraft:copper_nugget}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_NUGGET = create(key("copper_nugget"));
+
+    /**
      * {@code minecraft:copper_ore}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> COPPER_ORE = create(key("copper_ore"));
+
+    /**
+     * {@code minecraft:copper_pickaxe}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_PICKAXE = create(key("copper_pickaxe"));
+
+    /**
+     * {@code minecraft:copper_shovel}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_SHOVEL = create(key("copper_shovel"));
+
+    /**
+     * {@code minecraft:copper_sword}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_SWORD = create(key("copper_sword"));
+
+    /**
+     * {@code minecraft:copper_torch}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_TORCH = create(key("copper_torch"));
 
     /**
      * {@code minecraft:copper_trapdoor}
@@ -2215,6 +2362,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> CRIMSON_ROOTS = create(key("crimson_roots"));
+
+    /**
+     * {@code minecraft:crimson_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> CRIMSON_SHELF = create(key("crimson_shelf"));
 
     /**
      * {@code minecraft:crimson_sign}
@@ -2523,6 +2677,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> DARK_OAK_SAPLING = create(key("dark_oak_sapling"));
+
+    /**
+     * {@code minecraft:dark_oak_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> DARK_OAK_SHELF = create(key("dark_oak_shelf"));
 
     /**
      * {@code minecraft:dark_oak_sign}
@@ -3274,11 +3435,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> EXPOSED_COPPER = create(key("exposed_copper"));
 
     /**
+     * {@code minecraft:exposed_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_COPPER_BARS = create(key("exposed_copper_bars"));
+
+    /**
      * {@code minecraft:exposed_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> EXPOSED_COPPER_BULB = create(key("exposed_copper_bulb"));
+
+    /**
+     * {@code minecraft:exposed_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_COPPER_CHAIN = create(key("exposed_copper_chain"));
+
+    /**
+     * {@code minecraft:exposed_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_COPPER_CHEST = create(key("exposed_copper_chest"));
 
     /**
      * {@code minecraft:exposed_copper_door}
@@ -3288,11 +3470,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> EXPOSED_COPPER_DOOR = create(key("exposed_copper_door"));
 
     /**
+     * {@code minecraft:exposed_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_COPPER_GOLEM_STATUE = create(key("exposed_copper_golem_statue"));
+
+    /**
      * {@code minecraft:exposed_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> EXPOSED_COPPER_GRATE = create(key("exposed_copper_grate"));
+
+    /**
+     * {@code minecraft:exposed_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_COPPER_LANTERN = create(key("exposed_copper_lantern"));
 
     /**
      * {@code minecraft:exposed_copper_trapdoor}
@@ -3321,6 +3517,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> EXPOSED_CUT_COPPER_STAIRS = create(key("exposed_cut_copper_stairs"));
+
+    /**
+     * {@code minecraft:exposed_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> EXPOSED_LIGHTNING_ROD = create(key("exposed_lightning_rod"));
 
     /**
      * {@code minecraft:eye_armor_trim_smithing_template}
@@ -4303,6 +4506,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> IRON_BOOTS = create(key("iron_boots"));
 
     /**
+     * {@code minecraft:iron_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> IRON_CHAIN = create(key("iron_chain"));
+
+    /**
      * {@code minecraft:iron_chestplate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4511,6 +4721,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> JUNGLE_SAPLING = create(key("jungle_sapling"));
+
+    /**
+     * {@code minecraft:jungle_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> JUNGLE_SHELF = create(key("jungle_shelf"));
 
     /**
      * {@code minecraft:jungle_sign}
@@ -5297,6 +5514,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> MANGROVE_ROOTS = create(key("mangrove_roots"));
 
     /**
+     * {@code minecraft:mangrove_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> MANGROVE_SHELF = create(key("mangrove_shelf"));
+
+    /**
      * {@code minecraft:mangrove_sign}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5990,6 +6214,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> OAK_SAPLING = create(key("oak_sapling"));
 
     /**
+     * {@code minecraft:oak_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OAK_SHELF = create(key("oak_shelf"));
+
+    /**
      * {@code minecraft:oak_sign}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6207,11 +6438,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> OXIDIZED_COPPER = create(key("oxidized_copper"));
 
     /**
+     * {@code minecraft:oxidized_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_COPPER_BARS = create(key("oxidized_copper_bars"));
+
+    /**
      * {@code minecraft:oxidized_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> OXIDIZED_COPPER_BULB = create(key("oxidized_copper_bulb"));
+
+    /**
+     * {@code minecraft:oxidized_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_COPPER_CHAIN = create(key("oxidized_copper_chain"));
+
+    /**
+     * {@code minecraft:oxidized_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_COPPER_CHEST = create(key("oxidized_copper_chest"));
 
     /**
      * {@code minecraft:oxidized_copper_door}
@@ -6221,11 +6473,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> OXIDIZED_COPPER_DOOR = create(key("oxidized_copper_door"));
 
     /**
+     * {@code minecraft:oxidized_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_COPPER_GOLEM_STATUE = create(key("oxidized_copper_golem_statue"));
+
+    /**
      * {@code minecraft:oxidized_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> OXIDIZED_COPPER_GRATE = create(key("oxidized_copper_grate"));
+
+    /**
+     * {@code minecraft:oxidized_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_COPPER_LANTERN = create(key("oxidized_copper_lantern"));
 
     /**
      * {@code minecraft:oxidized_copper_trapdoor}
@@ -6254,6 +6520,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> OXIDIZED_CUT_COPPER_STAIRS = create(key("oxidized_cut_copper_stairs"));
+
+    /**
+     * {@code minecraft:oxidized_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> OXIDIZED_LIGHTNING_ROD = create(key("oxidized_lightning_rod"));
 
     /**
      * {@code minecraft:packed_ice}
@@ -6380,6 +6653,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> PALE_OAK_SAPLING = create(key("pale_oak_sapling"));
+
+    /**
+     * {@code minecraft:pale_oak_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> PALE_OAK_SHELF = create(key("pale_oak_shelf"));
 
     /**
      * {@code minecraft:pale_oak_sign}
@@ -8300,6 +8580,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> SPRUCE_SAPLING = create(key("spruce_sapling"));
 
     /**
+     * {@code minecraft:spruce_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> SPRUCE_SHELF = create(key("spruce_shelf"));
+
+    /**
      * {@code minecraft:spruce_sign}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9161,6 +9448,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WARPED_ROOTS = create(key("warped_roots"));
 
     /**
+     * {@code minecraft:warped_shelf}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WARPED_SHELF = create(key("warped_shelf"));
+
+    /**
      * {@code minecraft:warped_sign}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9217,6 +9511,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_CHISELED_COPPER = create(key("waxed_chiseled_copper"));
 
     /**
+     * {@code minecraft:waxed_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_COPPER_BARS = create(key("waxed_copper_bars"));
+
+    /**
      * {@code minecraft:waxed_copper_block}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9231,6 +9532,20 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_COPPER_BULB = create(key("waxed_copper_bulb"));
 
     /**
+     * {@code minecraft:waxed_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_COPPER_CHAIN = create(key("waxed_copper_chain"));
+
+    /**
+     * {@code minecraft:waxed_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_COPPER_CHEST = create(key("waxed_copper_chest"));
+
+    /**
      * {@code minecraft:waxed_copper_door}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9238,11 +9553,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_COPPER_DOOR = create(key("waxed_copper_door"));
 
     /**
+     * {@code minecraft:waxed_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_COPPER_GOLEM_STATUE = create(key("waxed_copper_golem_statue"));
+
+    /**
      * {@code minecraft:waxed_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_COPPER_GRATE = create(key("waxed_copper_grate"));
+
+    /**
+     * {@code minecraft:waxed_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_COPPER_LANTERN = create(key("waxed_copper_lantern"));
 
     /**
      * {@code minecraft:waxed_copper_trapdoor}
@@ -9287,11 +9616,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER = create(key("waxed_exposed_copper"));
 
     /**
+     * {@code minecraft:waxed_exposed_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_BARS = create(key("waxed_exposed_copper_bars"));
+
+    /**
      * {@code minecraft:waxed_exposed_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_BULB = create(key("waxed_exposed_copper_bulb"));
+
+    /**
+     * {@code minecraft:waxed_exposed_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_CHAIN = create(key("waxed_exposed_copper_chain"));
+
+    /**
+     * {@code minecraft:waxed_exposed_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_CHEST = create(key("waxed_exposed_copper_chest"));
 
     /**
      * {@code minecraft:waxed_exposed_copper_door}
@@ -9301,11 +9651,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_DOOR = create(key("waxed_exposed_copper_door"));
 
     /**
+     * {@code minecraft:waxed_exposed_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_GOLEM_STATUE = create(key("waxed_exposed_copper_golem_statue"));
+
+    /**
      * {@code minecraft:waxed_exposed_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_GRATE = create(key("waxed_exposed_copper_grate"));
+
+    /**
+     * {@code minecraft:waxed_exposed_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_COPPER_LANTERN = create(key("waxed_exposed_copper_lantern"));
 
     /**
      * {@code minecraft:waxed_exposed_copper_trapdoor}
@@ -9336,6 +9700,20 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_EXPOSED_CUT_COPPER_STAIRS = create(key("waxed_exposed_cut_copper_stairs"));
 
     /**
+     * {@code minecraft:waxed_exposed_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_EXPOSED_LIGHTNING_ROD = create(key("waxed_exposed_lightning_rod"));
+
+    /**
+     * {@code minecraft:waxed_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_LIGHTNING_ROD = create(key("waxed_lightning_rod"));
+
+    /**
      * {@code minecraft:waxed_oxidized_chiseled_copper}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9350,11 +9728,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER = create(key("waxed_oxidized_copper"));
 
     /**
+     * {@code minecraft:waxed_oxidized_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_BARS = create(key("waxed_oxidized_copper_bars"));
+
+    /**
      * {@code minecraft:waxed_oxidized_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_BULB = create(key("waxed_oxidized_copper_bulb"));
+
+    /**
+     * {@code minecraft:waxed_oxidized_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_CHAIN = create(key("waxed_oxidized_copper_chain"));
+
+    /**
+     * {@code minecraft:waxed_oxidized_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_CHEST = create(key("waxed_oxidized_copper_chest"));
 
     /**
      * {@code minecraft:waxed_oxidized_copper_door}
@@ -9364,11 +9763,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_DOOR = create(key("waxed_oxidized_copper_door"));
 
     /**
+     * {@code minecraft:waxed_oxidized_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_GOLEM_STATUE = create(key("waxed_oxidized_copper_golem_statue"));
+
+    /**
      * {@code minecraft:waxed_oxidized_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_GRATE = create(key("waxed_oxidized_copper_grate"));
+
+    /**
+     * {@code minecraft:waxed_oxidized_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_COPPER_LANTERN = create(key("waxed_oxidized_copper_lantern"));
 
     /**
      * {@code minecraft:waxed_oxidized_copper_trapdoor}
@@ -9399,6 +9812,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_OXIDIZED_CUT_COPPER_STAIRS = create(key("waxed_oxidized_cut_copper_stairs"));
 
     /**
+     * {@code minecraft:waxed_oxidized_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_OXIDIZED_LIGHTNING_ROD = create(key("waxed_oxidized_lightning_rod"));
+
+    /**
      * {@code minecraft:waxed_weathered_chiseled_copper}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9413,11 +9833,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER = create(key("waxed_weathered_copper"));
 
     /**
+     * {@code minecraft:waxed_weathered_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_BARS = create(key("waxed_weathered_copper_bars"));
+
+    /**
      * {@code minecraft:waxed_weathered_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_BULB = create(key("waxed_weathered_copper_bulb"));
+
+    /**
+     * {@code minecraft:waxed_weathered_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_CHAIN = create(key("waxed_weathered_copper_chain"));
+
+    /**
+     * {@code minecraft:waxed_weathered_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_CHEST = create(key("waxed_weathered_copper_chest"));
 
     /**
      * {@code minecraft:waxed_weathered_copper_door}
@@ -9427,11 +9868,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_DOOR = create(key("waxed_weathered_copper_door"));
 
     /**
+     * {@code minecraft:waxed_weathered_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_GOLEM_STATUE = create(key("waxed_weathered_copper_golem_statue"));
+
+    /**
      * {@code minecraft:waxed_weathered_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_GRATE = create(key("waxed_weathered_copper_grate"));
+
+    /**
+     * {@code minecraft:waxed_weathered_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_COPPER_LANTERN = create(key("waxed_weathered_copper_lantern"));
 
     /**
      * {@code minecraft:waxed_weathered_copper_trapdoor}
@@ -9462,6 +9917,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WAXED_WEATHERED_CUT_COPPER_STAIRS = create(key("waxed_weathered_cut_copper_stairs"));
 
     /**
+     * {@code minecraft:waxed_weathered_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WAXED_WEATHERED_LIGHTNING_ROD = create(key("waxed_weathered_lightning_rod"));
+
+    /**
      * {@code minecraft:wayfinder_armor_trim_smithing_template}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -9483,11 +9945,32 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WEATHERED_COPPER = create(key("weathered_copper"));
 
     /**
+     * {@code minecraft:weathered_copper_bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_COPPER_BARS = create(key("weathered_copper_bars"));
+
+    /**
      * {@code minecraft:weathered_copper_bulb}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WEATHERED_COPPER_BULB = create(key("weathered_copper_bulb"));
+
+    /**
+     * {@code minecraft:weathered_copper_chain}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_COPPER_CHAIN = create(key("weathered_copper_chain"));
+
+    /**
+     * {@code minecraft:weathered_copper_chest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_COPPER_CHEST = create(key("weathered_copper_chest"));
 
     /**
      * {@code minecraft:weathered_copper_door}
@@ -9497,11 +9980,25 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WEATHERED_COPPER_DOOR = create(key("weathered_copper_door"));
 
     /**
+     * {@code minecraft:weathered_copper_golem_statue}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_COPPER_GOLEM_STATUE = create(key("weathered_copper_golem_statue"));
+
+    /**
      * {@code minecraft:weathered_copper_grate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WEATHERED_COPPER_GRATE = create(key("weathered_copper_grate"));
+
+    /**
+     * {@code minecraft:weathered_copper_lantern}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_COPPER_LANTERN = create(key("weathered_copper_lantern"));
 
     /**
      * {@code minecraft:weathered_copper_trapdoor}
@@ -9530,6 +10027,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> WEATHERED_CUT_COPPER_STAIRS = create(key("weathered_cut_copper_stairs"));
+
+    /**
+     * {@code minecraft:weathered_lightning_rod}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WEATHERED_LIGHTNING_ROD = create(key("weathered_lightning_rod"));
 
     /**
      * {@code minecraft:weeping_vines}

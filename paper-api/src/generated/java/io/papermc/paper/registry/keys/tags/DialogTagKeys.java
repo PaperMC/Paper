@@ -2,8 +2,8 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public final class DialogTagKeys {
     /**
      * {@code #minecraft:pause_screen_additions}

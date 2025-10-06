@@ -21,7 +21,7 @@
 +        map.put(Items.POTION, (state, level, pos, player, hand, stack, hitDirection) -> { // Paper - add hitDirection
              PotionContents potionContents = stack.get(DataComponents.POTION_CONTENTS);
              if (potionContents != null && potionContents.is(Potions.WATER)) {
-                 if (!level.isClientSide) {
+                 if (!level.isClientSide()) {
 +                    // CraftBukkit start
 +                    if (!LayeredCauldronBlock.changeLevel(level, pos, Blocks.WATER_CAULDRON.defaultBlockState(), player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
 +                        return InteractionResult.SUCCESS;
@@ -55,7 +55,7 @@
          );
 -        map1.put(Items.GLASS_BOTTLE, (state, level, pos, player, hand, stack) -> {
 +        map1.put(Items.GLASS_BOTTLE, (state, level, pos, player, hand, stack, hitDirection) -> { // Paper - add hitDirection
-             if (!level.isClientSide) {
+             if (!level.isClientSide()) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.lowerFillLevel(state, level, pos, player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.BOTTLE_FILL)) {
 +                    return InteractionResult.SUCCESS;
@@ -80,7 +80,7 @@
              } else {
                  PotionContents potionContents = stack.get(DataComponents.POTION_CONTENTS);
                  if (potionContents != null && potionContents.is(Potions.WATER)) {
-                     if (!level.isClientSide) {
+                     if (!level.isClientSide()) {
 +                        // CraftBukkit start
 +                        if (!LayeredCauldronBlock.changeLevel(level, pos, state.cycle(LayeredCauldronBlock.LEVEL), player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
 +                            return InteractionResult.SUCCESS;
@@ -135,7 +135,7 @@
          if (!statePredicate.test(state)) {
              return InteractionResult.TRY_WITH_EMPTY_HAND;
          } else {
-             if (!level.isClientSide) {
+             if (!level.isClientSide()) {
 +                // Paper start - fire PlayerBucketFillEvent
 +                if (hitDirection != null) {
 +                    org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent(level, player, pos, pos, hitDirection, emptyStack, filledStack.getItem(), hand);
@@ -161,19 +161,19 @@
              }
 @@ -222,12 +_,33 @@
      static InteractionResult emptyBucket(
-         Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack filledStackl, BlockState state, SoundEvent emptySound
+         Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack filledStack, BlockState state, SoundEvent emptySound
      ) {
 +        // Paper start - add hitDirection
-+        return emptyBucket(level, pos, player, hand, filledStackl, state, emptySound, null);
++        return emptyBucket(level, pos, player, hand, filledStack, state, emptySound, null);
 +    }
 +
-+    static InteractionResult emptyBucket(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack filledStackl, BlockState state, SoundEvent emptySound, @javax.annotation.Nullable net.minecraft.core.Direction hitDirection) {
++    static InteractionResult emptyBucket(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack filledStack, BlockState state, SoundEvent emptySound, @javax.annotation.Nullable net.minecraft.core.Direction hitDirection) {
 +        // Paper end - add hitDirection
-         if (!level.isClientSide) {
+         if (!level.isClientSide()) {
 +            // Paper start - fire PlayerBucketEmptyEvent
 +            ItemStack output = new ItemStack(Items.BUCKET);
 +            if (hitDirection != null) {
-+                org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, pos, hitDirection, filledStackl, hand);
++                org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, pos, hitDirection, filledStack, hand);
 +                if (event.isCancelled()) {
 +                    return InteractionResult.PASS;
 +                }
@@ -185,9 +185,9 @@
 +                return InteractionResult.SUCCESS;
 +            }
 +            // CraftBukkit end
-             Item item = filledStackl.getItem();
--            player.setItemInHand(hand, ItemUtils.createFilledResult(filledStackl, player, new ItemStack(Items.BUCKET)));
-+            player.setItemInHand(hand, ItemUtils.createFilledResult(filledStackl, player, output)); // Paper
+             Item item = filledStack.getItem();
+-            player.setItemInHand(hand, ItemUtils.createFilledResult(filledStack, player, new ItemStack(Items.BUCKET)));
++            player.setItemInHand(hand, ItemUtils.createFilledResult(filledStack, player, output)); // Paper
              player.awardStat(Stats.FILL_CAULDRON);
              player.awardStat(Stats.ITEM_USED.get(item));
 -            level.setBlockAndUpdate(pos, state);
@@ -239,7 +239,7 @@
          if (!(block instanceof ShulkerBoxBlock)) {
              return InteractionResult.TRY_WITH_EMPTY_HAND;
          } else {
-             if (!level.isClientSide) {
+             if (!level.isClientSide()) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.lowerFillLevel(state, level, pos, player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.SHULKER_WASH)) {
 +                    return InteractionResult.SUCCESS;
@@ -262,7 +262,7 @@
          if (bannerPatternLayers.layers().isEmpty()) {
              return InteractionResult.TRY_WITH_EMPTY_HAND;
          } else {
-             if (!level.isClientSide) {
+             if (!level.isClientSide()) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.lowerFillLevel(state, level, pos, player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.BANNER_WASH)) {
 +                    return InteractionResult.SUCCESS;
@@ -287,7 +287,7 @@
          } else if (!stack.has(DataComponents.DYED_COLOR)) {
              return InteractionResult.TRY_WITH_EMPTY_HAND;
          } else {
-             if (!level.isClientSide) {
+             if (!level.isClientSide()) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.lowerFillLevel(state, level, pos, player, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.ARMOR_WASH)) {
 +                    return InteractionResult.SUCCESS;

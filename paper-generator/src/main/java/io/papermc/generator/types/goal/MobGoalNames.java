@@ -20,108 +20,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.AbstractCow;
-import org.bukkit.entity.AbstractHorse;
-import org.bukkit.entity.AbstractSkeleton;
-import org.bukkit.entity.AbstractVillager;
-import org.bukkit.entity.Ageable;
-import org.bukkit.entity.Allay;
-import org.bukkit.entity.Ambient;
-import org.bukkit.entity.Animals;
-import org.bukkit.entity.Armadillo;
-import org.bukkit.entity.Axolotl;
-import org.bukkit.entity.Bat;
-import org.bukkit.entity.Bee;
-import org.bukkit.entity.Blaze;
-import org.bukkit.entity.Bogged;
-import org.bukkit.entity.Breeze;
-import org.bukkit.entity.Cat;
-import org.bukkit.entity.CaveSpider;
-import org.bukkit.entity.ChestedHorse;
-import org.bukkit.entity.Chicken;
-import org.bukkit.entity.Cod;
-import org.bukkit.entity.Cow;
-import org.bukkit.entity.Creaking;
-import org.bukkit.entity.Creature;
-import org.bukkit.entity.Creeper;
-import org.bukkit.entity.Dolphin;
-import org.bukkit.entity.Donkey;
-import org.bukkit.entity.Drowned;
-import org.bukkit.entity.ElderGuardian;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.Enderman;
-import org.bukkit.entity.Endermite;
-import org.bukkit.entity.Evoker;
-import org.bukkit.entity.Fish;
-import org.bukkit.entity.Fox;
-import org.bukkit.entity.Frog;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.Giant;
-import org.bukkit.entity.GlowSquid;
-import org.bukkit.entity.Goat;
-import org.bukkit.entity.Golem;
-import org.bukkit.entity.Guardian;
-import org.bukkit.entity.HappyGhast;
-import org.bukkit.entity.Hoglin;
-import org.bukkit.entity.Horse;
-import org.bukkit.entity.Husk;
-import org.bukkit.entity.Illager;
-import org.bukkit.entity.Illusioner;
-import org.bukkit.entity.IronGolem;
-import org.bukkit.entity.Llama;
-import org.bukkit.entity.MagmaCube;
-import org.bukkit.entity.Mob;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Mule;
-import org.bukkit.entity.MushroomCow;
-import org.bukkit.entity.Ocelot;
-import org.bukkit.entity.Panda;
-import org.bukkit.entity.Parrot;
-import org.bukkit.entity.Phantom;
-import org.bukkit.entity.Pig;
-import org.bukkit.entity.PigZombie;
-import org.bukkit.entity.Piglin;
-import org.bukkit.entity.PiglinAbstract;
-import org.bukkit.entity.PiglinBrute;
-import org.bukkit.entity.Pillager;
-import org.bukkit.entity.PolarBear;
-import org.bukkit.entity.PufferFish;
-import org.bukkit.entity.Rabbit;
-import org.bukkit.entity.Raider;
-import org.bukkit.entity.Ravager;
-import org.bukkit.entity.Salmon;
-import org.bukkit.entity.Sheep;
-import org.bukkit.entity.Shulker;
-import org.bukkit.entity.Silverfish;
-import org.bukkit.entity.Skeleton;
-import org.bukkit.entity.SkeletonHorse;
-import org.bukkit.entity.Slime;
-import org.bukkit.entity.Sniffer;
-import org.bukkit.entity.Snowman;
-import org.bukkit.entity.Spellcaster;
-import org.bukkit.entity.Spider;
-import org.bukkit.entity.Squid;
-import org.bukkit.entity.Stray;
-import org.bukkit.entity.Strider;
-import org.bukkit.entity.Tadpole;
-import org.bukkit.entity.Tameable;
-import org.bukkit.entity.TraderLlama;
-import org.bukkit.entity.TropicalFish;
-import org.bukkit.entity.Turtle;
-import org.bukkit.entity.Vex;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Vindicator;
-import org.bukkit.entity.WanderingTrader;
-import org.bukkit.entity.Warden;
-import org.bukkit.entity.WaterMob;
-import org.bukkit.entity.Witch;
-import org.bukkit.entity.Wither;
-import org.bukkit.entity.WitherSkeleton;
-import org.bukkit.entity.Wolf;
-import org.bukkit.entity.Zoglin;
-import org.bukkit.entity.Zombie;
-import org.bukkit.entity.ZombieHorse;
-import org.bukkit.entity.ZombieVillager;
+import org.bukkit.entity.*;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -237,22 +136,17 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         map.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class); // close enough
         map.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         map.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
+        map.put(net.minecraft.world.entity.animal.coppergolem.CopperGolem.class, org.bukkit.entity.CopperGolem.class);
         //</editor-fold>
     });
 
     // TODO these kinda should be checked on each release, in case nested classes changes
-    private static final Map<String, String> NESTED_CLASS_NAMES = Util.make(new HashMap<>(), map -> {
+    private static final Map<String, String> RENAMES = Util.make(new HashMap<>(), map -> {
         map.put("AbstractSkeleton$1", "AbstractSkeletonMelee");
 
         // remove duplicate
         map.put("TraderLlama$TraderLlamaDefendWanderingTraderGoal", "TraderLlamaDefendWanderingTraderGoal");
         map.put("AbstractIllager$RaiderOpenDoorGoal", "RaiderOpenDoorGoal");
-
-        // weird enderman case
-        map.put("EnderMan.EndermanFreezeWhenLookedAt", "EndermanFreezeWhenLookedAt");
-        map.put("EnderMan.EndermanLeaveBlockGoal", "EndermanLeaveBlockGoal");
-        map.put("EnderMan.EndermanTakeBlockGoal", "EndermanTakeBlockGoal");
-        map.put("EnderMan.EndermanLookForPlayerGoal", "EndermanLookForPlayerGoal");
     });
 
     private static final Set<Class<? extends Mob>> NO_SPECIFIER = Set.of(
@@ -279,12 +173,12 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
                     break;
                 }
             }
-            if (!needRename && !NESTED_CLASS_NAMES.containsKey(pathName)) {
+            if (!needRename && !RENAMES.containsKey(pathName)) {
                 pathName = innerClassNames;
             }
         }
 
-        if (!NESTED_CLASS_NAMES.containsKey(pathName)) {
+        if (!RENAMES.containsKey(pathName)) {
             if (needRename) {
                 throw new IllegalStateException("need to map " + name + " (" + pathName + ")");
             }
@@ -298,7 +192,7 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
                 pathName = prefix + pathName;
             }
         } else {
-            pathName = NESTED_CLASS_NAMES.get(pathName);
+            pathName = RENAMES.get(pathName);
         }
 
         pathName = Formatting.stripWordOfCamelCaseName(pathName, "TargetGoal", true); // replace last? reverse search?

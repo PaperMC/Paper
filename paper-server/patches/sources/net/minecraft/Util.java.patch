@@ -1,34 +1,34 @@
 --- a/net/minecraft/Util.java
 +++ b/net/minecraft/Util.java
-@@ -93,9 +_,26 @@
+@@ -91,9 +_,25 @@
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
 -    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
 +    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
      private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
+-    private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
 +    public static final TracingExecutor DIMENSION_DATA_IO_POOL = makeExtraIoExecutor("Dimension-Data-IO-Worker-"); // Paper - Separate dimension data IO pool
-     private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
-+    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
-+    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
-+
++    // Paper start - Limit download pool size
++    private static final TracingExecutor DOWNLOAD_POOL = new TracingExecutor(Executors.newFixedThreadPool(4, new java.util.concurrent.ThreadFactory() {
 +        private final AtomicInteger count = new AtomicInteger();
 +
 +        @Override
 +        public Thread newThread(Runnable run) {
 +            Thread ret = new Thread(run);
-+            ret.setName("Profile Lookup Executor #" + this.count.getAndIncrement());
++            ret.setDaemon(true);
++            ret.setName("Download-" + this.count.getAndIncrement());
 +            ret.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
 +                LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
 +            });
 +            return ret;
 +        }
-+    });
-+    // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
++    }));
++    // Paper end - Limit download pool size
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
      public static final int LINEAR_LOOKUP_THRESHOLD = 8;
      private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
-@@ -114,6 +_,7 @@
+@@ -112,6 +_,7 @@
          .findFirst()
          .orElseThrow(() -> new IllegalStateException("No jar file system provider found"));
      private static Consumer<String> thePauser = string -> {};
@@ -36,7 +36,7 @@
  
      public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
          return Collectors.toMap(Entry::getKey, Entry::getValue);
-@@ -136,7 +_,7 @@
+@@ -134,7 +_,7 @@
      }
  
      public static long getNanos() {
@@ -45,7 +45,7 @@
      }
  
      public static long getEpochMillis() {
-@@ -147,9 +_,10 @@
+@@ -145,9 +_,10 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
@@ -58,7 +58,7 @@
          if (i <= 0) {
              directExecutorService = MoreExecutors.newDirectExecutorService();
          } else {
-@@ -174,16 +_,30 @@
+@@ -172,16 +_,30 @@
                          super.onTermination(throwOnTermination);
                      }
                  };
@@ -91,7 +91,7 @@
      }
  
      private static int getMaxThreads() {
-@@ -234,6 +_,21 @@
+@@ -232,6 +_,21 @@
          }));
      }
  
@@ -113,7 +113,7 @@
      public static void throwAsRuntime(Throwable throwable) {
          throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);
      }
-@@ -1093,16 +_,7 @@
+@@ -1116,16 +_,7 @@
          }
  
          public void openUri(URI uri) {

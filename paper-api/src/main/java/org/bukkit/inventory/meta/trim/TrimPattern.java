@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 public interface TrimPattern extends Keyed, Translatable {
 
     // Start generate - TrimPattern
-    // @GeneratedFrom 1.21.8
     TrimPattern BOLT = getTrimPattern("bolt");
 
     TrimPattern COAST = getTrimPattern("coast");

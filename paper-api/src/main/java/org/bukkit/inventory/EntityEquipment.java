@@ -363,7 +363,7 @@ public interface EntityEquipment {
      * <ul>
      * <li>A drop chance of 0.0F will never drop
      * <li>A drop chance of exactly 1.0F will always drop if killed by a player
-     * <li>A drop chance of greater than 1.0F will always drop killed by anything
+     * <li>A drop chance of greater than 1.0F will always drop if killed by anything
      * </ul>
      *
      * @return chance of the currently held item being dropped (1 for non-{@link Mob})

@@ -13,7 +13,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
-import net.minecraft.world.level.Level;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.RegisteredListener;
@@ -29,7 +28,10 @@ public class HorriblePlayerLoginEventHack {
     private static final Logger LOGGER = LogUtils.getClassLogger();
     private static boolean nagged = false;
 
-    public static void warnReenterConfiguration() {
+    public static boolean warnReenterConfiguration(final Connection connection) {
+        if (!connection.handledLegacyLoginEvent) {
+            return false;
+        }
         LOGGER.warn("""
                 
                 ============================================================
@@ -40,6 +42,7 @@ public class HorriblePlayerLoginEventHack {
                 
                 Please look in your logs for the Plugins listening to this event.
                 ============================================================""", StackWalkerUtil.getFirstPluginCaller().getName());
+        return true;
     }
 
     public static @Nullable Component execute(final Connection connection, MinecraftServer server, GameProfile profile, PlayerList.LoginResult result) {
@@ -71,13 +74,14 @@ public class HorriblePlayerLoginEventHack {
         // We need to account for the fact that during the config stage we now call this event to mimic the old behavior.
         // However, we want to make sure that we still properly hold the same player reference
         ServerPlayer player;
-        if (connection.savedPlayerForLoginEventLegacy != null) {
-            player = connection.savedPlayerForLoginEventLegacy;
+        if (connection.savedPlayerForLegacyEvents != null) {
+            player = connection.savedPlayerForLegacyEvents;
         } else {
-            ServerPlayer serverPlayer = new ServerPlayer(server, server.getLevel(Level.OVERWORLD), profile, ClientInformation.createDefault());
-            connection.savedPlayerForLoginEventLegacy = serverPlayer;
+            ServerPlayer serverPlayer = new ServerPlayer(server, server.overworld(), profile, ClientInformation.createDefault());
+            connection.savedPlayerForLegacyEvents = serverPlayer;
             player = serverPlayer;
         }
+        connection.handledLegacyLoginEvent = true;
 
         CraftPlayer horribleBukkitPlayer = player.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());

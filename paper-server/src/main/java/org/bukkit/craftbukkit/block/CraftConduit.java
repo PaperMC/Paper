@@ -98,7 +98,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
                 return false;
             }
 
-            conduit.destroyTarget = new EntityReference<>(((CraftLivingEntity) target).getHandle());
+            conduit.destroyTarget = EntityReference.of(((CraftLivingEntity) target).getHandle());
         }
 
         ConduitBlockEntity.updateAndAttackTarget(

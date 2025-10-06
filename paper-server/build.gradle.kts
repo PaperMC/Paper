@@ -17,7 +17,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.8+build.2")
+    mache("io.papermc:mache:1.21.9+build.1")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -27,7 +27,7 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = true
+        enabled = false
         buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
         packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
@@ -115,6 +115,7 @@ val alsoShade: Configuration by configurations.creating
 
 val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+    extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
 }
 
 // Configure mockito agent that is needed in newer java versions
@@ -130,12 +131,11 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.3")
+    implementation("ca.spottedleaf:concurrentutil:0.0.5")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
-    runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
@@ -280,18 +280,6 @@ sourceSets {
     }
 }
 
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-        mcVersion.set(providers.gradleProperty("mcVersion"))
-        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-        classpath.from(configurations.compileClasspath)
-    }
-    tasks.check {
-        dependsOn(scanJarForOldGeneratedCode)
-    }
-}
-
 fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
@@ -376,7 +364,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.STABLE
+        channel = BuildChannel.ALPHA
 
         downloads {
             register("server:default") {

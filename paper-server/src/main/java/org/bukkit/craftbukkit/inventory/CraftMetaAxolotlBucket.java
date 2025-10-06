@@ -7,7 +7,9 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
@@ -16,7 +18,7 @@ import org.bukkit.inventory.meta.AxolotlBucketMeta;
 public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBucketMeta {
 
     static final ItemMetaKey VARIANT = new ItemMetaKey("Variant", "axolotl-variant");
-    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+    static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
     static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 
     private Integer variant;
@@ -39,7 +41,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         super(tag, extraHandledDcts);
 
         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTag();
+            this.entityTag = nbt.copyTagWithEntityId();
             this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
         getOrEmpty(tag, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
@@ -80,7 +82,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         super.applyToItem(tag);
 
         if (this.entityTag != null) {
-            tag.put(CraftMetaAxolotlBucket.ENTITY_TAG, CustomData.of(this.entityTag));
+            tag.put(CraftMetaAxolotlBucket.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
         }
 
         CompoundTag bucketEntityTag = (this.bucketEntityTag != null) ? this.bucketEntityTag.copy() : null;

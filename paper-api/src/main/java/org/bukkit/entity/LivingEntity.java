@@ -5,13 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
-import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.key.Key;
 import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -284,7 +282,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @see #getTargetBlockExact(int, org.bukkit.FluidCollisionMode)
      */
     @Nullable
-    public Block getTargetBlockExact(int maxDistance);
+    default Block getTargetBlockExact(int maxDistance) {
+        return this.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
+    }
 
     /**
      * Gets the block that the living entity has targeted.
@@ -317,7 +317,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @see #rayTraceBlocks(double, FluidCollisionMode)
      */
     @Nullable
-    public RayTraceResult rayTraceBlocks(double maxDistance);
+    default RayTraceResult rayTraceBlocks(double maxDistance) {
+        return this.rayTraceBlocks(maxDistance, FluidCollisionMode.NEVER);
+    }
 
     /**
      * Performs a ray trace that provides information on the targeted block.
@@ -604,13 +606,14 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    public boolean addPotionEffect(@NotNull PotionEffect effect);
+    default boolean addPotionEffect(@NotNull PotionEffect effect) {
+        return this.addPotionEffect(effect, false);
+    }
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
      * <p>
-     * Only one potion effect can be present for a given {@link
-     * PotionEffectType}.
+     * Only one potion effect can be present for a given {@link PotionEffectType}.
      *
      * @param effect PotionEffect to be added
      * @param force whether conflicting effects should be removed
@@ -957,7 +960,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param memoryKey memory to access
      * @param <T> the type of the return value
-     * @return a instance of the memory section value or null if not present
+     * @return an instance of the memory section value or null if not present
      */
     @Nullable
     <T> T getMemory(@NotNull MemoryKey<T> memoryKey);
@@ -1084,15 +1087,22 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Get the delay (in ticks) before blocking is effective for this entity
      *
      * @return Delay in ticks
+     * @deprecated no longer applicable, check the blocks_attacks component on the shield
      */
-    int getShieldBlockingDelay();
+    @Deprecated(since = "1.21.9")
+    default int getShieldBlockingDelay() {
+        return 5;
+    }
 
     /**
      * Set the delay (in ticks) before blocking is effective for this entity
      *
      * @param delay Delay in ticks
+     * @deprecated no longer applicable, use the blocks_attacks component on the shield
      */
-    void setShieldBlockingDelay(int delay);
+    @Deprecated(since = "1.21.9")
+    default void setShieldBlockingDelay(int delay) {
+    }
 
     /**
      * Retrieves the sideways movement direction of the entity.

@@ -32,6 +32,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.MissingPaletteEntryException;
 import net.minecraft.world.level.chunk.Palette;
+import net.minecraft.world.level.chunk.PaletteResize;
 import org.bukkit.Bukkit;
 
 public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
@@ -77,10 +78,10 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             presetBlockStatesNetherrack = new BlockState[]{Blocks.NETHERRACK.defaultBlockState()};
             presetBlockStatesEndStone = new BlockState[]{Blocks.END_STONE.defaultBlockState()};
             presetBlockStateBitsGlobal = null;
-            presetBlockStateBitsStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.STONE.defaultBlockState())};
-            presetBlockStateBitsDeepslateGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.DEEPSLATE.defaultBlockState())};
-            presetBlockStateBitsNetherrackGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.NETHERRACK.defaultBlockState())};
-            presetBlockStateBitsEndStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.END_STONE.defaultBlockState())};
+            presetBlockStateBitsStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.STONE.defaultBlockState(), PaletteResize.noResizeExpected())};
+            presetBlockStateBitsDeepslateGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.DEEPSLATE.defaultBlockState(), PaletteResize.noResizeExpected())};
+            presetBlockStateBitsNetherrackGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.NETHERRACK.defaultBlockState(), PaletteResize.noResizeExpected())};
+            presetBlockStateBitsEndStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.END_STONE.defaultBlockState(), PaletteResize.noResizeExpected())};
         } else {
             toObfuscate = new ArrayList<>(paperWorldConfig.replacementBlocks);
             List<BlockState> presetBlockStateList = new LinkedList<>();
@@ -106,7 +107,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             presetBlockStateBitsGlobal = new int[presetBlockStatesFull.length];
 
             for (int i = 0; i < presetBlockStatesFull.length; i++) {
-                presetBlockStateBitsGlobal[i] = GLOBAL_BLOCKSTATE_PALETTE.idFor(presetBlockStatesFull[i]);
+                presetBlockStateBitsGlobal[i] = GLOBAL_BLOCKSTATE_PALETTE.idFor(presetBlockStatesFull[i], PaletteResize.noResizeExpected());
             }
 
             presetBlockStateBitsStoneGlobal = null;
@@ -121,7 +122,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
             if (block != null && !block.defaultBlockState().isAir()) {
                 // Replace all block states of a specified block
                 for (BlockState blockState : block.getStateDefinition().getPossibleStates()) {
-                    obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState)] = true;
+                    obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState, PaletteResize.noResizeExpected())] = true;
                 }
             }
         }
@@ -293,7 +294,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
                     for (int i = 0; i < presetBlockStateBitsTemp.length; i++) {
                         // This is thread safe because we only request IDs that are guaranteed to be in the palette and are visible
                         // For more details see the comments in the readPalette method
-                        presetBlockStateBitsTemp[i] = chunkPacketInfoAntiXray.getPalette(chunkSectionIndex).idFor(presetBlockStatesFull[i]);
+                        presetBlockStateBitsTemp[i] = chunkPacketInfoAntiXray.getPalette(chunkSectionIndex).idFor(presetBlockStatesFull[i], PaletteResize.noResizeExpected());
                     }
                 }
 
@@ -578,7 +579,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         }
 
         try {
-            return !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(chunkSection.getBlockState(x, y, z))];
+            return !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(chunkSection.getBlockState(x, y, z), PaletteResize.noResizeExpected())];
         } catch (MissingPaletteEntryException e) {
             // Race condition / visibility issue / no happens-before relationship
             // We don't care and treat the block as transparent
@@ -594,7 +595,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
 
         try {
             for (int i = 0; i < palette.getSize(); i++) {
-                temp[i] = global[GLOBAL_BLOCKSTATE_PALETTE.idFor(palette.valueFor(i))];
+                temp[i] = global[GLOBAL_BLOCKSTATE_PALETTE.idFor(palette.valueFor(i), PaletteResize.noResizeExpected())];
             }
         } catch (MissingPaletteEntryException e) {
             // Race condition / visibility issue / no happens-before relationship
@@ -608,7 +609,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
 
     @Override
     public void onBlockChange(Level level, BlockPos blockPos, BlockState newBlockState, BlockState oldBlockState, int flags, int maxUpdateDepth) {
-        if (oldBlockState != null && solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(oldBlockState)] && !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(newBlockState)] && blockPos.getY() <= maxBlockHeightUpdatePosition) {
+        if (oldBlockState != null && solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(oldBlockState, PaletteResize.noResizeExpected())] && !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(newBlockState, PaletteResize.noResizeExpected())] && blockPos.getY() <= maxBlockHeightUpdatePosition) {
             updateNearbyBlocks(level, blockPos);
         }
     }
@@ -662,7 +663,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     private void updateBlock(Level level, BlockPos blockPos) {
         BlockState blockState = level.getBlockStateIfLoaded(blockPos);
 
-        if (blockState != null && obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState)]) {
+        if (blockState != null && obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState, PaletteResize.noResizeExpected())]) {
             ((ServerLevel) level).getChunkSource().blockChanged(blockPos);
         }
     }

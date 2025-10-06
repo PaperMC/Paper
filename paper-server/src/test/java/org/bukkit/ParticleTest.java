@@ -10,9 +10,11 @@ import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.core.particles.SculkChargeParticleOptions;
 import net.minecraft.core.particles.ShriekParticleOption;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.particles.SpellParticleOption;
 import net.minecraft.core.particles.TrailParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
@@ -118,6 +120,11 @@ public class ParticleTest {
             return;
         }
 
+        if (bukkit.getDataType().equals(Particle.Spell.class)) {
+            this.testSpell(bukkit, minecraft);
+            return;
+        }
+
         fail(String.format("""
                 No test found for particle %s.
                 Please add a test case for it here.
@@ -215,13 +222,25 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testFloat(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        float role = 0.1205f;
-        SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, role, SculkChargeParticleOptions.class);
+        if (bukkit == Particle.SCULK_CHARGE) {
+            float roll = 0.1205f;
+            SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, roll, SculkChargeParticleOptions.class);
 
-        assertEquals(role, param.roll(), 0.001, String.format("""
-                Float role for particle %s do not match.
-                Did something change in the implementation or minecraft?
-                """, bukkit.getKey()));
+            assertEquals(roll, param.roll(), 0.001, String.format("""
+                    Float roll for particle %s do not match.
+                    Did something change in the implementation or minecraft?
+                    """, bukkit.getKey()));
+        } else if (bukkit == Particle.DRAGON_BREATH) {
+            float power = 3.1415f;
+            PowerParticleOption param = this.createAndTest(bukkit, minecraft, power, PowerParticleOption.class);
+
+            assertEquals(power, param.getPower(), 0.001, String.format("""
+                    Float power for particle %s do not match.
+                    Did something change in the implementation or minecraft?
+                    """, bukkit.getKey()));
+        } else {
+            throw new IllegalArgumentException("Missing float particle options test mapping, please add it here.");
+        }
     }
 
     private <T extends ParticleOptions> void testInteger(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
@@ -268,6 +287,27 @@ public class ParticleTest {
                 Expected: %s.
                 Got: %s.
                 """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
+    }
+
+    private <T extends ParticleOptions> void testSpell(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
+        Color color = Color.AQUA;
+        float power = 3.1415f;
+        Particle.Spell spell = new Particle.Spell(color, power);
+
+        SpellParticleOption param = this.createAndTest(bukkit, minecraft, spell, SpellParticleOption.class);
+
+        assertEquals(color.asARGB(), param.color, String.format("""
+                Spell color for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), color.asARGB(), param.color));
+        assertEquals(power, param.getPower(), 0.001, String.format("""
+                Spell power for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), power, param.getPower()));
     }
 
     private <D extends ParticleOptions, T extends ParticleOptions> D createAndTest(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft, Object data, Class<D> paramClass) {

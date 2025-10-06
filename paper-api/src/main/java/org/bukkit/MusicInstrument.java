@@ -29,7 +29,6 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     }
 
     // Start generate - MusicInstrument
-    // @GeneratedFrom 1.21.8
     public static final MusicInstrument ADMIRE_GOAT_HORN = getInstrument("admire_goat_horn");
 
     public static final MusicInstrument CALL_GOAT_HORN = getInstrument("call_goat_horn");

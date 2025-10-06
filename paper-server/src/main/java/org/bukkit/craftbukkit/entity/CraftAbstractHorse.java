@@ -100,7 +100,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     }
 
     public void setOwnerUUID(UUID uuid) {
-        this.getHandle().owner = uuid == null ? null : new EntityReference<>(uuid);
+        this.getHandle().owner = uuid == null ? null : EntityReference.of(uuid);
     }
 
     @Override

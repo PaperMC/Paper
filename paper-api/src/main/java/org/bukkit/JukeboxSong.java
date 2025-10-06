@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
 public interface JukeboxSong extends Keyed, Translatable {
 
     // Start generate - JukeboxSong
-    // @GeneratedFrom 1.21.8
     JukeboxSong ELEVEN = get("11");
 
     JukeboxSong THIRTEEN = get("13");

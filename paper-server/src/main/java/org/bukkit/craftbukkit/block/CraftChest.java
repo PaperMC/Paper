@@ -6,7 +6,6 @@ import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -45,14 +44,13 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
             return inventory;
         }
 
-        // The logic here is basically identical to the logic in BlockChest.interact
         CraftWorld world = (CraftWorld) this.getWorld();
 
-        ChestBlock blockChest = (ChestBlock) (this.getType() == Material.CHEST ? Blocks.CHEST : Blocks.TRAPPED_CHEST);
-        MenuProvider nms = blockChest.getMenuProvider(this.data, world.getHandle(), this.getPosition(), true);
+        ChestBlock block = this.data.getBlock() instanceof ChestBlock chestBlock ? chestBlock : (ChestBlock) Blocks.CHEST;
+        MenuProvider provider = block.getMenuProvider(this.data, world.getHandle(), this.getPosition(), true);
 
-        if (nms instanceof ChestBlock.DoubleInventory) {
-            inventory = new CraftInventoryDoubleChest((ChestBlock.DoubleInventory) nms);
+        if (provider instanceof ChestBlock.DoubleInventory) {
+            inventory = new CraftInventoryDoubleChest((ChestBlock.DoubleInventory) provider);
         }
         return inventory;
     }

@@ -96,7 +96,7 @@ public interface StructureManager {
     /**
      * Saves the currently {@link #getStructures() registered structure} for the
      * specified {@link NamespacedKey key} to the primary world folder as
-     * specified by {#getStructureFile(NamespacedKey}.
+     * specified by {@link #getStructureFile(NamespacedKey)}.
      *
      * @param structureKey The key for which to save the structure for
      */

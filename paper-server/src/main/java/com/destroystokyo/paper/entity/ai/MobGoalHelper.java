@@ -27,7 +27,6 @@ public class MobGoalHelper {
     public static final Map<Class<? extends net.minecraft.world.entity.Mob>, Class<? extends Mob>> BUKKIT_BRIDGE = Util.make(new LinkedHashMap<>(), map -> {
         //<editor-fold defaultstate="collapsed" desc="bukkitMap Entities">
         // Start generate - MobGoalHelper#BUKKIT_BRIDGE
-        // @GeneratedFrom 1.21.8
         map.put(net.minecraft.world.entity.Mob.class, Mob.class);
         map.put(net.minecraft.world.entity.AgeableMob.class, Ageable.class);
         map.put(net.minecraft.world.entity.ambient.AmbientCreature.class, Ambient.class);
@@ -135,23 +134,18 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class);
         map.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         map.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
+        map.put(net.minecraft.world.entity.animal.coppergolem.CopperGolem.class, CopperGolem.class);
         // End generate - MobGoalHelper#BUKKIT_BRIDGE
         //</editor-fold>
     });
 
     // TODO these kinda should be checked on each release, in case nested classes changes
-    private static final Map<String, String> NESTED_CLASS_NAMES = Util.make(new HashMap<>(), map -> {
+    private static final Map<String, String> RENAMES = Util.make(new HashMap<>(), map -> {
         map.put("AbstractSkeleton$1", "AbstractSkeletonMelee");
 
         // remove duplicate
         map.put("TraderLlama$TraderLlamaDefendWanderingTraderGoal", "TraderLlamaDefendWanderingTraderGoal");
         map.put("AbstractIllager$RaiderOpenDoorGoal", "RaiderOpenDoorGoal");
-
-        // weird enderman case
-        map.put("EnderMan.EndermanFreezeWhenLookedAt", "EndermanFreezeWhenLookedAt");
-        map.put("EnderMan.EndermanLeaveBlockGoal", "EndermanLeaveBlockGoal");
-        map.put("EnderMan.EndermanTakeBlockGoal", "EndermanTakeBlockGoal");
-        map.put("EnderMan.EndermanLookForPlayerGoal", "EndermanLookForPlayerGoal");
     });
 
     private static final Set<Class<? extends Mob>> NO_SPECIFIER = Set.of(
@@ -178,12 +172,12 @@ public class MobGoalHelper {
                     break;
                 }
             }
-            if (!needRename && !NESTED_CLASS_NAMES.containsKey(pathName)) {
+            if (!needRename && !RENAMES.containsKey(pathName)) {
                 pathName = innerClassNames;
             }
         }
 
-        if (!NESTED_CLASS_NAMES.containsKey(pathName)) {
+        if (!RENAMES.containsKey(pathName)) {
             if (needRename) {
                 throw new IllegalStateException("need to map " + name + " (" + pathName + ")");
             }
@@ -197,7 +191,7 @@ public class MobGoalHelper {
                 pathName = prefix + pathName;
             }
         } else {
-            pathName = NESTED_CLASS_NAMES.get(pathName);
+            pathName = RENAMES.get(pathName);
         }
 
         pathName = pathName.replace("TargetGoal", ""); // replace last? reverse search?

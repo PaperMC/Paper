@@ -65,7 +65,7 @@ public class CraftBlock implements Block {
     private final net.minecraft.world.level.LevelAccessor world;
     private final BlockPos position;
 
-    public CraftBlock(LevelAccessor world, BlockPos position) {
+    private CraftBlock(LevelAccessor world, BlockPos position) {
         this.world = world;
         this.position = position.immutable();
     }

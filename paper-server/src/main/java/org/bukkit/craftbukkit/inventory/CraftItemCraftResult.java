@@ -14,12 +14,12 @@ public final class CraftItemCraftResult implements ItemCraftResult {
     private final List<ItemStack> overflowItems;
 
     public CraftItemCraftResult(ItemStack result) {
-        this.result = Objects.requireNonNullElseGet(result, () -> new ItemStack(Material.AIR));
+        this.result = result;
         this.resultMatrix = new ItemStack[9];
         this.overflowItems = new ArrayList<>();
 
         for (int i = 0; i < this.resultMatrix.length; i++) {
-            this.resultMatrix[i] = new ItemStack(Material.AIR);
+            this.resultMatrix[i] = ItemStack.empty();
         }
     }
 
@@ -39,6 +39,6 @@ public final class CraftItemCraftResult implements ItemCraftResult {
     }
 
     public void setResultMatrix(int i, ItemStack itemStack) {
-        this.resultMatrix[i] = Objects.requireNonNullElseGet(itemStack, () -> new ItemStack(Material.AIR));
+        this.resultMatrix[i] = itemStack;
     }
 }

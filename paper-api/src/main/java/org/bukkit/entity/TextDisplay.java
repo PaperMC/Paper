@@ -100,14 +100,14 @@ public interface TextDisplay extends Display {
     void setShadowed(boolean shadow);
 
     /**
-     * Gets if the text is see through.
+     * Gets if the text is seen through.
      *
      * @return see through status
      */
     boolean isSeeThrough();
 
     /**
-     * Sets if the text is see through.
+     * Sets if the text is seen through.
      *
      * @param seeThrough if see through
      */

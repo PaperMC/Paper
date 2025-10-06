@@ -1,16 +1,21 @@
 --- a/net/minecraft/server/commands/GameModeCommand.java
 +++ b/net/minecraft/server/commands/GameModeCommand.java
-@@ -69,9 +_,16 @@
+@@ -69,9 +_,21 @@
      }
  
      private static boolean setGameMode(CommandSourceStack source, ServerPlayer player, GameType gameMode) {
 -        if (player.setGameMode(gameMode)) {
-+        // Paper start
-+        org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND, net.kyori.adventure.text.Component.empty());
++        // Paper start - Expand PlayerGameModeChangeEvent
++        return setGameMode(source, player, gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND);
++    }
++
++    public static boolean setGameMode(CommandSourceStack source, ServerPlayer player, GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause) {
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(gameMode, cause, null);
 +        if (event != null && !event.isCancelled()) {
-+            // Paper end
++            // Paper end - Expand PlayerGameModeChangeEvent
              logGamemodeChange(source, player, gameMode);
              return true;
++            // Paper start - Expand PlayerGameModeChangeEvent
 +        } else if (event != null && event.cancelMessage() != null) {
 +            source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
 +            return false;

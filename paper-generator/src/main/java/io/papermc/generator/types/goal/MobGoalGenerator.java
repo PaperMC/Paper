@@ -47,7 +47,7 @@ public class MobGoalGenerator extends SimpleGenerator {
             .addSuperinterface(ParameterizedTypeName.get(ClassName.get(com.destroystokyo.paper.entity.ai.Goal.class), type))
             .addModifiers(PUBLIC)
             .addTypeVariable(type)
-            .addAnnotations(Annotations.CLASS_HEADER)
+            .addAnnotations(Annotations.CONSTANTS_HEADER)
             .addJavadoc(CLASS_HEADER);
 
         TypeName mobType = ParameterizedTypeName.get(ClassName.get(Class.class), type);
