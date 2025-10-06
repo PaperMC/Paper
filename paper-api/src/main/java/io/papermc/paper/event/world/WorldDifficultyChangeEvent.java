@@ -36,7 +36,7 @@ public class WorldDifficultyChangeEvent extends WorldEvent {
      * @return {@code null} if the difficulty was changed via api, otherwise the {@link CommandSourceStack}.
      */
     public @Nullable CommandSourceStack getCommandSource() {
-        return commandSource;
+        return this.commandSource;
     }
 
     /**
@@ -45,7 +45,7 @@ public class WorldDifficultyChangeEvent extends WorldEvent {
      * @return the new difficulty.
      */
     public Difficulty getDifficulty() {
-        return difficulty;
+        return this.difficulty;
     }
 
     @Override

@@ -5,6 +5,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import org.bukkit.GameEvent;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +31,6 @@ public class CraftGameEventTag extends CraftTag<net.minecraft.world.level.gameev
 
     @Override
     public @NotNull Set<GameEvent> getValues() {
-        return getHandle().stream().map((nms) -> Objects.requireNonNull(GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms.value()))), () -> nms + " is not a recognized game event")).collect(Collectors.toUnmodifiableSet());
+        return getHandle().stream().map((nms) -> Objects.requireNonNull(Registry.GAME_EVENT.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms.value()))), () -> nms + " is not a recognized game event")).collect(Collectors.toUnmodifiableSet());
     }
 }

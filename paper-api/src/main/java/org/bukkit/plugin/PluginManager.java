@@ -315,6 +315,9 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
     public boolean useTimings();
 
     // Paper start
+    /**
+     * @hidden
+     */
     @org.jetbrains.annotations.ApiStatus.Internal
     boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig);
 

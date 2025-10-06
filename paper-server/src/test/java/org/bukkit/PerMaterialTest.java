@@ -1,18 +1,15 @@
 package org.bukkit;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import net.minecraft.core.component.DataComponents;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.material.MaterialData;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @AllFeatures
 public class PerMaterialTest {
@@ -27,16 +24,6 @@ public class PerMaterialTest {
             // assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().blocksLight()))); // PAIL: not unit testable anymore (17w50a)
         } else {
             assertFalse(material.isTransparent());
-        }
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
-    public void usesDurability(Material material) {
-        if (!material.isBlock()) {
-            assertThat(EnchantmentTarget.BREAKABLE.includes(material), is(CraftMagicNumbers.getItem(material).components().getOrDefault(DataComponents.MAX_DAMAGE, 0) > 0));
-        } else {
-            assertFalse(EnchantmentTarget.BREAKABLE.includes(material));
         }
     }
 

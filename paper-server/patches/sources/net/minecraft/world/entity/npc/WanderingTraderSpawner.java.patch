@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
 +++ b/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
-@@ -38,38 +_,47 @@
+@@ -38,36 +_,45 @@
  
      public WanderingTraderSpawner(ServerLevelData serverLevelData) {
          this.serverLevelData = serverLevelData;
@@ -27,7 +27,7 @@
      }
  
      @Override
-     public void tick(ServerLevel level, boolean spawnEnemies, boolean spawnFriendlies) {
+     public void tick(ServerLevel level, boolean spawnEnemies) {
 +        // Paper start - Add Wandering Trader spawn rate config options
 +        if (this.tickDelay == Integer.MIN_VALUE) {
 +            this.tickDelay = level.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
@@ -46,18 +46,16 @@
                  if (this.spawnDelay <= 0) {
 -                    this.spawnDelay = 24000;
 +                    this.spawnDelay = level.paperConfig().entities.spawning.wanderingTrader.spawnDayLength;
-                     if (level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
-                         int i = this.spawnChance;
--                        this.spawnChance = Mth.clamp(this.spawnChance + 25, 25, 75);
--                        this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance);
-+                        this.spawnChance = Mth.clamp(this.spawnChance + level.paperConfig().entities.spawning.wanderingTrader.spawnChanceFailureIncrement, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMax);
-+                        //this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance); // Paper - We don't need to save this value to disk if it gets set back to a hardcoded value anyways
-                         if (this.random.nextInt(100) <= i) {
-                             if (this.spawn(level)) {
--                                this.spawnChance = 25;
-+                                this.spawnChance = level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin;
-+                                // Paper end - Add Wandering Trader spawn rate config options
-                             }
+                     int i = this.spawnChance;
+-                    this.spawnChance = Mth.clamp(this.spawnChance + 25, 25, 75);
+-                    this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance);
++                    this.spawnChance = Mth.clamp(this.spawnChance + level.paperConfig().entities.spawning.wanderingTrader.spawnChanceFailureIncrement, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMax);
++                    //this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance); // Paper - We don't need to save this value to disk if it gets set back to a hardcoded value anyways
+                     if (this.random.nextInt(100) <= i) {
+                         if (this.spawn(level)) {
+-                            this.spawnChance = 25;
++                            this.spawnChance = level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin;
++                            // Paper end - Add Wandering Trader spawn rate config options
                          }
                      }
                  }
@@ -66,7 +64,7 @@
          }
      }
  
-@@ -91,14 +_,14 @@
+@@ -89,14 +_,14 @@
                      return false;
                  }
  
@@ -83,7 +81,7 @@
                      wanderingTrader.setWanderTarget(blockPos1);
                      wanderingTrader.setHomeTo(blockPos1, 16);
                      return true;
-@@ -112,7 +_,7 @@
+@@ -110,7 +_,7 @@
      private void tryToSpawnLlamaFor(ServerLevel serverLevel, WanderingTrader trader, int maxDistance) {
          BlockPos blockPos = this.findSpawnPositionNear(serverLevel, trader.blockPosition(), maxDistance);
          if (blockPos != null) {

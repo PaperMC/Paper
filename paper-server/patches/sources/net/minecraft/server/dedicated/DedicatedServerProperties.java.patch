@@ -1,14 +1,14 @@
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -47,6 +_,7 @@
+@@ -48,6 +_,7 @@
      static final Logger LOGGER = LogUtils.getLogger();
      private static final Pattern SHA1 = Pattern.compile("^[a-fA-F0-9]{40}$");
      private static final Splitter COMMA_SPLITTER = Splitter.on(',').trimResults();
 +    public final boolean debug = this.get("debug", false); // CraftBukkit
-     public final boolean onlineMode = this.get("online-mode", true);
-     public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
-     public final String serverIp = this.get("server-ip", "");
-@@ -87,7 +_,7 @@
+     public static final String MANAGEMENT_SERVER_TLS_ENABLED_KEY = "management-server-tls-enabled";
+     public static final String MANAGEMENT_SERVER_TLS_KEYSTORE_KEY = "management-server-tls-keystore";
+     public static final String MANAGEMENT_SERVER_TLS_KEYSTORE_PASSWORD_KEY = "management-server-tls-keystore-password";
+@@ -97,7 +_,7 @@
      public final boolean broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
      public final boolean broadcastConsoleToOps = this.get("broadcast-console-to-ops", true);
      public final int maxWorldSize = this.get("max-world-size", property -> Mth.clamp(property, 1, 29999984), 29999984);
@@ -16,16 +16,16 @@
 +    public final boolean syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag
      public final String regionFileComression = this.get("region-file-compression", "deflate");
      public final boolean enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
-     public final boolean enableStatus = this.get("enable-status", true);
-@@ -101,13 +_,16 @@
+     public final Settings<DedicatedServerProperties>.MutableValue<Boolean> enableStatus = this.getMutable("enable-status", true);
+@@ -114,13 +_,16 @@
      public final Settings<DedicatedServerProperties>.MutableValue<Boolean> whiteList = this.getMutable("white-list", false);
      public final boolean enforceSecureProfile = this.get("enforce-secure-profile", true);
      public final boolean logIPs = this.get("log-ips", true);
--    public int pauseWhenEmptySeconds = this.get("pause-when-empty-seconds", 60);
-+    public int pauseWhenEmptySeconds = this.get("pause-when-empty-seconds", -1); // Paper - disable tick sleeping by default 
+-    public Settings<DedicatedServerProperties>.MutableValue<Integer> pauseWhenEmptySeconds = this.getMutable("pause-when-empty-seconds", 60);
++    public Settings<DedicatedServerProperties>.MutableValue<Integer> pauseWhenEmptySeconds = this.getMutable("pause-when-empty-seconds", -1); // Paper - disable tick sleeping by default
      private final DedicatedServerProperties.WorldDimensionData worldDimensionData;
      public final WorldOptions worldOptions;
-     public boolean acceptsTransfers = this.get("accepts-transfers", false);
+     public Settings<DedicatedServerProperties>.MutableValue<Boolean> acceptsTransfers = this.getMutable("accepts-transfers", false);
 +    public final String rconIp; // Paper - Configurable rcon ip
  
 -    public DedicatedServerProperties(Properties properties) {
@@ -37,7 +37,7 @@
          String string = this.get("level-seed", "");
          boolean flag = this.get("generate-structures", true);
          long l = WorldOptions.parseSeed(string).orElse(WorldOptions.randomSeed());
-@@ -128,15 +_,21 @@
+@@ -141,15 +_,21 @@
              this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())),
              this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled()))
          );

@@ -24,11 +24,11 @@ import io.papermc.paper.configuration.transformation.Transformations;
 import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
+import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
-import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
 import io.papermc.paper.configuration.type.Duration;
@@ -50,7 +50,6 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -282,7 +281,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_ZeroWorldHeight.apply(versionedBuilder);
         V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
-        V31_SpawnLoadedRangeToGameRule.apply(versionedBuilder, contextMap, defaultsNode);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
@@ -298,6 +296,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_LogIPs.apply(versionedBuilder);
         V30_PacketIds.apply(versionedBuilder);
+        V31_AllowNetherPropertiesToConfig.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
