@@ -28050,7 +28050,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd7e190312 100644
+index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..454f588b166e412a6da9d7991607418d7e100b59 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -149,7 +149,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -28551,7 +28551,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
      }
  
      public int countPlayerPassengers() {
-@@ -4478,77 +4717,136 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4478,77 +4717,126 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
          return Mth.lerp(partialTick, this.yRotO, this.yRot);
      }
  
@@ -28591,7 +28591,17 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
 -                                        flow = flow.scale(d);
 -                                    }
 +        }
-+
+ 
+-                                    vec3 = vec3.add(flow);
+-                                    i++;
+-                                }
+-                                // CraftBukkit start - store last lava contact location
+-                                if (fluidTag == FluidTags.LAVA) {
+-                                    this.lastLavaContact = mutableBlockPos.immutable();
+-                                }
+-                                // CraftBukkit end
+-                            }
+-                        }
 +        final AABB boundingBox = this.getBoundingBox().deflate(1.0E-3);
 +
 +        final Level world = this.level;
@@ -28617,81 +28627,65 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
 +        final int minChunkX = minBlockX >> 4;
 +        final int maxChunkX = maxBlockX >> 4;
 +
-+        final int minChunkY = minBlockY >> 4;
-+        final int maxChunkY = maxBlockY >> 4;
-+
 +        final int minChunkZ = minBlockZ >> 4;
 +        final int maxChunkZ = maxBlockZ >> 4;
 +
 +        final net.minecraft.world.level.chunk.ChunkSource chunkSource = world.getChunkSource();
 +
++        final int chunkLenX = maxChunkX - minChunkX + 1;
++        // chunk index = (x - minX) + (maxX-minX+1)*(z - minZ)
++        //             = x + (maxX-minX+1)*z - (minX + (maxX-minX+1)*minZ)
++        final int chunkOffset = -(minChunkX + chunkLenX*minChunkZ);
++        //             = x + (maxX-minX+1)*z + chunkOffset
++        final net.minecraft.world.level.chunk.LevelChunkSection[][] sections = new net.minecraft.world.level.chunk.LevelChunkSection[chunkLenX * (maxChunkZ - minChunkZ + 1)][];
++
++        // init chunks
 +        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
 +            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
-+                final net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunkSource.getChunk(currChunkX, currChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false).getSections();
++                sections[currChunkX + chunkLenX*currChunkZ + chunkOffset] = chunkSource.getChunk(currChunkX, currChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false).getSections();
++            }
++        }
 +
-+                // bound y
-+                for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
-+                    final int sectionIdx = currChunkY - minSection;
-+                    if (sectionIdx < 0 || sectionIdx >= sections.length) {
++        for (int currX = minBlockX; currX <= maxBlockX; ++currX) {
++            for (int currY = minBlockY; currY <= maxBlockY; ++currY) {
++                for (int currZ = minBlockZ; currZ <= maxBlockZ; ++currZ) {
++                    final FluidState fluidState = sections[(currX >> 4) + chunkLenX*(currZ >> 4) + chunkOffset][(currY >> 4) - minSection]
++                        .states.get((currX & 15) | ((currZ & 15) << 4) | ((currY & 15) << 8)).getFluidState();
++
++                    if (fluidState.isEmpty() || !fluidState.is(fluid)) {
 +                        continue;
 +                    }
-+                    final net.minecraft.world.level.chunk.LevelChunkSection section = sections[sectionIdx];
-+                    if (section.hasOnlyAir()) {
-+                        // empty
++
++                    mutablePos.set(currX, currY, currZ);
++
++                    // CraftBukkit start - store last lava contact location
++                    if (fluid == FluidTags.LAVA) {
++                        this.lastLavaContact = mutablePos.immutable();
++                    }
++                    // CraftBukkit end
++
++                    final double height = (double)((float)currY + fluidState.getHeight(world, mutablePos));
++                    final double diff = height - boundingBox.minY;
++
++                    if (diff < 0.0) {
 +                        continue;
 +                    }
 +
-+                    final net.minecraft.world.level.chunk.PalettedContainer<net.minecraft.world.level.block.state.BlockState> blocks = section.states;
++                    inFluid = true;
++                    maxHeightDiff = Math.max(maxHeightDiff, diff);
 +
-+                    final int minXIterate = currChunkX == minChunkX ? (minBlockX & 15) : 0;
-+                    final int maxXIterate = currChunkX == maxChunkX ? (maxBlockX & 15) : 15;
-+                    final int minZIterate = currChunkZ == minChunkZ ? (minBlockZ & 15) : 0;
-+                    final int maxZIterate = currChunkZ == maxChunkZ ? (maxBlockZ & 15) : 15;
-+                    final int minYIterate = currChunkY == minChunkY ? (minBlockY & 15) : 0;
-+                    final int maxYIterate = currChunkY == maxChunkY ? (maxBlockY & 15) : 15;
- 
--                                    vec3 = vec3.add(flow);
--                                    i++;
-+                    for (int currY = minYIterate; currY <= maxYIterate; ++currY) {
-+                        for (int currZ = minZIterate; currZ <= maxZIterate; ++currZ) {
-+                            for (int currX = minXIterate; currX <= maxXIterate; ++currX) {
-+                                final FluidState fluidState = blocks.get((currX) | (currZ << 4) | ((currY) << 8)).getFluidState();
++                    if (!isPushable) {
++                        continue;
++                    }
 +
-+                                if (fluidState.isEmpty() || !fluidState.is(fluid)) {
-+                                    continue;
-                                 }
--                                // CraftBukkit start - store last lava contact location
--                                if (fluidTag == FluidTags.LAVA) {
--                                    this.lastLavaContact = mutableBlockPos.immutable();
++                    ++totalPushes;
 +
-+                                mutablePos.set(currX | (currChunkX << 4), currY | (currChunkY << 4), currZ | (currChunkZ << 4));
++                    final Vec3 flow = fluidState.getFlow(world, mutablePos);
 +
-+                                final double height = (double)((float)mutablePos.getY() + fluidState.getHeight(world, mutablePos));
-+                                final double diff = height - boundingBox.minY;
-+
-+                                if (diff < 0.0) {
-+                                    continue;
-+                                }
-+
-+                                inFluid = true;
-+                                maxHeightDiff = Math.max(maxHeightDiff, diff);
-+
-+                                if (!isPushable) {
-+                                    continue;
-+                                }
-+
-+                                ++totalPushes;
-+
-+                                final Vec3 flow = fluidState.getFlow(world, mutablePos);
-+
-+                                if (diff < 0.4) {
-+                                    pushVector = pushVector.add(flow.scale(diff));
-+                                } else {
-+                                    pushVector = pushVector.add(flow);
-                                 }
--                                // CraftBukkit end
-                             }
-                         }
++                    if (maxHeightDiff < 0.4) {
++                        pushVector = pushVector.add(flow.scale(maxHeightDiff));
++                    } else {
++                        pushVector = pushVector.add(flow);
                      }
                  }
              }
@@ -28706,7 +28700,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
 -                if (!(this instanceof Player)) {
 -                    vec3 = vec3.normalize();
 -                }
-+        if (pushVector.lengthSqr() == 0.0) {
++        if (pushVector == Vec3.ZERO) {
 +            return inFluid;
 +        }
  
@@ -28716,7 +28710,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
 -                if (Math.abs(deltaMovement.x) < 0.003 && Math.abs(deltaMovement.z) < 0.003 && vec3.length() < 0.0045000000000000005) {
 -                    vec3 = vec3.normalize().scale(0.0045000000000000005);
 -                }
-+        // note: totalPushes != 0 as pushVector != 0
++        // note: totalPushes != 0 as pushVector was changed
 +        pushVector = pushVector.scale(1.0 / totalPushes);
 +        final Vec3 currMovement = this.getDeltaMovement();
  
@@ -28742,7 +28736,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
  
      public boolean touchingUnloadedChunk() {
          AABB aabb = this.getBoundingBox().inflate(1.0);
-@@ -4704,6 +5002,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4704,6 +4992,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
      }
  
      public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
@@ -28758,7 +28752,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
          if (!checkPosition(this, x, y, z)) {
              return;
          }
-@@ -4855,6 +5162,12 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4855,6 +5152,12 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
  
      @Override
      public final void setRemoved(Entity.RemovalReason removalReason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause cause) { // CraftBukkit - add Bukkit remove cause
@@ -28771,7 +28765,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
          org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause); // CraftBukkit
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-@@ -4865,7 +5178,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4865,7 +5168,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
              this.stopRiding();
          }
  
@@ -28780,7 +28774,7 @@ index 5ee3dc10cb4755fca83d8f7cad55d26b07afd6ff..346d9dfafab6dfe6f8253552d0e89ecd
          this.levelCallback.onRemove(removalReason);
          this.onRemoval(removalReason);
          // Paper start - Folia schedulers
-@@ -4899,7 +5212,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+@@ -4899,7 +5202,7 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
      public boolean shouldBeSaved() {
          return (this.removalReason == null || this.removalReason.shouldSave())
              && !this.isPassenger()
