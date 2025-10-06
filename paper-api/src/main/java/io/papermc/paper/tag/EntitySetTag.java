@@ -9,6 +9,10 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @deprecated in favour of regular registry tags
+ */
+@Deprecated(since = "1.21.11")
 public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
 
     public EntitySetTag(@NotNull NamespacedKey key, @NotNull Predicate<EntityType> filter) {
