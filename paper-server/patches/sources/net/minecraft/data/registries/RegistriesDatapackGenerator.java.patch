@@ -1,0 +1,29 @@
+--- a/net/minecraft/data/registries/RegistriesDatapackGenerator.java
++++ b/net/minecraft/data/registries/RegistriesDatapackGenerator.java
+@@ -18,10 +_,18 @@
+ public class RegistriesDatapackGenerator implements DataProvider {
+     private final PackOutput output;
+     private final CompletableFuture<HolderLookup.Provider> registries;
++    private final String namespace; // Paper - Data generator
+ 
+     public RegistriesDatapackGenerator(final PackOutput output, final CompletableFuture<HolderLookup.Provider> registries) {
++        // Paper start - Data generator
++        this(output, registries, net.minecraft.resources.Identifier.DEFAULT_NAMESPACE);
++    }
++
++    public RegistriesDatapackGenerator(PackOutput output, CompletableFuture<HolderLookup.Provider> registries, String namespace) {
++        // Paper end - Data generator
+         this.registries = registries;
+         this.output = output;
++        this.namespace = namespace; // Paper - Data generator
+     }
+ 
+     @Override
+@@ -50,6 +_,7 @@
+                     PackOutput.PathProvider pathProvider = this.output.createRegistryElementsPathProvider(registryKey);
+                     return CompletableFuture.allOf(
+                         registry.listElements()
++                            .filter(e -> e.key().identifier().getNamespace().equals(this.namespace)) // Paper - Data generator
+                             .map(e -> dumpValue(pathProvider.json(e.key().identifier()), cache, writeOps, v.elementCodec(), e.value()))
+                             .toArray(CompletableFuture[]::new)
+                     );
