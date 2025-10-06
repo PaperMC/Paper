@@ -268,8 +268,8 @@ public final class MCUtil {
             return false;
         }
 
-        return ((entity instanceof AbstractCow) && stack.is(Items.BUCKET))
-            || (entity instanceof MushroomCow && stack.is(Items.BOWL)
-            || (entity instanceof Bucketable && stack.is(Items.WATER_BUCKET)));
+        return (entity instanceof AbstractCow && stack.is(Items.BUCKET))
+            || (entity instanceof MushroomCow && stack.is(Items.BOWL))
+            || (entity instanceof Bucketable && stack.is(Items.WATER_BUCKET));
     }
 }
