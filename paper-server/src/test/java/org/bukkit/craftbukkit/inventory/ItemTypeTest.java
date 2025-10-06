@@ -51,6 +51,7 @@ public class ItemTypeTest {
         final ItemStack itemStack = ItemType.DIAMOND.createItemStack();
         Assertions.assertEquals(itemStack.getType(), Material.DIAMOND);
         Assertions.assertEquals(itemStack.getType().asItemType(), ItemType.DIAMOND);
+        Assertions.assertEquals(itemStack.getItemType(), ItemType.DIAMOND);
     }
 
     @Test

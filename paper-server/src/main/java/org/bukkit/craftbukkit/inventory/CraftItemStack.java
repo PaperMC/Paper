@@ -193,6 +193,12 @@ public final class CraftItemStack extends ItemStack {
     public Material getType() {
         return this.handle != null ? CraftItemType.minecraftToBukkit(this.handle.getItem()) : Material.AIR;
     }
+    // Paper start - ItemType API
+    @Override
+    public @NotNull org.bukkit.inventory.ItemType getItemType() {
+        return this.handle != null ? CraftItemType.minecraftToBukkitNew(this.handle.getItem()) : org.bukkit.inventory.ItemType.AIR;
+    }
+    // Paper end - ItemType API
 
     @Override
     public void setType(Material type) {
@@ -481,6 +487,26 @@ public final class CraftItemStack extends ItemStack {
         return mirrored;
     }
     // Paper end
+    // Paper start - ItemType API
+    @Override
+    public ItemStack withType(org.bukkit.inventory.ItemType type) {
+        if (type == org.bukkit.inventory.ItemType.AIR) {
+            return CraftItemStack.asCraftMirror(null);
+        }
+
+        net.minecraft.world.item.ItemStack copy = new net.minecraft.world.item.ItemStack(
+            CraftItemType.bukkitToMinecraftNew(type), getAmount()
+        );
+
+        if (handle != null) {
+            copy.applyComponents(handle.getComponentsPatch());
+        }
+
+        CraftItemStack mirrored = CraftItemStack.asCraftMirror(copy);
+        mirrored.setItemMeta(mirrored.getItemMeta());
+        return mirrored;
+    }
+    // Paper end - ItemType API
 
     public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
     private net.minecraft.nbt.CompoundTag getPdcTag() {
