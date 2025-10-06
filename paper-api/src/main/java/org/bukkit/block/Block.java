@@ -100,6 +100,15 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      */
     @NotNull
     Material getType();
+    // Paper start - BlockType API
+    /**
+     * Gets the type of this block
+     *
+     * @return block type
+     */
+    @NotNull
+    BlockType getBlockType();
+    // Paper end - BlockType API
 
     /**
      * Gets the light level between 0-15
@@ -308,6 +317,14 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param type Material to change this block to
      */
     void setType(@NotNull Material type);
+    // Paper start - BlockType API
+    /**
+     * Sets the type of this block
+     *
+     * @param type BlockType to change this block to
+     */
+    void setType(@NotNull BlockType type);
+    // Paper end - BlockType API
 
     /**
      * Sets the type of this block
@@ -329,6 +346,28 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param applyPhysics False to cancel physics on the changed block.
      */
     void setType(@NotNull Material type, boolean applyPhysics);
+    // Paper start - BlockType API
+    /**
+     * Sets the type of this block
+     *
+     * <br>
+     * Note that applyPhysics = false is not in general safe. It should only be
+     * used when you need to avoid triggering a physics update of neighboring
+     * blocks, for example when creating a {@link Bisected} block. If you are
+     * using a custom populator, then this parameter may also be required to
+     * prevent triggering infinite chunk loads on border blocks. This method
+     * should NOT be used to "hack" physics by placing blocks in impossible
+     * locations. Such blocks are liable to be removed on various events such as
+     * world upgrades. Furthermore setting large amounts of such blocks in close
+     * proximity may overload the server physics engine if an update is
+     * triggered at a later point. If this occurs, the resulting behavior is
+     * undefined.
+     *
+     * @param type BlockType to change this block to
+     * @param applyPhysics False to cancel physics on the changed block.
+     */
+    void setType(@NotNull BlockType type, boolean applyPhysics);
+    // Paper end - BlockType API
 
     /**
      * Gets the face relation of this block compared to the given block.

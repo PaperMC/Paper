@@ -37,6 +37,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFluidCollisionMode;
@@ -60,6 +61,7 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftBlock implements Block {
     private final net.minecraft.world.level.LevelAccessor world;
@@ -173,12 +175,25 @@ public class CraftBlock implements Block {
     public void setType(final Material type) {
         this.setType(type, true);
     }
+    // Paper start - BlockType API
+    @Override
+    public void setType(BlockType type) {
+        setType(type, true);
+    }
+    // Paper end - BlockType API
 
     @Override
     public void setType(Material type, boolean applyPhysics) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
         this.setBlockData(type.createBlockData(), applyPhysics);
     }
+    // Paper start - BlockType API
+    @Override
+    public void setType(BlockType type, boolean applyPhysics) {
+        Preconditions.checkArgument(type != null, "BlockType cannot be null");
+        setBlockData(type.createBlockData(), applyPhysics);
+    }
+    // Paper end - BlockType API
 
     @Override
     public void setBlockData(BlockData data) {
@@ -229,6 +244,12 @@ public class CraftBlock implements Block {
     public Material getType() {
         return this.world.getBlockState(this.position).getBukkitMaterial(); // Paper - optimise getType calls
     }
+    // Paper start - BlockType API
+    @Override
+    public @NotNull BlockType getBlockType() {
+        return CraftBlockType.minecraftToBukkitNew(this.world.getBlockState(this.position).getBlock());
+    }
+    // Paper end - BlockType API
 
     @Override
     public byte getLightLevel() {
