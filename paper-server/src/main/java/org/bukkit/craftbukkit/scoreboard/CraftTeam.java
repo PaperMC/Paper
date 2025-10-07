@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.scoreboard;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -14,12 +15,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.NameTagVisibility;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.bukkit.scoreboard.Team;
 
-final class CraftTeam extends CraftScoreboardComponent implements Team {
+public final class CraftTeam extends CraftScoreboardComponent implements Team {
     private final PlayerTeam team;
 
-    CraftTeam(CraftScoreboard scoreboard, PlayerTeam team) {
+    public CraftTeam(CraftScoreboard scoreboard, PlayerTeam team) {
         super(scoreboard);
         this.team = team;
     }
@@ -227,26 +229,20 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     }
 
     @Override
-    public void addPlayer(OfflinePlayer player) {
-        Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
-        this.addEntry(player.getName());
-    }
-
-    @Override
-    public void addEntry(String entry) {
-        Preconditions.checkArgument(entry != null, "Entry cannot be null");
+    public void addEntry(final ScoreHolder holder) {
+        Preconditions.checkArgument(holder != null, "Holder cannot be null");
         this.checkState();
 
-        this.getScoreboard().getHandle().addPlayerToTeam(entry, this.team);
+        this.getScoreboard().getHandle().addPlayerToTeam(holder.getScoreboardName(), this.team);
     }
 
     @Override
-    public void addEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
-        this.addEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
+    public void addScoreHolders(final Collection<? extends ScoreHolder> holders) {
+        this.addEntries(holders.stream().map(ScoreHolder::getScoreboardName).toList());
     }
 
     @Override
-    public void addEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
+    public void addEntries(final Collection<String> entries) {
         Preconditions.checkArgument(entries != null, "Entries cannot be null");
         this.checkState();
 
@@ -254,31 +250,25 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     }
 
     @Override
-    public boolean removePlayer(OfflinePlayer player) {
-        Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
-        return this.removeEntry(player.getName());
-    }
-
-    @Override
-    public boolean removeEntry(String entry) {
-        Preconditions.checkArgument(entry != null, "Entry cannot be null");
+    public boolean removeEntry(final ScoreHolder holder) {
+        Preconditions.checkArgument(holder != null, "holder cannot be null");
         this.checkState();
 
-        if (!this.team.getPlayers().contains(entry)) {
+        if (!this.team.getPlayers().contains(holder.getScoreboardName())) {
             return false;
         }
 
-        this.getScoreboard().getHandle().removePlayerFromTeam(entry, this.team);
+        this.getScoreboard().getHandle().removePlayerFromTeam(holder.getScoreboardName(), this.team);
         return true;
     }
 
     @Override
-    public boolean removeEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
-        return this.removeEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
+    public boolean removeScoreHolders(final Collection<? extends ScoreHolder> holders) {
+        return this.removeEntries(holders.stream().map(ScoreHolder::getScoreboardName).toList());
     }
 
     @Override
-    public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
+    public boolean removeEntries(Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
         Preconditions.checkArgument(entries != null, "Entry cannot be null");
         this.checkState();
 
@@ -293,17 +283,11 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     }
 
     @Override
-    public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
-        Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
-        return this.hasEntry(player.getName());
-    }
-
-    @Override
-    public boolean hasEntry(String entry) throws IllegalArgumentException, IllegalStateException {
-        Preconditions.checkArgument(entry != null, "Entry cannot be null");
+    public boolean hasEntry(ScoreHolder holder) {
+        Preconditions.checkArgument(holder != null, "holder cannot be null");
         this.checkState();
 
-        return this.team.getPlayers().contains(entry);
+        return this.team.getPlayers().contains(holder.getScoreboardName());
     }
 
     @Override
@@ -334,24 +318,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
             case COLLISION_RULE -> this.team.setCollisionRule(net.minecraft.world.scores.Team.CollisionRule.values()[status.ordinal()]);
             default -> throw new IllegalArgumentException("Unrecognised option " + option);
         }
-    }
-
-    @Override
-    public void addEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        this.addEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
-    }
-
-    @Override
-    public boolean removeEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        return this.removeEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
-    }
-
-    @Override
-    public boolean hasEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        return this.hasEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
     }
 
     @Override
