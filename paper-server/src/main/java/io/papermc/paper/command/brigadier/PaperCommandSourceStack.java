@@ -14,8 +14,6 @@ import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import static java.util.Objects.requireNonNull;
-
 public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
 
     net.minecraft.commands.CommandSourceStack getHandle();
@@ -52,19 +50,19 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
 
     @Override
     default void sendToTarget(final @NonNull ComponentLike message) {
-        requireNonNull(message, "message");
+        Preconditions.checkNotNull(message, "message cannot be null.");
         this.getHandle().sendSystemMessage(PaperAdventure.asVanilla(message.asComponent()));
     }
 
     @Override
     default void sendSuccess(final @NonNull ComponentLike message, final boolean allowInformingAdmins) {
-        requireNonNull(message, "message");
+        Preconditions.checkNotNull(message, "message cannot be null.");
         this.getHandle().sendSuccess(() -> PaperAdventure.asVanilla(message.asComponent()), allowInformingAdmins);
     }
 
     @Override
     default void sendFailure(final @NonNull ComponentLike message) {
-        requireNonNull(message, "message");
+        Preconditions.checkNotNull(message, "message cannot be null.");
         this.getHandle().sendFailure(PaperAdventure.asVanilla(message.asComponent()), false);
     }
 
