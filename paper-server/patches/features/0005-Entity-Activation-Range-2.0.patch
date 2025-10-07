@@ -464,7 +464,7 @@ index 135478a52cd106e6a3a0af9300a77ee5a871a400..ade0649a9fecbb84cebab3c44b4afe7f
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 346d9dfafab6dfe6f8253552d0e89ecd7e190312..681a4d7c0a40466997595d32cfb8aa902991e86b 100644
+index 3a2447c56ef28ee56db3f3bf0522109c3a3dd247..a8b89f84d3a42a4911d3fb9365342b91b8d5bf7b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -368,6 +368,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -542,18 +542,21 @@ index d5e304c9431bf3d7ad151e68e955b113d3c599ef..90483699b3f2efe9945c849adfdd3842
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 10fa3bef58c51f584c78ff4b5e0562458e6373ba..4994dcb209dd82d60559cfc453198b75cbfa1511 100644
+index 10fa3bef58c51f584c78ff4b5e0562458e6373ba..ada99c1763abc1444757cd1d4870a1555bd40a9b 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -217,6 +217,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -217,6 +217,22 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          return this.lookControl;
      }
  
 +    // Paper start
++    int inactiveTickDisableCounter = 0;
++    io.papermc.paper.configuration.type.number.IntOr.Disabled throttleRate = level.paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate;
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (this.goalSelector.inactiveTick()) {
++        boolean isThrottled = throttleRate.enabled() && inactiveTickDisableCounter++ % throttleRate.intValue() != 0; // throttle inactive goal selector ticking
++        if (this.goalSelector.inactiveTick() && !isThrottled) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
