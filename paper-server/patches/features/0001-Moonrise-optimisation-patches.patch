@@ -26186,7 +26186,7 @@ index 9dbb7c744030fb8d6891780a0928c8cca2a2b68d..f019f1330f9f1e6aa98ef3f914833769
          if (!passengers.equals(this.lastPassengers)) {
              this.synchronizer
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 9f88fafefa490be098b6d45cb55ae290fb435246..f79dfe4d6431de334d890759bbb84d44653dfdcb 100644
+index 9f88fafefa490be098b6d45cb55ae290fb435246..9d105729b5828bb6c601641b968f0c7cb10d45a0 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -175,7 +175,7 @@ import net.minecraft.world.ticks.LevelTicks;
@@ -26885,11 +26885,13 @@ index 9f88fafefa490be098b6d45cb55ae290fb435246..f79dfe4d6431de334d890759bbb84d44
      }
  
      public void startTickingChunk(LevelChunk chunk) {
-@@ -2199,7 +2511,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2198,8 +2510,8 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
      public void waitForEntities(ChunkPos chunkPos, int radius) {
          List<ChunkPos> list = ChunkPos.rangeClosed(chunkPos, radius).toList();
-         this.server.managedBlock(() -> {
+-        this.server.managedBlock(() -> {
 -            this.entityManager.processPendingLoads();
++        this.chunkSource.mainThreadProcessor.managedBlock(() -> { // Paper - rewrite chunk system
 +            //this.entityManager.processPendingLoads(); // Paper - rewrite chunk system
  
              for (ChunkPos chunkPos1 : list) {
@@ -26961,7 +26963,7 @@ index 9f88fafefa490be098b6d45cb55ae290fb435246..f79dfe4d6431de334d890759bbb84d44
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index b40fd308a93295f52392cf8d05673a8455667f85..be318510a571de3064b3b13187456049bbb52cdf 100644
+index b40fd308a93295f52392cf8d05673a8455667f85..a69158ea3e8c8ba35b5ff840102fd763f42e7b4f 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -201,7 +201,7 @@ import net.minecraft.world.scores.Team;
@@ -27010,6 +27012,15 @@ index b40fd308a93295f52392cf8d05673a8455667f85..be318510a571de3064b3b13187456049
      public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
          super(level, gameProfile);
          this.server = server;
+@@ -459,7 +489,7 @@ public class ServerPlayer extends Player {
+     @Override
+     public BlockPos adjustSpawnLocation(ServerLevel level, BlockPos pos) {
+         CompletableFuture<Vec3> completableFuture = PlayerSpawnFinder.findSpawn(level, pos);
+-        this.server.managedBlock(completableFuture::isDone);
++        level.chunkSource.mainThreadProcessor.managedBlock(completableFuture::isDone); // Paper - rewrite chunk system
+         return BlockPos.containing(completableFuture.join());
+     }
+ 
 diff --git a/net/minecraft/server/level/ThreadedLevelLightEngine.java b/net/minecraft/server/level/ThreadedLevelLightEngine.java
 index 664d1aaf0fffd5ca649476966da2d950858279d8..db960cb5397a8840c145f200a753e5507688957b 100644
 --- a/net/minecraft/server/level/ThreadedLevelLightEngine.java
