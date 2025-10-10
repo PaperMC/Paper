@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Xavier Horwood <github@teamriverbubbles.com>
 Date: Fri, 10 Oct 2025 14:49:35 +1000
-Subject: [PATCH] Management API
+Subject: [PATCH] Management Api
 
 
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
@@ -12,25 +12,25 @@ index 9b3894ec6d458a8d7ed8078fb51193c5dfa1641c..ce3cea637d5b283745e416afbcd8ca96
      @Nullable
      private ManagementServer jsonRpcServer;
      private long lastHeartbeat;
-+    // Paper start - Management API
++    // Paper start - Management Api
 +    @Nullable
 +    private io.papermc.paper.jsonrpc.PluginManagementNotificationService pluginNotificationService;
-+    // Paper end - Management API
++    // Paper end - Management Api
 +
  
      public DedicatedServer(
          joptsimple.OptionSet options, net.minecraft.server.WorldLoader.DataLoadContext worldLoader, // CraftBukkit - Signature changed
 @@ -185,6 +190,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              this.jsonRpcServer = new ManagementServer(hostAndPort, authenticationHandler);
-             MinecraftAPI minecraftAPI = MinecraftAPI.of(this);
-             minecraftAPI.notificationManager().registerService(new JsonRpcNotificationService(minecraftAPI, this.jsonRpcServer));
-+            // Paper start - Management API
+             MinecraftApi minecraftApi = MinecraftApi.of(this);
+             minecraftApi.notificationManager().registerService(new JsonRpcNotificationService(minecraftApi, this.jsonRpcServer));
++            // Paper start - Management Api
 +            this.pluginNotificationService = new io.papermc.paper.jsonrpc.PluginManagementNotificationService(this.jsonRpcServer);
 +            this.jsonRpcServer.setPluginService(this.pluginNotificationService);
-+            // Paper end - Management API
++            // Paper end - Management Api
              if (this.getProperties().managementServerTlsEnabled) {
                  SslContext sslContext = this.createSslContext();
-                 this.jsonRpcServer.startWithTls(minecraftAPI, sslContext);
+                 this.jsonRpcServer.startWithTls(minecraftApi, sslContext);
 @@ -324,6 +333,16 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
          // CraftBukkit end
@@ -56,7 +56,7 @@ index d5318f2ebc62a0601e66bce6455129e8a30bad0e..42f57259573762803d390c326ba923b9
          } else {
              Optional<IncomingRpcMethod> optional = BuiltInRegistries.INCOMING_RPC_METHOD.getOptional(resourceLocation);
              if (optional.isEmpty()) {
-+                // Paper start - Management API
++                // Paper start - Management Api
 +                io.papermc.paper.jsonrpc.PluginManagementNotificationService pluginService = this.managementServer.getPluginService();
 +                if (pluginService != null) {
 +                    JsonElement pluginResult = pluginService.dispatchPluginMethod(resourceLocation.getPath(), params, this.clientInfo);
@@ -64,7 +64,7 @@ index d5318f2ebc62a0601e66bce6455129e8a30bad0e..42f57259573762803d390c326ba923b9
 +                        return pluginResult;
 +                    }
 +                }
-+                // Paper end - Management API
++                // Paper end - Management Api
                  throw new MethodNotFoundJsonRpcException("Method not found: " + methodName);
              } else if (optional.get().attributes().runOnMainThread()) {
                  try {
@@ -73,7 +73,7 @@ index d5318f2ebc62a0601e66bce6455129e8a30bad0e..42f57259573762803d390c326ba923b9
          return null;
      }
 +
-+    // Paper start - Management API
++    // Paper start - Management Api
 +    /**
 +     * Sends a raw JSON-RPC notification to this connection.
 +     * Used by the plugin management notification system.
@@ -81,7 +81,7 @@ index d5318f2ebc62a0601e66bce6455129e8a30bad0e..42f57259573762803d390c326ba923b9
 +    void sendRawNotification(com.google.gson.JsonObject notification) {
 +        this.channel.writeAndFlush(notification);
 +    }
-+    // Paper end - Management API
++    // Paper end - Management Api
  }
 diff --git a/net/minecraft/server/jsonrpc/ManagementServer.java b/net/minecraft/server/jsonrpc/ManagementServer.java
 index 52778e2e104c90c68b3b8bf255f76c45034f8808..b3f2a0805da179807a5c4a9e86da1dde043dbdeb 100644
@@ -91,10 +91,10 @@ index 52778e2e104c90c68b3b8bf255f76c45034f8808..b3f2a0805da179807a5c4a9e86da1dde
      private Channel serverChannel;
      private final NioEventLoopGroup nioEventLoopGroup;
      private final Set<Connection> connections = Sets.newIdentityHashSet();
-+    // Paper start - Management API
++    // Paper start - Management Api
 +    @Nullable
 +    private io.papermc.paper.jsonrpc.PluginManagementNotificationService pluginService;
-+    // Paper end - Management API
++    // Paper end - Management Api
  
      public ManagementServer(HostAndPort hostAndPort, AuthenticationHandler authenticationHandler) {
          this.hostAndPort = hostAndPort;
@@ -103,7 +103,7 @@ index 52778e2e104c90c68b3b8bf255f76c45034f8808..b3f2a0805da179807a5c4a9e86da1dde
          }
      }
 +
-+    // Paper start - Management API
++    // Paper start - Management Api
 +    /**
 +     * Sends a raw JSON-RPC notification to all connected clients.
 +     * Used by the plugin management notification system.
@@ -128,5 +128,5 @@ index 52778e2e104c90c68b3b8bf255f76c45034f8808..b3f2a0805da179807a5c4a9e86da1dde
 +    public io.papermc.paper.jsonrpc.PluginManagementNotificationService getPluginService() {
 +        return this.pluginService;
 +    }
-+    // Paper end - Management API
++    // Paper end - Management Api
  }
