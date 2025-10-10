@@ -1,7 +1,8 @@
 package io.papermc.paper.jsonrpc;
 
-import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A handle to a registered notification type that can be used to send notifications
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> The type of data this notification sends (Void for parameterless notifications)
  */
+@NullMarked
 public interface NotificationHandle<T> {
 
     /**
@@ -16,7 +18,6 @@ public interface NotificationHandle<T> {
      *
      * @return The namespace
      */
-    @NotNull
     String getNamespace();
 
     /**
@@ -24,15 +25,20 @@ public interface NotificationHandle<T> {
      *
      * @return The name
      */
-    @NotNull
     String getName();
+
+    /**
+     * Gets the key of this notification.
+     *
+     * @return The key
+     */
+    Key key();
 
     /**
      * Gets the full notification identifier in the format: {@code notification/plugin/<namespace>/<name>}
      *
      * @return The full identifier
      */
-    @NotNull
     String getFullName();
 
     /**
@@ -40,7 +46,6 @@ public interface NotificationHandle<T> {
      *
      * @return The description
      */
-    @NotNull
     String getDescription();
 
     /**

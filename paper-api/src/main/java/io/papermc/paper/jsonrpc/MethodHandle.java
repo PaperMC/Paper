@@ -1,6 +1,7 @@
 package io.papermc.paper.jsonrpc;
 
-import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.key.Key;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A handle to a registered RPC method that can be called by management clients.
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <Params> The type of parameters this method accepts (Void for parameterless)
  * @param <Result> The type of result this method returns
  */
+@NullMarked
 public interface MethodHandle<Params, Result> {
 
     /**
@@ -19,7 +21,6 @@ public interface MethodHandle<Params, Result> {
      *
      * @return The namespace
      */
-    @NotNull
     String getNamespace();
 
     /**
@@ -27,15 +28,20 @@ public interface MethodHandle<Params, Result> {
      *
      * @return The name
      */
-    @NotNull
     String getName();
+
+    /**
+     * Gets the key of this method.
+     *
+     * @return The key
+     */
+    Key key();
 
     /**
      * Gets the full method identifier in the format: {@code plugin/<namespace>/<name>}
      *
      * @return The full identifier
      */
-    @NotNull
     String getFullName();
 
     /**
@@ -43,7 +49,6 @@ public interface MethodHandle<Params, Result> {
      *
      * @return The description
      */
-    @NotNull
     String getDescription();
 
     /**

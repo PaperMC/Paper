@@ -1,8 +1,8 @@
 package io.papermc.paper.jsonrpc;
 
-import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.Nullable;
-import io.papermc.paper.jsonrpc.NotificationHandle;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Service for sending custom notifications through the Management API (JSON-RPC over WebSocket).
@@ -17,8 +17,7 @@ import io.papermc.paper.jsonrpc.NotificationHandle;
  *
  * // Register a notification type
  * NotificationHandle<MyData> handle = service.registerNotification(
- *     "myplugin",
- *     "custom_event",
+ *     Key.key("myplugin", "custom_event"),
  *     "My custom event notification",
  *     MyData.class
  * );
@@ -28,6 +27,7 @@ import io.papermc.paper.jsonrpc.NotificationHandle;
  * handle.send(data);
  * }</pre>
  */
+@NullMarked
 public interface ManagementNotificationService {
 
     /**
@@ -36,18 +36,15 @@ public interface ManagementNotificationService {
      * The notification will be registered with the name: {@code notification/plugin/<namespace>/<name>}
      * </p>
      *
-     * @param namespace The namespace for the notification (typically your plugin name)
-     * @param name The name of the notification
+     * @param key The key for the notification (namespace typically your plugin name)
      * @param description A description of what this notification represents
      * @return A handle to send this notification type
      * @throws IllegalArgumentException if the notification is already registered
      * @throws IllegalStateException if the management server is not available
      */
-    @NotNull
     NotificationHandle<Void> registerNotification(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description
+        Key key,
+        String description
     );
 
     /**
@@ -60,8 +57,7 @@ public interface ManagementNotificationService {
      * primitive types, Strings, or other JSON-serializable objects.
      * </p>
      *
-     * @param namespace The namespace for the notification (typically your plugin name)
-     * @param name The name of the notification
+     * @param key The key for the notification (namespace typically your plugin name)
      * @param description A description of what this notification represents
      * @param dataClass The class type of the data to be sent with this notification
      * @param <T> The type of data
@@ -69,33 +65,29 @@ public interface ManagementNotificationService {
      * @throws IllegalArgumentException if the notification is already registered or dataClass is not serializable
      * @throws IllegalStateException if the management server is not available
      */
-    @NotNull
     <T> NotificationHandle<T> registerNotification(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<T> dataClass
+        Key key,
+        String description,
+        Class<T> dataClass
     );
 
     /**
-     * Checks if a notification with the given namespace and name is registered.
+     * Checks if a notification with the given key is registered.
      *
-     * @param namespace The namespace of the notification
-     * @param name The name of the notification
+     * @param key The key of the notification
      * @return true if the notification is registered
      */
-    boolean isNotificationRegistered(@NotNull String namespace, @NotNull String name);
+    boolean isNotificationRegistered(Key key);
 
     /**
      * Gets a handle to a previously registered notification.
      *
-     * @param namespace The namespace of the notification
-     * @param name The name of the notification
+     * @param key The key of the notification
      * @param <T> The type of data for this notification
      * @return The notification handle, or null if not registered
      */
     @Nullable
-    <T> NotificationHandle<T> getNotificationHandle(@NotNull String namespace, @NotNull String name);
+    <T> NotificationHandle<T> getNotificationHandle(Key key);
 
     /**
      * Checks if the management server is currently running and accepting connections.
@@ -125,8 +117,7 @@ public interface ManagementNotificationService {
      * Response: {"jsonrpc":"2.0","result":{...},"id":"123"}
      * }</pre>
      *
-     * @param namespace The namespace for the method (typically your plugin name)
-     * @param name The name of the method
+     * @param key The key for the method (namespace typically your plugin name)
      * @param description A description of what this method does
      * @param resultClass The class type of the result
      * @param handler The handler function that processes the request
@@ -135,13 +126,11 @@ public interface ManagementNotificationService {
      * @throws IllegalArgumentException if the method is already registered or resultClass is not serializable
      * @throws IllegalStateException if the management server is not available
      */
-    @NotNull
     <Result> MethodHandle<Void, Result> registerMethod(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<Result> resultClass,
-        @NotNull MethodHandler.Parameterless<Result> handler
+        Key key,
+        String description,
+        Class<Result> resultClass,
+        MethodHandler.Parameterless<Result> handler
     );
 
     /**
@@ -156,8 +145,7 @@ public interface ManagementNotificationService {
      * Response: {"jsonrpc":"2.0","result":{...},"id":"123"}
      * }</pre>
      *
-     * @param namespace The namespace for the method (typically your plugin name)
-     * @param name The name of the method
+     * @param key The key for the method (namespace typically your plugin name)
      * @param description A description of what this method does
      * @param paramsClass The class type of the parameters
      * @param resultClass The class type of the result
@@ -168,34 +156,30 @@ public interface ManagementNotificationService {
      * @throws IllegalArgumentException if the method is already registered or classes are not serializable
      * @throws IllegalStateException if the management server is not available
      */
-    @NotNull
     <Params, Result> MethodHandle<Params, Result> registerMethod(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<Params> paramsClass,
-        @NotNull Class<Result> resultClass,
-        @NotNull MethodHandler.WithParams<Params, Result> handler
+        Key key,
+        String description,
+        Class<Params> paramsClass,
+        Class<Result> resultClass,
+        MethodHandler.WithParams<Params, Result> handler
     );
 
     /**
-     * Checks if a method with the given namespace and name is registered.
+     * Checks if a method with the given key is registered.
      *
-     * @param namespace The namespace of the method
-     * @param name The name of the method
+     * @param key The key of the method
      * @return true if the method is registered
      */
-    boolean isMethodRegistered(@NotNull String namespace, @NotNull String name);
+    boolean isMethodRegistered(Key key);
 
     /**
      * Gets a handle to a previously registered method.
      *
-     * @param namespace The namespace of the method
-     * @param name The name of the method
+     * @param key The key of the method
      * @param <Params> The type of parameters
      * @param <Result> The type of result
      * @return The method handle, or null if not registered
      */
     @Nullable
-    <Params, Result> MethodHandle<Params, Result> getMethodHandle(@NotNull String namespace, @NotNull String name);
+    <Params, Result> MethodHandle<Params, Result> getMethodHandle(Key key);
 }

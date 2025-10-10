@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,10 +24,9 @@ import io.papermc.paper.jsonrpc.MethodHandle;
 import io.papermc.paper.jsonrpc.MethodHandler;
 import io.papermc.paper.jsonrpc.NotificationHandle;
 import org.bukkit.Bukkit;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Implementation of the plugin management notification service that bridges
  * Bukkit API calls to the internal JSON-RPC notification system.
  */
+@NullMarked
 public class PluginManagementNotificationService implements ManagementNotificationService {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().create();
@@ -47,70 +48,58 @@ public class PluginManagementNotificationService implements ManagementNotificati
     }
 
     @Override
-    @NotNull
     public NotificationHandle<Void> registerNotification(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description
+        Key key,
+        String description
     ) {
-        validateNamespace(namespace);
-        validateName(name);
-
-        String key = buildKey(namespace, name);
-        Preconditions.checkArgument(!registeredNotifications.containsKey(key), "Notification already registered: %s", key);
+        String keyString = key.asString();
+        Preconditions.checkArgument(!registeredNotifications.containsKey(keyString), "Notification already registered: %s", keyString);
 
         PluginNotificationHandle<Void> handle = new PluginNotificationHandle<>(
-            namespace,
-            name,
+            key,
             description,
             null,
             this
         );
 
-        registeredNotifications.put(key, handle);
+        registeredNotifications.put(keyString, handle);
         LOGGER.info("Registered parameterless notification: {}", handle.getFullName());
 
         return handle;
     }
 
     @Override
-    @NotNull
     public <T> NotificationHandle<T> registerNotification(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<T> dataClass
+        Key key,
+        String description,
+        Class<T> dataClass
     ) {
-        validateNamespace(namespace);
-        validateName(name);
-
-        String key = buildKey(namespace, name);
-        Preconditions.checkArgument(!registeredNotifications.containsKey(key), "Notification already registered: %s", key);
+        String keyString = key.asString();
+        Preconditions.checkArgument(!registeredNotifications.containsKey(keyString), "Notification already registered: %s", keyString);
 
         PluginNotificationHandle<T> handle = new PluginNotificationHandle<>(
-            namespace,
-            name,
+            key,
             description,
             dataClass,
             this
         );
 
-        registeredNotifications.put(key, handle);
+        registeredNotifications.put(keyString, handle);
         LOGGER.info("Registered notification: {} with data type: {}", handle.getFullName(), dataClass.getSimpleName());
 
         return handle;
     }
 
     @Override
-    public boolean isNotificationRegistered(@NotNull String namespace, @NotNull String name) {
-        return registeredNotifications.containsKey(buildKey(namespace, name));
+    public boolean isNotificationRegistered(Key key) {
+        return registeredNotifications.containsKey(key.asString());
     }
 
     @Override
     @Nullable
     @SuppressWarnings("unchecked")
-    public <T> NotificationHandle<T> getNotificationHandle(@NotNull String namespace, @NotNull String name) {
-        return (NotificationHandle<T>) registeredNotifications.get(buildKey(namespace, name));
+    public <T> NotificationHandle<T> getNotificationHandle(Key key) {
+        return (NotificationHandle<T>) registeredNotifications.get(key.asString());
     }
 
     @Override
@@ -131,23 +120,17 @@ public class PluginManagementNotificationService implements ManagementNotificati
     // ===== RPC Method Registration =====
 
     @Override
-    @NotNull
     public <Result> MethodHandle<Void, Result> registerMethod(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<Result> resultClass,
-        @NotNull MethodHandler.Parameterless<Result> handler
+        Key key,
+        String description,
+        Class<Result> resultClass,
+        MethodHandler.Parameterless<Result> handler
     ) {
-        validateNamespace(namespace);
-        validateName(name);
-
-        String key = buildKey(namespace, name);
-        Preconditions.checkArgument(!registeredMethods.containsKey(key), "Method already registered: %s", key);
+        String keyString = key.asString();
+        Preconditions.checkArgument(!registeredMethods.containsKey(keyString), "Method already registered: %s", keyString);
 
         PluginMethodHandle<Void, Result> methodHandle = new PluginMethodHandle<>(
-            namespace,
-            name,
+            key,
             description,
             null,
             resultClass,
@@ -156,31 +139,25 @@ public class PluginManagementNotificationService implements ManagementNotificati
             this
         );
 
-        registeredMethods.put(key, methodHandle);
+        registeredMethods.put(keyString, methodHandle);
         LOGGER.info("Registered RPC method: {}", methodHandle.getFullName());
 
         return methodHandle;
     }
 
     @Override
-    @NotNull
     public <Params, Result> MethodHandle<Params, Result> registerMethod(
-        @NotNull String namespace,
-        @NotNull String name,
-        @NotNull String description,
-        @NotNull Class<Params> paramsClass,
-        @NotNull Class<Result> resultClass,
-        @NotNull MethodHandler.WithParams<Params, Result> handler
+        Key key,
+        String description,
+        Class<Params> paramsClass,
+        Class<Result> resultClass,
+        MethodHandler.WithParams<Params, Result> handler
     ) {
-        validateNamespace(namespace);
-        validateName(name);
-
-        String key = buildKey(namespace, name);
-        Preconditions.checkArgument(!registeredMethods.containsKey(key), "Method already registered: %s", key);
+        String keyString = key.asString();
+        Preconditions.checkArgument(!registeredMethods.containsKey(keyString), "Method already registered: %s", keyString);
 
         PluginMethodHandle<Params, Result> methodHandle = new PluginMethodHandle<>(
-            namespace,
-            name,
+            key,
             description,
             paramsClass,
             resultClass,
@@ -189,22 +166,22 @@ public class PluginManagementNotificationService implements ManagementNotificati
             this
         );
 
-        registeredMethods.put(key, methodHandle);
+        registeredMethods.put(keyString, methodHandle);
         LOGGER.info("Registered RPC method: {} with params: {}", methodHandle.getFullName(), paramsClass.getSimpleName());
 
         return methodHandle;
     }
 
     @Override
-    public boolean isMethodRegistered(@NotNull String namespace, @NotNull String name) {
-        return registeredMethods.containsKey(buildKey(namespace, name));
+    public boolean isMethodRegistered(Key key) {
+        return registeredMethods.containsKey(key.asString());
     }
 
     @Override
     @Nullable
     @SuppressWarnings("unchecked")
-    public <Params, Result> MethodHandle<Params, Result> getMethodHandle(@NotNull String namespace, @NotNull String name) {
-        return (MethodHandle<Params, Result>) registeredMethods.get(buildKey(namespace, name));
+    public <Params, Result> MethodHandle<Params, Result> getMethodHandle(Key key) {
+        return (MethodHandle<Params, Result>) registeredMethods.get(key.asString());
     }
 
     /**
@@ -225,8 +202,9 @@ public class PluginManagementNotificationService implements ManagementNotificati
 
         String namespace = remainder.substring(0, slashIndex);
         String name = remainder.substring(slashIndex + 1);
+        Key key = Key.key(namespace, name);
 
-        PluginMethodHandle<?, ?> method = registeredMethods.get(buildKey(namespace, name));
+        PluginMethodHandle<?, ?> method = registeredMethods.get(key.asString());
         if (method == null) {
             return null;
         }
@@ -259,64 +237,48 @@ public class PluginManagementNotificationService implements ManagementNotificati
         LOGGER.debug("Sent notification {} to {} clients", fullName, getConnectedClientCount());
     }
 
-    private String buildKey(String namespace, String name) {
-        return namespace + ":" + name;
-    }
-
-    private void validateNamespace(String namespace) {
-        Preconditions.checkArgument(namespace != null && !namespace.isEmpty(), "Namespace cannot be null or empty");
-        Preconditions.checkArgument(namespace.matches("[a-z0-9_-]+"), "Namespace must contain only lowercase letters, numbers, underscores, and hyphens");
-    }
-
-    private void validateName(String name) {
-        Preconditions.checkArgument(name != null && !name.isEmpty(), "Name cannot be null or empty");
-        Preconditions.checkArgument(name.matches("[a-z0-9_/-]+"), "Name must contain only lowercase letters, numbers, underscores, hyphens, and forward slashes");
-    }
-
     /**
      * Implementation of NotificationHandle for plugin notifications.
      */
     private static class PluginNotificationHandle<T> implements NotificationHandle<T> {
-        private final String namespace;
-        private final String name;
+        private final Key key;
         private final String description;
         private final Class<T> dataClass;
         private final PluginManagementNotificationService service;
 
         public PluginNotificationHandle(
-            String namespace,
-            String name,
+            Key key,
             String description,
             @Nullable Class<T> dataClass,
             PluginManagementNotificationService service
         ) {
-            this.namespace = namespace;
-            this.name = name;
+            this.key = key;
             this.description = description;
             this.dataClass = dataClass;
             this.service = service;
         }
 
         @Override
-        @NotNull
         public String getNamespace() {
-            return namespace;
+            return key.namespace();
         }
 
         @Override
-        @NotNull
         public String getName() {
-            return name;
+            return key.value();
         }
 
         @Override
-        @NotNull
+        public Key key() {
+            return key;
+        }
+
+        @Override
         public String getFullName() {
-            return "notification/plugin/" + namespace + "/" + name;
+            return "notification/plugin/" + key.namespace() + "/" + key.value();
         }
 
         @Override
-        @NotNull
         public String getDescription() {
             return description;
         }
@@ -339,8 +301,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
      * Implementation of MethodHandle for plugin RPC methods.
      */
     private static class PluginMethodHandle<Params, Result> implements MethodHandle<Params, Result> {
-        private final String namespace;
-        private final String name;
+        private final Key key;
         private final String description;
         private final Class<Params> paramsClass;
         private final Class<Result> resultClass;
@@ -349,8 +310,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
         private final PluginManagementNotificationService service;
 
         public PluginMethodHandle(
-            String namespace,
-            String name,
+            Key key,
             String description,
             @Nullable Class<Params> paramsClass,
             Class<Result> resultClass,
@@ -358,8 +318,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
             @Nullable MethodHandler.WithParams<Params, Result> paramsHandler,
             PluginManagementNotificationService service
         ) {
-            this.namespace = namespace;
-            this.name = name;
+            this.key = key;
             this.description = description;
             this.paramsClass = paramsClass;
             this.resultClass = resultClass;
@@ -369,25 +328,26 @@ public class PluginManagementNotificationService implements ManagementNotificati
         }
 
         @Override
-        @NotNull
         public String getNamespace() {
-            return namespace;
+            return key.namespace();
         }
 
         @Override
-        @NotNull
         public String getName() {
-            return name;
+            return key.value();
         }
 
         @Override
-        @NotNull
+        public Key key() {
+            return key;
+        }
+
+        @Override
         public String getFullName() {
-            return "plugin/" + namespace + "/" + name;
+            return "plugin/" + key.namespace() + "/" + key.value();
         }
 
         @Override
-        @NotNull
         public String getDescription() {
             return description;
         }

@@ -1,11 +1,12 @@
 package io.papermc.paper.jsonrpc;
 
 import org.bukkit.Server;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Functional interfaces for RPC method handlers.
  */
+@NullMarked
 public final class MethodHandler {
 
     private MethodHandler() {
@@ -26,8 +27,7 @@ public final class MethodHandler {
          * @param clientInfo Information about the calling client
          * @return The result to send back to the client
          */
-        @NotNull
-        Result handle(@NotNull Server server, @NotNull ClientInfo clientInfo);
+        Result handle(Server server, ClientInfo clientInfo);
     }
 
     /**
@@ -46,7 +46,6 @@ public final class MethodHandler {
          * @param clientInfo Information about the calling client
          * @return The result to send back to the client
          */
-        @NotNull
-        Result handle(@NotNull Server server, @NotNull Params params, @NotNull ClientInfo clientInfo);
+        Result handle(Server server, Params params, ClientInfo clientInfo);
     }
 }
