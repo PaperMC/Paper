@@ -55,9 +55,6 @@ abstract class Services {
 
     @get:Inject
     abstract val archiveOperations: ArchiveOperations
-
-    @get:Inject
-    abstract val fileSystemOperations: FileSystemOperations
 }
 val services = objects.newInstance<Services>()
 
