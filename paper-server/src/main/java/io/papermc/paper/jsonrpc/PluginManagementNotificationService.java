@@ -1,5 +1,6 @@
 package io.papermc.paper.jsonrpc;
 
+ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -56,9 +57,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
         validateName(name);
 
         String key = buildKey(namespace, name);
-        if (registeredNotifications.containsKey(key)) {
-            throw new IllegalArgumentException("Notification already registered: " + key);
-        }
+        Preconditions.checkArgument(!registeredNotifications.containsKey(key), "Notification already registered: %s", key);
 
         PluginNotificationHandle<Void> handle = new PluginNotificationHandle<>(
             namespace,
@@ -86,9 +85,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
         validateName(name);
 
         String key = buildKey(namespace, name);
-        if (registeredNotifications.containsKey(key)) {
-            throw new IllegalArgumentException("Notification already registered: " + key);
-        }
+        Preconditions.checkArgument(!registeredNotifications.containsKey(key), "Notification already registered: %s", key);
 
         PluginNotificationHandle<T> handle = new PluginNotificationHandle<>(
             namespace,
@@ -146,9 +143,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
         validateName(name);
 
         String key = buildKey(namespace, name);
-        if (registeredMethods.containsKey(key)) {
-            throw new IllegalArgumentException("Method already registered: " + key);
-        }
+        Preconditions.checkArgument(!registeredMethods.containsKey(key), "Method already registered: %s", key);
 
         PluginMethodHandle<Void, Result> methodHandle = new PluginMethodHandle<>(
             namespace,
@@ -181,9 +176,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
         validateName(name);
 
         String key = buildKey(namespace, name);
-        if (registeredMethods.containsKey(key)) {
-            throw new IllegalArgumentException("Method already registered: " + key);
-        }
+        Preconditions.checkArgument(!registeredMethods.containsKey(key), "Method already registered: %s", key);
 
         PluginMethodHandle<Params, Result> methodHandle = new PluginMethodHandle<>(
             namespace,
@@ -250,9 +243,7 @@ public class PluginManagementNotificationService implements ManagementNotificati
      * Internal method to send a notification to all connected clients.
      */
     <T> void sendNotificationInternal(String fullName, @Nullable T data, @Nullable Class<T> dataClass) {
-        if (managementServer == null) {
-            throw new IllegalStateException("Management server is not available");
-        }
+        Preconditions.checkState(managementServer != null, "Management server is not available");
 
         com.google.gson.JsonObject notification;
         if (data == null) {
@@ -273,21 +264,13 @@ public class PluginManagementNotificationService implements ManagementNotificati
     }
 
     private void validateNamespace(String namespace) {
-        if (namespace == null || namespace.isEmpty()) {
-            throw new IllegalArgumentException("Namespace cannot be null or empty");
-        }
-        if (!namespace.matches("[a-z0-9_-]+")) {
-            throw new IllegalArgumentException("Namespace must contain only lowercase letters, numbers, underscores, and hyphens");
-        }
+        Preconditions.checkArgument(namespace != null && !namespace.isEmpty(), "Namespace cannot be null or empty");
+        Preconditions.checkArgument(namespace.matches("[a-z0-9_-]+"), "Namespace must contain only lowercase letters, numbers, underscores, and hyphens");
     }
 
     private void validateName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Name cannot be null or empty");
-        }
-        if (!name.matches("[a-z0-9_/-]+")) {
-            throw new IllegalArgumentException("Name must contain only lowercase letters, numbers, underscores, hyphens, and forward slashes");
-        }
+        Preconditions.checkArgument(name != null && !name.isEmpty(), "Name cannot be null or empty");
+        Preconditions.checkArgument(name.matches("[a-z0-9_/-]+"), "Name must contain only lowercase letters, numbers, underscores, hyphens, and forward slashes");
     }
 
     /**
@@ -340,12 +323,8 @@ public class PluginManagementNotificationService implements ManagementNotificati
 
         @Override
         public void send(@Nullable T data) {
-            if (requiresData() && data == null) {
-                throw new IllegalArgumentException("Data is required for this notification type");
-            }
-            if (!requiresData() && data != null) {
-                throw new IllegalArgumentException("This notification does not accept data");
-            }
+            Preconditions.checkArgument(!requiresData() || data != null, "Data is required for this notification type");
+            Preconditions.checkArgument(requiresData() || data == null, "This notification does not accept data");
 
             service.sendNotificationInternal(getFullName(), data, dataClass);
         }
