@@ -159,9 +159,7 @@ public interface PersistentDataContainerView {
     byte[] serializeToBytes() throws java.io.IOException;
 
     /**
-     * Returns the size of the data container
-     *
-     * @return The size of the data container
+     * {@return the size of the data container}
      */
     int getSize();
 }
