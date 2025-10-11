@@ -191,6 +191,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             GZIP,
             ZLIB,
             LZ4,
+            ZSTD,
             NONE
         }
     }

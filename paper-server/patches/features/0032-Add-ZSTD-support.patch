@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: wechandoit <ethanchan7981@gmail.com>
+Date: Fri, 10 Oct 2025 23:48:40 -0400
+Subject: [PATCH] Add ZSTD support
+
+
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+index cc544f3199cd6af29e50362923d0651705877f16..6c8a1b2ee389cd5f412c101975cd32c281fcc3bb 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+@@ -16,6 +16,8 @@ import java.util.zip.InflaterInputStream;
+ import javax.annotation.Nullable;
+ import net.jpountz.lz4.LZ4BlockInputStream;
+ import net.jpountz.lz4.LZ4BlockOutputStream;
++import com.github.luben.zstd.ZstdInputStream;
++import com.github.luben.zstd.ZstdOutputStream;
+ import net.minecraft.util.FastBufferedInputStream;
+ import org.slf4j.Logger;
+ 
+@@ -48,6 +50,14 @@ public class RegionFileVersion {
+             stream -> new BufferedOutputStream(new LZ4BlockOutputStream(stream))
+         )
+     );
++    public static final RegionFileVersion VERSION_ZSTD = register(
++        new RegionFileVersion(
++            5,
++            "zstd",
++            stream -> new FastBufferedInputStream(new ZstdInputStream(stream)),
++            stream -> new BufferedOutputStream(new ZstdOutputStream(stream))
++        )
++    );
+     public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, inputWrapper -> {
+         throw new UnsupportedOperationException();
+     }, outputWrapper -> {
+@@ -67,6 +77,7 @@ public class RegionFileVersion {
+             case GZIP -> VERSION_GZIP;
+             case ZLIB -> VERSION_DEFLATE;
+             case LZ4 -> VERSION_LZ4;
++            case ZSTD -> VERSION_ZSTD;
+             case NONE -> VERSION_NONE;
+         };
+     }

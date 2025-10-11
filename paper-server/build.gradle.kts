@@ -136,6 +136,7 @@ dependencies {
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
+    implementation("com.github.luben:zstd-jni:1.5.5-4")
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
