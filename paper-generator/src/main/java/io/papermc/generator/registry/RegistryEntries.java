@@ -17,6 +17,8 @@ import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
+import io.papermc.paper.registry.data.TrimMaterialRegistryEntry;
+import io.papermc.paper.registry.data.TrimPatternRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.lang.reflect.Field;
@@ -170,8 +172,8 @@ public final class RegistryEntries {
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
         entry(Registries.BIOME, Biomes.class, Biome.class).delayed(),
         entry(Registries.STRUCTURE, BuiltinStructures.class, Structure.class).delayed(),
-        entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).allowDirect().delayed(),
-        entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).allowDirect().delayed(),
+        entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).writableApiRegistryBuilder(TrimMaterialRegistryEntry.Builder.class, "PaperTrimMaterialRegistryEntry.PaperBuilder").allowDirect().delayed(),
+        entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).writableApiRegistryBuilder(TrimPatternRegistryEntry.Builder.class, "PaperTrimPatternRegistryEntry.PaperBuilder").allowDirect().delayed(),
         entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).writableApiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_VARIANT, WolfVariants.class, Wolf.Variant.class).writableApiRegistryBuilder(WolfVariantRegistryEntry.Builder.class, "PaperWolfVariantRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_SOUND_VARIANT, WolfSoundVariants.class, Wolf.SoundVariant.class),
