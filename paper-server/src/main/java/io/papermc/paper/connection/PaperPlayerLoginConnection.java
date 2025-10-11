@@ -61,4 +61,9 @@ public class PaperPlayerLoginConnection extends ReadablePlayerCookieConnectionIm
     public void disconnect(final Component component) {
         this.packetListener.disconnect(PaperAdventure.asVanilla(component));
     }
+
+    @Override
+    public boolean isConnected() {
+        return this.packetListener.connection.isConnected();
+    }
 }
