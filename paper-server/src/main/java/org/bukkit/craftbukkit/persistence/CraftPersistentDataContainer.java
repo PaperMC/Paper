@@ -170,4 +170,9 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
             return container;
         }, CraftPersistentDataContainer::toTagCompound);
     }
+
+    @Override
+    public int getSize() {
+        return this.customDataTags.size();
+    }
 }

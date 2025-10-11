@@ -320,6 +320,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
                 public net.minecraft.nbt.Tag getTag(String key) {
                     return net.minecraft.Optionull.map(this.getPersistentTag(), tag -> tag.get(key));
                 }
+
+                @Override
+                public int getSize() {
+                    return this.getPersistentTag().size();
+                }
             };
         }
         return this.persistentDataContainerView;
