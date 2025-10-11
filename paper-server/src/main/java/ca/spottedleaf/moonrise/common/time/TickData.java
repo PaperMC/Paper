@@ -103,8 +103,12 @@ public final class TickData {
         long tickTimeCPU
     ) {}
 
-    // rets null if there is no data
     public TickReportData generateTickReport(final TickTime inProgress, final long endTime, final long tickInterval) {
+        return this.generateTickReport(inProgress, endTime, tickInterval, true);
+    }
+
+    // rets null if there is no data
+    public TickReportData generateTickReport(final TickTime inProgress, final long endTime, final long tickInterval, final boolean trimLast) {
         if (this.timeData.isEmpty() && inProgress == null) {
             return null;
         }
@@ -214,6 +218,14 @@ public final class TickData {
             }
         }
 
+
+        if (trimLast) {
+            // Avoid skewing data with task execution time of in-progress tick
+            collapsedData.removeLast();
+            if (collapsedData.isEmpty()) {
+                return null;
+            }
+        }
 
         final int collectedTicks = collapsedData.size();
         final long[] tickStartToStartDifferences = new long[collectedTicks];
