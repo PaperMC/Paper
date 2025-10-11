@@ -41,7 +41,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -278,10 +_,86 @@
+@@ -278,10 +_,91 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
@@ -70,7 +70,7 @@
 +    // Paper start - improve tick loop
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
-+    public @Nullable ca.spottedleaf.moonrise.common.time.TickData.TickReportData tickReport5s;
++    private volatile @Nullable ca.spottedleaf.moonrise.common.time.TickData.TickReportData tickReport5s;
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes10s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
@@ -82,9 +82,10 @@
 +    private long lastTickStart;
 +    private long currentTickStart;
 +    private long scheduledTickStart;
-+    private double[] tps = new double[]{0.0, 0.0, 0.0};
++    private volatile double[] tps = new double[]{0.0, 0.0, 0.0};
 +
 +    private void addTickTime(final ca.spottedleaf.moonrise.common.time.TickTime time) {
++        org.spigotmc.AsyncCatcher.catchOp("addTickTime");
 +        this.tickTimes1s.addDataFrom(time);
 +        this.tickTimes5s.addDataFrom(time);
 +        this.tickReport5s = this.tickTimes5s.generateTickReport(null, System.nanoTime(), this.tickRateManager().nanosecondsPerTick());
@@ -106,7 +107,11 @@
 +    }
 +
 +    public double[] getTPS() {
-+        return this.tps;
++        return this.tps.clone();
++    }
++
++    public @Nullable ca.spottedleaf.moonrise.common.time.TickData.TickReportData getTickReport5s() {
++        return this.tickReport5s;
 +    }
 +
 +    public double[] computeTPS() {

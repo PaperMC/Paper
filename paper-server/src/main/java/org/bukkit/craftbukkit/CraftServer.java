@@ -2695,13 +2695,13 @@ public final class CraftServer implements Server {
 
     @Override
     public long[] getTickTimes() {
-        final TickData.TickReportData reportData = this.getServer().tickReport5s;
-        return reportData == null ? new long[0] : reportData.timePerTickData().rawData();
+        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
+        return reportData == null ? new long[0] : reportData.timePerTickData().rawData().clone();
     }
 
     @Override
     public double getAverageTickTime() {
-        final TickData.TickReportData reportData = this.getServer().tickReport5s;
+        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
         return reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().average() * 1.0E-6D;
     }
 
