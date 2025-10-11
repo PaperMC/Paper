@@ -6,8 +6,8 @@
      public EntityReference<ServerPlayer> loveCause;
 +    public @Nullable ItemStack breedItem; // CraftBukkit - Add breedItem variable
  
-     protected Animal(EntityType<? extends Animal> entityType, Level level) {
-         super(entityType, level);
+     protected Animal(EntityType<? extends Animal> type, Level level) {
+         super(type, level);
 @@ -79,9 +_,13 @@
      }
  
@@ -64,20 +64,20 @@
          if (breedOffspring != null) {
              breedOffspring.setBaby(true);
              breedOffspring.snapTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
--            this.finalizeSpawnChildFromBreeding(level, mate, breedOffspring);
+-            this.finalizeSpawnChildFromBreeding(level, partner, breedOffspring);
 -            level.addFreshEntityWithPassengers(breedOffspring);
 +            // CraftBukkit start - Call EntityBreedEvent
-+            ServerPlayer breeder = Optional.ofNullable(this.getLoveCause()).or(() -> Optional.ofNullable(mate.getLoveCause())).orElse(null);
++            ServerPlayer breeder = Optional.ofNullable(this.getLoveCause()).or(() -> Optional.ofNullable(partner.getLoveCause())).orElse(null);
 +            int experience = this.getRandom().nextInt(7) + 1;
-+            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(breedOffspring, this, mate, breeder, this.breedItem, experience);
++            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(breedOffspring, this, partner, breeder, this.breedItem, experience);
 +            if (entityBreedEvent.isCancelled()) {
 +                this.resetLove();
-+                mate.resetLove();
++                partner.resetLove();
 +                return;
 +            }
 +            experience = entityBreedEvent.getExperience();
 +
-+            this.finalizeSpawnChildFromBreeding(level, mate, breedOffspring, experience);
++            this.finalizeSpawnChildFromBreeding(level, partner, breedOffspring, experience);
 +            level.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
 +            // CraftBukkit end - Call EntityBreedEvent
          }

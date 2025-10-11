@@ -50,7 +50,7 @@
                  serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.IMMEDIATE_RESPAWN, value.get() ? 1.0F : 0.0F));
              }
          })
-@@ -211,7 +_,7 @@
+@@ -211,13 +_,13 @@
      public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = register(
          "minecartMaxSpeed",
          GameRules.Category.MISC,
@@ -59,16 +59,14 @@
      );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_TNT_EXPLODES = register(
          "tntExplodes", GameRules.Category.MISC, GameRules.BooleanValue.create(true)
-@@ -219,7 +_,7 @@
+     );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_LOCATOR_BAR = register(
-         "locatorBar",
-         GameRules.Category.PLAYER,
--        GameRules.BooleanValue.create(true, (minecraftServer, booleanValue) -> minecraftServer.getAllLevels().forEach(serverLevel -> {
-+        GameRules.BooleanValue.create(true, (minecraftServer, booleanValue) -> java.util.Optional.of(minecraftServer).ifPresent(serverLevel -> { // Paper - per world game rules
-             ServerWaypointManager waypointManager = serverLevel.getWaypointManager();
-             if (booleanValue.get()) {
-                 serverLevel.players().forEach(waypointManager::updatePlayer);
-@@ -233,7 +_,11 @@
+-        "locatorBar", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true, (server, value) -> server.getAllLevels().forEach(level -> {
++        "locatorBar", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true, (minecraftServer, value) -> java.util.Optional.of(minecraftServer).ifPresent(level -> { // Paper - per world game rules
+             ServerWaypointManager waypointManager = level.getWaypointManager();
+             if (value.get()) {
+                 level.players().forEach(waypointManager::updatePlayer);
+@@ -231,7 +_,11 @@
          "allowEnteringNetherUsingPortals", GameRules.Category.MISC, GameRules.BooleanValue.create(true)
      );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_SPAWN_MONSTERS = register(
@@ -81,7 +79,7 @@
      );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_COMMAND_BLOCKS_ENABLED = register(
          "commandBlocksEnabled", GameRules.Category.MISC, GameRules.BooleanValue.create(true)
-@@ -243,6 +_,7 @@
+@@ -241,6 +_,7 @@
      );
      private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
      private final FeatureFlagSet enabledFeatures;
@@ -89,7 +87,7 @@
  
      public static <T extends GameRules.Value<T>> GameRules.Type<T> getType(GameRules.Key<T> key) {
          return (GameRules.Type<T>)GAME_RULE_TYPES.get(key);
-@@ -290,10 +_,21 @@
+@@ -288,10 +_,21 @@
      private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
          this.rules = rules;
          this.enabledFeatures = enabledFeatures;
@@ -112,7 +110,7 @@
          if (value == null) {
              throw new IllegalArgumentException("Tried to access invalid game rule");
          } else {
-@@ -334,13 +_,13 @@
+@@ -332,13 +_,13 @@
          }
      }
  
@@ -130,7 +128,7 @@
      }
  
      public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> key) {
-@@ -355,7 +_,7 @@
+@@ -353,7 +_,7 @@
          private boolean value;
  
          private static GameRules.Type<GameRules.BooleanValue> create(
@@ -139,7 +137,7 @@
          ) {
              return new GameRules.Type<>(
                  BoolArgumentType::bool,
-@@ -367,7 +_,7 @@
+@@ -365,7 +_,7 @@
              );
          }
  
@@ -148,7 +146,7 @@
              return new GameRules.Type<>(
                  BoolArgumentType::bool,
                  type -> new GameRules.BooleanValue(type, defaultValue),
-@@ -388,17 +_,21 @@
+@@ -386,17 +_,21 @@
          }
  
          @Override
@@ -174,7 +172,7 @@
          }
  
          @Override
-@@ -427,9 +_,9 @@
+@@ -425,9 +_,9 @@
          }
  
          @Override
@@ -186,7 +184,7 @@
          }
      }
  
-@@ -467,7 +_,7 @@
+@@ -465,7 +_,7 @@
      public static class IntegerValue extends GameRules.Value<GameRules.IntegerValue> {
          private int value;
  
@@ -195,7 +193,7 @@
              return new GameRules.Type<>(
                  IntegerArgumentType::integer,
                  type -> new GameRules.IntegerValue(type, defaultValue),
-@@ -479,7 +_,7 @@
+@@ -477,7 +_,7 @@
          }
  
          static GameRules.Type<GameRules.IntegerValue> create(
@@ -204,7 +202,7 @@
          ) {
              return new GameRules.Type<>(
                  () -> IntegerArgumentType.integer(min, max),
-@@ -501,17 +_,21 @@
+@@ -499,17 +_,21 @@
          }
  
          @Override
@@ -230,7 +228,7 @@
          }
  
          @Override
-@@ -562,13 +_,17 @@
+@@ -560,13 +_,17 @@
          }
  
          @Override
@@ -250,7 +248,7 @@
          final String id;
          private final GameRules.Category category;
  
-@@ -608,7 +_,7 @@
+@@ -606,7 +_,7 @@
      public static class Type<T extends GameRules.Value<T>> {
          final Supplier<ArgumentType<?>> argument;
          private final Function<GameRules.Type<T>, T> constructor;
@@ -259,7 +257,7 @@
          private final GameRules.VisitorCaller<T> visitorCaller;
          final Class<T> valueClass;
          final FeatureFlagSet requiredFeatures;
-@@ -616,7 +_,7 @@
+@@ -614,7 +_,7 @@
          Type(
              Supplier<ArgumentType<?>> argument,
              Function<GameRules.Type<T>, T> constructor,
@@ -268,7 +266,7 @@
              GameRules.VisitorCaller<T> visitorCaller,
              Class<T> valueClass,
              FeatureFlagSet requiredFeatures
-@@ -644,6 +_,12 @@
+@@ -642,6 +_,12 @@
          public FeatureFlagSet requiredFeatures() {
              return this.requiredFeatures;
          }
@@ -281,7 +279,7 @@
      }
  
      public abstract static class Value<T extends GameRules.Value<T>> {
-@@ -653,16 +_,16 @@
+@@ -651,16 +_,16 @@
              this.type = type;
          }
  
@@ -305,7 +303,7 @@
              }
          }
  
-@@ -681,7 +_,7 @@
+@@ -679,7 +_,7 @@
  
          protected abstract T copy();
  

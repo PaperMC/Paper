@@ -378,14 +378,14 @@
 -    }
 -
 -    @Nullable
--    public Component canPlayerLogin(SocketAddress address, NameAndId nameAndId) {
+-    public Component canPlayerLogin(SocketAddress socketAddress, NameAndId nameAndId) {
 -        if (this.bans.isBanned(nameAndId)) {
 -            UserBanListEntry userBanListEntry = this.bans.get(nameAndId);
 +        // CraftBukkit start
 +        // this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
 +        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
 +        for (int i = 0; i < this.players.size(); i++) {
-+            ServerPlayer otherPlayer = (ServerPlayer) this.players.get(i);
++            ServerPlayer otherPlayer = this.players.get(i);
 +
 +            if (otherPlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
 +                otherPlayer.connection.send(packet);
@@ -408,12 +408,12 @@
 +        }
 +    }
 +    // Paper end - PlayerLoginEvent
-+    public LoginResult canPlayerLogin(SocketAddress address, NameAndId nameAndId) { // Paper - PlayerLoginEvent
++    public LoginResult canPlayerLogin(SocketAddress socketAddress, NameAndId nameAndId) { // Paper - PlayerLoginEvent
 +        LoginResult whitelistEventResult; // Paper
 +        // Paper start - Fix MC-158900
 +        UserBanListEntry userBanListEntry;
 +        if (this.bans.isBanned(nameAndId) && (userBanListEntry = this.bans.get(nameAndId)) != null) {
-+        // Paper end - Fix MC-158900
++            // Paper end - Fix MC-158900
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReasonMessage());
              if (userBanListEntry.getExpires() != null) {
                  mutableComponent.append(
@@ -425,12 +425,12 @@
 -        } else if (!this.isWhiteListed(nameAndId)) {
 -            return Component.translatable("multiplayer.disconnect.not_whitelisted");
 +            return new LoginResult(mutableComponent, org.bukkit.event.player.PlayerLoginEvent.Result.KICK_BANNED); // Paper - PlayerLoginEvent
-+        // Paper start - whitelist event
++            // Paper start - whitelist event
 +        } else if ((whitelistEventResult = this.isWhiteListedLogin(nameAndId)).result == org.bukkit.event.player.PlayerLoginEvent.Result.KICK_WHITELIST) {
 +            return whitelistEventResult;
-+        // Paper end
-         } else if (this.ipBans.isBanned(address)) {
-             IpBanListEntry ipBanListEntry = this.ipBans.get(address);
++            // Paper end
+         } else if (this.ipBans.isBanned(socketAddress)) {
+             IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReasonMessage());
 @@ -353,19 +_,18 @@
                  );
@@ -446,14 +446,14 @@
          }
      }
  
--    public boolean disconnectAllPlayersWithProfile(UUID uuid) {
-+    public boolean disconnectAllPlayersWithProfile(com.mojang.authlib.GameProfile gameProfile) { // Paper - validate usernames
-+        UUID uuid = gameProfile.id(); // Paper - validate usernames
+-    public boolean disconnectAllPlayersWithProfile(UUID profileId) {
++    public boolean disconnectAllPlayersWithProfile(GameProfile profile) { // Paper - validate usernames
++        UUID profileId = profile.id(); // Paper - validate usernames
          Set<ServerPlayer> set = Sets.newIdentityHashSet();
  
          for (ServerPlayer serverPlayer : this.players) {
--            if (serverPlayer.getUUID().equals(uuid)) {
-+            if (serverPlayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().name().equalsIgnoreCase(gameProfile.name()))) { // Paper - validate usernames
+-            if (serverPlayer.getUUID().equals(profileId)) {
++            if (serverPlayer.getUUID().equals(profileId) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().name().equalsIgnoreCase(profile.name()))) { // Paper - validate usernames
                  set.add(serverPlayer);
              }
          }
@@ -689,7 +689,7 @@
      public void broadcastAll(Packet<?> packet) {
          for (ServerPlayer serverPlayer : this.players) {
              serverPlayer.connection.send(packet);
-@@ -560,6 +_,12 @@
+@@ -558,6 +_,12 @@
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permLevel) {
@@ -702,7 +702,7 @@
          if (player.connection != null) {
              byte b;
              if (permLevel <= 0) {
-@@ -573,9 +_,48 @@
+@@ -571,9 +_,48 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b));
          }
  
@@ -753,7 +753,7 @@
      public boolean isWhiteListed(NameAndId nameAndId) {
          return !this.isUsingWhitelist() || this.ops.contains(nameAndId) || this.whitelist.contains(nameAndId);
      }
-@@ -588,21 +_,17 @@
+@@ -586,21 +_,17 @@
  
      @Nullable
      public ServerPlayer getPlayerByName(String username) {
@@ -781,7 +781,7 @@
              if (serverPlayer != except && serverPlayer.level().dimension() == dimension) {
                  double d = x - serverPlayer.getX();
                  double d1 = y - serverPlayer.getY();
-@@ -615,9 +_,11 @@
+@@ -613,9 +_,11 @@
      }
  
      public void saveAll() {
@@ -793,7 +793,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -645,9 +_,13 @@
+@@ -643,9 +_,13 @@
          player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
          player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
          if (level.isRaining()) {
@@ -810,7 +810,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -656,8 +_,21 @@
+@@ -654,8 +_,21 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -833,14 +833,13 @@
      }
  
      public int getPlayerCount() {
-@@ -706,10 +_,35 @@
+@@ -704,9 +_,26 @@
      }
  
      public void removeAll() {
 -        for (int i = 0; i < this.players.size(); i++) {
 -            this.players.get(i).connection.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
 -        }
--    }
 +        // Paper start - Extract method to allow for restarting flag
 +        this.removeAll(false);
 +    }
@@ -861,19 +860,10 @@
 +            if (team != null) scoreboard.removePlayerTeam(team);
 +        }
 +        // Paper end - Configurable player collision
-+    }
-+
-+    // CraftBukkit start
-+    public void broadcastMessage(Component[] iChatBaseComponents) {
-+        for (Component component : iChatBaseComponents) {
-+            this.broadcastSystemMessage(component, false);
-+        }
-+    }
-+    // CraftBukkit end
+     }
  
-     public void broadcastSystemMessage(Component message, boolean bypassHiddenChat) {
-         this.broadcastSystemMessage(message, serverPlayer -> message, bypassHiddenChat);
-@@ -731,20 +_,39 @@
+     public void broadcastSystemMessage(Component message, boolean overlay) {
+@@ -729,20 +_,39 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType) {
@@ -916,7 +906,7 @@
              flag1 |= flag2 && message.isFullyFiltered();
          }
  
-@@ -757,15 +_,21 @@
+@@ -755,15 +_,21 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -943,7 +933,7 @@
                  Path path = file2.toPath();
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
                      file2.renameTo(file1);
-@@ -773,7 +_,7 @@
+@@ -771,7 +_,7 @@
              }
  
              serverStatsCounter = new ServerStatsCounter(this.server, file1);
@@ -952,7 +942,7 @@
          }
  
          return serverStatsCounter;
-@@ -781,11 +_,11 @@
+@@ -779,11 +_,11 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -966,7 +956,7 @@
          }
  
          playerAdvancements.setPlayer(player);
-@@ -839,11 +_,34 @@
+@@ -837,11 +_,34 @@
      }
  
      public void reloadResources() {
