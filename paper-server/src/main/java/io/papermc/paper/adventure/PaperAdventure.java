@@ -76,7 +76,6 @@ import static java.util.Objects.requireNonNull;
 public final class PaperAdventure {
     private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
     public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
-        .nestingLimit(30) // todo: should this be configurable? a system property or config value?
         .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
             final Language language = Language.getInstance();
             final @Nullable String fallback = translatable.fallback();
