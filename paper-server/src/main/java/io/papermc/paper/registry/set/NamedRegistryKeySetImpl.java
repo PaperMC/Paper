@@ -44,9 +44,7 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
 
     @Override
     public boolean contains(final TypedKey<T> valueKey) {
-        return Iterables.any(this.namedSet, h -> {
-            return PaperRegistries.fromNms(((Holder.Reference<?>) h).key()).equals(valueKey);
-        });
+        return this.namedSet.contains(valueKey);
     }
 
     @Override
