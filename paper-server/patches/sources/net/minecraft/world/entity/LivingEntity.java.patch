@@ -336,7 +336,7 @@
          }
      }
  
-@@ -983,21 +_,57 @@
+@@ -983,23 +_,71 @@
      }
  
      public final boolean addEffect(MobEffectInstance effectInstance) {
@@ -372,8 +372,12 @@
              boolean flag = false;
 +            // CraftBukkit start
 +            boolean override = false;
++            // Paper start - Properly update hidden effects
++            boolean addAsHiddenEffect = false;
 +            if (mobEffectInstance != null) {
 +                override = new MobEffectInstance(mobEffectInstance).update(effectInstance);
++                addAsHiddenEffect = mobEffectInstance.getAmplifier() > effectInstance.getAmplifier() && mobEffectInstance.isShorterDurationThan(effectInstance);
++            // Paper end - Properly update hidden effects
 +            }
 +
 +            if (fireEvent) { // Paper - Don't fire sync event during generation
@@ -395,7 +399,17 @@
 +                mobEffectInstance.update(effectInstance);
                  this.onEffectUpdated(mobEffectInstance, true, entity);
                  flag = true;
++                // Paper start - Properly update hidden effects
++            } else if (addAsHiddenEffect) {
++                if (mobEffectInstance.hiddenEffect == null) {
++                    mobEffectInstance.hiddenEffect = new MobEffectInstance(effectInstance);
++                } else {
++                    mobEffectInstance.hiddenEffect.update(effectInstance);
++                }
++                // Paper end - Properly update hidden effects
              }
+ 
+             effectInstance.onEffectStarted(this);
 @@ -1036,11 +_,37 @@
  
      @Nullable
