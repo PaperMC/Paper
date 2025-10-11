@@ -319,7 +319,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             this, this.getLocation(), location);
         // cancelling the event is handled differently for players and entities,
         // entities just stop teleporting, players will still teleport to the "from" location of the event
-        if (!event.callEvent() || event.getTo() == null) {
+        if (!event.callEvent()) {
             return false;
         }
         location = event.getTo();
