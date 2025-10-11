@@ -17,7 +17,7 @@ public interface PlayerConnection {
     void disconnect(Component component);
 
     /**
-     * {@return whether this connection is currently open & active}
+     * {@return whether this connection is currently open and active}
      */
     boolean isConnected();
 
