@@ -1,20 +1,23 @@
 import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.data.FileEntry
+import paper.libs.com.google.gson.annotations.SerializedName
 import java.time.Instant
+import kotlin.io.path.readText
 
 plugins {
     `java-library`
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.9"
+    id("io.papermc.fill.gradle") version "1.0.7"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.10+build.4")
+    mache("io.papermc:mache:1.21.9+build.1")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -24,9 +27,9 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = true
-        buildDataRef = "42d18d4c4653ffc549778dbe223f6994a031d69e"
-        packageVersion = "v1_21_R6" // also needs to be updated in MappingEnvironment
+        enabled = false
+        buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
+        packageVersion = "v1_21_R5" // also needs to be updated in MappingEnvironment
     }
 
     reobfPackagesToFix.addAll(
@@ -182,7 +185,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.152")
+    implementation("me.lucko:spark-paper:1.10.133-20250413.112336-1")
 }
 
 tasks.jar {
@@ -190,7 +193,7 @@ tasks.jar {
         val git = Git(rootProject.layout.projectDirectory.path)
         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
-        val buildTime = providers.environmentVariable("BUILD_STARTED_AT").map(Instant::parse).orElse(Instant.EPOCH).get()
+        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
         val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim()

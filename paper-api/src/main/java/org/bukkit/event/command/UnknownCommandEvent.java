@@ -1,6 +1,5 @@
 package org.bukkit.event.command;
 
-import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
@@ -19,49 +18,40 @@ public class UnknownCommandEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final CommandSourceStack commandSource;
+    private final CommandSender sender;
     private final String commandLine;
     private @Nullable Component message;
 
     @ApiStatus.Internal
-    public UnknownCommandEvent(final CommandSourceStack commandSource, final String commandLine, final @Nullable Component message) {
+    public UnknownCommandEvent(final CommandSender sender, final String commandLine, final @Nullable Component message) {
         super(false);
-        this.commandSource = commandSource;
+        this.sender = sender;
         this.commandLine = commandLine;
         this.message = message;
     }
 
     /**
-     * Gets the CommandSender
+     * Gets the CommandSender or ConsoleCommandSender
      *
-     * @return sender of the command
+     * @return Sender of the command
      */
     public CommandSender getSender() {
-        return this.commandSource.getSender();
-    }
-
-    /**
-     * Gets the command source associated with this event
-     *
-     * @return the {@link CommandSourceStack}
-     */
-    public CommandSourceStack getCommandSource() {
-        return this.commandSource;
+        return this.sender;
     }
 
     /**
      * Gets the command that was sent
      *
-     * @return command sent
+     * @return Command sent
      */
     public String getCommandLine() {
         return this.commandLine;
     }
 
     /**
-     * Gets the message that will be returned
+     * Gets message that will be returned
      *
-     * @return unknown command message
+     * @return Unknown command message
      * @deprecated use {@link #message()}
      */
     @Deprecated
@@ -70,7 +60,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Sets the message that will be returned
+     * Sets message that will be returned
      * <p>
      * Set to {@code null} to avoid any message being sent
      *
@@ -83,9 +73,9 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Gets the message that will be returned
+     * Gets message that will be returned
      *
-     * @return unknown command message
+     * @return Unknown command message
      */
     @Contract(pure = true)
     public @Nullable Component message() {
@@ -93,7 +83,7 @@ public class UnknownCommandEvent extends Event {
     }
 
     /**
-     * Sets the message that will be returned
+     * Sets message that will be returned
      * <p>
      * Set to {@code null} to avoid any message being sent
      *

@@ -19,16 +19,12 @@ public interface Weapon {
     }
 
     /**
-     * Amount of durability to remove each time the weapon is used to attack.
-     *
-     * @return durability
+     * The damage that the weapon deals per attack.
      */
     int itemDamagePerAttack();
 
     /**
      * The number of seconds that blocking is disabled.
-     *
-     * @return seconds
      */
     float disableBlockingForSeconds();
 
@@ -40,11 +36,10 @@ public interface Weapon {
     interface Builder extends DataComponentBuilder<Weapon> {
 
         /**
-         * Controls the amount of durability to remove each time the weapon is used to attack.
+         * Sets the damage per attack.
          *
-         * @param damage durability to remove
-         * @return the builder for chaining
-         * @see #itemDamagePerAttack()
+         * @param damage the damage value.
+         * @return the builder for chaining.
          */
         Builder itemDamagePerAttack(int damage);
 

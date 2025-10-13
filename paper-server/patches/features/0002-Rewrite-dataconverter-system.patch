@@ -217,7 +217,7 @@ index 0000000000000000000000000000000000000000..515f6691c72ffa82ac8b92646768be7a
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java b/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79ff70b3c6b73827612f874cd2d4116f66a040d3
+index 0000000000000000000000000000000000000000..449143be8333aaa21b94ea1dba34b5cba8f1d9bf
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
 @@ -0,0 +1,493 @@
@@ -509,7 +509,7 @@ index 0000000000000000000000000000000000000000..79ff70b3c6b73827612f874cd2d4116f
 +            4541,
 +            4544,
 +            4548
-+            // All up to 1.21.10
++            // All up to 1.21.9-rc1
 +        };
 +        Arrays.sort(converterVersions);
 +
@@ -716,10 +716,10 @@ index 0000000000000000000000000000000000000000..79ff70b3c6b73827612f874cd2d4116f
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/MCVersions.java b/ca/spottedleaf/dataconverter/minecraft/MCVersions.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..04a0e626563d30c9144bfbd52e57a6bd718c1e3d
+index 0000000000000000000000000000000000000000..7de480e8fe2ae65200c7e6cab1d7036b80144c0e
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/MCVersions.java
-@@ -0,0 +1,619 @@
+@@ -0,0 +1,616 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +@SuppressWarnings("unused")
@@ -1333,9 +1333,6 @@ index 0000000000000000000000000000000000000000..04a0e626563d30c9144bfbd52e57a6bd
 +    public static final int V1_21_9_PRE3          = 4551;
 +    public static final int V1_21_9_PRE4          = 4552;
 +    public static final int V1_21_9_RC1           = 4553;
-+    public static final int V1_21_9               = 4554;
-+    public static final int V1_21_10_RC1          = 4555;
-+    public static final int V1_21_10              = 4556;
 +
 +    private MCVersions() {}
 +}
@@ -32910,11 +32907,11 @@ index 71b8bbeda2fecf930870a9b6e856e20639d31645..91650a92a21fcaac65a5dfcac0cc856b
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 87b890fe94d1017b3e7717e062c5f901533e2aed..7fd37ef5e6403b6ee37b0b998d1546b3cc29e821 100644
+index a38d52b5b3c16b054332d38c44dfe28f91206284..b00241f8ec8da9b009b2526725f4864f3a5c515d 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -361,6 +361,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     // Paper end - improve tick loop
+@@ -312,6 +312,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
 +        ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
@@ -33006,20 +33003,20 @@ index 48fce0845fb023d6286dac144c285b048d778564..7779a2f83f51465bde476776470bd777
                      LOGGER.warn("Failed to partially datafix chunk {}", chunkPos, var12);
                      return StructureCheckResult.CHUNK_LOAD_NEEDED;
 diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager.java b/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager.java
-index e284e2f0bab93d36700e9998a71df51cfae2ab31..d6197ac9a4e32df5941115aa267248ed0f871dd4 100644
+index 5c4ba7d5f704253eb92b4e288eec75292ff4f46c..9f93c78fb1d6451febdd6e14400f82ff9eac1f64 100644
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager.java
 @@ -245,7 +245,7 @@ public class StructureTemplateManager {
-     public StructureTemplate readStructure(CompoundTag tag) {
+     public StructureTemplate readStructure(CompoundTag nbt) {
          StructureTemplate structureTemplate = new StructureTemplate();
-         int dataVersion = NbtUtils.getDataVersion(tag, 500);
--        structureTemplate.load(this.blockLookup, DataFixTypes.STRUCTURE.updateToCurrentVersion(this.fixerUpper, tag, dataVersion));
-+        structureTemplate.load(this.blockLookup, ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, tag, dataVersion, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion())); // Paper - rewrite data conversion system
+         int dataVersion = NbtUtils.getDataVersion(nbt, 500);
+-        structureTemplate.load(this.blockLookup, DataFixTypes.STRUCTURE.updateToCurrentVersion(this.fixerUpper, nbt, dataVersion));
++        structureTemplate.load(this.blockLookup, ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.STRUCTURE, nbt, dataVersion, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion())); // Paper - rewrite data conversion system
          return structureTemplate;
      }
  
 diff --git a/net/minecraft/world/level/storage/LevelStorageSource.java b/net/minecraft/world/level/storage/LevelStorageSource.java
-index 2e3736d545d3c7f318ce5fe4757d2cbf43d32453..85cddc7ccb9c73e2464a764d61f46f974ce255e3 100644
+index d0512d2e9b241fbea2cb8248c750aa55c41fbb9d..3b40822ea6ec9783fe3cb8eaba069a8d626d8382 100644
 --- a/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/net/minecraft/world/level/storage/LevelStorageSource.java
 @@ -227,7 +227,7 @@ public class LevelStorageSource {

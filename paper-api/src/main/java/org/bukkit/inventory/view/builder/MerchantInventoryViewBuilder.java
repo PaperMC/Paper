@@ -26,7 +26,6 @@ public interface MerchantInventoryViewBuilder<V extends InventoryView> extends I
      *
      * @param merchant the merchant
      * @return this builder
-     * @see Server#createMerchant()
      */
     MerchantInventoryViewBuilder<V> merchant(final Merchant merchant);
 
@@ -35,7 +34,7 @@ public interface MerchantInventoryViewBuilder<V extends InventoryView> extends I
      * the location.
      * <p>
      * Given checkReachable is provided and a virtual merchant is provided to
-     * the builder from {@link Server#createMerchant()} this method will
+     * the builder from {@link Server#createMerchant(net.kyori.adventure.text.Component)} this method will
      * have no effect on the actual menu status.
      *
      * @param checkReachable whether or not to check if the view is "reachable"

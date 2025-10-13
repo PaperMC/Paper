@@ -2075,18 +2075,18 @@ public class CraftEventFactory {
      * If the event is cancelled, this method also resets the love on both the {@code breeding} and {@code other} entity.
      *
      * @param breeding the entity on which #spawnChildFromBreeding was called.
-     * @param partner  the partner of the entity.
+     * @param other    the partner of the entity.
      * @return the event after it was called. The instance may be used to retrieve the experience of the event.
      */
-    public static io.papermc.paper.event.entity.EntityFertilizeEggEvent callEntityFertilizeEggEvent(Animal breeding, Animal partner) {
+    public static io.papermc.paper.event.entity.EntityFertilizeEggEvent callEntityFertilizeEggEvent(Animal breeding, Animal other) {
         ServerPlayer serverPlayer = breeding.getLoveCause();
-        if (serverPlayer == null) serverPlayer = partner.getLoveCause();
+        if (serverPlayer == null) serverPlayer = other.getLoveCause();
         final int experience = breeding.getRandom().nextInt(7) + 1; // From Animal#spawnChildFromBreeding(ServerLevel, Animal)
 
-        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) partner.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
+        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) other.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
         if (!event.callEvent()) {
             breeding.resetLove();
-            partner.resetLove(); // stop the pathfinding to avoid infinite loop
+            other.resetLove(); // stop the pathfinding to avoid infinite loop
         }
 
         return event;

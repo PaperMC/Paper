@@ -5,10 +5,10 @@ Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index dd9f545da1dbecbb2bb5ef5c87e4ea572eb1373f..09b8ab629db24bf9ac2abdc6162e589da18215cd 100644
+index 77aa4307fdbe9a52c4d35a7a74282f87a176da5e..853d4603249c19c31d4252fb0e411d5b41b851ad 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -953,7 +953,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -886,7 +886,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          boolean var4;
          try {
              this.isSaving = true;
@@ -17,7 +17,7 @@ index dd9f545da1dbecbb2bb5ef5c87e4ea572eb1373f..09b8ab629db24bf9ac2abdc6162e589d
              var4 = this.saveAllChunks(suppressLogs, flush, force);
          } finally {
              this.isSaving = false;
-@@ -1610,9 +1610,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1471,9 +1471,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.ticksUntilAutosave--;
@@ -48,12 +48,12 @@ index dd9f545da1dbecbb2bb5ef5c87e4ea572eb1373f..09b8ab629db24bf9ac2abdc6162e589d
 +        // Paper end - Incremental chunk and player saving
  
          ProfilerFiller profilerFiller = Profiler.get();
-         this.server.spark.executeMainThreadTasks(); // Paper - spark
+         this.runAllTasks(); // Paper - move runAllTasks() into full server tick (previously for timings)
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 71de8d8920eb33d15a18653dcef370c8e1a43712..20b8cbb84805e4259438766a773d65fb37581662 100644
+index 9aa154a7349ffb7b6af167fd84955168dbcd2bd9..5993a9530586e9792691e26d0a0a57febff5b447 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -1378,6 +1378,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -1371,6 +1371,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          return !(entity instanceof Player player && (this.server.isUnderSpawnProtection(this, pos, player) || !this.getWorldBorder().isWithinBounds(pos)));
      }
  
@@ -81,7 +81,7 @@ index 71de8d8920eb33d15a18653dcef370c8e1a43712..20b8cbb84805e4259438766a773d65fb
          // Paper start - add close param
          this.save(progress, flush, skipSave, false);
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 58c38cef10d8c3b5de5aa8d664c6e8c5f50b7510..19d41401dfaed718ce45a23a393c0c809ec5d816 100644
+index 0b41d4c924b77fe46089b2e5a0ebc92014a1f143..ff507ab2ec9391e899785fd42150fb4547eac83c 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -203,6 +203,7 @@ import org.slf4j.Logger;
@@ -93,7 +93,7 @@ index 58c38cef10d8c3b5de5aa8d664c6e8c5f50b7510..19d41401dfaed718ce45a23a393c0c80
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 0270f8f975118ef5ecac6ec4e3643295a2899d64..36aa8584e306fda9d4f89260990a54cae00bf391 100644
+index 05621e00508d17a327819cf1e42d5895ba2ac950..16ddf616eb4e5b0e112d37c69a3670febfa52e6f 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -405,6 +405,7 @@ public abstract class PlayerList {
@@ -104,7 +104,7 @@ index 0270f8f975118ef5ecac6ec4e3643295a2899d64..36aa8584e306fda9d4f89260990a54ca
          this.playerIo.save(player);
          ServerStatsCounter serverStatsCounter = player.getStats(); // CraftBukkit
          if (serverStatsCounter != null) {
-@@ -984,9 +985,23 @@ public abstract class PlayerList {
+@@ -986,9 +987,23 @@ public abstract class PlayerList {
      }
  
      public void saveAll() {
