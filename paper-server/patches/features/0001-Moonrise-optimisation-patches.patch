@@ -23030,7 +23030,7 @@ index 13424bce076493f146bdc5fd0b1f2e09805bd5e7..2de7072c8ccc005e514673bba494b64d
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index c75a5ad4e24452519d69ad11899287b58f298028..8db972769a965cca97d52d50a58e490faf76df4e 100644
+index 3ee62f3f92b17546c98695464a5be92d38f48d9b..224ef4faa7b6add6f55c1379421c1428162ddfcd 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -177,7 +177,7 @@ import net.minecraft.world.phys.Vec2;
@@ -25690,7 +25690,7 @@ index fbbddc9ae0ed4e28602ab1103d860e4639f19c8f..0766c5a6de4d43c24fac1f5318ebf94b
                      if (throwable == null) {
                          try {
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 143442e69aaaf86d54043babc08dfb7eafa55ab6..0d5841c2669570658f4c4a693b585a6e537569a5 100644
+index 6142eef782297f03487579a3325df4fe3dbcf749..effbf1681b437d218b326c2d642ed25077ea9436 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -56,7 +56,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26142,13 +26142,13 @@ index 143442e69aaaf86d54043babc08dfb7eafa55ab6..0d5841c2669570658f4c4a693b585a6e
 @@ -598,17 +666,11 @@ public class ServerChunkCache extends ChunkSource {
      }
  
-     public CompletableFuture<?> addTicketAndLoadWithRadius(TicketType ticket, ChunkPos chunkPos, int radius) {
--        if (!ticket.doesLoad()) {
--            throw new IllegalStateException("Ticket type " + ticket + " does not trigger chunk loading");
--        } else if (ticket.canExpireIfUnloaded()) {
--            throw new IllegalStateException("Ticket type " + ticket + " can expire before it loads, cannot fetch asynchronously");
+     public CompletableFuture<?> addTicketAndLoadWithRadius(TicketType ticketType, ChunkPos chunkPos, int radius) {
+-        if (!ticketType.doesLoad()) {
+-            throw new IllegalStateException("Ticket type " + ticketType + " does not trigger chunk loading");
+-        } else if (ticketType.canExpireIfUnloaded()) {
+-            throw new IllegalStateException("Ticket type " + ticketType + " can expire before it loads, cannot fetch asynchronously");
 -        } else {
--            this.addTicketWithRadius(ticket, chunkPos, radius);
+-            this.addTicketWithRadius(ticketType, chunkPos, radius);
 -            this.runDistanceManagerUpdates();
 -            ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(chunkPos.toLong());
 -            Objects.requireNonNull(visibleChunkIfPresent, "No chunk was scheduled for loading");
@@ -26156,12 +26156,12 @@ index 143442e69aaaf86d54043babc08dfb7eafa55ab6..0d5841c2669570658f4c4a693b585a6e
 -        }
 +        // Paper start - rewrite chunk system
 +        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAndLoadWithRadius(
-+            ticket, chunkPos, radius, ChunkStatus.FULL, ca.spottedleaf.concurrentutil.util.Priority.NORMAL
++            ticketType, chunkPos, radius, ChunkStatus.FULL, ca.spottedleaf.concurrentutil.util.Priority.NORMAL
 +        );
 +        // Paper end - rewrite chunk system
      }
  
-     public void addTicketWithRadius(TicketType ticket, ChunkPos chunkPos, int radius) {
+     public void addTicketWithRadius(TicketType ticketType, ChunkPos chunkPos, int radius) {
 @@ -658,6 +720,12 @@ public class ServerChunkCache extends ChunkSource {
          this.chunkMap.setServerViewDistance(viewDistance);
      }
