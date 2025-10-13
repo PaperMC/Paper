@@ -1005,14 +1005,14 @@
 @@ -1181,10 +_,77 @@
      }
  
-     public void teleport(double x, double y, double z, float yaw, float pitch) {
--        this.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, pitch), Collections.emptySet());
-+        // CraftBukkit start - Delegate to teleport(Location)
-+        this.teleport(x, y, z, yaw, pitch, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     public void teleport(double x, double y, double z, float yRot, float xRot) {
+-        this.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yRot, xRot), Collections.emptySet());
++        // CraftBukkit start
++        this.teleport(x, y, z, yRot, xRot, PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
 +
-+    public boolean teleport(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) {
-+        return this.teleport(new PositionMoveRotation(new Vec3(d0, d1, d2), Vec3.ZERO, f, f1), Collections.emptySet(), cause);
++    public boolean teleport(double x, double y, double z, float yRot, float xRot, PlayerTeleportEvent.TeleportCause cause) {
++        return this.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yRot, xRot), Collections.emptySet(), cause);
 +        // CraftBukkit end
      }
  
@@ -1056,8 +1056,8 @@
 +        this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch());
 +    }
 +
-+    private void internalTeleport(double d0, double d1, double d2, float f, float f1) {
-+        this.internalTeleport(new PositionMoveRotation(new Vec3(d0, d1, d2), Vec3.ZERO, f, f1), Collections.emptySet());
++    private void internalTeleport(double x, double y, double z, float yRot, float xRot) {
++        this.internalTeleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yRot, xRot), Collections.emptySet());
 +    }
 +
 +    public void internalTeleport(PositionMoveRotation posMoveRotation, Set<Relative> relatives) {
@@ -1754,10 +1754,10 @@
 @@ -1649,6 +_,14 @@
      }
  
-     public void sendPlayerChatMessage(PlayerChatMessage chatMessage, ChatType.Bound boundType) {
+     public void sendPlayerChatMessage(PlayerChatMessage chatMessage, ChatType.Bound boundChatType) {
 +        // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
 +        if (!this.getCraftPlayer().canSeePlayer(chatMessage.link().sender())) {
-+            this.sendDisguisedChatMessage(chatMessage.decoratedContent(), boundType);
++            this.sendDisguisedChatMessage(chatMessage.decoratedContent(), boundChatType);
 +            return;
 +        }
 +        // CraftBukkit end
@@ -1778,7 +1778,7 @@
 +        // Paper end - Ensure that client receives chat packets in the same order that we add into the message signature cache
      }
  
-     public void sendDisguisedChatMessage(Component message, ChatType.Bound boundType) {
+     public void sendDisguisedChatMessage(Component message, ChatType.Bound boundChatType) {
 @@ -1684,6 +_,17 @@
          return this.connection.getRemoteAddress();
      }
