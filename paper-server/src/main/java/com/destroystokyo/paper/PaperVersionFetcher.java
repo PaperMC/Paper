@@ -87,12 +87,12 @@ public class PaperVersionFetcher implements VersionFetcher {
             switch (distance) {
                 case DISTANCE_ERROR -> COMPONENT_LOGGER.error(text("*** Error obtaining version information! Cannot fetch version info ***"));
                 case 0 -> apiResult.ifPresent(result -> {
-                    COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionId() + ")", NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(text("However, you are " + result.distance() + " release(s) behind the latest stable release (" + result.latestVersion() + ")!", NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(text("It is recommended that you update as soon as possible", NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(text(DOWNLOAD_PAGE, NamedTextColor.GREEN));
-                    COMPONENT_LOGGER.info(text("*************************************************************************************", NamedTextColor.GREEN));
+                    COMPONENT_LOGGER.warn(text("*************************************************************************************"));
+                    COMPONENT_LOGGER.warn(text("You are running the latest build for your Minecraft version (" + build.minecraftVersionId() + ")"));
+                    COMPONENT_LOGGER.warn(text("However, you are " + result.distance() + " release(s) behind the latest stable release (" + result.latestVersion() + ")!"));
+                    COMPONENT_LOGGER.warn(text("It is recommended that you update as soon as possible"));
+                    COMPONENT_LOGGER.warn(text(DOWNLOAD_PAGE));
+                    COMPONENT_LOGGER.warn(text("*************************************************************************************"));
                 });
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 default -> {
@@ -172,8 +172,8 @@ public class PaperVersionFetcher implements VersionFetcher {
                             final String channel = buildJson.get("channel").getAsString();
                             if ("STABLE".equals(channel)) {
                                 final int currentIndex = versionList.indexOf(currentVersion);
-                                final int stableIndex = versionList.indexOf(latestVersion);
-                                final int distance = currentIndex - stableIndex;
+                                final int latestIndex = versionList.indexOf(latestVersion);
+                                final int distance = currentIndex - latestIndex;
                                 return Optional.of(new MinecraftVersionFetcher(latestVersion, distance));
                             }
                         } catch (final JsonSyntaxException ex) {
