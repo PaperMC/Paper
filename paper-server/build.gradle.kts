@@ -1,10 +1,7 @@
 import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
-import io.papermc.paperweight.util.data.FileEntry
-import paper.libs.com.google.gson.annotations.SerializedName
 import java.time.Instant
-import kotlin.io.path.readText
 
 plugins {
     `java-library`
@@ -17,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.10+build.1")
+    mache("io.papermc:mache:1.21.10+build.4")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

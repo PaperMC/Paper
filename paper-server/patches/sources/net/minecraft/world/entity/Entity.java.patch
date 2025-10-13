@@ -174,8 +174,8 @@
 +    }
 +    // Paper end
  
-     public Entity(EntityType<?> entityType, Level level) {
-         this.type = entityType;
+     public Entity(EntityType<?> type, Level level) {
+         this.type = type;
 @@ -305,6 +_,7 @@
          this.entityData = builder.build();
          this.setPos(0.0, 0.0, 0.0);
@@ -274,8 +274,8 @@
 +    // Paper end
 +
      @Override
-     public boolean equals(Object object) {
-         return object instanceof Entity && ((Entity)object).id == this.id;
+     public boolean equals(Object other) {
+         return other instanceof Entity && ((Entity)other).id == this.id;
 @@ -402,7 +_,13 @@
      }
  
@@ -1158,24 +1158,24 @@
 @@ -2317,11 +_,11 @@
      }
  
-     public boolean startRiding(Entity vehicle, boolean force, boolean sendGameEvent) {
--        if (vehicle == this.vehicle) {
-+        if (vehicle == this.vehicle || vehicle.level != this.level) { // Paper - Ensure entity passenger world matches ridden entity (bad plugins)
+     public boolean startRiding(Entity entity, boolean force, boolean triggerEvents) {
+-        if (entity == this.vehicle) {
++        if (entity == this.vehicle || entity.level != this.level) { // Paper - Ensure entity passenger world matches ridden entity (bad plugins)
              return false;
-         } else if (!vehicle.couldAcceptPassenger()) {
+         } else if (!entity.couldAcceptPassenger()) {
              return false;
--        } else if (!this.level().isClientSide() && !vehicle.type.canSerialize()) {
+-        } else if (!this.level().isClientSide() && !entity.type.canSerialize()) {
 +        } else if (!force && !this.level().isClientSide() && !vehicle.type.canSerialize()) { // SPIGOT-7947: Allow force riding all entities
              return false;
          } else {
-             for (Entity entity = vehicle; entity.vehicle != null; entity = entity.vehicle) {
+             for (Entity entity1 = entity; entity1.vehicle != null; entity1 = entity1.vehicle) {
 @@ -2331,6 +_,27 @@
              }
  
-             if (force || this.canRide(vehicle) && vehicle.canAddPassenger(this)) {
+             if (force || this.canRide(entity) && entity.canAddPassenger(this)) {
 +                // CraftBukkit start
-+                if (vehicle.getBukkitEntity() instanceof org.bukkit.entity.Vehicle && this.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity) {
-+                    org.bukkit.event.vehicle.VehicleEnterEvent event = new org.bukkit.event.vehicle.VehicleEnterEvent((org.bukkit.entity.Vehicle) vehicle.getBukkitEntity(), this.getBukkitEntity());
++                if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle && this.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity) {
++                    org.bukkit.event.vehicle.VehicleEnterEvent event = new org.bukkit.event.vehicle.VehicleEnterEvent((org.bukkit.entity.Vehicle) entity.getBukkitEntity(), this.getBukkitEntity());
 +                    // Suppress during worldgen
 +                    if (this.valid) {
 +                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
@@ -1185,7 +1185,7 @@
 +                    }
 +                }
 +
-+                org.bukkit.event.entity.EntityMountEvent event = new org.bukkit.event.entity.EntityMountEvent(this.getBukkitEntity(), vehicle.getBukkitEntity());
++                org.bukkit.event.entity.EntityMountEvent event = new org.bukkit.event.entity.EntityMountEvent(this.getBukkitEntity(), entity.getBukkitEntity());
 +                // Suppress during worldgen
 +                if (this.valid) {
 +                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
@@ -1359,19 +1359,19 @@
 @@ -2690,10 +_,22 @@
      }
  
-     public void setAirSupply(int air) {
--        this.entityData.set(DATA_AIR_SUPPLY_ID, air);
+     public void setAirSupply(int airSupply) {
+-        this.entityData.set(DATA_AIR_SUPPLY_ID, airSupply);
 +        // CraftBukkit start
-+        org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), air);
++        org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), airSupply);
 +        // Suppress during worldgen
 +        if (this.valid) {
 +            event.getEntity().getServer().getPluginManager().callEvent(event);
 +        }
-+        if (event.isCancelled() && this.getAirSupply() != air) {
-+            this.entityData.markDirty(Entity.DATA_AIR_SUPPLY_ID);
++        if (event.isCancelled() && this.getAirSupply() != airSupply) {
++            this.entityData.markDirty(DATA_AIR_SUPPLY_ID);
 +            return;
 +        }
-+        this.entityData.set(Entity.DATA_AIR_SUPPLY_ID, event.getAmount());
++        this.entityData.set(DATA_AIR_SUPPLY_ID, event.getAmount());
 +        // CraftBukkit end
      }
  
@@ -1666,11 +1666,11 @@
 @@ -3346,6 +_,12 @@
      }
  
-     public void stopSeenByPlayer(ServerPlayer serverPlayer) {
+     public void stopSeenByPlayer(ServerPlayer player) {
 +        // Paper start - entity tracking events
 +        // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
 +        if (io.papermc.paper.event.player.PlayerUntrackEntityEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(serverPlayer.getBukkitEntity(), this.getBukkitEntity()).callEvent();
++            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(player.getBukkitEntity(), this.getBukkitEntity()).callEvent();
 +        }
 +        // Paper end - entity tracking events
      }

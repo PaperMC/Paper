@@ -5,7 +5,7 @@
          boolean shouldOffsetYMore
      ) {
 +        // CraftBukkit start
-+        return this.spawn(level, spawnedFrom, owner, pos, reason, shouldOffsetY, shouldOffsetYMore, reason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
++        return this.spawn(level, spawnedFrom, owner, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, spawnReason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
 +    }
 +
 +    @Nullable
@@ -14,7 +14,7 @@
 +        @Nullable ItemStack spawnedFrom,
 +        @Nullable LivingEntity owner,
 +        BlockPos pos,
-+        EntitySpawnReason reason,
++        EntitySpawnReason spawnReason,
 +        boolean shouldOffsetY,
 +        boolean shouldOffsetYMore,
 +        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
@@ -27,12 +27,12 @@
              consumer = entity -> {};
          }
  
--        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
-+        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
+-        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
++        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level level, ItemStack stack, @Nullable LivingEntity owner) {
-@@ -1289,19 +_,56 @@
+@@ -1289,21 +_,58 @@
  
      public static <T extends Entity> Consumer<T> appendCustomEntityStackConfig(Consumer<T> consumer, Level level, ItemStack stack, @Nullable LivingEntity owner) {
          TypedEntityData<EntityType<?>> typedEntityData = stack.get(DataComponents.ENTITY_DATA);
@@ -42,33 +42,35 @@
 +            try {
 +                updateCustomEntityTag(level, owner, entity, typedEntityData);
 +            } catch (Throwable t) {
-+                EntityType.LOGGER.warn("Error loading spawn egg NBT", t);
++                LOGGER.warn("Error loading spawn egg NBT", t);
 +            }
 +        }) : consumer;
 +        // CraftBukkit end
      }
  
      @Nullable
-     public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason) {
--        return this.spawn(level, null, pos, reason, false, false);
+     public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason spawnReason) {
+-        return this.spawn(level, null, pos, spawnReason, false, false);
 +        // CraftBukkit start
-+        return this.spawn(level, pos, reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.spawn(level, pos, spawnReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+        return this.spawn(level, null, pos, reason, false, false, creatureSpawnReason);
++    public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason spawnReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        return this.spawn(level, null, pos, spawnReason, false, false, creatureSpawnReason);
 +        // CraftBukkit End
      }
  
      @Nullable
-     public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore) {
+     public T spawn(
+         ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason spawnReason, boolean shouldOffsetY, boolean shouldOffsetYMore
+     ) {
 +        // CraftBukkit start
-+        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++    public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason spawnReason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
 +        // CraftBukkit end
 +        // Paper start - PreCreatureSpawnEvent
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
@@ -80,7 +82,7 @@
 +            return null;
 +        }
 +        // Paper end - PreCreatureSpawnEvent
-         T entity = this.create(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
+         T entity = this.create(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
          if (entity != null) {
 -            level.addFreshEntityWithPassengers(entity);
 +            // CraftBukkit start
@@ -92,21 +94,21 @@
              if (entity instanceof Mob mob) {
                  mob.playAmbientSound();
              }
-@@ -1356,6 +_,13 @@
+@@ -1358,6 +_,13 @@
                  if (level.isClientSide()
                      || !entity.getType().onlyOpCanSetNbt()
                      || owner instanceof Player player && server.getPlayerList().isOp(player.nameAndId())) {
 +                    // Paper start - filter out protected tags
 +                    if (owner == null || !owner.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
 +                        for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
-+                            tag.remove(data.getUnsafe());
++                            tag.remove(entityData.getUnsafe());
 +                        }
 +                    }
 +                    // Paper end - filter out protected tags
-                     data.loadInto(entity);
+                     entityData.loadInto(entity);
                  }
              }
-@@ -1427,9 +_,20 @@
+@@ -1429,9 +_,20 @@
      }
  
      public static Optional<Entity> create(ValueInput input, Level level, EntitySpawnReason spawnReason) {
