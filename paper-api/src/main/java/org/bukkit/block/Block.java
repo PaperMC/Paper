@@ -485,7 +485,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     /**
      * Check if this block is replaceable
      * <p>
-     * Determined by Minecraft, representing a block that is not AIR that you can still place a new block at, such as flowers.
+     * Determined by Minecraft, representing a block that you can place a new block at, such as air or tall grass.
      * @return true if block is replaceable
      */
     boolean isReplaceable();

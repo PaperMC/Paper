@@ -317,4 +317,12 @@ public interface BlockData extends Cloneable {
      */
     boolean isRandomlyTicked();
     // Paper end - Tick API
+
+    /**
+     * Check if this block is replaceable
+     * <p>
+     * Determined by Minecraft, representing a block that you can place a new block at, such as air or tall grass.
+     * @return true if block is replaceable
+     */
+    boolean isReplaceable();
 }
