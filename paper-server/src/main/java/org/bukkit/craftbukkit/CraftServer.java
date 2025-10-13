@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import ca.spottedleaf.moonrise.common.time.TickData;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -2694,12 +2695,14 @@ public final class CraftServer implements Server {
 
     @Override
     public long[] getTickTimes() {
-        return this.getServer().tickTimes5s.getTimes();
+        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
+        return reportData == null ? new long[0] : reportData.timePerTickData().rawData().clone();
     }
 
     @Override
     public double getAverageTickTime() {
-        return this.getServer().tickTimes5s.getAverage();
+        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
+        return reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().average() * 1.0E-6D;
     }
 
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
@@ -2756,11 +2759,7 @@ public final class CraftServer implements Server {
 
     @Override
     public double[] getTPS() {
-        return new double[] {
-            net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
-            net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
-            net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
-        };
+        return this.getServer().getTPS();
     }
 
     @Override

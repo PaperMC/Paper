@@ -1983,15 +1983,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.persistentDataContainer;
     }
 
-    public void storeBukkitValues(CompoundTag c) {
+    public void storeBukkitValues(CompoundTag tag) {
         if (!this.persistentDataContainer.isEmpty()) {
-            c.put("BukkitValues", this.persistentDataContainer.toTagCompound());
+            tag.put("BukkitValues", this.persistentDataContainer.toTagCompound());
         }
     }
 
-    public void readBukkitValues(Tag c) {
-        if (c instanceof CompoundTag) {
-            this.persistentDataContainer.putAll((CompoundTag) c);
+    public void readBukkitValues(Tag tag) {
+        if (tag instanceof CompoundTag compoundTag) {
+            this.persistentDataContainer.putAll(compoundTag);
         }
     }
 

@@ -34,9 +34,9 @@
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +    // CraftBukkit end
  
-     protected LivingEntity(EntityType<? extends LivingEntity> entityType, Level level) {
-         super(entityType, level);
-         this.attributes = new AttributeMap(DefaultAttributes.getSupplier(entityType));
+     protected LivingEntity(EntityType<? extends LivingEntity> type, Level level) {
+         super(type, level);
+         this.attributes = new AttributeMap(DefaultAttributes.getSupplier(type));
 -        this.setHealth(this.getMaxHealth());
 +        this.craftAttributes = new org.bukkit.craftbukkit.attribute.CraftAttributeMap(this.attributes); // CraftBukkit
 +        // CraftBukkit - this.setHealth(this.getMaxHealth()) inlined and simplified to skip the instanceof check for Player, as getBukkitEntity() is not initialized in constructor
@@ -438,22 +438,22 @@
 @@ -1131,17 +_,62 @@
      }
  
-     public void heal(float healAmount) {
+     public void heal(float amount) {
 +        // CraftBukkit start - Delegate so we can handle providing a reason for health being regained
-+        this.heal(healAmount, EntityRegainHealthEvent.RegainReason.CUSTOM);
++        this.heal(amount, EntityRegainHealthEvent.RegainReason.CUSTOM);
 +    }
 +
-+    public void heal(float healAmount, EntityRegainHealthEvent.RegainReason regainReason) {
++    public void heal(float amount, EntityRegainHealthEvent.RegainReason regainReason) {
 +        // Paper start - Forward
-+        this.heal(healAmount, regainReason, false);
++        this.heal(amount, regainReason, false);
 +    }
 +
-+    public void heal(float healAmount, EntityRegainHealthEvent.RegainReason regainReason, boolean isFastRegen) {
++    public void heal(float amount, EntityRegainHealthEvent.RegainReason regainReason, boolean isFastRegen) {
 +        // Paper end - Forward
          float health = this.getHealth();
          if (health > 0.0F) {
--            this.setHealth(health + healAmount);
-+            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), healAmount, regainReason, isFastRegen); // Paper
+-            this.setHealth(health + amount);
++            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), amount, regainReason, isFastRegen); // Paper
 +            // Suppress during worldgen
 +            if (this.valid) {
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -468,8 +468,8 @@
  
      public float getHealth() {
 +        // CraftBukkit start - Use unscaled health
-+        if (this instanceof ServerPlayer serverPlayer) {
-+            return (float) serverPlayer.getBukkitEntity().getHealth();
++        if (this instanceof ServerPlayer player) {
++            return (float) player.getBukkitEntity().getHealth();
 +        }
 +        // CraftBukkit end
          return this.entityData.get(DATA_HEALTH_ID);
