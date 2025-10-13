@@ -101,7 +101,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                         COMPONENT_LOGGER.error(text("*** Please update to the latest stable version on " + DOWNLOAD_PAGE + " ***"));
                     } else {
                         COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
-                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download a new build from " + DOWNLOAD_PAGE + " ***"));
+                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download the latest build from " + DOWNLOAD_PAGE + " ***"));
                     }
                 }
             };
