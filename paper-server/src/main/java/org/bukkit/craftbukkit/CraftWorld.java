@@ -1990,8 +1990,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     public void readBukkitValues(Tag tag) {
-        if (tag instanceof CompoundTag) {
-            this.persistentDataContainer.putAll((CompoundTag) tag);
+        if (tag instanceof CompoundTag compoundTag) {
+            this.persistentDataContainer.putAll(compoundTag);
         }
     }
 
