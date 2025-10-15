@@ -2695,14 +2695,14 @@ public final class CraftServer implements Server {
 
     @Override
     public long[] getTickTimes() {
-        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
-        return reportData == null ? new long[0] : reportData.timePerTickData().rawData().clone();
+        final TickData.MSPTData reportData = this.getServer().getMSPTData5s();
+        return reportData == null ? new long[0] : reportData.rawData().clone();
     }
 
     @Override
     public double getAverageTickTime() {
-        final TickData.TickReportData reportData = this.getServer().getTickReport5s();
-        return reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().average() * 1.0E-6D;
+        final TickData.MSPTData reportData = this.getServer().getMSPTData5s();
+        return reportData == null ? 0.0 : reportData.avg();
     }
 
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
