@@ -41,7 +41,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -278,10 +_,92 @@
+@@ -278,10 +_,108 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
@@ -70,7 +70,6 @@
 +    // Paper start - improve tick loop
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
-+    private volatile @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData msptData5s;
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes10s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
@@ -82,21 +81,26 @@
 +    private long lastTickStart;
 +    private long currentTickStart;
 +    private long scheduledTickStart;
-+    private volatile double[] tps = new double[]{0.0, 0.0, 0.0};
++    private final Object statsLock = new Object();
++    private @Nullable double[] tps;
++    private @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData msptData5s;
 +
 +    private void addTickTime(final ca.spottedleaf.moonrise.common.time.TickTime time) {
-+        this.tickTimes1s.addDataFrom(time);
-+        this.tickTimes5s.addDataFrom(time);
-+        this.tickTimes10s.addDataFrom(time);
-+        this.tickTimes15s.addDataFrom(time);
-+        this.tickTimes1m.addDataFrom(time);
-+        this.tickTimes5m.addDataFrom(time);
-+        this.tickTimes15m.addDataFrom(time);
++        synchronized (this.statsLock) {
++            this.tickTimes1s.addDataFrom(time);
++            this.tickTimes5s.addDataFrom(time);
++            this.tickTimes10s.addDataFrom(time);
++            this.tickTimes15s.addDataFrom(time);
++            this.tickTimes1m.addDataFrom(time);
++            this.tickTimes5m.addDataFrom(time);
++            this.tickTimes15m.addDataFrom(time);
++            this.clearTickTimeStatistics();
++        }
 +    }
 +
-+    private void updateTickTimeStatistics() {
-+        this.msptData5s = this.tickTimes5s.getMSPTData(null, this.tickRateManager().nanosecondsPerTick());
-+        this.tps = this.computeTPS();
++    private void clearTickTimeStatistics() {
++        this.msptData5s = null;
++        this.tps = null;
 +    }
 +
 +    private static double getTPS(final ca.spottedleaf.moonrise.common.time.TickData tickData, final long tickInterval) {
@@ -109,11 +113,23 @@
 +    }
 +
 +    public double[] getTPS() {
-+        return this.tps.clone();
++        synchronized (this.statsLock) {
++            double[] tps = this.tps;
++            if (tps == null) {
++                tps = this.computeTPS();
++                this.tps = tps;
++            }
++            return tps.clone();
++        }
 +    }
 +
 +    public @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData getMSPTData5s() {
-+        return this.msptData5s;
++        synchronized (this.statsLock) {
++            if (this.msptData5s == null) {
++                this.msptData5s = this.tickTimes5s.getMSPTData(null, this.tickRateManager().nanosecondsPerTick());
++            }
++            return this.msptData5s;
++        }
 +    }
 +
 +    public double[] computeTPS() {
@@ -614,7 +630,7 @@
          this.running = false;
          if (waitForShutdown) {
              try {
-@@ -730,6 +_,125 @@
+@@ -730,6 +_,124 @@
          }
      }
  
@@ -652,7 +668,6 @@
 +        );
 +
 +        this.addTickTime(time);
-+        this.updateTickTimeStatistics();
 +    }
 +
 +    private void runAllTasksAtTickStart() {
