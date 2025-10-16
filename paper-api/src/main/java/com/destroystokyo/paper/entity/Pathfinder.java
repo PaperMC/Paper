@@ -113,7 +113,10 @@ public interface Pathfinder {
      *
      * @param target the Entity to navigate to
      * @return If the pathfinding was successfully started
+     * 
+     * @deprecated Use {@link #moveTo(Entity)} instead
      */
+    @Deprecated(forRemoval = true)
     default boolean moveTo(LivingEntity target) {
         return this.moveTo(target, 1);
     }
@@ -130,8 +133,45 @@ public interface Pathfinder {
      * @param target the Entity to navigate to
      * @param speed  Speed multiplier to navigate at, where 1 is 'normal'
      * @return If the pathfinding was successfully started
+     * 
+     * @deprecated Use {@link #moveTo(Entity, double)} instead.
      */
+    @Deprecated(forRemoval = true)
     default boolean moveTo(LivingEntity target, double speed) {
+        PathResult path = this.findPath(target);
+        return path != null && this.moveTo(path, speed);
+    }
+
+    /**
+     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * and sets it with default speed.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @return If the pathfinding was successfully started
+     */
+    default boolean moveTo(Entity target) {
+        return this.moveTo(target, 1);
+    }
+
+    /**
+     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * and sets it with specified speed.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @param speed  Speed multiplier to navigate at, where 1 is 'normal'
+     * @return If the pathfinding was successfully started
+     */
+    default boolean moveTo(Entity target, double speed) {
         PathResult path = this.findPath(target);
         return path != null && this.moveTo(path, speed);
     }
