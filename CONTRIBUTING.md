@@ -210,7 +210,11 @@ Golem is going to be added in 1.21.9, you can PR to the relevant dev branch as i
 not make sense to merge that into `main`. Or, if you are fixing a bug that only exists in
 a dev branch, you should target that branch. When submitting PRs to dev branches, please
 coordinate with the dev team in Discord or open an issue before starting work to ensure
-it's an area we want to accept changes for.
+it's an area we want to accept changes for. The team prefers to handle initial updating
+work through to the server running ourselves, so do not attempt to PR version updates
+(i.e. 25w42a -> 25w43a, etc.) or while there are still unapplied source patches. Feature
+patches are also not applied until at earliest the pre-release phase to avoid unnecessary
+churn.
 
 ## Formatting
 
