@@ -57,10 +57,7 @@ public interface Pathfinder {
      *
      * @param target the Entity to navigate to
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
-     * 
-     * @deprecated Use {@link #findPath(Entity)} instead.
      */
-    @Deprecated(forRemoval = true)
     @Nullable PathResult findPath(LivingEntity target);
 
     /**
@@ -113,12 +110,9 @@ public interface Pathfinder {
      *
      * @param target the Entity to navigate to
      * @return If the pathfinding was successfully started
-     * 
-     * @deprecated Use {@link #moveTo(Entity)} instead
      */
-    @Deprecated(forRemoval = true)
     default boolean moveTo(LivingEntity target) {
-        return this.moveTo(target, 1);
+        return this.moveTo((Entity)target, 1);
     }
 
     /**
@@ -133,13 +127,9 @@ public interface Pathfinder {
      * @param target the Entity to navigate to
      * @param speed  Speed multiplier to navigate at, where 1 is 'normal'
      * @return If the pathfinding was successfully started
-     * 
-     * @deprecated Use {@link #moveTo(Entity, double)} instead.
      */
-    @Deprecated(forRemoval = true)
     default boolean moveTo(LivingEntity target, double speed) {
-        PathResult path = this.findPath(target);
-        return path != null && this.moveTo(path, speed);
+        return this.moveTo((Entity)target, speed);
     }
 
     /**
