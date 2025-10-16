@@ -1,0 +1,126 @@
+--- a/net/minecraft/world/entity/animal/coppergolem/CopperGolem.java
++++ b/net/minecraft/world/entity/animal/coppergolem/CopperGolem.java
+@@ -56,8 +_,8 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class CopperGolem extends AbstractGolem implements ContainerUser, Shearable {
+-    private static final long IGNORE_WEATHERING_TICK = -2L;
+-    private static final long UNSET_WEATHERING_TICK = -1L;
++    public static final long IGNORE_WEATHERING_TICK = -2L; // Paper - public
++    public static final long UNSET_WEATHERING_TICK = -1L; // Paper - public
+     private static final int WEATHERING_TICK_FROM = 504000;
+     private static final int WEATHERING_TICK_TO = 552000;
+     private static final int SPIN_ANIMATION_MIN_COOLDOWN = 200;
+@@ -76,7 +_,7 @@
+     private BlockPos openedChestPos;
+     @Nullable
+     private UUID lastLightningBoltUUID;
+-    private long nextWeatheringTick = -1L;
++    public long nextWeatheringTick = -1L; // Paper - public
+     private int idleAnimationStartTick = 0;
+     private final AnimationState idleAnimationState = new AnimationState();
+     private final AnimationState interactionGetItemAnimationState = new AnimationState();
+@@ -220,7 +_,15 @@
+         Level level = this.level();
+         if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
+             if (level instanceof ServerLevel serverLevel) {
+-                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
++                // Paper start
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) return InteractionResult.PASS;
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                }
++                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops);
++                // Paper end
+                 this.gameEvent(GameEvent.SHEAR, player);
+                 itemInHand.hurtAndBreak(1, player, hand);
+             }
+@@ -283,20 +_,27 @@
+ 
+     private void turnToStatue(ServerLevel level) {
+         BlockPos blockPos = this.blockPosition();
+-        level.setBlock(
+-            blockPos,
++        // Paper start - call EntityChangeBlockEvent
++        //level.setBlock(
++        //    blockPos,
++        BlockState newState =
+             Blocks.OXIDIZED_COPPER_GOLEM_STATUE
+                 .defaultBlockState()
+                 .setValue(
+                     CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.values()[this.random.nextInt(0, CopperGolemStatueBlock.Pose.values().length)]
+                 )
+-                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot())),
+-            3
+-        );
++                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
++        //    3
++        //);
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockPos, newState)) {
++            return;
++        }
++        level.setBlock(blockPos, newState, 3);
++        // Paper end - call EntityChangeBlockEvent
+         if (level.getBlockEntity(blockPos) instanceof CopperGolemStatueBlockEntity copperGolemStatueBlockEntity) {
+             copperGolemStatueBlockEntity.createStatue(this);
+             this.dropPreservedEquipment(level);
+-            this.discard();
++            this.discard(null); // Paper - add Bukkit remove cause
+             this.playSound(SoundEvents.COPPER_GOLEM_BECOME_STATUE);
+             if (this.isLeashed()) {
+                 if (level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+@@ -427,12 +_,32 @@
+     }
+ 
+     @Override
+-    public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
++    // Paper start
++    public void shear(ServerLevel level, SoundSource source, ItemStack shears, java.util.List<ItemStack> drops) {
+         level.playSound(null, this, SoundEvents.COPPER_GOLEM_SHEAR, source, 1.0F, 1.0F);
+-        ItemStack itemBySlot = this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA);
+         this.setItemSlot(EQUIPMENT_SLOT_ANTENNA, ItemStack.EMPTY);
+-        this.spawnAtLocation(level, itemBySlot, 1.5F);
+-    }
++        for (ItemStack drop : drops) {
++            this.forceDrops = true;
++            this.spawnAtLocation(level, drop, 1.5F);
++            this.forceDrops = false;
++        }
++    }
++
++    @Override
++    public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
++        this.shear(level, source, shears, this.generateDefaultDrops(level, shears));
++    }
++
++    @Override
++    public java.util.List<net.minecraft.world.item.ItemStack> generateDefaultDrops(final net.minecraft.server.level.ServerLevel serverLevel, final net.minecraft.world.item.ItemStack shears) {
++        if (!this.readyForShearing()) {
++            return java.util.Collections.emptyList();
++        }
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(1);
++        drops.add(this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA).copy());
++        return drops;
++    }
++    // Paper end
+ 
+     @Override
+     public boolean readyForShearing() {
+@@ -446,9 +_,13 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
+-        super.actuallyHurt(level, damageSource, amount);
++    // CraftBukkit start - void -> boolean
++    protected boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++        if (!damageResult) return false;
++        // CraftBukkit end
+         this.setState(CopperGolemState.IDLE);
++        return true; // CraftBukkit
+     }
+ 
+     @Override

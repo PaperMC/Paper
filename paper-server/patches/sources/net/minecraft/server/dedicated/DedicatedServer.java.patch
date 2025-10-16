@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -63,10 +_,10 @@
+@@ -78,10 +_,10 @@
      static final Logger LOGGER = LogUtils.getLogger();
      private static final int CONVERSION_RETRY_DELAY_MS = 5000;
      private static final int CONVERSION_RETRIES = 2;
@@ -13,27 +13,28 @@
      @Nullable
      private RconThread rconThread;
      public DedicatedServerSettings settings;
-@@ -81,6 +_,7 @@
-     public ServerLinks serverLinks;
+@@ -99,6 +_,7 @@
+     private long lastHeartbeat;
  
      public DedicatedServer(
 +        joptsimple.OptionSet options, net.minecraft.server.WorldLoader.DataLoadContext worldLoader, // CraftBukkit - Signature changed
          Thread serverThread,
          LevelStorageSource.LevelStorageAccess storageSource,
          PackRepository packRepository,
-@@ -90,9 +_,9 @@
-         Services services,
-         ChunkProgressListenerFactory progressListenerFactory
+@@ -107,9 +_,10 @@
+         DataFixer fixerUpper,
+         Services services
      ) {
--        super(serverThread, storageSource, packRepository, worldStem, Proxy.NO_PROXY, fixerUpper, services, progressListenerFactory);
-+        super(options, worldLoader, serverThread, storageSource, packRepository, worldStem, Proxy.NO_PROXY, fixerUpper, services, progressListenerFactory); // CraftBukkit - Signature changed
+-        super(serverThread, storageSource, packRepository, worldStem, Proxy.NO_PROXY, fixerUpper, services, LoggingLevelLoadListener.forDedicatedServer());
++        super(options, worldLoader, serverThread, storageSource, packRepository, worldStem, Proxy.NO_PROXY, fixerUpper, services, LoggingLevelLoadListener.forDedicatedServer()); // CraftBukkit - Signature changed
          this.settings = settings;
 -        this.rconConsoleSource = new RconConsoleSource(this);
++        this.setMotd(settings.getProperties().motd.get()); // Paper - set field from initial properties
 +        //this.rconConsoleSource = new RconConsoleSource(this); // CraftBukkit - remove field
          this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
          this.serverLinks = createServerLinks(settings);
-     }
-@@ -102,6 +_,10 @@
+         if (settings.getProperties().codeOfConduct) {
+@@ -194,6 +_,10 @@
          Thread thread = new Thread("Server console handler") {
              @Override
              public void run() {
@@ -43,8 +44,8 @@
 +                /*
                  BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
  
-                 String string1;
-@@ -111,17 +_,41 @@
+                 String string3;
+@@ -203,17 +_,41 @@
                      }
                  } catch (IOException var4) {
                      DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)var4);
@@ -88,10 +89,11 @@
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
          if (this.isSingleplayer()) {
-@@ -132,13 +_,51 @@
+@@ -224,8 +_,46 @@
              this.setLocalIp(properties.serverIp);
          }
  
+-        this.worldData.setGameType(properties.gameMode.get());
 +        // Spigot start
 +        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
 +        org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
@@ -105,7 +107,7 @@
 +        this.server.spark.enableEarlyIfRequested(); // Paper - spark
 +        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
-+            this.getProfileCache().save(false); // Paper
++            this.services().nameToIdCache().save(false); // Paper
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
 +        // Paper end - fix converting txt to json file
@@ -116,14 +118,8 @@
 +        com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
 +        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
 +
-         this.setPvpAllowed(properties.pvp);
-         this.setFlightAllowed(properties.allowFlight);
-         this.setMotd(properties.motd);
-         super.setPlayerIdleTimeout(properties.playerIdleTimeout.get());
-         this.setEnforceWhitelist(properties.enforceWhitelist);
--        this.worldData.setGameType(properties.gamemode);
-+        // this.worldData.setGameType(properties.gamemode); // CraftBukkit - moved to world loading
-         LOGGER.info("Default game type: {}", properties.gamemode);
++        // this.worldData.setGameType(properties.gameMode.get()); // CraftBukkit - moved to world loading
+         LOGGER.info("Default game type: {}", properties.gameMode.get());
 +        // Paper start - Unix domain socket support
 +        java.net.SocketAddress bindAddress;
 +        if (this.getLocalIp().startsWith("unix:")) {
@@ -141,7 +137,7 @@
          InetAddress inetAddress = null;
          if (!this.getLocalIp().isEmpty()) {
              inetAddress = InetAddress.getByName(this.getLocalIp());
-@@ -147,36 +_,61 @@
+@@ -234,46 +_,72 @@
          if (this.getPort() < 0) {
              this.setPort(properties.serverPort);
          }
@@ -155,11 +151,11 @@
          try {
 -            this.getConnection().startTcpServerListener(inetAddress, this.getPort());
 +            this.getConnection().startTcpServerListener(bindAddress); // Paper - Unix domain socket support
-         } catch (IOException var10) {
+         } catch (IOException var11) {
              LOGGER.warn("**** FAILED TO BIND TO PORT!");
-             LOGGER.warn("The exception was: {}", var10.toString());
+             LOGGER.warn("The exception was: {}", var11.toString());
              LOGGER.warn("Perhaps a server is already running on that port?");
-+            if (true) throw new IllegalStateException("Failed to bind to port", var10); // Paper - Propagate failed to bind to port error
++            if (true) throw new IllegalStateException("Failed to bind to port", var11); // Paper - Propagate failed to bind to port error
              return false;
          }
  
@@ -195,7 +191,7 @@
 +        // CraftBukkit start
 +        /*
          if (this.convertOldUsers()) {
-             this.getProfileCache().save();
+             this.services.nameToIdCache().save();
          }
 +        */
 +        // CraftBukkit end
@@ -205,26 +201,24 @@
          } else {
 -            this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
 +            // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // CraftBukkit - moved up
-             this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
-             this.tickTimeLogger = new RemoteSampleLogger(
-                 TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME
-@@ -185,12 +_,12 @@
-             SkullBlockEntity.setup(this.services, this);
-             GameProfileCache.setUsesAuthentication(this.usesAuthentication());
+             this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSubscribers(), RemoteDebugSampleType.TICK_TIME);
+             long nanos = Util.getNanos();
+             this.services.nameToIdCache().resolveOfflineUsers(!this.usesAuthentication());
              LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
 -            this.loadLevel();
 +            this.loadLevel(this.storageSource.getLevelId()); // CraftBukkit
              long l = Util.getNanos() - nanos;
-             String string = String.format(Locale.ROOT, "%.3fs", l / 1.0E9);
--            LOGGER.info("Done ({})! For help, type \"help\"", string);
-+            LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), string); // Paper - Improve startup message, add total time
+             String string2 = String.format(Locale.ROOT, "%.3fs", l / 1.0E9);
+-            LOGGER.info("Done ({})! For help, type \"help\"", string2);
++            LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), string2); // Paper - Improve startup message, add total time
++            this.initPostWorld(); // Paper - don't include plugins in world preparation time
              if (properties.announcePlayerAchievements != null) {
 -                this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(properties.announcePlayerAchievements, this);
 +                this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(properties.announcePlayerAchievements, this.overworld()); // CraftBukkit - per-world
              }
  
              if (properties.enableQuery) {
-@@ -203,7 +_,7 @@
+@@ -286,7 +_,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -233,7 +227,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
                  thread1.setName("Server Watchdog");
-@@ -220,6 +_,12 @@
+@@ -304,6 +_,12 @@
          }
      }
  
@@ -244,18 +238,26 @@
 +    // Paper end
 +
      @Override
-     public boolean isSpawningMonsters() {
-         return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
-@@ -232,7 +_,7 @@
+     public boolean isEnforceWhitelist() {
+         return this.settings.getProperties().enforceWhitelist.get();
+@@ -321,6 +_,7 @@
+ 
+     @Override
+     public void setUsingWhitelist(boolean usingWhitelist) {
++        new com.destroystokyo.paper.event.server.WhitelistToggleEvent(usingWhitelist).callEvent(); // Paper - WhitelistToggleEvent
+         this.settings.update(dedicatedServerProperties -> dedicatedServerProperties.whiteList.update(this.registryAccess(), usingWhitelist));
+     }
+ 
+@@ -371,7 +_,7 @@
  
      @Override
      public void forceDifficulty() {
--        this.setDifficulty(this.getProperties().difficulty, true);
-+        // this.setDifficulty(this.getProperties().difficulty, true); // Paper - per level difficulty; Don't overwrite level.dat's difficulty, keep current
+-        this.setDifficulty(this.getProperties().difficulty.get(), true);
++        // this.setDifficulty(this.getProperties().difficulty.get(), true); // Paper - per level difficulty; Don't overwrite level.dat's difficulty, keep current
      }
  
-     @Override
-@@ -271,12 +_,15 @@
+     public int viewDistance() {
+@@ -427,11 +_,11 @@
          }
  
          if (this.rconThread != null) {
@@ -267,13 +269,19 @@
 -            this.queryThreadGs4.stop();
 +            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
          }
+ 
+         if (this.jsonRpcServer != null) {
+@@ -441,6 +_,9 @@
+                 LOGGER.error("Interrupted while stopping the management server", (Throwable)var2);
+             }
+         }
 +
 +        this.hasFullyShutdown = true; // Paper - Improved watchdog support
 +        System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support
      }
  
      @Override
-@@ -291,12 +_,20 @@
+@@ -450,12 +_,20 @@
      }
  
      public void handleConsoleInput(String msg, CommandSourceStack source) {
@@ -297,7 +305,25 @@
              this.getCommands().performPrefixedCommand(consoleInput.source, consoleInput.msg);
          }
      }
-@@ -430,7 +_,11 @@
+@@ -601,12 +_,15 @@
+ 
+     @Override
+     public String getMotd() {
+-        return this.settings.getProperties().motd.get();
++        return super.getMotd(); // Paper
+     }
+ 
+     @Override
+     public void setMotd(String motd) {
+-        this.settings.update(dedicatedServerProperties -> dedicatedServerProperties.motd.update(this.registryAccess(), motd));
++        // Paper start
++        super.setMotd(motd);
++        this.settings.update(dedicatedServerProperties -> dedicatedServerProperties.motd.update(this.registryAccess(), this.getMotd()));
++        // Paper end
+     }
+ 
+     @Override
+@@ -632,7 +_,11 @@
      @Override
      public boolean enforceSecureProfile() {
          DedicatedServerProperties properties = this.getProperties();
@@ -310,7 +336,7 @@
      }
  
      @Override
-@@ -515,14 +_,53 @@
+@@ -717,21 +_,60 @@
  
      @Override
      public String getPluginNames() {
@@ -367,19 +393,18 @@
 +        // CraftBukkit end
      }
  
-     public void storeUsingWhiteList(boolean isStoreUsingWhiteList) {
-@@ -532,7 +_,7 @@
      @Override
      public void stopServer() {
+         this.notificationManager().serverShuttingDown();
          super.stopServer();
 -        Util.shutdownExecutors();
 +        //Util.shutdownExecutors(); // Paper - Improved watchdog support; moved into super
-         SkullBlockEntity.clear();
      }
  
-@@ -626,4 +_,15 @@
-             }
-         }
+     @Override
+@@ -863,4 +_,15 @@
+     public Map<String, String> getCodeOfConducts() {
+         return this.codeOfConductTexts;
      }
 +
 +    // CraftBukkit start

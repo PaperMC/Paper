@@ -1,0 +1,24 @@
+--- a/net/minecraft/server/jsonrpc/internalapi/MinecraftGameRuleServiceImpl.java
++++ b/net/minecraft/server/jsonrpc/internalapi/MinecraftGameRuleServiceImpl.java
+@@ -24,18 +_,18 @@
+         net.minecraft.world.level.GameRules.Value<?> ruleValue = this.getRuleValue(rule.key());
+         String string = ruleValue.serialize();
+         if (ruleValue instanceof net.minecraft.world.level.GameRules.BooleanValue booleanValue) {
+-            booleanValue.set(Boolean.parseBoolean(rule.value()), this.server);
++            booleanValue.set(Boolean.parseBoolean(rule.value()), this.server.overworld()); // Paper - per-world game rules - use overworld for vanilla protocol
+         } else {
+             if (!(ruleValue instanceof net.minecraft.world.level.GameRules.IntegerValue integerValue)) {
+                 throw new InvalidParameterJsonRpcException("Unknown rule type for key: " + rule.key());
+             }
+ 
+-            integerValue.set(Integer.parseInt(rule.value()), this.server);
++            integerValue.set(Integer.parseInt(rule.value()), this.server.overworld()); // Paper - per-world game rules - use overworld for vanilla protocol
+         }
+ 
+         GameRulesService.TypedRule typedRule = this.getTypedRule(rule.key(), ruleValue);
+         this.jsonrpcLogger.log(client, "Game rule '{}' updated from '{}' to '{}'", typedRule.key(), string, typedRule.value());
+-        this.server.onGameRuleChanged(rule.key(), ruleValue);
++        this.server.notificationManager().onGameRuleChanged(this.server.overworld(), rule.key(), ruleValue); // Paper - per-world game rules - use overworld for vanilla protocol
+         return typedRule;
+     }
+ 

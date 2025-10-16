@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/LiquidBlock.java
 +++ b/net/minecraft/world/level/block/LiquidBlock.java
-@@ -135,9 +_,28 @@
+@@ -139,9 +_,30 @@
      @Override
-     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
          if (this.shouldSpreadLiquid(level, pos, state)) {
 -            level.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(level));
 -        }
@@ -10,20 +10,22 @@
 +            level.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(level, pos)); // Paper - Configurable speed for water flowing over lava
 +        }
 +    }
++
 +    // Paper start - Configurable speed for water flowing over lava
 +    public int getFlowSpeed(Level level, BlockPos pos) {
 +        if (net.minecraft.core.registries.BuiltInRegistries.FLUID.wrapAsHolder(this.fluid).is(FluidTags.WATER)) {
 +            if (
-+                isLava(level, pos.north(1)) ||
-+                isLava(level, pos.south(1)) ||
-+                isLava(level, pos.west(1)) ||
-+                isLava(level, pos.east(1))
++                isLava(level, pos.north()) ||
++                isLava(level, pos.south()) ||
++                isLava(level, pos.west()) ||
++                isLava(level, pos.east())
 +            ) {
 +                return level.paperConfig().environment.waterOverLavaFlowSpeed;
 +            }
 +        }
 +        return this.fluid.getTickDelay(level);
 +    }
++
 +    private static boolean isLava(Level level, BlockPos pos) {
 +        final FluidState fluidState = level.getFluidIfLoaded(pos);
 +        return fluidState != null && fluidState.is(FluidTags.LAVA);
@@ -32,7 +34,7 @@
  
      @Override
      protected BlockState updateShape(
-@@ -160,7 +_,7 @@
+@@ -164,7 +_,7 @@
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
          if (this.shouldSpreadLiquid(level, pos, state)) {
@@ -41,7 +43,7 @@
          }
      }
  
-@@ -172,14 +_,20 @@
+@@ -176,14 +_,20 @@
                  BlockPos blockPos = pos.relative(direction.getOpposite());
                  if (level.getFluidState(blockPos).is(FluidTags.WATER)) {
                      Block block = level.getFluidState(pos).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;

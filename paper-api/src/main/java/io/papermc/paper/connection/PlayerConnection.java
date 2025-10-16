@@ -10,7 +10,7 @@ public interface PlayerConnection {
     /**
      * Disconnects the player connection.
      * <p>
-     * Note that calling this during connection related events may caused undefined behavior.
+     * Note that calling this during connection related events may cause undefined behavior.
      *
      * @param component disconnect reason
      */

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
-import io.papermc.paper.world.damagesource.FallLocationType;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,6 +22,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -281,7 +281,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @see #getTargetBlockExact(int, org.bukkit.FluidCollisionMode)
      */
     @Nullable
-    public Block getTargetBlockExact(int maxDistance);
+    default Block getTargetBlockExact(int maxDistance) {
+        return this.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
+    }
 
     /**
      * Gets the block that the living entity has targeted.
@@ -314,7 +316,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @see #rayTraceBlocks(double, FluidCollisionMode)
      */
     @Nullable
-    public RayTraceResult rayTraceBlocks(double maxDistance);
+    default RayTraceResult rayTraceBlocks(double maxDistance) {
+        return this.rayTraceBlocks(maxDistance, FluidCollisionMode.NEVER);
+    }
 
     /**
      * Performs a ray trace that provides information on the targeted block.
@@ -399,23 +403,24 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return ticks until arrow leaves
      */
-    public int getArrowCooldown();
+    public @NonNegative int getArrowCooldown();
 
     /**
      * Sets the time in ticks until the next arrow leaves the entity's body.
+     * <p>
+     * A value of 0 will cause the server to re-calculate the time on the next tick.
      *
      * @param ticks time until arrow leaves
      */
-    public void setArrowCooldown(int ticks);
+    public void setArrowCooldown(@NonNegative int ticks);
 
     /**
      * Gets the amount of arrows in an entity's body.
      *
      * @return amount of arrows in body
      */
-    public int getArrowsInBody();
+    public @NonNegative int getArrowsInBody();
 
-    // Paper start
     /**
      * Set the amount of arrows in the entity's body.
      * <p>
@@ -423,10 +428,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param count amount of arrows in entity's body
      */
-    default void setArrowsInBody(final int count) {
+    default void setArrowsInBody(final @NonNegative int count) {
         this.setArrowsInBody(count, false);
     }
-    // Paper end
 
     /**
      * Set the amount of arrows in the entity's body.
@@ -434,54 +438,61 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param count amount of arrows in entity's body
      * @param fireEvent whether to fire the {@link org.bukkit.event.entity.ArrowBodyCountChangeEvent} event
      */
-    void setArrowsInBody(int count, boolean fireEvent); // Paper
+    void setArrowsInBody(@NonNegative int count, boolean fireEvent); // Paper
 
-    // Paper start - Add methods for working with arrows stuck in living entities
     /**
      * Sets the amount of ticks before the next arrow gets removed from the entities body.
      * <p>
      * A value of 0 will cause the server to re-calculate the amount of ticks on the next tick.
      *
      * @param ticks Amount of ticks
+     * @deprecated use {@link #setArrowCooldown(int)}
      */
-    void setNextArrowRemoval(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int ticks);
+    @Deprecated(since = "1.21.10")
+    default void setNextArrowRemoval(@NonNegative int ticks) {
+        this.setArrowCooldown(ticks);
+    }
 
     /**
      * Gets the amount of ticks before the next arrow gets removed from the entities body.
      *
      * @return ticks Amount of ticks
+     * @deprecated use {@link #getArrowCooldown()}
      */
-    int getNextArrowRemoval();
-    // Paper end - Add methods for working with arrows stuck in living entities
+    @Deprecated(since = "1.21.10")
+    default @NonNegative int getNextArrowRemoval() {
+        return this.getArrowCooldown();
+    }
 
-    // Paper start - Bee Stinger API
     /**
      * Gets the time in ticks until the next bee stinger leaves the entity's body.
      *
      * @return ticks until bee stinger leaves
      */
-    public int getBeeStingerCooldown();
+    public @NonNegative int getBeeStingerCooldown();
 
     /**
      * Sets the time in ticks until the next stinger leaves the entity's body.
+     * <p>
+     * A value of 0 will cause the server to re-calculate the time on the next tick.
      *
      * @param ticks time until bee stinger leaves
      */
-    public void setBeeStingerCooldown(int ticks);
+    public void setBeeStingerCooldown(@NonNegative int ticks);
 
     /**
      * Gets the amount of bee stingers in an entity's body.
      *
      * @return amount of bee stingers in body
      */
-    public int getBeeStingersInBody();
+    public @NonNegative int getBeeStingersInBody();
 
     /**
      * Set the amount of bee stingers in the entity's body.
      *
      * @param count amount of bee stingers in entity's body
      */
-    public void setBeeStingersInBody(int count);
+    public void setBeeStingersInBody(@NonNegative int count);
 
     /**
      * Sets the amount of ticks before the next bee stinger gets removed from the entities body.
@@ -489,16 +500,23 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * A value of 0 will cause the server to re-calculate the amount of ticks on the next tick.
      *
      * @param ticks Amount of ticks
+     * @deprecated use {@link #setBeeStingerCooldown(int)}
      */
-    void setNextBeeStingerRemoval(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int ticks);
+    @Deprecated(since = "1.21.10")
+    default void setNextBeeStingerRemoval(@NonNegative int ticks) {
+        this.setBeeStingerCooldown(ticks);
+    }
 
     /**
      * Gets the amount of ticks before the next bee stinger gets removed from the entities body.
      *
      * @return ticks Amount of ticks
+     * @deprecated use {@link #getBeeStingerCooldown()}
      */
-    int getNextBeeStingerRemoval();
-    // Paper end - Stinger API
+    @Deprecated(since = "1.21.10")
+    default @NonNegative int getNextBeeStingerRemoval() {
+        return this.getBeeStingerCooldown();
+    }
 
     /**
      * Returns the living entity's current maximum no damage ticks.
@@ -601,13 +619,14 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    public boolean addPotionEffect(@NotNull PotionEffect effect);
+    default boolean addPotionEffect(@NotNull PotionEffect effect) {
+        return this.addPotionEffect(effect, false);
+    }
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
      * <p>
-     * Only one potion effect can be present for a given {@link
-     * PotionEffectType}.
+     * Only one potion effect can be present for a given {@link PotionEffectType}.
      *
      * @param effect PotionEffect to be added
      * @param force whether conflicting effects should be removed
@@ -954,7 +973,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param memoryKey memory to access
      * @param <T> the type of the return value
-     * @return a instance of the memory section value or null if not present
+     * @return an instance of the memory section value or null if not present
      */
     @Nullable
     <T> T getMemory(@NotNull MemoryKey<T> memoryKey);
@@ -1061,11 +1080,14 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Get the number of arrows stuck in this entity
+     *
      * @return Number of arrows stuck
      * @deprecated use {@link #getArrowsInBody()}
      */
     @Deprecated
-    int getArrowsStuck();
+    default @NonNegative int getArrowsStuck() {
+        return this.getArrowsInBody();
+    }
 
     /**
      * Set the number of arrows stuck in this entity
@@ -1075,21 +1097,30 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * you want to retain exact functionality, pass {@code true} for {@code fireEvent}.</b>
      */
     @Deprecated
-    void setArrowsStuck(int arrows);
+    default void setArrowsStuck(@NonNegative int arrows) {
+        this.setArrowsInBody(arrows, true);
+    }
 
     /**
      * Get the delay (in ticks) before blocking is effective for this entity
      *
      * @return Delay in ticks
+     * @deprecated no longer applicable, check the blocks_attacks component on the shield
      */
-    int getShieldBlockingDelay();
+    @Deprecated(since = "1.21.9")
+    default int getShieldBlockingDelay() {
+        return 5;
+    }
 
     /**
      * Set the delay (in ticks) before blocking is effective for this entity
      *
      * @param delay Delay in ticks
+     * @deprecated no longer applicable, use the blocks_attacks component on the shield
      */
-    void setShieldBlockingDelay(int delay);
+    @Deprecated(since = "1.21.9")
+    default void setShieldBlockingDelay(int delay) {
+    }
 
     /**
      * Retrieves the sideways movement direction of the entity.

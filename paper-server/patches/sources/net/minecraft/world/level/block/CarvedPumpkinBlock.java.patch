@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/block/CarvedPumpkinBlock.java
 +++ b/net/minecraft/world/level/block/CarvedPumpkinBlock.java
-@@ -79,9 +_,14 @@
+@@ -94,6 +_,7 @@
+             CopperGolem copperGolem = EntityType.COPPER_GOLEM.create(level, EntitySpawnReason.TRIGGERED);
+             if (copperGolem != null) {
+                 spawnGolemInWorld(level, blockPatternMatch2, copperGolem, blockPatternMatch2.getBlock(0, 0, 0).getPos());
++                if (!copperGolem.valid) return; // Paper - entityspawnevent - entity was not added to the world so prevent world mutation
+                 this.replaceCopperBlockWithChest(level, blockPatternMatch2);
+                 copperGolem.spawn(this.getWeatherStateFromPattern(blockPatternMatch2));
+             }
+@@ -112,9 +_,22 @@
      }
  
      private static void spawnGolemInWorld(Level level, BlockPattern.BlockPatternMatch patternMatch, Entity golem, BlockPos pos) {
@@ -9,7 +17,15 @@
          golem.snapTo(pos.getX() + 0.5, pos.getY() + 0.05, pos.getZ() + 0.5, 0.0F, 0.0F);
 -        level.addFreshEntity(golem);
 +        // Paper start
-+        if (!level.addFreshEntity(golem, (golem.getType() == EntityType.SNOW_GOLEM) ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_IRONGOLEM)) {
++        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason;
++        if (golem.getType() == net.minecraft.world.entity.EntityType.SNOW_GOLEM) {
++            spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN;
++        } else if (golem.getType() == net.minecraft.world.entity.EntityType.COPPER_GOLEM) {
++            spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_COPPERGOLEM;
++        } else {
++            spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_IRONGOLEM;
++        }
++        if (!level.addFreshEntity(golem, spawnReason)) {
 +            return;
 +        }
 +        // Paper end

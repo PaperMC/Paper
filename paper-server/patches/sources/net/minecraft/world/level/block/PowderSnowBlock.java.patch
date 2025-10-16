@@ -1,18 +1,20 @@
 --- a/net/minecraft/world/level/block/PowderSnowBlock.java
 +++ b/net/minecraft/world/level/block/PowderSnowBlock.java
-@@ -60,6 +_,12 @@
+@@ -60,6 +_,14 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
 +        // Paper start - Add EntityInsideBlockEvent
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) {
-+            entity.getEntityData().markDirty(net.minecraft.world.entity.Entity.DATA_TICKS_FROZEN); // prevent desync on cancelled event
++            if (entity instanceof net.minecraft.server.level.ServerPlayer player) {
++                player.resendPossiblyDesyncedDataValues(java.util.List.of(net.minecraft.world.entity.Entity.DATA_TICKS_FROZEN), player); // prevent desync on cancelled event
++            }
 +            return;
 +        }
 +        // Paper end - Add EntityInsideBlockEvent
          if (!(entity instanceof LivingEntity) || entity.getInBlockState().is(this)) {
              entity.makeStuckInBlock(state, new Vec3(0.9F, 1.5, 0.9F));
-             if (level.isClientSide) {
+             if (level.isClientSide()) {
 @@ -85,8 +_,13 @@
              entity1 -> {
                  if (level instanceof ServerLevel serverLevel

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -149,6 +_,33 @@
+@@ -147,6 +_,33 @@
      public int serverViewDistance;
      private final WorldGenContext worldGenContext;
  
@@ -34,7 +34,7 @@
      public ChunkMap(
          ServerLevel level,
          LevelStorageSource.LevelStorageAccess levelStorageAccess,
-@@ -176,13 +_,19 @@
+@@ -173,13 +_,19 @@
          this.level = level;
          RegistryAccess registryAccess = level.registryAccess();
          long seed = level.getSeed();
@@ -55,8 +55,8 @@
 +        this.chunkGeneratorState = generator.createState(registryAccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, seed, level.spigotConfig); // Spigot
          this.mainThreadExecutor = mainThreadExecutor;
          ConsecutiveExecutor consecutiveExecutor = new ConsecutiveExecutor(dispatcher, "worldgen");
-         this.progressListener = progressListener;
-@@ -213,6 +_,12 @@
+         this.chunkStatusListener = chunkStatusListener;
+@@ -209,6 +_,12 @@
          this.chunksToEagerlySave.add(chunkPos.toLong());
      }
  
@@ -69,7 +69,7 @@
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
      }
-@@ -352,9 +_,9 @@
+@@ -354,9 +_,9 @@
                  }
              );
          stringBuilder.append("Updating:").append(System.lineSeparator());
@@ -81,7 +81,7 @@
          CrashReport crashReport = CrashReport.forThrowable(exception, "Chunk loading");
          CrashReportCategory crashReportCategory = crashReport.addCategory("Chunk loading");
          crashReportCategory.setDetail("Details", details);
-@@ -390,6 +_,7 @@
+@@ -392,6 +_,7 @@
                      holder.setTicketLevel(newLevel);
                  } else {
                      holder = new ChunkHolder(new ChunkPos(chunkPos), newLevel, this.level, this.lightEngine, this::onLevelChange, this);
@@ -89,7 +89,7 @@
                  }
  
                  this.updatingChunkMap.put(chunkPos, holder);
-@@ -418,8 +_,8 @@
+@@ -420,8 +_,8 @@
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
@@ -100,7 +100,7 @@
                  .stream()
                  .filter(ChunkHolder::wasAccessibleSinceLastSave)
                  .peek(ChunkHolder::refreshAccessibility)
-@@ -445,7 +_,7 @@
+@@ -447,7 +_,7 @@
              this.nextChunkSaveTime.clear();
              long millis = Util.getMillis();
  
@@ -109,7 +109,7 @@
                  this.saveChunkIfNeeded(chunkHolder, millis);
              }
          }
-@@ -466,6 +_,7 @@
+@@ -468,6 +_,7 @@
      public boolean hasWork() {
          return this.lightEngine.hasLightWork()
              || !this.pendingUnloads.isEmpty()
@@ -117,7 +117,7 @@
              || !this.updatingChunkMap.isEmpty()
              || this.poiManager.hasWork()
              || !this.toDrop.isEmpty()
-@@ -524,7 +_,11 @@
+@@ -526,7 +_,11 @@
                  this.scheduleUnload(chunkPos, chunkHolder);
              } else {
                  ChunkAccess latestChunk = chunkHolder.getLatestChunk();
@@ -130,9 +130,9 @@
                      if (latestChunk instanceof LevelChunk levelChunk) {
                          levelChunk.setLoaded(false);
                      }
-@@ -538,7 +_,9 @@
+@@ -539,7 +_,9 @@
+                     this.lightEngine.updateChunkStatus(latestChunk.getPos());
                      this.lightEngine.tryScheduleUpdate();
-                     this.progressListener.onStatusChange(latestChunk.getPos(), null);
                      this.nextChunkSaveTime.remove(latestChunk.getPos().toLong());
 -                }
 +                } else if (removed) { // Paper start
@@ -141,7 +141,7 @@
              }
          }, this.unloadQueue::add).whenComplete((_void, error) -> {
              if (error != null) {
-@@ -854,7 +_,7 @@
+@@ -850,7 +_,7 @@
      }
  
      public int size() {
@@ -150,16 +150,7 @@
      }
  
      public net.minecraft.server.level.DistanceManager getDistanceManager() {
-@@ -862,7 +_,7 @@
-     }
- 
-     protected Iterable<ChunkHolder> getChunks() {
--        return Iterables.unmodifiableIterable(this.visibleChunkMap.values());
-+        return Iterables.unmodifiableIterable(ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.level)); // Paper
-     }
- 
-     void dumpChunks(Writer writer) throws IOException {
-@@ -885,10 +_,10 @@
+@@ -877,10 +_,10 @@
              .addColumn("fluid_ticks")
              .build(writer);
  
@@ -173,7 +164,7 @@
              Optional<ChunkAccess> optional = Optional.ofNullable(chunkHolder.getLatestChunk());
              Optional<LevelChunk> optional1 = optional.flatMap(chunk -> chunk instanceof LevelChunk ? Optional.of((LevelChunk)chunk) : Optional.empty());
              csvOutput.writeRow(
-@@ -928,11 +_,13 @@
+@@ -920,11 +_,13 @@
      }
  
      private CompletableFuture<Optional<CompoundTag>> readChunk(ChunkPos pos) {
@@ -190,7 +181,7 @@
      }
  
      void collectSpawningChunks(List<LevelChunk> output) {
-@@ -942,7 +_,7 @@
+@@ -934,7 +_,7 @@
              ChunkHolder chunkHolder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
              if (chunkHolder != null) {
                  LevelChunk tickingChunk = chunkHolder.getTickingChunk();
@@ -199,7 +190,7 @@
                      output.add(tickingChunk);
                  }
              }
-@@ -962,13 +_,35 @@
+@@ -954,13 +_,35 @@
      }
  
      public boolean anyPlayerCloseEnoughForSpawning(ChunkPos chunkPos) {
@@ -237,7 +228,7 @@
                  return true;
              }
          }
-@@ -984,7 +_,7 @@
+@@ -976,7 +_,7 @@
              Builder<ServerPlayer> builder = ImmutableList.builder();
  
              for (ServerPlayer serverPlayer : this.playerMap.getAllPlayers()) {
@@ -246,7 +237,7 @@
                      builder.add(serverPlayer);
                  }
              }
-@@ -993,12 +_,12 @@
+@@ -985,12 +_,12 @@
          }
      }
  
@@ -261,7 +252,7 @@
          }
      }
  
-@@ -1120,9 +_,19 @@
+@@ -1112,9 +_,19 @@
      }
  
      public void addEntity(Entity entity) {
@@ -273,7 +264,7 @@
 +            return;
 +        }
 +        // Paper end - ignore and warn about illegal addEntity calls instead of crashing server
-+        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Paper - Fire PlayerJoinEvent when Player is actually ready; Delay adding to tracker until after list packets
++        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).suppressTrackerForLogin) return; // Paper - Fire PlayerJoinEvent when Player is actually ready; Delay adding to tracker until after list packets
          if (!(entity instanceof EnderDragonPart)) {
              EntityType<?> type = entity.getType();
              int i = type.clientTrackingRange() * 16;
@@ -281,7 +272,7 @@
              if (i != 0) {
                  int updateInterval = type.updateInterval();
                  if (this.entityMap.containsKey(entity.getId())) {
-@@ -1146,6 +_,7 @@
+@@ -1138,6 +_,7 @@
      }
  
      protected void removeEntity(Entity entity) {
@@ -289,7 +280,7 @@
          if (entity instanceof ServerPlayer serverPlayer) {
              this.updatePlayerStatus(serverPlayer, false);
  
-@@ -1278,10 +_,10 @@
+@@ -1299,10 +_,10 @@
          final Entity entity;
          private final int range;
          SectionPos lastSectionPos;
@@ -297,19 +288,20 @@
 +        public final Set<ServerPlayerConnection> seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
  
          public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
--            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this::broadcast, this::broadcastIgnorePlayers);
-+            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this::broadcast, this::broadcastIgnorePlayers, this.seenBy); // Paper
+-            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this);
++            this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this, this.seenBy); // Paper
              this.entity = entity;
              this.range = range;
              this.lastSectionPos = SectionPos.of(entity);
-@@ -1325,24 +_,47 @@
+@@ -1349,6 +_,7 @@
          }
  
          public void removePlayer(ServerPlayer player) {
 +            org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
-             }
+                 if (this.seenBy.isEmpty()) {
+@@ -1358,23 +_,45 @@
          }
  
          public void updatePlayer(ServerPlayer player) {
@@ -350,12 +342,17 @@
 +                        // Paper start - entity tracking events
 +                        if (io.papermc.paper.event.player.PlayerTrackEntityEvent.getHandlerList().getRegisteredListeners().length == 0 || new io.papermc.paper.event.player.PlayerTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity()).callEvent()) {
                          this.serverEntity.addPairing(player);
+                         if (this.seenBy.size() == 1) {
+                             ChunkMap.this.level.debugSynchronizers().registerEntity(this.entity);
+                         }
+ 
+                         ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
 +                        }
 +                        // Paper end - entity tracking events
                      }
-                 } else if (this.seenBy.remove(player.connection)) {
-                     this.serverEntity.removePairing(player);
-@@ -1359,6 +_,7 @@
+                 } else {
+                     this.removePlayer(player);
+@@ -1391,6 +_,7 @@
  
              for (Entity entity : this.entity.getIndirectPassengers()) {
                  int i1 = entity.getType().clientTrackingRange() * 16;

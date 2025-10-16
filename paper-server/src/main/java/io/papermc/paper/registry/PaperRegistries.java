@@ -101,7 +101,6 @@ public final class PaperRegistries {
     static {
         REGISTRY_ENTRIES = List.of(
             // Start generate - RegistryDefinitions
-            // @GeneratedFrom 1.21.8
             // built-in
             start(Registries.GAME_EVENT, RegistryKey.GAME_EVENT).craft(GameEvent.class, CraftGameEvent::new).writable(PaperGameEventRegistryEntry.PaperBuilder::new),
             start(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE).craft(StructureType.class, CraftStructureType::new).build(),

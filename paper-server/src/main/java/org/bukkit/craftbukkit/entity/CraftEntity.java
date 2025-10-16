@@ -7,15 +7,16 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -74,8 +75,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
-
-import net.md_5.bungee.api.chat.BaseComponent; // Spigot
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -333,7 +332,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
             // Prevent teleportation to an other world during world generation
             Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
-            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getPitch(), location.getYaw(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
+            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getYaw(), location.getPitch(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
             return true;
         }
 
@@ -520,7 +519,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(passenger != null, "Entity passenger cannot be null");
         Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
 
-        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true);
+        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true, true);
     }
 
     @Override
@@ -960,10 +959,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setPose(Pose pose, boolean fixed) {
-        Preconditions.checkNotNull(pose, "Pose cannot be null");
+        Preconditions.checkArgument(pose != null, "pose cannot be null");
+        this.setPose0(net.minecraft.world.entity.Pose.values()[pose.ordinal()], fixed);
+    }
+
+    public void setPose0(net.minecraft.world.entity.Pose pose, boolean fixed) {
         final Entity handle = this.getHandle();
         handle.fixedPose = false;
-        handle.setPose(net.minecraft.world.entity.Pose.values()[pose.ordinal()]);
+        handle.setPose(pose);
         handle.fixedPose = fixed;
     }
 

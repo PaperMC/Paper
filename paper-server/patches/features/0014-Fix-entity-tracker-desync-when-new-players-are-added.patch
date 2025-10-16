@@ -1,0 +1,105 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 20 Feb 2024 18:24:16 -0800
+Subject: [PATCH] Fix entity tracker desync when new players are added to the
+ tracker
+
+The delta position packet instructs the client to update
+the entity position by a position difference. However, this position
+difference is relative to the last position in the entity tracker
+state, not the last position which has been sent to the player. As
+a result, if the last position the player has recorded is different
+than the one stored in the entity tracker (which occurs when a new
+player is added to an existing entity tracker state) then the sent
+position difference will cause a position desync for the client.
+
+We can resolve this problem by either tracking the last position
+sent per-player, or by simply resetting the last sent position
+in the entity tracker state every time a new player is added.
+Resetting the last sent position every time a new player is
+added to the tracker is just easier to do, so that is what
+this patch does.
+
+This patch also fixes entities appearing to disappear when
+teleporting to players by changing the initial position
+in the spawn packet to the entities current tracking position.
+When teleporting, the spawn packet will contain the old position
+which is most likely in an unloaded chunk - which means that the
+client will not tick the entity and thus not lerp the entity
+from its old position to its new position.
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+index 2a86ca1de6920017be6cd4a3a5251e892067f07c..f571ff64ae1007f8f0632febd2dcca7056a29b3c 100644
+--- a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+@@ -38,9 +38,11 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
+         this(
+             entity.getId(),
+             entity.getUUID(),
+-            serverEntity.getPositionBase().x(),
+-            serverEntity.getPositionBase().y(),
+-            serverEntity.getPositionBase().z(),
++            // Paper start - fix entity tracker desync
++            entity.trackingPosition().x(),
++            entity.trackingPosition().y(),
++            entity.trackingPosition().z(),
++            // Paper end - fix entity tracker desync
+             serverEntity.getLastSentXRot(),
+             serverEntity.getLastSentYRot(),
+             entity.getType(),
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 032d164284ebc8fd4cfbc96f1381e8627edd1605..30c26d1f79621ac89d5dfd4652e627062af57956 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1326,6 +1326,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                         ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
+                         }
+                         // Paper end - entity tracking events
++                        this.serverEntity.onPlayerAdd(); // Paper - fix desync when a player is added to the tracker
+                     }
+                 } else {
+                     this.removePlayer(player);
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index f019f1330f9f1e6aa98ef3f914833769cbadea16..638432a2e6506d3db6a25c068a33eeafb13cf0d6 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -88,6 +88,13 @@ public class ServerEntity {
+         this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
+     }
+ 
++    // Paper start - fix desync when a player is added to the tracker
++    private boolean forceStateResync;
++    public void onPlayerAdd() {
++        this.forceStateResync = true;
++    }
++    // Paper end - fix desync when a player is added to the tracker
++
+     public void sendChanges() {
+         // Paper start - optimise collisions
+         if (((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)this.entity).moonrise$isHardColliding()) {
+@@ -129,7 +136,7 @@ public class ServerEntity {
+             this.sendDirtyEntityData();
+         }
+ 
+-        if (this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) {
++        if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
+             byte b = Mth.packDegrees(this.entity.getYRot());
+             byte b1 = Mth.packDegrees(this.entity.getXRot());
+             boolean flag = Math.abs(b - this.lastSentYRot) >= 1 || Math.abs(b1 - this.lastSentXRot) >= 1;
+@@ -164,7 +171,7 @@ public class ServerEntity {
+                 long l1 = this.positionCodec.encodeY(vec3);
+                 long l2 = this.positionCodec.encodeZ(vec3);
+                 boolean flag5 = l < -32768L || l > 32767L || l1 < -32768L || l1 > 32767L || l2 < -32768L || l2 > 32767L;
+-                if (this.entity.getRequiresPrecisePosition()
++                if (this.forceStateResync || this.entity.getRequiresPrecisePosition() // Paper - fix desync when a player is added to the tracker
+                     || flag5
+                     || this.teleportDelay > 400
+                     || this.wasRiding
+@@ -233,6 +240,7 @@ public class ServerEntity {
+             }
+ 
+             this.entity.hasImpulse = false;
++            this.forceStateResync = false; // Paper - fix desync when a player is added to the tracker
+         }
+ 
+         this.tickCount++;

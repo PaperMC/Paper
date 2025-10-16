@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -82,6 +_,14 @@
+@@ -90,6 +_,14 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.ticks.ContainerSingleItem;
  
@@ -15,7 +15,7 @@
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
-@@ -115,6 +_,7 @@
+@@ -125,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      public GoalSelector goalSelector;
@@ -23,16 +23,16 @@
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -129,6 +_,8 @@
+@@ -139,6 +_,8 @@
      private Leashable.LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
 +    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
  
-     protected Mob(EntityType<? extends Mob> entityType, Level level) {
-         super(entityType, level);
-@@ -145,6 +_,12 @@
+     protected Mob(EntityType<? extends Mob> type, Level level) {
+         super(type, level);
+@@ -155,6 +_,12 @@
          }
      }
  
@@ -45,7 +45,7 @@
      protected void registerGoals() {
      }
  
-@@ -225,7 +_,39 @@
+@@ -235,7 +_,39 @@
      }
  
      public void setTarget(@Nullable LivingEntity target) {
@@ -85,7 +85,7 @@
      }
  
      @Override
-@@ -365,13 +_,27 @@
+@@ -375,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
@@ -115,16 +115,21 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -383,6 +_,8 @@
+@@ -393,6 +_,13 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
 +        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
-+        this.despawnInPeacefulOverride = input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - allow changing despawnInPeaceful
++        // Paper start - allow changing despawnInPeaceful
++        this.despawnInPeacefulOverride = readDespawnInPeacefulOverride(input);
++    }
++    public static net.kyori.adventure.util.TriState readDespawnInPeacefulOverride(ValueInput input) {
++        return input.read("Paper.DespawnInPeacefulOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET);
++        // Paper end - allow changing despawnInPeaceful
      }
  
      @Override
-@@ -446,6 +_,11 @@
+@@ -456,6 +_,11 @@
                      && !itemEntity.getItem().isEmpty()
                      && !itemEntity.hasPickUpDelay()
                      && this.wantsToPickUp(serverLevel, itemEntity.getItem())) {
@@ -136,7 +141,7 @@
                      this.pickUpItem(serverLevel, itemEntity);
                  }
              }
-@@ -460,18 +_,24 @@
+@@ -470,18 +_,24 @@
  
      protected void pickUpItem(ServerLevel level, ItemEntity entity) {
          ItemStack item = entity.getItem();
@@ -163,7 +168,7 @@
          EquipmentSlot equipmentSlotForItem = this.getEquipmentSlotForItem(stack);
          if (!this.isEquippableInSlot(stack, equipmentSlotForItem)) {
              return ItemStack.EMPTY;
-@@ -484,10 +_,18 @@
+@@ -494,10 +_,18 @@
                  canReplaceCurrentItem = itemBySlot.isEmpty();
              }
  
@@ -183,25 +188,21 @@
                  }
  
                  ItemStack itemStack = equipmentSlotForItem.limit(stack);
-@@ -601,29 +_,42 @@
+@@ -611,25 +_,38 @@
          return this.isPassenger();
      }
  
 +    // Paper start - allow changing despawnInPeaceful
-+    public final boolean shouldActuallyDespawnInPeaceful() {
-+        return this.despawnInPeacefulOverride.toBooleanOrElse(this.shouldDespawnInPeaceful());
++    public final boolean shouldDespawnInPeaceful() {
++        return this.despawnInPeacefulOverride.toBooleanOrElse(!this.getType().isTypeAllowedInPeaceful());
 +    }
 +    // Paper end - allow changing despawnInPeaceful
 +
-     protected boolean shouldDespawnInPeaceful() {
-         return false;
-     }
- 
      @Override
      public void checkDespawn() {
--        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
 -            this.discard();
-+        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldActuallyDespawnInPeaceful()) { //Paper - allow changing despawnInPeaceful
++        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) { // Paper - allow changing despawnInPeaceful
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Entity nearestPlayer = this.level().getNearestPlayer(this, -1.0);
@@ -240,7 +241,7 @@
                      this.noActionTime = 0;
                  }
              }
-@@ -635,6 +_,15 @@
+@@ -641,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
          this.noActionTime++;
@@ -256,7 +257,7 @@
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("sensing");
          this.sensing.tick();
-@@ -814,14 +_,69 @@
+@@ -815,14 +_,69 @@
              public boolean stillValid(Player player) {
                  return player.getVehicle() == Mob.this || player.canInteractWithEntity(Mob.this, 4.0);
              }
@@ -326,7 +327,7 @@
              ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
              float f = this.dropChances.byEquipment(equipmentSlot);
              if (f != 0.0F) {
-@@ -841,7 +_,13 @@
+@@ -842,7 +_,13 @@
                      }
  
                      this.spawnAtLocation(level, itemBySlot);
@@ -340,7 +341,7 @@
                  }
              }
          }
-@@ -865,7 +_,9 @@
+@@ -866,7 +_,9 @@
                      set.add(equipmentSlot);
                  } else if (this.dropChances.isPreserved(equipmentSlot)) {
                      this.setItemSlot(equipmentSlot, ItemStack.EMPTY);
@@ -350,7 +351,7 @@
                  }
              }
          }
-@@ -1147,6 +_,21 @@
+@@ -1161,6 +_,21 @@
      public <T extends Mob> T convertTo(
          EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
      ) {
@@ -372,7 +373,7 @@
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1155,13 +_,23 @@
+@@ -1169,13 +_,23 @@
                  return null;
              } else {
                  conversionParams.type().convert(this, mob, conversionParams);
@@ -399,29 +400,29 @@
                  }
  
                  return mob;
-@@ -1171,7 +_,18 @@
+@@ -1185,7 +_,18 @@
  
      @Nullable
-     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion) {
--        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion);
+     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion) {
+-        return this.convertTo(entityType, conversionParams, EntitySpawnReason.CONVERSION, afterConversion);
 +        // Paper start - entity zap event - allow cancellation of conversion post creation
-+        return this.convertTo(entityType, coversionParams, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.convertTo(entityType, conversionParams, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+        return this.convertTo(entityType, coversionParams, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        return this.convertTo(entityType, conversionParams, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion, transformReason, creatureSpawnReason);
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        return this.convertTo(entityType, conversionParams, EntitySpawnReason.CONVERSION, afterConversion, transformReason, creatureSpawnReason);
 +        // Paper end - entity zap event - allow cancellation of conversion post creation
      }
  
      @Nullable
-@@ -1213,7 +_,17 @@
-     public boolean startRiding(Entity entity, boolean force) {
-         boolean flag = super.startRiding(entity, force);
+@@ -1227,7 +_,17 @@
+     public boolean startRiding(Entity entity, boolean force, boolean triggerEvents) {
+         boolean flag = super.startRiding(entity, force, triggerEvents);
          if (flag && this.isLeashed()) {
 -            this.dropLeash();
 +            // Paper start - Expand EntityUnleashEvent
@@ -438,9 +439,9 @@
          }
  
          return flag;
-@@ -1296,7 +_,7 @@
-             float knockback = this.getKnockback(source, damageSource);
-             if (knockback > 0.0F && source instanceof LivingEntity livingEntity) {
+@@ -1310,7 +_,7 @@
+             float knockback = this.getKnockback(target, damageSource);
+             if (knockback > 0.0F && target instanceof LivingEntity livingEntity) {
                  livingEntity.knockback(
 -                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
 +                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // CraftBukkit // Paper - knockback events

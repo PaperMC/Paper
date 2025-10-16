@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 19 Dec 2021 09:13:41 -0800
+Subject: [PATCH] Only write chunk data to disk if it serializes without
+ throwing
+
+This ensures at least a valid version of the chunk exists
+on disk, even if outdated
+
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 984db72272d552c7210bd6f437ea88694ddd2828..dea2823a9d1d69dcb0a4759d8ea9b3015ede20dc 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -24,6 +24,7 @@ import org.slf4j.Logger;
+ 
+ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile { // Paper - rewrite chunk system
+     private static final Logger LOGGER = LogUtils.getLogger();
++    public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
+     private static final int SECTOR_BYTES = 4096;
+     @VisibleForTesting
+     protected static final int SECTOR_INTS = 1024;
+@@ -455,6 +456,24 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+             this.pos = pos;
+         }
+ 
++        // Paper start - don't write garbage data to disk if writing serialization fails
++        @Override
++        public void write(final int b) {
++            if (this.count > MAX_CHUNK_SIZE) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + this.count);
++            }
++            super.write(b);
++        }
++
++        @Override
++        public void write(final byte[] b, final int off, final int len) {
++            if (this.count + len > MAX_CHUNK_SIZE) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + (this.count + len));
++            }
++            super.write(b, off, len);
++        }
++        // Paper end - don't write garbage data to disk if writing serialization fails
++
+         @Override
+         public void close() throws IOException {
+             ByteBuffer byteBuffer = ByteBuffer.wrap(this.buf, 0, this.count);
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index 283f73e633e32585530458545bf54fc6a644c830..5133590b1a8c7035a949b85ceefa904b583e4e7f 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -16,6 +16,7 @@ import net.minecraft.util.ExceptionCollector;
+ import net.minecraft.world.level.ChunkPos;
+ 
+ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
+     public static final String ANVIL_EXTENSION = ".mca";
+     private static final int MAX_CACHE_SIZE = 256;
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
+@@ -120,11 +121,24 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         // (and, the regionfile parameter is unused for writing until the write call)
+         final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData writeData = ((ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile)regionFile).moonrise$startWrite(compound, pos);
+ 
++        try { // Paper - implement RegionFileSizeException
+         try {
+             NbtIo.write(compound, writeData.output());
+         } finally {
+             writeData.output().close();
+         }
++        // Paper start - implement RegionFileSizeException
++        } catch (final RegionFileSizeException ex) {
++            // note: it's OK if close() is called, as close() here will not issue a write to the RegionFile
++            // see startWrite
++            final int maxSize = RegionFile.MAX_CHUNK_SIZE / (1024 * 1024);
++            LOGGER.error("Chunk at (" + chunkX + "," + chunkZ + ") in regionfile '" + regionFile.getPath().toString() + "' exceeds max size of " + maxSize + "MiB, it has been deleted from disk.");
++            return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData(
++                compound, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData.WriteResult.DELETE,
++                null, null
++            );
++        }
++        // Paper end - implement RegionFileSizeException
+ 
+         return writeData;
+     }
+@@ -328,9 +342,17 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+             if (chunkData == null) {
+                 regionFile.clear(chunkPos);
+             } else {
+-                try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
++            DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos); // Paper - Only write if successful
++            try { // Paper - Only write if successful
+                     NbtIo.write(chunkData, chunkDataOutputStream);
+                     regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
++                // Paper start - don't write garbage data to disk if writing serialization fails
++                chunkDataOutputStream.close();
++            } catch (final RegionFileSizeException ex) {
++                regionFile.clear(chunkPos);
++                final int maxSize = RegionFile.MAX_CHUNK_SIZE / (1024 * 1024);
++                LOGGER.error("Chunk at (" + chunkPos.x + "," + chunkPos.z + ") in regionfile '" + regionFile.getPath().toString() + "' exceeds max size of " + maxSize + "MiB, it has been deleted from disk.");
++                // Paper end - don't write garbage data to disk if writing serialization fails
+                 }
+             }
+         }
+@@ -373,4 +395,13 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+     public RegionStorageInfo info() {
+         return this.info;
+     }
++
++    // Paper start - don't write garbage data to disk if writing serialization fails
++    public static final class RegionFileSizeException extends RuntimeException {
++
++        public RegionFileSizeException(final String message) {
++            super(message);
++        }
++    }
++    // Paper end - don't write garbage data to disk if writing serialization fails
+ }

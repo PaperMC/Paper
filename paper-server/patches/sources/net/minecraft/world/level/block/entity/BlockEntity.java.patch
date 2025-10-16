@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -35,6 +_,10 @@
+@@ -37,6 +_,10 @@
  import org.slf4j.Logger;
  
- public abstract class BlockEntity {
+ public abstract class BlockEntity implements DebugValueSource {
 +    // CraftBukkit start - data containers
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
 +    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
@@ -11,7 +11,7 @@
      private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
      private static final Logger LOGGER = LogUtils.getLogger();
      private final BlockEntityType<?> type;
-@@ -50,6 +_,7 @@
+@@ -52,6 +_,7 @@
          this.worldPosition = pos.immutable();
          this.validateBlockState(blockState);
          this.blockState = blockState;
@@ -19,7 +19,7 @@
      }
  
      private void validateBlockState(BlockState state) {
-@@ -66,6 +_,7 @@
+@@ -68,6 +_,7 @@
          int intOr = tag.getIntOr("x", 0);
          int intOr1 = tag.getIntOr("y", 0);
          int intOr2 = tag.getIntOr("z", 0);
@@ -27,7 +27,7 @@
          int sectionPosCoord = SectionPos.blockToSectionCoord(intOr);
          int sectionPosCoord1 = SectionPos.blockToSectionCoord(intOr2);
          if (sectionPosCoord != chunkPos.x || sectionPosCoord1 != chunkPos.z) {
-@@ -73,6 +_,7 @@
+@@ -75,6 +_,7 @@
              intOr = chunkPos.getBlockX(SectionPos.sectionRelative(intOr));
              intOr2 = chunkPos.getBlockZ(SectionPos.sectionRelative(intOr2));
          }
@@ -35,7 +35,7 @@
  
          return new BlockPos(intOr, intOr1, intOr2);
      }
-@@ -91,6 +_,12 @@
+@@ -93,6 +_,12 @@
      }
  
      protected void loadAdditional(ValueInput input) {
@@ -48,7 +48,7 @@
      }
  
      public final void loadWithComponents(ValueInput input) {
-@@ -140,6 +_,11 @@
+@@ -142,6 +_,11 @@
      public void saveWithoutMetadata(ValueOutput output) {
          this.saveAdditional(output);
          output.store("components", DataComponentMap.CODEC, this.components);
@@ -60,7 +60,7 @@
      }
  
      public final CompoundTag saveCustomOnly(HolderLookup.Provider registries) {
-@@ -155,6 +_,11 @@
+@@ -157,6 +_,11 @@
  
      public void saveCustomOnly(ValueOutput output) {
          this.saveAdditional(output);
@@ -72,7 +72,7 @@
      }
  
      public void saveId(ValueOutput output) {
-@@ -287,6 +_,12 @@
+@@ -289,6 +_,12 @@
      }
  
      public final void applyComponents(DataComponentMap components, DataComponentPatch patch) {
@@ -85,7 +85,7 @@
          final Set<DataComponentType<?>> set = new HashSet<>();
          set.add(DataComponents.BLOCK_ENTITY_DATA);
          set.add(DataComponents.BLOCK_STATE);
-@@ -307,6 +_,10 @@
+@@ -309,6 +_,10 @@
          });
          DataComponentPatch dataComponentPatch = patch.forget(set::contains);
          this.components = dataComponentPatch.split().added();
@@ -96,17 +96,17 @@
      }
  
      protected void collectImplicitComponents(DataComponentMap.Builder components) {
-@@ -339,6 +_,27 @@
-     public ProblemReporter.PathElement problemPath() {
-         return new BlockEntity.BlockEntityPathElement(this);
+@@ -345,6 +_,27 @@
+     @Override
+     public void registerDebugValues(ServerLevel level, DebugValueSource.Registration registrar) {
      }
 +
 +    // CraftBukkit start - add method
-+    public org.bukkit.inventory.InventoryHolder getOwner() {
++    public @Nullable org.bukkit.inventory.InventoryHolder getOwner() {
 +        return getOwner(true);
 +    }
 +
-+    public org.bukkit.inventory.InventoryHolder getOwner(boolean useSnapshot) {
++    public @Nullable org.bukkit.inventory.InventoryHolder getOwner(boolean useSnapshot) {
 +        if (this.level == null) return null;
 +        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition);
 +        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper

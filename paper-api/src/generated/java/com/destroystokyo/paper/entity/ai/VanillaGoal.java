@@ -1,8 +1,8 @@
 package com.destroystokyo.paper.entity.ai;
 
 import com.destroystokyo.paper.entity.RangedEntity;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.entity.SchoolableFish;
-import io.papermc.paper.generated.GeneratedFrom;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
@@ -68,7 +68,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> HORSE_RANDOM_STAND = create("horse_random_stand", AbstractHorse.class);
 
