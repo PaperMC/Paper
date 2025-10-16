@@ -3,6 +3,7 @@ package com.destroystokyo.paper.entity;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -56,8 +57,26 @@ public interface Pathfinder {
      *
      * @param target the Entity to navigate to
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
+     * 
+     * @deprecated Use {@link #findPath(Entity)} instead.
      */
+    @Deprecated(forRemoval = true)
     @Nullable PathResult findPath(LivingEntity target);
+
+    /**
+     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * but does not set it as the current target.
+     * Useful for calculating what would happen before setting it.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
+     */
+    @Nullable PathResult findPath(Entity target);
 
     /**
      * Calculates a destination for the Entity to navigate to, and sets it with default speed
