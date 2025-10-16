@@ -112,7 +112,7 @@ public interface Pathfinder {
      * @return If the pathfinding was successfully started
      */
     default boolean moveTo(LivingEntity target) {
-        return this.moveTo((Entity)target, 1);
+        return this.moveTo(target, 1);
     }
 
     /**
