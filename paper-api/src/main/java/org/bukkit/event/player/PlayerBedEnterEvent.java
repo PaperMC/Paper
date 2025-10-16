@@ -139,7 +139,10 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          * <p>
          * Entering the bed is prevented and if {@link World#isBedWorks()} is
          * {@code false} then the bed explodes.
+         *
+         * @deprecated TODO - snapshot - no longer exists in vanilla
          */
+        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_HERE,
         /**
          * Entering the bed is prevented due to it not being night nor
@@ -148,7 +151,10 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          * If the event is forcefully allowed during daytime, the player will
          * enter the bed (and set its bed location), but might get immediately
          * thrown out again.
+         *
+         * @deprecated TODO - snapshot - no longer exists in vanilla
          */
+        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_NOW,
         /**
          * Entering the bed is prevented due to the player being too far away.

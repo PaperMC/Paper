@@ -23,7 +23,7 @@
          }
  
          this.resendOffersToTradingPlayer();
-@@ -456,7 +_,12 @@
+@@ -451,7 +_,12 @@
          int i = 2 - this.numberOfRestocksToday;
          if (i > 0) {
              for (MerchantOffer merchantOffer : this.getOffers()) {
@@ -37,7 +37,7 @@
              }
          }
  
-@@ -477,6 +_,7 @@
+@@ -472,6 +_,7 @@
          int playerReputation = this.getPlayerReputation(player);
          if (playerReputation != 0) {
              for (MerchantOffer merchantOffer : this.getOffers()) {
@@ -45,7 +45,7 @@
                  merchantOffer.addToSpecialPriceDiff(-Mth.floor(playerReputation * merchantOffer.getPriceMultiplier()));
              }
          }
-@@ -486,6 +_,7 @@
+@@ -481,6 +_,7 @@
              int amplifier = effect.getAmplifier();
  
              for (MerchantOffer merchantOffer1 : this.getOffers()) {
@@ -53,7 +53,7 @@
                  double d = 0.3 + 0.0625 * amplifier;
                  int i = (int)Math.floor(d * merchantOffer1.getBaseCostA().getCount());
                  merchantOffer1.addToSpecialPriceDiff(-Math.max(i, 1));
-@@ -594,7 +_,7 @@
+@@ -589,7 +_,7 @@
          }
  
          if (offer.shouldRewardExp()) {
@@ -62,7 +62,7 @@
          }
      }
  
-@@ -612,7 +_,7 @@
+@@ -607,7 +_,7 @@
  
      @Override
      public void die(DamageSource damageSource) {
@@ -71,7 +71,16 @@
          Entity entity = damageSource.getEntity();
          if (entity != null) {
              this.tellWitnessesThatIWasMurdered(entity);
-@@ -780,12 +_,19 @@
+@@ -706,7 +_,7 @@
+         return VillagerData.canLevelUp(level) && this.villagerXp >= VillagerData.getMaxXpPerLevel(level);
+     }
+ 
+-    private void increaseMerchantCareer(ServerLevel serverLevel) {
++    public void increaseMerchantCareer(ServerLevel serverLevel) { // Paper - public
+         this.setVillagerData(this.getVillagerData().withLevel(this.getVillagerData().level() + 1));
+         this.updateTrades(serverLevel);
+     }
+@@ -775,12 +_,19 @@
      @Override
      public void thunderHit(ServerLevel level, LightningBolt lightning) {
          if (level.getDifficulty() != Difficulty.PEACEFUL) {
@@ -93,10 +102,10 @@
              if (witch == null) {
                  super.thunderHit(level, lightning);
              }
-@@ -825,6 +_,12 @@
+@@ -820,6 +_,12 @@
  
      @Override
-     protected void updateTrades() {
+     protected void updateTrades(ServerLevel level) {
 +        // Paper start - More vanilla friendly methods to update trades
 +        this.updateTrades(TRADES_PER_LEVEL);
 +    }
@@ -106,14 +115,15 @@
          VillagerData villagerData = this.getVillagerData();
          ResourceKey<VillagerProfession> resourceKey = villagerData.profession().unwrapKey().orElse(null);
          if (resourceKey != null) {
-@@ -840,13 +_,15 @@
+@@ -835,13 +_,15 @@
                  VillagerTrades.ItemListing[] itemListings = map1.get(villagerData.level());
                  if (itemListings != null) {
                      MerchantOffers offers = this.getOffers();
--                    this.addOffersFromItemListings(offers, itemListings, 2);
-+                    this.addOffersFromItemListings(offers, itemListings, amount); // Paper - More vanilla friendly methods to update trades
+-                    this.addOffersFromItemListings(level, offers, itemListings, 2);
++                    this.addOffersFromItemListings((net.minecraft.server.level.ServerLevel) this.level(), offers, itemListings, amount); // Paper - More vanilla friendly methods to update trades
                      if (SharedConstants.DEBUG_UNLOCK_ALL_TRADES && villagerData.level() < map1.size()) {
-                         this.increaseMerchantCareer();
+-                        this.increaseMerchantCareer(level);
++                        this.increaseMerchantCareer((net.minecraft.server.level.ServerLevel) this.level());
                      }
 +                    return true; // Paper - More vanilla friendly methods to update trades
                  }
@@ -123,7 +133,7 @@
      }
  
      public void gossip(ServerLevel level, Villager target, long gameTime) {
-@@ -875,7 +_,7 @@
+@@ -870,7 +_,7 @@
              List<Villager> entitiesOfClass = level.getEntitiesOfClass(Villager.class, aabb);
              List<Villager> list = entitiesOfClass.stream().filter(villager -> villager.wantsToSpawnGolem(gameTime)).limit(5L).toList();
              if (list.size() >= minVillagerAmount) {
@@ -132,7 +142,7 @@
                          EntityType.IRON_GOLEM,
                          EntitySpawnReason.MOB_SUMMONED,
                          level,
-@@ -884,9 +_,11 @@
+@@ -879,9 +_,11 @@
                          8,
                          6,
                          SpawnUtil.Strategy.LEGACY_IRON_GOLEM,

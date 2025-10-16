@@ -135,6 +135,9 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         map.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
         map.put(net.minecraft.world.entity.animal.coppergolem.CopperGolem.class, CopperGolem.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.AbstractNautilus.class, AbstractNautilus.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.Nautilus.class, Nautilus.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.ZombieNautilus.class, ZombieNautilus.class);
         // End generate - MobGoalHelper#BUKKIT_BRIDGE
         //</editor-fold>
     });

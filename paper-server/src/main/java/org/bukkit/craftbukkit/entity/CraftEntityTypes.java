@@ -128,6 +128,7 @@ import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Marker;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.MushroomCow;
+import org.bukkit.entity.Nautilus;
 import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.OminousItemSpawner;
 import org.bukkit.entity.Painting;
@@ -184,6 +185,7 @@ import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zoglin;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.ZombieHorse;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.entity.boat.AcaciaBoat;
 import org.bukkit.entity.boat.AcaciaChestBoat;
@@ -358,6 +360,8 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.HAPPY_GHAST, HappyGhast.class, CraftHappyGhast::new, createLiving(net.minecraft.world.entity.EntityType.HAPPY_GHAST)));
         register(new EntityTypeData<>(EntityType.COPPER_GOLEM, CopperGolem.class, CraftCopperGolem::new, createLiving(net.minecraft.world.entity.EntityType.COPPER_GOLEM)));
         register(new EntityTypeData<>(EntityType.MANNEQUIN, Mannequin.class, CraftMannequin::new, createLiving(net.minecraft.world.entity.EntityType.MANNEQUIN)));
+        register(new EntityTypeData<>(EntityType.NAUTILUS, Nautilus.class, CraftNautilus::new, createLiving(net.minecraft.world.entity.EntityType.NAUTILUS)));
+        register(new EntityTypeData<>(EntityType.ZOMBIE_NAUTILUS, ZombieNautilus.class, CraftZombieNautilus::new, createLiving(net.minecraft.world.entity.EntityType.ZOMBIE_NAUTILUS)));
 
         Function<SpawnData, net.minecraft.world.entity.boss.enderdragon.EnderDragon> dragonFunction = createLiving(net.minecraft.world.entity.EntityType.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {

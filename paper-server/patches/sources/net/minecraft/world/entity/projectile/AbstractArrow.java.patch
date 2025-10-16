@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -84,7 +_,14 @@
+@@ -87,7 +_,14 @@
      protected AbstractArrow(
          EntityType<? extends AbstractArrow> type, double x, double y, double z, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon
      ) {
@@ -15,7 +15,7 @@
          this.pickupItemStack = pickupItemStack.copy();
          this.applyComponentsFromItemStack(pickupItemStack);
          Unit unit = pickupItemStack.remove(DataComponents.INTANGIBLE_PROJECTILE);
-@@ -109,8 +_,8 @@
+@@ -112,8 +_,8 @@
      protected AbstractArrow(
          EntityType<? extends AbstractArrow> type, LivingEntity owner, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon
      ) {
@@ -26,7 +26,7 @@
      }
  
      public void setSoundEvent(SoundEvent soundEvent) {
-@@ -205,6 +_,7 @@
+@@ -208,6 +_,7 @@
                  this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
              }
          } else {
@@ -34,22 +34,25 @@
              this.inGroundTime = 0;
              Vec3 vec31 = this.position();
              if (this.isInWater()) {
-@@ -272,12 +_,12 @@
+@@ -277,7 +_,7 @@
  
-             if (entityHitResult == null) {
+             if (list.isEmpty()) {
                  if (this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
 -                    this.hitTargetOrDeflectSelf(hitResult);
 +                    this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
                      this.hasImpulse = true;
                  }
                  break;
-             } else if (this.isAlive() && !this.noPhysics) {
--                ProjectileDeflection projectileDeflection = this.hitTargetOrDeflectSelf(entityHitResult);
-+                ProjectileDeflection projectileDeflection = this.preHitTargetOrDeflectSelf(entityHitResult); // CraftBukkit - projectile hit event
-                 this.hasImpulse = true;
-                 if (this.getPierceLevel() > 0 && projectileDeflection == ProjectileDeflection.NONE) {
-                     continue;
-@@ -310,13 +_,26 @@
+@@ -294,7 +_,7 @@
+ 
+     private ProjectileDeflection hitTargetsOrDeflectSelf(Collection<EntityHitResult> hitResults) {
+         for (EntityHitResult entityHitResult : hitResults) {
+-            ProjectileDeflection projectileDeflection = this.hitTargetOrDeflectSelf(entityHitResult);
++            ProjectileDeflection projectileDeflection = this.preHitTargetOrDeflectSelf(entityHitResult); // CraftBukkit - projectile hit event
+             if (!this.isAlive() || projectileDeflection != ProjectileDeflection.NONE) {
+                 return projectileDeflection;
+             }
+@@ -326,13 +_,26 @@
          }
      }
  
@@ -77,7 +80,7 @@
      }
  
      private void startFalling() {
-@@ -349,8 +_,8 @@
+@@ -365,8 +_,8 @@
  
      protected void tickDespawn() {
          this.life++;
@@ -88,7 +91,7 @@
          }
      }
  
-@@ -384,9 +_,9 @@
+@@ -400,9 +_,9 @@
      }
  
      @Override
@@ -100,7 +103,7 @@
          }
      }
  
-@@ -413,7 +_,7 @@
+@@ -429,7 +_,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -109,7 +112,7 @@
                  return;
              }
  
-@@ -429,10 +_,16 @@
+@@ -445,10 +_,16 @@
              livingEntity.setLastHurtMob(entity);
          }
  
@@ -127,7 +130,7 @@
          }
  
          if (entity.hurtOrSimulate(damageSource, ceil)) {
-@@ -470,7 +_,7 @@
+@@ -486,7 +_,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -136,7 +139,7 @@
              }
          } else {
              entity.setRemainingFireTicks(remainingFireTicks);
-@@ -481,7 +_,7 @@
+@@ -497,7 +_,7 @@
                      this.spawnAtLocation(serverLevel2, this.getPickupItem(), 0.1F);
                  }
  
@@ -145,7 +148,7 @@
              }
          }
      }
-@@ -494,7 +_,7 @@
+@@ -510,7 +_,7 @@
              double max = Math.max(0.0, 1.0 - entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
              Vec3 vec3 = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(d * 0.6 * max);
              if (vec3.lengthSqr() > 0.0) {
@@ -154,7 +157,7 @@
              }
          }
      }
-@@ -601,7 +_,14 @@
+@@ -623,7 +_,14 @@
  
      @Override
      public void setOwner(@Nullable Entity entity) {
@@ -169,7 +172,7 @@
  
          this.pickup = switch (entity) {
              case Player player when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
-@@ -613,9 +_,22 @@
+@@ -635,9 +_,22 @@
      @Override
      public void playerTouch(Player entity) {
          if (!this.level().isClientSide() && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {

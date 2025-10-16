@@ -64,12 +64,12 @@ public class CraftBee extends CraftAnimals implements Bee {
 
     @Override
     public int getAnger() {
-        return this.getHandle().getRemainingPersistentAngerTime();
+        return (int) (this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime());
     }
 
     @Override
     public void setAnger(int anger) {
-        this.getHandle().setRemainingPersistentAngerTime(anger);
+        this.getHandle().setTimeToRemainAngry(anger);
     }
 
     @Override

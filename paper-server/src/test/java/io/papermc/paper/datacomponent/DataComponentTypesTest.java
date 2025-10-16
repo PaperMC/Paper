@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.util.Set;

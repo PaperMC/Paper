@@ -1,15 +1,24 @@
 --- a/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
 +++ b/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
-@@ -128,7 +_,7 @@
+@@ -84,7 +_,7 @@
+ 
+     @Override
+     public InteractionResult interact(Player player, InteractionHand hand) {
+-        if (!player.canUseGameMasterBlocks()) {
++        if (!player.canUseGameMasterBlocks() && (!player.isCreative() || !player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+             return InteractionResult.PASS;
+         } else {
+             if (player.level().isClientSide()) {
+@@ -122,7 +_,7 @@
                  MinecartCommandBlock.this.position(),
                  MinecartCommandBlock.this.getRotationVector(),
-                 this.getLevel(),
--                2,
-+                this.getLevel().paperConfig().commandBlocks.permissionsLevel, // Paper - configurable command block perm level
+                 level,
+-                LevelBasedPermissionSet.GAMEMASTER,
++                LevelBasedPermissionSet.forLevel(net.minecraft.server.permissions.PermissionLevel.byId(level.paperConfig().commandBlocks.permissionsLevel)), // Paper - configurable command block perm level
                  this.getName().getString(),
                  MinecartCommandBlock.this.getDisplayName(),
-                 this.getLevel().getServer(),
-@@ -140,5 +_,12 @@
+                 level.getServer(),
+@@ -134,5 +_,17 @@
          public boolean isValid() {
              return !MinecartCommandBlock.this.isRemoved();
          }
@@ -18,6 +27,11 @@
 +        @Override
 +        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
 +            return net.minecraft.world.entity.vehicle.MinecartCommandBlock.this.getBukkitEntity();
++        }
++
++        @Override
++        public net.minecraft.server.level.ServerLevel getLevel() {
++            return (net.minecraft.server.level.ServerLevel) MinecartCommandBlock.this.level();
 +        }
 +        // CraftBukkit end
      }

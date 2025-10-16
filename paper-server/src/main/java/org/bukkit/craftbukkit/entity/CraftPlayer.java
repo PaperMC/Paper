@@ -105,6 +105,8 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
@@ -684,9 +686,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void sendOpLevel(byte level) {
-        Preconditions.checkArgument(level >= Commands.LEVEL_ALL && level <= Commands.LEVEL_OWNERS, "Level must be within [%s, %s]", Commands.LEVEL_ALL, Commands.LEVEL_OWNERS);
+        Preconditions.checkArgument(level >= PermissionLevel.ALL.id() && level <= PermissionLevel.OWNERS.id(), "Level must be within [%s, %s]", PermissionLevel.ALL.id(), PermissionLevel.OWNERS.id());
 
-        this.server.getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
+        this.server.getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), LevelBasedPermissionSet.forLevel(PermissionLevel.byId(level)), false);
     }
 
     @Override

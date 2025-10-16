@@ -298,6 +298,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Monster> RANGED_CROSSBOW_ATTACK = create("ranged_crossbow_attack", Monster.class);
 
+    GoalKey<Monster> SPEAR_USE = create("spear_use", Monster.class);
+
     GoalKey<Ocelot> OCELOT_AVOID_ENTITY = create("ocelot_avoid_entity", Ocelot.class);
 
     GoalKey<Ocelot> OCELOT_TEMPT = create("ocelot_tempt", Ocelot.class);

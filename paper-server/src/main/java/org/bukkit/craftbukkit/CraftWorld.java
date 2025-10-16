@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
@@ -56,6 +57,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -795,15 +797,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public long getTime() {
-        long time = this.getFullTime() % Level.TICKS_PER_DAY;
-        if (time < 0) time += Level.TICKS_PER_DAY;
+        long time = this.getFullTime() % SharedConstants.TICKS_PER_GAME_DAY;
+        if (time < 0) time += SharedConstants.TICKS_PER_GAME_DAY;
         return time;
     }
 
     @Override
     public void setTime(long time) {
-        long margin = (time - this.getFullTime()) % Level.TICKS_PER_DAY;
-        if (margin < 0) margin += Level.TICKS_PER_DAY;
+        long margin = (time - this.getFullTime()) % SharedConstants.TICKS_PER_GAME_DAY;
+        if (margin < 0) margin += SharedConstants.TICKS_PER_GAME_DAY;
         this.setFullTime(this.getFullTime() + margin);
     }
 
@@ -1371,7 +1373,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isBedWorks() {
-        return this.world.dimensionType().bedWorks();
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).canSleep().test(this.world); // TODO - snapshot - check if canSleep is correct
     }
 
     @Override
@@ -1386,22 +1388,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isPiglinSafe() {
-        return this.world.dimensionType().piglinSafe();
+        return !this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.PIGLINS_ZOMBIFY);
     }
 
     @Override
     public boolean isRespawnAnchorWorks() {
-        return this.world.dimensionType().respawnAnchorWorks();
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.RESPAWN_ANCHOR_WORKS);
     }
 
     @Override
     public boolean hasRaids() {
-        return this.world.dimensionType().hasRaids();
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.CAN_START_RAID);
     }
 
     @Override
     public boolean isUltraWarm() {
-        return this.world.dimensionType().ultraWarm();
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.WATER_EVAPORATES);
     }
 
     @Override
