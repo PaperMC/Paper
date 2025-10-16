@@ -1,4 +1,4 @@
 package org.bukkit.entity;
 
-public interface AbstractNautilus extends Animals {
+public interface AbstractNautilus extends Animals, Tameable {
 }
