@@ -117,4 +117,14 @@ interface ItemComponentTypesBridge {
     TooltipDisplay.Builder tooltipDisplay();
 
     Weapon.Builder weapon();
+
+    KineticWeapon.Builder kineticWeapon();
+
+    UseEffects.Builder useEffects();
+
+    PiercingWeapon.Builder piercingWeapon();
+
+    SwingAnimation.Builder swingAnimation();
+
+    KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
 }
