@@ -58,7 +58,10 @@ public interface Pathfinder {
      * @param target the Entity to navigate to
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
-    @Nullable PathResult findPath(LivingEntity target);
+    @Nullable
+    default PathResult findPath(LivingEntity target) {
+        return this.findPath((Entity)target);
+    }
 
     /**
      * Calculates a destination for the Entity to navigate to to reach the target entity,

@@ -8,10 +8,8 @@ import javax.annotation.Nullable;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
@@ -55,12 +53,6 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         Preconditions.checkArgument(loc != null, "Location can not be null");
         Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
         return path != null ? new PaperPathResult(path) : null;
-    }
-
-    @Nullable
-    @Override
-    public PathResult findPath(LivingEntity target) {
-        return this.findPath((Entity)target);
     }
 
     @Nullable
