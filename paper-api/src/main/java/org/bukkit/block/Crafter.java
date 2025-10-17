@@ -28,7 +28,7 @@ public interface Crafter extends Container, com.destroystokyo.paper.loottable.Lo
      * have items placed in it.
      *
      * @param slot slot index
-     * @return true if the slot is disabled otherwise false
+     * @return whether the slot is disabled
      */
     boolean isSlotDisabled(int slot);
 
@@ -37,7 +37,7 @@ public interface Crafter extends Container, com.destroystokyo.paper.loottable.Lo
      * have items placed in it.
      *
      * @param slot slot index
-     * @param disabled true if the slot should be disabled otherwise false
+     * @param disabled whether the slot should be disabled
      */
     void setSlotDisabled(int slot, boolean disabled);
 
