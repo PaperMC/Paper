@@ -1,16 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
-import io.papermc.paper.util.MCUtil;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.world.item.component.FireworkExplosion;
-import org.bukkit.FireworkEffect;
-import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
-
-import java.util.List;
 
 @NullMarked
 public record PaperUseEffects(

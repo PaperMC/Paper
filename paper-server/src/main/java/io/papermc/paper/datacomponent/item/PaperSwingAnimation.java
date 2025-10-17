@@ -9,21 +9,6 @@ public record PaperSwingAnimation(
         net.minecraft.world.item.component.SwingAnimation impl
 ) implements SwingAnimation, Handleable<net.minecraft.world.item.component.SwingAnimation> {
 
-    @Override
-    public net.minecraft.world.item.component.SwingAnimation getHandle() {
-        return this.impl;
-    }
-
-    @Override
-    public SwingAnimation.Animation type() {
-        return fromNms(this.impl.type());
-    }
-
-    @Override
-    public int duration() {
-        return this.impl.duration();
-    }
-
     private static SwingAnimation.Animation fromNms(final SwingAnimationType nms) {
         return switch (nms) {
             case NONE -> SwingAnimation.Animation.NONE;
@@ -38,6 +23,21 @@ public record PaperSwingAnimation(
             case WHACK -> SwingAnimationType.WHACK;
             case STAB -> SwingAnimationType.STAB;
         };
+    }
+
+    @Override
+    public net.minecraft.world.item.component.SwingAnimation getHandle() {
+        return this.impl;
+    }
+
+    @Override
+    public SwingAnimation.Animation type() {
+        return fromNms(this.impl.type());
+    }
+
+    @Override
+    public int duration() {
+        return this.impl.duration();
     }
 
     static final class BuilderImpl implements SwingAnimation.Builder {

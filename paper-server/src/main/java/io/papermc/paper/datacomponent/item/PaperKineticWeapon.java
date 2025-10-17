@@ -1,22 +1,28 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.datacomponent.item.KineticWeapon;
-import io.papermc.paper.util.MCUtil;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 @org.jspecify.annotations.NullMarked
 public record PaperKineticWeapon(
         net.minecraft.world.item.component.KineticWeapon impl
 ) implements KineticWeapon, Handleable<net.minecraft.world.item.component.KineticWeapon> {
+
+    private static net.minecraft.world.item.component.KineticWeapon.Condition toNms(final KineticWeapon.Condition api) {
+        if (api instanceof PaperKineticWeaponCondition(
+                net.minecraft.world.item.component.KineticWeapon.Condition cond
+        )) {
+            return cond;
+        } else {
+            throw new UnsupportedOperationException("Could not decode " + api);
+        }
+    }
 
     @Override
     public net.minecraft.world.item.component.KineticWeapon getHandle() {
@@ -94,7 +100,6 @@ public record PaperKineticWeapon(
                 .orElse(null);
     }
 
-
     public record PaperKineticWeaponCondition(
             net.minecraft.world.item.component.KineticWeapon.Condition impl
     ) implements KineticWeapon.Condition, Handleable<net.minecraft.world.item.component.KineticWeapon.Condition> {
@@ -119,8 +124,6 @@ public record PaperKineticWeapon(
             return this.impl.minRelativeSpeed();
         }
     }
-
-    // --- Builder ---
 
     static final class BuilderImpl implements KineticWeapon.Builder {
 
@@ -237,13 +240,5 @@ public record PaperKineticWeapon(
             );
         }
 
-    }
-
-    private static net.minecraft.world.item.component.KineticWeapon.Condition toNms(final KineticWeapon.Condition api) {
-        if (api instanceof PaperKineticWeaponCondition(net.minecraft.world.item.component.KineticWeapon.Condition cond)) {
-            return cond;
-        } else {
-            throw new UnsupportedOperationException("Could not decode " + api);
-        }
     }
 }

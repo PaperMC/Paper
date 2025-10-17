@@ -2,14 +2,11 @@ package io.papermc.paper.datacomponent.item;
 
 
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.datacomponent.item.PiercingWeapon;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NullMarked;
 
 import java.util.Optional;
 
@@ -69,15 +66,15 @@ public record PaperPiercingWeapon(
 
     static final class BuilderImpl implements PiercingWeapon.Builder {
 
-        private float minReach = 0.0F;    // CODEC default
-        private float maxReach = 3.0F;    // CODEC default
-        private float hitboxMargin = 0.3F; // CODEC default
+        private float minReach = 0.0F;
+        private float maxReach = 3.0F;
+        private float hitboxMargin = 0.3F;
 
-        private boolean dealsKnockback = true; // CODEC default
-        private boolean dismounts = false;     // CODEC default
+        private boolean dealsKnockback = true;
+        private boolean dismounts = false;
 
-        private @Nullable Key sound = null;    // optional
-        private @Nullable Key hitSound = null; // optional
+        private @Nullable Key sound = null;
+        private @Nullable Key hitSound = null;
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
