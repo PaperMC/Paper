@@ -249,7 +249,7 @@
                          f *= 1.5F;
                      }
  
-@@ -1014,9 +_,10 @@
+@@ -1014,11 +_,12 @@
          return !target.isAttackable() || target.skipAttackInteraction(this);
      }
  
@@ -259,8 +259,11 @@
              && target instanceof Projectile projectile
 +            && callEvent.getAsBoolean() // Paper - damage events
              && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
-             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
++            this.makeSound(SoundEvents.PLAYER_ATTACK_NODAMAGE); // Paper - Use makeSound to not play the sound in both client and server
              return true;
+         } else {
+             return false;
 @@ -1111,21 +_,43 @@
      public void causeExtraKnockback(Entity target, float strength, Vec3 currentMovement) {
          if (strength > 0.0F) {
@@ -402,6 +405,15 @@
      }
  
      @Override
+@@ -1537,7 +_,7 @@
+ 
+         if (levels > 0 && this.experienceLevel % 5 == 0 && this.lastLevelUpTime < this.tickCount - 100.0F) {
+             float f = this.experienceLevel > 30 ? 1.0F : this.experienceLevel / 30.0F;
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_LEVELUP, this.getSoundSource(), f * 0.75F, 1.0F);
++            Player.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_LEVELUP, this.getSoundSource(), f * 0.75F, 1.0F); // Paper - send while respecting visibility
+             this.lastLevelUpTime = this.tickCount;
+         }
+     }
 @@ -1545,15 +_,35 @@
      public int getXpNeededForNextLevel() {
          if (this.experienceLevel >= 30) {
