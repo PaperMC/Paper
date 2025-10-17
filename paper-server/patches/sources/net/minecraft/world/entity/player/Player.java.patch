@@ -318,7 +318,23 @@
                          livingEntity.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
                          EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity, damageSource);
                      }
-@@ -1179,7 +_,7 @@
+@@ -1173,13 +_,22 @@
+ 
+     @Override
+     public boolean stabAttack(EquipmentSlot slot, Entity target, float damageAmount, boolean damage, boolean knockback, boolean dismount) {
+-        if (this.cannotAttack(target)) {
++        // Paper start - PlayerAttackEntityEvent
++        boolean cannotAttack = this.cannotAttack(target); // Vanilla logic
++        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
++            (org.bukkit.entity.Player) this.getBukkitEntity(),
++            target.getBukkitEntity(),
++            !cannotAttack
++        );
++
++        if (!playerAttackEntityEvent.callEvent() || cannotAttack) { // Logic moved to cannotAttack local variable.
++        // Paper end - PlayerAttackEntityEvent
+             return false;
+         } else {
              ItemStack itemBySlot = this.getItemBySlot(slot);
              DamageSource damageSource = this.createAttackSource(itemBySlot);
              float f = this.getEnchantedDamage(target, damageAmount, damageSource) - damageAmount;
