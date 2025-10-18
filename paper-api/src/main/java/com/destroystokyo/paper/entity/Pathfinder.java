@@ -182,7 +182,7 @@ public interface Pathfinder {
 
     /**
      * Takes the result of a previous pathfinding calculation and sets it
-     * as the active pathfinding,
+     * as the active pathfinding.
      *
      * @param path  The Path to start following
      * @param speed Speed multiplier to navigate at, where 1 is 'normal'
