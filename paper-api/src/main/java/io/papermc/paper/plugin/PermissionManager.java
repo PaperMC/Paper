@@ -168,10 +168,13 @@ public interface PermissionManager {
      */
     void clearPermissions();
 
+    @ApiStatus.Experimental
     Permissible createPermissible(@NotNull ServerOperator operator);
 
+    @ApiStatus.Experimental
     Permissible createCommandBlockPermissible();
 
     // This is very special, and also this is expected to hold no state to PermissionManager.
+    @ApiStatus.Experimental
     CompletableFuture<Optional<Permissible>> loadPlayerPermissible(@NotNull UUID playerUuid);
 }
