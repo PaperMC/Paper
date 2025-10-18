@@ -133,16 +133,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          */
         OK,
         /**
-         * The world doesn't allow sleeping or saving the spawn point (eg,
-         * Nether, The End or Custom Worlds). This is based on
-         * {@link World#isBedWorks()} and {@link World#isNatural()}.
+         * The world doesn't allow sleeping (eg, Nether, The End or Custom Worlds), but
+         * saving the spawn point may still be allowed. See {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}.
+         * for spawn point changes. This is only called when sleeping isn't allowed and the bed
+         * doesn't explode. When the bed explodes, {@link #EXPLOSION} is called instead.
          * <p>
-         * Entering the bed is prevented and if {@link World#isBedWorks()} is
-         * {@code false} then the bed explodes.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
+         * Entering the bed is prevented
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_HERE,
         /**
          * Entering the bed is prevented due to it not being night nor
@@ -151,10 +148,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          * If the event is forcefully allowed during daytime, the player will
          * enter the bed (and set its bed location), but might get immediately
          * thrown out again.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_NOW,
         /**
          * Entering the bed is prevented due to the player being too far away.
@@ -171,6 +165,10 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         /**
          * Entering the bed is prevented due to there being some other problem.
          */
-        OTHER_PROBLEM;
+        OTHER_PROBLEM,
+        /**
+         * Entering the bed is prevented and the bed explodes.
+         */
+        EXPLOSION;
     }
 }

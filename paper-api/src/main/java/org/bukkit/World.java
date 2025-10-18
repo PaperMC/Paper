@@ -2794,9 +2794,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Gets if this world is natural.
      *
-     * When false, compasses spin randomly, and using a bed to set the respawn
-     * point or sleep, is disabled. When true, nether portals can spawn
-     * zombified piglins.
+     * When false, the moon is not visible and eyeblossoms do not open/close
      *
      * @return true if world is natural
      */
@@ -2805,11 +2803,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Gets if beds work in this world.
      *
-     * A non-working bed will blow up when trying to sleep. {@link #isNatural()}
-     * defines if a bed can be used to set spawn point.
+     * A non-working bed can blow up when trying to sleep, but that may
+     * not always be the case.
      *
      * @return true if beds work in this world
      */
+    // TODO - snapshot: Should we deprecate this method since the underlying setting was split in 3 different environment attributes?
     public boolean isBedWorks();
 
     /**
