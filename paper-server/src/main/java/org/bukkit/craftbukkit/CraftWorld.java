@@ -57,6 +57,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -1373,7 +1374,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isBedWorks() {
-        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).canSleep().test(this.world); // TODO - snapshot - check if canSleep is correct
+        BedRule bedRule = this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
+        return !bedRule.explodes() && bedRule.canSleep().test(this.world);
     }
 
     @Override

@@ -133,9 +133,10 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          */
         OK,
         /**
-         * The world doesn't allow sleeping or saving the spawn point (eg,
-         * Nether, The End or Custom Worlds). This is based on
-         * {@link World#isBedWorks()} and {@link World#isNatural()}.
+         * The world doesn't allow sleeping (eg, Nether, The End or Custom Worlds), but
+         * saving the spawn point may still be allowed. See {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}.
+         * for spawn point changes. This is only called when sleeping isn't allowed and the bed
+         * doesn't explode. When the bed explodes, {@link #EXPLOSION} is called instead.
          * <p>
          * Entering the bed is prevented
          */

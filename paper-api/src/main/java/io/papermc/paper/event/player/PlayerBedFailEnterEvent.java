@@ -83,7 +83,8 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
     public enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering
-         * the bed is prevented.
+         * the bed is prevented but the bed doesn't explode. When the bed
+         * explodes, {@link #EXPLOSION} is used instead.
          */
         NOT_POSSIBLE_HERE,
         /**
