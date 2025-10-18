@@ -46,7 +46,7 @@ public interface Pathfinder {
     @Nullable PathResult findPath(Location loc);
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * but does not set it as the current target.
      * Useful for calculating what would happen before setting it.
      * <p>
@@ -64,7 +64,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * but does not set it as the current target.
      * Useful for calculating what would happen before setting it.
      * <p>
@@ -103,7 +103,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with default speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
@@ -119,7 +119,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with specified speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
@@ -136,7 +136,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with default speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
@@ -152,7 +152,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with specified speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
