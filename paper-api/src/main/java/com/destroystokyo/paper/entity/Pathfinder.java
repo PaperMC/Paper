@@ -198,7 +198,7 @@ public interface Pathfinder {
     boolean canOpenDoors();
 
     /**
-     * Allows this pathfinder to pass through closed doors, or not
+     * Allows this pathfinder to pass through closed doors, or not.
      *
      * @param canOpenDoors if the mob can pass through closed doors, or not
      */
@@ -212,35 +212,35 @@ public interface Pathfinder {
     boolean canPassDoors();
 
     /**
-     * Allows this pathfinder to pass through open doors, or not
+     * Allows this pathfinder to pass through open doors, or not.
      *
      * @param canPassDoors if the mob can pass through open doors, or not
      */
     void setCanPassDoors(boolean canPassDoors);
 
     /**
-     * Checks if this pathfinder assumes that the mob can float
+     * Checks if this pathfinder assumes that the mob can float.
      *
      * @return if this pathfinder assumes that the mob can float
      */
     boolean canFloat();
 
     /**
-     * Makes this pathfinder assume that the mob can float, or not
+     * Makes this pathfinder assume that the mob can float, or not.
      *
      * @param canFloat if the mob can float, or not
      */
     void setCanFloat(boolean canFloat);
 
     /**
-     * Represents the result of a pathfinding calculation
+     * Represents the result of a pathfinding calculation.
      */
     interface PathResult {
 
         /**
-         * All currently calculated points to follow along the path to reach the destination location
+         * All currently calculated points to follow along the path to reach the destination location.
          * <p>
-         * Will return points the entity has already moved past, see {@link #getNextPointIndex()}
+         * Will return points the entity has already moved past, see {@link #getNextPointIndex()}.
          *
          * @return List of points
          */
@@ -248,7 +248,7 @@ public interface Pathfinder {
 
         /**
          * @return Returns the index of the current point along the points returned in {@link #getPoints()} the entity
-         * is trying to reach. This value will be higher than the maximum index of {@link #getPoints()} if this path finding is done.
+         * is trying to reach. This value will be higher than the maximum index of {@link #getPoints()} if this path finding is done
          */
         int getNextPointIndex();
 
@@ -263,7 +263,7 @@ public interface Pathfinder {
         @Nullable Location getFinalPoint();
 
         /**
-         * Checks whether the final point can be reached
+         * Checks whether the final point can be reached.
          *
          * @return whether the final point can be reached
          * @see #getFinalPoint()
