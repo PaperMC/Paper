@@ -57,7 +57,11 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Boolean> ATTACK_COOLING_DOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_cooling_down"), Boolean.class);
 
+    public static final MemoryKey<Integer> ATTACK_TARGET_COOLDOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_target_cooldown"), Integer.class);
+
     public static final MemoryKey<Long> CANT_REACH_WALK_TARGET_SINCE = new MemoryKey<>(NamespacedKey.minecraft("cant_reach_walk_target_since"), Long.class);
+
+    public static final MemoryKey<Integer> CHARGE_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("charge_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Boolean> DANCING = new MemoryKey<>(NamespacedKey.minecraft("dancing"), Boolean.class);
 

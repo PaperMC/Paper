@@ -37,7 +37,7 @@
          this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
          this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
          this.addBehaviourGoals();
-@@ -116,7 +_,7 @@
+@@ -117,7 +_,7 @@
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
          this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(ZombifiedPiglin.class));
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -46,7 +46,7 @@
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
-@@ -170,11 +_,16 @@
+@@ -171,11 +_,16 @@
  
      @Override
      protected int getBaseExperienceReward(ServerLevel level) {
@@ -64,7 +64,7 @@
      }
  
      @Override
-@@ -182,9 +_,9 @@
+@@ -183,9 +_,9 @@
          this.getEntityData().set(DATA_BABY_ID, childZombie);
          if (this.level() != null && !this.level().isClientSide()) {
              AttributeInstance attribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -76,8 +76,8 @@
              }
          }
      }
-@@ -253,6 +_,13 @@
-         super.aiStep();
+@@ -226,6 +_,13 @@
+         super.tick();
      }
  
 +    // Paper start - Add more Zombie API
@@ -90,18 +90,18 @@
      public void startUnderWaterConversion(int conversionTime) {
          this.conversionTime = conversionTime;
          this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, true);
-@@ -266,31 +_,50 @@
+@@ -239,31 +_,50 @@
      }
  
-     protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
+     protected void convertToZombieType(ServerLevel level, EntityType<? extends Zombie> entityType) {
 -        this.convertTo(
 +        Zombie converted = this.convertTo( // CraftBukkit
              entityType,
              ConversionParams.single(this, true, true),
--            zombie -> zombie.handleAttributes(zombie.level().getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier())
+-            zombie -> zombie.handleAttributes(level.getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier())
 -        );
 +            // CraftBukkit start
-+            zombie -> { zombie.handleAttributes(zombie.level().getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier()); },
++            zombie -> {  zombie.handleAttributes(level.getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier()); },
 +            org.bukkit.event.entity.EntityTransformEvent.TransformReason.DROWNED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DROWNED);
 +        if (converted == null) {
 +            ((org.bukkit.entity.Zombie) this.getBukkitEntity()).setConversionTime(-1); // CraftBukkit - SPIGOT-5208: End conversion to stop event spam
@@ -150,7 +150,7 @@
  
      @Override
      public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
-@@ -323,13 +_,13 @@
+@@ -296,13 +_,13 @@
                      if (SpawnPlacements.isSpawnPositionOk(type, level, blockPos)
                          && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, blockPos, level.random)) {
                          zombie.setPos(i1, i2, i3);
@@ -167,9 +167,9 @@
                              AttributeInstance attribute = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
                              AttributeModifier modifier = attribute.getModifier(REINFORCEMENT_CALLER_CHARGE_ID);
                              double d = modifier != null ? modifier.amount() : 0.0;
-@@ -354,7 +_,12 @@
+@@ -327,7 +_,12 @@
          if (flag) {
-             float effectiveDifficulty = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
+             float effectiveDifficulty = level.getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < effectiveDifficulty * 0.3F) {
 -                target.igniteForSeconds(2 * (int)effectiveDifficulty);
 +                // CraftBukkit start
@@ -181,7 +181,7 @@
              }
          }
  
-@@ -414,6 +_,7 @@
+@@ -389,6 +_,7 @@
          output.putBoolean("CanBreakDoors", this.canBreakDoors());
          output.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
          output.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
@@ -189,7 +189,7 @@
      }
  
      @Override
-@@ -428,13 +_,15 @@
+@@ -403,13 +_,15 @@
          } else {
              this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, false);
          }
@@ -207,7 +207,7 @@
                  return flag;
              }
  
-@@ -470,7 +_,7 @@
+@@ -445,7 +_,7 @@
          spawnGroupData = super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
          float specialMultiplier = difficulty.getSpecialMultiplier();
          if (spawnReason != EntitySpawnReason.CONVERSION) {
@@ -216,7 +216,7 @@
          }
  
          if (spawnGroupData == null) {
-@@ -497,7 +_,7 @@
+@@ -472,7 +_,7 @@
                              chicken1.finalizeSpawn(level, difficulty, EntitySpawnReason.JOCKEY, null);
                              chicken1.setChickenJockey(true);
                              this.startRiding(chicken1, false, false);

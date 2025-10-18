@@ -1,32 +1,32 @@
 --- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
-@@ -104,11 +_,16 @@
-                 ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
-                 ServerPlayer.RespawnConfig respawnConfig1 = new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(level.dimension(), pos, 0.0F, 0.0F), false);
-                 if (respawnConfig == null || !respawnConfig.isSamePosition(respawnConfig1)) {
--                    serverPlayer.setRespawnPosition(respawnConfig1, true);
-+                    if (serverPlayer.setRespawnPosition(respawnConfig1, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
-                     level.playSound(
-                         null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F
+@@ -106,11 +_,16 @@
+                         LevelData.RespawnData.of(serverLevel.dimension(), pos, 0.0F, 0.0F), false
                      );
-                     return InteractionResult.SUCCESS_SERVER;
-+                    // Paper start - Add PlayerSetSpawnEvent
-+                    } else {
-+                        return InteractionResult.FAIL;
-+                    }
-+                    // Paper end - Add PlayerSetSpawnEvent
+                     if (respawnConfig == null || !respawnConfig.isSamePosition(respawnConfig1)) {
+-                        serverPlayer.setRespawnPosition(respawnConfig1, true);
++                        if (serverPlayer.setRespawnPosition(respawnConfig1, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
+                         serverLevel.playSound(
+                             null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F
+                         );
+                         return InteractionResult.SUCCESS_SERVER;
++                        // Paper start - Add PlayerSetSpawnEvent
++                        } else {
++                            return InteractionResult.FAIL;
++                        }
++                        // Paper end - Add PlayerSetSpawnEvent
+                     }
                  }
-             }
  
-@@ -142,6 +_,7 @@
+@@ -147,6 +_,7 @@
      }
  
-     private void explode(BlockState state, Level level, final BlockPos pos2) {
+     private void explode(BlockState state, ServerLevel level, final BlockPos pos2) {
 +        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos2).getState(); // CraftBukkit - capture BlockState before remove block
          level.removeBlock(pos2, false);
          boolean flag = Direction.Plane.HORIZONTAL.stream().map(pos2::relative).anyMatch(blockPos -> isWaterThatWouldFlow(blockPos, level));
          final boolean flag1 = flag || level.getFluidState(pos2.above()).is(FluidTags.WATER);
-@@ -155,7 +_,7 @@
+@@ -160,7 +_,7 @@
          };
          Vec3 center = pos2.getCenter();
          level.explode(

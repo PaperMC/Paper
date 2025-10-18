@@ -1739,6 +1739,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_AXOLOTL_SWIM = getSound("entity.axolotl.swim");
 
+    Sound ENTITY_BABY_NAUTILUS_AMBIENT = getSound("entity.baby_nautilus.ambient");
+
+    Sound ENTITY_BABY_NAUTILUS_DEATH = getSound("entity.baby_nautilus.death");
+
+    Sound ENTITY_BABY_NAUTILUS_EAT = getSound("entity.baby_nautilus.eat");
+
+    Sound ENTITY_BABY_NAUTILUS_HURT = getSound("entity.baby_nautilus.hurt");
+
+    Sound ENTITY_BABY_NAUTILUS_SWIM = getSound("entity.baby_nautilus.swim");
+
     Sound ENTITY_BAT_AMBIENT = getSound("entity.bat.ambient");
 
     Sound ENTITY_BAT_DEATH = getSound("entity.bat.death");
@@ -2438,6 +2448,22 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_MULE_HURT = getSound("entity.mule.hurt");
 
     Sound ENTITY_MULE_JUMP = getSound("entity.mule.jump");
+
+    Sound ENTITY_NAUTILUS_AMBIENT = getSound("entity.nautilus.ambient");
+
+    Sound ENTITY_NAUTILUS_DASH = getSound("entity.nautilus.dash");
+
+    Sound ENTITY_NAUTILUS_DASH_READY = getSound("entity.nautilus.dash_ready");
+
+    Sound ENTITY_NAUTILUS_DEATH = getSound("entity.nautilus.death");
+
+    Sound ENTITY_NAUTILUS_EAT = getSound("entity.nautilus.eat");
+
+    Sound ENTITY_NAUTILUS_HURT = getSound("entity.nautilus.hurt");
+
+    Sound ENTITY_NAUTILUS_RIDING = getSound("entity.nautilus.riding");
+
+    Sound ENTITY_NAUTILUS_SWIM = getSound("entity.nautilus.swim");
 
     Sound ENTITY_OCELOT_AMBIENT = getSound("entity.ocelot.ambient");
 
@@ -3199,9 +3225,25 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_ZOMBIE_HORSE_AMBIENT = getSound("entity.zombie_horse.ambient");
 
+    Sound ENTITY_ZOMBIE_HORSE_ANGRY = getSound("entity.zombie_horse.angry");
+
     Sound ENTITY_ZOMBIE_HORSE_DEATH = getSound("entity.zombie_horse.death");
 
     Sound ENTITY_ZOMBIE_HORSE_HURT = getSound("entity.zombie_horse.hurt");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT = getSound("entity.zombie_nautilus.ambient");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH = getSound("entity.zombie_nautilus.dash");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_READY = getSound("entity.zombie_nautilus.dash_ready");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DEATH = getSound("entity.zombie_nautilus.death");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_EAT = getSound("entity.zombie_nautilus.eat");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_HURT = getSound("entity.zombie_nautilus.hurt");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_SWIM = getSound("entity.zombie_nautilus.swim");
 
     Sound ENTITY_ZOMBIE_VILLAGER_AMBIENT = getSound("entity.zombie_villager.ambient");
 
@@ -3249,11 +3291,15 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_ARMOR_EQUIP_LEATHER = getSound("item.armor.equip_leather");
 
+    Sound ITEM_ARMOR_EQUIP_NAUTILUS = getSound("item.armor.equip_nautilus");
+
     Sound ITEM_ARMOR_EQUIP_NETHERITE = getSound("item.armor.equip_netherite");
 
     Sound ITEM_ARMOR_EQUIP_TURTLE = getSound("item.armor.equip_turtle");
 
     Sound ITEM_ARMOR_EQUIP_WOLF = getSound("item.armor.equip_wolf");
+
+    Sound ITEM_ARMOR_UNEQUIP_NAUTILUS = getSound("item.armor.unequip_nautilus");
 
     Sound ITEM_ARMOR_UNEQUIP_WOLF = getSound("item.armor.unequip_wolf");
 
@@ -3402,6 +3448,24 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ITEM_SHIELD_BREAK = getSound("item.shield.break");
 
     Sound ITEM_SHOVEL_FLATTEN = getSound("item.shovel.flatten");
+
+    Sound ITEM_SPEAR_ATTACK = getSound("item.spear.attack");
+
+    Sound ITEM_SPEAR_HIT = getSound("item.spear.hit");
+
+    Sound ITEM_SPEAR_LUNGE_1 = getSound("item.spear.lunge_1");
+
+    Sound ITEM_SPEAR_LUNGE_2 = getSound("item.spear.lunge_2");
+
+    Sound ITEM_SPEAR_LUNGE_3 = getSound("item.spear.lunge_3");
+
+    Sound ITEM_SPEAR_USE = getSound("item.spear.use");
+
+    Sound ITEM_SPEAR_WOOD_ATTACK = getSound("item.spear_wood.attack");
+
+    Sound ITEM_SPEAR_WOOD_HIT = getSound("item.spear_wood.hit");
+
+    Sound ITEM_SPEAR_WOOD_USE = getSound("item.spear_wood.use");
 
     Sound ITEM_SPYGLASS_STOP_USING = getSound("item.spyglass.stop_using");
 

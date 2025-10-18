@@ -12,7 +12,7 @@ import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
-import net.minecraft.commands.PermissionSource;
+import net.minecraft.commands.Commands;
 import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.decoration.Mannequin;
 import org.bukkit.block.Biome;
@@ -84,7 +84,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, PermissionSource.RestrictedMarker {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
             @Override
             public boolean test(final CommandSourceStack commandSourceStack) {
                 return this.predicate.test(commandSourceStack);

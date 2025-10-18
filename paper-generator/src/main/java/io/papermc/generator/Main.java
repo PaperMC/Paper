@@ -34,6 +34,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.CloseableResourceManager;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.world.flag.FeatureFlagSet;
@@ -97,7 +98,7 @@ public class Main implements Callable<Integer> {
                 pendingTags,
                 flags,
                 Commands.CommandSelection.DEDICATED,
-                Commands.LEVEL_GAMEMASTERS,
+                LevelBasedPermissionSet.GAMEMASTER,
                 Util.backgroundExecutor(),
                 Runnable::run
             ).whenComplete((result, ex) -> {
