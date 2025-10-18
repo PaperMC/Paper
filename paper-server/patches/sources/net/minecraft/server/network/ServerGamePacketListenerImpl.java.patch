@@ -342,7 +342,7 @@
 +
 +                    // If the event is cancelled we move the player back to their old location.
 +                    if (event.isCancelled()) {
-+                        this.teleport(from);
++                        this.internalTeleport(from);
 +                        return;
 +                    }
 +
@@ -365,7 +365,7 @@
                  this.player.level().getChunkSource().move(this.player);
                  Vec3 vec3 = new Vec3(rootVehicle.getX() - x, rootVehicle.getY() - y, rootVehicle.getZ() - z);
                  this.handlePlayerKnownMovement(vec3);
-@@ -508,12 +_,12 @@
+@@ -508,7 +_,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (packet.getId() == this.awaitingTeleport) {
              if (this.awaitingPositionFromClient == null) {
@@ -374,12 +374,6 @@
                  return;
              }
  
-             this.player
--                .absSnapTo(
-+                 .snapTo( // Paper - Fix Entity Teleportation and cancel velocity if teleported
-                     this.awaitingPositionFromClient.x,
-                     this.awaitingPositionFromClient.y,
-                     this.awaitingPositionFromClient.z,
 @@ -525,12 +_,20 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
@@ -962,7 +956,7 @@
 +
 +                                        // If the event is cancelled we move the player back to their old location.
 +                                        if (event.isCancelled()) {
-+                                            this.teleport(from);
++                                            this.internalTeleport(from);
 +                                            return;
 +                                        }
 +
@@ -1035,7 +1029,7 @@
 +        // Paper start - Teleport API
 +        final Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
 +        for (final Relative relativeArgument : relatives) {
-+            final io.papermc.paper.entity.TeleportFlag.Relative flag = org.bukkit.craftbukkit.entity.CraftPlayer.deltaRelativeToAPI(relativeArgument);
++            final io.papermc.paper.entity.TeleportFlag.Relative flag = org.bukkit.craftbukkit.entity.CraftEntity.deltaRelativeToAPI(relativeArgument);
 +            if (flag != null) relativeFlags.add(flag);
 +        }
 +        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
@@ -1043,7 +1037,7 @@
 +        this.cserver.getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled() || !to.equals(event.getTo())) {
-+            // set = Collections.emptySet(); // Can't relative teleport // Paper - Teleport API; Now you can!
++            relatives = Set.of(); // target pos is absolute
 +            to = event.isCancelled() ? event.getFrom() : event.getTo();
 +            posMoveRotation = new PositionMoveRotation(CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch());
 +        }
@@ -1052,11 +1046,11 @@
 +        return !event.isCancelled(); // CraftBukkit - Return event status
 +    }
 +
-+    public void teleport(Location dest) {
++    public void internalTeleport(Location dest) {
 +        this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch());
 +    }
 +
-+    private void internalTeleport(double x, double y, double z, float yRot, float xRot) {
++    public void internalTeleport(double x, double y, double z, float yRot, float xRot) {
 +        this.internalTeleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yRot, xRot), Collections.emptySet());
 +    }
 +

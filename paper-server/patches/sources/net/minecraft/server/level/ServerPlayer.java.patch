@@ -609,22 +609,32 @@
          }
      }
  
-@@ -991,25 +_,86 @@
+@@ -991,25 +_,95 @@
      }
  
      private boolean isPvpAllowed() {
 -        return this.server.isPvpAllowed();
-+        return this.level().getWorld().getPVP(); // CraftBukkit - this.server.isPvpAllowed() -> this.level().getWorld().getPVP()
-     }
- 
+-    }
+-
 -    public TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition) {
-+    // CraftBukkit start
-+    public @Nullable TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
++        return this.level().getWorld().getPVP(); // CraftBukkit - this.server.isPvpAllowed() -> this.level().getWorld().getPVP()
++    }
++
++    // Paper start
++    public record RespawnResult(TeleportTransition transition, boolean isBedSpawn, boolean isAnchorSpawn) {
++    }
++
++    public @Nullable TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
++        RespawnResult result = this.findRespawnPositionAndUseSpawnBlock0(useCharge, postTeleportTransition, respawnReason);
++        return result == null ? null : result.transition();
++    }
++
++    public @Nullable RespawnResult findRespawnPositionAndUseSpawnBlock0(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
 +        TeleportTransition teleportTransition;
 +        boolean isBedSpawn = false;
 +        boolean isAnchorSpawn = false;
 +        Runnable consumeAnchorCharge = null;
-+        // CraftBukkit end
++        // Paper end
          ServerPlayer.RespawnConfig respawnConfig = this.getRespawnConfig();
          ServerLevel level = this.server.getLevel(ServerPlayer.RespawnConfig.getDimensionOrDefault(respawnConfig));
          if (level != null && respawnConfig != null) {
@@ -647,11 +657,8 @@
          } else {
 -            return TeleportTransition.createDefault(this, postTeleportTransition);
 -        }
++            // CraftBukkit start
 +            teleportTransition = TeleportTransition.createDefault(this, postTeleportTransition);
-+        }
-+        // CraftBukkit start
-+        if (respawnReason == null) {
-+            return teleportTransition;
 +        }
 +
 +        org.bukkit.entity.Player respawnPlayer = this.getBukkitEntity();
@@ -686,17 +693,21 @@
 +        // Paper end - consume anchor charge if location hasn't changed
 +        location = respawnEvent.getRespawnLocation();
 +
-+        return new TeleportTransition(
-+            ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
-+            org.bukkit.craftbukkit.util.CraftLocation.toVec3(location),
-+            teleportTransition.deltaMovement(),
-+            location.getYaw(),
-+            location.getPitch(),
-+            teleportTransition.missingRespawnBlock(),
-+            teleportTransition.asPassenger(),
-+            teleportTransition.relatives(),
-+            teleportTransition.postTeleportTransition(),
-+            teleportTransition.cause()
++        return new RespawnResult(
++            new TeleportTransition(
++                ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
++                org.bukkit.craftbukkit.util.CraftLocation.toVec3(location),
++                teleportTransition.deltaMovement(),
++                location.getYaw(),
++                location.getPitch(),
++                teleportTransition.missingRespawnBlock(),
++                teleportTransition.asPassenger(),
++                teleportTransition.relatives(),
++                teleportTransition.postTeleportTransition(),
++                teleportTransition.cause()
++            ),
++            isBedSpawn,
++            isAnchorSpawn
 +        );
 +        // CraftBukkit end
      }
@@ -739,7 +750,7 @@
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1084,17 +_,52 @@
+@@ -1084,13 +_,48 @@
  
              ServerLevel level = teleportTransition.newLevel();
              ServerLevel serverLevel = this.level();
@@ -750,15 +761,17 @@
 +            org.bukkit.Location enter = this.getBukkitEntity().getLocation();
 +            PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 +            org.bukkit.Location exit = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(absolutePosition.position(), level, absolutePosition.yRot(), absolutePosition.xRot());
-+            org.bukkit.event.player.PlayerTeleportEvent tpEvent = new org.bukkit.event.player.PlayerTeleportEvent(this.getBukkitEntity(), enter, exit.clone(), teleportTransition.cause());
++            final org.bukkit.event.player.PlayerTeleportEvent tpEvent;
 +            // Paper start - gateway-specific teleport event
 +            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
 +                tpEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), enter, exit.clone(), new org.bukkit.craftbukkit.block.CraftEndGateway(this.level().getWorld(), theEndGatewayBlockEntity));
++            } else {
++                tpEvent = new org.bukkit.event.player.PlayerTeleportEvent(this.getBukkitEntity(), enter, exit.clone(), teleportTransition.cause());
 +            }
 +            // Paper end - gateway-specific teleport event
 +            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(tpEvent);
 +            org.bukkit.Location newExit = tpEvent.getTo();
-+            if (tpEvent.isCancelled() || newExit == null) {
++            if (tpEvent.isCancelled()) {
 +                return null;
 +            }
 +            if (!newExit.equals(exit)) {
@@ -783,52 +796,35 @@
 -            if (level.dimension() == resourceKey) {
 -                this.connection.teleport(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 +            // CraftBukkit start
-+            if (level != null && level.dimension() == serverLevel.dimension()) {
++            if (level.dimension() == serverLevel.dimension()) {
 +                this.connection.internalTeleport(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 +                // CraftBukkit end
                  this.connection.resetPosition();
                  teleportTransition.postTeleportTransition().onTransition(this);
                  return this;
-             } else {
-+                // CraftBukkit start
-+                /*
-                 this.isChangingDimension = true;
-                 LevelData levelData = level.getLevelData();
-                 this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(level), (byte)3));
-@@ -1103,16 +_,30 @@
+@@ -1101,18 +_,19 @@
+                 this.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
+                 PlayerList playerList = this.server.getPlayerList();
                  playerList.sendPlayerPermissionLevel(this);
++                this.portalProcess = null; // SPIGOT-7785: there is no need to carry this over as it contains the old world/location and we might run into trouble if there is a portal in the same spot in both worlds
                  serverLevel.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
                  this.unsetRemoved();
-+                */
-+                // CraftBukkit end
                  ProfilerFiller profilerFiller = Profiler.get();
                  profilerFiller.push("moving");
 -                if (resourceKey == Level.OVERWORLD && level.dimension() == Level.NETHER) {
-+                if (level != null && resourceKey == net.minecraft.world.level.dimension.LevelStem.OVERWORLD && level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER) { // CraftBukkit - empty to fall through to null to event
++                if (resourceKey == net.minecraft.world.level.dimension.LevelStem.OVERWORLD && level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER) { // CraftBukkit - empty to fall through to null to event
                      this.enteredNetherPosition = this.position();
                  }
  
                  profilerFiller.pop();
                  profilerFiller.push("placing");
-+                // CraftBukkit start
-+                this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
-+                LevelData worlddata = level.getLevelData();
-+
-+                this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(level), (byte) 3));
-+                this.connection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
-+                PlayerList playerList = this.server.getPlayerList();
-+
-+                playerList.sendPlayerPermissionLevel(this);
-+                serverLevel.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
-+                this.unsetRemoved();
-+                // CraftBukkit end
                  this.setServerLevel(level);
 -                this.connection.teleport(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 +                this.connection.internalTeleport(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives()); // CraftBukkit - use internal teleport without event
                  this.connection.resetPosition();
                  level.addDuringTeleport(this);
                  profilerFiller.pop();
-@@ -1127,10 +_,37 @@
+@@ -1127,6 +_,15 @@
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
                  this.teleportSpectators(teleportTransition, serverLevel);
@@ -844,28 +840,6 @@
                  return this;
              }
          }
-     }
-+
-+    // CraftBukkit start
-+    @Override
-+    public @Nullable org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
-+        Entity entity,
-+        org.bukkit.Location exit,
-+        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
-+        int searchRadius, int creationRadius
-+    ) {
-+        org.bukkit.Location enter = this.getBukkitEntity().getLocation();
-+        org.bukkit.event.player.PlayerPortalEvent event = new org.bukkit.event.player.PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
-+        event.callEvent();
-+        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
-+            return null;
-+        }
-+        return new org.bukkit.craftbukkit.event.CraftPortalEvent(event);
-+    }
-+    // CraftBukkit end
- 
-     @Override
-     public void forceSetRotation(float yRot, boolean yRelative, float xRot, boolean xRelative) {
 @@ -1141,12 +_,26 @@
      public void triggerDimensionChangeTriggers(ServerLevel level) {
          ResourceKey<Level> resourceKey = level.dimension();
@@ -1242,6 +1216,30 @@
          this.seenCredits = that.seenCredits;
          this.enteredNetherPosition = that.enteredNetherPosition;
          this.chunkTrackingView = that.chunkTrackingView;
+@@ -1629,9 +_,22 @@
+         CriteriaTriggers.EFFECTS_CHANGED.trigger(this, null);
+     }
+ 
++    // Paper start - use dismount cause
++    @Override
++    public void dismountTo(double x, double y, double z) {
++        this.teleportTo(x, y, z, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.DISMOUNT);
++    }
++    // Paper end - use dismount cause
++
+     @Override
+     public void teleportTo(double x, double y, double z) {
+-        this.connection.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, 0.0F, 0.0F), Relative.union(Relative.DELTA, Relative.ROTATION));
++        // Paper start - pass cause
++        this.teleportTo(x, y, z, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public void teleportTo(double x, double y, double z, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        this.connection.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, 0.0F, 0.0F), Relative.union(Relative.DELTA, Relative.ROTATION), cause);
++        // Paper end - pass cause
+     }
+ 
+     @Override
 @@ -1640,7 +_,7 @@
      }
  
@@ -1518,7 +1516,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 position, BlockPos towardsPos) {
-@@ -2266,4 +_,138 @@
+@@ -2266,4 +_,135 @@
          );
          public static final ServerPlayer.SavedPosition EMPTY = new ServerPlayer.SavedPosition(Optional.empty(), Optional.empty(), Optional.empty());
      }
@@ -1603,12 +1601,6 @@
 +        return super.toString() + "(" + this.getScoreboardName() + " at " + this.getX() + "," + this.getY() + "," + this.getZ() + ")";
 +    }
 +
-+    // SPIGOT-1903, MC-98153
-+    public void forceSetPositionRotation(double x, double y, double z, float yaw, float pitch) {
-+        this.snapTo(x, y, z, yaw, pitch);
-+        this.connection.resetPosition();
-+    }
-+
 +    @Override
 +    public boolean isImmobile() {
 +        return super.isImmobile() || (this.connection != null && this.connection.isDisconnected()); // Paper - Fix duplication bugs
@@ -1633,7 +1625,10 @@
 +        this.totalExperience = this.newTotalExp;
 +        this.experienceProgress = 0;
 +        this.deathTime = 0;
++        this.setStingerCount(0);
++        this.removeStingerTime = 0;
 +        this.setArrowCount(0, true); // CraftBukkit - ArrowBodyCountChangeEvent
++        this.removeArrowTime = 0;
 +        this.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DEATH);
 +        this.effectsDirty = true;
 +        this.containerMenu = this.inventoryMenu;
