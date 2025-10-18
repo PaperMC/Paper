@@ -307,7 +307,7 @@ public class CraftEventFactory {
             (org.bukkit.entity.Player) player.getBukkitEntity(),
             asFailReason(bedSleepingProblem),
             org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
-            !player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).canSleep().test(player.level()), // TODO - snapshot - check if canSleep is correct
+            player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).explodes(),
             io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()));
         event.callEvent();
         return event;
