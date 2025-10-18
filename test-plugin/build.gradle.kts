@@ -8,6 +8,7 @@ tasks.processResources {
     var apiVersion = rootProject.providers.gradleProperty("mcVersion").get()
     // Bukkit api versioning does not support suffixed versions
     apiVersion = apiVersion.substringBefore('-')
+    apiVersion = "1.21.11" // TODO - snapshot - remove once pre-releases hit
 
     val props = mapOf(
         "version" to project.version,
