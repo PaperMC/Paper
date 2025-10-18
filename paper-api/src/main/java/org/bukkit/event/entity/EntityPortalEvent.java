@@ -1,12 +1,13 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.PortalType;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a non-player entity is about to teleport because it is in
@@ -19,29 +20,28 @@ public class EntityPortalEvent extends EntityTeleportEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final PortalType type;
-    private int searchRadius = 128;
-    private boolean canCreatePortal = true;
-    private int creationRadius = 16;
+    private int searchRadius;
+    private boolean canCreatePortal;
+    private int creationRadius;
+    private WorldBorder worldBorder = null;
 
     @ApiStatus.Internal
-    public EntityPortalEvent(@NotNull final Entity entity, @NotNull final Location from, @Nullable final Location to) {
+    public EntityPortalEvent(@NotNull final Entity entity, @NotNull final Location from, @NotNull final Location to) {
         this(entity, from, to, 128);
     }
 
     @ApiStatus.Internal
-    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius) {
-        super(entity, from, to);
-        this.searchRadius = searchRadius;
-        this.type = PortalType.CUSTOM;
+    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @NotNull Location to, int searchRadius) {
+        this(entity, from, to, searchRadius, true, 16);
     }
 
     @ApiStatus.Internal
-    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius, boolean canCreatePortal, int creationRadius) {
+    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @NotNull Location to, int searchRadius, boolean canCreatePortal, int creationRadius) {
         this(entity, from, to, searchRadius, canCreatePortal, creationRadius, PortalType.CUSTOM);
     }
 
     @ApiStatus.Internal
-    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius, boolean canCreatePortal, int creationRadius, final @NotNull PortalType portalType) {
+    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @NotNull Location to, int searchRadius, boolean canCreatePortal, int creationRadius, final @NotNull PortalType portalType) {
         super(entity, from, to);
         this.type = portalType;
         this.searchRadius = searchRadius;
@@ -60,7 +60,7 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      * @return starting point for search or exact destination
      */
     @Override
-    public @Nullable Location getTo() {
+    public @NotNull Location getTo() {
         return super.getTo();
     }
 
@@ -70,7 +70,7 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      *           or {@code null} to cancel
      */
     @Override
-    public void setTo(@Nullable final Location to) {
+    public void setTo(@NotNull final Location to) {
         super.setTo(to);
     }
 
@@ -154,6 +154,52 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      */
     public int getCreationRadius() {
         return this.creationRadius;
+    }
+
+    /**
+     * Sets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param worldBorder the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     */
+    public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+        this.worldBorder = worldBorder;
+    }
+
+    /**
+     * Sets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param center the center of the world border.
+     * @param size the side length of the world border.
+     */
+    public void setWorldBorder(@NotNull Location center, double size) {
+        this.worldBorder = Bukkit.createWorldBorder();
+        this.worldBorder.setCenter(center);
+        this.worldBorder.setSize(size);
+    }
+
+    /**
+     * Gets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @return the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     */
+    public @NotNull WorldBorder getWorldBorder() {
+        if  (this.worldBorder == null) {
+            var worldWorldBorder = this.getTo().getWorld().getWorldBorder();
+            this.worldBorder = Bukkit.createWorldBorder();
+            this.worldBorder.setCenter(worldWorldBorder.getCenter().clone());
+            this.worldBorder.setSize(worldWorldBorder.getSize());
+        }
+
+        return this.worldBorder;
     }
 
     @NotNull
