@@ -279,6 +279,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
+        Preconditions.checkArgument(maxDurationTicks >= 0, "maxDurationTicks must be non-negative");
         return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
                 maxDurationTicks, minSpeed, minRelativeSpeed
         ));

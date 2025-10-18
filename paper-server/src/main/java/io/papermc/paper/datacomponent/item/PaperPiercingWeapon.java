@@ -1,16 +1,14 @@
 package io.papermc.paper.datacomponent.item;
 
-
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Optional;
-
-@org.jspecify.annotations.NullMarked
 public record PaperPiercingWeapon(
         net.minecraft.world.item.component.PiercingWeapon impl
 ) implements PiercingWeapon, Handleable<net.minecraft.world.item.component.PiercingWeapon> {
@@ -48,19 +46,19 @@ public record PaperPiercingWeapon(
     @Override
     public @Nullable Key sound() {
         return this.impl.sound()
-                .map(Holder::value)
-                .map(SoundEvent::location)
-                .map(PaperAdventure::asAdventure)
-                .orElse(null);
+            .map(Holder::value)
+            .map(SoundEvent::location)
+            .map(PaperAdventure::asAdventure)
+            .orElse(null);
     }
 
     @Override
     public @Nullable Key hitSound() {
         return this.impl.hitSound()
-                .map(Holder::value)
-                .map(SoundEvent::location)
-                .map(PaperAdventure::asAdventure)
-                .orElse(null);
+            .map(Holder::value)
+            .map(SoundEvent::location)
+            .map(PaperAdventure::asAdventure)
+            .orElse(null);
     }
 
 
@@ -78,21 +76,21 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            com.google.common.base.Preconditions.checkArgument(minReach >= 0.0F, "minReach must be >= 0");
+            Preconditions.checkArgument(minReach >= 0.0F, "minReach must be non-negative");
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            com.google.common.base.Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be >= 0");
+            Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be non-negative");
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            com.google.common.base.Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be >= 0");
+            Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be non-negative");
             this.hitboxMargin = hitboxMargin;
             return this;
         }
@@ -124,15 +122,15 @@ public record PaperPiercingWeapon(
         @Override
         public PiercingWeapon build() {
             return new PaperPiercingWeapon(
-                    new net.minecraft.world.item.component.PiercingWeapon(
-                            this.minReach,
-                            this.maxReach,
-                            this.hitboxMargin,
-                            this.dealsKnockback,
-                            this.dismounts,
-                            Optional.ofNullable(this.sound).map(PaperAdventure::resolveSound),
-                            Optional.ofNullable(this.hitSound).map(PaperAdventure::resolveSound)
-                    )
+                new net.minecraft.world.item.component.PiercingWeapon(
+                    this.minReach,
+                    this.maxReach,
+                    this.hitboxMargin,
+                    this.dealsKnockback,
+                    this.dismounts,
+                    Optional.ofNullable(this.sound).map(PaperAdventure::resolveSound),
+                    Optional.ofNullable(this.hitSound).map(PaperAdventure::resolveSound)
+                )
             );
         }
     }

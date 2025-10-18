@@ -44,8 +44,8 @@ import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
-import java.util.List;
 import io.papermc.paper.registry.tag.TagKey;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Art;
@@ -78,7 +78,6 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
 import static java.util.Objects.requireNonNull;
@@ -125,9 +124,6 @@ public final class DataComponentTypes {
      * @see #ITEM_NAME
      */
     public static final DataComponentType.Valued<Component> CUSTOM_NAME = valued("custom_name");
-    /**
-     * TODO: 0-1
-     */
     public static final DataComponentType.Valued<Float> MINIMUM_ATTACK_CHARGE = valued("minimum_attack_charge");
     public static final DataComponentType.Valued<DamageType> DAMAGE_TYPE = valued("damage_type");
     /**

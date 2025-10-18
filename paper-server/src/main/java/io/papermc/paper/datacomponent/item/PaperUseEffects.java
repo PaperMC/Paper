@@ -1,9 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public record PaperUseEffects(
         net.minecraft.world.item.component.UseEffects impl
 ) implements UseEffects, Handleable<net.minecraft.world.item.component.UseEffects> {
@@ -36,7 +35,7 @@ public record PaperUseEffects(
 
         @Override
         public UseEffects.Builder speedMultiplier(final float speedMultiplier) {
-            com.google.common.base.Preconditions.checkArgument(speedMultiplier >= 0.0F && speedMultiplier <= 1.0F, "speedMultiplier must be between 0.0 and 1.0 (inclusive)");
+            Preconditions.checkArgument(speedMultiplier >= 0.0F && speedMultiplier <= 1.0F, "speedMultiplier must be between 0.0 and 1.0 (inclusive)");
             this.speedMultiplier = speedMultiplier;
             return this;
         }
@@ -44,10 +43,10 @@ public record PaperUseEffects(
         @Override
         public UseEffects build() {
             return new PaperUseEffects(
-                    new net.minecraft.world.item.component.UseEffects(
-                            this.canSprint,
-                            this.speedMultiplier
-                    )
+                new net.minecraft.world.item.component.UseEffects(
+                    this.canSprint,
+                    this.speedMultiplier
+                )
             );
         }
     }

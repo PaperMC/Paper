@@ -1,22 +1,21 @@
 package io.papermc.paper.datacomponent.item;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Optional;
-
-@org.jspecify.annotations.NullMarked
 public record PaperKineticWeapon(
         net.minecraft.world.item.component.KineticWeapon impl
 ) implements KineticWeapon, Handleable<net.minecraft.world.item.component.KineticWeapon> {
 
     private static net.minecraft.world.item.component.KineticWeapon.Condition toNms(final KineticWeapon.Condition api) {
         if (api instanceof PaperKineticWeaponCondition(
-                net.minecraft.world.item.component.KineticWeapon.Condition cond
+            net.minecraft.world.item.component.KineticWeapon.Condition cond
         )) {
             return cond;
         } else {
@@ -55,21 +54,21 @@ public record PaperKineticWeapon(
     }
 
     @Override
-    public @Nullable KineticWeapon.Condition dismountConditions() {
+    public KineticWeapon.@Nullable Condition dismountConditions() {
         return this.impl.dismountConditions().map(PaperKineticWeaponCondition::new)
-                .orElse(null);
+            .orElse(null);
     }
 
     @Override
-    public @Nullable KineticWeapon.Condition knockbackConditions() {
+    public KineticWeapon.@Nullable Condition knockbackConditions() {
         return this.impl.knockbackConditions().map(PaperKineticWeaponCondition::new)
-                .orElse(null);
+            .orElse(null);
     }
 
     @Override
-    public @Nullable KineticWeapon.Condition damageConditions() {
+    public KineticWeapon.@Nullable Condition damageConditions() {
         return this.impl.damageConditions().map(PaperKineticWeaponCondition::new)
-                .orElse(null);
+            .orElse(null);
     }
 
     @Override
@@ -85,19 +84,19 @@ public record PaperKineticWeapon(
     @Override
     public @Nullable Key sound() {
         return this.impl.sound()
-                .map(Holder::value)
-                .map(SoundEvent::location)
-                .map(PaperAdventure::asAdventure)
-                .orElse(null);
+            .map(Holder::value)
+            .map(SoundEvent::location)
+            .map(PaperAdventure::asAdventure)
+            .orElse(null);
     }
 
     @Override
     public @Nullable Key hitSound() {
         return this.impl.hitSound()
-                .map(Holder::value)
-                .map(SoundEvent::location)
-                .map(PaperAdventure::asAdventure)
-                .orElse(null);
+            .map(Holder::value)
+            .map(SoundEvent::location)
+            .map(PaperAdventure::asAdventure)
+            .orElse(null);
     }
 
     public record PaperKineticWeaponCondition(
@@ -133,9 +132,9 @@ public record PaperKineticWeapon(
         private int contactCooldownTicks = 10;
         private int delayTicks = 0;
 
-        private @Nullable net.minecraft.world.item.component.KineticWeapon.Condition dismountConditions;
-        private @Nullable net.minecraft.world.item.component.KineticWeapon.Condition knockbackConditions;
-        private @Nullable net.minecraft.world.item.component.KineticWeapon.Condition damageConditions;
+        private net.minecraft.world.item.component.KineticWeapon.@Nullable Condition dismountConditions;
+        private net.minecraft.world.item.component.KineticWeapon.@Nullable Condition knockbackConditions;
+        private net.minecraft.world.item.component.KineticWeapon.@Nullable Condition damageConditions;
 
         private @Nullable Key sound = null;
         private @Nullable Key hitSound = null;
@@ -145,54 +144,54 @@ public record PaperKineticWeapon(
 
         @Override
         public KineticWeapon.Builder minReach(final float minReach) {
-            com.google.common.base.Preconditions.checkArgument(minReach >= 0.0F, "minReach must be >= 0");
+            Preconditions.checkArgument(minReach >= 0.0F, "minReach must be non-negative");
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public KineticWeapon.Builder maxReach(final float maxReach) {
-            com.google.common.base.Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be >= 0");
+            Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be non-negative");
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public KineticWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            com.google.common.base.Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be >= 0");
+            Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be non-negative");
             this.hitboxMargin = hitboxMargin;
             return this;
         }
 
         @Override
         public KineticWeapon.Builder contactCooldownTicks(final int ticks) {
-            com.google.common.base.Preconditions.checkArgument(ticks >= 0, "contactCooldownTicks must be >= 0");
+            Preconditions.checkArgument(ticks >= 0, "contactCooldownTicks must be non-negative");
             this.contactCooldownTicks = ticks;
             return this;
         }
 
         @Override
         public KineticWeapon.Builder delayTicks(final int ticks) {
-            com.google.common.base.Preconditions.checkArgument(ticks >= 0, "delayTicks must be >= 0");
+            Preconditions.checkArgument(ticks >= 0, "delayTicks must be non-negative");
             this.delayTicks = ticks;
             return this;
         }
 
         @Override
-        public KineticWeapon.Builder dismountConditions(@Nullable final KineticWeapon.Condition condition) {
-            this.dismountConditions = toNms(condition);
+        public KineticWeapon.Builder dismountConditions(final KineticWeapon.@Nullable Condition condition) {
+            this.dismountConditions = condition == null ? null : toNms(condition);
             return this;
         }
 
         @Override
-        public KineticWeapon.Builder knockbackConditions(@Nullable final KineticWeapon.Condition condition) {
-            this.knockbackConditions = toNms(condition);
+        public KineticWeapon.Builder knockbackConditions(final KineticWeapon.@Nullable Condition condition) {
+            this.knockbackConditions = condition == null ? null : toNms(condition);
             return this;
         }
 
         @Override
-        public KineticWeapon.Builder damageConditions(@Nullable final KineticWeapon.Condition condition) {
-            this.damageConditions = toNms(condition);
+        public KineticWeapon.Builder damageConditions(final KineticWeapon.@Nullable Condition condition) {
+            this.damageConditions = condition == null ? null : toNms(condition);
             return this;
         }
 
@@ -223,22 +222,21 @@ public record PaperKineticWeapon(
         @Override
         public KineticWeapon build() {
             return new PaperKineticWeapon(
-                    new net.minecraft.world.item.component.KineticWeapon(
-                            this.minReach,
-                            this.maxReach,
-                            this.hitboxMargin,
-                            this.contactCooldownTicks,
-                            this.delayTicks,
-                            Optional.ofNullable(this.dismountConditions),
-                            Optional.ofNullable(this.knockbackConditions),
-                            Optional.ofNullable(this.damageConditions),
-                            this.forwardMovement,
-                            this.damageMultiplier,
-                            Optional.ofNullable(this.sound).map(PaperAdventure::resolveSound),
-                            Optional.ofNullable(this.hitSound).map(PaperAdventure::resolveSound)
-                    )
+                new net.minecraft.world.item.component.KineticWeapon(
+                    this.minReach,
+                    this.maxReach,
+                    this.hitboxMargin,
+                    this.contactCooldownTicks,
+                    this.delayTicks,
+                    Optional.ofNullable(this.dismountConditions),
+                    Optional.ofNullable(this.knockbackConditions),
+                    Optional.ofNullable(this.damageConditions),
+                    this.forwardMovement,
+                    this.damageMultiplier,
+                    Optional.ofNullable(this.sound).map(PaperAdventure::resolveSound),
+                    Optional.ofNullable(this.hitSound).map(PaperAdventure::resolveSound)
+                )
             );
         }
-
     }
 }
