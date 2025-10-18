@@ -21,6 +21,6 @@ public class CraftDamageTag extends CraftTag<net.minecraft.world.damagesource.Da
 
     @Override
     public Set<DamageType> getValues() {
-        return this.getHandle().stream().map(Holder::value).map(CraftDamageType::minecraftToBukkit).collect(Collectors.toUnmodifiableSet());
+        return this.getHandle().stream().map(CraftDamageType::minecraftHolderToBukkit).collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -26,6 +26,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class RegistryHelper {
 
@@ -87,14 +88,14 @@ public final class RegistryHelper {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
 
-        MultiPackResourceManager ireloadableresourcemanager = RegistryHelper.createResourceManager(featureFlagSet);
+        MultiPackResourceManager resourceManager = RegistryHelper.createResourceManager(featureFlagSet);
         // add tags and loot tables for unit tests
-        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
-        List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
-        RegistryAccess.Frozen iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
+        LayeredRegistryAccess<RegistryLayer> registryAccess = RegistryLayer.createRegistryAccess();
+        List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourceManager, registryAccess.getLayer(RegistryLayer.STATIC));
+        RegistryAccess.Frozen iregistrycustom_dimension = registryAccess.getAccessForLoading(RegistryLayer.WORLDGEN);
         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
-        RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
-        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
+        RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load(resourceManager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        LayeredRegistryAccess<RegistryLayer> layers = registryAccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
         // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
         try {
             Class.forName("org.bukkit.Registry");
@@ -102,13 +103,15 @@ public final class RegistryHelper {
         // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
         RegistryHelper.registry = layers.compositeAccess().freeze();
         // Register vanilla pack
-        RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        RegistryHelper.dataPack = ReloadableServerResources.loadResources(resourceManager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
         RegistryHelper.dataPack.updateStaticRegistryTags();
         // Biome shortcut
         RegistryHelper.biomes = RegistryHelper.registry.lookupOrThrow(Registries.BIOME);
         // PalettedContainerFactory shortcut
         RegistryHelper.palettedContainerFactory = PalettedContainerFactory.create(RegistryHelper.registry);
+        // Feature flags
+        CraftRegistry.setFeatureFlags(featureFlagSet);
     }
 
     public static <T extends Keyed> Class<T> updateClass(Class<T> aClass, NamespacedKey key) {
