@@ -59,7 +59,5 @@ public interface BannerPatternRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder translationKey(String translationKey);
-
     }
-
 }
