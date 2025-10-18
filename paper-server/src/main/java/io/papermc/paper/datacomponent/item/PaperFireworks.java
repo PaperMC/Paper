@@ -29,6 +29,13 @@ public record PaperFireworks(
         return this.impl.flightDuration();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .flightDuration(this.flightDuration())
+            .effects(this.effects());
+    }
+
     static final class BuilderImpl implements Fireworks.Builder {
 
         private final List<FireworkExplosion> effects = new ObjectArrayList<>();
@@ -61,6 +68,19 @@ public record PaperFireworks(
                 net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
                 this.effects.size() + effects.size()
             );
+            MCUtil.addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
+            return this;
+        }
+
+        @Override
+        public Builder effects(final List<FireworkEffect> effects) {
+            Preconditions.checkArgument(
+                effects.size() <= net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
+                "Cannot have more than %s effects, had %s",
+                net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
+                effects.size()
+            );
+            this.effects.clear();
             MCUtil.addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
             return this;
         }

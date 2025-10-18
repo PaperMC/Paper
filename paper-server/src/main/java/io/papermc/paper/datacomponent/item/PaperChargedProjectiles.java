@@ -22,6 +22,11 @@ public record PaperChargedProjectiles(
         return MCUtil.transformUnmodifiable(this.impl.getItems() /*makes copies internally*/, CraftItemStack::asCraftMirror);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.projectiles());
+    }
+
     static final class BuilderImpl implements ChargedProjectiles.Builder {
 
         private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
@@ -36,6 +41,13 @@ public record PaperChargedProjectiles(
 
         @Override
         public ChargedProjectiles.Builder addAll(final List<ItemStack> stacks) {
+            stacks.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public Builder stacks(final List<ItemStack> stacks) {
+            items.clear();
             stacks.forEach(this::add);
             return this;
         }
