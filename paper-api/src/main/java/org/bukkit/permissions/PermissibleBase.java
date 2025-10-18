@@ -179,6 +179,7 @@ public class PermissibleBase implements Permissible {
         }
     }
 
+    @Override
     public synchronized void clearPermissions() {
         Set<String> perms = permissions.keySet();
 

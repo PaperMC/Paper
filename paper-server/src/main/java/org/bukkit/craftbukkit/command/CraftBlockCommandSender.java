@@ -3,10 +3,12 @@ package org.bukkit.craftbukkit.command;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.ServerOperator;
 
@@ -16,18 +18,7 @@ import org.bukkit.permissions.ServerOperator;
 public class CraftBlockCommandSender extends ServerCommandSender implements BlockCommandSender {
 
     // For performance reasons, use one PermissibleBase for all command blocks.
-    private static final PermissibleBase SHARED_PERM = new PermissibleBase(new ServerOperator() {
-
-        @Override
-        public boolean isOp() {
-            return true;
-        }
-
-        @Override
-        public void setOp(boolean value) {
-            throw new UnsupportedOperationException("Cannot change operator status of a block");
-        }
-    });
+    private static final Permissible SHARED_PERM = Bukkit.getServer().getPluginManager().createCommandBlockPermissible();
     private final CommandSourceStack block;
     private final BlockEntity blockEntity;
 

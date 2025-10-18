@@ -6,6 +6,7 @@ import net.kyori.adventure.pointer.PointersSupplier;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
@@ -18,13 +19,13 @@ public abstract class ServerCommandSender implements CommandSender {
         .resolving(net.kyori.adventure.permission.PermissionChecker.POINTER, serverCommandSender -> serverCommandSender::permissionValue)
         .build();
 
-    public final PermissibleBase perm;
+    public final Permissible perm;
 
     protected ServerCommandSender() {
-        this.perm = new PermissibleBase(this);
+        this.perm = Bukkit.getServer().getPluginManager().createPermissible(this);
     }
 
-    protected ServerCommandSender(PermissibleBase perm) {
+    protected ServerCommandSender(Permissible perm) {
         this.perm = perm;
     }
 
