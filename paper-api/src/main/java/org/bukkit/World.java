@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import io.papermc.paper.world.biome.BiomeClimate;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.nio.file.Path;
@@ -2748,7 +2749,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param y Y coordinate of the block
      * @param z Z coordinate of the block
      * @return Temperature of the requested block
+     * @deprecated Get the temperature from the biome instead.
+     *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
+    @Deprecated(since = "1.21.7")
     public double getTemperature(int x, int y, int z);
 
     /**
@@ -2777,7 +2781,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param y Y coordinate of the block
      * @param z Z coordinate of the block
      * @return Humidity of the requested block
+     * @deprecated Get the temperature from the biome instead.
+     *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
+    @Deprecated(since = "1.21.7")
     public double getHumidity(int x, int y, int z);
 
     /**
