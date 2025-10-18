@@ -83,11 +83,8 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
     public enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering
-         * the bed is prevented and the bed explodes.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
+         * the bed is prevented.
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_HERE,
         /**
          * Entering the bed is prevented due to it not being night nor
@@ -96,10 +93,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
          * If the event is forcefully allowed during daytime, the player will
          * enter the bed (and set its bed location), but might get immediately
          * thrown out again.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_NOW,
         /**
          * Entering the bed is prevented due to the player being too far away.
@@ -116,6 +110,10 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         /**
          * Entering the bed is prevented due to there being monsters nearby.
          */
-        NOT_SAFE
+        NOT_SAFE,
+        /**
+         * Entering the bed is prevented and the bed explodes.
+         */
+        EXPLOSION
     }
 }

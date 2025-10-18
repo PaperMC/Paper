@@ -288,8 +288,10 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static PlayerBedFailEnterEvent.FailReason asFailReason(final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
-        if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
+    public static PlayerBedFailEnterEvent.FailReason asFailReason(final net.minecraft.world.attribute.BedRule bedRule, final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
+        if (bedRule.explodes()) {
+            return PlayerBedFailEnterEvent.FailReason.EXPLOSION;
+        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
             return PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE) {
             return PlayerBedFailEnterEvent.FailReason.NOT_SAFE;
@@ -297,17 +299,26 @@ public class CraftEventFactory {
             return PlayerBedFailEnterEvent.FailReason.OBSTRUCTED;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
             return PlayerBedFailEnterEvent.FailReason.TOO_FAR_AWAY;
+        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
+            return PlayerBedFailEnterEvent.FailReason.EXPLOSION;
+        } else if (sleepingProblem.message() != null) {
+            if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
+                return PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
+            } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
+                return PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW;
+            }
         }
         throw new IllegalArgumentException(sleepingProblem.toString());
     }
 
     public static PlayerBedFailEnterEvent callPlayerBedFailEnterEvent(
         net.minecraft.world.entity.player.Player player, BlockPos bed, net.minecraft.world.entity.player.Player.BedSleepingProblem bedSleepingProblem) {
+        net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
         final var event = new PlayerBedFailEnterEvent(
             (org.bukkit.entity.Player) player.getBukkitEntity(),
-            asFailReason(bedSleepingProblem),
+            asFailReason(bedRule, bedSleepingProblem),
             org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
-            player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).explodes(),
+            bedSleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION,
             io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()));
         event.callEvent();
         return event;
@@ -323,8 +334,17 @@ public class CraftEventFactory {
                 return BedEnterResult.OBSTRUCTED;
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
                 return BedEnterResult.TOO_FAR_AWAY;
+            } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
+                return BedEnterResult.EXPLOSION;
+            } else if (sleepingProblem.message() != null) {
+                net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
+                if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
+                    return BedEnterResult.NOT_POSSIBLE_HERE;
+                } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
+                    return BedEnterResult.NOT_POSSIBLE_NOW;
+                }
             }
-            throw new IllegalStateException();
+            throw new IllegalStateException(sleepingProblem.toString());
         }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
         PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.level(), bed), bedEnterResult);
