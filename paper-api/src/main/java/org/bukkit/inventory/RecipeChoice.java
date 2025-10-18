@@ -1,6 +1,10 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
+import io.papermc.paper.registry.tag.TagKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,7 +15,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.material.MaterialData;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potential item match within a recipe. All choices within a
@@ -20,9 +26,10 @@ import org.jetbrains.annotations.NotNull;
  *
  * <b>This class is not legal for implementation by plugins!</b>
  */
+@NullMarked
+@ApiStatus.NonExtendable
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
-    // Paper start - add "empty" choice
     /**
      * An "empty" recipe choice. Only valid as a recipe choice in
      * specific places. Check the javadocs of a method before using it
@@ -30,10 +37,23 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      *
      * @return the empty recipe choice
      */
-    static @NotNull RecipeChoice empty() {
+    static RecipeChoice empty() {
         return EmptyRecipeChoice.INSTANCE;
     }
-    // Paper end
+
+    /**
+     * Creates a new recipe choice based on a {@link RegistryKeySet} of item types.
+     * Can either be created via {@link RegistryKeySet#keySet(RegistryKey, TypedKey[])}
+     * or obtained from {@link org.bukkit.Registry#getTag(TagKey)}.
+     *
+     * @param itemTypes the item types to match
+     * @return a new recipe choice
+     */
+    @Contract(pure = true, value = "_ -> new")
+    @ApiStatus.Experimental
+    static ItemTypeChoice itemType(final RegistryKeySet<ItemType> itemTypes) {
+        return new ItemTypeRecipeChoiceImpl(itemTypes);
+    }
 
     /**
      * Gets a single item stack representative of this stack choice.
@@ -42,18 +62,16 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @deprecated for compatibility only
      */
     @Deprecated(since = "1.13.1")
-    @NotNull
     ItemStack getItemStack();
 
-    @NotNull
     RecipeChoice clone();
 
     @Override
-    boolean test(@NotNull ItemStack itemStack);
+    boolean test(ItemStack itemStack);
 
     // Paper start - check valid ingredients
     @org.jetbrains.annotations.ApiStatus.Internal
-    default @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+    default RecipeChoice validate(final boolean allowEmptyRecipes) {
         return this;
     }
     // Paper end - check valid ingredients
@@ -61,15 +79,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     /**
      * Represents a choice of multiple matching Materials.
      */
-    public static class MaterialChoice implements RecipeChoice {
+    final class MaterialChoice implements RecipeChoice {
 
         private List<Material> choices;
 
-        public MaterialChoice(@NotNull Material choice) {
+        public MaterialChoice(Material choice) {
             this(Arrays.asList(choice));
         }
 
-        public MaterialChoice(@NotNull Material... choices) {
+        public MaterialChoice(Material... choices) {
             this(Arrays.asList(choices));
         }
 
@@ -79,11 +97,11 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          *
          * @param choices the tag
          */
-        public MaterialChoice(@NotNull Tag<Material> choices) {
+        public MaterialChoice(Tag<Material> choices) {
             this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
 
-        public MaterialChoice(@NotNull List<Material> choices) {
+        public MaterialChoice(List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
 
@@ -103,7 +121,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
-        public boolean test(@NotNull ItemStack t) {
+        public boolean test(ItemStack t) {
             for (Material match : choices) {
                 if (t.getType() == match) {
                     return true;
@@ -113,7 +131,6 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return false;
         }
 
-        @NotNull
         @Override
         public ItemStack getItemStack() {
             ItemStack stack = new ItemStack(choices.get(0));
@@ -126,12 +143,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return stack;
         }
 
-        @NotNull
         public List<Material> getChoices() {
             return Collections.unmodifiableList(choices);
         }
 
-        @NotNull
         @Override
         public MaterialChoice clone() {
             try {
@@ -175,7 +190,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         // Paper start - check valid ingredients
         @Override
-        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+        public RecipeChoice validate(final boolean allowEmptyRecipes) {
             if (this.choices.stream().anyMatch(Material::isAir)) {
                 throw new IllegalArgumentException("RecipeChoice.MaterialChoice cannot contain air");
             }
@@ -188,19 +203,19 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Represents a choice that will be valid only if one of the stacks is
      * exactly matched (aside from stack size).
      */
-    public static class ExactChoice implements RecipeChoice {
+    final class ExactChoice implements RecipeChoice {
 
         private List<ItemStack> choices;
 
-        public ExactChoice(@NotNull ItemStack stack) {
+        public ExactChoice(ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
-        public ExactChoice(@NotNull ItemStack... stacks) {
+        public ExactChoice(ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
 
-        public ExactChoice(@NotNull List<ItemStack> choices) {
+        public ExactChoice(List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
             for (ItemStack choice : choices) {
@@ -211,18 +226,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             this.choices = new ArrayList<>(choices);
         }
 
-        @NotNull
         @Override
         public ItemStack getItemStack() {
             return choices.get(0).clone();
         }
 
-        @NotNull
         public List<ItemStack> getChoices() {
             return Collections.unmodifiableList(choices);
         }
 
-        @NotNull
         @Override
         public ExactChoice clone() {
             try {
@@ -240,7 +252,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
-        public boolean test(@NotNull ItemStack t) {
+        public boolean test(ItemStack t) {
             for (ItemStack match : choices) {
                 if (t.isSimilar(match)) {
                     return true;
@@ -282,12 +294,29 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         // Paper start - check valid ingredients
         @Override
-        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+        public RecipeChoice validate(final boolean allowEmptyRecipes) {
             if (this.choices.stream().anyMatch(s -> s.getType().isAir())) {
                 throw new IllegalArgumentException("RecipeChoice.ExactChoice cannot contain air");
             }
             return this;
         }
         // Paper end - check valid ingredients
+    }
+
+    /**
+     * Represents a choice that will be valid if the {@link ItemStack#getType()}
+     * matches any of the item types in the set.
+     *
+     * @see #itemType(RegistryKeySet)
+     */
+    @ApiStatus.Experimental
+    sealed interface ItemTypeChoice extends RecipeChoice permits ItemTypeRecipeChoiceImpl {
+
+        /**
+         * Gets the set of item types that this choice will match.
+         *
+         * @return the set of item types
+         */
+        RegistryKeySet<ItemType> itemTypes();
     }
 }
