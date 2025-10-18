@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
 public record PaperKineticWeapon(
-        net.minecraft.world.item.component.KineticWeapon impl
+    net.minecraft.world.item.component.KineticWeapon impl
 ) implements KineticWeapon, Handleable<net.minecraft.world.item.component.KineticWeapon> {
 
     private static net.minecraft.world.item.component.KineticWeapon.Condition toNms(final KineticWeapon.Condition api) {

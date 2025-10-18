@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
 public record PaperPiercingWeapon(
-        net.minecraft.world.item.component.PiercingWeapon impl
+    net.minecraft.world.item.component.PiercingWeapon impl
 ) implements PiercingWeapon, Handleable<net.minecraft.world.item.component.PiercingWeapon> {
 
     @Override

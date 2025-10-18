@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.util.Handleable;
 
 public record PaperUseEffects(
-        net.minecraft.world.item.component.UseEffects impl
+    net.minecraft.world.item.component.UseEffects impl
 ) implements UseEffects, Handleable<net.minecraft.world.item.component.UseEffects> {
 
     @Override
