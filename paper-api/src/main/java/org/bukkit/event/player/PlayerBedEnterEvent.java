@@ -1,8 +1,7 @@
 package org.bukkit.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
-import io.papermc.paper.block.bed.BedEnterActionImpl;
-import io.papermc.paper.block.bed.BedEnterProblem;
+import io.papermc.paper.block.bed.BedEnterActionBridge;
 import io.papermc.paper.block.bed.BedRuleResult;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -34,27 +33,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     @ApiStatus.Internal
     @Deprecated(since = "1.21.11", forRemoval = true)
     public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
-       this(player, bed, bedEnterResult, PlayerBedEnterEvent.fromBedEnterResult(bedEnterResult));
+       this(player, bed, bedEnterResult, BedEnterActionBridge.instance().fromBedEnterResult(player, bedEnterResult));
     }
 
     @ApiStatus.Internal
     @Deprecated(since = "1.13.2", forRemoval = true)
     public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
         this(player, bed, BedEnterResult.OK);
-    }
-
-    // This is what we have to do for backwards compatibility...
-    private static @NotNull BedEnterAction fromBedEnterResult(@NotNull BedEnterResult bedEnterResult) {
-        return switch (bedEnterResult) {
-            case OK -> new BedEnterActionImpl(BedRuleResult.ALLOWED, BedRuleResult.UNDEFINED, null);
-            case NOT_POSSIBLE_HERE -> new BedEnterActionImpl(BedRuleResult.NEVER, BedRuleResult.UNDEFINED, null);
-            case NOT_POSSIBLE_NOW -> new BedEnterActionImpl(BedRuleResult.TOO_MUCH_LIGHT, BedRuleResult.UNDEFINED, null);
-            case TOO_FAR_AWAY -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.TOO_FAR_AWAY);
-            case OBSTRUCTED -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OBSTRUCTED);
-            case NOT_SAFE -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.NOT_SAFE);
-            case OTHER_PROBLEM -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OTHER);
-            case EXPLOSION -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.EXPLOSION);
-        };
     }
 
     /**

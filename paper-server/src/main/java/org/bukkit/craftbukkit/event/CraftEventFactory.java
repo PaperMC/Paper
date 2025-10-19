@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -290,6 +291,7 @@ public class CraftEventFactory {
         final net.minecraft.world.entity.player.Player player, final net.minecraft.world.attribute.BedRule bedRule, final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
         PlayerBedFailEnterEvent.FailReason failReason = null;
         io.papermc.paper.block.bed.BedEnterProblem enterProblem = null;
+        Component errorMessage = sleepingProblem.message();
         if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
             failReason = PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
             enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OTHER;
@@ -305,6 +307,7 @@ public class CraftEventFactory {
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
             failReason = PlayerBedFailEnterEvent.FailReason.EXPLOSION;
             enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
+            errorMessage = bedRule.errorMessage().orElse(null);
         } else if (sleepingProblem.message() != null) {
             if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
                 failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
@@ -320,17 +323,16 @@ public class CraftEventFactory {
         return com.mojang.datafixers.util.Pair.of(
             failReason,
             new io.papermc.paper.block.bed.BedEnterActionImpl(
-                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), enterProblem != null),
-                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), enterProblem != null),
-                enterProblem
+                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level())),
+                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level())),
+                enterProblem,
+                errorMessage == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(errorMessage)
             )
         );
     }
 
-    public static io.papermc.paper.block.bed.BedRuleResult asBedRuleResult(net.minecraft.world.attribute.BedRule.Rule rule, boolean value, boolean problemFound) {
-        if (problemFound) {
-            return io.papermc.paper.block.bed.BedRuleResult.UNDEFINED;
-        } else if (rule == net.minecraft.world.attribute.BedRule.Rule.ALWAYS) {
+    public static io.papermc.paper.block.bed.BedRuleResult asBedRuleResult(net.minecraft.world.attribute.BedRule.Rule rule, boolean value) {
+        if (rule == net.minecraft.world.attribute.BedRule.Rule.ALWAYS) {
             return io.papermc.paper.block.bed.BedRuleResult.ALLOWED;
         } else if (rule == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
             if (value) {
@@ -353,7 +355,7 @@ public class CraftEventFactory {
             actionPair.getFirst(),
             org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
             bedSleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION,
-            io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()),
+            actionPair.getSecond().errorMessage(),
             actionPair.getSecond());
         event.callEvent();
         return event;
@@ -365,6 +367,7 @@ public class CraftEventFactory {
         com.mojang.datafixers.util.Pair<BedEnterResult, io.papermc.paper.block.bed.BedEnterActionImpl> bedEnterResult = nmsBedResult.mapBoth(sleepingProblem -> {
             BedEnterResult enterResult = null;
             io.papermc.paper.block.bed.BedEnterProblem enterProblem = null;
+            Component errorMessage = sleepingProblem.message();
             if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
                 enterResult = BedEnterResult.OTHER_PROBLEM;
                 enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OTHER;
@@ -380,6 +383,7 @@ public class CraftEventFactory {
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
                 enterResult = BedEnterResult.EXPLOSION;
                 enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
+                errorMessage = bedRule.errorMessage().orElse(null);
             } else if (sleepingProblem.message() != null) {
                 if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
                     enterResult = BedEnterResult.NOT_POSSIBLE_HERE;
@@ -395,16 +399,18 @@ public class CraftEventFactory {
             return com.mojang.datafixers.util.Pair.of(
                 enterResult,
                 new io.papermc.paper.block.bed.BedEnterActionImpl(
-                    CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), enterProblem != null),
-                    CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), enterProblem != null),
-                    enterProblem
+                    CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level())),
+                    CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level())),
+                    enterProblem,
+                    errorMessage == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(errorMessage)
                 )
             );
         }, t -> com.mojang.datafixers.util.Pair.of(
             BedEnterResult.OK,
             new io.papermc.paper.block.bed.BedEnterActionImpl(
-                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), false),
-                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), false),
+                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level())),
+                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level())),
+                null,
                 null
             )
         )).map(java.util.function.Function.identity(), java.util.function.Function.identity());

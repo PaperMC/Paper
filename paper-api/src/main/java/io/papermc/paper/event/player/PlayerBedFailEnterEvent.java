@@ -1,9 +1,7 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
-import io.papermc.paper.block.bed.BedEnterActionImpl;
-import io.papermc.paper.block.bed.BedEnterProblem;
-import io.papermc.paper.block.bed.BedRuleResult;
+import io.papermc.paper.block.bed.BedEnterActionBridge;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -40,20 +38,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
     @ApiStatus.Internal
     @Deprecated(since = "1.21.11")
     public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message) {
-        this(player, failReason, bed, willExplode, message, PlayerBedFailEnterEvent.fromFailReason(failReason));
-    }
-
-    // This is what we have to do for backwards compatibility...
-    private static BedEnterAction fromFailReason(FailReason failReason) {
-        return switch (failReason) {
-            case NOT_POSSIBLE_HERE -> new BedEnterActionImpl(BedRuleResult.NEVER, BedRuleResult.UNDEFINED, null);
-            case NOT_POSSIBLE_NOW -> new BedEnterActionImpl(BedRuleResult.TOO_MUCH_LIGHT, BedRuleResult.UNDEFINED, null);
-            case TOO_FAR_AWAY -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.TOO_FAR_AWAY);
-            case OBSTRUCTED -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OBSTRUCTED);
-            case NOT_SAFE -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.NOT_SAFE);
-            case OTHER_PROBLEM -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OTHER);
-            case EXPLOSION -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.EXPLOSION);
-        };
+        this(player, failReason, bed, willExplode, message, BedEnterActionBridge.instance().fromFailReason(player, failReason));
     }
 
     @Deprecated(since = "1.21.11")

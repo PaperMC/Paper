@@ -1,12 +1,12 @@
 package io.papermc.paper.block.bed;
 
-import net.kyori.adventure.util.TriState;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
 
+/**
+ * @hidden
+ */
 @ApiStatus.Internal
 public record BedRuleResultImpl(
-    TriState success,
-    @Nullable String ruleId
+    boolean success
 ) implements BedRuleResult {
 }

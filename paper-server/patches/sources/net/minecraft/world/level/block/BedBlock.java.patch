@@ -9,7 +9,7 @@
                  bedRule.errorMessage().ifPresent(component -> player.displayClientMessage(component, true));
                  level.removeBlock(pos, false);
                  BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
-@@ -105,22 +_,56 @@
+@@ -105,22 +_,58 @@
                  level.explode(null, level.damageSources().badRespawnPointExplosion(center), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                  return InteractionResult.SUCCESS_SERVER;
              } else if (state.getValue(OCCUPIED)) {
@@ -25,6 +25,9 @@
 +                final BlockPos finalBlockPos = pos;
 +                // CraftBukkit end
                  player.startSleepInBed(pos).ifLeft(bedSleepingProblem -> {
+-                    if (bedSleepingProblem.message() != null) {
+-                        player.displayClientMessage(bedSleepingProblem.message(), true);
+-                    }
 +                    // Paper start - PlayerBedFailEnterEvent
 +                    if (bedSleepingProblem != null) {
 +                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalBlockPos, bedSleepingProblem);
@@ -37,11 +40,12 @@
 +                        this.explodeBed(finalBlockState, level, finalBlockPos);
 +                    }
 +                    // CraftBukkit end
-                     if (bedSleepingProblem.message() != null) {
--                        player.displayClientMessage(bedSleepingProblem.message(), true);
-+                        final net.kyori.adventure.text.Component message = event.getMessage(); // Paper - PlayerBedFailEnterEvent
-+                        if (message != null) player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true); // Paper - PlayerBedFailEnterEvent
-                     }
++                    // Paper start - PlayerBedFailEnterEvent
++                    final net.kyori.adventure.text.Component message = event.getMessage();
++                    if (message != null) {
++                        player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true);
++                        // Paper end - PlayerBedFailEnterEvent
++                    }
 +                    } // Paper - PlayerBedFailEnterEvent
                  });
                  return InteractionResult.SUCCESS_SERVER;

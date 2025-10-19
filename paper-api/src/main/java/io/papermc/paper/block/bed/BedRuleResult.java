@@ -1,39 +1,37 @@
 package io.papermc.paper.block.bed;
 
-import net.kyori.adventure.util.TriState;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- *
+ * Represents the result of a bed rule during {@link org.bukkit.event.player.PlayerBedEnterEvent}
+ * and {@link io.papermc.paper.event.player.PlayerBedFailEnterEvent}. Bed rules are responsible
+ * for allowing players to sleep and to set their spawn point
  */
 @ApiStatus.Experimental
 public sealed interface BedRuleResult permits BedRuleResultImpl {
 
     /**
-     *
+     * Used when the bed rule is allowed
      */
-    BedRuleResult ALLOWED = new BedRuleResultImpl(TriState.TRUE, null);
+    BedRuleResult ALLOWED = new BedRuleResultImpl(true);
 
     /**
-     *
+     * Used when the bed rule is denied due to there
+     * being too much light. This is the case during
+     * daytime without thunderstorms
      */
-    BedRuleResult TOO_MUCH_LIGHT = new BedRuleResultImpl(TriState.FALSE, "when_dark");
+    BedRuleResult TOO_MUCH_LIGHT = new BedRuleResultImpl(false);
 
     /**
-     *
+     * Used when the bed rule is set to always be denied
      */
-    BedRuleResult NEVER = new BedRuleResultImpl(TriState.FALSE, "never");
+    BedRuleResult NEVER = new BedRuleResultImpl(false);
 
     /**
-     *
-     */
-    BedRuleResult UNDEFINED = new BedRuleResultImpl(TriState.NOT_SET, null);
-
-    /**
-     * Returns {@link TriState#TRUE} if this result is a success, or {@link TriState#NOT_SET} when {@link #UNDEFINED}
+     * Returns {@code true} if this result is a success
      *
      * @return whether this result is a success
      */
-    TriState success();
+    boolean success();
 
 }
