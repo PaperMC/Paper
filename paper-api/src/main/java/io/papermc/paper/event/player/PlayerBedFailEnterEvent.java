@@ -100,6 +100,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         return HANDLER_LIST;
     }
 
+    @Deprecated(since = "1.21.11")
     public enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering
