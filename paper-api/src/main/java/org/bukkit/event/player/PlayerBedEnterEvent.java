@@ -1,6 +1,9 @@
 package org.bukkit.event.player;
 
-import org.bukkit.World;
+import io.papermc.paper.block.bed.BedEnterAction;
+import io.papermc.paper.block.bed.BedEnterActionImpl;
+import io.papermc.paper.block.bed.BedEnterProblem;
+import io.papermc.paper.block.bed.BedRuleResult;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -16,20 +19,42 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Block bed;
-    private final BedEnterResult bedEnterResult;
+    private final @Deprecated(since = "1.21.11") BedEnterResult bedEnterResult;
+    private final @NotNull BedEnterAction enterAction;
     private Result useBed = Result.DEFAULT;
 
     @ApiStatus.Internal
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
+    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult, @NotNull BedEnterAction enterAction) {
         super(player);
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
+        this.enterAction = enterAction;
+    }
+
+    @ApiStatus.Internal
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
+       this(player, bed, bedEnterResult, PlayerBedEnterEvent.fromBedEnterResult(bedEnterResult));
     }
 
     @ApiStatus.Internal
     @Deprecated(since = "1.13.2", forRemoval = true)
     public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
         this(player, bed, BedEnterResult.OK);
+    }
+
+    // This is what we have to do for backwards compatibility...
+    private static @NotNull BedEnterAction fromBedEnterResult(@NotNull BedEnterResult bedEnterResult) {
+        return switch (bedEnterResult) {
+            case OK -> new BedEnterActionImpl(BedRuleResult.ALLOWED, BedRuleResult.UNDEFINED, null);
+            case NOT_POSSIBLE_HERE -> new BedEnterActionImpl(BedRuleResult.NEVER, BedRuleResult.UNDEFINED, null);
+            case NOT_POSSIBLE_NOW -> new BedEnterActionImpl(BedRuleResult.TOO_MUCH_LIGHT, BedRuleResult.UNDEFINED, null);
+            case TOO_FAR_AWAY -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.TOO_FAR_AWAY);
+            case OBSTRUCTED -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OBSTRUCTED);
+            case NOT_SAFE -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.NOT_SAFE);
+            case OTHER_PROBLEM -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OTHER);
+            case EXPLOSION -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.EXPLOSION);
+        };
     }
 
     /**
@@ -48,8 +73,19 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @return the bed enter result representing the default outcome of this event
      */
     @NotNull
+    @Deprecated(since = "1.21.11")
     public BedEnterResult getBedEnterResult() {
         return this.bedEnterResult;
+    }
+
+    /**
+     * This describes the default outcome of this event.
+     *
+     * @return the action representing the default outcome of this event
+     */
+    @ApiStatus.Experimental
+    public @NotNull BedEnterAction enterAction() {
+        return this.enterAction;
     }
 
     /**
@@ -100,7 +136,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      */
     @Override
     public boolean isCancelled() {
-        return this.useBed == Result.DENY || this.useBed == Result.DEFAULT && this.bedEnterResult != BedEnterResult.OK;
+        return this.useBed == Result.DENY || this.useBed == Result.DEFAULT && this.enterAction.canSleep() != BedRuleResult.ALLOWED;
     }
 
     /**
@@ -127,6 +163,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     /**
      * Represents the default possible outcomes of this event.
      */
+    @Deprecated(since = "1.21.11")
     public enum BedEnterResult {
         /**
          * The player will enter the bed.

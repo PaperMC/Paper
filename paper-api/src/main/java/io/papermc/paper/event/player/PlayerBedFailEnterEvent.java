@@ -1,5 +1,9 @@
 package io.papermc.paper.event.player;
 
+import io.papermc.paper.block.bed.BedEnterAction;
+import io.papermc.paper.block.bed.BedEnterActionImpl;
+import io.papermc.paper.block.bed.BedEnterProblem;
+import io.papermc.paper.block.bed.BedRuleResult;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -15,24 +19,55 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final FailReason failReason;
+    private final @Deprecated(since = "1.21.11") FailReason failReason;
     private final Block bed;
+    private final BedEnterAction enterAction;
     private boolean willExplode;
     private @Nullable Component message;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message) {
+    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message, BedEnterAction enterAction) {
         super(player);
         this.failReason = failReason;
         this.bed = bed;
+        this.enterAction = enterAction;
         this.willExplode = willExplode;
         this.message = message;
     }
 
+    @ApiStatus.Internal
+    @Deprecated(since = "1.21.11")
+    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message) {
+        this(player, failReason, bed, willExplode, message, PlayerBedFailEnterEvent.fromFailReason(failReason));
+    }
+
+    // This is what we have to do for backwards compatibility...
+    private static BedEnterAction fromFailReason(FailReason failReason) {
+        return switch (failReason) {
+            case NOT_POSSIBLE_HERE -> new BedEnterActionImpl(BedRuleResult.NEVER, BedRuleResult.UNDEFINED, null);
+            case NOT_POSSIBLE_NOW -> new BedEnterActionImpl(BedRuleResult.TOO_MUCH_LIGHT, BedRuleResult.UNDEFINED, null);
+            case TOO_FAR_AWAY -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.TOO_FAR_AWAY);
+            case OBSTRUCTED -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OBSTRUCTED);
+            case NOT_SAFE -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.NOT_SAFE);
+            case OTHER_PROBLEM -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.OTHER);
+            case EXPLOSION -> new BedEnterActionImpl(BedRuleResult.UNDEFINED, BedRuleResult.UNDEFINED, BedEnterProblem.EXPLOSION);
+        };
+    }
+
+    @Deprecated(since = "1.21.11")
     public FailReason getFailReason() {
         return this.failReason;
+    }
+
+    /**
+     * This describes the default outcome of this event.
+     *
+     * @return the action representing the default outcome of this event
+     */
+    public BedEnterAction enterAction() {
+        return this.enterAction;
     }
 
     public Block getBed() {

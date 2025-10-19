@@ -25,7 +25,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,7 +33,6 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -288,66 +286,135 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static PlayerBedFailEnterEvent.FailReason asFailReason(final net.minecraft.world.attribute.BedRule bedRule, final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
-        if (bedRule.explodes()) {
-            return PlayerBedFailEnterEvent.FailReason.EXPLOSION;
-        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
-            return PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
+    public static com.mojang.datafixers.util.Pair<PlayerBedFailEnterEvent.FailReason, io.papermc.paper.block.bed.BedEnterAction> asFailReason(
+        final net.minecraft.world.entity.player.Player player, final net.minecraft.world.attribute.BedRule bedRule, final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
+        PlayerBedFailEnterEvent.FailReason failReason = null;
+        io.papermc.paper.block.bed.BedEnterProblem enterProblem = null;
+        if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
+            failReason = PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
+            enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OTHER;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE) {
-            return PlayerBedFailEnterEvent.FailReason.NOT_SAFE;
+            failReason = PlayerBedFailEnterEvent.FailReason.NOT_SAFE;
+            enterProblem = io.papermc.paper.block.bed.BedEnterProblem.NOT_SAFE;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED) {
-            return PlayerBedFailEnterEvent.FailReason.OBSTRUCTED;
+            failReason = PlayerBedFailEnterEvent.FailReason.OBSTRUCTED;
+            enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OBSTRUCTED;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
-            return PlayerBedFailEnterEvent.FailReason.TOO_FAR_AWAY;
+            failReason = PlayerBedFailEnterEvent.FailReason.TOO_FAR_AWAY;
+            enterProblem = io.papermc.paper.block.bed.BedEnterProblem.TOO_FAR_AWAY;
         } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
-            return PlayerBedFailEnterEvent.FailReason.EXPLOSION;
+            failReason = PlayerBedFailEnterEvent.FailReason.EXPLOSION;
+            enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
         } else if (sleepingProblem.message() != null) {
             if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
-                return PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
+                failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
             } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
-                return PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW;
+                failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW;
             }
         }
-        throw new IllegalArgumentException(sleepingProblem.toString());
+
+        if (failReason == null) {
+            throw new IllegalArgumentException(sleepingProblem.toString());
+        }
+
+        return com.mojang.datafixers.util.Pair.of(
+            failReason,
+            new io.papermc.paper.block.bed.BedEnterActionImpl(
+                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), enterProblem != null),
+                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), enterProblem != null),
+                enterProblem
+            )
+        );
+    }
+
+    public static io.papermc.paper.block.bed.BedRuleResult asBedRuleResult(net.minecraft.world.attribute.BedRule.Rule rule, boolean value, boolean problemFound) {
+        if (problemFound) {
+            return io.papermc.paper.block.bed.BedRuleResult.UNDEFINED;
+        } else if (rule == net.minecraft.world.attribute.BedRule.Rule.ALWAYS) {
+            return io.papermc.paper.block.bed.BedRuleResult.ALLOWED;
+        } else if (rule == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
+            if (value) {
+                return io.papermc.paper.block.bed.BedRuleResult.ALLOWED;
+            } else {
+                return io.papermc.paper.block.bed.BedRuleResult.TOO_MUCH_LIGHT;
+            }
+        } else if (rule == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
+            return io.papermc.paper.block.bed.BedRuleResult.NEVER;
+        }
+        throw new IllegalArgumentException(rule.toString());
     }
 
     public static PlayerBedFailEnterEvent callPlayerBedFailEnterEvent(
         net.minecraft.world.entity.player.Player player, BlockPos bed, net.minecraft.world.entity.player.Player.BedSleepingProblem bedSleepingProblem) {
         net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
+        com.mojang.datafixers.util.Pair<PlayerBedFailEnterEvent.FailReason, io.papermc.paper.block.bed.BedEnterAction> actionPair = asFailReason(player, bedRule, bedSleepingProblem);
         final var event = new PlayerBedFailEnterEvent(
             (org.bukkit.entity.Player) player.getBukkitEntity(),
-            asFailReason(bedRule, bedSleepingProblem),
+            actionPair.getFirst(),
             org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
             bedSleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION,
-            io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()));
+            io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()),
+            actionPair.getSecond());
         event.callEvent();
         return event;
     }
 
-    public static Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> callPlayerBedEnterEvent(net.minecraft.world.entity.player.Player player, BlockPos bed, Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> nmsBedResult) {
-        BedEnterResult bedEnterResult = nmsBedResult.mapBoth(sleepingProblem -> {
+    public static Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> callPlayerBedEnterEvent(
+        net.minecraft.world.entity.player.Player player, BlockPos bed, Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> nmsBedResult) {
+        final net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
+        com.mojang.datafixers.util.Pair<BedEnterResult, io.papermc.paper.block.bed.BedEnterActionImpl> bedEnterResult = nmsBedResult.mapBoth(sleepingProblem -> {
+            BedEnterResult enterResult = null;
+            io.papermc.paper.block.bed.BedEnterProblem enterProblem = null;
             if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
-                return BedEnterResult.OTHER_PROBLEM;
+                enterResult = BedEnterResult.OTHER_PROBLEM;
+                enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OTHER;
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE) {
-                return BedEnterResult.NOT_SAFE;
+                enterResult = BedEnterResult.NOT_SAFE;
+                enterProblem = io.papermc.paper.block.bed.BedEnterProblem.NOT_SAFE;
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED) {
-                return BedEnterResult.OBSTRUCTED;
+                enterResult = BedEnterResult.OBSTRUCTED;
+                enterProblem = io.papermc.paper.block.bed.BedEnterProblem.OBSTRUCTED;
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
-                return BedEnterResult.TOO_FAR_AWAY;
+                enterResult = BedEnterResult.TOO_FAR_AWAY;
+                enterProblem = io.papermc.paper.block.bed.BedEnterProblem.TOO_FAR_AWAY;
             } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION) {
-                return BedEnterResult.EXPLOSION;
+                enterResult = BedEnterResult.EXPLOSION;
+                enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
             } else if (sleepingProblem.message() != null) {
-                net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
                 if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
-                    return BedEnterResult.NOT_POSSIBLE_HERE;
+                    enterResult = BedEnterResult.NOT_POSSIBLE_HERE;
                 } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
-                    return BedEnterResult.NOT_POSSIBLE_NOW;
+                    enterResult = BedEnterResult.NOT_POSSIBLE_NOW;
                 }
             }
-            throw new IllegalStateException(sleepingProblem.toString());
-        }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
-        PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.level(), bed), bedEnterResult);
+            if (enterResult == null) {
+                throw new IllegalStateException(sleepingProblem.toString());
+            }
+
+            return com.mojang.datafixers.util.Pair.of(
+                enterResult,
+                new io.papermc.paper.block.bed.BedEnterActionImpl(
+                    CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), enterProblem != null),
+                    CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), enterProblem != null),
+                    enterProblem
+                )
+            );
+        }, t -> com.mojang.datafixers.util.Pair.of(
+            BedEnterResult.OK,
+            new io.papermc.paper.block.bed.BedEnterActionImpl(
+                CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep().test(player.level()), false),
+                CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn().test(player.level()), false),
+                null
+            )
+        )).map(java.util.function.Function.identity(), java.util.function.Function.identity());
+
+        PlayerBedEnterEvent event = new PlayerBedEnterEvent(
+            (Player) player.getBukkitEntity(),
+            CraftBlock.at(player.level(), bed),
+            bedEnterResult.getFirst(),
+            bedEnterResult.getSecond()
+        );
         Bukkit.getServer().getPluginManager().callEvent(event);
 
         Result result = event.useBed();
