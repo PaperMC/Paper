@@ -2808,7 +2808,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if beds work in this world
      */
-    // TODO - snapshot: Should we deprecate this method since the underlying setting was split in 3 different environment attributes?
+    @Deprecated(since = "1.21.11")
     public boolean isBedWorks();
 
     /**
