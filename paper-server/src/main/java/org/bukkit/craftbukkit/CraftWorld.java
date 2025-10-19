@@ -1403,7 +1403,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isUltraWarm() {
-        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.WATER_EVAPORATES);
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.WATER_EVAPORATES)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.FAST_LAVA)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE).equals(ParticleTypes.DRIPPING_DRIPSTONE_LAVA);
     }
 
     @Override
