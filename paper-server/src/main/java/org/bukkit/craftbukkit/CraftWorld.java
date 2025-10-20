@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.raytracing.BlockCollisionMode;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -1036,6 +1037,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<? super Block> canCollide) {
+        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks ? BlockCollisionMode.COLLIDER : BlockCollisionMode.OUTLINE, canCollide);
+    }
+
+    public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, BlockCollisionMode blockCollisionMode, Predicate<? super Block> canCollide) {
         Preconditions.checkArgument(start != null, "Location start cannot be null");
         Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
         Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
@@ -1045,6 +1050,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         Preconditions.checkArgument(direction.lengthSquared() > 0, "Direction's magnitude (%s) need to be greater than 0", direction.lengthSquared());
         Preconditions.checkArgument(fluidCollisionMode != null, "FluidCollisionMode cannot be null");
+        Preconditions.checkArgument(blockCollisionMode != null, "BlockCollisionMode cannot be null");
 
         if (maxDistance < 0.0D) {
             return null;
@@ -1053,14 +1059,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Vector dir = direction.clone().normalize().multiply(maxDistance);
         Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
-        HitResult hitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
+        HitResult hitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ClipContext.Block.values()[blockCollisionMode.ordinal()], CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), canCollide);
 
         return CraftRayTraceResult.convertFromInternal(this.getHandle(), hitResult);
     }
 
     @Override
     public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
-        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
+        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks ? BlockCollisionMode.COLLIDER : BlockCollisionMode.OUTLINE, raySize, filter, null);
+    }
+
+    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, BlockCollisionMode blockCollisionMode, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
+        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, blockCollisionMode, canCollide);
         Vector startVec = null;
         double blockHitDistance = maxDistance;
 
@@ -1101,11 +1111,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         final double maxDistance = builder.maxDistance.getAsDouble();
         if (builder.targets.contains(RayTraceTarget.ENTITY)) {
             if (builder.targets.contains(RayTraceTarget.BLOCK)) {
-                return this.rayTrace(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.raySize, builder.entityFilter, builder.blockFilter);
+                return this.rayTrace(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.blockCollisionMode, builder.raySize, builder.entityFilter, builder.blockFilter);
             }
             return this.rayTraceEntities(builder.start, builder.direction, maxDistance, builder.raySize, builder.entityFilter);
         }
-        return this.rayTraceBlocks(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.blockFilter);
+        return this.rayTraceBlocks(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.blockCollisionMode, builder.blockFilter);
     }
 
     @Override
