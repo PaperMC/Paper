@@ -1,6 +1,8 @@
 package io.papermc.paper.entity;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 /**
@@ -85,8 +87,8 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
      * Represents flags that effect the entity's state on
      * teleportation.
      *
-     * @deprecated as of 1.21.10, this is now the default behavior without
-     * any additional flags required
+     * @deprecated as of 1.21.10, the default behavior for teleportation is now aligned with vanilla
+     * behavior. This means all of these flags are functionally done by default.
      */
     @Deprecated(since = "1.21.10", forRemoval = true)
     enum EntityState implements TeleportFlag {
@@ -96,6 +98,8 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          * Note:
          * Teleporting to a different world with this flag present while the entity has entities riding it
          * will cause this teleportation to return false and not occur.
+         * @deprecated This is now default behavior in teleportation. If you want to dismount all passengers,
+         * remove them with {@link org.bukkit.entity.Entity#removePassenger(Entity)}.
          */
         RETAIN_PASSENGERS,
         /**
@@ -104,6 +108,8 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          * Note:
          * Teleporting to a different world with this flag present while this entity is riding another entity will
          * cause this teleportation to return false and not occur.
+         * @deprecated This behavior was highly technical and is not replicatable due to client limitations,
+         * and has not functioned for many updates.
          */
         RETAIN_VEHICLE,
         /**
@@ -111,6 +117,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          * <p>
          * Note:
          * This option will be ignored when teleported to a different world.
+         * @deprecated No longer done on teleportation, use {@link Player#closeInventory()} to do this yourself.
          */
         RETAIN_OPEN_INVENTORY;
     }
