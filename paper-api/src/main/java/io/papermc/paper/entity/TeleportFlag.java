@@ -18,8 +18,8 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
      *
      * @apiNote The relative flags exposed in the API do *not* mirror all flags known to vanilla, as relative flags concerning
      * the position are non-applicable given teleports always expect an absolute location.
-     * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
-     * @see org.bukkit.entity.Entity#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
+     * @see Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
+     * @see Entity#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
      */
     enum Relative implements TeleportFlag {
         /**
@@ -87,7 +87,7 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
      * Represents flags that effect the entity's state on
      * teleportation.
      *
-     * @deprecated as of 1.21.10, the default behavior for teleportation is now aligned with vanilla
+     * @deprecated As of 1.21.10, the default behavior for teleportation is now aligned with vanilla
      * behavior. This means all of these flags are functionally done by default.
      */
     @Deprecated(since = "1.21.10", forRemoval = true)
@@ -98,9 +98,11 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          * Note:
          * Teleporting to a different world with this flag present while the entity has entities riding it
          * will cause this teleportation to return false and not occur.
+         *
          * @deprecated This is now default behavior in teleportation. If you want to dismount all passengers,
-         * remove them with {@link org.bukkit.entity.Entity#removePassenger(Entity)}.
+         * remove them with {@link Entity#removePassenger(Entity)}.
          */
+        @Deprecated(since = "1.21.10", forRemoval = true)
         RETAIN_PASSENGERS,
         /**
          * If the entity should not be dismounted if they are riding another entity.
@@ -108,17 +110,21 @@ public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportF
          * Note:
          * Teleporting to a different world with this flag present while this entity is riding another entity will
          * cause this teleportation to return false and not occur.
+         *
          * @deprecated This behavior was highly technical and is not replicatable due to client limitations,
          * and has not functioned for many updates.
          */
+        @Deprecated(since = "1.21.10", forRemoval = true)
         RETAIN_VEHICLE,
         /**
          * Indicates that a player should not have their current open inventory closed when teleporting.
          * <p>
          * Note:
          * This option will be ignored when teleported to a different world.
+         *
          * @deprecated No longer done on teleportation, use {@link Player#closeInventory()} to do this yourself.
          */
+        @Deprecated(since = "1.21.10", forRemoval = true)
         RETAIN_OPEN_INVENTORY;
     }
 
