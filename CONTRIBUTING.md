@@ -25,9 +25,9 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
   - Paper requires JDK 21 to build, however, makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
-    feature to allow building with only JRE 11 or later installed. (Gradle will
+    feature to allow building with only JRE 17 or later installed. (Gradle will
     automatically provision JDK 21 for compilation if it cannot find an existing
-    install).
+    installation).
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).
@@ -469,11 +469,11 @@ release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 In order to speed up patching process on Windows, it's recommended you get WSL 2.
 This is available in Windows 10 v2004, build 19041 or higher. (You can check
 your version by running `winver` in the run window (Windows key + R)). If you're
-using an out of date version of Windows 10, update your system with the
+using an out-of-date version of Windows 10, update your system with the
 [Windows 10 Update Assistant](https://www.microsoft.com/en-us/software-download/windows10) or [Windows 11 Update Assistant](https://www.microsoft.com/en-us/software-download/windows11).
 
 To set up WSL 2, follow the information here:
-<https://docs.microsoft.com/en-us/windows/wsl/install>
+<https://learn.microsoft.com/en-us/windows/wsl/install>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
@@ -482,5 +482,5 @@ required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
 everything like usual.
 
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
-> in Windows like described here:
-> <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
+> in Windows as described here:
+> <https://learn.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>

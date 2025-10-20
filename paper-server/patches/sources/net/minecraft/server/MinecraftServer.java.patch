@@ -41,7 +41,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -278,10 +_,91 @@
+@@ -278,10 +_,108 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
@@ -70,7 +70,6 @@
 +    // Paper start - improve tick loop
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
-+    private volatile @Nullable ca.spottedleaf.moonrise.common.time.TickData.TickReportData tickReport5s;
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes10s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
 +    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
@@ -82,45 +81,63 @@
 +    private long lastTickStart;
 +    private long currentTickStart;
 +    private long scheduledTickStart;
-+    private volatile double[] tps = new double[]{0.0, 0.0, 0.0};
++    private final Object statsLock = new Object();
++    private @Nullable double[] tps;
++    private @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData msptData5s;
 +
 +    private void addTickTime(final ca.spottedleaf.moonrise.common.time.TickTime time) {
-+        org.spigotmc.AsyncCatcher.catchOp("addTickTime");
-+        this.tickTimes1s.addDataFrom(time);
-+        this.tickTimes5s.addDataFrom(time);
-+        this.tickReport5s = this.tickTimes5s.generateTickReport(null, System.nanoTime(), this.tickRateManager().nanosecondsPerTick());
-+        this.tickTimes10s.addDataFrom(time);
-+        this.tickTimes15s.addDataFrom(time);
-+        this.tickTimes1m.addDataFrom(time);
-+        this.tickTimes5m.addDataFrom(time);
-+        this.tickTimes15m.addDataFrom(time);
-+        this.tps = this.computeTPS();
++        synchronized (this.statsLock) {
++            this.tickTimes1s.addDataFrom(time);
++            this.tickTimes5s.addDataFrom(time);
++            this.tickTimes10s.addDataFrom(time);
++            this.tickTimes15s.addDataFrom(time);
++            this.tickTimes1m.addDataFrom(time);
++            this.tickTimes5m.addDataFrom(time);
++            this.tickTimes15m.addDataFrom(time);
++            this.clearTickTimeStatistics();
++        }
 +    }
 +
-+    private static double getTPS(final ca.spottedleaf.moonrise.common.time.TickData tickData, final long timeNow, final long tickInterval) {
-+        final ca.spottedleaf.moonrise.common.time.TickData.TickReportData tickReportData = tickData.generateTickReport(null, timeNow, tickInterval);
-+        if (tickReportData == null) {
++    private void clearTickTimeStatistics() {
++        this.msptData5s = null;
++        this.tps = null;
++    }
++
++    private static double getTPS(final ca.spottedleaf.moonrise.common.time.TickData tickData, final long tickInterval) {
++        final Double avg = tickData.getTPSAverage(null, tickInterval);
++        if (avg == null) {
 +            return 1.0E9 / (double)tickInterval;
 +        }
 +
-+        return tickReportData.tpsData().segmentAll().average();
++        return avg;
 +    }
 +
 +    public double[] getTPS() {
-+        return this.tps.clone();
++        synchronized (this.statsLock) {
++            double[] tps = this.tps;
++            if (tps == null) {
++                tps = this.computeTPS();
++                this.tps = tps;
++            }
++            return tps.clone();
++        }
 +    }
 +
-+    public @Nullable ca.spottedleaf.moonrise.common.time.TickData.TickReportData getTickReport5s() {
-+        return this.tickReport5s;
++    public @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData getMSPTData5s() {
++        synchronized (this.statsLock) {
++            if (this.msptData5s == null) {
++                this.msptData5s = this.tickTimes5s.getMSPTData(null, this.tickRateManager().nanosecondsPerTick());
++            }
++            return this.msptData5s;
++        }
 +    }
 +
 +    public double[] computeTPS() {
-+        final long now = System.nanoTime();
 +        final long interval = this.tickRateManager().nanosecondsPerTick();
 +        return new double[] {
-+            getTPS(this.tickTimes1m, now, interval),
-+            getTPS(this.tickTimes5m, now, interval),
-+            getTPS(this.tickTimes15m, now, interval)
++            getTPS(this.tickTimes1m, interval),
++            getTPS(this.tickTimes5m, interval),
++            getTPS(this.tickTimes15m, interval)
 +        };
 +    }
 +    // Paper end - improve tick loop

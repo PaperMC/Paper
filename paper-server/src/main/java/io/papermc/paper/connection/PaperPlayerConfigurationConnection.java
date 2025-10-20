@@ -144,4 +144,9 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     public Set<String> getListeningPluginChannels() {
         return Set.copyOf(this.channels());
     }
+
+    @Override
+    public boolean isConnected() {
+        return this.handle.connection.isConnected();
+    }
 }
