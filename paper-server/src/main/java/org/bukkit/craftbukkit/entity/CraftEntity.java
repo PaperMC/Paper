@@ -11,6 +11,7 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -309,8 +310,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             }
         }
 
+        World targetWorld = Objects.requireNonNullElse(location.getWorld(), this.getWorld());
         return this.entity.teleport(new TeleportTransition(
-            ((CraftWorld) location.getWorld()).getHandle(),
+            ((CraftWorld) targetWorld).getHandle(),
             CraftLocation.toVec3(location),
             Vec3.ZERO,
             location.getYaw(),
