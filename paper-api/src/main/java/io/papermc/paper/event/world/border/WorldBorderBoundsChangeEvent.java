@@ -106,6 +106,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * {@link Type#STARTED_MOVE}.
      *
      * @param duration the time in milliseconds for the change
+     * @deprecated deprecated in favor of {@link #setDurationTicks(long)}
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     public void setDuration(final long duration) {
