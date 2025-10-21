@@ -1168,7 +1168,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             }
 
             @Override
-            public void onLerpSize(net.minecraft.world.level.border.WorldBorder border, double fromSize, double toSize, long time) {
+            public void onLerpSize(net.minecraft.world.level.border.WorldBorder border, double fromSize, double toSize, long time, long gameTime) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderLerpSizePacket(border));
             }
 
