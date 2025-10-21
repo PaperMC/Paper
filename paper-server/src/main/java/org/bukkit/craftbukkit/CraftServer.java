@@ -714,6 +714,18 @@ public final class CraftServer implements Server {
 
         return null;
     }
+    //Paper - start
+    /**
+     * Gets an online player by their exact username.
+     *
+     * @param name The exact username of the player.
+     * @return An {@link Optional} containing the player if found, otherwise empty.
+     */
+
+    public Optional<Player> player(@NotNull String name) {
+        return Optional.ofNullable(getPlayer(name));
+    }
+    //Paper - end
 
     @Override
     @Deprecated
