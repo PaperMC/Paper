@@ -1,12 +1,13 @@
 package org.bukkit.event.player;
 
 import io.papermc.paper.entity.TeleportFlag;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.util.Set;
 
 /**
@@ -22,19 +23,20 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
     private int searchRadius = 128;
     private boolean canCreatePortal = true;
     private int creationRadius = 16;
+    private WorldBorder worldBorder = null;
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to) {
         super(player, from, to);
     }
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @NotNull Location to, @NotNull TeleportCause cause) {
         super(player, from, to, cause);
     }
 
     @ApiStatus.Internal
-    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause, int searchRadius, boolean canCreatePortal, int creationRadius) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @NotNull Location to, @NotNull TeleportCause cause, int searchRadius, boolean canCreatePortal, int creationRadius) {
         super(player, from, to, cause);
         this.searchRadius = searchRadius;
         this.canCreatePortal = canCreatePortal;
@@ -137,6 +139,66 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      */
     public int getCreationRadius() {
         return this.creationRadius;
+    }
+
+    /**
+     * Sets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param worldBorder the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     */
+    public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+        this.worldBorder = worldBorder;
+    }
+
+    /**
+     * Sets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param center the center of the world border.
+     * @param size the side length of the world border.
+     */
+    public void setWorldBorder(@NotNull Location center, double size) {
+        this.worldBorder = Bukkit.createWorldBorder();
+        this.worldBorder.setCenter(center);
+        this.worldBorder.setSize(size);
+    }
+
+    /**
+     * Sets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param x the x coordinate of the center of the world border.
+     * @param z the z coordinate of the center of the world border.
+     * @param size the side length of the world border.
+     */
+    public void setWorldBorder(double x, double z , double size) {
+        this.setWorldBorder(new Location(null, x, 0, z),  size);
+    }
+
+    /**
+     * Gets the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     * <p>
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @return the {@link WorldBorder} that portal search and optionally creation will be limited to.
+     */
+    public @NotNull WorldBorder getWorldBorder() {
+        if  (this.worldBorder == null) {
+            var worldWorldBorder = this.getTo().getWorld().getWorldBorder();
+            this.worldBorder = Bukkit.createWorldBorder();
+            this.worldBorder.setCenter(worldWorldBorder.getCenter().clone());
+            this.worldBorder.setSize(worldWorldBorder.getSize());
+        }
+
+        return this.worldBorder;
     }
 
     /**
