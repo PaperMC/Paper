@@ -1,11 +1,13 @@
 package io.papermc.paper.event.world.border;
 
+import io.papermc.paper.util.Tick;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
+import java.time.Duration;
 
 /**
  * Called when a world border changes its bounds, either over time, or instantly.
@@ -67,12 +69,36 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
     }
 
     /**
+     * Gets the time in ticks for the change. Will be 0 if instant.
+     *
+     * @return the time in ticks for the change
+     */
+    public long getDurationTicks() {
+        return this.duration;
+    }
+
+    /**
      * Gets the time in milliseconds for the change. Will be 0 if instant.
      *
      * @return the time in milliseconds for the change
+     * @deprecated deprecated in favor of {@link #getDurationTicks()}
      */
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public long getDuration() {
-        return this.duration;
+        return Tick.of(this.duration).toMillis();
+    }
+
+    /**
+     * Sets the time in ticks for the change. Will change {@link #getType()} to return
+     * {@link Type#STARTED_MOVE}.
+     *
+     * @param duration the time in ticks for the change
+     */
+    public void setDurationTicks(final long duration) {
+        this.duration = duration;
+        if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
+            this.type = Type.STARTED_MOVE;
+        }
     }
 
     /**
@@ -81,12 +107,9 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      *
      * @param duration the time in milliseconds for the change
      */
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public void setDuration(final long duration) {
-        // PAIL: TODO: Magic Values
-        this.duration = Math.min(9223372036854775L, Math.max(0L, duration));
-        if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
-            this.type = Type.STARTED_MOVE;
-        }
+        this.setDurationTicks(Tick.tick().fromDuration(Duration.ofMillis(duration)));
     }
 
     @Override
