@@ -135,6 +135,10 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
          */
         REGEN,
         /**
+         * Player was affected by an enchantment
+         */
+        ENCHANTMENT_EFFECT,
+        /**
          * Unknown exhaustion reason
          */
         UNKNOWN
