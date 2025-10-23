@@ -193,7 +193,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param location New location to teleport this entity to
@@ -206,7 +206,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param location New location to teleport this entity to
@@ -220,7 +220,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param destination Entity to teleport this entity to
@@ -233,7 +233,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param destination Entity to teleport this entity to
