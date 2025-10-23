@@ -189,8 +189,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper end - Teleport API
 
     /**
-     * Teleports this entity to the given location. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -198,8 +202,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Location location);
 
     /**
-     * Teleports this entity to the given location. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param cause The cause of this teleportation
@@ -208,8 +216,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause);
 
     /**
-     * Teleports this entity to the target Entity. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the target Entity.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
      *
      * @param destination Entity to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -217,8 +229,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Entity destination);
 
     /**
-     * Teleports this entity to the target Entity. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the target Entity.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
      *
      * @param destination Entity to teleport this entity to
      * @param cause The cause of this teleportation
