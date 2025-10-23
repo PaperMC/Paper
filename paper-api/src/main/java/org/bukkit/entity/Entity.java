@@ -139,9 +139,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Teleports this entity to the given location.
      * <p>
-     * Note: This uses default in game behavior for teleportation, especially in regards to handling
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passangers across dimensions is not supported and will cause this to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param location New location to teleport this entity to
@@ -155,9 +155,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Teleports this entity to the given location.
      * <p>
-     * Note: This uses default in game behavior for teleportation, especially in regards to handling
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
      * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
-     * with passangers across dimensions is not supported and will cause this to return false. This behavior may
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
      * change in future versions.
      *
      * @param location New location to teleport this entity to
@@ -229,6 +229,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper start
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @param loc Location to teleport to
      * @return A future that will be completed with the result of the teleport
      */
@@ -238,6 +244,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @param loc Location to teleport to
      * @param cause Reason for teleport
      * @return A future that will be completed with the result of the teleport
@@ -254,6 +266,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param loc Location to teleport to
      * @param cause Reason for teleport
      * @param teleportFlags Flags to be used in this teleportation
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @return A future that will be completed with the result of the teleport
      */
     java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
