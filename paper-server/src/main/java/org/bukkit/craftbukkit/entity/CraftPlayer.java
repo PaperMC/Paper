@@ -1300,6 +1300,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (this.getHandle().connection == null) {
             return false;
         }
+        // Minecraft does not currently support teleporting players between worlds with passengers.
+        // It causes them to be dismounted, and causes weird behavior.
+        if (location.getWorld() != this.getWorld() && !this.getHandle().passengers.isEmpty()) {
+            return false;
+        }
+
         return super.teleport0(location, cause, flags);
     }
 

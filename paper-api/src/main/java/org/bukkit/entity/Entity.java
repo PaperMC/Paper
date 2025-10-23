@@ -138,6 +138,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper start - Teleport API
     /**
      * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regards to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passangers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param teleportFlags Flags to be used in this teleportation
@@ -149,6 +154,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regards to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passangers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param cause The cause of this teleportation
