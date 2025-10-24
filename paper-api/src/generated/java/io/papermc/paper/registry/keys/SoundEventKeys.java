@@ -12157,6 +12157,13 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ITEM_TRIDENT_THUNDER = create(key("item.trident.thunder"));
 
     /**
+     * {@code minecraft:item.underwater_saddle.equip}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ITEM_UNDERWATER_SADDLE_EQUIP = create(key("item.underwater_saddle.equip"));
+
+    /**
      * {@code minecraft:item.wolf_armor.break}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

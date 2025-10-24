@@ -3489,6 +3489,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_TRIDENT_THUNDER = getSound("item.trident.thunder");
 
+    Sound ITEM_UNDERWATER_SADDLE_EQUIP = getSound("item.underwater_saddle.equip");
+
     Sound ITEM_WOLF_ARMOR_BREAK = getSound("item.wolf_armor.break");
 
     Sound ITEM_WOLF_ARMOR_CRACK = getSound("item.wolf_armor.crack");
