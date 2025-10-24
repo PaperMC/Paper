@@ -135,6 +135,12 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
          */
         REGEN,
         /**
+         * Player was affected by an enchantment
+         * @see <a href="https://minecraft.wiki/w/Enchantment_definition#apply_exhaustion">Minecraft Wiki: Enchantment Effects "apply_exhaustion"</a>
+         */
+        // TODO - snapshot - In release check if this Wiki URL exists
+        ENCHANTMENT_EFFECT,
+        /**
          * Unknown exhaustion reason
          */
         UNKNOWN
