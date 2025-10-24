@@ -86,41 +86,4 @@ public class BedEnterActionBridgeImpl implements BedEnterActionBridge {
             errorMessage == null ? null : PaperAdventure.asAdventure(errorMessage)
         );
     }
-
-    @Override
-    public BedEnterAction fromFailReason(final org.bukkit.entity.Player player, final PlayerBedFailEnterEvent.FailReason failReason) {
-        Player vanillaPlayer = ((CraftPlayer) player).getHandle();
-        BedRule bedRule = vanillaPlayer.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
-        BedRuleResult canSetSpawn = CraftEventFactory.asBedRuleResult(bedRule.canSetSpawn(), bedRule.canSetSpawn(vanillaPlayer.level()));
-
-        if (failReason == PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE || failReason == PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW) {
-            return new BedEnterActionImpl(
-                failReason == PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE ? BedRuleResult.NEVER : BedRuleResult.TOO_MUCH_LIGHT,
-                canSetSpawn,
-                null,
-                bedRule.errorMessage().map(PaperAdventure::asAdventure).orElse(null)
-            );
-        }
-
-        BedRuleResult canSleep = CraftEventFactory.asBedRuleResult(bedRule.canSleep(), bedRule.canSleep(vanillaPlayer.level()));
-        BedEnterProblem enterProblem = switch (failReason) {
-            case TOO_FAR_AWAY -> BedEnterProblem.TOO_FAR_AWAY;
-            case OBSTRUCTED -> BedEnterProblem.OBSTRUCTED;
-            case NOT_SAFE -> BedEnterProblem.NOT_SAFE;
-            case OTHER_PROBLEM -> BedEnterProblem.OTHER;
-            case EXPLOSION -> BedEnterProblem.EXPLOSION;
-            default -> throw new IllegalStateException("Unexpected value: " + failReason);
-        };
-        Component errorMessage = ((BedEnterProblemImpl) enterProblem).vanillaProblem().message();
-        if (failReason == PlayerBedFailEnterEvent.FailReason.EXPLOSION) {
-            errorMessage = bedRule.errorMessage().orElse(null);
-        }
-
-        return new BedEnterActionImpl(
-            canSleep,
-            canSetSpawn,
-            enterProblem,
-            errorMessage == null ? null : PaperAdventure.asAdventure(errorMessage)
-        );
-    }
 }

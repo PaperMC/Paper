@@ -33,7 +33,4 @@ public interface BedEnterActionBridge {
     @Deprecated(since = "1.21.11", forRemoval = true)
     BedEnterAction fromBedEnterResult(Player player, PlayerBedEnterEvent.BedEnterResult bedEnterResult);
 
-    @Deprecated(since = "1.21.11", forRemoval = true)
-    BedEnterAction fromFailReason(Player player, PlayerBedFailEnterEvent.FailReason failReason);
-
 }

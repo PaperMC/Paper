@@ -1,7 +1,6 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
-import io.papermc.paper.block.bed.BedEnterActionBridge;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -33,12 +32,6 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         this.enterAction = enterAction;
         this.willExplode = willExplode;
         this.message = message;
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.21.11")
-    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message) {
-        this(player, failReason, bed, willExplode, message, BedEnterActionBridge.instance().fromFailReason(player, failReason));
     }
 
     @Deprecated(since = "1.21.11")
