@@ -6,7 +6,6 @@
  public abstract class Entity implements SyncedDataHolder, DebugValueSource, Nameable, ItemOwner, EntityAccess, ScoreHolder, DataComponentGetter {
 +    // CraftBukkit start
 +    private static final int CURRENT_LEVEL = 2;
-+    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first snapTo
 +    static boolean isLevelAtLeast(ValueInput input, int level) {
 +        return input.getIntOr("Bukkit.updateLevel", CURRENT_LEVEL) >= level;
 +    }
@@ -606,6 +605,7 @@
      }
  
      public void snapTo(Vec3 pos) {
+<<<<<<< HEAD
 @@ -1695,11 +_,19 @@
      }
  
@@ -619,6 +619,7 @@
 +        // Paper end - Fix Entity Teleportation and cancel velocity if teleported
          this.setPosRaw(x, y, z);
          this.setYRot(yRot);
+@@ -1685,6 +_,7 @@
          this.setXRot(xRot);
          this.setOldPosAndRot();
          this.reapplyPosition();
@@ -1491,7 +1492,7 @@
 +            org.bukkit.Location to = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(absolutePosition.position(), teleportTransition.newLevel(), absolutePosition.yRot(), absolutePosition.xRot());
 +            // Paper start - gateway-specific teleport event
 +            final org.bukkit.event.entity.EntityTeleportEvent teleEvent;
-+            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level.getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
++            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) Blocks.END_GATEWAY)) && this.level.getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
 +                teleEvent = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(to.getWorld(), theEndGatewayBlockEntity));
 +                teleEvent.callEvent();
 +            } else {
@@ -1578,37 +1579,7 @@
          }
  
          if (this instanceof WaypointTransmitter waypointTransmitter && this.level instanceof ServerLevel serverLevel) {
-@@ -3112,11 +_,37 @@
-         return PortalShape.getRelativePosition(portal, axis, this.position(), this.getDimensions(this.getPose()));
-     }
- 
-+    // CraftBukkit start
-+    public @Nullable org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
-+        Entity entity,
-+        org.bukkit.Location exit,
-+        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
-+        int searchRadius, int creationRadius
-+    ) {
-+        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
-+        org.bukkit.Location enter = bukkitEntity.getLocation();
-+
-+        final org.bukkit.PortalType portalType = switch (cause) {
-+            case END_PORTAL -> org.bukkit.PortalType.ENDER;
-+            case NETHER_PORTAL -> org.bukkit.PortalType.NETHER;
-+            case END_GATEWAY -> org.bukkit.PortalType.END_GATEWAY; // not actually used yet
-+            default -> org.bukkit.PortalType.CUSTOM;
-+        };
-+        org.bukkit.event.entity.EntityPortalEvent event = new org.bukkit.event.entity.EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, true, creationRadius, portalType);
-+        event.callEvent();
-+        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
-+            return null;
-+        }
-+        return new org.bukkit.craftbukkit.event.CraftPortalEvent(event);
-+    }
-+    // CraftBukkit end
-+
-     public boolean canUsePortal(boolean allowPassengers) {
-         return (allowPassengers || !this.isPassenger()) && this.isAlive();
+@@ -3097,6 +_,7 @@
      }
  
      public boolean canTeleport(Level fromLevel, Level toLevel) {
@@ -1633,7 +1604,14 @@
          return entity != null;
      }
  
-@@ -3339,7 +_,26 @@
+@@ -3319,7 +_,26 @@
+     public void dismountTo(double x, double y, double z) {
+-        this.teleportTo(x, y, z);
++        this.teleportTo(x, y, z); // Paper - diff on change for override
+     }
+ 
+     public void teleportTo(double x, double y, double z) {
+@@ -3319,7 +_,26 @@
      }
  
      public final void setBoundingBox(AABB bb) {
