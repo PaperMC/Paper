@@ -81,7 +81,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * Gets the time in milliseconds for the change. Will be 0 if instant.
      *
      * @return the time in milliseconds for the change
-     * @deprecated deprecated in favor of {@link #getDurationTicks()}
+     * @deprecated in favor of {@link #getDurationTicks()}
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     public long getDuration() {
