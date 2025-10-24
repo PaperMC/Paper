@@ -1,7 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
-import net.kyori.adventure.key.Key;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
@@ -20,12 +20,14 @@ public interface SwingAnimation {
     Animation type();
 
     @Contract(pure = true)
-    int duration();
+    @Positive int duration();
 
     enum Animation {
+        // Start generate - SwingAnimationType
         NONE,
         WHACK,
-        STAB
+        STAB;
+        // End generate - SwingAnimationType
     }
 
     /**
@@ -53,6 +55,6 @@ public interface SwingAnimation {
          * @see #duration()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder duration(int duration);
+        Builder duration(@Positive int duration);
     }
 }

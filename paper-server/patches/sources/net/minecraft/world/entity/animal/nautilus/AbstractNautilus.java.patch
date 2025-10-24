@@ -1,28 +1,20 @@
 --- a/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
 +++ b/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
-@@ -138,8 +_,14 @@
+@@ -387,7 +_,7 @@
+                 if (this.isFood(itemInHand) && this.getHealth() < this.getMaxHealth()) {
+                     this.usePlayerItem(player, hand, itemInHand);
+                     FoodProperties foodProperties = itemInHand.get(DataComponents.FOOD);
+-                    this.heal(foodProperties != null ? 2 * foodProperties.nutrition() : 1.0F);
++                    this.heal(foodProperties != null ? 2 * foodProperties.nutrition() : 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add regain reason
+                     return InteractionResult.SUCCESS;
+                 }
  
-     @Override
-     public int getMaxAirSupply() {
--        return 300;
--    }
-+        return this.maxAirTicks; // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
-+    }
-+    // CraftBukkit start - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
-+    @Override
-+    public int getDefaultMaxAirSupply() {
-+        return TOTAL_AIR_SUPPLY;
-+    }
-+    // CraftBukkit end
- 
-     protected void handleAirSupply(ServerLevel level, int airSupply) {
-         if (this.isAlive() && !this.isInWater()) {
-@@ -149,7 +_,7 @@
-                 this.hurtServer(level, this.damageSources().dryOut(), 2.0F);
-             }
-         } else {
--            this.setAirSupply(300);
-+            this.setAirSupply(this.maxAirTicks); // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
-         }
+@@ -407,7 +_,7 @@
      }
  
+     private void tryToTame(Player player) {
+-        if (this.random.nextInt(3) == 0) {
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit - added event call
+             this.tame(player);
+             this.navigation.stop();
+             this.level().broadcastEntityEvent(this, (byte)7);

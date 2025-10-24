@@ -2,10 +2,11 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 @ApiStatus.Experimental
@@ -13,29 +14,27 @@ import org.jspecify.annotations.NullMarked;
 public interface PiercingWeapon {
 
     /**
-     * Returns a new builder for creating a Kinetic Weapon.
+     * Returns a new builder for creating a Piercing Weapon.
      *
-     * @return a builder instance.
+     * @return a builder instance
      */
-    static Builder kineticWeapon() {
+    static Builder piercingWeapon() {
         return ItemComponentTypesBridge.bridge().piercingWeapon();
     }
 
-    float minReach();
+    @NonNegative float minReach();
 
-    float maxReach();
+    @NonNegative float maxReach();
 
-    float hitboxMargin();
+    @NonNegative float hitboxMargin();
 
     boolean dealsKnockback();
 
     boolean dismounts();
 
-    @Nullable
-    Key sound();
+    @Nullable Key sound();
 
-    @Nullable
-    Key hitSound();
+    @Nullable Key hitSound();
 
     /**
      * Builder for {@link PiercingWeapon}.
@@ -45,13 +44,13 @@ public interface PiercingWeapon {
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(float minReach);
+        Builder minReach(@NonNegative float minReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(float maxReach);
+        Builder maxReach(@NonNegative float maxReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(float hitboxMargin);
+        Builder hitboxMargin(@NonNegative float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder dealsKnockback(boolean dealsKnockback);

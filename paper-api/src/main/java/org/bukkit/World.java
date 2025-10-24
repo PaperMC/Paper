@@ -2858,7 +2858,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * </ul>
      *
      * @return true if this world has the above mechanics
+     * @deprecated as of 1.21.11, ultra warm is replaced by the WATER_EVAPORATES, FAST_LAVA, and DEFAULT_DRIPSTONE_PARTICLE environment attributes.
      */
+    @Deprecated(since = "1.21.11")
     public boolean isUltraWarm();
 
     /**

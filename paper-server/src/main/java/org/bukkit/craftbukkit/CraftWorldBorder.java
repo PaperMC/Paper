@@ -54,7 +54,7 @@ public class CraftWorldBorder implements WorldBorder {
         Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
 
         if (time > 0L) {
-            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, unit.toMillis(time));
+            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, unit.toMillis(time), this.getWorld().getGameTime());
         } else {
             this.handle.setSize(newSize);
         }

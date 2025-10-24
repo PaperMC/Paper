@@ -1,10 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
-import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

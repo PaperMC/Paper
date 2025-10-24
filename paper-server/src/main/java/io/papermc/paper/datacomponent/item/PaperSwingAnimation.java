@@ -1,29 +1,12 @@
 package io.papermc.paper.datacomponent.item;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.item.SwingAnimationType;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public record PaperSwingAnimation(
-        net.minecraft.world.item.component.SwingAnimation impl
+    net.minecraft.world.item.component.SwingAnimation impl
 ) implements SwingAnimation, Handleable<net.minecraft.world.item.component.SwingAnimation> {
-
-    private static SwingAnimation.Animation fromNms(final SwingAnimationType nms) {
-        return switch (nms) {
-            case NONE -> SwingAnimation.Animation.NONE;
-            case WHACK -> SwingAnimation.Animation.WHACK;
-            case STAB -> SwingAnimation.Animation.STAB;
-        };
-    }
-
-    private static SwingAnimationType toNms(final SwingAnimation.Animation api) {
-        return switch (api) {
-            case NONE -> SwingAnimationType.NONE;
-            case WHACK -> SwingAnimationType.WHACK;
-            case STAB -> SwingAnimationType.STAB;
-        };
-    }
 
     @Override
     public net.minecraft.world.item.component.SwingAnimation getHandle() {
@@ -31,8 +14,8 @@ public record PaperSwingAnimation(
     }
 
     @Override
-    public SwingAnimation.Animation type() {
-        return fromNms(this.impl.type());
+    public Animation type() {
+        return Animation.valueOf(this.impl.type().name());
     }
 
     @Override
@@ -47,13 +30,13 @@ public record PaperSwingAnimation(
 
         @Override
         public SwingAnimation.Builder type(final SwingAnimation.Animation type) {
-            this.type = toNms(type);
+            this.type = SwingAnimationType.valueOf(type.name());
             return this;
         }
 
         @Override
         public SwingAnimation.Builder duration(final int duration) {
-            com.google.common.base.Preconditions.checkArgument(duration >= 0, "duration must be >= 0");
+            Preconditions.checkArgument(duration > 0, "duration must be positive");
             this.duration = duration;
             return this;
         }
@@ -61,10 +44,10 @@ public record PaperSwingAnimation(
         @Override
         public SwingAnimation build() {
             return new PaperSwingAnimation(
-                    new net.minecraft.world.item.component.SwingAnimation(
-                            this.type,
-                            this.duration
-                    )
+                new net.minecraft.world.item.component.SwingAnimation(
+                    this.type,
+                    this.duration
+                )
             );
         }
     }

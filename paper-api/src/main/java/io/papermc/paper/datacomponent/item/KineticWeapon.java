@@ -2,10 +2,11 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 @ApiStatus.Experimental
@@ -15,7 +16,7 @@ public interface KineticWeapon {
     /**
      * Returns a new builder for creating a Kinetic Weapon.
      *
-     * @return a builder instance.
+     * @return a builder instance
      */
     @Contract(value = "-> new", pure = true)
     static Builder kineticWeapon() {
@@ -25,25 +26,25 @@ public interface KineticWeapon {
     /**
      * Creates a {@link Condition} object.
      */
-    @Contract(value = "_,_,_ -> new", pure = true)
-    static Condition condition(final int maxDurationTicks, final float minSpeed, final float minRelativeSpeed) {
+    @Contract(value = "_, _, _ -> new", pure = true)
+    static Condition condition(final @NonNegative int maxDurationTicks, final float minSpeed, final float minRelativeSpeed) {
         return ItemComponentTypesBridge.bridge().kineticWeaponCondition(maxDurationTicks, minSpeed, minRelativeSpeed);
     }
 
     @Contract(pure = true)
-    float minReach();
+    @NonNegative float minReach();
 
     @Contract(pure = true)
-    float maxReach();
+    @NonNegative float maxReach();
 
     @Contract(pure = true)
-    float hitboxMargin();
+    @NonNegative float hitboxMargin();
 
     @Contract(pure = true)
-    int contactCooldownTicks();
+    @NonNegative int contactCooldownTicks();
 
     @Contract(pure = true)
-    int delayTicks();
+    @NonNegative int delayTicks();
 
     @Contract(pure = true)
     @Nullable Condition dismountConditions();
@@ -65,10 +66,13 @@ public interface KineticWeapon {
     @Nullable Key hitSound();
 
     interface Condition {
+
         @Contract(pure = true)
-        int maxDurationTicks();
+        @NonNegative int maxDurationTicks();
+
         @Contract(pure = true)
         float minSpeed();
+
         @Contract(pure = true)
         float minRelativeSpeed();
     }
@@ -81,19 +85,19 @@ public interface KineticWeapon {
     interface Builder extends DataComponentBuilder<KineticWeapon> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(float minReach);
+        Builder minReach(@NonNegative float minReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(float maxReach);
+        Builder maxReach(@NonNegative float maxReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(float hitboxMargin);
+        Builder hitboxMargin(@NonNegative float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder contactCooldownTicks(int ticks);
+        Builder contactCooldownTicks(@NonNegative int ticks);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder delayTicks(int ticks);
+        Builder delayTicks(@NonNegative int ticks);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder dismountConditions(@Nullable Condition condition);
@@ -115,6 +119,5 @@ public interface KineticWeapon {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hitSound(Key sound);
-
     }
 }

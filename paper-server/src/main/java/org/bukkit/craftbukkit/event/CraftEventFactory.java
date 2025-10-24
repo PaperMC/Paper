@@ -1663,8 +1663,8 @@ public class CraftEventFactory {
     }
 
     public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
-        if (!(leashed instanceof final Entity leashedEntity)) return false;
-        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+        if (!(leashed instanceof final Entity leashedEntity)) return true;
+        return !callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).isCancelled();
     }
 
     public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
