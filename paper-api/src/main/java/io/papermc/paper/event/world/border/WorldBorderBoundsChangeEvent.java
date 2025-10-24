@@ -95,7 +95,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * @param duration the time in ticks for the change
      */
     public void setDurationTicks(final long duration) {
-        this.duration = duration;
+        this.duration = Math.clamp(duration, 0L, Integer.MAX_VALUE);
         if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
             this.type = Type.STARTED_MOVE;
         }
@@ -110,7 +110,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     public void setDuration(final long duration) {
-        this.setDurationTicks(Tick.tick().fromDuration(Duration.ofMillis(duration)));
+        this.setDurationTicks(Tick.tick().fromDuration(Duration.ofMillis(Math.clamp(duration, 0L, Integer.MAX_VALUE))));
     }
 
     @Override

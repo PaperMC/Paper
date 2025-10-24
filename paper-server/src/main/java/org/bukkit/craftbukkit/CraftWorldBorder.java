@@ -46,7 +46,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize, long time) {
-        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.min(9223372036854775L, Math.max(0L, time)));
+        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.clamp(time, 0L, Integer.MAX_VALUE));
     }
 
     @Override
