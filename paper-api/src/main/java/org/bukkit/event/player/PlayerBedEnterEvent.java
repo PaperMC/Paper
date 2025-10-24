@@ -1,7 +1,6 @@
 package org.bukkit.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
-import io.papermc.paper.block.bed.BedEnterActionBridge;
 import io.papermc.paper.block.bed.BedRuleResult;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -28,18 +27,6 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
         this.enterAction = enterAction;
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.21.11", forRemoval = true)
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
-       this(player, bed, bedEnterResult, BedEnterActionBridge.instance().fromBedEnterResult(player, bedEnterResult));
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.13.2", forRemoval = true)
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
-        this(player, bed, BedEnterResult.OK);
     }
 
     /**

@@ -1,11 +1,8 @@
 package io.papermc.paper.block.bed;
 
-import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
-import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.jetbrains.annotations.ApiStatus;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * @hidden
@@ -29,8 +26,5 @@ public interface BedEnterActionBridge {
     BedEnterProblem createExplosionProblem();
 
     BedEnterProblem createOtherProblem();
-
-    @Deprecated(since = "1.21.11", forRemoval = true)
-    BedEnterAction fromBedEnterResult(Player player, PlayerBedEnterEvent.BedEnterResult bedEnterResult);
 
 }
