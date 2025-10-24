@@ -37,6 +37,56 @@
                  this.dragonUUID = null;
              }
          }
+@@ -271,6 +_,12 @@
+     public BlockPattern.BlockPatternMatch findExitPortal() {
+         ChunkPos chunkPos = new ChunkPos(this.origin);
+ 
++        // Paper start
++        BlockPattern.BlockPatternMatch originSearch = this.findExitPortalAroundOrigin();
++        if (originSearch != null) {
++            return originSearch;
++        }
++        // Paper end
+         for (int i = -8 + chunkPos.x; i <= 8 + chunkPos.x; i++) {
+             for (int i1 = -8 + chunkPos.z; i1 <= 8 + chunkPos.z; i1++) {
+                 LevelChunk chunk = this.level.getChunk(i, i1);
+@@ -279,9 +_,9 @@
+                     if (blockEntity instanceof TheEndPortalBlockEntity) {
+                         BlockPattern.BlockPatternMatch blockPatternMatch = this.exitPortalPattern.find(this.level, blockEntity.getBlockPos());
+                         if (blockPatternMatch != null) {
+-                            BlockPos pos = blockPatternMatch.getBlock(3, 3, 3).getPos();
++                            // BlockPos pos = blockPatternMatch.getBlock(3, 3, 3).getPos(); // Paper - move down
+                             if (this.portalLocation == null) {
+-                                this.portalLocation = pos;
++                                this.portalLocation = blockPatternMatch.getBlock(3, 3, 3).getPos(); // Paper
+                             }
+ 
+                             return blockPatternMatch;
+@@ -291,11 +_,23 @@
+             }
+         }
+ 
++    // Paper start - exit portal optimization look around the origin first
++        return null;
++    }
++    public @Nullable BlockPattern.BlockPatternMatch findExitPortalAroundOrigin() {
++    // Paper end - exit portal optimization look around the origin first
+         BlockPos location = EndPodiumFeature.getLocation(this.origin);
+         int i1 = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, location).getY();
+ 
+         for (int i2 = i1; i2 >= this.level.getMinY(); i2--) {
+-            BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, new BlockPos(location.getX(), i2, location.getZ()));
++            // Paper start
++            BlockPos targetPos = new BlockPos(location.getX(), i2, location.getZ());
++            // Early exit if we encroached a non bedrock block because the middle column MUST be bedrock
++            if (!this.level.getBlockState(targetPos).is(Blocks.BEDROCK)) {
++                continue;
++            }
++            BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, targetPos);
++            // Paper end
+             if (blockPatternMatch1 != null) {
+                 if (this.portalLocation == null) {
+                     this.portalLocation = blockPatternMatch1.getBlock(3, 3, 3).getPos();
 @@ -365,12 +_,22 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
