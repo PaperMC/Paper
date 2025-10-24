@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @hidden
  */
 @ApiStatus.Internal
-public record BedRuleResultImpl(
+record BedRuleResultImpl(
     boolean success
 ) implements BedRuleResult {
 }
