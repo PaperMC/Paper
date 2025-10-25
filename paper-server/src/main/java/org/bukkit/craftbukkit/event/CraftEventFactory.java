@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event;
 
+import com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent;
+import com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
@@ -9,6 +11,7 @@ import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.entity.TeleportFlag;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import java.util.ArrayList;
@@ -63,6 +66,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -103,6 +107,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -1932,6 +1937,38 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static PlayerTeleportEvent callPlayerTeleportEvent(Player player, Location from, Location to, PlayerTeleportEvent.TeleportCause cause, @Nullable Set<TeleportFlag.Relative> teleportFlags) {
+        PlayerTeleportEvent event;
+        if (teleportFlags == null) {
+            event = new PlayerTeleportEvent(player, from, to, cause);
+        } else {
+            event = new PlayerTeleportEvent(player, from, to, cause, teleportFlags);
+        }
+
+        event.callEvent();
+
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getFrom())), "origin for PlayerTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        if (!event.isCancelled()) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for PlayerTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
+
+        return event;
+    }
+
+    public static PlayerTeleportEndGatewayEvent callPlayerTeleportEndGatewayEvent(ServerPlayer nmsPlayer, Location to, TheEndGatewayBlockEntity nmsTheEndGatewayBlockEntity) {
+        CraftPlayer entity = nmsPlayer.getBukkitEntity();
+        PlayerTeleportEndGatewayEvent event = new PlayerTeleportEndGatewayEvent(entity, entity.getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(nmsPlayer.level().getWorld(), nmsTheEndGatewayBlockEntity));
+
+        event.callEvent();
+
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getFrom())), "origin for PlayerTeleportEndGatewayEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        if (!event.isCancelled()) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for PlayerTeleportEndGatewayEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
+
+        return event;
+    }
+
     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, double x, double y, double z) {
         CraftEntity entity = nmsEntity.getBukkitEntity();
         Location to = new Location(entity.getWorld(), x, y, z, nmsEntity.getYRot(), nmsEntity.getXRot());
@@ -1942,7 +1979,26 @@ public class CraftEventFactory {
         CraftEntity entity = nmsEntity.getBukkitEntity();
         EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
 
-        Bukkit.getPluginManager().callEvent(event);
+        event.callEvent();
+
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getFrom())), "origin for EntityTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        if (!event.isCancelled() && event.getTo() != null) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for EntityTeleportEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
+
+        return event;
+    }
+
+    public static EntityTeleportEndGatewayEvent callEntityTeleportEndGatewayEvent(Entity nmsEntity, Location to, TheEndGatewayBlockEntity nmsTheEndGatewayBlockEntity) {
+        CraftEntity entity = nmsEntity.getBukkitEntity();
+        EntityTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(entity, entity.getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(to.getWorld(), nmsTheEndGatewayBlockEntity));
+
+        event.callEvent();
+
+        Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getFrom())), "origin for EntityTeleportEndGatewayEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        if (!event.isCancelled() && event.getTo() != null) {
+            Preconditions.checkArgument(ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(event.getTo())), "destination for EntityTeleportEndGatewayEvent is out of spawnable bounds [x/z between %s and %s or y between %s and %s]", -ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MAX_LEVEL_SIZE, ServerLevel.MIN_ENTITY_SPAWN_Y, ServerLevel.MAX_ENTITY_SPAWN_Y);
+        }
 
         return event;
     }
