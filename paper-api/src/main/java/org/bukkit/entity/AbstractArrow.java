@@ -268,6 +268,14 @@ public interface AbstractArrow extends Projectile {
     int getLifetimeTicks();
 
     /**
+     * Gets the number of ticks this arrow may exist before it despawns
+     * automatically.
+     *
+     * @return maximum lifetime ticks for this arrow
+     */
+    int getMaxLifetimeTicks();
+
+    /**
      * Gets the sound that is played when this arrow hits an entity.
      *
      * @return sound that plays
