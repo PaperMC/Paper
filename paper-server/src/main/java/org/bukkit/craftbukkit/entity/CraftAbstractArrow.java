@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.util.List;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockCollisions;
 import net.minecraft.world.phys.AABB;
@@ -162,6 +163,23 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     @Override
     public int getLifetimeTicks() {
         return this.getHandle().life;
+    }
+
+    @Override
+    public int getMaxLifetimeTicks() {
+        final net.minecraft.world.entity.projectile.AbstractArrow handle = this.getHandle();
+        final net.minecraft.world.level.Level level = handle.level();
+        if (level == null) {
+            return 1200; // Vanilla default fallback
+        }
+
+        return switch (handle.pickup) {
+            case CREATIVE_ONLY -> level.paperConfig().entities.spawning.creativeArrowDespawnRate.value();
+            case DISALLOWED -> level.paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value();
+            default -> handle instanceof ThrownTrident
+                ? level.spigotConfig.tridentDespawnRate
+                : level.spigotConfig.arrowDespawnRate;
+        };
     }
 
     @Override
