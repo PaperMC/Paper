@@ -750,7 +750,7 @@
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1084,13 +_,48 @@
+@@ -1084,13 +_,46 @@
  
              ServerLevel level = teleportTransition.newLevel();
              ServerLevel serverLevel = this.level();
@@ -758,18 +758,16 @@
 +            // CraftBukkit start
 +            ResourceKey<net.minecraft.world.level.dimension.LevelStem> resourceKey = serverLevel.getTypeKey();
 +
-+            org.bukkit.Location enter = this.getBukkitEntity().getLocation();
 +            PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 +            org.bukkit.Location exit = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(absolutePosition.position(), level, absolutePosition.yRot(), absolutePosition.xRot());
 +            final org.bukkit.event.player.PlayerTeleportEvent tpEvent;
 +            // Paper start - gateway-specific teleport event
 +            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
-+                tpEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), enter, exit.clone(), new org.bukkit.craftbukkit.block.CraftEndGateway(this.level().getWorld(), theEndGatewayBlockEntity));
++                tpEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerTeleportEndGatewayEvent(this, exit.clone(), theEndGatewayBlockEntity);
 +            } else {
-+                tpEvent = new org.bukkit.event.player.PlayerTeleportEvent(this.getBukkitEntity(), enter, exit.clone(), teleportTransition.cause());
++                tpEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), exit.clone(), teleportTransition.cause(), null);
 +            }
 +            // Paper end - gateway-specific teleport event
-+            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(tpEvent);
 +            org.bukkit.Location newExit = tpEvent.getTo();
 +            if (tpEvent.isCancelled()) {
 +                return null;
