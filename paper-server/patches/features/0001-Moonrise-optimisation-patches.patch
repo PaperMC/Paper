@@ -18182,7 +18182,7 @@ index 0000000000000000000000000000000000000000..ed80017c8f257b981d626a37ffc5480d
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa7b784a89626e8528c249d7889a598bd7ee3d49
+index 0000000000000000000000000000000000000000..b623fb6974f5c4875a1ddc09053e72e6e67dda17
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/BlockStarLightEngine.java
 @@ -0,0 +1,280 @@
@@ -18208,8 +18208,8 @@ index 0000000000000000000000000000000000000000..fa7b784a89626e8528c249d7889a598b
 +
 +public final class BlockStarLightEngine extends StarLightEngine {
 +
-+    public BlockStarLightEngine(final Level world) {
-+        super(false, world);
++    public BlockStarLightEngine() {
++        super(false);
 +    }
 +
 +    @Override
@@ -18915,10 +18915,10 @@ index 0000000000000000000000000000000000000000..5c7b3804cdbcb0a873a0d195325c2658
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f9aef289e9a2d6f63c98c72c56ef32b8793f57f4
+index 0000000000000000000000000000000000000000..cdb679fb6e3d342efc776329124209d1f433cc8f
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/SkyStarLightEngine.java
-@@ -0,0 +1,681 @@
+@@ -0,0 +1,689 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import ca.spottedleaf.moonrise.common.util.WorldUtil;
@@ -18971,11 +18971,21 @@ index 0000000000000000000000000000000000000000..f9aef289e9a2d6f63c98c72c56ef32b8
 +        Arrays.fill(this.heightMapBlockChange, Integer.MIN_VALUE); // clear heightmap
 +    }
 +
-+    protected final boolean[] nullPropagationCheckCache;
++    protected boolean[] nullPropagationCheckCache;
 +
-+    public SkyStarLightEngine(final Level world) {
-+        super(true, world);
-+        this.nullPropagationCheckCache = new boolean[WorldUtil.getTotalLightSections(world)];
++    public SkyStarLightEngine() {
++        super(true);
++    }
++
++    @Override
++    public void setWorld(final Level world) {
++        super.setWorld(world);
++        if (world != null) {
++            final int minArraySize = WorldUtil.getTotalLightSections(world);
++            if (this.nullPropagationCheckCache == null || this.nullPropagationCheckCache.length < minArraySize) {
++                this.nullPropagationCheckCache = new boolean[minArraySize];
++            }
++        }
 +    }
 +
 +    @Override
@@ -19361,8 +19371,6 @@ index 0000000000000000000000000000000000000000..f9aef289e9a2d6f63c98c72c56ef32b8
 +        this.performLightDecrease(lightAccess);
 +    }
 +
-+    protected final int[] heightMapGen = new int[32 * 32];
-+
 +    @Override
 +    protected void lightChunk(final LightChunkGetter lightAccess, final ChunkAccess chunk, final boolean needsEdgeChecks) {
 +        this.rewriteNibbleCacheForSkylight(chunk);
@@ -19602,10 +19610,10 @@ index 0000000000000000000000000000000000000000..f9aef289e9a2d6f63c98c72c56ef32b8
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7ba2b8d58a78662fda7f2b8f4c8c87b8e8ecb275
+index 0000000000000000000000000000000000000000..c6222bfb75706052df41d821f2fcfc4620ce3672
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightEngine.java
-@@ -0,0 +1,1438 @@
+@@ -0,0 +1,1450 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import ca.spottedleaf.concurrentutil.util.IntegerUtil;
@@ -19696,17 +19704,17 @@ index 0000000000000000000000000000000000000000..7ba2b8d58a78662fda7f2b8f4c8c87b8
 +    // for the y chunk section it's from [minLightSection, maxLightSection] or [0, maxLightSection - minLightSection]
 +    // index = x + (z * 5) + (y * 25)
 +    // null index indicates the chunk section doesn't exist (empty or out of bounds)
-+    protected final LevelChunkSection[] sectionCache;
++    protected LevelChunkSection[] sectionCache;
 +
 +    // the exact same as above, except for storing fast access to SWMRNibbleArray
 +    // for the y chunk section it's from [minLightSection, maxLightSection] or [0, maxLightSection - minLightSection]
 +    // index = x + (z * 5) + (y * 25)
-+    protected final SWMRNibbleArray[] nibbleCache;
++    protected SWMRNibbleArray[] nibbleCache;
 +
 +    // the exact same as above, except for storing fast access to nibbles to call change callbacks for
 +    // for the y chunk section it's from [minLightSection, maxLightSection] or [0, maxLightSection - minLightSection]
 +    // index = x + (z * 5) + (y * 25)
-+    protected final boolean[] notifyUpdateCache;
++    protected boolean[] notifyUpdateCache;
 +
 +    // always initialsed during start of lighting.
 +    // index = x + (z * 5)
@@ -19732,27 +19740,39 @@ index 0000000000000000000000000000000000000000..7ba2b8d58a78662fda7f2b8f4c8c87b8
 +
 +    protected final boolean skylightPropagator;
 +    protected final int emittedLightMask;
-+    protected final boolean isClientSide;
++    protected boolean isClientSide;
 +
-+    protected final Level world;
-+    protected final int minLightSection;
-+    protected final int maxLightSection;
-+    protected final int minSection;
-+    protected final int maxSection;
++    protected Level world;
++    protected int minLightSection;
++    protected int maxLightSection;
++    protected int minSection;
++    protected int maxSection;
 +
-+    protected StarLightEngine(final boolean skylightPropagator, final Level world) {
++    protected StarLightEngine(final boolean skylightPropagator) {
 +        this.skylightPropagator = skylightPropagator;
 +        this.emittedLightMask = skylightPropagator ? 0 : 0xF;
-+        this.isClientSide = world.isClientSide();
-+        this.world = world;
-+        this.minLightSection = WorldUtil.getMinLightSection(world);
-+        this.maxLightSection = WorldUtil.getMaxLightSection(world);
-+        this.minSection = WorldUtil.getMinSection(world);
-+        this.maxSection = WorldUtil.getMaxSection(world);
++    }
 +
-+        this.sectionCache = new LevelChunkSection[5 * 5 * ((this.maxLightSection - this.minLightSection + 1) + 2)]; // add two extra sections for buffer
-+        this.nibbleCache = new SWMRNibbleArray[5 * 5 * ((this.maxLightSection - this.minLightSection + 1) + 2)]; // add two extra sections for buffer
-+        this.notifyUpdateCache = new boolean[5 * 5 * ((this.maxLightSection - this.minLightSection + 1) + 2)]; // add two extra sections for buffer
++    public void setWorld(final Level world) {
++        this.world = world;
++        if (world != null) {
++            this.isClientSide = world.isClientSide();
++            this.minLightSection = WorldUtil.getMinLightSection(world);
++            this.maxLightSection = WorldUtil.getMaxLightSection(world);
++            this.minSection = WorldUtil.getMinSection(world);
++            this.maxSection = WorldUtil.getMaxSection(world);
++            final int minArraySize = 5 * 5 * ((this.maxLightSection - this.minLightSection + 1) + 2); // add two extra sections for buffer
++
++            if (this.sectionCache == null || this.sectionCache.length < minArraySize) {
++                this.sectionCache = new LevelChunkSection[minArraySize];
++            }
++            if (this.nibbleCache == null || this.nibbleCache.length < minArraySize) {
++                this.nibbleCache = new SWMRNibbleArray[minArraySize];
++            }
++            if (this.notifyUpdateCache == null || this.notifyUpdateCache.length < minArraySize) {
++                this.notifyUpdateCache = new boolean[minArraySize];
++            }
++        }
 +    }
 +
 +    protected final void setupEncodeOffset(final int centerX, final int centerY, final int centerZ) {
@@ -21046,10 +21066,10 @@ index 0000000000000000000000000000000000000000..7ba2b8d58a78662fda7f2b8f4c8c87b8
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/StarLightInterface.java b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightInterface.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..649042cd0a83aaf6866b09b21dfc54b337320111
+index 0000000000000000000000000000000000000000..7faf226b753a03e03b0dec9bbfcc94a6c3f5bc0f
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/StarLightInterface.java
-@@ -0,0 +1,920 @@
+@@ -0,0 +1,936 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -21099,8 +21119,8 @@ index 0000000000000000000000000000000000000000..649042cd0a83aaf6866b09b21dfc54b3
 +    public final Level world;
 +    public final LightChunkGetter lightAccess;
 +
-+    private final ThreadLocal<SkyStarLightEngine> cachedSkyPropagator;
-+    private final ThreadLocal<BlockStarLightEngine> cachedBlockPropagator;
++    private static final ThreadLocal<SkyStarLightEngine> SKY_PROPAGATOR = new ThreadLocal<>();
++    private static final ThreadLocal<BlockStarLightEngine> BLOCK_PROPAGATOR = new ThreadLocal<>();
 +
 +    private final LightQueue lightQueue;
 +
@@ -21121,8 +21141,6 @@ index 0000000000000000000000000000000000000000..649042cd0a83aaf6866b09b21dfc54b3
 +    public StarLightInterface(final LightChunkGetter lightAccess, final boolean hasSkyLight, final boolean hasBlockLight, final LevelLightEngine lightEngine) {
 +        this.lightAccess = lightAccess;
 +        this.world = lightAccess == null ? null : (Level)lightAccess.getLevel();
-+        this.cachedSkyPropagator = hasSkyLight && lightAccess != null ? new ThreadLocal<>() : null;
-+        this.cachedBlockPropagator = hasBlockLight && lightAccess != null ? new ThreadLocal<>() : null;
 +        this.isClientSide = !(this.world instanceof ServerLevel);
 +        if (this.world == null) {
 +            this.minSection = -4;
@@ -21411,43 +21429,61 @@ index 0000000000000000000000000000000000000000..649042cd0a83aaf6866b09b21dfc54b3
 +    }
 +
 +    public SkyStarLightEngine getSkyLightEngine() {
-+        if (this.cachedSkyPropagator == null) {
++        if (!this.hasSkyLight || this.world == null) {
 +            return null;
 +        }
-+        final SkyStarLightEngine ret = this.cachedSkyPropagator.get();
-+        this.cachedSkyPropagator.set(null);
++
++        SkyStarLightEngine ret = SKY_PROPAGATOR.get();
++        SKY_PROPAGATOR.set(null);
 +
 +        if (ret == null) {
-+            return new SkyStarLightEngine(this.world);
++            ret = new SkyStarLightEngine();
 +        }
++
++        ret.setWorld(this.world);
++
 +        return ret;
 +    }
 +
 +    public void releaseSkyLightEngine(final SkyStarLightEngine engine) {
-+        if (this.cachedSkyPropagator == null || this.cachedSkyPropagator.get() != null) {
++        if (engine != null) {
++            engine.setWorld(null);
++        }
++
++        if (!this.hasSkyLight || this.world == null || SKY_PROPAGATOR.get() != null) {
 +            return;
 +        }
-+        this.cachedSkyPropagator.set(engine);
++
++        SKY_PROPAGATOR.set(engine);
 +    }
 +
 +    public BlockStarLightEngine getBlockLightEngine() {
-+        if (this.cachedBlockPropagator == null) {
++        if (!this.hasBlockLight || this.world == null) {
 +            return null;
 +        }
-+        final BlockStarLightEngine ret = this.cachedBlockPropagator.get();
-+        this.cachedBlockPropagator.set(null);
++
++        BlockStarLightEngine ret = BLOCK_PROPAGATOR.get();
++        BLOCK_PROPAGATOR.set(null);
 +
 +        if (ret == null) {
-+            return new BlockStarLightEngine(this.world);
++            ret = new BlockStarLightEngine();
 +        }
++
++        ret.setWorld(this.world);
++
 +        return ret;
 +    }
 +
 +    public void releaseBlockLightEngine(final BlockStarLightEngine engine) {
-+        if (this.cachedBlockPropagator == null || this.cachedBlockPropagator.get() != null) {
++        if (engine != null) {
++            engine.setWorld(null);
++        }
++
++        if (!this.hasBlockLight || this.world == null || BLOCK_PROPAGATOR.get() != null) {
 +            return;
 +        }
-+        this.cachedBlockPropagator.set(engine);
++
++        BLOCK_PROPAGATOR.set(engine);
 +    }
 +
 +    public LightQueue.ChunkTasks blockChange(final BlockPos pos) {
@@ -21934,7 +21970,7 @@ index 0000000000000000000000000000000000000000..649042cd0a83aaf6866b09b21dfc54b3
 +            }
 +
 +            public boolean markTicketAdded() {
-+                return !this.ticketAdded.get() && !this.ticketAdded.getAndSet(true);
++                return !this.ticketAdded.get() && false == this.ticketAdded.compareAndExchange(false, true);
 +            }
 +
 +            public void schedule() {
@@ -27000,7 +27036,7 @@ index 704733ff5e558a12f2f9dde924ab4c507745595d..5e305c9a64e856de70ed787901c01d09
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index a5bc4e8a3dde40c416c05e91dfec25bc7efdd013..66c25f323b9a19e25fcaea782dc72f477fd32629 100644
+index 53623b518266edc1436dbba3d965386dc31e6e6c..ecc39329af8722c3c3341d67bee1d22d7ccc7a4d 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -201,7 +201,7 @@ import net.minecraft.world.scores.Team;
