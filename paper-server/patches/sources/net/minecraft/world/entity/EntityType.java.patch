@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
+@@ -185,6 +_,7 @@
+ import org.slf4j.Logger;
+ 
+ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeTest<Entity, T> {
++    private static final boolean DEBUG_ENTITIES_WITH_INVALID_IDS = Boolean.getBoolean("paper.debugEntitiesWithInvalidIds"); // Paper - Add logging for debugging entity tags with invalid ids
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
+     public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
 @@ -1265,6 +_,22 @@
          boolean shouldOffsetY,
          boolean shouldOffsetYMore
@@ -108,7 +116,7 @@
                      entityData.loadInto(entity);
                  }
              }
-@@ -1429,9 +_,20 @@
+@@ -1429,10 +_,28 @@
      }
  
      public static Optional<Entity> create(ValueInput input, Level level, EntitySpawnReason spawnReason) {
@@ -121,15 +129,24 @@
          return Util.ifElse(
              by(input).map(entityType -> entityType.create(level, spawnReason)),
 -            entity -> entity.load(input),
+-            () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
 +            // Paper start - Don't fire sync event during generation
 +            entity -> {
 +                if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
 +                entity.load(input);
 +            },
 +            // Paper end - Don't fire sync event during generation
-             () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
++            // Paper start - Add logging for debugging entity tags with invalid ids
++            () -> {
++                LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"));
++                if ((DEBUG_ENTITIES_WITH_INVALID_IDS || level.getCraftServer().getServer().isDebugging()) && input instanceof TagValueInput tagInput) {
++                    LOGGER.warn("Skipped entity tag: {}", tagInput.input);
++                }
++            }
++            // Paper end - Add logging for debugging entity tags with invalid ids
          );
      }
+ 
 @@ -1588,8 +_,23 @@
          return this.builtInRegistryHolder;
      }
