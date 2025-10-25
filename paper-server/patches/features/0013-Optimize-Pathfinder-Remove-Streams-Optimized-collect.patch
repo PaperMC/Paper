@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d718893d0 100644
+index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7b2032b33 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -48,8 +48,12 @@ public class PathFinder {
@@ -52,15 +52,14 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d
          this.openSet.clear();
          this.openSet.insert(node);
          boolean asBoolean = this.captureDebug.getAsBoolean();
--        Set<Node> set1 = asBoolean ? new HashSet<>() : Set.of();
-+        // Set<Node> set1 = asBoolean ? new HashSet<>() : Set.of(); // Paper - unused debug
+         Set<Node> set1 = asBoolean ? new HashSet<>() : Set.of();
          int i = 0;
 -        Set<Target> set2 = Sets.newHashSetWithExpectedSize(set.size());
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
          int i1 = (int)(this.maxVisitedNodes * maxVisitedNodesMultiplier);
  
          while (!this.openSet.isEmpty()) {
-@@ -81,20 +85,21 @@ public class PathFinder {
+@@ -81,14 +85,18 @@ public class PathFinder {
              Node node1 = this.openSet.pop();
              node1.closed = true;
  
@@ -82,13 +81,7 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d
                  break;
              }
  
--            if (asBoolean) {
--                set1.add(node1);
--            }
- 
-             if (!(node1.distanceTo(node) >= maxRange)) {
-                 int neighbors = this.nodeEvaluator.getNeighbors(this.neighbors, node1);
-@@ -107,7 +112,7 @@ public class PathFinder {
+@@ -107,7 +115,7 @@ public class PathFinder {
                      if (node2.walkedDistance < maxRange && (!node2.inOpenSet() || f1 < node2.g)) {
                          node2.cameFrom = node1;
                          node2.g = f1;
@@ -97,7 +90,7 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -119,34 +124,34 @@ public class PathFinder {
+@@ -119,34 +127,41 @@ public class PathFinder {
              }
          }
  
@@ -108,13 +101,6 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d
 -            : set.stream()
 -                .map(pathfinder -> this.reconstructPath(pathfinder.getBestNode(), targets.get(pathfinder), false))
 -                .min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
--        profilerFiller.pop();
--        if (optional.isEmpty()) {
--            return null;
--        } else {
--            Path path = optional.get();
--            if (asBoolean) {
--                path.setDebug(this.openSet.getHeap(), set1.toArray(Node[]::new), set);
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = entryList.isEmpty();
@@ -125,11 +111,24 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..f90c2bb95e304bd6b9b8539d89f38d2d
 +            Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !entryListIsEmpty);
 +            if (best == null || comparator.compare(path, best) < 0) {
 +                best = path;
++            }
++        }
+         profilerFiller.pop();
+-        if (optional.isEmpty()) {
+-            return null;
+-        } else {
+-            Path path = optional.get();
+-            if (asBoolean) {
+-                path.setDebug(this.openSet.getHeap(), set1.toArray(Node[]::new), set);
++        if(asBoolean && best != null) {
++            Set<Target> set = Sets.newHashSet();
++            for(Map.Entry<Target, BlockPos> entry : positions) {
++                set.add(entry.getKey());
              }
 -
 -            return path;
++            best.setDebug(this.openSet.getHeap(), set1.toArray(Node[]::new), set);
          }
-+        profilerFiller.pop();
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection
      }
