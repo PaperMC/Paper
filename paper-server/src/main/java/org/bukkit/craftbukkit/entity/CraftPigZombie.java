@@ -17,12 +17,12 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
 
     @Override
     public int getAnger() {
-        return this.getHandle().getRemainingPersistentAngerTime();
+        return (int) (this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime());
     }
 
     @Override
     public void setAnger(int level) {
-        this.getHandle().setRemainingPersistentAngerTime(level);
+        this.getHandle().setTimeToRemainAngry(level);
     }
 
     @Override

@@ -23,6 +23,7 @@ import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
+import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.world.WeatheringCopperState;
@@ -41,6 +42,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.SwingAnimationType;
 import net.minecraft.world.level.block.WeatheringCopper;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
@@ -152,6 +154,7 @@ public final class Rewriters {
                 })
             ))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
+            .register("SwingAnimationType", SwingAnimation.Animation.class, new EnumCloneRewriter<>(SwingAnimationType.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(Rarity rarity) {

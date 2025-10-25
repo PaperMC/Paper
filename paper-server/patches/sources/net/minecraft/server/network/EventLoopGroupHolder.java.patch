@@ -1,0 +1,40 @@
+--- a/net/minecraft/server/network/EventLoopGroupHolder.java
++++ b/net/minecraft/server/network/EventLoopGroupHolder.java
+@@ -38,15 +_,37 @@
+             return LocalIoHandler.newFactory();
+         }
+     };
++    // Paper start - Unix domain socket support
++    private static final EventLoopGroupHolder EPOLL_UNIX_DOMAIN = new EventLoopGroupHolder("Unix Domain Socket", io.netty.channel.epoll.EpollDomainSocketChannel.class, io.netty.channel.epoll.EpollServerDomainSocketChannel.class) {
++        @Override
++        protected IoHandlerFactory ioHandlerFactory() {
++            return EpollIoHandler.newFactory();
++        }
++    };
++    // Paper end - Unix domain socket support
+     private final String type;
+     private final Class<? extends Channel> channelCls;
+     private final Class<? extends ServerChannel> serverChannelCls;
+     @Nullable
+     private volatile EventLoopGroup group;
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use variant with address param
+     public static EventLoopGroupHolder remote(boolean tryNativeTransport) {
+         return tryNativeTransport && Epoll.isAvailable() ? EPOLL : NIO;
+     }
++
++    // Paper start - Unix domain socket support
++    public static EventLoopGroupHolder remote(java.net.SocketAddress address, boolean tryNativeTransport) {
++        if (tryNativeTransport && Epoll.isAvailable()) {
++            if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                return EPOLL_UNIX_DOMAIN;
++            } else {
++                return EPOLL;
++            }
++        }
++        return NIO;
++    }
++    // Paper end - Unix domain socket support
+ 
+     public static EventLoopGroupHolder local() {
+         return LOCAL;

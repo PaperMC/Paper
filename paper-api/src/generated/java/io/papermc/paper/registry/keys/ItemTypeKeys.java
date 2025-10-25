@@ -2140,6 +2140,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> COPPER_LEGGINGS = create(key("copper_leggings"));
 
     /**
+     * {@code minecraft:copper_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_NAUTILUS_ARMOR = create(key("copper_nautilus_armor"));
+
+    /**
      * {@code minecraft:copper_nugget}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -2166,6 +2173,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> COPPER_SHOVEL = create(key("copper_shovel"));
+
+    /**
+     * {@code minecraft:copper_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> COPPER_SPEAR = create(key("copper_spear"));
 
     /**
      * {@code minecraft:copper_sword}
@@ -3064,6 +3078,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> DIAMOND_LEGGINGS = create(key("diamond_leggings"));
 
     /**
+     * {@code minecraft:diamond_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> DIAMOND_NAUTILUS_ARMOR = create(key("diamond_nautilus_armor"));
+
+    /**
      * {@code minecraft:diamond_ore}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3083,6 +3104,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> DIAMOND_SHOVEL = create(key("diamond_shovel"));
+
+    /**
+     * {@code minecraft:diamond_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> DIAMOND_SPEAR = create(key("diamond_spear"));
 
     /**
      * {@code minecraft:diamond_sword}
@@ -3953,6 +3981,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> GOLDEN_LEGGINGS = create(key("golden_leggings"));
 
     /**
+     * {@code minecraft:golden_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> GOLDEN_NAUTILUS_ARMOR = create(key("golden_nautilus_armor"));
+
+    /**
      * {@code minecraft:golden_pickaxe}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3965,6 +4000,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> GOLDEN_SHOVEL = create(key("golden_shovel"));
+
+    /**
+     * {@code minecraft:golden_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> GOLDEN_SPEAR = create(key("golden_spear"));
 
     /**
      * {@code minecraft:golden_sword}
@@ -4569,6 +4611,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> IRON_LEGGINGS = create(key("iron_leggings"));
 
     /**
+     * {@code minecraft:iron_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> IRON_NAUTILUS_ARMOR = create(key("iron_nautilus_armor"));
+
+    /**
      * {@code minecraft:iron_nugget}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4595,6 +4644,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> IRON_SHOVEL = create(key("iron_shovel"));
+
+    /**
+     * {@code minecraft:iron_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> IRON_SPEAR = create(key("iron_spear"));
 
     /**
      * {@code minecraft:iron_sword}
@@ -5941,6 +5997,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> NAUTILUS_SHELL = create(key("nautilus_shell"));
 
     /**
+     * {@code minecraft:nautilus_spawn_egg}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> NAUTILUS_SPAWN_EGG = create(key("nautilus_spawn_egg"));
+
+    /**
      * {@code minecraft:nether_brick}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6081,6 +6144,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> NETHERITE_LEGGINGS = create(key("netherite_leggings"));
 
     /**
+     * {@code minecraft:netherite_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> NETHERITE_NAUTILUS_ARMOR = create(key("netherite_nautilus_armor"));
+
+    /**
      * {@code minecraft:netherite_pickaxe}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6100,6 +6170,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> NETHERITE_SHOVEL = create(key("netherite_shovel"));
+
+    /**
+     * {@code minecraft:netherite_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> NETHERITE_SPEAR = create(key("netherite_spear"));
 
     /**
      * {@code minecraft:netherite_sword}
@@ -8734,6 +8811,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> STONE_SLAB = create(key("stone_slab"));
 
     /**
+     * {@code minecraft:stone_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> STONE_SPEAR = create(key("stone_spear"));
+
+    /**
      * {@code minecraft:stone_stairs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -10274,6 +10358,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> WOODEN_SHOVEL = create(key("wooden_shovel"));
 
     /**
+     * {@code minecraft:wooden_spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> WOODEN_SPEAR = create(key("wooden_spear"));
+
+    /**
      * {@code minecraft:wooden_sword}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -10419,6 +10510,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> ZOMBIE_HORSE_SPAWN_EGG = create(key("zombie_horse_spawn_egg"));
+
+    /**
+     * {@code minecraft:zombie_nautilus_spawn_egg}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> ZOMBIE_NAUTILUS_SPAWN_EGG = create(key("zombie_nautilus_spawn_egg"));
 
     /**
      * {@code minecraft:zombie_spawn_egg}

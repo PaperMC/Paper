@@ -82,6 +82,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> BOAT = create(key("boat"));
 
     /**
+     * {@code #minecraft:burn_in_daylight}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> BURN_IN_DAYLIGHT = create(key("burn_in_daylight"));
+
+    /**
      * {@code #minecraft:can_breathe_under_water}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -115,6 +122,13 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> CAN_WEAR_HORSE_ARMOR = create(key("can_wear_horse_armor"));
+
+    /**
+     * {@code #minecraft:can_wear_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_WEAR_NAUTILUS_ARMOR = create(key("can_wear_nautilus_armor"));
 
     /**
      * {@code #minecraft:candidate_for_iron_golem_gift}
@@ -227,6 +241,13 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> INVERTED_HEALING_AND_HARM = create(key("inverted_healing_and_harm"));
+
+    /**
+     * {@code #minecraft:nautilus_hostiles}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> NAUTILUS_HOSTILES = create(key("nautilus_hostiles"));
 
     /**
      * {@code #minecraft:no_anger_from_wind_charge}

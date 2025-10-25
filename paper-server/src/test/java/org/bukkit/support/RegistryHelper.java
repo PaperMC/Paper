@@ -20,6 +20,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.biome.Biome;
@@ -102,7 +103,7 @@ public final class RegistryHelper {
         // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
         RegistryHelper.registry = layers.compositeAccess().freeze();
         // Register vanilla pack
-        RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, LevelBasedPermissionSet.ALL_PERMISSIONS, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
         RegistryHelper.dataPack.updateStaticRegistryTags();
         // Biome shortcut
