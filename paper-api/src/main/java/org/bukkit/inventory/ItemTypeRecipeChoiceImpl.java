@@ -2,16 +2,32 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.keys.ItemTypeKeys;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+/**
+ * This class extends {@link org.bukkit.inventory.RecipeChoice.MaterialChoice} to maintain
+ * compatibility when instances are returned from recipes.
+ */
 @NullMarked
-record ItemTypeRecipeChoiceImpl(RegistryKeySet<ItemType> itemTypes) implements RecipeChoice.ItemTypeChoice {
+final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice implements RecipeChoice.ItemTypeChoice {
 
-    ItemTypeRecipeChoiceImpl {
+    private final RegistryKeySet<ItemType> itemTypes;
+    private @Nullable List<Material> legacyChoices;
+
+    ItemTypeRecipeChoiceImpl(final RegistryKeySet<ItemType> itemTypes) {
         Preconditions.checkArgument(!itemTypes.isEmpty(), "ItemTypeChoice cannot be empty");
         Preconditions.checkArgument(!(itemTypes.contains(ItemTypeKeys.AIR)), "ItemTypeChoice cannot contain minecraft:air");
+        this.itemTypes = itemTypes;
     }
 
     @Override
@@ -20,7 +36,7 @@ record ItemTypeRecipeChoiceImpl(RegistryKeySet<ItemType> itemTypes) implements R
     }
 
     @Override
-    public RecipeChoice clone() {
+    public ItemTypeRecipeChoiceImpl clone() {
         return new ItemTypeRecipeChoiceImpl(this.itemTypes);
     }
 
@@ -33,5 +49,40 @@ record ItemTypeRecipeChoiceImpl(RegistryKeySet<ItemType> itemTypes) implements R
     public RecipeChoice validate(final boolean allowEmptyRecipes) {
         Preconditions.checkArgument(!(this.itemTypes.contains(ItemTypeKeys.AIR)), "ItemTypeChoice cannot contain minecraft:air");
         return this;
+    }
+
+    @Override
+    public RegistryKeySet<ItemType> itemTypes() {
+        return this.itemTypes;
+    }
+
+    @Override
+    public List<Material> getChoices() {
+        if (this.legacyChoices == null) {
+            final List<Material> choices = new ArrayList<>();
+            for (final TypedKey<ItemType> itemTypeKey : this.itemTypes) {
+                choices.add(Registry.MATERIAL.getOrThrow(itemTypeKey));
+            }
+            this.legacyChoices = Collections.unmodifiableList(choices);
+        }
+        return this.legacyChoices;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object obj) {
+        if (obj == this) return true;
+        if (obj == null || obj.getClass() != this.getClass()) return false;
+        final var that = (ItemTypeRecipeChoiceImpl) obj;
+        return Objects.equals(this.itemTypes, that.itemTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.itemTypes);
+    }
+
+    @Override
+    public String toString() {
+        return "ItemTypeRecipeChoiceImpl[" + "itemTypes=" + this.itemTypes + ']';
     }
 }

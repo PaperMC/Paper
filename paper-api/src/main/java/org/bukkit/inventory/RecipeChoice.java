@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import io.papermc.paper.registry.set.RegistrySet;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,21 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
 
     /**
+     * Creates a new recipe choice based on a collection of {@link ItemType}s.
+     *
+     * @param itemType the first item type to match
+     * @param itemTypes other item types to match.
+     * @return a new recipe choice
+     */
+    @Contract(pure = true, value = "_, _ -> new")
+    static ItemTypeChoice itemType(final ItemType itemType, final ItemType ... itemTypes) {
+        final List<ItemType> types = new ArrayList<>();
+        types.add(itemType);
+        types.addAll(Arrays.asList(itemTypes));
+        return itemType(RegistrySet.keySetFromValues(RegistryKey.ITEM, types));
+    }
+
+    /**
      * Creates a new recipe choice based on a {@link RegistryKeySet} of item types.
      * Can either be created via {@link RegistryKeySet#keySet(RegistryKey, TypedKey[])}
      * or obtained from {@link org.bukkit.Registry#getTag(TagKey)}.
@@ -50,7 +66,6 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @return a new recipe choice
      */
     @Contract(pure = true, value = "_ -> new")
-    @ApiStatus.Experimental
     static ItemTypeChoice itemType(final RegistryKeySet<ItemType> itemTypes) {
         return new ItemTypeRecipeChoiceImpl(itemTypes);
     }
@@ -78,8 +93,13 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     /**
      * Represents a choice of multiple matching Materials.
+     * @apiNote recommended to use {@link ItemTypeChoice}
      */
-    final class MaterialChoice implements RecipeChoice {
+    @ApiStatus.Obsolete(since = "1.21.10")
+    sealed class MaterialChoice implements RecipeChoice permits ItemTypeRecipeChoiceImpl {
+
+        protected MaterialChoice() {
+        }
 
         private List<Material> choices;
 
@@ -308,8 +328,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * matches any of the item types in the set.
      *
      * @see #itemType(RegistryKeySet)
+     * @see #itemType(ItemType, ItemType...)
      */
-    @ApiStatus.Experimental
     sealed interface ItemTypeChoice extends RecipeChoice permits ItemTypeRecipeChoiceImpl {
 
         /**
