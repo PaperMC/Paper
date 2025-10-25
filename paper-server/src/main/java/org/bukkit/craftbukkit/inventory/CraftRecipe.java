@@ -77,13 +77,9 @@ public interface CraftRecipe extends Recipe {
             }
 
             return new RecipeChoice.ExactChoice(choices);
-        // } else { // TODO change over to this when it's not experimental
-        //     RegistryKeySet<ItemType> itemTypes = PaperRegistrySets.convertToApi(RegistryKey.ITEM, list.values);
-        //     return RecipeChoice.itemType(itemTypes);
         } else {
-            List<org.bukkit.Material> choices = list.items().map((i) -> CraftItemType.minecraftToBukkit(i.value())).toList();
-
-            return new RecipeChoice.MaterialChoice(choices);
+            final RegistryKeySet<ItemType> itemTypes = PaperRegistrySets.convertToApi(RegistryKey.ITEM, list.values);
+            return RecipeChoice.itemType(itemTypes);
         }
     }
 
