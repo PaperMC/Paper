@@ -6,6 +6,7 @@ import org.bukkit.WorldBorder;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import java.time.Duration;
 
@@ -94,9 +95,9 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      *
      * @param duration the time in ticks for the change
      */
-    public void setDurationTicks(final long duration) {
+    public void setDurationTicks(@Range(from = 0, to = Integer.MAX_VALUE) final long duration) {
         this.duration = Math.clamp(duration, 0L, Integer.MAX_VALUE);
-        if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
+        if (this.type == Type.INSTANT_MOVE) {
             this.type = Type.STARTED_MOVE;
         }
     }
