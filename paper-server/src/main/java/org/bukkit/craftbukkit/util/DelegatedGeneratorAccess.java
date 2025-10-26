@@ -178,7 +178,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
+    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int flags, int recursionLeft) {
         this.delegate.neighborShapeChanged(direction, pos, neighborPos, neighborState, flags, recursionLeft);
     }
 
@@ -683,12 +683,12 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         return this.delegate.setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         return this.delegate.setBlock(pos, state, flags);
     }
 

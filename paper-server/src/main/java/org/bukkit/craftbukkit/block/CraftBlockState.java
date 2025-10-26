@@ -28,6 +28,7 @@ public class CraftBlockState implements BlockState {
     protected final CraftWorld world;
     private final BlockPos position;
     protected net.minecraft.world.level.block.state.BlockState data;
+    @net.minecraft.world.level.block.Block.UpdateFlags
     protected int capturedFlags; // todo move out of this class
     private WeakReference<LevelAccessor> weakWorld;
 
@@ -39,7 +40,7 @@ public class CraftBlockState implements BlockState {
     }
 
     @Deprecated
-    protected CraftBlockState(final Block block, int capturedFlags) {
+    protected CraftBlockState(final Block block, @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags) {
         this(block);
         this.capturedFlags = capturedFlags;
     }
@@ -181,11 +182,11 @@ public class CraftBlockState implements BlockState {
         return this.data.getBukkitMaterial();
     }
 
-    public void setFlags(int flags) {
+    public void setFlags(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         this.capturedFlags = flags;
     }
 
-    public int getFlags() {
+    public @net.minecraft.world.level.block.Block.UpdateFlags int getFlags() {
         return this.capturedFlags;
     }
 
@@ -244,7 +245,7 @@ public class CraftBlockState implements BlockState {
     }
 
     // used when the flags matter for non API usage
-    public boolean place(int flags) {
+    public boolean place(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         if (!this.isPlaced()) {
             return false;
         }
