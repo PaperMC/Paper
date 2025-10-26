@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
-@@ -67,9 +_,26 @@
+@@ -68,9 +_,26 @@
              return false;
          } else {
              this.coolDownEndsAtTick = startTick + 10L;
@@ -29,19 +29,19 @@
                  this.brushingCompleted(level, brusher, stack);
                  return true;
              } else {
-@@ -77,7 +_,7 @@
+@@ -78,7 +_,7 @@
                  int completionState1 = this.getCompletionState();
                  if (completionState != completionState1) {
                      BlockState blockState = this.getBlockState();
 -                    BlockState blockState1 = blockState.setValue(BlockStateProperties.DUSTED, completionState1);
 +                    BlockState blockState1 = nextBrokenBlockState; // Paper - EntityChangeBlockEvent - use precomputed - diff on change
-                     level.setBlock(this.getBlockPos(), blockState1, 3);
+                     level.setBlock(this.getBlockPos(), blockState1, Block.UPDATE_ALL);
                  }
  
-@@ -118,6 +_,11 @@
+@@ -119,6 +_,11 @@
          this.dropContent(level, brusher, stack);
          BlockState blockState = this.getBlockState();
-         level.levelEvent(3008, this.getBlockPos(), Block.getId(blockState));
+         level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE, this.getBlockPos(), Block.getId(blockState));
 +    // Paper start - EntityChangeEvent - extract result block logic
 +        this.brushingCompleteUpdateBlock(this.computeTurnsTo());
 +    }
@@ -50,7 +50,7 @@
          Block turnsInto;
          if (this.getBlockState().getBlock() instanceof BrushableBlock brushableBlock) {
              turnsInto = brushableBlock.getTurnsInto();
-@@ -125,6 +_,11 @@
+@@ -126,6 +_,11 @@
              turnsInto = Blocks.AIR;
          }
  
@@ -59,10 +59,10 @@
 +    }
 +    public void brushingCompleteUpdateBlock(final Block turnsInto) {
 +    // Paper end - EntityChangeEvent - extract result block logic
-         level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
+         level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), Block.UPDATE_ALL);
      }
  
-@@ -141,7 +_,12 @@
+@@ -142,7 +_,12 @@
              double d5 = blockPos.getZ() + 0.5 * d1 + d2;
              ItemEntity itemEntity = new ItemEntity(level, d3, d4, d5, this.item.split(level.random.nextInt(21) + 10));
              itemEntity.setDeltaMovement(Vec3.ZERO);
