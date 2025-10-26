@@ -15,7 +15,7 @@ public final class CapturedBlockState extends CraftBlockState {
 
     private final boolean treeBlock;
 
-    public CapturedBlockState(Block block, int capturedFlags, boolean treeBlock) {
+    public CapturedBlockState(Block block, @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags, boolean treeBlock) {
         super(block, capturedFlags);
 
         this.treeBlock = treeBlock;

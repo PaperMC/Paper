@@ -210,7 +210,7 @@ public class CraftBlock implements Block {
             return world.setBlock(pos, newState, net.minecraft.world.level.block.Block.UPDATE_ALL);
         } else {
             boolean success = world.setBlock(pos, newState,
-                net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+                    net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
                     net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
                     net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
             if (success && world instanceof net.minecraft.world.level.Level) {

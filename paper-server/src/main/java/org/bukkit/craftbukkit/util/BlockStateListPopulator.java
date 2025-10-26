@@ -82,7 +82,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
             return false;
         }
 
-        this.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3, recursionLeft); // capture block without the event
+        this.setBlock(pos, blockState.getFluidState().createLegacyBlock(), Block.UPDATE_ALL, recursionLeft); // capture block without the event
         return true;
     }
 
