@@ -1,6 +1,5 @@
 package io.papermc.paper.command;
 
-import com.destroystokyo.paper.PaperVersionFetcher;
 import com.destroystokyo.paper.util.VersionFetcher;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -25,6 +24,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.StringUtil;
 import org.jspecify.annotations.NullMarked;
@@ -45,7 +45,7 @@ public class PaperVersionCommand {
     private static final Component FAILED_TO_FETCH = Component.text("Could not fetch version information!", NamedTextColor.RED);
     private static final Component FETCHING = Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC);
 
-    private final VersionFetcher versionFetcher = new PaperVersionFetcher();
+    private final VersionFetcher versionFetcher = CraftMagicNumbers.INSTANCE.getVersionFetcher();
     private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {
