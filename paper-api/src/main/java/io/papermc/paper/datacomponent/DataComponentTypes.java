@@ -21,27 +21,31 @@ import io.papermc.paper.datacomponent.item.ItemContainerContents;
 import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.JukeboxPlayable;
+import io.papermc.paper.datacomponent.item.KineticWeapon;
 import io.papermc.paper.datacomponent.item.LodestoneTracker;
 import io.papermc.paper.datacomponent.item.MapDecorations;
 import io.papermc.paper.datacomponent.item.MapId;
 import io.papermc.paper.datacomponent.item.MapItemColor;
 import io.papermc.paper.datacomponent.item.OminousBottleAmplifier;
+import io.papermc.paper.datacomponent.item.PiercingWeapon;
 import io.papermc.paper.datacomponent.item.PotDecorations;
 import io.papermc.paper.datacomponent.item.PotionContents;
 import io.papermc.paper.datacomponent.item.Repairable;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
+import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.Tool;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.datacomponent.item.UseCooldown;
+import io.papermc.paper.datacomponent.item.UseEffects;
 import io.papermc.paper.datacomponent.item.UseRemainder;
 import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
-import java.util.List;
 import io.papermc.paper.registry.tag.TagKey;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Art;
@@ -51,6 +55,7 @@ import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
@@ -111,12 +116,16 @@ public final class DataComponentTypes {
      * If set, the item will not lose any durability when used.
      */
     public static final DataComponentType.NonValued UNBREAKABLE = unvalued("unbreakable");
+
+    public static final DataComponentType.Valued<UseEffects> USE_EFFECTS = valued("use_effects");
     /**
      * Custom name override for an item (as set by renaming with an Anvil).
      *
      * @see #ITEM_NAME
      */
     public static final DataComponentType.Valued<Component> CUSTOM_NAME = valued("custom_name");
+    public static final DataComponentType.Valued<Float> MINIMUM_ATTACK_CHARGE = valued("minimum_attack_charge");
+    public static final DataComponentType.Valued<DamageType> DAMAGE_TYPE = valued("damage_type");
     /**
      * When present, replaces default item name with contained chat component.
      * <p>
@@ -210,6 +219,9 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Key> TOOLTIP_STYLE = valued("tooltip_style");
     public static final DataComponentType.Valued<DeathProtection> DEATH_PROTECTION = valued("death_protection");
     public static final DataComponentType.Valued<BlocksAttacks> BLOCKS_ATTACKS = valued("blocks_attacks");
+    public static final DataComponentType.Valued<PiercingWeapon> PIERCING_WEAPON = valued("piercing_weapon");
+    public static final DataComponentType.Valued<KineticWeapon> KINETIC_WEAPON = valued("kinetic_weapon");
+    public static final DataComponentType.Valued<SwingAnimation> SWING_ANIMATION = valued("swing_animation");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
      * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments

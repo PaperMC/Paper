@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -110,14 +_,16 @@
+@@ -112,14 +_,16 @@
      private static final int SEND_PLAYER_INFO_INTERVAL = 600;
-     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z", Locale.ROOT);
      private final MinecraftServer server;
 -    public final List<ServerPlayer> players = Lists.newArrayList();
 +    public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
@@ -20,7 +20,7 @@
      public final PlayerDataStorage playerIo;
      private final LayeredRegistryAccess<RegistryLayer> registries;
      private int viewDistance;
-@@ -125,9 +_,17 @@
+@@ -127,9 +_,17 @@
      private boolean allowCommandsForAllPlayers;
      private int sendAllPlayerInfoIn;
  
@@ -38,7 +38,7 @@
          this.server = server;
          this.registries = registries;
          this.playerIo = playerIo;
-@@ -137,23 +_,19 @@
+@@ -139,23 +_,19 @@
          this.ipBans = new IpBanList(IPBANLIST_FILE, notificationService);
      }
  
@@ -67,7 +67,7 @@
          LevelData levelData = serverLevel.getLevelData();
          ServerGamePacketListenerImpl serverGamePacketListenerImpl = new ServerGamePacketListenerImpl(this.server, connection, player, cookie);
          connection.setupInboundProtocol(
-@@ -170,8 +_,8 @@
+@@ -173,8 +_,8 @@
                  levelData.isHardcore(),
                  this.server.levelKeys(),
                  this.getMaxPlayers(),
@@ -78,7 +78,7 @@
                  _boolean1,
                  !_boolean,
                  _boolean2,
-@@ -179,6 +_,7 @@
+@@ -182,6 +_,7 @@
                  this.server.enforceSecureProfile()
              )
          );
@@ -86,7 +86,7 @@
          serverGamePacketListenerImpl.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          serverGamePacketListenerImpl.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
          serverGamePacketListenerImpl.send(new ClientboundSetHeldSlotPacket(player.getInventory().getSelectedSlot()));
-@@ -198,23 +_,128 @@
+@@ -201,24 +_,129 @@
              mutableComponent = Component.translatable("multiplayer.player.joined.renamed", player.getDisplayName(), string);
          }
  
@@ -187,6 +187,7 @@
 +        // Paper - move loading pearls / parent vehicle up
          player.initInventoryMenu();
          this.server.notificationManager().playerJoined(player);
+         serverGamePacketListenerImpl.resumeFlushing();
 +        // Paper start - Configurable player collision; Add to collideRule team if needed
 +        final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +        final PlayerTeam collideRuleTeam = scoreboard.getPlayerTeam(this.collideRuleTeamName);
@@ -219,7 +220,7 @@
      }
  
      public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {
-@@ -236,31 +_,40 @@
+@@ -240,31 +_,40 @@
          }
      }
  
@@ -241,7 +242,7 @@
              }
  
              @Override
-             public void onLerpSize(WorldBorder border, double oldSize, double newSize, long time) {
+             public void onLerpSize(WorldBorder border, double oldSize, double newSize, long time, long startTime) {
 -                PlayerList.this.broadcastAll(new ClientboundSetBorderLerpSizePacket(border), level.dimension());
 +                PlayerList.this.broadcastWorldborder(new ClientboundSetBorderLerpSizePacket(border), level.dimension()); // Paper - virtual world border API
              }
@@ -265,7 +266,7 @@
              }
  
              @Override
-@@ -284,57 +_,137 @@
+@@ -288,57 +_,137 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -417,7 +418,7 @@
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReasonMessage());
              if (userBanListEntry.getExpires() != null) {
                  mutableComponent.append(
-@@ -342,9 +_,11 @@
+@@ -346,9 +_,11 @@
                  );
              }
  
@@ -432,7 +433,7 @@
          } else if (this.ipBans.isBanned(socketAddress)) {
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReasonMessage());
-@@ -354,19 +_,18 @@
+@@ -358,19 +_,18 @@
                  );
              }
  
@@ -457,7 +458,7 @@
                  set.add(serverPlayer);
              }
          }
-@@ -377,23 +_,31 @@
+@@ -381,23 +_,31 @@
          }
  
          for (ServerPlayer serverPlayer2 : set) {
@@ -494,7 +495,7 @@
              serverPlayer.copyRespawnPosition(player);
          }
  
-@@ -401,17 +_,26 @@
+@@ -405,17 +_,26 @@
              serverPlayer.addTag(string);
          }
  
@@ -522,7 +523,7 @@
          serverPlayer.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
          serverPlayer.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          serverPlayer.connection
-@@ -421,9 +_,15 @@
+@@ -425,9 +_,15 @@
          this.sendPlayerPermissionLevel(serverPlayer);
          level.addRespawnedPlayer(serverPlayer);
          this.players.add(serverPlayer);
@@ -538,7 +539,7 @@
          ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
          if (!keepInventory && respawnConfig != null) {
              LevelData.RespawnData respawnData = respawnConfig.respawnData();
-@@ -449,6 +_,29 @@
+@@ -453,6 +_,29 @@
              }
          }
  
@@ -568,7 +569,7 @@
          return serverPlayer;
      }
  
-@@ -457,23 +_,58 @@
+@@ -461,23 +_,58 @@
      }
  
      public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl connection) {
@@ -590,7 +591,7 @@
 +
 +    public void sendPlayerPermissionLevel(ServerPlayer player, boolean recalculatePermissions) {
 +        // Paper end - avoid recalculating permissions if possible
-         int profilePermissions = this.server.getProfilePermissions(player.nameAndId());
+         LevelBasedPermissionSet profilePermissions = this.server.getProfilePermissions(player.nameAndId());
 -        this.sendPlayerPermissionLevel(player, profilePermissions);
 +        this.sendPlayerPermissionLevel(player, profilePermissions, recalculatePermissions); // Paper - avoid recalculating permissions if possible
      }
@@ -630,20 +631,20 @@
      public void broadcastAll(Packet<?> packet) {
          for (ServerPlayer serverPlayer : this.players) {
              serverPlayer.connection.send(packet);
-@@ -559,6 +_,12 @@
+@@ -563,6 +_,12 @@
      }
  
-     private void sendPlayerPermissionLevel(ServerPlayer player, int permLevel) {
+     private void sendPlayerPermissionLevel(ServerPlayer player, LevelBasedPermissionSet permissions) {
 +        // Paper start - Add sendOpLevel API
-+        this.sendPlayerPermissionLevel(player, permLevel, true);
++        this.sendPlayerPermissionLevel(player, permissions, true);
 +    }
 +
-+    public void sendPlayerPermissionLevel(ServerPlayer player, int permLevel, boolean recalculatePermissions) {
++    public void sendPlayerPermissionLevel(ServerPlayer player, LevelBasedPermissionSet permissions, boolean recalculatePermissions) {
 +        // Paper end - Add sendOpLevel API
          if (player.connection != null) {
-             byte b;
-             if (permLevel <= 0) {
-@@ -572,9 +_,48 @@
+             byte b = switch (permissions.level()) {
+                 case ALL -> EntityEvent.PERMISSION_LEVEL_ALL;
+@@ -574,9 +_,48 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b));
          }
  
@@ -694,7 +695,7 @@
      public boolean isWhiteListed(NameAndId nameAndId) {
          return !this.isUsingWhitelist() || this.ops.contains(nameAndId) || this.whitelist.contains(nameAndId);
      }
-@@ -587,21 +_,17 @@
+@@ -589,21 +_,17 @@
  
      @Nullable
      public ServerPlayer getPlayerByName(String username) {
@@ -722,7 +723,7 @@
              if (serverPlayer != except && serverPlayer.level().dimension() == dimension) {
                  double d = x - serverPlayer.getX();
                  double d1 = y - serverPlayer.getY();
-@@ -614,9 +_,11 @@
+@@ -616,9 +_,11 @@
      }
  
      public void saveAll() {
@@ -734,7 +735,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -643,10 +_,18 @@
+@@ -645,10 +_,18 @@
          player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
          player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
          player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
@@ -756,7 +757,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -655,8 +_,21 @@
+@@ -657,8 +_,21 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -779,7 +780,7 @@
      }
  
      public int getPlayerCount() {
-@@ -705,9 +_,26 @@
+@@ -707,9 +_,26 @@
      }
  
      public void removeAll() {
@@ -809,7 +810,7 @@
      }
  
      public void broadcastSystemMessage(Component message, boolean overlay) {
-@@ -730,20 +_,39 @@
+@@ -732,20 +_,39 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType) {
@@ -852,7 +853,7 @@
              flag1 |= flag2 && message.isFullyFiltered();
          }
  
-@@ -756,15 +_,21 @@
+@@ -758,15 +_,21 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -879,7 +880,7 @@
                  Path path = file2.toPath();
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
                      file2.renameTo(file1);
-@@ -772,7 +_,7 @@
+@@ -774,7 +_,7 @@
              }
  
              serverStatsCounter = new ServerStatsCounter(this.server, file1);
@@ -888,7 +889,7 @@
          }
  
          return serverStatsCounter;
-@@ -780,11 +_,11 @@
+@@ -782,11 +_,11 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -902,7 +903,7 @@
          }
  
          playerAdvancements.setPlayer(player);
-@@ -838,11 +_,34 @@
+@@ -840,11 +_,34 @@
      }
  
      public void reloadResources() {

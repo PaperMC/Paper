@@ -6,11 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
-import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
-import io.papermc.paper.connection.PlayerConnection;
-import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -19,11 +14,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
+import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +34,8 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.attribute.EnvironmentAttribute;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -288,16 +292,43 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
+    public static PlayerBedFailEnterEvent.FailReason asFailReason(final net.minecraft.world.entity.player.Player.BedSleepingProblem sleepingProblem) {
+        if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
+            return PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
+        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE) {
+            return PlayerBedFailEnterEvent.FailReason.NOT_SAFE;
+        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED) {
+            return PlayerBedFailEnterEvent.FailReason.OBSTRUCTED;
+        } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
+            return PlayerBedFailEnterEvent.FailReason.TOO_FAR_AWAY;
+        }
+        throw new IllegalArgumentException(sleepingProblem.toString());
+    }
+
+    public static PlayerBedFailEnterEvent callPlayerBedFailEnterEvent(
+        net.minecraft.world.entity.player.Player player, BlockPos bed, net.minecraft.world.entity.player.Player.BedSleepingProblem bedSleepingProblem) {
+        final var event = new PlayerBedFailEnterEvent(
+            (org.bukkit.entity.Player) player.getBukkitEntity(),
+            asFailReason(bedSleepingProblem),
+            org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
+            !player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE).canSleep().test(player.level()), // TODO - snapshot - check if canSleep is correct
+            io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.message()));
+        event.callEvent();
+        return event;
+    }
+
     public static Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> callPlayerBedEnterEvent(net.minecraft.world.entity.player.Player player, BlockPos bed, Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> nmsBedResult) {
         BedEnterResult bedEnterResult = nmsBedResult.mapBoth(sleepingProblem -> {
-            return switch (sleepingProblem) {
-                case NOT_POSSIBLE_HERE -> BedEnterResult.NOT_POSSIBLE_HERE;
-                case NOT_POSSIBLE_NOW -> BedEnterResult.NOT_POSSIBLE_NOW;
-                case TOO_FAR_AWAY -> BedEnterResult.TOO_FAR_AWAY;
-                case NOT_SAFE -> BedEnterResult.NOT_SAFE;
-                case OBSTRUCTED -> BedEnterResult.OBSTRUCTED;
-                default -> BedEnterResult.OTHER_PROBLEM;
-            };
+            if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
+                return BedEnterResult.OTHER_PROBLEM;
+            } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE) {
+                return BedEnterResult.NOT_SAFE;
+            } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED) {
+                return BedEnterResult.OBSTRUCTED;
+            } else if (sleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY) {
+                return BedEnterResult.TOO_FAR_AWAY;
+            }
+            throw new IllegalStateException();
         }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
         PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.level(), bed), bedEnterResult);
@@ -803,7 +834,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleMoistureChangeEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+    public static boolean handleMoistureChangeEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 
@@ -817,11 +848,11 @@ public class CraftEventFactory {
 
     public static BlockPos sourceBlockOverride = null; // SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPos up to five methods deep.
 
-    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags) {
+    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         return handleBlockSpreadEvent(world, source, target, state, flags, false);
     }
 
-    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags, boolean checkSetResult) {
+    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, boolean checkSetResult) {
         // Suppress during worldgen
         if (!(world instanceof Level)) {
             boolean result = world.setBlock(target, state, flags);
@@ -1170,7 +1201,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 
@@ -1788,15 +1819,15 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         return CraftEventFactory.handleBlockFormEvent(world, pos, state, flags, null);
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, @Nullable Entity entity) {
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, @Nullable Entity entity) {
         return CraftEventFactory.handleBlockFormEvent(world, pos, state, flags, entity, false);
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, @Nullable Entity entity, boolean checkSetResult) {
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, @Nullable Entity entity, boolean checkSetResult) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 

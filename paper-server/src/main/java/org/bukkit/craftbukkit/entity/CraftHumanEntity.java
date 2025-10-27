@@ -203,7 +203,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // From BlockBed
         state = state.setValue(BedBlock.OCCUPIED, true);
-        this.getHandle().level().setBlock(pos, state, 4);
+        this.getHandle().level().setBlock(pos, state, net.minecraft.world.level.block.Block.UPDATE_INVISIBLE);
 
         return true;
     }

@@ -13,6 +13,7 @@ import java.util.zip.ZipEntry;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractCow;
 import org.bukkit.entity.AbstractHorse;
+import org.bukkit.entity.AbstractNautilus;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.AbstractWindCharge;
@@ -122,7 +123,8 @@ public class EntityTypesTest {
             ThrownPotion.class,
             TippedArrow.class,
             Vehicle.class,
-            WaterMob.class
+            WaterMob.class,
+            AbstractNautilus.class
     );
 
     static {

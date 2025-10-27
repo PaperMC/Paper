@@ -340,7 +340,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
         .endsWith("_SPAWN_EGG")
-        .ensureSize("SPAWN_EGGS", 83).lock();
+        .ensureSize("SPAWN_EGGS", 85).lock();
 
     /**
      * Covers all colors of stained glass.
@@ -677,6 +677,7 @@ public class MaterialTags {
         .not(Material.COPPER_HORSE_ARMOR, Material.COPPER_GOLEM_SPAWN_EGG)
         .not(Material.COPPER_HELMET, Material.COPPER_CHESTPLATE, Material.COPPER_LEGGINGS, Material.COPPER_BOOTS)
         .not(Material.COPPER_AXE, Material.COPPER_HOE, Material.COPPER_PICKAXE, Material.COPPER_SHOVEL, Material.COPPER_SWORD)
+        .not(Material.COPPER_NAUTILUS_ARMOR, Material.COPPER_SPEAR)
         .ensureSize("UNAFFECTED_COPPER_BLOCKS", 30).lock();
 
     /**

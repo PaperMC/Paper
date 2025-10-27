@@ -201,7 +201,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     }
 
     @Override
-    public boolean place(int flags) {
+    public boolean place(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         boolean result = super.place(flags);
 
         this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {

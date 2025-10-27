@@ -21,6 +21,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.attribute.EnvironmentAttributeReader;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
@@ -29,6 +30,7 @@ import net.minecraft.world.level.ClipBlockStateContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -176,7 +178,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
+    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int flags, int recursionLeft) {
         this.delegate.neighborShapeChanged(direction, pos, neighborPos, neighborState, flags, recursionLeft);
     }
 
@@ -256,7 +258,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public int getMoonPhase() {
+    public MoonPhase getMoonPhase() {
         return this.delegate.getMoonPhase();
     }
 
@@ -423,6 +425,11 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     @Override
     public FeatureFlagSet enabledFeatures() {
         return this.delegate.enabledFeatures();
+    }
+
+    @Override
+    public EnvironmentAttributeReader environmentAttributes() {
+        return this.delegate.environmentAttributes();
     }
 
     @Override
@@ -676,12 +683,12 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         return this.delegate.setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         return this.delegate.setBlock(pos, state, flags);
     }
 

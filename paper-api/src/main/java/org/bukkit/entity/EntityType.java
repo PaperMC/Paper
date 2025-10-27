@@ -135,6 +135,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     MINECART("minecart", RideableMinecart.class, 42),
     MOOSHROOM("mooshroom", MushroomCow.class, 96),
     MULE("mule", Mule.class, 32),
+    NAUTILUS("nautilus", Nautilus.class, -1),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
     OCELOT("ocelot", Ocelot.class, 98),
@@ -197,6 +198,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     ZOGLIN("zoglin", Zoglin.class, -1),
     ZOMBIE("zombie", Zombie.class, 54),
     ZOMBIE_HORSE("zombie_horse", ZombieHorse.class, 29),
+    ZOMBIE_NAUTILUS("zombie_nautilus", ZombieNautilus.class, -1),
     ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
     ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     // End generate - EntityType

@@ -14,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.10+build.9")
+    mache("io.papermc:mache:25w43a+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -24,7 +24,7 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = true
+        enabled = false
         buildDataRef = "42d18d4c4653ffc549778dbe223f6994a031d69e"
         packageVersion = "v1_21_R6" // also needs to be updated in MappingEnvironment
     }
@@ -40,6 +40,10 @@ paperweight {
         "org.bukkit.craftbukkit",
         "org.spigotmc",
     )
+
+    updatingMinecraft {
+        //oldPaperCommit = "474d54da728306598f93b4a779578eee5cf54423"
+    }
 }
 
 tasks.generateDevelopmentBundle {
@@ -361,7 +365,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.BETA
+        channel = BuildChannel.ALPHA
 
         downloads {
             register("server:default") {
