@@ -4,6 +4,7 @@ import com.google.common.base.Predicates;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.dialog.PaperDialogResponseView;
 import io.papermc.paper.registry.data.dialog.action.DialogActionCallback;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnstableApiUsage") // permitted provider
@@ -34,7 +36,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
     @Override
     public @NotNull ClickEvent create(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
         final CompoundTag tag = new CompoundTag();
-        tag.store(ID_KEY, UUIDUtil.CODEC, ADVENTURE_CLICK_MANAGER.addCallback(callback, options));
+        tag.store(ID_KEY, UUIDUtil.CODEC, ADVENTURE_CLICK_MANAGER.addCallback(callback, options, null));
         return ClickEvent.custom(ADVENTURE_CLICK_CALLBACK_KEY, PaperAdventure.asBinaryTagHolder(tag));
     }
 
@@ -45,7 +47,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
 
         public UUID addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
-            return this.addCallback(UUID.randomUUID(), callback, options);
+            return this.addCallback(UUID.randomUUID(), callback, options, null);
         }
 
         @Override
@@ -98,12 +100,17 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
 
         public I addCallback(final I id, final @NotNull C callback, final ClickCallback.@NotNull Options options) {
-            this.queue.add(new StoredCallback<>(callback, options, id));
+            return addCallback(id, callback, options, null);
+        }
+
+        // New overload to bind player
+        public I addCallback(final I id, final @NotNull C callback, final ClickCallback.@NotNull Options options, final Player player) {
+            this.queue.add(new StoredCallback<>(callback, options, id, player));
             return id;
         }
 
         public void handleQueue(final int currentTick) {
-            // Evict expired entries
+            // Evict expired or invalid entries
             if (currentTick % 100 == 0) {
                 this.callbacks.values().removeIf(callback -> !callback.valid());
             }
@@ -111,6 +118,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             // Add entries from queue
             StoredCallback<C, I> callback;
             while ((callback = this.queue.poll()) != null) {
+                if (!callback.valid()) continue; // skip invalid or disconnected
                 this.callbacks.put(callback.id(), callback);
             }
         }
@@ -138,7 +146,17 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         private final I id;
         private int remainingUses;
 
+        // New: weak reference to a bound player
+        private final WeakReference<Player> boundPlayer;
+
+        // New: manual invalidation flag
+        private volatile boolean invalidated = false;
+
         private StoredCallback(final @NotNull C callback, final ClickCallback.@NotNull Options options, final I id) {
+            this(callback, options, id, null);
+        }
+
+        private StoredCallback(final @NotNull C callback, final ClickCallback.@NotNull Options options, final I id, final Player player) {
             long lifetimeValue;
             this.callback = callback;
             try {
@@ -149,6 +167,7 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
             this.lifetime = lifetimeValue;
             this.remainingUses = options.uses();
             this.id = id;
+            this.boundPlayer = player == null ? null : new WeakReference<>(player);
         }
 
         private void takeUse() {
@@ -167,7 +186,19 @@ public class ClickCallbackProviderImpl implements ClickCallback.Provider {
         }
 
         private boolean valid() {
-            return this.hasRemainingUses() && !this.expired();
+            return this.hasRemainingUses() && !this.expired() && !this.invalidated && !isPlayerDisconnected();
+        }
+
+        // New helper: check if bound player disconnected
+        private boolean isPlayerDisconnected() {
+            if (boundPlayer == null) return false;
+            Player p = boundPlayer.get();
+            return p == null || !p.isOnline();
+        }
+
+        // New method to manually invalidate callback
+        public void invalidate() {
+            this.invalidated = true;
         }
 
         public I id() {
