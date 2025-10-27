@@ -495,7 +495,7 @@
              serverPlayer.copyRespawnPosition(player);
          }
  
-@@ -405,18 +_,27 @@
+@@ -405,17 +_,26 @@
              serverPlayer.addTag(string);
          }
  
@@ -510,8 +510,7 @@
 +        serverPlayer.connection.resetPosition(); // Paper - Fix SPIGOT-1903, MC-98153
 +        level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3.x()) >> 4, net.minecraft.util.Mth.floor(vec3.z()) >> 4), 1); // Paper - post teleport ticket type
          if (teleportTransition.missingRespawnBlock()) {
-             serverPlayer.connection
-                 .send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, ClientboundGameEventPacket.DEMO_PARAM_INTRO));
+             serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
 +            serverPlayer.setRespawnPosition(null, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed
          }
  
@@ -524,7 +523,7 @@
          serverPlayer.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
          serverPlayer.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          serverPlayer.connection
-@@ -426,9 +_,15 @@
+@@ -425,9 +_,15 @@
          this.sendPlayerPermissionLevel(serverPlayer);
          level.addRespawnedPlayer(serverPlayer);
          this.players.add(serverPlayer);
@@ -540,7 +539,7 @@
          ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
          if (!keepInventory && respawnConfig != null) {
              LevelData.RespawnData respawnData = respawnConfig.respawnData();
-@@ -454,6 +_,29 @@
+@@ -453,6 +_,29 @@
              }
          }
  
@@ -570,7 +569,7 @@
          return serverPlayer;
      }
  
-@@ -462,23 +_,58 @@
+@@ -461,23 +_,58 @@
      }
  
      public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl connection) {
@@ -632,7 +631,7 @@
      public void broadcastAll(Packet<?> packet) {
          for (ServerPlayer serverPlayer : this.players) {
              serverPlayer.connection.send(packet);
-@@ -564,6 +_,12 @@
+@@ -563,6 +_,12 @@
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, LevelBasedPermissionSet permissions) {
@@ -645,7 +644,7 @@
          if (player.connection != null) {
              byte b = switch (permissions.level()) {
                  case ALL -> EntityEvent.PERMISSION_LEVEL_ALL;
-@@ -575,9 +_,48 @@
+@@ -574,9 +_,48 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b));
          }
  
@@ -696,7 +695,7 @@
      public boolean isWhiteListed(NameAndId nameAndId) {
          return !this.isUsingWhitelist() || this.ops.contains(nameAndId) || this.whitelist.contains(nameAndId);
      }
-@@ -590,21 +_,17 @@
+@@ -589,21 +_,17 @@
  
      @Nullable
      public ServerPlayer getPlayerByName(String username) {
@@ -724,7 +723,7 @@
              if (serverPlayer != except && serverPlayer.level().dimension() == dimension) {
                  double d = x - serverPlayer.getX();
                  double d1 = y - serverPlayer.getY();
-@@ -617,9 +_,11 @@
+@@ -616,9 +_,11 @@
      }
  
      public void saveAll() {
@@ -736,7 +735,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -646,10 +_,18 @@
+@@ -645,10 +_,18 @@
          player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
          player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
          player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
@@ -745,7 +744,7 @@
 +        player.connection.send(new ClientboundSetSimulationDistancePacket(level.spigotConfig.simulationDistance));
 +        // Paper end
          if (level.isRaining()) {
--            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, ClientboundGameEventPacket.DEMO_PARAM_INTRO));
+-            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
 -            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, level.getRainLevel(1.0F)));
 -            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, level.getThunderLevel(1.0F)));
 +            // CraftBukkit start - handle player weather
@@ -757,8 +756,8 @@
 +            // CraftBukkit end
          }
  
-         player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, ClientboundGameEventPacket.DEMO_PARAM_INTRO));
-@@ -658,8 +_,21 @@
+         player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
+@@ -657,8 +_,21 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -781,7 +780,7 @@
      }
  
      public int getPlayerCount() {
-@@ -708,9 +_,26 @@
+@@ -707,9 +_,26 @@
      }
  
      public void removeAll() {
@@ -811,7 +810,7 @@
      }
  
      public void broadcastSystemMessage(Component message, boolean overlay) {
-@@ -733,20 +_,39 @@
+@@ -732,20 +_,39 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound boundChatType) {
@@ -854,7 +853,7 @@
              flag1 |= flag2 && message.isFullyFiltered();
          }
  
-@@ -759,15 +_,21 @@
+@@ -758,15 +_,21 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -881,7 +880,7 @@
                  Path path = file2.toPath();
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
                      file2.renameTo(file1);
-@@ -775,7 +_,7 @@
+@@ -774,7 +_,7 @@
              }
  
              serverStatsCounter = new ServerStatsCounter(this.server, file1);
@@ -890,7 +889,7 @@
          }
  
          return serverStatsCounter;
-@@ -783,11 +_,11 @@
+@@ -782,11 +_,11 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -904,7 +903,7 @@
          }
  
          playerAdvancements.setPlayer(player);
-@@ -841,11 +_,34 @@
+@@ -840,11 +_,34 @@
      }
  
      public void reloadResources() {

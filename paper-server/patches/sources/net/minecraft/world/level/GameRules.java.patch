@@ -28,29 +28,29 @@
                  serverPlayer.connection.send(new ClientboundEntityEventPacket(serverPlayer, b));
              }
          })
-@@ -119,8 +_,8 @@
-         GameRules.Category.PLAYER,
-         GameRules.BooleanValue.create(
-             false,
--            (server, value) -> {
--                for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
-+            (level, value) -> { // Paper - rename param to match changes
-+                for (ServerPlayer serverPlayer : level.players()) { // Paper - per world gamerules
-                     serverPlayer.connection
-                         .send(
-                             new ClientboundGameEventPacket(
-@@ -154,8 +_,8 @@
-         GameRules.Category.PLAYER,
-         GameRules.BooleanValue.create(
-             false,
--            (server, value) -> {
--                for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
-+            (level, value) -> { // Paper - rename param to match changes
-+                for (ServerPlayer serverPlayer : level.players()) { // Paper - per world gamerules
-                     serverPlayer.connection
-                         .send(
-                             new ClientboundGameEventPacket(
-@@ -232,13 +_,13 @@
+@@ -115,8 +_,8 @@
+         "doWeatherCycle", GameRules.Category.UPDATES, GameRules.BooleanValue.create(!SharedConstants.DEBUG_WORLD_RECREATE)
+     );
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_LIMITED_CRAFTING = register(
+-        "doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (server, value) -> {
+-            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
++        "doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (level, value) -> { // Paper - rename param to match changes
++            for (ServerPlayer serverPlayer : level.players()) { // Paper - per world gamerules
+                 serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LIMITED_CRAFTING, value.get() ? 1.0F : 0.0F));
+             }
+         })
+@@ -140,8 +_,8 @@
+         "doInsomnia", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true)
+     );
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_IMMEDIATE_RESPAWN = register(
+-        "doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (server, value) -> {
+-            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
++        "doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (level, value) -> { // Paper - rename param to match changes
++            for (ServerPlayer serverPlayer : level.players()) { // Paper - per world gamerules
+                 serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.IMMEDIATE_RESPAWN, value.get() ? 1.0F : 0.0F));
+             }
+         })
+@@ -212,13 +_,13 @@
      public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = register(
          "minecartMaxSpeed",
          GameRules.Category.MISC,
@@ -66,7 +66,7 @@
              ServerWaypointManager waypointManager = level.getWaypointManager();
              if (value.get()) {
                  level.players().forEach(waypointManager::updatePlayer);
-@@ -252,7 +_,11 @@
+@@ -232,7 +_,11 @@
          "allowEnteringNetherUsingPortals", GameRules.Category.MISC, GameRules.BooleanValue.create(true)
      );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_SPAWN_MONSTERS = register(
@@ -79,7 +79,7 @@
      );
      public static final GameRules.Key<GameRules.BooleanValue> RULE_COMMAND_BLOCKS_ENABLED = register(
          "commandBlocksEnabled", GameRules.Category.MISC, GameRules.BooleanValue.create(true)
-@@ -262,6 +_,7 @@
+@@ -242,6 +_,7 @@
      );
      private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
      private final FeatureFlagSet enabledFeatures;
@@ -87,7 +87,7 @@
  
      public static <T extends GameRules.Value<T>> GameRules.Type<T> getType(GameRules.Key<T> key) {
          return (GameRules.Type<T>)GAME_RULE_TYPES.get(key);
-@@ -309,10 +_,21 @@
+@@ -289,10 +_,21 @@
      private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
          this.rules = rules;
          this.enabledFeatures = enabledFeatures;
@@ -110,7 +110,7 @@
          if (value == null) {
              throw new IllegalArgumentException("Tried to access invalid game rule");
          } else {
-@@ -353,13 +_,13 @@
+@@ -333,13 +_,13 @@
          }
      }
  
@@ -128,7 +128,7 @@
      }
  
      public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> key) {
-@@ -374,7 +_,7 @@
+@@ -354,7 +_,7 @@
          private boolean value;
  
          private static GameRules.Type<GameRules.BooleanValue> create(
@@ -137,7 +137,7 @@
          ) {
              return new GameRules.Type<>(
                  BoolArgumentType::bool,
-@@ -386,7 +_,7 @@
+@@ -366,7 +_,7 @@
              );
          }
  
@@ -146,7 +146,7 @@
              return new GameRules.Type<>(
                  BoolArgumentType::bool,
                  type -> new GameRules.BooleanValue(type, defaultValue),
-@@ -407,17 +_,21 @@
+@@ -387,17 +_,21 @@
          }
  
          @Override
@@ -172,7 +172,7 @@
          }
  
          @Override
-@@ -446,9 +_,9 @@
+@@ -426,9 +_,9 @@
          }
  
          @Override
@@ -184,7 +184,7 @@
          }
      }
  
-@@ -486,7 +_,7 @@
+@@ -466,7 +_,7 @@
      public static class IntegerValue extends GameRules.Value<GameRules.IntegerValue> {
          private int value;
  
@@ -193,7 +193,7 @@
              return new GameRules.Type<>(
                  IntegerArgumentType::integer,
                  type -> new GameRules.IntegerValue(type, defaultValue),
-@@ -498,7 +_,7 @@
+@@ -478,7 +_,7 @@
          }
  
          static GameRules.Type<GameRules.IntegerValue> create(
@@ -202,7 +202,7 @@
          ) {
              return new GameRules.Type<>(
                  () -> IntegerArgumentType.integer(min, max),
-@@ -520,17 +_,21 @@
+@@ -500,17 +_,21 @@
          }
  
          @Override
@@ -228,7 +228,7 @@
          }
  
          @Override
-@@ -581,13 +_,17 @@
+@@ -561,13 +_,17 @@
          }
  
          @Override
@@ -248,7 +248,7 @@
          final String id;
          private final GameRules.Category category;
  
-@@ -627,7 +_,7 @@
+@@ -607,7 +_,7 @@
      public static class Type<T extends GameRules.Value<T>> {
          final Supplier<ArgumentType<?>> argument;
          private final Function<GameRules.Type<T>, T> constructor;
@@ -257,7 +257,7 @@
          private final GameRules.VisitorCaller<T> visitorCaller;
          final Class<T> valueClass;
          final FeatureFlagSet requiredFeatures;
-@@ -635,7 +_,7 @@
+@@ -615,7 +_,7 @@
          Type(
              Supplier<ArgumentType<?>> argument,
              Function<GameRules.Type<T>, T> constructor,
@@ -266,7 +266,7 @@
              GameRules.VisitorCaller<T> visitorCaller,
              Class<T> valueClass,
              FeatureFlagSet requiredFeatures
-@@ -663,6 +_,12 @@
+@@ -643,6 +_,12 @@
          public FeatureFlagSet requiredFeatures() {
              return this.requiredFeatures;
          }
@@ -279,7 +279,7 @@
      }
  
      public abstract static class Value<T extends GameRules.Value<T>> {
-@@ -672,16 +_,16 @@
+@@ -652,16 +_,16 @@
              this.type = type;
          }
  
@@ -303,7 +303,7 @@
              }
          }
  
-@@ -700,7 +_,7 @@
+@@ -680,7 +_,7 @@
  
          protected abstract T copy();
  
