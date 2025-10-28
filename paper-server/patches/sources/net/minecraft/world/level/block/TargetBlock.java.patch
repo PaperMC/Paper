@@ -11,7 +11,7 @@
          if (projectile.getOwner() instanceof ServerPlayer serverPlayer) {
              serverPlayer.awardStat(Stats.TARGET_HIT);
              CriteriaTriggers.TARGET_BLOCK_HIT.trigger(serverPlayer, projectile, hit.getLocation(), i);
-@@ -51,9 +_,29 @@
+@@ -51,10 +_,30 @@
      private static int updateRedstoneOutput(LevelAccessor level, BlockState state, BlockHitResult hit, Entity projectile) {
          int redstoneStrength = getRedstoneStrength(hit, hit.getLocation());
          int i = projectile instanceof AbstractArrow ? 20 : 8;
@@ -32,12 +32,38 @@
          if (!level.getBlockTicks().hasScheduledTick(hit.getBlockPos(), state.getBlock())) {
              setOutputPower(level, state, redstoneStrength, hit.getBlockPos(), i);
          }
-+
+ 
 +        // Paper start - Award Hit Criteria after Block Update
 +        if (shouldAward) {
 +            awardTargetHitCriteria((Projectile) projectile, hit, redstoneStrength);
 +        }
 +        // Paper end - Award Hit Criteria after Block Update
- 
++
          return redstoneStrength;
+     }
+ 
+@@ -77,6 +_,11 @@
+     }
+ 
+     private static void setOutputPower(LevelAccessor level, BlockState state, int power, BlockPos pos, int waitTime) {
++        // Paper start - Call BlockRedstoneEvent
++        if (state.getValue(OUTPUT_POWER) != power) {
++            power = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(OUTPUT_POWER), power).getNewCurrent();
++        }
++        // Paper end - Call BlockRedstoneEvent
+         level.setBlock(pos, state.setValue(OUTPUT_POWER, power), Block.UPDATE_ALL);
+         level.scheduleTick(pos, state.getBlock(), waitTime);
+     }
+@@ -84,6 +_,12 @@
+     @Override
+     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         if (state.getValue(OUTPUT_POWER) != 0) {
++            // Paper start - Call BlockRedstoneEvent
++            org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(OUTPUT_POWER), 0);
++            if (event.getNewCurrent() > 0) {
++                return;
++            }
++            // Paper end - Call BlockRedstoneEvent
+             level.setBlock(pos, state.setValue(OUTPUT_POWER, 0), Block.UPDATE_ALL);
+         }
      }
