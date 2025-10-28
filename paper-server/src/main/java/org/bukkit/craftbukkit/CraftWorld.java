@@ -40,6 +40,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -1790,18 +1791,46 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
-        this.getHandle().sendParticlesSource(
-                receivers == null ? this.getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
-                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
-                CraftParticle.createParticleParam(particle, data), // Particle
-                force,
-                false,
-                x, y, z, // Position
-                count,  // Count
-                offsetX, offsetY, offsetZ, // Random offset
-                extra // Speed?
+
+        ClientboundLevelParticlesPacket clientboundLevelParticlesPacket = new ClientboundLevelParticlesPacket(
+            CraftParticle.createParticleParam(particle, data),
+            force,
+            false,
+            x, y, z,
+            (long) offsetX, (long) offsetY, (long) offsetZ, // Random offset
+            (long) extra, // Speed
+            count
         );
 
+        if (receivers == null) {
+            for (ServerPlayer player : this.getHandle().players()) {
+                sendParticlePacket(sender, player, clientboundLevelParticlesPacket, force, x, y, z);
+            }
+            return;
+        }
+
+        for (Player craftPlayer : receivers) {
+            ServerPlayer player = ((CraftPlayer) craftPlayer).getHandle();
+            sendParticlePacket(sender, player, clientboundLevelParticlesPacket, force, x, y, z);
+        }
+    }
+
+    private void sendParticlePacket(
+        Player sender,
+        ServerPlayer player,
+        ClientboundLevelParticlesPacket packet,
+        boolean force,
+        double x,
+        double y,
+        double z
+    ) {
+        if (sender != null && !player.getBukkitEntity().canSee(sender)) return;
+        if (player.level() != this.getHandle()) return;
+
+        BlockPos blockPos = player.blockPosition();
+        if (blockPos.closerToCenterThan(new Vec3(x, y, z), force ? 512.0 : 32.0)) {
+            player.connection.send(packet);
+        }
     }
 
     @Deprecated
