@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.data;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
@@ -18,5 +19,9 @@ public final class InlinedRegistryBuilderProviderImpl implements InlinedRegistry
     @Override
     public Dialog createDialog(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
         return Conversions.global().createApiInstanceFromBuilder(RegistryKey.DIALOG, value);
+    }
+
+    public TrialSpawnerConfig createTrialSpawnerConfig(final Consumer<RegistryBuilderFactory<TrialSpawnerConfig, ? extends TrialSpawnerConfigRegistryEntry.Builder>> value) {
+        return Conversions.global().createApiInstanceFromBuilder(RegistryKey.TRIAL_SPAWNER_CONFIG, value);
     }
 }
