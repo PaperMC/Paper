@@ -62,6 +62,15 @@ public record PaperItemTool(
         }
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .damagePerBlock(this.damagePerBlock())
+            .defaultMiningSpeed(this.defaultMiningSpeed())
+            .rules(this.rules())
+            .canDestroyBlocksInCreative(this.canDestroyBlocksInCreative());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ObjectArrayList<>();
@@ -100,6 +109,13 @@ public record PaperItemTool(
 
         @Override
         public Builder addRules(final Collection<Rule> rules) {
+            rules.forEach(this::addRule);
+            return this;
+        }
+
+        @Override
+        public Builder rules(final Collection<Rule> rules) {
+            this.rules.clear();
             rules.forEach(this::addRule);
             return this;
         }
