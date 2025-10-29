@@ -185,6 +185,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityPushByExplodeEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
@@ -2039,6 +2040,12 @@ public class CraftEventFactory {
 
     public static ExplosionPrimeEvent callExplosionPrimeEvent(Entity nmsEntity, float size, boolean fire) {
         ExplosionPrimeEvent event = new ExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static EntityPushByExplodeEvent callEntityPushByExplodeEvent(Entity pusher, Entity pushee, Vec3 knockback) {
+        EntityPushByExplodeEvent event = new EntityPushByExplodeEvent(pusher.getBukkitEntity(), pushee.getBukkitEntity(), CraftVector.toBukkit(knockback));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
