@@ -37,6 +37,8 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private final TrialSpawnerBlockEntity snapshot;
+    private final boolean isOminous;
+    private final CraftTrialSpawner spawner; // Paper
 
     private int spawnRange;
     private float totalMobs;
@@ -48,8 +50,10 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     private WeightedList<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTablesToEject;
     private ResourceKey<net.minecraft.world.level.storage.loot.LootTable> itemsToDropWhenOminous;
 
-    public CraftTrialSpawnerConfiguration(TrialSpawnerConfig minecraft, TrialSpawnerBlockEntity snapshot) {
+    public CraftTrialSpawnerConfiguration(TrialSpawnerConfig minecraft, TrialSpawnerBlockEntity snapshot, boolean isOminous, CraftTrialSpawner spawner) { // Paper
         this.snapshot = snapshot;
+        this.isOminous = isOminous;
+        this.spawner = spawner; // Paper
 
         this.spawnRange = minecraft.spawnRange();
         this.totalMobs = minecraft.totalMobs();
@@ -104,6 +108,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     @Override
     public void setBaseSpawnsBeforeCooldown(float amount) {
         this.totalMobs = amount;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -114,6 +119,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     @Override
     public void setBaseSimultaneousEntities(float amount) {
         this.simultaneousMobs = amount;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -124,6 +130,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     @Override
     public void setAdditionalSpawnsBeforeCooldown(float amount) {
         this.totalMobsAddedPerPlayer = amount;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -134,6 +141,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     @Override
     public void setAdditionalSimultaneousEntities(float amount) {
         this.simultaneousMobsAddedPerPlayer = amount;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -146,6 +154,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         Preconditions.checkArgument(delay >= 0, "Delay cannot be less than 0");
 
         this.ticksBetweenSpawn = delay;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -156,6 +165,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     @Override
     public void setSpawnRange(int spawnRange) {
         this.spawnRange = spawnRange;
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -184,6 +194,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         if (snapshot == null) {
             this.getTrialData().nextSpawnData = Optional.empty();
             this.spawnPotentialsDefinition = WeightedList.of(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
+            this.updateConfig(); // Paper
             return;
         }
 
@@ -192,6 +203,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
         this.getTrialData().nextSpawnData = Optional.of(data);
         this.spawnPotentialsDefinition = WeightedList.of(data);
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -208,6 +220,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         this.spawnPotentialsDefinition.unwrap().forEach(entry -> builder.add(entry.value(), entry.weight()));
         builder.add(new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment)), weight);
         this.spawnPotentialsDefinition = builder.build();
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -227,6 +240,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             builder.add(new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnerEntry.getSpawnRule())), CraftCreatureSpawner.getEquipment(spawnerEntry.getEquipment())), spawnerEntry.getSpawnWeight());
         }
         this.spawnPotentialsDefinition = builder.build();
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -267,6 +281,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         this.lootTablesToEject.unwrap().forEach(entry -> builder.add(entry.value(), entry.weight()));
         builder.add(CraftLootTable.bukkitToMinecraft(table), weight);
         this.lootTablesToEject = builder.build();
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -282,12 +297,14 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             }
         }
         this.lootTablesToEject = builder.build();
+        this.updateConfig(); // Paper
     }
 
     @Override
     public void setPossibleRewards(Map<LootTable, Integer> rewards) {
         if (rewards == null || rewards.isEmpty()) {
             this.lootTablesToEject = WeightedList.of();
+            this.updateConfig(); // Paper
             return;
         }
 
@@ -300,6 +317,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         });
 
         this.lootTablesToEject = builder.build();
+        this.updateConfig(); // Paper
     }
 
     @Override
@@ -315,6 +333,18 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     private TrialSpawnerStateData getTrialData() {
         return this.snapshot.getTrialSpawner().getStateData();
     }
+
+    // Paper start - support live blockstates
+    private void updateConfig() {
+        if (!this.spawner.isSnapshot()) {
+            // When updating a live block state, we need to update both configs
+            this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.overrideConfigs(
+                net.minecraft.core.Holder.direct(this.spawner.getNormalConfigInternal().toMinecraft()),
+                net.minecraft.core.Holder.direct(this.spawner.getOminousConfigInternal().toMinecraft())
+            );
+        }
+    }
+    // Paper end
 
     protected TrialSpawnerConfig toMinecraft() {
         return new TrialSpawnerConfig(this.spawnRange, this.totalMobs, this.simultaneousMobs, this.totalMobsAddedPerPlayer, this.simultaneousMobsAddedPerPlayer, this.ticksBetweenSpawn, this.spawnPotentialsDefinition, this.lootTablesToEject, this.itemsToDropWhenOminous);
