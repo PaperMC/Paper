@@ -55,29 +55,26 @@ tasks.generateDevelopmentBundle {
 
 abstract class Services {
     @get:Inject
-    abstract val softwareComponentFactory: SoftwareComponentFactory
-
-    @get:Inject
     abstract val archiveOperations: ArchiveOperations
 }
 val services = objects.newInstance<Services>()
 
 if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-    val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
+    val devBundleComponent = publishing.softwareComponentFactory.adhoc("devBundle")
     components.add(devBundleComponent)
 
     val devBundle = configurations.consumable("devBundle") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
         outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
     }
-    devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
+    devBundleComponent.addVariantsFromConfiguration(devBundle) {}
 
     val runtime = configurations.consumable("serverRuntimeClasspath") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
         extendsFrom(configurations.runtimeClasspath.get())
     }
-    devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
+    devBundleComponent.addVariantsFromConfiguration(runtime) {
         mapToMavenScope("runtime")
     }
 
@@ -86,7 +83,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
         extendsFrom(configurations.compileClasspath.get())
     }
-    devBundleComponent.addVariantsFromConfiguration(compile.get()) {
+    devBundleComponent.addVariantsFromConfiguration(compile) {
         mapToMavenScope("compile")
     }
 
