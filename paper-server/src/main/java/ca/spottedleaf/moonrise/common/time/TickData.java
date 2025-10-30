@@ -292,78 +292,51 @@ public final class TickData {
         // So, we will "compact" the data by merging any inbetween tick times
         // the next tick.
         // If there is no "next tick", then we will create one.
-        final List<TickInformation> collapsedData = new ArrayList<>();
-        for (int i = 0, len = allData.size(); i < len; ++i) {
-            final List<TickTime> toCollapse = new ArrayList<>();
-            TickTime lastTick = null;
-            for (;i < len; ++i) {
-                final TickTime time = allData.get(i);
-                if (!time.isTickExecution()) {
-                    toCollapse.add(time);
-                    continue;
-                }
-                lastTick = time;
-                break;
-            }
+        final int len = allData.size();
+        final List<TickInformation> collapsedData = new ArrayList<>(len);
 
-            if (toCollapse.isEmpty()) {
-                // nothing to collapse
-                final TickTime last = allData.get(i);
+        long totalTickTime = 0L;
+        long totalCpuTime = 0L;
+        TickTime lastActualTick = null;
+
+        for (final TickTime time : allData) {
+            if (!time.isTickExecution()) {
+                totalTickTime += time.tickLength();
+                totalCpuTime += time.supportCPUTime() ? time.tickCpuTime() : 0L;
+            } else {
+                final long tickCpu = time.supportCPUTime() ? time.tickCpuTime() : 0L;
+
                 collapsedData.add(
                     new TickInformation(
-                        last.differenceFromLastTick(tickInterval),
-                        last.tickLength(),
-                        last.supportCPUTime() ? last.tickCpuTime() : 0L
+                        time.differenceFromLastTick(tickInterval),
+                        time.tickLength() + totalTickTime,
+                        tickCpu + totalCpuTime
                     )
                 );
-            } else {
-                long totalTickTime = 0L;
-                long totalCpuTime = 0L;
-                for (int k = 0, len2 = toCollapse.size(); k < len2; ++k) {
-                    final TickTime time = toCollapse.get(k);
-                    totalTickTime += time.tickLength();
-                    totalCpuTime += time.supportCPUTime() ? time.tickCpuTime() : 0L;
-                }
-                if (i < len) {
-                    // we know there is a tick to collapse into
-                    final TickTime last = allData.get(i);
-                    collapsedData.add(
-                        new TickInformation(
-                            last.differenceFromLastTick(tickInterval),
-                            last.tickLength() + totalTickTime,
-                            (last.supportCPUTime() ? last.tickCpuTime() : 0L) + totalCpuTime
-                        )
-                    );
-                } else if (createFakeTick) {
-                    // we do not have a tick to collapse into, so we must make one up
-                    // we will assume that the tick is "starting now" and ongoing
 
-                    // compute difference between imaginary tick and last tick
-                    final long differenceBetweenTicks;
-                    if (lastTick != null) {
-                        // we have a last tick, use it
-                        differenceBetweenTicks = lastTick.tickStart();
-                    } else {
-                        // we don't have a last tick, so we must make one up that makes sense
-                        // if the current interval exceeds the max tick time, then use it
-
-                        // Otherwise use the interval length.
-                        // This is how differenceFromLastTick() works on TickTime when there is no previous interval.
-                        differenceBetweenTicks = Math.max(
-                            tickInterval, totalTickTime
-                        );
-                    }
-
-                    collapsedData.add(
-                        new TickInformation(
-                            differenceBetweenTicks,
-                            totalTickTime,
-                            totalCpuTime
-                        )
-                    );
-                }
+                totalTickTime = 0L;
+                totalCpuTime = 0L;
+                lastActualTick = time;
             }
         }
+
+        if (totalTickTime > 0 && createFakeTick) {
+            final long differenceBetweenTicks;
+            if (lastActualTick != null) {
+                differenceBetweenTicks = lastActualTick.tickStart();
+            } else {
+                differenceBetweenTicks = Math.max(tickInterval, totalTickTime);
+            }
+
+            collapsedData.add(
+                new TickInformation(
+                    differenceBetweenTicks,
+                    totalTickTime,
+                    totalCpuTime
+                )
+            );
+        }
+
         return collapsedData;
     }
 
