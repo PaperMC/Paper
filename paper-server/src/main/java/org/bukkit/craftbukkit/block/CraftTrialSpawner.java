@@ -23,8 +23,8 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity) {
         super(world, blockEntity);
-        this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().normalConfig(), this.getSnapshot());
-        this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().ominousConfig(), this.getSnapshot());
+        this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().normalConfig(), this.getSnapshot(), this);
+        this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().ominousConfig(), this.getSnapshot(), this);
     }
 
     protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
@@ -169,6 +169,14 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public TrialSpawnerConfiguration getOminousConfiguration() {
+        return this.ominousConfig;
+    }
+
+    CraftTrialSpawnerConfiguration getNormalConfigInternal() {
+        return this.normalConfig;
+    }
+
+    CraftTrialSpawnerConfiguration getOminousConfigInternal() {
         return this.ominousConfig;
     }
 
