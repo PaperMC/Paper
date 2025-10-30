@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import io.papermc.paper.util.Tick;
 import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -44,7 +46,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize, long time) {
-        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.min(9223372036854775L, Math.max(0L, time)));
+        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.clamp(time, 0L, Integer.MAX_VALUE));
     }
 
     @Override
@@ -54,7 +56,8 @@ public class CraftWorldBorder implements WorldBorder {
         Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
 
         if (time > 0L) {
-            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, unit.toMillis(time), this.getWorld().getGameTime());
+            final long startTime = (this.getWorld() != null) ? this.getWorld().getGameTime() : 0; // Virtual Borders don't have a World
+            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, Tick.tick().fromDuration(Duration.of(time, unit.toChronoUnit())), startTime);
         } else {
             this.handle.setSize(newSize);
         }
