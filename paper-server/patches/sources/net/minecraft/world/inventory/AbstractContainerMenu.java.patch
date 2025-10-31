@@ -49,7 +49,17 @@
 +
 +    // Paper start
 +    public void forceHeldSlot(final net.minecraft.world.InteractionHand hand) {
-+        this.sendAllDataToRemote();
++        // Paper start - GH-13253 - Optimize slot synchronization
++        // Only sync the specific held slot instead of the entire inventory
++        final org.bukkit.inventory.Inventory bottomInv = this.getBukkitView().getBottomInventory();
++        if (bottomInv instanceof org.bukkit.inventory.PlayerInventory playerInv) {
++            final net.minecraft.world.entity.player.Inventory inv = ((org.bukkit.craftbukkit.inventory.CraftInventoryPlayer) playerInv).getInventory();
++            final int slot = hand == net.minecraft.world.InteractionHand.MAIN_HAND ? inv.getSelectedSlot() : net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND;
++            this.forceSlot(inv, slot);
++        } else {
++            this.sendAllDataToRemote();
++        }
++        // Paper end - GH-13253 - Optimize slot synchronization
 +    }
 +
 +    public void forceHeldSlotAndArmor(final net.minecraft.world.InteractionHand hand) {
