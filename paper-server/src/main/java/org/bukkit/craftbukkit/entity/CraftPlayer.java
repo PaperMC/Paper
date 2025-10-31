@@ -3069,6 +3069,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         ));
     }
 
+    @Override
     public void openBook(ItemStack book) {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
