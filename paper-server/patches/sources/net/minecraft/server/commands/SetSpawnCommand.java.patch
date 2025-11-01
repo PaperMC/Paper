@@ -1,15 +1,15 @@
 --- a/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/net/minecraft/server/commands/SetSpawnCommand.java
-@@ -66,24 +_,34 @@
-     private static int setSpawn(CommandSourceStack source, Collection<ServerPlayer> targets, BlockPos pos, float angle) {
-         ResourceKey<Level> resourceKey = source.getLevel().dimension();
+@@ -73,24 +_,34 @@
+         float f = rotation.y;
+         float f1 = rotation.x;
  
 +        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
          for (ServerPlayer serverPlayer : targets) {
--            serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(resourceKey, pos, angle, true), false);
+-            serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(resourceKey, pos, f, f1), true), false);
 -        }
 +            // Paper start - Add PlayerSetSpawnEvent
-+            if (serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(resourceKey, pos, angle, true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++            if (serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(resourceKey, pos, f, f1), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
 +                actualTargets.add(serverPlayer);
 +            }
 +            // Paper end - Add PlayerSetSpawnEvent
@@ -25,15 +25,15 @@
 +        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
              source.sendSuccess(
                  () -> Component.translatable(
--                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, string, targets.iterator().next().getDisplayName()
-+                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, string, actualTargets.iterator().next().getDisplayName() // Paper - Add PlayerSetSpawnEvent
+-                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, targets.iterator().next().getDisplayName()
++                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, actualTargets.iterator().next().getDisplayName() // Paper - Add PlayerSetSpawnEvent
                  ),
                  true
              );
          } else {
              source.sendSuccess(
--                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, string, targets.size()), true
-+                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, string, actualTargets.size()), true // Paper - Add PlayerSetSpawnEvent
+-                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, targets.size()), true
++                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, actualTargets.size()), true // Paper - Add PlayerSetSpawnEvent
              );
          }
  

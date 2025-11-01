@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 24 Jun 2025 07:05:51 -0700
+Subject: [PATCH] Optimise EntityScheduler ticking
+
+The vast majority of the time, there are no tasks scheduled to
+the EntityScheduler. We can avoid iterating the entire entity list
+by tracking which schedulers have any tasks scheduled.
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
+index a2fbc13105673e926cbaed69221826ebd392140f..a42938e1abd371dba6806e65552fde71b178a096 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
+@@ -96,6 +96,7 @@ public final class ServerEntityLookup extends EntityLookup {
+         if (entity instanceof ThrownEnderpearl enderpearl) {
+             this.addEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()));
+         }
++        entity.registerScheduler(); // Paper - optimise Folia entity scheduler
+     }
+ 
+     @Override
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index d5f3083354d70c4da3c39e2f909ce4c7e170295c..4b1ffb5396138fc0d165ac647797b83f11d039ac 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1741,33 +1741,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+ 
++    public final io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList entitySchedulerTickList = new io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList(); // Paper - optimise Folia entity scheduler
++
+     protected void tickChildren(BooleanSupplier hasTimeLeft) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing());
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
+-        // Paper start - Folia scheduler API
+-        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
+-        for (ServerPlayer player : this.playerList.players) {
+-            if (!this.playerList.players.contains(player)) {
++        // Paper start - optimise Folia entity scheduler
++        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler)org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
++        for (io.papermc.paper.threadedregions.EntityScheduler scheduler : this.entitySchedulerTickList.getAllSchedulers()) {
++            if (scheduler.isRetired()) {
+                 continue;
+             }
+-            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = player.getBukkitEntityRaw();
+-            if (bukkit != null) {
+-                bukkit.taskScheduler.executeTick();
+-            }
++
++            scheduler.executeTick();
+         }
+-        getAllLevels().forEach(level -> {
+-            for (final net.minecraft.world.entity.Entity entity : io.papermc.paper.FeatureHooks.getAllEntities(level)) {
+-                if (entity.isRemoved() || entity instanceof ServerPlayer) {
+-                    continue;
+-                }
+-                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
+-                if (bukkit != null) {
+-                    bukkit.taskScheduler.executeTick();
+-                }
+-            }
+-        });
+-        // Paper end - Folia scheduler API
++        // Paper end - optimise Folia entity scheduler
+         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.handleQueue(this.tickCount); // Paper
+         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.handleQueue(this.tickCount); // Paper
+         profilerFiller.push("commandFunctions");
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index fea14f27503369185c867d269c5b8b416ce76eda..80dce02ac088eccaff71ab7fa85516036177a804 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -5190,6 +5190,11 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
+         this.getBukkitEntity().taskScheduler.retire();
+     }
+     // Paper end - Folia schedulers
++    // Paper start - optimise Folia entity scheduler
++    public final void registerScheduler() {
++        this.getBukkitEntity().taskScheduler.registerTo(net.minecraft.server.MinecraftServer.getServer().entitySchedulerTickList);
++    }
++    // Paper end - optimise Folia entity scheduler
+ 
+     @Override
+     public void setLevelCallback(EntityInLevelCallback levelCallback) {

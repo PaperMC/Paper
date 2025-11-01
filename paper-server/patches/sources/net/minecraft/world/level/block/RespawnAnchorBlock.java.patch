@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
-@@ -103,11 +_,16 @@
+@@ -104,11 +_,16 @@
                  ServerPlayer.RespawnConfig respawnConfig = serverPlayer.getRespawnConfig();
-                 ServerPlayer.RespawnConfig respawnConfig1 = new ServerPlayer.RespawnConfig(level.dimension(), pos, 0.0F, false);
+                 ServerPlayer.RespawnConfig respawnConfig1 = new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(level.dimension(), pos, 0.0F, 0.0F), false);
                  if (respawnConfig == null || !respawnConfig.isSamePosition(respawnConfig1)) {
 -                    serverPlayer.setRespawnPosition(respawnConfig1, true);
 +                    if (serverPlayer.setRespawnPosition(respawnConfig1, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
@@ -18,15 +18,15 @@
                  }
              }
  
-@@ -141,6 +_,7 @@
+@@ -142,6 +_,7 @@
      }
  
      private void explode(BlockState state, Level level, final BlockPos pos2) {
 +        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos2).getState(); // CraftBukkit - capture BlockState before remove block
          level.removeBlock(pos2, false);
-         boolean flag = Direction.Plane.HORIZONTAL.stream().map(pos2::relative).anyMatch(pos -> isWaterThatWouldFlow(pos, level));
+         boolean flag = Direction.Plane.HORIZONTAL.stream().map(pos2::relative).anyMatch(blockPos -> isWaterThatWouldFlow(blockPos, level));
          final boolean flag1 = flag || level.getFluidState(pos2.above()).is(FluidTags.WATER);
-@@ -154,7 +_,7 @@
+@@ -155,7 +_,7 @@
          };
          Vec3 center = pos2.getCenter();
          level.explode(

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/BaseSpawner.java
 +++ b/net/minecraft/world/level/BaseSpawner.java
-@@ -53,13 +_,15 @@
+@@ -54,13 +_,15 @@
      public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
@@ -17,20 +17,20 @@
      }
  
      public void clientTick(Level level, BlockPos pos) {
-@@ -82,13 +_,19 @@
+@@ -83,13 +_,19 @@
      }
  
-     public void serverTick(ServerLevel serverLevel, BlockPos pos) {
+     public void serverTick(ServerLevel level, BlockPos pos) {
 +        if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
 +        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
-+        tickDelay = serverLevel.paperConfig().tickRates.mobSpawner;
++        tickDelay = level.paperConfig().tickRates.mobSpawner;
 +        if (tickDelay == -1) { return; } // If disabled
 +        // Paper end - Configurable mob spawner tick rate
-         if (this.isNearPlayer(serverLevel, pos)) {
+         if (this.isNearPlayer(level, pos) && level.getServer().isSpawnerBlockEnabled()) {
 -            if (this.spawnDelay == -1) {
 +            if (this.spawnDelay < -tickDelay) { // Paper - Configurable mob spawner tick rate
-                 this.delay(serverLevel, pos);
+                 this.delay(level, pos);
              }
  
              if (this.spawnDelay > 0) {
@@ -38,16 +38,16 @@
 +                this.spawnDelay -= tickDelay; // Paper - Configurable mob spawner tick rate
              } else {
                  boolean flag = false;
-                 RandomSource random = serverLevel.getRandom();
-@@ -128,6 +_,21 @@
+                 RandomSource random = level.getRandom();
+@@ -127,6 +_,21 @@
                                  continue;
                              }
  
 +                            // Paper start - PreCreatureSpawnEvent
 +                            com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent event = new com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent(
-+                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3, serverLevel.getWorld()),
++                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3, level),
 +                                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(optional.get()),
-+                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel)
++                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level)
 +                            );
 +                            if (!event.callEvent()) {
 +                                flag = true;
@@ -58,18 +58,10 @@
 +                            }
 +                            // Paper end - PreCreatureSpawnEvent
 +
-                             Entity entity = EntityType.loadEntityRecursive(valueInput, serverLevel, EntitySpawnReason.SPAWNER, entity1 -> {
+                             Entity entity = EntityType.loadEntityRecursive(valueInput, level, EntitySpawnReason.SPAWNER, entity1 -> {
                                  entity1.snapTo(vec3.x, vec3.y, vec3.z, entity1.getYRot(), entity1.getXRot());
                                  return entity1;
-@@ -148,6 +_,7 @@
-                                 return;
-                             }
- 
-+                            entity.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; preserve entity motion from tag
-                             entity.snapTo(entity.getX(), entity.getY(), entity.getZ(), random.nextFloat() * 360.0F, 0.0F);
-                             if (entity instanceof Mob mob) {
-                                 if (nextSpawnData.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(serverLevel, EntitySpawnReason.SPAWNER)
-@@ -162,9 +_,22 @@
+@@ -160,9 +_,22 @@
                                  }
  
                                  nextSpawnData.getEquipment().ifPresent(mob::equip);
@@ -80,7 +72,7 @@
 +                                // Spigot end
                              }
  
--                            if (!serverLevel.tryAddFreshEntityWithPassengers(entity)) {
+-                            if (!level.tryAddFreshEntityWithPassengers(entity)) {
 +                            // Paper start
 +                            entity.spawnedViaMobSpawner = true;
 +                            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER;
@@ -88,12 +80,12 @@
 +                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
 +                                continue;
 +                            }
-+                            if (!serverLevel.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER)) {
++                            if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER)) {
 +                                // Paper end
-                                 this.delay(serverLevel, pos);
+                                 this.delay(level, pos);
                                  return;
                              }
-@@ -175,7 +_,7 @@
+@@ -173,7 +_,7 @@
                                  ((Mob)entity).spawnAnim();
                              }
  
@@ -102,7 +94,7 @@
                          }
                      }
                  }
-@@ -202,12 +_,14 @@
+@@ -200,12 +_,14 @@
      }
  
      public void load(@Nullable Level level, BlockPos pos, ValueInput input) {
@@ -120,7 +112,7 @@
          this.spawnCount = input.getIntOr("SpawnCount", 4);
          this.maxNearbyEntities = input.getIntOr("MaxNearbyEntities", 6);
          this.requiredPlayerRange = input.getIntOr("RequiredPlayerRange", 16);
-@@ -216,9 +_,19 @@
+@@ -214,9 +_,19 @@
      }
  
      public void save(ValueOutput output) {

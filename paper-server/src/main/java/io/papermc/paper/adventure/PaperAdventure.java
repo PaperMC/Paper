@@ -76,7 +76,6 @@ import static java.util.Objects.requireNonNull;
 public final class PaperAdventure {
     private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
     public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
-        .nestingLimit(30) // todo: should this be configurable? a system property or config value?
         .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
             final Language language = Language.getInstance();
             final @Nullable String fallback = translatable.fallback();
@@ -190,28 +189,20 @@ public final class PaperAdventure {
         return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
     }
 
-    public static ArrayList<Component> asAdventure(final List<? extends net.minecraft.network.chat.Component> vanillas) {
-        final ArrayList<Component> adventures = new ArrayList<>(vanillas.size());
+    public static List<Component> asAdventure(final List<? extends net.minecraft.network.chat.Component> vanillas) {
+        final List<Component> adventures = new ArrayList<>(vanillas.size());
         for (final net.minecraft.network.chat.Component vanilla : vanillas) {
             adventures.add(asAdventure(vanilla));
         }
         return adventures;
     }
 
-    public static ArrayList<Component> asAdventureFromJson(final List<String> jsonStrings) {
-        final ArrayList<Component> adventures = new ArrayList<>(jsonStrings.size());
-        for (final String json : jsonStrings) {
-            adventures.add(GsonComponentSerializer.gson().deserialize(json));
+    public static List<Component> asAdventure(final net.minecraft.network.chat.Component[] vanillas) {
+        final List<Component> adventures = new ArrayList<>(vanillas.length);
+        for (final net.minecraft.network.chat.Component vanilla : vanillas) {
+            adventures.add(asAdventure(vanilla));
         }
         return adventures;
-    }
-
-    public static List<String> asJson(final List<? extends Component> adventures) {
-        final List<String> jsons = new ArrayList<>(adventures.size());
-        for (final Component component : adventures) {
-            jsons.add(GsonComponentSerializer.gson().serialize(component));
-        }
-        return jsons;
     }
 
     public static net.minecraft.network.chat.@NotNull Component asVanillaNullToEmpty(final @Nullable Component component) {
@@ -350,7 +341,7 @@ public final class PaperAdventure {
             Filterable.passThrough(validateField(asPlain(book.title(), locale), WrittenBookContent.TITLE_MAX_LENGTH, "title")),
             asPlain(book.author(), locale),
             0,
-            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate legnth?
+            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate length?
             false
         ));
         return item;
@@ -503,4 +494,5 @@ public final class PaperAdventure {
         return AdventureCodecs.STYLE_MAP_CODEC.codec()
             .parse(ops, encoded).getOrThrow(IllegalStateException::new);
     }
+
 }

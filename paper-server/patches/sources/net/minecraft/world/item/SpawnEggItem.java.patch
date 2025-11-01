@@ -1,19 +1,28 @@
 --- a/net/minecraft/world/item/SpawnEggItem.java
 +++ b/net/minecraft/world/item/SpawnEggItem.java
-@@ -55,6 +_,7 @@
-             Direction clickedFace = context.getClickedFace();
-             BlockState blockState = level.getBlockState(clickedPos);
-             if (level.getBlockEntity(clickedPos) instanceof Spawner spawner) {
-+                if (level.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
-                 EntityType<?> type = this.getType(level.registryAccess(), itemInHand);
-                 spawner.setEntityId(type, level.getRandom());
-                 level.sendBlockUpdated(clickedPos, blockState, blockState, 3);
-@@ -170,7 +_,7 @@
+@@ -68,6 +_,7 @@
+ 
+                     return InteractionResult.FAIL;
+                 } else {
++                    if (level.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
+                     spawner.setEntityId(type, level.getRandom());
+                     level.sendBlockUpdated(clickedPos, blockState, blockState, Block.UPDATE_ALL);
+                     level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, clickedPos);
+@@ -95,7 +_,7 @@
+         EntityType<?> type = this.getType(stack);
+         if (type == null) {
+             return InteractionResult.FAIL;
+-        } else if (!type.isAllowedInPeaceful() && level.getDifficulty() == Difficulty.PEACEFUL) {
++        } else if (!type.isAllowedInPeaceful(stack.get(DataComponents.ENTITY_DATA).getUnsafe()) && level.getDifficulty() == Difficulty.PEACEFUL) { // Paper - check peaceful override
+             return InteractionResult.FAIL;
+         } else {
+             if (type.spawn((ServerLevel)level, stack, owner, pos, EntitySpawnReason.SPAWN_ITEM_USE, shouldOffsetY, shouldOffsetYMore) != null) {
+@@ -179,7 +_,7 @@
                  } else {
                      breedOffspring.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
                      breedOffspring.applyComponentsFromItemStack(stack);
--                    serverLevel.addFreshEntityWithPassengers(breedOffspring);
-+                    serverLevel.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+-                    level.addFreshEntityWithPassengers(breedOffspring);
++                    level.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
                      stack.consume(1, player);
                      return Optional.of(breedOffspring);
                  }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/gametest/framework/GameTestServer.java
 +++ b/net/minecraft/gametest/framework/GameTestServer.java
-@@ -133,6 +_,8 @@
+@@ -143,6 +_,8 @@
          boolean verify
      ) {
          super(
@@ -9,35 +9,53 @@
              serverThread,
              storageSource,
              packRepository,
-@@ -148,8 +_,15 @@
+@@ -158,8 +_,16 @@
  
      @Override
      public boolean initServer() {
--        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, 1) {});
+-        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, new EmptyNotificationService()) {});
 -        this.loadLevel();
 +        // Paper start
-+        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, 1) {
++        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, new EmptyNotificationService()) {
 +            @Override
 +            public void loadAndSaveFiles() {
 +                throw new UnsupportedOperationException("Should not be called in a GameTestServer");
 +            }
 +        });
 +        this.loadLevel("blah");
++        this.initPostWorld();
 +        // Paper end
          ServerLevel serverLevel = this.overworld();
          this.testBatches = this.evaluateTestsToRun(serverLevel);
          LOGGER.info("Started game test server");
-@@ -338,6 +_,13 @@
-     public boolean shouldInformAdmins() {
+@@ -354,6 +_,13 @@
          return false;
      }
-+
+ 
 +    // Paper start
 +    @Override
 +    public org.bukkit.command.CommandSender getBukkitSender(final net.minecraft.commands.CommandSourceStack wrapper) {
 +        throw new UnsupportedOperationException("Not supported.");
 +    }
 +    // Paper end
- 
++
      @Override
-     public boolean isSingleplayerOwner(GameProfile profile) {
+     public boolean isSingleplayerOwner(NameAndId nameAndId) {
+         return false;
+@@ -401,5 +_,16 @@
+         @Override
+         public void save() {
+         }
++
++        // Paper start
++        @Override
++        public void save(final boolean async) {
++        }
++
++        @Override
++        public @Nullable NameAndId getIfCached(final String name) {
++            return this.get(name).orElse(null);
++        }
++        // Paper end
+     }
+ }

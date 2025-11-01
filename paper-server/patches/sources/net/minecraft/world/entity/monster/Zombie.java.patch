@@ -22,9 +22,9 @@
      public int conversionTime;
 +    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
-     public Zombie(EntityType<? extends Zombie> entityType, Level level) {
-         super(entityType, level);
-+        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(level.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(entityType, level.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.ZOMBIE)))); // Paper - Configurable door breaking difficulty
+     public Zombie(EntityType<? extends Zombie> type, Level level) {
+         super(type, level);
++        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(level.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(type, level.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.ZOMBIE)))); // Paper - Configurable door breaking difficulty
      }
  
      public Zombie(Level level) {
@@ -66,7 +66,7 @@
      @Override
 @@ -183,9 +_,9 @@
          this.getEntityData().set(DATA_BABY_ID, childZombie);
-         if (this.level() != null && !this.level().isClientSide) {
+         if (this.level() != null && !this.level().isClientSide()) {
              AttributeInstance attribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
 -            attribute.removeModifier(SPEED_MODIFIER_BABY_ID);
 +            attribute.removeModifier(this.babyModifier.id()); // Paper - Make baby speed configurable
@@ -124,7 +124,7 @@
              mob.setTradeOffers(villager.getOffers().copy());
              mob.setVillagerXp(villager.getVillagerXp());
 -            if (!this.isSilent()) {
--                level.levelEvent(null, 1026, this.blockPosition(), 0);
+-                level.levelEvent(null, LevelEvent.SOUND_ZOMBIE_INFECTED, this.blockPosition(), 0);
 +            // CraftBukkit start
 +            if (!silent) {
 +                level.levelEvent(null, 1026, blockPosition, 0);
@@ -171,11 +171,11 @@
          if (flag) {
              float effectiveDifficulty = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < effectiveDifficulty * 0.3F) {
--                source.igniteForSeconds(2 * (int)effectiveDifficulty);
+-                target.igniteForSeconds(2 * (int)effectiveDifficulty);
 +                // CraftBukkit start
-+                org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), source.getBukkitEntity(), (float) (2 * (int)effectiveDifficulty));
++                org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), target.getBukkitEntity(), (float) (2 * (int)effectiveDifficulty));
 +                if (event.callEvent()) {
-+                    source.igniteForSeconds(event.getDuration(), false);
++                    target.igniteForSeconds(event.getDuration(), false);
 +                }
 +                // CraftBukkit end
              }
@@ -197,8 +197,8 @@
      }
  
      @Override
-     public boolean killedEntity(ServerLevel level, LivingEntity entity) {
-         boolean flag = super.killedEntity(level, entity);
+     public boolean killedEntity(ServerLevel level, LivingEntity entity, DamageSource damageSource) {
+         boolean flag = super.killedEntity(level, entity, damageSource);
 -        if ((level.getDifficulty() == Difficulty.NORMAL || level.getDifficulty() == Difficulty.HARD) && entity instanceof Villager villager) {
 -            if (level.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
 +        final double fallbackChance = level.getDifficulty() == Difficulty.HARD ? 100 : level.getDifficulty() == Difficulty.NORMAL ? 50 : 0; // Paper - Configurable chance of villager zombie infection - moved up from belows if
@@ -219,7 +219,7 @@
 @@ -498,7 +_,7 @@
                              chicken1.finalizeSpawn(level, difficulty, EntitySpawnReason.JOCKEY, null);
                              chicken1.setChickenJockey(true);
-                             this.startRiding(chicken1);
+                             this.startRiding(chicken1, false, false);
 -                            level.addFreshEntity(chicken1);
 +                            level.addFreshEntity(chicken1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT); // CraftBukkit
                          }

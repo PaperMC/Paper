@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/TicketStorage.java
 +++ b/net/minecraft/world/level/TicketStorage.java
-@@ -163,7 +_,7 @@
+@@ -179,7 +_,7 @@
      }
  
      private static boolean isTicketSameTypeAndLevel(Ticket first, Ticket second) {
@@ -9,19 +9,20 @@
      }
  
      public int getTicketLevelAt(long chunkPos, boolean requireSimulation) {
-@@ -272,7 +_,7 @@
+@@ -301,7 +_,7 @@
      }
  
      public void deactivateTicketsOnClosing() {
--        this.removeTicketIf((_long, ticket) -> ticket.getType() != TicketType.UNKNOWN, this.deactivatedTickets);
-+        this.removeTicketIf((_long, ticket) -> ticket.getType() != TicketType.UNKNOWN && ticket.getType() != TicketType.CHUNK_LOAD && ticket.getType() != TicketType.FUTURE_AWAIT, this.deactivatedTickets);
+-        this.removeTicketIf((ticket, chunkPos) -> ticket.getType() != TicketType.UNKNOWN, this.deactivatedTickets);
++        this.removeTicketIf((ticket, chunkPos) -> ticket.getType() != TicketType.UNKNOWN && ticket.getType() != TicketType.CHUNK_LOAD && ticket.getType() != TicketType.FUTURE_AWAIT, this.deactivatedTickets);
      }
  
-     public void removeTicketIf(BiPredicate<Long, Ticket> biPredicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> map) {
-@@ -378,4 +_,19 @@
-     public interface ChunkUpdated {
-         void update(long chunkPos, int ticketLevel, boolean isDecreasing);
+     public void removeTicketIf(TicketStorage.TicketPredicate predicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> tickets) {
+@@ -411,4 +_,20 @@
+     public interface TicketPredicate {
+         boolean test(Ticket ticket, long chunkPos);
      }
++
 +    // Paper start
 +    public boolean addPluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
 +        // Keep inline with force loading
@@ -34,7 +35,7 @@
 +    }
 +
 +    public void removeAllPluginRegionTickets(TicketType ticketType, int ticketLevel, org.bukkit.plugin.Plugin ticketIdentifier) {
-+        removeTicketIf((chunkKey, ticket) -> ticket.getType() == ticketType && ticket.getTicketLevel() == ticketLevel && ticket.getIdentifier() == ticketIdentifier, null);
++        removeTicketIf((ticket, chunkKey) -> ticket.getType() == ticketType && ticket.getTicketLevel() == ticketLevel && ticket.getIdentifier() == ticketIdentifier, null);
 +    }
 +    // Paper end
  }

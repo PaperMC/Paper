@@ -1,26 +1,26 @@
 --- a/net/minecraft/server/players/UserWhiteList.java
 +++ b/net/minecraft/server/players/UserWhiteList.java
-@@ -28,4 +_,23 @@
-     protected String getKeyForUser(GameProfile obj) {
-         return obj.getId().toString();
-     }
-+    // Paper start - Add whitelist events
-+    @Override
-+    public void add(UserWhiteListEntry entry) {
-+        if (!new io.papermc.paper.event.server.WhitelistStateUpdateEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(entry.getUser()), io.papermc.paper.event.server.WhitelistStateUpdateEvent.WhitelistStatus.ADDED).callEvent()) {
-+            return;
+@@ -21,6 +_,11 @@
+ 
+     @Override
+     public boolean add(UserWhiteListEntry entry) {
++        // Paper start - Add whitelist events
++        if (!new io.papermc.paper.event.server.WhitelistStateUpdateEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(entry.getUser().toUncompletedGameProfile()), io.papermc.paper.event.server.WhitelistStateUpdateEvent.WhitelistStatus.ADDED).callEvent()) {
++            return false;
 +        }
-+
-+        super.add(entry);
-+    }
-+
-+    @Override
-+    public void remove(GameProfile profile) {
-+        if (!new io.papermc.paper.event.server.WhitelistStateUpdateEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile), io.papermc.paper.event.server.WhitelistStateUpdateEvent.WhitelistStatus.REMOVED).callEvent()) {
-+            return;
++        // Paper end - Add whitelist events
+         if (super.add(entry)) {
+             if (entry.getUser() != null) {
+                 this.notificationService.playerAddedToAllowlist(entry.getUser());
+@@ -34,6 +_,11 @@
+ 
+     @Override
+     public boolean remove(NameAndId user) {
++        // Paper start - Add whitelist events
++        if (!new io.papermc.paper.event.server.WhitelistStateUpdateEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(user.toUncompletedGameProfile()), io.papermc.paper.event.server.WhitelistStateUpdateEvent.WhitelistStatus.REMOVED).callEvent()) {
++            return false;
 +        }
-+
-+        super.remove(profile);
-+    }
-+    // Paper end - Add whitelist events
- }
++        // Paper end - Add whitelist events
+         if (super.remove(user)) {
+             this.notificationService.playerRemovedFromAllowlist(user);
+             return true;

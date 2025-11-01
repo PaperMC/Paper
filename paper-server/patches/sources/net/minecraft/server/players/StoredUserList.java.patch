@@ -1,38 +1,38 @@
 --- a/net/minecraft/server/players/StoredUserList.java
 +++ b/net/minecraft/server/players/StoredUserList.java
-@@ -26,7 +_,7 @@
+@@ -28,7 +_,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
      private final File file;
 -    private final Map<String, V> map = Maps.newHashMap();
-+    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in JsonList
++    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in StoredUserList
+     protected final NotificationService notificationService;
  
-     public StoredUserList(File file) {
-         this.file = file;
-@@ -48,8 +_,11 @@
+     public StoredUserList(File file, NotificationService notificationService) {
+@@ -60,8 +_,11 @@
  
      @Nullable
-     public V get(K obj) {
+     public V get(K user) {
 -        this.removeExpired();
--        return this.map.get(this.getKeyForUser(obj));
-+        // Paper start - Use ConcurrentHashMap in JsonList
-+        return this.map.computeIfPresent(this.getKeyForUser(obj), (k, v) -> {
-+            return v.hasExpired() ? null : v;
+-        return this.map.get(this.getKeyForUser(user));
++        // Paper start - Use ConcurrentHashMap in StoredUserList
++        return this.map.computeIfPresent(this.getKeyForUser(user), (key, value) -> {
++            return value.hasExpired() ? null : value;
 +        });
-+        // Paper end - Use ConcurrentHashMap in JsonList
++        // Paper end - Use ConcurrentHashMap in StoredUserList
      }
  
-     public void remove(K user) {
-@@ -71,7 +_,7 @@
+     public boolean remove(K user) {
+@@ -98,7 +_,7 @@
      }
  
      public boolean isEmpty() {
 -        return this.map.size() < 1;
-+        return this.map.isEmpty(); // Paper - Use ConcurrentHashMap in JsonList
++        return this.map.isEmpty(); // Paper - Use ConcurrentHashMap in StoredUserList
      }
  
-     protected String getKeyForUser(K obj) {
-@@ -79,21 +_,12 @@
+     protected String getKeyForUser(K user) {
+@@ -106,21 +_,12 @@
      }
  
      protected boolean contains(K entry) {
@@ -52,11 +52,11 @@
 -        for (K object : list) {
 -            this.map.remove(this.getKeyForUser(object));
 -        }
-+        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in JsonList
++        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in StoredUserList
      }
  
      protected abstract StoredUserEntry<K> createEntry(JsonObject entryData);
-@@ -103,6 +_,7 @@
+@@ -130,6 +_,7 @@
      }
  
      public void save() throws IOException {
@@ -64,7 +64,7 @@
          JsonArray jsonArray = new JsonArray();
          this.map.values().stream().map(storedEntry -> Util.make(new JsonObject(), storedEntry::serialize)).forEach(jsonArray::add);
  
-@@ -127,7 +_,14 @@
+@@ -154,7 +_,14 @@
                          this.map.put(this.getKeyForUser(storedUserEntry.getUser()), (V)storedUserEntry);
                      }
                  }

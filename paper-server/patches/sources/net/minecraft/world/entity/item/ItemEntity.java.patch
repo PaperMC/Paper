@@ -3,29 +3,29 @@
 @@ -53,6 +_,9 @@
      @Nullable
      public UUID target;
-     public final float bobOffs;
+     public final float bobOffs = this.random.nextFloat() * (float) Math.PI * 2.0F;
 +    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
 +    private int despawnRate = -1; // Paper - Alternative item-despawn-rate
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
  
-     public ItemEntity(EntityType<? extends ItemEntity> entityType, Level level) {
-         super(entityType, level);
-@@ -61,7 +_,12 @@
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level level) {
+         super(type, level);
+@@ -60,7 +_,12 @@
      }
  
-     public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack itemStack) {
--        this(level, posX, posY, posZ, itemStack, level.random.nextDouble() * 0.2 - 0.1, 0.2, level.random.nextDouble() * 0.2 - 0.1);
+     public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack stack) {
+-        this(level, posX, posY, posZ, stack, level.random.nextDouble() * 0.2 - 0.1, 0.2, level.random.nextDouble() * 0.2 - 0.1);
 +        // Paper start - Don't use level random in entity constructors (to make them thread-safe)
 +        this(EntityType.ITEM, level);
 +        this.setPos(posX, posY, posZ);
 +        this.setDeltaMovement(this.random.nextDouble() * 0.2 - 0.1, 0.2, this.random.nextDouble() * 0.2 - 0.1);
-+        this.setItem(itemStack);
++        this.setItem(stack);
 +        // Paper end - Don't use level random in entity constructors
      }
  
-     public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack itemStack, double deltaX, double deltaY, double deltaZ) {
-@@ -79,6 +_,14 @@
-         this.bobOffs = other.bobOffs;
+     public ItemEntity(Level level, double posX, double posY, double posZ, ItemStack stack, double deltaX, double deltaY, double deltaZ) {
+@@ -70,6 +_,14 @@
+         this.setItem(stack);
      }
  
 +    // Paper start - Require item entities to send their location precisely (Fixes MC-4)
@@ -39,7 +39,7 @@
      @Override
      public boolean dampensVibrations() {
          return this.getItem().is(ItemTags.DAMPENS_VIBRATIONS);
-@@ -116,7 +_,7 @@
+@@ -107,7 +_,7 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -48,7 +48,7 @@
          } else {
              super.tick();
              if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
-@@ -144,11 +_,15 @@
+@@ -135,11 +_,15 @@
                  }
              }
  
@@ -66,13 +66,13 @@
                      f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
  
-@@ -181,8 +_,14 @@
+@@ -172,8 +_,14 @@
                  }
              }
  
--            if (!this.level().isClientSide && this.age >= 6000) {
+-            if (!this.level().isClientSide() && this.age >= 6000) {
 -                this.discard();
-+            if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
++            if (!this.level().isClientSide() && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
@@ -83,7 +83,7 @@
              }
          }
      }
-@@ -207,9 +_,18 @@
+@@ -198,9 +_,18 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -103,7 +103,7 @@
                      this.tryToMerge(itemEntity);
                      if (this.isRemoved()) {
                          break;
-@@ -221,7 +_,7 @@
+@@ -212,7 +_,7 @@
  
      private boolean isMergable() {
          ItemStack item = this.getItem();
@@ -112,7 +112,7 @@
      }
  
      private void tryToMerge(ItemEntity itemEntity) {
-@@ -254,11 +_,16 @@
+@@ -245,11 +_,16 @@
      }
  
      private static void merge(ItemEntity destinationEntity, ItemStack destinationStack, ItemEntity originEntity, ItemStack originStack) {
@@ -130,7 +130,7 @@
          }
      }
  
-@@ -286,12 +_,17 @@
+@@ -277,12 +_,17 @@
          } else if (!this.getItem().canBeHurtBy(damageSource)) {
              return false;
          } else {
@@ -149,7 +149,7 @@
              }
  
              return true;
-@@ -313,6 +_,11 @@
+@@ -304,6 +_,11 @@
          if (!this.getItem().isEmpty()) {
              output.store("Item", ItemStack.CODEC, this.getItem());
          }
@@ -161,7 +161,7 @@
      }
  
      @Override
-@@ -323,8 +_,17 @@
+@@ -314,8 +_,17 @@
          this.target = input.read("Owner", UUIDUtil.CODEC).orElse(null);
          this.thrower = EntityReference.read(input, "Thrower");
          this.setItem(input.read("Item", ItemStack.CODEC).orElse(ItemStack.EMPTY));
@@ -180,7 +180,7 @@
          }
      }
  
-@@ -334,10 +_,73 @@
+@@ -325,10 +_,73 @@
              ItemStack item = this.getItem();
              Item item1 = item.getItem();
              int count = item.getCount();
@@ -255,7 +255,7 @@
                      item.setCount(count);
                  }
  
-@@ -375,6 +_,7 @@
+@@ -366,6 +_,7 @@
  
      public void setItem(ItemStack stack) {
          this.getEntityData().set(DATA_ITEM, stack);
@@ -263,7 +263,7 @@
      }
  
      @Override
-@@ -427,7 +_,7 @@
+@@ -418,7 +_,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();

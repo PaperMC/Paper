@@ -6,14 +6,14 @@
      protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
 +    public boolean autoExpire = true; // Paper - Expand FallingBlock API
  
-     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> entityType, Level level) {
-         super(entityType, level);
+     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level level) {
+         super(type, level);
 @@ -97,6 +_,7 @@
              pos.getZ() + 0.5,
-             blockState.hasProperty(BlockStateProperties.WATERLOGGED) ? blockState.setValue(BlockStateProperties.WATERLOGGED, false) : blockState
+             state.hasProperty(BlockStateProperties.WATERLOGGED) ? state.setValue(BlockStateProperties.WATERLOGGED, false) : state
          );
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(fallingBlockEntity, pos, blockState.getFluidState().createLegacyBlock())) return fallingBlockEntity; // CraftBukkit
-         level.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3);
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(fallingBlockEntity, pos, state.getFluidState().createLegacyBlock())) return fallingBlockEntity; // CraftBukkit
+         level.setBlock(pos, state.getFluidState().createLegacyBlock(), Block.UPDATE_ALL);
          level.addFreshEntity(fallingBlockEntity);
          return fallingBlockEntity;
 @@ -147,13 +_,22 @@
@@ -55,7 +55,7 @@
                      }
                  } else {
                      BlockState blockState = this.level().getBlockState(blockPos);
-@@ -197,12 +_,18 @@
+@@ -197,11 +_,17 @@
                                      this.blockState = this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
                                  }
  
@@ -65,17 +65,16 @@
 +                                    return;
 +                                }
 +                                // CraftBukkit end
-                                 if (this.level().setBlock(blockPos, this.blockState, 3)) {
-                                     ((ServerLevel)this.level())
-                                         .getChunkSource()
+                                 if (this.level().setBlock(blockPos, this.blockState, Block.UPDATE_ALL)) {
+                                     serverLevel.getChunkSource()
                                          .chunkMap
-                                         .broadcast(this, new ClientboundBlockUpdatePacket(blockPos, this.level().getBlockState(blockPos)));
+                                         .sendToTrackingPlayers(this, new ClientboundBlockUpdatePacket(blockPos, this.level().getBlockState(blockPos)));
 -                                    this.discard();
 +                                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-                                     if (block instanceof Fallable) {
-                                         ((Fallable)block).onLand(this.level(), blockPos, this.blockState, blockState, this);
+                                     if (block instanceof Fallable fallable) {
+                                         fallable.onLand(this.level(), blockPos, this.blockState, blockState, this);
                                      }
-@@ -227,19 +_,19 @@
+@@ -226,19 +_,19 @@
                                          }
                                      }
                                  } else if (this.dropItem && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
@@ -98,7 +97,7 @@
                              this.callOnBrokenAfterFall(block, blockPos);
                          }
                      }
-@@ -299,6 +_,7 @@
+@@ -298,6 +_,7 @@
          }
  
          output.putBoolean("CancelDrop", this.cancelDrop);
@@ -106,7 +105,7 @@
      }
  
      @Override
-@@ -310,8 +_,9 @@
+@@ -309,8 +_,9 @@
          this.fallDamagePerDistance = input.getFloatOr("FallHurtAmount", 0.0F);
          this.fallDamageMax = input.getIntOr("FallHurtMax", 40);
          this.dropItem = input.getBooleanOr("DropItem", true);
@@ -117,7 +116,7 @@
      }
  
      public void setHurtsEntities(float fallDamagePerDistance, int fallDamageMax) {
-@@ -368,7 +_,7 @@
+@@ -367,7 +_,7 @@
          ResourceKey<Level> resourceKey1 = this.level().dimension();
          boolean flag = (resourceKey1 == Level.END || resourceKey == Level.END) && resourceKey1 != resourceKey;
          Entity entity = super.teleport(teleportTransition);

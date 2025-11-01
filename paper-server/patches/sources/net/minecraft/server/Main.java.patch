@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -68,8 +_,10 @@
+@@ -66,8 +_,10 @@
          reason = "System.out needed before bootstrap"
      )
      @DontObfuscate
@@ -12,7 +12,7 @@
          OptionParser optionParser = new OptionParser();
          OptionSpec<Void> optionSpec = optionParser.accepts("nogui");
          OptionSpec<Void> optionSpec1 = optionParser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -94,41 +_,94 @@
+@@ -92,41 +_,94 @@
                  optionParser.printHelpOn(System.err);
                  return;
              }
@@ -116,7 +116,7 @@
              Dynamic<?> dataTag;
              if (levelStorageAccess.hasWorldData()) {
                  LevelSummary summary;
-@@ -170,12 +_,33 @@
+@@ -168,12 +_,36 @@
              }
  
              Dynamic<?> dynamic = dataTag;
@@ -134,14 +134,17 @@
 +            }
 +            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
 +            try {
++                final var major = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).major();
++                final var minor = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).minor();
 +                com.google.common.io.Files.asCharSink(mcMeta, java.nio.charset.StandardCharsets.UTF_8).write("""
 +                    {
 +                        "pack": {
 +                            "description": "Data pack for resources provided by Bukkit plugins",
-+                            "pack_format": %d
++                            "min_format": [%d, %d],
++                            "max_format": [%d, %d]
 +                        }
 +                    }
-+                    """.formatted(SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA))
++                    """.formatted(major, minor, major, minor)
 +                );
 +            } catch (java.io.IOException ex) {
 +                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
@@ -151,7 +154,7 @@
  
              WorldStem worldStem;
              try {
-@@ -184,6 +_,7 @@
+@@ -182,6 +_,7 @@
                          executor -> WorldLoader.load(
                              initConfig,
                              context -> {
@@ -159,25 +162,16 @@
                                  Registry<LevelStem> registry = context.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
                                  if (dynamic != null) {
                                      LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
-@@ -197,7 +_,7 @@
-                                     LevelSettings levelSettings;
-                                     WorldOptions worldOptions;
-                                     WorldDimensions worldDimensions;
--                                    if (optionSet.has(optionSpec2)) {
-+                                    if (optionSet.has("demo")) { // CraftBukkit
-                                         levelSettings = MinecraftServer.DEMO_SETTINGS;
-                                         worldOptions = WorldOptions.DEMO_OPTIONS;
-                                         worldDimensions = WorldPresets.createNormalWorldDimensions(context.datapackWorldgen());
-@@ -212,7 +_,7 @@
-                                             new GameRules(context.dataConfiguration().enabledFeatures()),
-                                             context.dataConfiguration()
-                                         );
--                                        worldOptions = optionSet.has(optionSpec3) ? properties.worldOptions.withBonusChest(true) : properties.worldOptions;
-+                                        worldOptions = optionSet.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
-                                         worldDimensions = properties.createDimensions(context.datapackWorldgen());
-                                     }
- 
-@@ -238,6 +_,7 @@
+@@ -193,7 +_,7 @@
+                                 } else {
+                                     LOGGER.info("No existing world data, creating new world");
+                                     return createNewWorldData(
+-                                        dedicatedServerSettings, context, registry, optionSet.has(optionSpec2), optionSet.has(optionSpec3)
++                                        dedicatedServerSettings, context, registry, optionSet.has("demo"), optionSet.has("bonusChest") // CraftBukkit
+                                     );
+                                 }
+                             },
+@@ -211,6 +_,7 @@
                  return;
              }
  
@@ -185,7 +179,7 @@
              RegistryAccess.Frozen frozen = worldStem.registries().compositeAccess();
              WorldData worldData = worldStem.worldData();
              boolean hasOptionSpec1 = optionSet.has(optionSpec6);
-@@ -246,9 +_,13 @@
+@@ -219,22 +_,50 @@
              }
  
              levelStorageAccess.saveDataTag(frozen, worldData);
@@ -193,15 +187,17 @@
              final DedicatedServer dedicatedServer = MinecraftServer.spin(
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
+-                        thread1, levelStorageAccess, packRepository, worldStem, dedicatedServerSettings, DataFixers.getDataFixer(), services
 +                        // CraftBukkit start
 +                        optionSet,
 +                        worldLoader.get(),
-                         thread1,
-                         levelStorageAccess,
-                         packRepository,
-@@ -258,18 +_,36 @@
-                         services,
-                         LoggerChunkProgressListener::createFromGameruleRadius
++                        thread1,
++                        levelStorageAccess,
++                        packRepository,
++                        worldStem,
++                        dedicatedServerSettings,
++                        DataFixers.getDataFixer(),
++                        services
                      );
 +                    /*
                      dedicatedServer1.setPort(optionSet.valueOf(optionSpec11));
@@ -230,7 +226,6 @@
 +                    }
 +                    // Paper end
  
-                     GameTestTicker.SINGLETON.startTicking();
                      return dedicatedServer1;
                  }
              );
@@ -238,7 +233,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  @Override
                  public void run() {
-@@ -278,6 +_,7 @@
+@@ -243,12 +_,13 @@
              };
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -246,7 +241,14 @@
          } catch (Exception var42) {
              LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var42);
          }
-@@ -319,7 +_,7 @@
+     }
+ 
+-    private static WorldLoader.DataLoadOutput<WorldData> createNewWorldData(
++    public static WorldLoader.DataLoadOutput<WorldData> createNewWorldData( // Paper - public
+         DedicatedServerSettings settings, WorldLoader.DataLoadContext context, Registry<LevelStem> stemRegistry, boolean demo, boolean generateBonusChest
+     ) {
+         LevelSettings levelSettings;
+@@ -316,7 +_,7 @@
          RegistryAccess registryAccess,
          boolean recreateRegionFiles
      ) {

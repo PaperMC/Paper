@@ -23,25 +23,25 @@
 +        // CraftBukkit end
      }
  
-     public static Properties loadFromFile(Path path) {
-+        if (!Files.exists(path)) return new Properties(); // CraftBukkit - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
+     public static Properties loadFromFile(Path filePath) {
++        if (!Files.exists(filePath)) return new Properties(); // CraftBukkit - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
          try {
              try {
                  Properties var13;
 @@ -65,7 +_,53 @@
      }
  
-     public void store(Path path) {
--        try (Writer bufferedWriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-+        try /*(Writer bufferedWriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8))*/ { // Paper
+     public void store(Path filePath) {
+-        try (Writer bufferedWriter = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
++        try /*(Writer bufferedWriter = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))*/ { // Paper
 +            // CraftBukkit start - Don't attempt writing to file if it's read only
-+            if (path.toFile().exists() && !path.toFile().canWrite()) {
-+                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
++            if (filePath.toFile().exists() && !filePath.toFile().canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", filePath); // Paper - log message file is read-only
 +                return;
 +            }
 +            // CraftBukkit end
 +            // Paper start - allow skipping server.properties comments
-+            java.io.OutputStream outputstream = Files.newOutputStream(path);
++            java.io.OutputStream outputstream = Files.newOutputStream(filePath);
 +            java.io.BufferedOutputStream bufferedOutputStream = !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
 +                private boolean isRightAfterNewline = true; // If last written char was newline
 +                private boolean isComment = false; // Are we writing comment currently?
@@ -82,7 +82,7 @@
 +            // Paper end - allow skipping server.properties comments
              this.properties.store(bufferedWriter, "Minecraft server properties");
          } catch (IOException var7) {
-             LOGGER.error("Failed to store properties to file: {}", path);
+             LOGGER.error("Failed to store properties to file: {}", filePath);
 @@ -94,7 +_,7 @@
  
      @Nullable
@@ -108,7 +108,7 @@
          String stringRaw = this.getStringRaw(key);
          V object = MoreObjects.firstNonNull(stringRaw != null ? serializer.apply(stringRaw) : null, defaultValue);
          this.properties.put(key, deserializer.apply(object));
-@@ -181,7 +_,7 @@
+@@ -185,7 +_,7 @@
          return map;
      }
  
@@ -117,7 +117,7 @@
  
      public class MutableValue<V> implements Supplier<V> {
          private final String key;
-@@ -202,7 +_,7 @@
+@@ -206,7 +_,7 @@
          public T update(RegistryAccess registryAccess, V newValue) {
              Properties map = Settings.this.cloneProperties();
              map.put(this.key, this.serializer.apply(newValue));

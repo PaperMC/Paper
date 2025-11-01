@@ -1,11 +1,19 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -1155,6 +_,22 @@
+@@ -185,6 +_,7 @@
+ import org.slf4j.Logger;
+ 
+ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeTest<Entity, T> {
++    private static final boolean DEBUG_ENTITIES_WITH_INVALID_IDS = Boolean.getBoolean("paper.debugEntitiesWithInvalidIds"); // Paper - Add logging for debugging entity tags with invalid ids
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
+     public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
+@@ -1265,6 +_,22 @@
          boolean shouldOffsetY,
          boolean shouldOffsetYMore
      ) {
 +        // CraftBukkit start
-+        return this.spawn(level, spawnedFrom, owner, pos, reason, shouldOffsetY, shouldOffsetYMore, reason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
++        return this.spawn(level, spawnedFrom, owner, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, spawnReason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
 +    }
 +
 +    @Nullable
@@ -14,7 +22,7 @@
 +        @Nullable ItemStack spawnedFrom,
 +        @Nullable LivingEntity owner,
 +        BlockPos pos,
-+        EntitySpawnReason reason,
++        EntitySpawnReason spawnReason,
 +        boolean shouldOffsetY,
 +        boolean shouldOffsetYMore,
 +        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
@@ -23,52 +31,54 @@
          Consumer<T> consumer;
          if (spawnedFrom != null) {
              consumer = createDefaultStackConfig(level, spawnedFrom, owner);
-@@ -1162,7 +_,7 @@
+@@ -1272,7 +_,7 @@
              consumer = entity -> {};
          }
  
--        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
-+        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
+-        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
++        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level level, ItemStack stack, @Nullable LivingEntity owner) {
-@@ -1179,19 +_,56 @@
+@@ -1289,21 +_,58 @@
  
      public static <T extends Entity> Consumer<T> appendCustomEntityStackConfig(Consumer<T> consumer, Level level, ItemStack stack, @Nullable LivingEntity owner) {
-         CustomData customData = stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
--        return !customData.isEmpty() ? consumer.andThen(entity -> updateCustomEntityTag(level, owner, entity, customData)) : consumer;
+         TypedEntityData<EntityType<?>> typedEntityData = stack.get(DataComponents.ENTITY_DATA);
+-        return typedEntityData != null ? consumer.andThen(entity -> updateCustomEntityTag(level, owner, entity, typedEntityData)) : consumer;
 +        // CraftBukkit start - SPIGOT-5665
-+        return !customData.isEmpty() ? consumer.andThen(entity -> {
++        return typedEntityData != null ? consumer.andThen(entity -> {
 +            try {
-+                updateCustomEntityTag(level, owner, entity, customData);
++                updateCustomEntityTag(level, owner, entity, typedEntityData);
 +            } catch (Throwable t) {
-+                EntityType.LOGGER.warn("Error loading spawn egg NBT", t);
++                LOGGER.warn("Error loading spawn egg NBT", t);
 +            }
 +        }) : consumer;
 +        // CraftBukkit end
      }
  
      @Nullable
-     public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason) {
--        return this.spawn(level, null, pos, reason, false, false);
+     public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason spawnReason) {
+-        return this.spawn(level, null, pos, spawnReason, false, false);
 +        // CraftBukkit start
-+        return this.spawn(level, pos, reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.spawn(level, pos, spawnReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+        return this.spawn(level, null, pos, reason, false, false, creatureSpawnReason);
++    public T spawn(ServerLevel level, BlockPos pos, EntitySpawnReason spawnReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++        return this.spawn(level, null, pos, spawnReason, false, false, creatureSpawnReason);
 +        // CraftBukkit End
      }
  
      @Nullable
-     public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore) {
+     public T spawn(
+         ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason spawnReason, boolean shouldOffsetY, boolean shouldOffsetYMore
+     ) {
 +        // CraftBukkit start
-+        return this.spawn(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason reason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++    public T spawn(ServerLevel level, @Nullable Consumer<T> consumer, BlockPos pos, EntitySpawnReason spawnReason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
 +        // CraftBukkit end
 +        // Paper start - PreCreatureSpawnEvent
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
@@ -80,7 +90,7 @@
 +            return null;
 +        }
 +        // Paper end - PreCreatureSpawnEvent
-         T entity = this.create(level, consumer, pos, reason, shouldOffsetY, shouldOffsetYMore);
+         T entity = this.create(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
          if (entity != null) {
 -            level.addFreshEntityWithPassengers(entity);
 +            // CraftBukkit start
@@ -92,23 +102,21 @@
              if (entity instanceof Mob mob) {
                  mob.playAmbientSound();
              }
-@@ -1247,6 +_,15 @@
-                 if (level.isClientSide
+@@ -1358,6 +_,13 @@
+                 if (level.isClientSide()
                      || !entity.getType().onlyOpCanSetNbt()
-                     || owner instanceof Player player && server.getPlayerList().isOp(player.getGameProfile())) {
+                     || owner instanceof Player player && server.getPlayerList().isOp(player.nameAndId())) {
 +                    // Paper start - filter out protected tags
 +                    if (owner == null || !owner.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
-+                        customData = customData.update((compound) -> {
-+                            for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
-+                                tag.remove(compound);
-+                            }
-+                        });
++                        for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : level.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                            tag.remove(entityData.getUnsafe());
++                        }
 +                    }
 +                    // Paper end - filter out protected tags
-                     customData.loadInto(entity);
+                     entityData.loadInto(entity);
                  }
              }
-@@ -1318,9 +_,20 @@
+@@ -1429,10 +_,28 @@
      }
  
      public static Optional<Entity> create(ValueInput input, Level level, EntitySpawnReason spawnReason) {
@@ -121,12 +129,46 @@
          return Util.ifElse(
              by(input).map(entityType -> entityType.create(level, spawnReason)),
 -            entity -> entity.load(input),
+-            () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
 +            // Paper start - Don't fire sync event during generation
 +            entity -> {
 +                if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
 +                entity.load(input);
 +            },
 +            // Paper end - Don't fire sync event during generation
-             () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
++            // Paper start - Add logging for debugging entity tags with invalid ids
++            () -> {
++                LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"));
++                if ((DEBUG_ENTITIES_WITH_INVALID_IDS || level.getCraftServer().getServer().isDebugging()) && input instanceof TagValueInput tagInput) {
++                    LOGGER.warn("Skipped entity tag: {}", tagInput.input);
++                }
++            }
++            // Paper end - Add logging for debugging entity tags with invalid ids
          );
      }
+ 
+@@ -1588,8 +_,23 @@
+         return this.builtInRegistryHolder;
+     }
+ 
+-    public boolean isAllowedInPeaceful() {
++    // Paper start
++    public final boolean isTypeAllowedInPeaceful() {
+         return this.allowedInPeaceful;
++    }
++    public final boolean isAllowedInPeaceful(@Nullable CompoundTag tag) {
++        if (tag == null || tag.isEmpty()) {
++            return this.isTypeAllowedInPeaceful();
++        }
++        final var input = TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, MinecraftServer.getServer().registryAccess(), tag);
++        final var override = Mob.readDespawnInPeacefulOverride(input);
++        return !override.toBooleanOrElse(!this.isTypeAllowedInPeaceful());
++    }
++    // Audit all vanilla uses of this method to ensure per-entity override API applies where possible
++    @io.papermc.paper.annotation.DoNotUse
++    public final boolean isAllowedInPeaceful() {
++        return this.isTypeAllowedInPeaceful();
++        // Paper end
+     }
+ 
+     private static EntityType.EntityFactory<Boat> boatFactory(Supplier<Item> boatItemGetter) {

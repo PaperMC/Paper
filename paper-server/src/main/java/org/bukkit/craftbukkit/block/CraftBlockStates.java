@@ -85,7 +85,6 @@ public final class CraftBlockStates {
 
     static {
         // Start generate - CraftBlockEntityStates
-        // @GeneratedFrom 1.21.8
         register(BlockEntityType.BANNER, CraftBanner.class, CraftBanner::new);
         register(BlockEntityType.BARREL, CraftBarrel.class, CraftBarrel::new);
         register(BlockEntityType.BEACON, CraftBeacon.class, CraftBeacon::new);
@@ -102,6 +101,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new);
         register(BlockEntityType.COMPARATOR, CraftComparator.class, CraftComparator::new);
         register(BlockEntityType.CONDUIT, CraftConduit.class, CraftConduit::new);
+        register(BlockEntityType.COPPER_GOLEM_STATUE, CraftCopperGolemStatue.class, CraftCopperGolemStatue::new);
         register(BlockEntityType.CRAFTER, CraftCrafter.class, CraftCrafter::new);
         register(BlockEntityType.CREAKING_HEART, CraftCreakingHeart.class, CraftCreakingHeart::new);
         register(BlockEntityType.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new);
@@ -123,6 +123,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new);
         register(BlockEntityType.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new);
         register(BlockEntityType.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new);
+        register(BlockEntityType.SHELF, CraftShelf.class, CraftShelf::new);
         register(BlockEntityType.SHULKER_BOX, CraftShulkerBox.class, CraftShulkerBox::new);
         register(BlockEntityType.SIGN, CraftSign.class, CraftSign::new);
         register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);

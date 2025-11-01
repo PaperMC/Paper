@@ -90,7 +90,7 @@
  
                                          if (i5 > 0 && random.nextInt(i4) <= i5 && (!level.isRaining() || !this.isNearRain(level, mutableBlockPos))) {
                                              int min1 = Math.min(15, ageValue + random.nextInt(5) / 4);
--                                            level.setBlock(mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), 3);
+-                                            level.setBlock(mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), Block.UPDATE_ALL);
 +                                            // CraftBukkit start - Call to stop spread of fire
 +                                            if (!level.getBlockState(mutableBlockPos).is(Blocks.FIRE)) {
 +                                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, mutableBlockPos, pos).isCancelled()) {
@@ -128,7 +128,7 @@
 +            // CraftBukkit end
              if (random.nextInt(age + 10) < 5 && !level.isRainingAt(pos)) {
                  int min = Math.min(age + random.nextInt(5) / 4, 15);
-                 level.setBlock(pos, this.getStateWithAge(level, pos, min), 3);
+                 level.setBlock(pos, this.getStateWithAge(level, pos, min), Block.UPDATE_ALL);
              } else {
 -                level.removeBlock(pos, false);
 +                if (!blockState.is(Blocks.TNT)) level.removeBlock(pos, false); // Paper - TNTPrimeEvent; We might be cancelling it below, move the setAir down
@@ -150,11 +150,11 @@
      }
  
      @Override
--    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
--        super.onPlace(state, level, pos, oldState, isMoving);
+-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+-        super.onPlace(state, level, pos, oldState, movedByPiston);
 -        level.scheduleTick(pos, this, getFireTickDelay(level.random));
-+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving, net.minecraft.world.item.context.UseOnContext context) {
-+        super.onPlace(state, level, pos, oldState, isMoving, context);
++    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston, net.minecraft.world.item.context.UseOnContext context) {
++        super.onPlace(state, level, pos, oldState, movedByPiston, context);
 +        // CraftBukkit end
 +        level.scheduleTick(pos, this, FireBlock.getFireTickDelay(level)); // Paper - Add fire-tick-delay option
      }

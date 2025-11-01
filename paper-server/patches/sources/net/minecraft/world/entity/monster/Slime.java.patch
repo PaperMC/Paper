@@ -6,8 +6,8 @@
      private boolean wasOnGround = false;
 +    private boolean canWander = true; // Paper - Slime pathfinder events
  
-     public Slime(EntityType<? extends Slime> entityType, Level level) {
-         super(entityType, level);
+     public Slime(EntityType<? extends Slime> type, Level level) {
+         super(type, level);
 @@ -112,6 +_,7 @@
          super.addAdditionalSaveData(output);
          output.putInt("Size", this.getSize() - 1);
@@ -24,16 +24,16 @@
      }
  
      public boolean isTiny() {
-@@ -198,7 +_,7 @@
+@@ -193,7 +_,7 @@
      }
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
 +    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          int size = this.getSize();
-         if (!this.level().isClientSide && size > 1 && this.isDeadOrDying()) {
+         if (!this.level().isClientSide() && size > 1 && this.isDeadOrDying()) {
              float width = this.getDimensions(this.getPose()).width();
-@@ -206,18 +_,43 @@
+@@ -201,18 +_,43 @@
              int i = size / 2;
              int i1 = 2 + this.random.nextInt(3);
              PlayerTeam team = this.getTeam();
@@ -81,7 +81,7 @@
      }
  
      @Override
-@@ -283,9 +_,13 @@
+@@ -278,9 +_,13 @@
                  return checkMobSpawnRules(entityType, level, spawnReason, pos, random);
              }
  
@@ -97,7 +97,7 @@
                  && random.nextFloat() < 0.5F
                  && random.nextFloat() < level.getMoonBrightness()
                  && level.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
-@@ -297,8 +_,11 @@
+@@ -292,8 +_,11 @@
              }
  
              ChunkPos chunkPos = new ChunkPos(pos);
@@ -111,7 +111,7 @@
                  return checkMobSpawnRules(entityType, level, spawnReason, pos, random);
              }
          }
-@@ -357,6 +_,16 @@
+@@ -352,6 +_,16 @@
          return super.getDefaultDimensions(pose).scale(this.getSize());
      }
  
@@ -128,7 +128,7 @@
      static class SlimeAttackGoal extends Goal {
          private final Slime slime;
          private int growTiredTimer;
-@@ -369,7 +_,16 @@
+@@ -364,7 +_,16 @@
          @Override
          public boolean canUse() {
              LivingEntity target = this.slime.getTarget();
@@ -146,7 +146,7 @@
          }
  
          @Override
-@@ -381,7 +_,16 @@
+@@ -376,7 +_,16 @@
          @Override
          public boolean canContinueToUse() {
              LivingEntity target = this.slime.getTarget();
@@ -164,7 +164,7 @@
          }
  
          @Override
-@@ -400,6 +_,13 @@
+@@ -395,6 +_,13 @@
                  slimeMoveControl.setDirection(this.slime.getYRot(), this.slime.isDealsDamage());
              }
          }
@@ -178,7 +178,7 @@
      }
  
      static class SlimeFloatGoal extends Goal {
-@@ -413,7 +_,7 @@
+@@ -408,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -187,7 +187,7 @@
          }
  
          @Override
-@@ -443,7 +_,7 @@
+@@ -438,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -196,7 +196,7 @@
          }
  
          @Override
-@@ -521,7 +_,7 @@
+@@ -516,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -205,7 +205,7 @@
                  && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION))
                  && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl;
          }
-@@ -531,6 +_,11 @@
+@@ -526,6 +_,11 @@
              if (--this.nextRandomizeTime <= 0) {
                  this.nextRandomizeTime = this.adjustedTickDelay(40 + this.slime.getRandom().nextInt(60));
                  this.chosenDegrees = this.slime.getRandom().nextInt(360);

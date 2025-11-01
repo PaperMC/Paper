@@ -1,0 +1,29 @@
+--- a/net/minecraft/world/level/block/WeatheringCopperGolemStatueBlock.java
++++ b/net/minecraft/world/level/block/WeatheringCopperGolemStatueBlock.java
+@@ -58,16 +_,21 @@
+                     return InteractionResult.PASS;
+                 }
+ 
+-                this.updatePose(level, state, pos, player);
+-                return InteractionResult.SUCCESS;
++                return this.updatePose(level, state, pos, player); // Paper - call EntityChangeBlockEvent
+             }
+ 
+             if (this.getAge().equals(WeatheringCopper.WeatherState.UNAFFECTED)) {
+                 CopperGolem copperGolem = copperGolemStatueBlockEntity.removeStatue(state);
+-                stack.hurtAndBreak(1, player, hand.asEquipmentSlot());
+                 if (copperGolem != null) {
+-                    level.addFreshEntity(copperGolem);
+-                    level.removeBlock(pos, false);
++                    // Paper start - call EntityChangeBlockEvent and spawnReason
++                    BlockState newState = level.getFluidState(pos).createLegacyBlock();
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
++                        return InteractionResult.PASS;
++                    }
++                    stack.hurtAndBreak(1, player, hand.asEquipmentSlot()); // Paper - moved after event
++                    level.addFreshEntity(copperGolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.REANIMATE); // Paper - add SpawnReason
++                    level.setBlock(pos, newState, 3);
++                    // Paper end - call EntityChangeBlockEvent and spawnReason
+                     return InteractionResult.SUCCESS;
+                 }
+             }
