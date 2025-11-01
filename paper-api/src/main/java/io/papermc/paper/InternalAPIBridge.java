@@ -5,6 +5,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import io.papermc.paper.entity.poi.PoiType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
@@ -48,6 +49,14 @@ public interface InternalAPIBridge {
      * @return the damage effect.
      */
     DamageEffect getDamageEffect(String key);
+
+    /**
+     * Creates an occupancy instance for the passed enum entry name.
+     *
+     * @param enumNameEntry the enum entry
+     * @return the occupancy
+     */
+    PoiType.Occupancy createOccupancy(String enumNameEntry);
 
     /**
      * Constructs the legacy custom biome instance for the biome enum.
