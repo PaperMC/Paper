@@ -2,6 +2,7 @@ package io.papermc.paper.plugin.lifecycle.event.types;
 
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.datapack.DatapackRegistrar;
+import io.papermc.paper.plugin.PermissionManagerRegistrar;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -40,6 +41,14 @@ public final class LifecycleEvents {
      */
     @ApiStatus.Experimental
     public static final LifecycleEventType.Prioritizable<BootstrapContext, RegistrarEvent<DatapackRegistrar>> DATAPACK_DISCOVERY = bootstrapPrioritized("datapack_discovery");
+
+    /**
+     * This event is for informing the server about any available datapacks from other sources such as inside a plugin's jar. You
+     * can register a handler for this event only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
+     * @see DatapackRegistrar an example of a datapack being discovered
+     */
+    @ApiStatus.Experimental
+    public static final LifecycleEventType.Prioritizable<BootstrapContext, RegistrarEvent<PermissionManagerRegistrar>> PERMISSION_MANAGER_REGISTER = bootstrapPrioritized("permission_manager_register");
 
     //<editor-fold desc="helper methods" defaultstate="collapsed">
     @ApiStatus.Internal
