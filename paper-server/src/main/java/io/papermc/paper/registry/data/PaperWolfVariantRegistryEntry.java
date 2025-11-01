@@ -3,10 +3,14 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import java.util.List;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Wolf;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -14,12 +18,11 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
+    protected final Conversions conversions;
     protected ClientAsset.@Nullable ResourceTexture angryClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture wildClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture tameClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
-
-    protected final Conversions conversions;
 
     public PaperWolfVariantRegistryEntry(
         final Conversions conversions,
@@ -52,6 +55,11 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         return this.conversions.asBukkit(asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"));
     }
 
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
+    }
+
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
 
         public PaperBuilder(final Conversions conversions, final @Nullable WolfVariant internal) {
@@ -73,6 +81,12 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         @Override
         public Builder tameClientTextureAsset(final ClientTextureAsset tameClientTextureAsset) {
             this.tameClientTextureAsset = this.conversions.asVanilla(asArgument(tameClientTextureAsset, "tameClientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 
