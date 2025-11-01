@@ -1872,7 +1872,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Remove the hidden entity from this player user list, if they're on it
         if (other instanceof ServerPlayer) {
             ServerPlayer otherPlayer = (ServerPlayer) other;
-            if (otherPlayer.sentListPacket) {
+            if (this.getHandle().sentListPacket && otherPlayer.sentListPacket) {
                 this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
             }
         }
