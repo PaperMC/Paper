@@ -16,6 +16,8 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
 import io.papermc.paper.world.PaperWorldLoader;
+import io.papermc.paper.world.explosion.Explosion;
+import io.papermc.paper.world.explosion.ExplosionImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -1417,6 +1419,11 @@ public final class CraftServer implements Server {
     @Override
     public WorldBorder createWorldBorder() {
         return new CraftWorldBorder(new net.minecraft.world.level.border.WorldBorder());
+    }
+
+    @Override
+    public @NotNull Explosion.Builder createExplosion() {
+        return ExplosionImpl.builder();
     }
 
     @Override
