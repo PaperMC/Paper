@@ -1,84 +1,88 @@
 package org.bukkit.registry;
 
-import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import javax.lang.model.SourceVersion;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.damage.DamageType;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
-import org.junit.jupiter.api.Test;
+import org.bukkit.support.provider.RegistriesArgumentProvider;
+import org.junit.jupiter.params.ArgumentCountValidationMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @AllFeatures
 public class RegistryConstantsTest {
 
-    @Test
-    public void testDamageType() {
-        this.testExcessConstants(DamageType.class, Registry.DAMAGE_TYPE);
-        this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE); // Paper - re-enable this one
+    public static Stream<Arguments> registries() {
+        return RegistriesArgumentProvider.getData()
+            .filter(args -> args.registryKey() != Registries.DATA_COMPONENT_TYPE) // already has its own test
+            .map(args -> Arguments.of(args.api(), args.apiHolder(), args.registryKey()));
     }
 
-    @Test
-    public void testTrimMaterial() {
-        this.testExcessConstants(TrimMaterial.class, org.bukkit.Registry.TRIM_MATERIAL); // Paper - remap fix
-        this.testMissingConstants(TrimMaterial.class, Registries.TRIM_MATERIAL);
-    }
+    @MethodSource("registries")
+    @ParameterizedTest(argumentCountValidation = ArgumentCountValidationMode.NONE)
+    public <T extends Keyed> void testConstantNames(Class<T> api, Class<?> apiHolder) throws IllegalAccessException {
+        Set<String> badNames = new HashSet<>();
 
-    @Test
-    public void testTrimPattern() {
-        this.testExcessConstants(TrimPattern.class, org.bukkit.Registry.TRIM_PATTERN); // Paper - remap fix
-        this.testMissingConstants(TrimPattern.class, Registries.TRIM_PATTERN);
-    }
+        for (Field field : apiHolder.getDeclaredFields()) {
+            if (!field.getType().isAssignableFrom(api) || !Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
 
-    private <T extends Keyed> void testExcessConstants(Class<T> clazz, org.bukkit.Registry<T> registry) { // Paper - remap fix
-        List<NamespacedKey> excessKeys = new ArrayList<>();
-
-        for (Field field : clazz.getFields()) {
-            if (field.getType() != clazz || !Modifier.isStatic(field.getModifiers())) {
+            if (field.isAnnotationPresent(Deprecated.class)) {
                 continue;
             }
 
             String name = field.getName();
-            NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-            if (registry.get(key) == null) {
-                excessKeys.add(key);
+            String expectedName = formatKeyAsField(((T) field.get(null)).key().value());
+            if (!SourceVersion.isIdentifier(expectedName)) {
+                continue; // skip invalid names for now (for JukeboxSong)
             }
-
+            if (!name.equals(expectedName)) {
+                badNames.add(name);
+            }
         }
 
-        assertTrue(excessKeys.isEmpty(), excessKeys.size() + " excess constants(s) in " + clazz.getSimpleName() + " that do not exist: " + excessKeys);
+        assertTrue(badNames.isEmpty(), badNames.size() + " bad constants(s) in " + apiHolder.getSimpleName() + " that do not match their expected names: " + badNames);
     }
 
-    private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<net.minecraft.core.Registry<M>> nmsRegistryKey) {
-        List<ResourceLocation> missingKeys = new ArrayList<>();
+    @MethodSource("registries")
+    @ParameterizedTest(argumentCountValidation = ArgumentCountValidationMode.NONE)
+    public <T extends Keyed, M> void testMissingConstants(Class<T> api, Class<?> apiHolder, ResourceKey<net.minecraft.core.Registry<M>> registryKey) throws IllegalAccessException {
+        Set<ResourceLocation> missing = new HashSet<>();
 
-        net.minecraft.core.Registry<M> nmsRegistry = RegistryHelper.getRegistry().lookupOrThrow(nmsRegistryKey);
-        for (M nmsObject : nmsRegistry) {
-            ResourceLocation minecraftKey = nmsRegistry.getKey(nmsObject);
-
+        for (Holder.Reference<M> reference : RegistryHelper.getRegistry().lookupOrThrow(registryKey).listElements().toList()) {
+            ResourceLocation key = reference.key().location();
+            String name = formatKeyAsField(key.getPath());
+            if (!SourceVersion.isIdentifier(name)) {
+                continue; // skip invalid names for now (for JukeboxSong)
+            }
             try {
-                @SuppressWarnings("unchecked")
-                T bukkitObject = (T) clazz.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);
-
-                assertEquals(minecraftKey, CraftNamespacedKey.toMinecraft(bukkitObject.getKey()), "Keys are not the same for " + minecraftKey);
+                apiHolder.getField(name).get(null);
             } catch (NoSuchFieldException e) {
-                missingKeys.add(minecraftKey);
-            } catch (Exception e) {
-                fail(e.getMessage());
+                missing.add(key);
             }
         }
 
-        assertTrue(missingKeys.isEmpty(), "Missing (" + missingKeys.size() + ") constants in " + clazz.getSimpleName() + ": " + missingKeys);
+        assertTrue(missing.isEmpty(), "Missing (" + missing.size() + ") constants in " + apiHolder.getSimpleName() + ": " + missing);
+    }
+
+    private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
+
+    private static String formatKeyAsField(String path) {
+        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 }
