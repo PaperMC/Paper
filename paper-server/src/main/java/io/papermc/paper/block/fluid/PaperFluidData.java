@@ -3,17 +3,22 @@ package io.papermc.paper.block.fluid;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.block.fluid.type.PaperFallingFluidData;
 import io.papermc.paper.block.fluid.type.PaperFlowingFluidData;
+import io.papermc.paper.block.property.PaperBlockPropertyHolder;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.FluidState;
 import org.bukkit.Fluid;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-public class PaperFluidData implements FluidData {
+public class PaperFluidData implements FluidData, PaperBlockPropertyHolder<net.minecraft.world.level.material.Fluid, FluidState> {
 
     private final FluidState state;
 
@@ -61,6 +66,21 @@ public class PaperFluidData implements FluidData {
     public float computeHeight(@NotNull final Location location) {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot compute height on world-less location");
         return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toBlockPosition(location));
+    }
+
+    @Override
+    public StateDefinition<net.minecraft.world.level.material.Fluid, FluidState> getStateDefinition() {
+        return this.state.getType().getStateDefinition();
+    }
+
+    @Override
+    public <T extends Comparable<T>> T get(final Property<T> ibs) {
+        return this.state.getValue(ibs);
+    }
+
+    @Override
+    public <B extends Enum<B>> B get(final EnumProperty<?> nms, final Class<B> bukkit) {
+        return CraftBlockData.toBukkit(this.state.getValue(nms), bukkit);
     }
 
     @Override
