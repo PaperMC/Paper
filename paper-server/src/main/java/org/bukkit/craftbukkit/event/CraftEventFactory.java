@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import io.papermc.paper.event.entity.PaperEntityTeleportEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -1930,7 +1931,7 @@ public class CraftEventFactory {
 
     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, Location to) {
         CraftEntity entity = nmsEntity.getBukkitEntity();
-        EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
+        EntityTeleportEvent event = new PaperEntityTeleportEvent(entity, entity.getLocation(), to);
 
         Bukkit.getPluginManager().callEvent(event);
 
