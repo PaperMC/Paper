@@ -16,15 +16,15 @@ public class CopperGolemWeatheringEvent extends EntityEvent implements Cancellab
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final WeatheringCopperState weatherState;
+    private final WeatheringCopperState currentWeatherState;
     private final WeatheringCopperState nextWeatherState;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public CopperGolemWeatheringEvent(final CopperGolem golem, final WeatheringCopperState weatherState, final WeatheringCopperState nextWeatherState) {
+    public CopperGolemWeatheringEvent(final CopperGolem golem, final WeatheringCopperState currentWeatherState, final WeatheringCopperState nextWeatherState) {
         super(golem);
-        this.weatherState = weatherState;
+        this.currentWeatherState = currentWeatherState;
         this.nextWeatherState = nextWeatherState;
     }
 
@@ -43,8 +43,8 @@ public class CopperGolemWeatheringEvent extends EntityEvent implements Cancellab
      *
      * @return The current weathering state.
      */
-    public WeatheringCopperState getWeatheringState() {
-        return weatherState;
+    public WeatheringCopperState getCurrentWeatheringState() {
+        return currentWeatherState;
     }
 
     /**
