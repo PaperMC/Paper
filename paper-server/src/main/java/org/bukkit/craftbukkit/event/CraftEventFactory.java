@@ -185,7 +185,6 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.event.entity.EntityPushByExplodeEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
@@ -2044,30 +2043,31 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityPushByExplodeEvent callEntityPushByExplodeEvent(Entity pusher, Entity pushee, Vec3 knockback) {
-        EntityPushByExplodeEvent event = new EntityPushByExplodeEvent(pusher.getBukkitEntity(), pushee.getBukkitEntity(), CraftVector.toBukkit(knockback));
-        Bukkit.getPluginManager().callEvent(event);
-        return event;
-    }
-
-    public static io.papermc.paper.event.entity.EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity pusher, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause, double force, Vec3 knockback) {
+    public static io.papermc.paper.event.entity.EntityKnockbackEvent callEntityKnockbackEvent(CraftEntity entity, Entity pusher, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause, double force, Vec3 knockback) {
         Vector apiKnockback = CraftVector.toBukkit(knockback);
-
         final Vector currentVelocity = entity.getVelocity();
-        final Vector legacyFinalKnockback = currentVelocity.clone().add(apiKnockback);
-        final org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause legacyCause = org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.valueOf(cause.name());
-        EntityKnockbackEvent legacyEvent;
-        if (pusher != null) {
-            legacyEvent = new EntityKnockbackByEntityEvent(entity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
-        } else {
-            legacyEvent = new EntityKnockbackEvent(entity, legacyCause, force, apiKnockback, legacyFinalKnockback);
+
+        EntityKnockbackEvent legacyEvent = null;
+        if (entity instanceof CraftLivingEntity) {
+            CraftLivingEntity livingEntity = (CraftLivingEntity) entity;
+            final Vector legacyFinalKnockback = currentVelocity.clone().add(apiKnockback);
+            final org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause legacyCause = org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.valueOf(cause.name());
+            if (pusher != null) {
+                legacyEvent = new EntityKnockbackByEntityEvent(livingEntity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
+            } else {
+                legacyEvent = new EntityKnockbackEvent(livingEntity, legacyCause, force, apiKnockback, legacyFinalKnockback);
+            }
+            legacyEvent.callEvent();
         }
-        legacyEvent.callEvent();
 
         final io.papermc.paper.event.entity.EntityKnockbackEvent event;
-        apiKnockback = legacyEvent.getFinalKnockback().subtract(currentVelocity);
+        apiKnockback = legacyEvent != null ? legacyEvent.getFinalKnockback().subtract(currentVelocity) : apiKnockback;
         if (attacker != null) {
-            event = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
+            if (entity instanceof CraftLivingEntity) {
+                event = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((CraftLivingEntity) entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
+            } else {
+                event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(entity, cause, pusher.getBukkitEntity(), apiKnockback);
+            }
         } else {
             event = new io.papermc.paper.event.entity.EntityKnockbackEvent(entity, cause, apiKnockback);
         }
