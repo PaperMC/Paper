@@ -330,7 +330,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         };
     }
 
-    public static @Nullable TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+    public static TeleportFlag.@Nullable Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
         return switch (nmsFlag) {
             case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
             case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;

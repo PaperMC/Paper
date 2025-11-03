@@ -67,7 +67,7 @@ import net.minecraft.world.entity.raid.Raids;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -830,7 +830,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().connection == null) continue;
 
-            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().level().getGameRules().get(GameRules.ADVANCE_TIME)));
         }
     }
 
@@ -1246,12 +1246,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean getPVP() {
-        return this.world.pvpMode.toBooleanOrElseGet(() -> this.world.getGameRules().getBoolean(GameRules.RULE_PVP));
+        return this.world.pvpMode.toBooleanOrElseGet(() -> this.world.getGameRules().get(GameRules.PVP));
     }
 
     @Override
     public void setPVP(boolean pvp) {
-        if (this.world.getGameRules().getBoolean(GameRules.RULE_PVP) == pvp) {
+        if (this.world.getGameRules().get(GameRules.PVP) == pvp) {
             return;
         }
         this.world.pvpMode = TriState.byBoolean(pvp);

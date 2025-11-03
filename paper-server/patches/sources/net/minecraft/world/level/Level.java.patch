@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -85,6 +_,16 @@
- import net.minecraft.world.scores.Scoreboard;
  import org.apache.commons.lang3.mutable.MutableBoolean;
+ import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
 +import java.util.Map;
@@ -24,7 +24,7 @@
 +    // CraftBukkit start
 +    private final CraftWorld world;
 +    public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
-+    public @Nullable org.bukkit.generator.ChunkGenerator generator;
++    public org.bukkit.generator.@Nullable ChunkGenerator generator;
 +
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
@@ -81,8 +81,8 @@
          long biomeZoomSeed,
 -        int maxChainedNeighborUpdates
 +        int maxChainedNeighborUpdates,
-+        @Nullable org.bukkit.generator.ChunkGenerator generator, // Paper
-+        @Nullable org.bukkit.generator.BiomeProvider biomeProvider, // Paper
++        org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
++        org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
 +        org.bukkit.World.Environment environment, // Paper
 +        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 +        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
@@ -148,7 +148,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -162,8 +_,15 @@
+@@ -161,8 +_,15 @@
          return null;
      }
  
@@ -165,7 +165,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -171,21 +_,86 @@
+@@ -170,21 +_,86 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -255,9 +255,9 @@
 +    }
 +    // Paper end
  
-     @Nullable
      @Override
-@@ -205,6 +_,22 @@
+     public @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
+@@ -203,6 +_,22 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
@@ -280,7 +280,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide() && this.isDebug()) {
-@@ -212,11 +_,31 @@
+@@ -210,11 +_,31 @@
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -312,7 +312,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -244,12 +_,68 @@
+@@ -242,12 +_,68 @@
  
                      this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
                  }
@@ -381,7 +381,7 @@
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
      }
  
-@@ -266,13 +_,31 @@
+@@ -264,13 +_,31 @@
              return false;
          } else {
              FluidState fluidState = this.getFluidState(pos);
@@ -416,7 +416,7 @@
              }
  
              boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
-@@ -338,10 +_,18 @@
+@@ -336,10 +_,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -436,7 +436,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -454,31 +_,47 @@
+@@ -452,31 +_,47 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -492,10 +492,10 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -603,6 +_,12 @@
-     @Nullable
+@@ -600,6 +_,12 @@
+ 
      @Override
-     public BlockEntity getBlockEntity(BlockPos pos) {
+     public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
 +        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
 +        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(pos)) != null) {
@@ -505,7 +505,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
-@@ -615,6 +_,12 @@
+@@ -612,6 +_,12 @@
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockPos = blockEntity.getBlockPos();
          if (!this.isOutsideBuildHeight(blockPos)) {
@@ -518,7 +518,7 @@
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1030,7 +_,8 @@
+@@ -1021,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),

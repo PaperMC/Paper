@@ -1,13 +1,22 @@
 --- a/net/minecraft/server/commands/GameRuleCommand.java
 +++ b/net/minecraft/server/commands/GameRuleCommand.java
-@@ -32,8 +_,8 @@
-     static <T extends GameRules.Value<T>> int setRule(CommandContext<CommandSourceStack> context, GameRules.Key<T> gameRule) {
+@@ -34,7 +_,18 @@
+     static <T> int setRule(CommandContext<CommandSourceStack> context, GameRule<T> rule) {
          CommandSourceStack commandSourceStack = context.getSource();
-         T rule = commandSourceStack.getLevel().getGameRules().getRule(gameRule);
--        rule.setFromArgument(context, "value");
--        commandSourceStack.getServer().onGameRuleChanged(gameRule.getId(), rule);
-+        rule.setFromArgument(context, "value", gameRule); // Paper - Add WorldGameRuleChangeEvent
-+        commandSourceStack.getServer().notificationManager().onGameRuleChanged(commandSourceStack.getLevel(), gameRule.getId(), rule); // Paper - per-world game rules
-         commandSourceStack.sendSuccess(() -> Component.translatable("commands.gamerule.set", gameRule.getId(), rule.toString()), true);
-         return rule.getCommandResult();
+         T argument = context.getArgument("value", rule.valueClass());
+-        commandSourceStack.getLevel().getGameRules().set(rule, argument, context.getSource().getServer());
++        // Paper start - Add WorldGameRuleChangeEvent
++        final var event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(
++            context.getSource().getBukkitWorld(),
++            context.getSource().getBukkitSender(),
++            org.bukkit.GameRule.getByName(gameRuleKey.toString()),
++            String.valueOf(argument)
++        );
++        if (!event.callEvent()) {
++            return 0;
++        }
++        // Paper end - Add WorldGameRuleChangeEvent
++        commandSourceStack.getLevel().getGameRules().set(rule, argument, context.getSource().getLevel()); // Paper - per-world game rules
+         commandSourceStack.sendSuccess(() -> Component.translatable("commands.gamerule.set", rule.id(), rule.serialize(argument)), true);
+         return rule.getCommandResult(argument);
      }

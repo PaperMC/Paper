@@ -1,6 +1,6 @@
 --- a/net/minecraft/Util.java
 +++ b/net/minecraft/Util.java
-@@ -89,9 +_,25 @@
+@@ -90,9 +_,25 @@
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
@@ -28,7 +28,7 @@
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
      public static final int LINEAR_LOOKUP_THRESHOLD = 8;
      private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
-@@ -110,6 +_,7 @@
+@@ -111,6 +_,7 @@
          .findFirst()
          .orElseThrow(() -> new IllegalStateException("No jar file system provider found"));
      private static Consumer<String> thePauser = string -> {};
@@ -36,7 +36,7 @@
  
      public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
          return Collectors.toMap(Entry::getKey, Entry::getValue);
-@@ -132,7 +_,7 @@
+@@ -133,7 +_,7 @@
      }
  
      public static long getNanos() {
@@ -45,7 +45,7 @@
      }
  
      public static long getEpochMillis() {
-@@ -143,9 +_,10 @@
+@@ -144,9 +_,10 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
@@ -58,7 +58,7 @@
          if (i <= 0) {
              directExecutorService = MoreExecutors.newDirectExecutorService();
          } else {
-@@ -170,16 +_,30 @@
+@@ -171,16 +_,30 @@
                          super.onTermination(throwOnTermination);
                      }
                  };
@@ -91,11 +91,10 @@
      }
  
      private static int getMaxThreads() {
-@@ -229,6 +_,21 @@
-             return thread;
+@@ -231,6 +_,21 @@
          }));
      }
-+
+ 
 +    // Paper start - Separate dimension data IO pool
 +    private static TracingExecutor makeExtraIoExecutor(String namePrefix) {
 +        AtomicInteger atomicInteger = new AtomicInteger(1);
@@ -110,6 +109,87 @@
 +        }));
 +    }
 +    // Paper end - Separate dimension data IO pool
- 
++
      public static void throwAsRuntime(Throwable throwable) {
          throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);
+     }
+@@ -297,6 +_,19 @@
+         return input -> true;
+     }
+ 
++    @SafeVarargs
++    public static <T> Predicate<T> allOf(Predicate<? super T>... predicates) {
++        return input -> {
++            for (Predicate<? super T> predicate : predicates) {
++                if (!predicate.test(input)) {
++                    return false;
++                }
++            }
++
++            return true;
++        };
++    }
++
+     public static <T> Predicate<T> allOf(Predicate<? super T> predicate) {
+         return (Predicate<T>)predicate;
+     }
+@@ -325,19 +_,6 @@
+         return input -> predicate1.test(input) && predicate2.test(input) && predicate3.test(input) && predicate4.test(input) && predicate5.test(input);
+     }
+ 
+-    @SafeVarargs
+-    public static <T> Predicate<T> allOf(Predicate<? super T>... predicates) {
+-        return input -> {
+-            for (Predicate<? super T> predicate : predicates) {
+-                if (!predicate.test(input)) {
+-                    return false;
+-                }
+-            }
+-
+-            return true;
+-        };
+-    }
+-
+     public static <T> Predicate<T> allOf(List<? extends Predicate<? super T>> predicates) {
+         return switch (predicates.size()) {
+             case 0 -> allOf();
+@@ -368,6 +_,19 @@
+         return input -> false;
+     }
+ 
++    @SafeVarargs
++    public static <T> Predicate<T> anyOf(Predicate<? super T>... predicates) {
++        return input -> {
++            for (Predicate<? super T> predicate : predicates) {
++                if (predicate.test(input)) {
++                    return true;
++                }
++            }
++
++            return false;
++        };
++    }
++
+     public static <T> Predicate<T> anyOf(Predicate<? super T> predicate) {
+         return (Predicate<T>)predicate;
+     }
+@@ -394,19 +_,6 @@
+         Predicate<? super T> predicate5
+     ) {
+         return input -> predicate1.test(input) || predicate2.test(input) || predicate3.test(input) || predicate4.test(input) || predicate5.test(input);
+-    }
+-
+-    @SafeVarargs
+-    public static <T> Predicate<T> anyOf(Predicate<? super T>... predicates) {
+-        return input -> {
+-            for (Predicate<? super T> predicate : predicates) {
+-                if (predicate.test(input)) {
+-                    return true;
+-                }
+-            }
+-
+-            return false;
+-        };
+     }
+ 
+     public static <T> Predicate<T> anyOf(List<? extends Predicate<? super T>> predicates) {

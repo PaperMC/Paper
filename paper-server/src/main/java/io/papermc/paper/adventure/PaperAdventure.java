@@ -185,7 +185,7 @@ public final class PaperAdventure {
 
     // Component
 
-    public static @NotNull Component asAdventure(@Nullable final net.minecraft.network.chat.Component component) {
+    public static @NotNull Component asAdventure(final net.minecraft.network.chat.@Nullable Component component) {
         return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
     }
 
@@ -261,7 +261,7 @@ public final class PaperAdventure {
         );
     }
 
-    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final org.bukkit.entity.@Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
         Boolean previous = null;
         if (css != null && bypassPermissions) {

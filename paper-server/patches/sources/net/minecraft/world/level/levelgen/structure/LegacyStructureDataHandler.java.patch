@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/levelgen/structure/LegacyStructureDataHandler.java
 +++ b/net/minecraft/world/level/levelgen/structure/LegacyStructureDataHandler.java
-@@ -107,6 +_,15 @@
+@@ -108,6 +_,15 @@
      @Override
      public CompoundTag applyFix(CompoundTag tag) {
          int dataVersion = NbtUtils.getDataVersion(tag);
@@ -16,15 +16,15 @@
          if (dataVersion < 1493) {
              tag = DataFixTypes.CHUNK.update(this.dataFixer, tag, dataVersion, 1493);
              if (tag.getCompound("Level").flatMap(compoundTag -> compoundTag.getBoolean("hasLegacyStructureData")).orElse(false)) {
-@@ -249,17 +_,18 @@
+@@ -250,17 +_,18 @@
      }
  
-     public static LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<Level> level, @Nullable DimensionDataStorage storage, DataFixer dataFixer) {
+     public static Supplier<LegacyTagFixer> getLegacyTagFixer(ResourceKey<Level> level, Supplier<@Nullable DimensionDataStorage> storage, DataFixer dataFixer) {
 -        if (level == Level.OVERWORLD) {
 +        ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey = net.minecraft.core.registries.Registries.levelToLevelStem(level); // CraftBukkit
 +        if (stemKey == net.minecraft.world.level.dimension.LevelStem.OVERWORLD) { // CraftBukkit
-             return new LegacyStructureDataHandler(
-                 storage,
+             return () -> new LegacyStructureDataHandler(
+                 storage.get(),
                  ImmutableList.of("Monument", "Stronghold", "Village", "Mineshaft", "Temple", "Mansion"),
                  ImmutableList.of("Village", "Mineshaft", "Mansion", "Igloo", "Desert_Pyramid", "Jungle_Pyramid", "Swamp_Hut", "Stronghold", "Monument"),
                  dataFixer
@@ -32,9 +32,9 @@
 -        } else if (level == Level.NETHER) {
 +        } else if (stemKey == net.minecraft.world.level.dimension.LevelStem.NETHER) { // CraftBukkit
              List<String> list = ImmutableList.of("Fortress");
-             return new LegacyStructureDataHandler(storage, list, list, dataFixer);
+             return () -> new LegacyStructureDataHandler(storage.get(), list, list, dataFixer);
 -        } else if (level == Level.END) {
 +        } else if (stemKey == net.minecraft.world.level.dimension.LevelStem.END) { // CraftBukkit
              List<String> list = ImmutableList.of("EndCity");
-             return new LegacyStructureDataHandler(storage, list, list, dataFixer);
+             return () -> new LegacyStructureDataHandler(storage.get(), list, list, dataFixer);
          } else {

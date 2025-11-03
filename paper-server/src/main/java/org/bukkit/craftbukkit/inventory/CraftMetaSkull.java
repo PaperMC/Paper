@@ -148,7 +148,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
-    public void setPlayerProfile(@Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
+    public void setPlayerProfile(com.destroystokyo.paper.profile.@Nullable PlayerProfile profile) {
         setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asResolvableProfileCopy(profile));
     }
 

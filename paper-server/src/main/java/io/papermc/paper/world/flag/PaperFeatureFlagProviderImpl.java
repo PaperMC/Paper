@@ -9,7 +9,7 @@ import java.util.Set;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.bukkit.FeatureFlag;
 import org.bukkit.GameRule;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
