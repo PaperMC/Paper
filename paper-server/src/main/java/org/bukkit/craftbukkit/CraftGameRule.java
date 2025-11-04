@@ -3,15 +3,14 @@ package org.bukkit.craftbukkit;
 import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.Instrument;
 import org.bukkit.GameRule;
-import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
+
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
 
@@ -82,7 +81,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
         return this.holder.value().id();
     }
 
-    public static class LegacyGameRuleWrapper<LEGACY, MODERN> extends CraftGameRule<LEGACY>  {
+    public static class LegacyGameRuleWrapper<LEGACY, MODERN> extends CraftGameRule<LEGACY> {
 
         private final Class<LEGACY> typeOverride;
         private final @Nullable Function<LEGACY, MODERN> fromLegacyToModern;
