@@ -120,7 +120,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
         register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
-        register(RegistryKey.GAME_RULE, GameRule.class, Registries.DIALOG, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
+        register(RegistryKey.GAME_RULE, GameRule.class, Registries.GAME_RULE, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
