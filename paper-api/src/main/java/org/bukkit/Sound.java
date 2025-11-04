@@ -1843,6 +1843,28 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_CAMEL_STEP_SAND = getSound("entity.camel.step_sand");
 
+    Sound ENTITY_CAMEL_HUSK_AMBIENT = getSound("entity.camel_husk.ambient");
+
+    Sound ENTITY_CAMEL_HUSK_DASH = getSound("entity.camel_husk.dash");
+
+    Sound ENTITY_CAMEL_HUSK_DASH_READY = getSound("entity.camel_husk.dash_ready");
+
+    Sound ENTITY_CAMEL_HUSK_DEATH = getSound("entity.camel_husk.death");
+
+    Sound ENTITY_CAMEL_HUSK_EAT = getSound("entity.camel_husk.eat");
+
+    Sound ENTITY_CAMEL_HUSK_HURT = getSound("entity.camel_husk.hurt");
+
+    Sound ENTITY_CAMEL_HUSK_SADDLE = getSound("entity.camel_husk.saddle");
+
+    Sound ENTITY_CAMEL_HUSK_SIT = getSound("entity.camel_husk.sit");
+
+    Sound ENTITY_CAMEL_HUSK_STAND = getSound("entity.camel_husk.stand");
+
+    Sound ENTITY_CAMEL_HUSK_STEP = getSound("entity.camel_husk.step");
+
+    Sound ENTITY_CAMEL_HUSK_STEP_SAND = getSound("entity.camel_husk.step_sand");
+
     Sound ENTITY_CAT_AMBIENT = getSound("entity.cat.ambient");
 
     Sound ENTITY_CAT_BEG_FOR_FOOD = getSound("entity.cat.beg_for_food");
@@ -2497,6 +2519,14 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_PANDA_WORRIED_AMBIENT = getSound("entity.panda.worried_ambient");
 
+    Sound ENTITY_PARCHED_AMBIENT = getSound("entity.parched.ambient");
+
+    Sound ENTITY_PARCHED_DEATH = getSound("entity.parched.death");
+
+    Sound ENTITY_PARCHED_HURT = getSound("entity.parched.hurt");
+
+    Sound ENTITY_PARCHED_STEP = getSound("entity.parched.step");
+
     Sound ENTITY_PARROT_AMBIENT = getSound("entity.parrot.ambient");
 
     Sound ENTITY_PARROT_DEATH = getSound("entity.parrot.death");
@@ -2512,6 +2542,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_BOGGED = getSound("entity.parrot.imitate.bogged");
 
     Sound ENTITY_PARROT_IMITATE_BREEZE = getSound("entity.parrot.imitate.breeze");
+
+    Sound ENTITY_PARROT_IMITATE_CAMEL_HUSK = getSound("entity.parrot.imitate.camel_husk");
 
     Sound ENTITY_PARROT_IMITATE_CREAKING = getSound("entity.parrot.imitate.creaking");
 
@@ -2538,6 +2570,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_ILLUSIONER = getSound("entity.parrot.imitate.illusioner");
 
     Sound ENTITY_PARROT_IMITATE_MAGMA_CUBE = getSound("entity.parrot.imitate.magma_cube");
+
+    Sound ENTITY_PARROT_IMITATE_PARCHED = getSound("entity.parrot.imitate.parched");
 
     Sound ENTITY_PARROT_IMITATE_PHANTOM = getSound("entity.parrot.imitate.phantom");
 
@@ -2576,6 +2610,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_ZOGLIN = getSound("entity.parrot.imitate.zoglin");
 
     Sound ENTITY_PARROT_IMITATE_ZOMBIE = getSound("entity.parrot.imitate.zombie");
+
+    Sound ENTITY_PARROT_IMITATE_ZOMBIE_HORSE = getSound("entity.parrot.imitate.zombie_horse");
+
+    Sound ENTITY_PARROT_IMITATE_ZOMBIE_NAUTILUS = getSound("entity.parrot.imitate.zombie_nautilus");
 
     Sound ENTITY_PARROT_IMITATE_ZOMBIE_VILLAGER = getSound("entity.parrot.imitate.zombie_villager");
 
@@ -3435,6 +3473,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_MACE_SMASH_GROUND_HEAVY = getSound("item.mace.smash_ground_heavy");
 
+    Sound ITEM_NAUTILUS_SADDLE_EQUIP = getSound("item.nautilus_saddle_equip");
+
+    Sound ITEM_NAUTILUS_SADDLE_UNDERWATER_EQUIP = getSound("item.nautilus_saddle_underwater_equip");
+
     Sound ITEM_NETHER_WART_PLANT = getSound("item.nether_wart.plant");
 
     Sound ITEM_OMINOUS_BOTTLE_DISPOSE = getSound("item.ominous_bottle.dispose");
@@ -3488,8 +3530,6 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ITEM_TRIDENT_THROW = getSound("item.trident.throw");
 
     Sound ITEM_TRIDENT_THUNDER = getSound("item.trident.thunder");
-
-    Sound ITEM_UNDERWATER_SADDLE_EQUIP = getSound("item.underwater_saddle.equip");
 
     Sound ITEM_WOLF_ARMOR_BREAK = getSound("item.wolf_armor.break");
 

@@ -26,6 +26,7 @@ import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
@@ -36,6 +37,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftGameEvent;
+import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.craftbukkit.CraftSound;
@@ -118,6 +120,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
         register(RegistryKey.DIALOG, Dialog.class, Registries.DIALOG, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
+        register(RegistryKey.GAME_RULE, GameRule.class, Registries.DIALOG, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper

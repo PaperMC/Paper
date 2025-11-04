@@ -167,7 +167,7 @@ public final class RegistryEntries {
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
-        entry(Registries.GAME_RULE, GameRules.class, GameRule.class)
+        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(

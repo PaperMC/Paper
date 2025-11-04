@@ -353,7 +353,7 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
     public static <T> GameRule<T> getByName(@NotNull String rule) {
         Preconditions.checkNotNull(rule, "Rule cannot be null");
         try {
-            return (GameRule<T>) RegistryAccess.registryAccess().getRegistry(RegistryKey.GAME_RULE).getOrThrow(NamespacedKey.minecraft(rule));
+            return (GameRule<T>) RegistryAccess.registryAccess().getRegistry(RegistryKey.GAME_RULE).getOrThrow(NamespacedKey.fromString(rule));
         } catch (IllegalArgumentException | NoSuchElementException e) {
             return null;
         }

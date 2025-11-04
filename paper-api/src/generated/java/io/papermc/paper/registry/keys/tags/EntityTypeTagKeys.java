@@ -110,6 +110,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CAN_EQUIP_SADDLE = create(key("can_equip_saddle"));
 
     /**
+     * {@code #minecraft:can_float_while_ridden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_FLOAT_WHILE_RIDDEN = create(key("can_float_while_ridden"));
+
+    /**
      * {@code #minecraft:can_turn_in_boats}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

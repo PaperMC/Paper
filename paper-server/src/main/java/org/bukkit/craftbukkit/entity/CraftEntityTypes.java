@@ -70,6 +70,7 @@ import org.bukkit.entity.Bogged;
 import org.bukkit.entity.Breeze;
 import org.bukkit.entity.BreezeWindCharge;
 import org.bukkit.entity.Camel;
+import org.bukkit.entity.CamelHusk;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
 import org.bukkit.entity.Chicken;
@@ -133,6 +134,7 @@ import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.OminousItemSpawner;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Panda;
+import org.bukkit.entity.Parched;
 import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Pig;
@@ -362,6 +364,8 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.MANNEQUIN, Mannequin.class, CraftMannequin::new, createLiving(net.minecraft.world.entity.EntityType.MANNEQUIN)));
         register(new EntityTypeData<>(EntityType.NAUTILUS, Nautilus.class, CraftNautilus::new, createLiving(net.minecraft.world.entity.EntityType.NAUTILUS)));
         register(new EntityTypeData<>(EntityType.ZOMBIE_NAUTILUS, ZombieNautilus.class, CraftZombieNautilus::new, createLiving(net.minecraft.world.entity.EntityType.ZOMBIE_NAUTILUS)));
+        register(new EntityTypeData<>(EntityType.CAMEL_HUSK, CamelHusk.class, CraftCamelHusk::new, createLiving(net.minecraft.world.entity.EntityType.CAMEL_HUSK)));
+        register(new EntityTypeData<>(EntityType.PARCHED, Parched.class, CraftParched::new, createLiving(net.minecraft.world.entity.EntityType.PARCHED)));
 
         Function<SpawnData, net.minecraft.world.entity.boss.enderdragon.EnderDragon> dragonFunction = createLiving(net.minecraft.world.entity.EntityType.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {
