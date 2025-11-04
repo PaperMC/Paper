@@ -81,6 +81,8 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
 
     public static final GameRule<Integer> MAX_ENTITY_CRAMMING = getByName("max_entity_cramming");
 
+    @MinecraftExperimental(MinecraftExperimental.Requires.MINECART_IMPROVEMENTS)
+    @ApiStatus.Experimental
     public static final GameRule<Integer> MAX_MINECART_SPEED = getByName("max_minecart_speed");
 
     public static final GameRule<Integer> MAX_SNOW_ACCUMULATION_HEIGHT = getByName("max_snow_accumulation_height");

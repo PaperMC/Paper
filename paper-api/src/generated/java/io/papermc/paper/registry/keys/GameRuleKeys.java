@@ -7,6 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameRule;
+import org.bukkit.MinecraftExperimental;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -219,6 +221,8 @@ public final class GameRuleKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
+    @ApiStatus.Experimental
+    @MinecraftExperimental(MinecraftExperimental.Requires.MINECART_IMPROVEMENTS)
     public static final TypedKey<GameRule<?>> MAX_MINECART_SPEED = create(key("max_minecart_speed"));
 
     /**

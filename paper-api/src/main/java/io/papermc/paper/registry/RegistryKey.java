@@ -126,8 +126,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-
-
+    /**
+     * Data-driven registry for game rules.
+     * @see io.papermc.paper.registry.keys.GameRuleKeys
+     */
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
     /* ********************** *
