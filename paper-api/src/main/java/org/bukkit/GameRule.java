@@ -1,9 +1,16 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.function.UnaryOperator;
+
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,242 +23,257 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> type of rule (Boolean or Integer)
  */
-public final class GameRule<T> implements net.kyori.adventure.translation.Translatable, FeatureDependant {
+@ApiStatus.NonExtendable
+public abstract class GameRule<T> implements net.kyori.adventure.translation.Translatable, FeatureDependant, Keyed {
 
-    private static Map<String, GameRule<?>> gameRules = new HashMap<>();
+    // Start generate - GameRule
+    public static final GameRule<Boolean> ADVANCE_TIME = getByName("advance_time");
+
+    public static final GameRule<Boolean> ADVANCE_WEATHER = getByName("advance_weather");
+
+    public static final GameRule<Boolean> ALLOW_ENTERING_NETHER_USING_PORTALS = getByName("allow_entering_nether_using_portals");
+
+    public static final GameRule<Boolean> BLOCK_DROPS = getByName("block_drops");
+
+    public static final GameRule<Boolean> BLOCK_EXPLOSION_DROP_DECAY = getByName("block_explosion_drop_decay");
+
+    public static final GameRule<Boolean> COMMAND_BLOCK_OUTPUT = getByName("command_block_output");
+
+    public static final GameRule<Boolean> COMMAND_BLOCKS_WORK = getByName("command_blocks_work");
+
+    public static final GameRule<Boolean> DROWNING_DAMAGE = getByName("drowning_damage");
+
+    public static final GameRule<Boolean> ELYTRA_MOVEMENT_CHECK = getByName("elytra_movement_check");
+
+    public static final GameRule<Boolean> ENDER_PEARLS_VANISH_ON_DEATH = getByName("ender_pearls_vanish_on_death");
+
+    public static final GameRule<Boolean> ENTITY_DROPS = getByName("entity_drops");
+
+    public static final GameRule<Boolean> FALL_DAMAGE = getByName("fall_damage");
+
+    public static final GameRule<Boolean> FIRE_DAMAGE = getByName("fire_damage");
+
+    public static final GameRule<Integer> FIRE_SPREAD_RADIUS_AROUND_PLAYER = getByName("fire_spread_radius_around_player");
+
+    public static final GameRule<Boolean> FORGIVE_DEAD_PLAYERS = getByName("forgive_dead_players");
+
+    public static final GameRule<Boolean> FREEZE_DAMAGE = getByName("freeze_damage");
+
+    public static final GameRule<Boolean> GLOBAL_SOUND_EVENTS = getByName("global_sound_events");
+
+    public static final GameRule<Boolean> IMMEDIATE_RESPAWN = getByName("immediate_respawn");
+
+    public static final GameRule<Boolean> KEEP_INVENTORY = getByName("keep_inventory");
+
+    public static final GameRule<Boolean> LAVA_SOURCE_CONVERSION = getByName("lava_source_conversion");
+
+    public static final GameRule<Boolean> LIMITED_CRAFTING = getByName("limited_crafting");
+
+    public static final GameRule<Boolean> LOCATOR_BAR = getByName("locator_bar");
+
+    public static final GameRule<Boolean> LOG_ADMIN_COMMANDS = getByName("log_admin_commands");
+
+    public static final GameRule<Integer> MAX_BLOCK_MODIFICATIONS = getByName("max_block_modifications");
+
+    public static final GameRule<Integer> MAX_COMMAND_FORKS = getByName("max_command_forks");
+
+    public static final GameRule<Integer> MAX_COMMAND_SEQUENCE_LENGTH = getByName("max_command_sequence_length");
+
+    public static final GameRule<Integer> MAX_ENTITY_CRAMMING = getByName("max_entity_cramming");
+
+    public static final GameRule<Integer> MAX_MINECART_SPEED = getByName("max_minecart_speed");
+
+    public static final GameRule<Integer> MAX_SNOW_ACCUMULATION_HEIGHT = getByName("max_snow_accumulation_height");
+
+    public static final GameRule<Boolean> MOB_DROPS = getByName("mob_drops");
+
+    public static final GameRule<Boolean> MOB_EXPLOSION_DROP_DECAY = getByName("mob_explosion_drop_decay");
+
+    public static final GameRule<Boolean> MOB_GRIEFING = getByName("mob_griefing");
+
+    public static final GameRule<Boolean> NATURAL_HEALTH_REGENERATION = getByName("natural_health_regeneration");
+
+    public static final GameRule<Boolean> PLAYER_MOVEMENT_CHECK = getByName("player_movement_check");
+
+    public static final GameRule<Integer> PLAYERS_NETHER_PORTAL_CREATIVE_DELAY = getByName("players_nether_portal_creative_delay");
+
+    public static final GameRule<Integer> PLAYERS_NETHER_PORTAL_DEFAULT_DELAY = getByName("players_nether_portal_default_delay");
+
+    public static final GameRule<Integer> PLAYERS_SLEEPING_PERCENTAGE = getByName("players_sleeping_percentage");
+
+    public static final GameRule<Boolean> PROJECTILES_CAN_BREAK_BLOCKS = getByName("projectiles_can_break_blocks");
+
+    public static final GameRule<Boolean> PVP = getByName("pvp");
+
+    public static final GameRule<Boolean> RAIDS = getByName("raids");
+
+    public static final GameRule<Integer> RANDOM_TICK_SPEED = getByName("random_tick_speed");
+
+    public static final GameRule<Boolean> REDUCED_DEBUG_INFO = getByName("reduced_debug_info");
+
+    public static final GameRule<Integer> RESPAWN_RADIUS = getByName("respawn_radius");
+
+    public static final GameRule<Boolean> SEND_COMMAND_FEEDBACK = getByName("send_command_feedback");
+
+    public static final GameRule<Boolean> SHOW_ADVANCEMENT_MESSAGES = getByName("show_advancement_messages");
+
+    public static final GameRule<Boolean> SHOW_DEATH_MESSAGES = getByName("show_death_messages");
+
+    public static final GameRule<Boolean> SPAWN_MOBS = getByName("spawn_mobs");
+
+    public static final GameRule<Boolean> SPAWN_MONSTERS = getByName("spawn_monsters");
+
+    public static final GameRule<Boolean> SPAWN_PATROLS = getByName("spawn_patrols");
+
+    public static final GameRule<Boolean> SPAWN_PHANTOMS = getByName("spawn_phantoms");
+
+    public static final GameRule<Boolean> SPAWN_WANDERING_TRADERS = getByName("spawn_wandering_traders");
+
+    public static final GameRule<Boolean> SPAWN_WARDENS = getByName("spawn_wardens");
+
+    public static final GameRule<Boolean> SPAWNER_BLOCKS_WORK = getByName("spawner_blocks_work");
+
+    public static final GameRule<Boolean> SPECTATORS_GENERATE_CHUNKS = getByName("spectators_generate_chunks");
+
+    public static final GameRule<Boolean> SPREAD_VINES = getByName("spread_vines");
+
+    public static final GameRule<Boolean> TNT_EXPLODES = getByName("tnt_explodes");
+
+    public static final GameRule<Boolean> TNT_EXPLOSION_DROP_DECAY = getByName("tnt_explosion_drop_decay");
+
+    public static final GameRule<Boolean> UNIVERSAL_ANGER = getByName("universal_anger");
+
+    public static final GameRule<Boolean> WATER_SOURCE_CONVERSION = getByName("water_source_conversion");
+    // End generate - GameRule
+
     // Boolean rules
     /**
      * Toggles the announcing of advancements.
      */
-    public static final GameRule<Boolean> ANNOUNCE_ADVANCEMENTS = new GameRule<>("announceAdvancements", Boolean.class);
-
-    /**
-     * Whether command blocks should notify admins when they perform commands.
-     */
-    public static final GameRule<Boolean> COMMAND_BLOCK_OUTPUT = new GameRule<>("commandBlockOutput", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> ANNOUNCE_ADVANCEMENTS = InternalAPIBridge.get().legacyGameRuleBridge(SHOW_ADVANCEMENT_MESSAGES, null, null, Boolean.class);
 
     /**
      * Whether the server should skip checking player speed.
      */
-    public static final GameRule<Boolean> DISABLE_PLAYER_MOVEMENT_CHECK = new GameRule<>("disablePlayerMovementCheck", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DISABLE_PLAYER_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(PLAYER_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
 
     /**
      * Whether the server should skip checking player speed when the player is
      * wearing elytra.
      */
-    public static final GameRule<Boolean> DISABLE_ELYTRA_MOVEMENT_CHECK = new GameRule<>("disableElytraMovementCheck", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DISABLE_ELYTRA_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(ELYTRA_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
 
     /**
      * Whether time progresses from the current moment.
      */
-    public static final GameRule<Boolean> DO_DAYLIGHT_CYCLE = new GameRule<>("doDaylightCycle", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_DAYLIGHT_CYCLE = InternalAPIBridge.get().legacyGameRuleBridge(ADVANCE_TIME, null, null, Boolean.class);
 
     /**
      * Whether entities that are not mobs should have drops.
      */
-    public static final GameRule<Boolean> DO_ENTITY_DROPS = new GameRule<>("doEntityDrops", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_ENTITY_DROPS = InternalAPIBridge.get().legacyGameRuleBridge(ENTITY_DROPS, null, null, Boolean.class);
 
     /**
      * Whether fire should spread and naturally extinguish.
      */
-    public static final GameRule<Boolean> DO_FIRE_TICK = new GameRule<>("doFireTick", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_FIRE_TICK = InternalAPIBridge.get().legacyGameRuleBridge(FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? 128 : 0, (value) -> value != 0, Boolean.class);
 
     /**
      * Whether players should only be able to craft recipes they've unlocked
      * first.
      */
-    public static final GameRule<Boolean> DO_LIMITED_CRAFTING = new GameRule<>("doLimitedCrafting", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_LIMITED_CRAFTING = InternalAPIBridge.get().legacyGameRuleBridge(LIMITED_CRAFTING, null, null, Boolean.class);
 
     /**
      * Whether mobs should drop items.
      */
-    public static final GameRule<Boolean> DO_MOB_LOOT = new GameRule<>("doMobLoot", Boolean.class);
-
-    /**
-     * Whether projectiles can break blocks.
-     */
-    public static final GameRule<Boolean> PROJECTILES_CAN_BREAK_BLOCKS = new GameRule<>("projectilesCanBreakBlocks", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_MOB_LOOT = InternalAPIBridge.get().legacyGameRuleBridge(MOB_DROPS, null, null, Boolean.class);
 
     /**
      * Whether mobs should naturally spawn.
      */
-    public static final GameRule<Boolean> DO_MOB_SPAWNING = new GameRule<>("doMobSpawning", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_MOB_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_MOBS, null, null, Boolean.class);
 
     /**
      * Whether blocks should have drops.
      */
-    public static final GameRule<Boolean> DO_TILE_DROPS = new GameRule<>("doTileDrops", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_TILE_DROPS = InternalAPIBridge.get().legacyGameRuleBridge(BLOCK_DROPS, null, null, Boolean.class);
 
     /**
      * Whether the weather will change from the current moment.
      */
-    public static final GameRule<Boolean> DO_WEATHER_CYCLE = new GameRule<>("doWeatherCycle", Boolean.class);
-
-    /**
-     * Whether the player should keep items in their inventory after death.
-     */
-    public static final GameRule<Boolean> KEEP_INVENTORY = new GameRule<>("keepInventory", Boolean.class);
-
-    /**
-     * Whether to log admin commands to server log.
-     */
-    public static final GameRule<Boolean> LOG_ADMIN_COMMANDS = new GameRule<>("logAdminCommands", Boolean.class);
-
-    /**
-     * Whether mobs can pick up items or change blocks.
-     */
-    public static final GameRule<Boolean> MOB_GRIEFING = new GameRule<>("mobGriefing", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_WEATHER_CYCLE = InternalAPIBridge.get().legacyGameRuleBridge(ADVANCE_WEATHER, null, null, Boolean.class);
 
     /**
      * Whether players can regenerate health naturally through their hunger bar.
      */
-    public static final GameRule<Boolean> NATURAL_REGENERATION = new GameRule<>("naturalRegeneration", Boolean.class);
-
-    /**
-     * Whether the debug screen shows all or reduced information.
-     */
-    public static final GameRule<Boolean> REDUCED_DEBUG_INFO = new GameRule<>("reducedDebugInfo", Boolean.class);
-
-    /**
-     * Whether the feedback from commands executed by a player should show up in
-     * chat. Also affects the default behavior of whether command blocks store
-     * their output text.
-     */
-    public static final GameRule<Boolean> SEND_COMMAND_FEEDBACK = new GameRule<>("sendCommandFeedback", Boolean.class);
-
-    /**
-     * Whether a message appears in chat when a player dies.
-     */
-    public static final GameRule<Boolean> SHOW_DEATH_MESSAGES = new GameRule<>("showDeathMessages", Boolean.class);
-
-    /**
-     * Whether players in spectator mode can generate chunks.
-     */
-    public static final GameRule<Boolean> SPECTATORS_GENERATE_CHUNKS = new GameRule<>("spectatorsGenerateChunks", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> NATURAL_REGENERATION = InternalAPIBridge.get().legacyGameRuleBridge(NATURAL_HEALTH_REGENERATION, null, null, Boolean.class);
 
     /**
      * Whether pillager raids are enabled or not.
      */
-    public static final GameRule<Boolean> DISABLE_RAIDS = new GameRule<>("disableRaids", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DISABLE_RAIDS = InternalAPIBridge.get().legacyGameRuleBridge(RAIDS, inverseBool(), inverseBool(), Boolean.class);
 
     /**
      * Whether phantoms will appear without sleeping or not.
      */
-    public static final GameRule<Boolean> DO_INSOMNIA = new GameRule<>("doInsomnia", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_INSOMNIA = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_PHANTOMS, null, null, Boolean.class);
 
     /**
      * Whether clients will respawn immediately after death or not.
      */
-    public static final GameRule<Boolean> DO_IMMEDIATE_RESPAWN = new GameRule<>("doImmediateRespawn", Boolean.class);
-
-    /**
-     * Whether drowning damage is enabled or not.
-     */
-    public static final GameRule<Boolean> DROWNING_DAMAGE = new GameRule<>("drowningDamage", Boolean.class);
-
-    /**
-     * Whether fall damage is enabled or not.
-     */
-    public static final GameRule<Boolean> FALL_DAMAGE = new GameRule<>("fallDamage", Boolean.class);
-
-    /**
-     * Whether fire damage is enabled or not.
-     */
-    public static final GameRule<Boolean> FIRE_DAMAGE = new GameRule<>("fireDamage", Boolean.class);
-
-    /**
-     * Whether freeze damage is enabled or not.
-     */
-    public static final GameRule<Boolean> FREEZE_DAMAGE = new GameRule<>("freezeDamage", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_IMMEDIATE_RESPAWN = InternalAPIBridge.get().legacyGameRuleBridge(IMMEDIATE_RESPAWN, null, null, Boolean.class);
 
     /**
      * Whether patrols should naturally spawn.
      */
-    public static final GameRule<Boolean> DO_PATROL_SPAWNING = new GameRule<>("doPatrolSpawning", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_PATROL_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_PATROLS, null, null, Boolean.class);
 
     /**
      * Whether traders should naturally spawn.
      */
-    public static final GameRule<Boolean> DO_TRADER_SPAWNING = new GameRule<>("doTraderSpawning", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_TRADER_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_WANDERING_TRADERS, null, null, Boolean.class);
 
     /**
      * Whether wardens should naturally spawn.
      */
-    public static final GameRule<Boolean> DO_WARDEN_SPAWNING = new GameRule<>("doWardenSpawning", Boolean.class);
-
-    /**
-     * Whether mobs should cease being angry at a player once they die.
-     */
-    public static final GameRule<Boolean> FORGIVE_DEAD_PLAYERS = new GameRule<>("forgiveDeadPlayers", Boolean.class);
-
-    /**
-     * Whether mobs will target all player entities once angered.
-     */
-    public static final GameRule<Boolean> UNIVERSAL_ANGER = new GameRule<>("universalAnger", Boolean.class);
-    /**
-     * Whether block explosions will destroy dropped items.
-     */
-    public static final GameRule<Boolean> BLOCK_EXPLOSION_DROP_DECAY = new GameRule<>("blockExplosionDropDecay", Boolean.class);
-    /**
-     * * Whether mob explosions will destroy dropped items.
-     */
-    public static final GameRule<Boolean> MOB_EXPLOSION_DROP_DECAY = new GameRule<>("mobExplosionDropDecay", Boolean.class);
-    /**
-     * Whether tnt explosions will destroy dropped items.
-     */
-    public static final GameRule<Boolean> TNT_EXPLOSION_DROP_DECAY = new GameRule<>("tntExplosionDropDecay", Boolean.class);
-    /**
-     * Whether water blocks can convert into water source blocks.
-     */
-    public static final GameRule<Boolean> WATER_SOURCE_CONVERSION = new GameRule<>("waterSourceConversion", Boolean.class);
-    /**
-     * Whether lava blocks can convert into lava source blocks.
-     */
-    public static final GameRule<Boolean> LAVA_SOURCE_CONVERSION = new GameRule<>("lavaSourceConversion", Boolean.class);
-    /**
-     * Whether global level events such as ender dragon, wither, and completed
-     * end portal effects will propagate across the entire server.
-     */
-    public static final GameRule<Boolean> GLOBAL_SOUND_EVENTS = new GameRule<>("globalSoundEvents", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_WARDEN_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_WARDENS, null, null, Boolean.class);
     /**
      * Whether vines will spread.
      */
-    public static final GameRule<Boolean> DO_VINES_SPREAD = new GameRule<>("doVinesSpread", Boolean.class);
-    /**
-     * Whether ender pearls will vanish on player death.
-     */
-    public static final GameRule<Boolean> ENDER_PEARLS_VANISH_ON_DEATH = new GameRule<>("enderPearlsVanishOnDeath", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> DO_VINES_SPREAD = InternalAPIBridge.get().legacyGameRuleBridge(SPREAD_VINES, null, null, Boolean.class);
     /**
      * Whether fire will still propagate far away from players (8 chunks).
      */
-    public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = new GameRule<>("allowFireTicksAwayFromPlayer", Boolean.class);
-    /**
-     * Whether primed tnt explodes.
-     */
-    public static final GameRule<Boolean> TNT_EXPLODES = new GameRule<>("tntExplodes", Boolean.class);
-
-    // Numerical rules
-    /**
-     * How often a random block tick occurs (such as plant growth, leaf decay,
-     * etc.) per chunk section per game tick. 0 will disable random ticks,
-     * higher numbers will increase random ticks.
-     */
-    public static final GameRule<Integer> RANDOM_TICK_SPEED = new GameRule<>("randomTickSpeed", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = InternalAPIBridge.get().legacyGameRuleBridge(FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? 128 : 0, (value) -> value != 0, Boolean.class);
 
     /**
      * The number of blocks outward from the world spawn coordinates that a
      * player will spawn in when first joining a server or when dying without a
      * spawnpoint.
      */
-    public static final GameRule<Integer> SPAWN_RADIUS = new GameRule<>("spawnRadius", Integer.class);
-
-    /**
-     * The maximum number of other pushable entities a mob or player can push,
-     * before taking suffocation damage.
-     * <br>
-     * Setting to 0 disables this rule.
-     */
-    public static final GameRule<Integer> MAX_ENTITY_CRAMMING = new GameRule<>("maxEntityCramming", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> SPAWN_RADIUS = InternalAPIBridge.get().legacyGameRuleBridge(RESPAWN_RADIUS, null, null, Integer.class);
 
     /**
      * Determines the number at which the chain of command blocks act as a
@@ -260,37 +282,24 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * This is the maximum amount of command blocks that can be activated in a
      * single tick from a single chain.
      */
-    public static final GameRule<Integer> MAX_COMMAND_CHAIN_LENGTH = new GameRule<>("maxCommandChainLength", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> MAX_COMMAND_CHAIN_LENGTH = InternalAPIBridge.get().legacyGameRuleBridge(MAX_COMMAND_SEQUENCE_LENGTH, null, null, Integer.class);
 
     /**
      * Determines the number of different commands/functions which execute
      * commands can fork into.
      */
-    public static final GameRule<Integer> MAX_COMMAND_FORK_COUNT = new GameRule<>("maxCommandForkCount", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> MAX_COMMAND_FORK_COUNT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_COMMAND_FORKS, null, null, Integer.class);
 
     /**
      * Determines the maximum number of blocks which a command can modify.
      */
-    public static final GameRule<Integer> COMMAND_MODIFICATION_BLOCK_LIMIT = new GameRule<>("commandModificationBlockLimit", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> COMMAND_MODIFICATION_BLOCK_LIMIT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_BLOCK_MODIFICATIONS, null, null, Integer.class);
 
-    /**
-     * The percentage of online players which must be sleeping for the night to
-     * advance.
-     */
-    public static final GameRule<Integer> PLAYERS_SLEEPING_PERCENTAGE = new GameRule<>("playersSleepingPercentage", Integer.class);
-    public static final GameRule<Integer> SNOW_ACCUMULATION_HEIGHT = new GameRule<>("snowAccumulationHeight", Integer.class);
-
-    /**
-     * The amount of time a player must stand in a nether portal before the
-     * portal activates.
-     */
-    public static final GameRule<Integer> PLAYERS_NETHER_PORTAL_DEFAULT_DELAY = new GameRule<>("playersNetherPortalDefaultDelay", Integer.class);
-
-    /**
-     * The amount of time a player in creative mode must stand in a nether
-     * portal before the portal activates.
-     */
-    public static final GameRule<Integer> PLAYERS_NETHER_PORTAL_CREATIVE_DELAY = new GameRule<>("playersNetherPortalCreativeDelay", Integer.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> SNOW_ACCUMULATION_HEIGHT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_SNOW_ACCUMULATION_HEIGHT, null, null, Integer.class);
 
     /**
      * The maximum speed of minecarts (when the new movement algorithm is
@@ -298,49 +307,23 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      */
     @MinecraftExperimental(MinecraftExperimental.Requires.MINECART_IMPROVEMENTS) // Paper - add missing annotation
     @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-    public static final GameRule<Integer> MINECART_MAX_SPEED = new GameRule<>("minecartMaxSpeed", Integer.class);
-
-    /**
-     * Configures if the world uses the locator bar.
-     */
-    public static final GameRule<Boolean> LOCATOR_BAR = new GameRule<>("locatorBar", Boolean.class);
-
-    /**
-     * Whether player versus player combat is allowed.
-     */
-    public static final GameRule<Boolean> PVP = new GameRule<>("pvp", Boolean.class);
-
-    /**
-     * Whether monsters should naturally spawn.
-     */
-    public static final GameRule<Boolean> SPAWN_MONSTERS = new GameRule<>("spawnMonsters", Boolean.class);
-
-    /**
-     * Whether players can enter the Nether using portals.
-     */
-    public static final GameRule<Boolean> ALLOW_ENTERING_NETHER_USING_PORTALS = new GameRule<>("allowEnteringNetherUsingPortals", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Integer> MINECART_MAX_SPEED = InternalAPIBridge.get().legacyGameRuleBridge(MAX_MINECART_SPEED, null, null, Integer.class);
 
     /**
      * Whether command blocks are enabled.
      */
-    public static final GameRule<Boolean> COMMAND_BLOCKS_ENABLED = new GameRule<>("commandBlocksEnabled", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> COMMAND_BLOCKS_ENABLED = InternalAPIBridge.get().legacyGameRuleBridge(COMMAND_BLOCKS_WORK, null, null, Boolean.class);
 
     /**
      * Whether spawner blocks are enabled.
      */
-    public static final GameRule<Boolean> SPAWNER_BLOCKS_ENABLED = new GameRule<>("spawnerBlocksEnabled", Boolean.class);
+    @Deprecated(forRemoval = true, since = "??")
+    public static final GameRule<Boolean> SPAWNER_BLOCKS_ENABLED = InternalAPIBridge.get().legacyGameRuleBridge(SPAWNER_BLOCKS_WORK, null, null, Boolean.class);
 
-    // All GameRules instantiated above this for organizational purposes
-    private final String name;
-    private final Class<T> type;
-
-    private GameRule(@NotNull String name, @NotNull Class<T> clazz) {
-        Preconditions.checkNotNull(name, "GameRule name cannot be null");
-        Preconditions.checkNotNull(clazz, "GameRule type cannot be null");
-        Preconditions.checkArgument(clazz == Boolean.class || clazz == Integer.class, "Must be of type Boolean or Integer. Found %s ", clazz.getName());
-        this.name = name;
-        this.type = clazz;
-        gameRules.put(name, this);
+    private static UnaryOperator<Boolean> inverseBool() {
+        return operand -> !operand;
     }
 
     /**
@@ -349,9 +332,7 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * @return the name of this GameRule
      */
     @NotNull
-    public String getName() {
-        return name;
-    }
+    public abstract String getName();
 
     /**
      * Get the type of this rule.
@@ -359,26 +340,7 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * @return the rule type; Integer or Boolean
      */
     @NotNull
-    public Class<T> getType() {
-        return type;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof GameRule)) {
-            return false;
-        }
-        GameRule<?> other = (GameRule<?>) obj;
-        return this.getName().equals(other.getName()) && this.getType() == other.getType();
-    }
-
-    @Override
-    public String toString() {
-        return "GameRule{" + "key=" + name + ", type=" + type + '}';
-    }
+    public abstract Class<T> getType();
 
     /**
      * Get a {@link GameRule} by its name.
@@ -388,9 +350,13 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      * name
      */
     @Nullable
-    public static GameRule<?> getByName(@NotNull String rule) {
+    public static <T> GameRule<T> getByName(@NotNull String rule) {
         Preconditions.checkNotNull(rule, "Rule cannot be null");
-        return gameRules.get(rule);
+        try {
+            return (GameRule<T>) RegistryAccess.registryAccess().getRegistry(RegistryKey.GAME_RULE).getOrThrow(NamespacedKey.minecraft(rule));
+        } catch (IllegalArgumentException | NoSuchElementException e) {
+            return null;
+        }
     }
 
     /**
@@ -400,12 +366,12 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
      */
     @NotNull
     public static GameRule<?>[] values() {
-        return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.GAME_RULE)
+                .stream()
+                .toArray(GameRule[]::new);
     }
 
     @Override
-    public @NotNull String translationKey() {
-        return "gamerule." + this.name;
-    }
+    public abstract @NotNull String translationKey();
 
 }

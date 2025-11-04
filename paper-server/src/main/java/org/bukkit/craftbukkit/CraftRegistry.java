@@ -84,7 +84,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                 }
                 yield ((CraftRegistry<B, M>) bukkitRegistry).createBukkit(direct);
             }
-            case final Holder.Reference<M> reference -> bukkitRegistry.get(MCUtil.fromResourceKey(reference.key()));
+            case final Holder.Reference<M> reference -> bukkitRegistry.get(CraftNamespacedKey.fromResourceKey(reference.key()));
             default -> throw new IllegalArgumentException("Unknown holder: " + minecraft);
         };
         Preconditions.checkArgument(bukkit != null);
@@ -196,7 +196,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
 
         // Important to use the ResourceKey<?> "get" method below because it will work before registry is frozen
-        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
+        final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(CraftNamespacedKey.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         final Holder.Reference<M> holder;
         if (holderOptional.isPresent()) {
             holder = holderOptional.get();
@@ -204,7 +204,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             // we lock the reference holders after the preload class has been initialized
             // this is to support the vanilla mechanic of preventing vanilla registry entries being loaded. We need
             // to create something to fill the API constant fields, so we create a dummy reference holder.
-            holder = Holder.Reference.createStandAlone(this.invalidHolderOwner, MCUtil.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
+            holder = Holder.Reference.createStandAlone(this.invalidHolderOwner, CraftNamespacedKey.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         } else {
             return null;
         }

@@ -9,6 +9,7 @@ import net.kyori.adventure.key.Keyed;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Particle;
@@ -127,6 +128,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
 
 
+    RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
     /* ********************** *
      * Data-driven Registries *

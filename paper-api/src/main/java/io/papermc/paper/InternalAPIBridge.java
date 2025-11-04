@@ -7,6 +7,7 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
+import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -97,5 +99,7 @@ public interface InternalAPIBridge {
     SkinParts.Mutable allSkinParts();
 
     Component defaultMannequinDescription();
+
+    <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, @Nullable Function<LEGACY, MODERN> fromLegacyToModern, @Nullable Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
 }
 
