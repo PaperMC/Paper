@@ -12,6 +12,7 @@ import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.gamerules.GameRules;
 import org.bukkit.FeatureFlag;
 import org.bukkit.GameRule;
+import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.entity.EntityType;
@@ -51,18 +52,10 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
         } else if (dependant instanceof final PotionType potionType) {
             return CraftPotionType.bukkitToMinecraft(potionType);
         } else if (dependant instanceof final GameRule<?> gameRule) {
-            return getGameRuleType(gameRule.getName()).asFeatureElement();
+            return () -> CraftGameRule.bukkitToMinecraft(gameRule).requiredFeatures();
         } else {
             throw new IllegalArgumentException(dependant + " is not a valid feature dependant");
         }
     }
 
-    private static GameRules.Type<?> getGameRuleType(final String name) {
-        for (final Map.Entry<GameRules.Key<?>, GameRules.Type<?>> gameRules : GameRules.GAME_RULE_TYPES.entrySet()) {
-            if (gameRules.getKey().getId().equals(name)) {
-                return gameRules.getValue();
-            }
-        }
-        return null;
-    }
 }

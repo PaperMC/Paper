@@ -1,22 +1,12 @@
 --- a/net/minecraft/server/commands/GameRuleCommand.java
 +++ b/net/minecraft/server/commands/GameRuleCommand.java
-@@ -34,7 +_,18 @@
+@@ -33,8 +_,7 @@
+ 
      static <T> int setRule(CommandContext<CommandSourceStack> context, GameRule<T> rule) {
          CommandSourceStack commandSourceStack = context.getSource();
-         T argument = context.getArgument("value", rule.valueClass());
+-        T argument = context.getArgument("value", rule.valueClass());
 -        commandSourceStack.getLevel().getGameRules().set(rule, argument, context.getSource().getServer());
-+        // Paper start - Add WorldGameRuleChangeEvent
-+        final var event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(
-+            context.getSource().getBukkitWorld(),
-+            context.getSource().getBukkitSender(),
-+            org.bukkit.GameRule.getByName(gameRuleKey.toString()),
-+            String.valueOf(argument)
-+        );
-+        if (!event.callEvent()) {
-+            return 0;
-+        }
-+        // Paper end - Add WorldGameRuleChangeEvent
-+        commandSourceStack.getLevel().getGameRules().set(rule, argument, context.getSource().getLevel()); // Paper - per-world game rules
++        T argument = org.bukkit.craftbukkit.event.CraftEventFactory.handleGameRuleSet(rule, context.getArgument("value", rule.valueClass()), commandSourceStack.getLevel(), context.getSource().getBukkitSender()).value(); // Paper - per-world game rules and event
          commandSourceStack.sendSuccess(() -> Component.translatable("commands.gamerule.set", rule.id(), rule.serialize(argument)), true);
          return rule.getCommandResult(argument);
      }

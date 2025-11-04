@@ -26,6 +26,7 @@ import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -67,6 +68,7 @@ import net.minecraft.world.entity.raid.Raids;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Climate;
@@ -88,7 +90,6 @@ import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
 import org.bukkit.FluidCollisionMode;
-import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -110,6 +111,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -1647,54 +1649,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
     // Paper end - Adventure
 
-    private Map<String, GameRules.Key<?>> gamerules;
-    public synchronized Map<String, GameRules.Key<?>> getGameRulesNMS() {
-        if (this.gamerules != null) {
-            return this.gamerules;
-        }
-
-        return this.gamerules = CraftWorld.getGameRulesNMS(this.getHandle().getGameRules());
-    }
-
-    public static Map<String, GameRules.Key<?>> getGameRulesNMS(GameRules gameRules) {
-        Map<String, GameRules.Key<?>> gamerules = new HashMap<>();
-        gameRules.visitGameRuleTypes(new GameRules.GameRuleTypeVisitor() {
-            @Override
-            public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
-                gamerules.put(key.getId(), key);
-            }
-        });
-        return gamerules;
-    }
-
-    private Map<String, GameRules.Type<?>> gameruleDefinitions;
-    public synchronized Map<String, GameRules.Type<?>> getGameRuleDefinitions() {
-        if (this.gameruleDefinitions != null) {
-            return this.gameruleDefinitions;
-        }
-
-        Map<String, GameRules.Type<?>> gameruleDefinitions = new HashMap<>();
-        this.getHandle().getGameRules().visitGameRuleTypes(new GameRules.GameRuleTypeVisitor() {
-            @Override
-            public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
-                gameruleDefinitions.put(key.getId(), type);
-            }
-        });
-
-        return this.gameruleDefinitions = gameruleDefinitions;
-    }
-
     @Override
     public String getGameRuleValue(String rule) {
         // In method contract for some reason
         if (rule == null) {
             return null;
         }
+        GameRule<?> nms = CraftGameRule.bukkitToMinecraft(org.bukkit.GameRule.getByName(rule));
+        GameRules gameRules = this.getHandle().getGameRules();
+        if (!gameRules.rules.has(nms)) {
+            return "";
+        }
 
-        GameRules.Value<?> value = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule));
-        return value != null ? value.toString() : "";
+        return gameRules.getAsString(nms);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public boolean setGameRuleValue(String rule, String value) {
         // No null values allowed
@@ -1702,76 +1672,69 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         if (!this.isGameRule(rule)) return false;
         // Paper start - Add WorldGameRuleChangeEvent
-        GameRule<?> gameRule = GameRule.getByName(rule);
-        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, gameRule, value);
-        if (!event.callEvent()) return false;
-        // Paper end - Add WorldGameRuleChangeEvent
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
 
-        GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule));
-        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
-        handle.onChanged(this.getHandle());
-        return true;
+        GameRule nms = CraftGameRule.bukkitToMinecraft(bukkit);
+
+        return !CraftEventFactory.handleGameRuleSet(nms, nms.deserialize(value).getOrThrow(), this.getHandle(), null).cancelled();
     }
 
     @Override
     public String[] getGameRules() {
-        return this.getGameRulesNMS().keySet().toArray(new String[this.getGameRulesNMS().size()]);
+        return this.getHandle().getGameRules().availableRules()
+                .map(GameRule::id)
+                .toArray(String[]::new);
     }
 
     @Override
     public boolean isGameRule(String rule) {
         Preconditions.checkArgument(rule != null, "String rule cannot be null");
         Preconditions.checkArgument(!rule.isEmpty(), "String rule cannot be empty");
-        return this.getGameRulesNMS().containsKey(rule);
+
+        GameRule<?> nms = CraftGameRule.bukkitToMinecraft(org.bukkit.GameRule.getByName(rule));
+        GameRules gameRules = this.getHandle().getGameRules();
+        return gameRules.rules.has(nms);
+    }
+
+    public static <T> T shimLegacyValue(T value, org.bukkit.GameRule<?> gameRule){
+        //noinspection all
+        if (gameRule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
+            //noinspection all
+            return (T) legacyGameRuleWrapper.getToLegacyFromModern().apply(value);
+        }
+
+        return value;
     }
 
     @Override
-    public <T> T getGameRuleValue(GameRule<T> rule) {
+    public <T> @Nullable T getGameRuleValue(org.bukkit.@NotNull GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        GameRules.Key<? extends GameRules.Value<?>> key = this.getGameRulesNMS().get(rule.getName());
-        Preconditions.checkArgument(key != null, "GameRule '%s' is not available", rule.getName());
 
-        return this.getGameRuleResult(rule, this.getHandle().getGameRules().getRule(key));
+        T value = this.getHandle().getGameRules().get(CraftGameRule.bukkitToMinecraft(rule));
+        return shimLegacyValue(value, rule);
     }
 
     @Override
-    public <T> T getGameRuleDefault(GameRule<T> rule) {
+    public <T> @Nullable T getGameRuleDefault(org.bukkit.@NotNull GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        GameRules.Type<?> type = this.getGameRuleDefinitions().get(rule.getName());
-        Preconditions.checkArgument(type != null, "GameRule '%s' is not available", rule.getName());
+        T value = CraftGameRule.bukkitToMinecraft(rule).defaultValue();
 
-        return this.getGameRuleResult(rule, type.createRule());
+        return shimLegacyValue(value, rule);
     }
 
     @Override
-    public <T> boolean setGameRule(GameRule<T> rule, T newValue) {
+    public <T> boolean setGameRule(org.bukkit.@NotNull GameRule<T> rule, @NotNull T newValue) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
         Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
-
-        if (!this.isGameRule(rule.getName())) return false;
-        // Paper start - Add WorldGameRuleChangeEvent
-        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, rule, String.valueOf(newValue));
-        if (!event.callEvent()) return false;
-        // Paper end - Add WorldGameRuleChangeEvent
-
-        GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName()));
-        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
-        handle.onChanged(this.getHandle());
-        return true;
-    }
-
-    private <T> T getGameRuleResult(GameRule<T> rule, GameRules.Value<?> value) {
-        if (value == null) {
-            return null;
+        GameRule<@NotNull T> nms = CraftGameRule.bukkitToMinecraft(rule);
+        if (!this.getHandle().getGameRules().rules.has(nms)) {
+            return false;
+        }
+        if (rule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
+            newValue = (T) legacyGameRuleWrapper.getFromLegacyToModern().apply(newValue);
         }
 
-        if (value instanceof GameRules.BooleanValue) {
-            return rule.getType().cast(((GameRules.BooleanValue) value).get());
-        } else if (value instanceof GameRules.IntegerValue) {
-            return rule.getType().cast(value.getCommandResult());
-        } else {
-            throw new IllegalArgumentException("Invalid GameRule type (" + value + ") for GameRule " + rule.getName());
-        }
+        return !CraftEventFactory.handleGameRuleSet(nms, newValue, this.getHandle(), null).cancelled();
     }
 
     @Override
