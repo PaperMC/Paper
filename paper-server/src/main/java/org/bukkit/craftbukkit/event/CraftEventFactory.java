@@ -12,7 +12,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -26,7 +25,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,7 +33,6 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -2228,7 +2225,7 @@ public class CraftEventFactory {
         return event.isAllowed();
     }
 
-    public static <T> T handleGameRuleSet(GameRule<@NotNull T> rule, T value, ServerLevel level, @Nullable CommandSender sender, @Nullable AtomicBoolean canceledTracker) {
+    public static <T> GameRuleSetResult<T> handleGameRuleSet(GameRule<@NotNull T> rule, T value, ServerLevel level, @Nullable CommandSender sender) {
         final var event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(
                 level.getWorld(),
                 sender,
@@ -2237,13 +2234,13 @@ public class CraftEventFactory {
         );
         if (event.callEvent()) {
             level.getGameRules().set(rule, value, level);
-            return value;
+            return new GameRuleSetResult<>(value, false);
         } else {
-            if (canceledTracker != null) {
-                canceledTracker.set(true);
-            }
-
-            return level.getGameRules().get(rule);
+            return new GameRuleSetResult<>(level.getGameRules().get(rule), true);
         }
+    }
+
+    public record GameRuleSetResult<T>(T value, boolean cancelled) {
+
     }
 }

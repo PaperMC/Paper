@@ -1676,10 +1676,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         GameRule nms = CraftGameRule.bukkitToMinecraft(bukkit);
 
-        AtomicBoolean cancelled = new AtomicBoolean();
-        CraftEventFactory.handleGameRuleSet(nms, value, this.getHandle(), null, cancelled);
-
-        return !cancelled.get();
+        return !CraftEventFactory.handleGameRuleSet(nms, nms.deserialize(value).getOrThrow(), this.getHandle(), null).cancelled();
     }
 
     @Override
@@ -1737,10 +1734,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             newValue = (T) legacyGameRuleWrapper.getFromLegacyToModern().apply(newValue);
         }
 
-        AtomicBoolean cancelled = new AtomicBoolean();
-        CraftEventFactory.handleGameRuleSet(nms, newValue, this.getHandle(), null, cancelled);
-
-        return !cancelled.get();
+        return !CraftEventFactory.handleGameRuleSet(nms, newValue, this.getHandle(), null).cancelled();
     }
 
     @Override
