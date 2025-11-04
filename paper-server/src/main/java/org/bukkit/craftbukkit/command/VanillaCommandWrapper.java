@@ -75,7 +75,7 @@ public class VanillaCommandWrapper extends BukkitCommand { // Paper
         if (sender instanceof CraftEntity entity) {
             if (sender instanceof CommandMinecart) {
                 return ((CraftMinecartCommand) sender).getHandle().getCommandBlock().createCommandSourceStack(
-                    ((CraftMinecartCommand) sender).getHandle().getCommandBlock().new CloseableCommandBlockSource()
+                    ((CraftMinecartCommand) sender).getHandle().getCommandBlock().createSource()
                 );
             }
 
