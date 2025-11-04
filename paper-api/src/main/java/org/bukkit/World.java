@@ -3788,7 +3788,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return String value of rule
      * @deprecated use {@link #getGameRuleValue(GameRule)} instead
      */
-    @Deprecated(since = "???", forRemoval = true)
+    @Deprecated(since = "1.21.11", forRemoval = true)
     @Contract("null -> null; !null -> !null")
     @Nullable
     public String getGameRuleValue(@Nullable String rule);

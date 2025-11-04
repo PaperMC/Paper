@@ -150,121 +150,121 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
     /**
      * Toggles the announcing of advancements.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> ANNOUNCE_ADVANCEMENTS = InternalAPIBridge.get().legacyGameRuleBridge(SHOW_ADVANCEMENT_MESSAGES, null, null, Boolean.class);
 
     /**
      * Whether the server should skip checking player speed.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DISABLE_PLAYER_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(PLAYER_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
 
     /**
      * Whether the server should skip checking player speed when the player is
      * wearing elytra.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DISABLE_ELYTRA_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(ELYTRA_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
 
     /**
      * Whether time progresses from the current moment.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_DAYLIGHT_CYCLE = InternalAPIBridge.get().legacyGameRuleBridge(ADVANCE_TIME, null, null, Boolean.class);
 
     /**
      * Whether entities that are not mobs should have drops.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_ENTITY_DROPS = InternalAPIBridge.get().legacyGameRuleBridge(ENTITY_DROPS, null, null, Boolean.class);
 
     /**
      * Whether fire should spread and naturally extinguish.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_FIRE_TICK = InternalAPIBridge.get().legacyGameRuleBridge(FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? 128 : 0, (value) -> value != 0, Boolean.class);
 
     /**
      * Whether players should only be able to craft recipes they've unlocked
      * first.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_LIMITED_CRAFTING = InternalAPIBridge.get().legacyGameRuleBridge(LIMITED_CRAFTING, null, null, Boolean.class);
 
     /**
      * Whether mobs should drop items.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_MOB_LOOT = InternalAPIBridge.get().legacyGameRuleBridge(MOB_DROPS, null, null, Boolean.class);
 
     /**
      * Whether mobs should naturally spawn.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_MOB_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_MOBS, null, null, Boolean.class);
 
     /**
      * Whether blocks should have drops.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_TILE_DROPS = InternalAPIBridge.get().legacyGameRuleBridge(BLOCK_DROPS, null, null, Boolean.class);
 
     /**
      * Whether the weather will change from the current moment.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_WEATHER_CYCLE = InternalAPIBridge.get().legacyGameRuleBridge(ADVANCE_WEATHER, null, null, Boolean.class);
 
     /**
      * Whether players can regenerate health naturally through their hunger bar.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> NATURAL_REGENERATION = InternalAPIBridge.get().legacyGameRuleBridge(NATURAL_HEALTH_REGENERATION, null, null, Boolean.class);
 
     /**
      * Whether pillager raids are enabled or not.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DISABLE_RAIDS = InternalAPIBridge.get().legacyGameRuleBridge(RAIDS, inverseBool(), inverseBool(), Boolean.class);
 
     /**
      * Whether phantoms will appear without sleeping or not.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_INSOMNIA = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_PHANTOMS, null, null, Boolean.class);
 
     /**
      * Whether clients will respawn immediately after death or not.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_IMMEDIATE_RESPAWN = InternalAPIBridge.get().legacyGameRuleBridge(IMMEDIATE_RESPAWN, null, null, Boolean.class);
 
     /**
      * Whether patrols should naturally spawn.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_PATROL_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_PATROLS, null, null, Boolean.class);
 
     /**
      * Whether traders should naturally spawn.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_TRADER_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_WANDERING_TRADERS, null, null, Boolean.class);
 
     /**
      * Whether wardens should naturally spawn.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_WARDEN_SPAWNING = InternalAPIBridge.get().legacyGameRuleBridge(SPAWN_WARDENS, null, null, Boolean.class);
     /**
      * Whether vines will spread.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> DO_VINES_SPREAD = InternalAPIBridge.get().legacyGameRuleBridge(SPREAD_VINES, null, null, Boolean.class);
     /**
      * Whether fire will still propagate far away from players (8 chunks).
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = InternalAPIBridge.get().legacyGameRuleBridge(FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? 128 : 0, (value) -> value != 0, Boolean.class);
 
     /**
@@ -272,7 +272,7 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      * player will spawn in when first joining a server or when dying without a
      * spawnpoint.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> SPAWN_RADIUS = InternalAPIBridge.get().legacyGameRuleBridge(RESPAWN_RADIUS, null, null, Integer.class);
 
     /**
@@ -282,23 +282,23 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      * This is the maximum amount of command blocks that can be activated in a
      * single tick from a single chain.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> MAX_COMMAND_CHAIN_LENGTH = InternalAPIBridge.get().legacyGameRuleBridge(MAX_COMMAND_SEQUENCE_LENGTH, null, null, Integer.class);
 
     /**
      * Determines the number of different commands/functions which execute
      * commands can fork into.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> MAX_COMMAND_FORK_COUNT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_COMMAND_FORKS, null, null, Integer.class);
 
     /**
      * Determines the maximum number of blocks which a command can modify.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> COMMAND_MODIFICATION_BLOCK_LIMIT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_BLOCK_MODIFICATIONS, null, null, Integer.class);
 
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> SNOW_ACCUMULATION_HEIGHT = InternalAPIBridge.get().legacyGameRuleBridge(MAX_SNOW_ACCUMULATION_HEIGHT, null, null, Integer.class);
 
     /**
@@ -307,19 +307,19 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      */
     @MinecraftExperimental(MinecraftExperimental.Requires.MINECART_IMPROVEMENTS) // Paper - add missing annotation
     @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Integer> MINECART_MAX_SPEED = InternalAPIBridge.get().legacyGameRuleBridge(MAX_MINECART_SPEED, null, null, Integer.class);
 
     /**
      * Whether command blocks are enabled.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> COMMAND_BLOCKS_ENABLED = InternalAPIBridge.get().legacyGameRuleBridge(COMMAND_BLOCKS_WORK, null, null, Boolean.class);
 
     /**
      * Whether spawner blocks are enabled.
      */
-    @Deprecated(forRemoval = true, since = "??")
+    @Deprecated(forRemoval = true, since = "1.21.11")
     public static final GameRule<Boolean> SPAWNER_BLOCKS_ENABLED = InternalAPIBridge.get().legacyGameRuleBridge(SPAWNER_BLOCKS_WORK, null, null, Boolean.class);
 
     private static UnaryOperator<Boolean> inverseBool() {
