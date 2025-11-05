@@ -6137,6 +6137,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> NETHERITE_HOE = create(key("netherite_hoe"));
 
     /**
+     * {@code minecraft:netherite_horse_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> NETHERITE_HORSE_ARMOR = create(key("netherite_horse_armor"));
+
+    /**
      * {@code minecraft:netherite_ingot}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

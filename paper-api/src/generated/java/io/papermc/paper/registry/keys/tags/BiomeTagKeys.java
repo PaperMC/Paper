@@ -432,6 +432,13 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> SPAWNS_COLD_VARIANT_FROGS = create(key("spawns_cold_variant_frogs"));
 
     /**
+     * {@code #minecraft:spawns_coral_variant_zombie_nautilus}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> SPAWNS_CORAL_VARIANT_ZOMBIE_NAUTILUS = create(key("spawns_coral_variant_zombie_nautilus"));
+
+    /**
      * {@code #minecraft:spawns_gold_rabbits}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -479,13 +486,6 @@ public final class BiomeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Biome> WATER_ON_MAP_OUTLINES = create(key("water_on_map_outlines"));
-
-    /**
-     * {@code #minecraft:without_patrol_spawns}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> WITHOUT_PATROL_SPAWNS = create(key("without_patrol_spawns"));
 
     /**
      * {@code #minecraft:without_wandering_trader_spawns}

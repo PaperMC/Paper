@@ -463,6 +463,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     NETHERITE_CHESTPLATE(-1, 1),
     NETHERITE_HELMET(-1, 1),
     NETHERITE_HOE(-1, 1),
+    NETHERITE_HORSE_ARMOR(-1, 1),
     NETHERITE_INGOT(-1),
     NETHERITE_LEGGINGS(-1, 1),
     NETHERITE_NAUTILUS_ARMOR(-1, 1),

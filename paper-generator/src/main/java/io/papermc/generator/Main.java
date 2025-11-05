@@ -17,14 +17,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
@@ -79,7 +79,7 @@ public class Main implements Callable<Integer> {
 
         PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
         FeatureFlagSet flags = FeatureFlags.REGISTRY.allFlags();
-        MinecraftServer.configurePackRepository(packRepository, new WorldDataConfiguration(new DataPackConfig(FeatureFlags.REGISTRY.toNames(flags).stream().map(ResourceLocation::getPath).toList(), List.of()), flags), true, false);
+        MinecraftServer.configurePackRepository(packRepository, new WorldDataConfiguration(new DataPackConfig(FeatureFlags.REGISTRY.toNames(flags).stream().map(Identifier::getPath).toList(), List.of()), flags), true, false);
         CloseableResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.openAllSelected());
 
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();

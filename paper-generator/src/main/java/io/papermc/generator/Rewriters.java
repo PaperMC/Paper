@@ -38,6 +38,7 @@ import javax.lang.model.SourceVersion;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
@@ -145,13 +146,13 @@ public final class Rewriters {
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
                     protected EnumValue.Builder rewriteEnumValue(ChatVisiblity visibility) {
-                        return super.rewriteEnumValue(visibility).argument(quoted(visibility.getKey()));
+                        return super.rewriteEnumValue(visibility).argument(quoted(((TranslatableContents) visibility.caption().getContents()).getKey()));
                     }
                 }.reachEnd(false)),
                 holder("ParticleVisibility", ClientOption.ParticleVisibility.class, new EnumCloneRewriter<>(ParticleStatus.class) {
                     @Override
                     protected EnumValue.Builder rewriteEnumValue(ParticleStatus status) {
-                        return super.rewriteEnumValue(status).argument(quoted(status.getKey()));
+                        return super.rewriteEnumValue(status).argument(quoted(((TranslatableContents) status.caption().getContents()).getKey()));
                     }
                 })
             ))

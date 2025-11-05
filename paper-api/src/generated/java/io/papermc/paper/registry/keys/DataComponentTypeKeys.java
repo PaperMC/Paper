@@ -739,6 +739,13 @@ public final class DataComponentTypeKeys {
      */
     public static final TypedKey<DataComponentType> WRITTEN_BOOK_CONTENT = create(key("written_book_content"));
 
+    /**
+     * {@code minecraft:zombie_nautilus/variant}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ZOMBIE_NAUTILUS_VARIANT = create(key("zombie_nautilus/variant"));
+
     private DataComponentTypeKeys() {
     }
 
