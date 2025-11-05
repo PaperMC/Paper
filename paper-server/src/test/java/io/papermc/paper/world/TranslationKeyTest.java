@@ -58,8 +58,8 @@ public class TranslationKeyTest {
     @Test
     public void testBiome() {
         for (Map.Entry<ResourceKey<Biome>, Biome> nms : RegistryHelper.getBiomes().entrySet()) {
-            org.bukkit.block.Biome bukkit = org.bukkit.block.Biome.valueOf(nms.getKey().location().getPath().toUpperCase(Locale.ROOT));
-            Assertions.assertEquals(nms.getKey().location().toLanguageKey("biome"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
+            org.bukkit.block.Biome bukkit = org.bukkit.block.Biome.valueOf(nms.getKey().identifier().getPath().toUpperCase(Locale.ROOT));
+            Assertions.assertEquals(nms.getKey().identifier().toLanguageKey("biome"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
         }
     }
 }

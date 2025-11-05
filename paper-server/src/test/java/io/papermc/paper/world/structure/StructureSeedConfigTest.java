@@ -36,13 +36,13 @@ public class StructureSeedConfigTest {
 
         final Registry<StructureSet> structureSets = RegistryHelper.getRegistry().lookupOrThrow(Registries.STRUCTURE_SET);
         for (final ResourceKey<StructureSet> setKey : structureSets.registryKeySet()) {
-            assertEquals(Identifier.DEFAULT_NAMESPACE, setKey.location().getNamespace());
+            assertEquals(Identifier.DEFAULT_NAMESPACE, setKey.identifier().getNamespace());
             final StructureSet set = structureSets.getValueOrThrow(setKey);
             if (setKey == BuiltinStructureSets.STRONGHOLDS) { // special case due to seed matching world seed
                 assertEquals(0, set.placement().salt);
                 continue;
             }
-            int salt = switch (setKey.location().getPath()) {
+            int salt = switch (setKey.identifier().getPath()) {
                 case "villages" -> config.villageSeed;
                 case "desert_pyramids" -> config.desertSeed;
                 case "igloos" -> config.iglooSeed;
