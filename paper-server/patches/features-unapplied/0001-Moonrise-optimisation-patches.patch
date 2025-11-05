@@ -1208,10 +1208,10 @@ index 0000000000000000000000000000000000000000..a814512fcfb85312474ae2c2c2144384
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f649116700e398caf
+index 0000000000000000000000000000000000000000..344e155420de9148cd402f626af11d4c523cacff
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-@@ -0,0 +1,1476 @@
+@@ -0,0 +1,1489 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -1220,7 +1220,6 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +import ca.spottedleaf.concurrentutil.executor.Cancellable;
 +import ca.spottedleaf.concurrentutil.executor.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.executor.queue.AreaDependentQueue;
-+import ca.spottedleaf.concurrentutil.executor.queue.PrioritisedTaskQueue;
 +import ca.spottedleaf.concurrentutil.function.BiLong1Function;
 +import ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable;
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -1250,7 +1249,6 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +
 +public final class MoonriseRegionFileIO {
 +
-+    private static final int REGION_FILE_SHIFT = 5;
 +    private static final Logger LOGGER = LoggerFactory.getLogger(MoonriseRegionFileIO.class);
 +
 +    /**
@@ -1432,11 +1430,11 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Returns the priority for the specified regionfile type for the specified chunk.
++     * Returns the priority for the specified RegionFile type for the specified chunk.
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
 +     * @param chunkZ Specified chunk z.
-+     * @param type Specified regionfile type.
++     * @param type Specified RegionFile type.
 +     * @return The priority for the chunk
 +     */
 +    public static Priority getPriority(final ServerLevel world, final int chunkX, final int chunkZ, final RegionFileType type) {
@@ -1451,7 +1449,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Sets the priority for all regionfile types for the specified chunk. Note that great care should
++     * Sets the priority for all RegionFile types for the specified chunk. Note that great care should
 +     * be taken using this method, as there can be multiple tasks tied to the same chunk that want different
 +     * priorities.
 +     *
@@ -1473,14 +1471,14 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Sets the priority for the specified regionfile type for the specified chunk. Note that great care should
++     * Sets the priority for the specified RegionFile type for the specified chunk. Note that great care should
 +     * be taken using this method, as there can be multiple tasks tied to the same chunk that want different
 +     * priorities.
 +     *
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
 +     * @param chunkZ Specified chunk z.
-+     * @param type Specified regionfile type.
++     * @param type Specified RegionFile type.
 +     * @param priority New priority.
 +     *
 +     * @see #raisePriority(ServerLevel, int, int, Priority)
@@ -1499,7 +1497,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Raises the priority for all regionfile types for the specified chunk.
++     * Raises the priority for all RegionFile types for the specified chunk.
 +     *
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
@@ -1519,12 +1517,12 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Raises the priority for the specified regionfile type for the specified chunk.
++     * Raises the priority for the specified RegionFile type for the specified chunk.
 +     *
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
 +     * @param chunkZ Specified chunk z.
-+     * @param type Specified regionfile type.
++     * @param type Specified RegionFile type.
 +     * @param priority New priority.
 +     *
 +     * @see #setPriority(ServerLevel, int, int, Priority)
@@ -1543,7 +1541,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Lowers the priority for all regionfile types for the specified chunk.
++     * Lowers the priority for all RegionFile types for the specified chunk.
 +     *
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
@@ -1563,12 +1561,12 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Lowers the priority for the specified regionfile type for the specified chunk.
++     * Lowers the priority for the specified RegionFile type for the specified chunk.
 +     *
 +     * @param world Specified world.
 +     * @param chunkX Specified chunk x.
 +     * @param chunkZ Specified chunk z.
-+     * @param type Specified regionfile type.
++     * @param type Specified RegionFile type.
 +     * @param priority New priority.
 +     *
 +     * @see #raisePriority(ServerLevel, int, int, Priority)
@@ -1603,7 +1601,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
 +     * @param data Chunk's data
-+     * @param type The regionfile type to write to.
++     * @param type The RegionFile type to write to.
 +     *
 +     * @throws IllegalStateException If the file io thread has shutdown.
 +     */
@@ -1629,7 +1627,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
 +     * @param data Chunk's data
-+     * @param type The regionfile type to write to.
++     * @param type The RegionFile type to write to.
 +     * @param priority The minimum priority to schedule at.
 +     *
 +     * @throws IllegalStateException If the file io thread has shutdown.
@@ -1665,7 +1663,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param chunkZ Chunk's z coordinate
 +     * @param completable Chunk's pending data
 +     * @param writeTask The task responsible for completing the pending chunk data
-+     * @param type The regionfile type to write to.
++     * @param type The RegionFile type to write to.
 +     * @param priority The minimum priority to schedule at.
 +     *
 +     * @throws IllegalStateException If the file io thread has shutdown.
@@ -1696,7 +1694,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param chunkZ Chunk's z coordinate
 +     * @param completable Chunk's pending data
 +     * @param writeTask The task responsible for completing the pending chunk data
-+     * @param type The regionfile type to write to.
++     * @param type The RegionFile type to write to.
 +     * @param priority The minimum priority to schedule at.
 +     *
 +     * @throws IllegalStateException If the file io thread has shutdown.
@@ -1746,17 +1744,9 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load all regionfile types, and then call
++     * Schedules a load to be executed asynchronously. This task will load all RegionFile types, and then call
 +     * {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean)}
 +     * for single load.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -1778,17 +1768,9 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load all regionfile types, and then call
++     * Schedules a load to be executed asynchronously. This task will load all RegionFile types, and then call
 +     * {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean, Priority)}
 +     * for single load.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -1812,17 +1794,9 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load data for the specified regionfile type(s), and
++     * Schedules a load to be executed asynchronously. This task will load data for the specified RegionFile type(s), and
 +     * then call {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean)}
 +     * for single load.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -1830,7 +1804,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param onComplete Consumer to execute once this task has completed
 +     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
 +     *                         of this call.
-+     * @param types The regionfile type(s) to load.
++     * @param types The RegionFile type(s) to load.
 +     *
 +     * @return The {@link Cancellable} for this chunk load. Cancelling it will not affect other loads for the same chunk data.
 +     *
@@ -1846,17 +1820,9 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load data for the specified regionfile type(s), and
++     * Schedules a load to be executed asynchronously. This task will load data for the specified RegionFile type(s), and
 +     * then call {@code onComplete}. This is a bulk load operation, see {@link #loadDataAsync(ServerLevel, int, int, RegionFileType, BiConsumer, boolean, Priority)}
 +     * for single load.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
@@ -1864,7 +1830,7 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param onComplete Consumer to execute once this task has completed
 +     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
 +     *                         of this call.
-+     * @param types The regionfile type(s) to load.
++     * @param types The RegionFile type(s) to load.
 +     * @param priority The minimum priority to load the data at.
 +     *
 +     * @return The {@link Cancellable} for this chunk load. Cancelling it will not affect other loads for the same chunk data.
@@ -1910,20 +1876,71 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load the specified regionfile type, and then call
-+     * {@code onComplete}.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
++     * Schedules a load to be executed asynchronously. This task will load the specified RegionFile type, and then complete
++     * the returned {@link Completable}.
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
++     * @param type The RegionFile type to load.
++     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
++     *                         of this call.
++     *
++     * @return A {@link Completable} which is completed when the data is loaded.
++     *
++     * @see #loadChunkData(ServerLevel, int, int, Consumer, boolean, RegionFileType...)
++     * @see #loadChunkData(ServerLevel, int, int, Consumer, boolean, Priority, RegionFileType...)
++     * @see #loadAllChunkData(ServerLevel, int, int, Consumer, boolean)
++     * @see #loadAllChunkData(ServerLevel, int, int, Consumer, boolean, Priority)
++     */
++    public static Completable<CompoundTag> loadDataAsync(final ServerLevel world, final int chunkX, final int chunkZ,
++                                                         final RegionFileType type, final boolean intendingToBlock) {
++        return MoonriseRegionFileIO.loadDataAsync(world, chunkX, chunkZ, type, intendingToBlock, Priority.NORMAL);
++    }
++
++    /**
++     * Schedules a load to be executed asynchronously. This task will load the specified RegionFile type, and then complete
++     * the returned {@link Completable}.
++     *
++     * @param world Chunk's world
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     * @param type The RegionFile type to load.
++     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
++     *                         of this call.
++     * @param priority Minimum priority to load the data at.
++     *
++     * @return A {@link Completable} which is completed when the data is loaded.
++     *
++     * @see #loadChunkData(ServerLevel, int, int, Consumer, boolean, RegionFileType...)
++     * @see #loadChunkData(ServerLevel, int, int, Consumer, boolean, Priority, RegionFileType...)
++     * @see #loadAllChunkData(ServerLevel, int, int, Consumer, boolean)
++     * @see #loadAllChunkData(ServerLevel, int, int, Consumer, boolean, Priority)
++     */
++    public static Completable<CompoundTag> loadDataAsync(final ServerLevel world, final int chunkX, final int chunkZ,
++                                                         final RegionFileType type, final boolean intendingToBlock,
++                                                         final Priority priority) {
++        final Completable<CompoundTag> ret = new Completable<>();
++
++        MoonriseRegionFileIO.loadDataAsync(world, chunkX, chunkZ, type, (final CompoundTag res, final Throwable thr) -> {
++            if (thr != null) {
++                ret.completeExceptionally(thr);
++            } else {
++                ret.complete(res);
++            }
++        }, intendingToBlock, priority);
++
++        return ret;
++    }
++
++    /**
++     * Schedules a load to be executed asynchronously. This task will load the specified RegionFile type, and then call
++     * {@code onComplete}.
++     *
++     * @param world Chunk's world
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     * @param type The RegionFile type to load.
 +     * @param onComplete Consumer to execute once this task has completed
 +     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
 +     *                         of this call.
@@ -1942,20 +1959,13 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +    }
 +
 +    /**
-+     * Schedules a load to be executed asynchronously. This task will load the specified regionfile type, and then call
++     * Schedules a load to be executed asynchronously. This task will load the specified RegionFile type, and then call
 +     * {@code onComplete}.
-+     * <p>
-+     *     Impl notes:
-+     * </p>
-+     * <li>
-+     *     The {@code onComplete} parameter may be completed during the execution of this function synchronously or it may
-+     *     be completed asynchronously on this file io thread. Interacting with the file IO thread in the completion of
-+     *     data is undefined behaviour, and can cause deadlock.
-+     * </li>
 +     *
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
++     * @param type The RegionFile type to load.
 +     * @param onComplete Consumer to execute once this task has completed
 +     * @param intendingToBlock Whether the caller is intending to block on completion. This only affects the cost
 +     *                         of this call.
@@ -2058,10 +2068,10 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +     * @param world Chunk's world
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
-+     * @param type Regionfile type
++     * @param type RegionFile type
 +     * @param priority Minimum priority to load the data at.
 +     *
-+     * @return The chunk data for the chunk. Note that a {@code null} result means the chunk or regionfile does not exist on disk.
++     * @return The chunk data for the chunk. Note that a {@code null} result means the chunk or RegionFile does not exist on disk.
 +     *
 +     * @throws IOException If the load fails for any reason
 +     */
@@ -2418,7 +2428,6 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +        }
 +
 +        private void performWriteCompress(final InProgressWrite inProgressWrite) {
-+            final CompoundTag write = inProgressWrite.value;
 +            if (!inProgressWrite.isComplete()) {
 +                throw new IllegalStateException("Should be writable");
 +            }
@@ -2426,11 +2435,15 @@ index 0000000000000000000000000000000000000000..4940289005ebd8f360ec799f64911670
 +            RegionDataController.WriteData writeData = null;
 +            boolean failedWrite = false;
 +
-+            try {
-+                writeData = this.regionDataController.startWrite(this.chunkX, this.chunkZ, write);
-+            } catch (final Throwable thr) {
-+                failedWrite = thr instanceof IOException;
-+                LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
++            if (inProgressWrite.throwable != null) {
++                LOGGER.error("Serialization task for chunk data failed: " + this.toString(), inProgressWrite.throwable);
++            } else {
++                try {
++                    writeData = this.regionDataController.startWrite(this.chunkX, this.chunkZ, inProgressWrite.value);
++                } catch (final Throwable thr) {
++                    failedWrite = thr instanceof IOException;
++                    LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
++                }
 +            }
 +
 +            if (writeData == null) {
@@ -9359,13 +9372,14 @@ index 0000000000000000000000000000000000000000..c47e77ceb15948cbd4a2a370738843c0
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf53750316
+index 0000000000000000000000000000000000000000..9a9a599ef178f851ee5c783631a724013a693586
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1987 @@
+@@ -0,0 +1,1975 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.CallbackCompletable;
++import ca.spottedleaf.concurrentutil.completable.Completable;
 +import ca.spottedleaf.concurrentutil.executor.Cancellable;
 +import ca.spottedleaf.concurrentutil.executor.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
@@ -10176,22 +10190,15 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +        }
 +    }
 +
-+    private void removeUnloadTask(final MoonriseRegionFileIO.RegionFileType type) {
-+        switch (type) {
-+            case CHUNK_DATA: {
-+                this.chunkDataUnload = null;
-+                return;
-+            }
-+            case ENTITY_DATA: {
-+                this.entityDataUnload = null;
-+                return;
-+            }
-+            case POI_DATA: {
-+                this.poiDataUnload = null;
-+                return;
-+            }
-+            default:
-+                throw new IllegalStateException("Unknown regionfile type " + type);
++    private void asyncCompleteUnloadTask(final MoonriseRegionFileIO.RegionFileType type, final Completable<CompoundTag> writeCompletable) {
++        final UnloadTask task = this.getUnloadTask(type);
++        if (writeCompletable == null) {
++            task.completable().complete(null);
++        } else {
++            writeCompletable.whenComplete((final CompoundTag write, final Throwable thr) -> {
++                // if thr != null, then complete with null
++                task.completable().complete(write);
++            });
 +        }
 +    }
 +
@@ -10202,7 +10209,7 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +        // because we hold the scheduling lock, we cannot actually unload anything
 +        // so, what we do here instead is to null this chunk's state and setup the unload tasks
 +        // the unload tasks will ensure that any loads that take place after stage1 (i.e during stage2, in which
-+        // we do not hold the lock) c
++        // we do not hold the lock) do not load old data
 +        final ChunkAccess chunk = this.currentChunk;
 +        final ChunkEntitySlices entityChunk = this.entityChunk;
 +        final PoiChunk poiChunk = this.poiChunk;
@@ -10237,23 +10244,6 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +        return this.unloadState = (chunk != null || entityChunk != null || poiChunk != null) ? new UnloadState(this, chunk, entityChunk, poiChunk) : null;
 +    }
 +
-+    // data is null if failed or does not need to be saved
-+    void completeAsyncUnloadDataSave(final MoonriseRegionFileIO.RegionFileType type, final CompoundTag data) {
-+        if (data != null) {
-+            MoonriseRegionFileIO.scheduleSave(this.world, this.chunkX, this.chunkZ, data, type);
-+        }
-+
-+        this.getUnloadTask(type).completable().complete(data);
-+        final ReentrantAreaLock.Node schedulingLock = this.scheduler.schedulingLockArea.lock(this.chunkX, this.chunkZ);
-+        try {
-+            // can only write to these fields while holding the schedule lock
-+            this.removeUnloadTask(type);
-+            this.checkUnload();
-+        } finally {
-+            this.scheduler.schedulingLockArea.unlock(schedulingLock);
-+        }
-+    }
-+
 +    void unloadStage2(final UnloadState state) {
 +        this.unloadState = null;
 +        final ChunkAccess chunk = state.chunk();
@@ -10269,23 +10259,22 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +                PlatformHooks.get().chunkUnloadFromWorld(levelChunk);
 +            }
 +
++            final Completable<CompoundTag>[] chunkWrite = new Completable[1];
 +            if (!shouldLevelChunkNotSave) {
-+                this.saveChunk(chunk, true);
-+            } else {
-+                this.completeAsyncUnloadDataSave(MoonriseRegionFileIO.RegionFileType.CHUNK_DATA, null);
++                this.saveChunk(chunk, true, chunkWrite);
 +            }
 +
 +            if (chunk instanceof LevelChunk levelChunk) {
 +                this.world.unload(levelChunk);
 +            }
++
++            this.asyncCompleteUnloadTask(MoonriseRegionFileIO.RegionFileType.CHUNK_DATA, chunkWrite[0]);
 +        }
 +
 +        // unload entity data
 +        if (entityChunk != null) {
-+            this.saveEntities(entityChunk, true);
-+            // yes this is a hack to pass the compound tag through...
-+            final CompoundTag lastEntityUnload = this.lastEntityUnload;
-+            this.lastEntityUnload = null;
++            final Completable<CompoundTag>[] entityWrite = new Completable[1];
++            this.saveEntities(entityChunk, true, entityWrite);
 +
 +            if (entityChunk.unload()) {
 +                final ReentrantAreaLock.Node schedulingLock = this.scheduler.schedulingLockArea.lock(this.chunkX, this.chunkZ);
@@ -10300,25 +10289,26 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +            }
 +            // we need to delay the callback until after determining transience, otherwise a potential loader could
 +            // set entityChunk before we do
-+            this.entityDataUnload.completable().complete(lastEntityUnload);
++            this.asyncCompleteUnloadTask(MoonriseRegionFileIO.RegionFileType.ENTITY_DATA, entityWrite[0]);
 +        }
 +
 +        // unload poi data
 +        if (poiChunk != null) {
++            final Completable<CompoundTag>[] poiWrite = new Completable[1];
 +            if (poiChunk.isDirty() && !shouldLevelChunkNotSave) {
-+                this.savePOI(poiChunk, true);
-+            } else {
-+                this.poiDataUnload.completable().complete(null);
++                this.savePOI(poiChunk, true, poiWrite);
 +            }
 +
 +            if (poiChunk.isLoaded()) {
 +                ((ChunkSystemPoiManager)this.world.getPoiManager()).moonrise$onUnload(CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ));
 +            }
++            this.asyncCompleteUnloadTask(MoonriseRegionFileIO.RegionFileType.POI_DATA, poiWrite[0]);
 +        }
 +    }
 +
 +    boolean unloadStage3() {
-+        // can only write to these while holding the schedule lock, and we instantly complete them in stage2
++        // no longer need the unload tasks, as every type has been scheduled to be saved
++        this.chunkDataUnload = null;
 +        this.poiDataUnload = null;
 +        this.entityDataUnload = null;
 +
@@ -11072,17 +11062,14 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +        boolean canSaveEntities = entities != null;
 +
 +        if (canSaveChunk) {
-+            canSaveChunk = this.saveChunk(chunk, false);
++            canSaveChunk = this.saveChunk(chunk, false, null);
 +        }
 +        if (canSavePOI) {
-+            canSavePOI = this.savePOI(poi, false);
++            canSavePOI = this.savePOI(poi, false, null);
 +        }
 +        if (canSaveEntities) {
 +            // on shutdown, we need to force transient entity chunks to save
-+            canSaveEntities = this.saveEntities(entities, shutdown);
-+            if (shutdown) {
-+                this.lastEntityUnload = null;
-+            }
++            canSaveEntities = this.saveEntities(entities, shutdown, null);
 +        }
 +
 +        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI ?
@@ -11094,11 +11081,8 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +                : null;
 +    }
 +
-+    private boolean saveChunk(final ChunkAccess chunk, final boolean unloading) {
++    private boolean saveChunk(final ChunkAccess chunk, final boolean unloading, final Completable<CompoundTag>[] chunkSave) {
 +        if (!chunk.isUnsaved()) {
-+            if (unloading) {
-+                this.completeAsyncUnloadDataSave(MoonriseRegionFileIO.RegionFileType.CHUNK_DATA, null);
-+            }
 +            return false;
 +        }
 +        try {
@@ -11107,16 +11091,20 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +
 +            chunk.tryMarkSaved();
 +
-+            final CallbackCompletable<CompoundTag> completable = new CallbackCompletable<>();
++            final Completable<CompoundTag> completable = new Completable<>();
 +
 +            final Runnable run = () -> {
-+                final CompoundTag data = chunkData.write();
++                final CompoundTag data;
++                try {
++                    data = chunkData.write();
++                } catch (final Throwable thr) {
++                    LOGGER.error("Failed to save chunk data (" + NewChunkHolder.this.chunkX + "," + NewChunkHolder.this.chunkZ + ") in world '" + WorldUtil.getWorldName(NewChunkHolder.this.world) + "'", thr);
++
++                    completable.completeExceptionally(thr);
++                    return;
++                }
 +
 +                completable.complete(data);
-+
-+                if (unloading) {
-+                    NewChunkHolder.this.completeAsyncUnloadDataSave(MoonriseRegionFileIO.RegionFileType.CHUNK_DATA, data);
-+                }
 +            };
 +
 +            final PrioritisedExecutor.PrioritisedTask task;
@@ -11132,6 +11120,9 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +            MoonriseRegionFileIO.scheduleSave(
 +                this.world, this.chunkX, this.chunkZ, completable, task, MoonriseRegionFileIO.RegionFileType.CHUNK_DATA, Priority.NORMAL
 +            );
++            if (chunkSave != null) {
++                chunkSave[0] = completable;
++            }
 +        } catch (final Throwable thr) {
 +            LOGGER.error("Failed to save chunk data (" + this.chunkX + "," + this.chunkZ + ") in world '" + WorldUtil.getWorldName(this.world) + "'", thr);
 +        }
@@ -11140,40 +11131,53 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +    }
 +
 +    private boolean lastEntitySaveNull;
-+    private CompoundTag lastEntityUnload;
-+    private boolean saveEntities(final ChunkEntitySlices entities, final boolean unloading) {
++    private boolean saveEntities(final ChunkEntitySlices entities, final boolean unloading, final Completable<CompoundTag>[] entitySave) {
 +        try {
-+            CompoundTag mergeFrom = null;
 +            if (entities.isTransient()) {
 +                if (!unloading) {
 +                    // if we're a transient chunk, we cannot save until unloading because otherwise a double save will
 +                    // result in double adding the entities
 +                    return false;
 +                }
-+                try {
-+                    mergeFrom = MoonriseRegionFileIO.loadData(this.world, this.chunkX, this.chunkZ, MoonriseRegionFileIO.RegionFileType.ENTITY_DATA, Priority.BLOCKING);
-+                } catch (final Exception ex) {
-+                    LOGGER.error("Cannot merge transient entities for chunk (" + this.chunkX + "," + this.chunkZ + ") in world '" + WorldUtil.getWorldName(this.world) + "', data on disk will be replaced", ex);
++                final CompoundTag save = entities.save();
++                if (save == null) {
++                    // we have no entities to add to the existing chunk
++                    return false;
 +                }
++                final Completable<CompoundTag> mergeFrom = MoonriseRegionFileIO.loadDataAsync(
++                    this.world, this.chunkX, this.chunkZ, MoonriseRegionFileIO.RegionFileType.ENTITY_DATA, false, Priority.NORMAL
++                );
++
++                final Completable<CompoundTag> toWrite = mergeFrom.handle((final CompoundTag onDisk, final Throwable thr) -> {
++                    if (thr != null) {
++                        LOGGER.error("Cannot merge transient entities for chunk (" + NewChunkHolder.this.chunkX + "," + NewChunkHolder.this.chunkZ + ") in world '" + WorldUtil.getWorldName(NewChunkHolder.this.world) + "', data on disk will be replaced", thr);
++                        return save;
++                    } else {
++                        ChunkEntitySlices.copyEntities(onDisk, save);
++                        return save;
++                    }
++                });
++
++                MoonriseRegionFileIO.scheduleSave(
++                    this.world, this.chunkX, this.chunkZ, toWrite, null, MoonriseRegionFileIO.RegionFileType.ENTITY_DATA, Priority.NORMAL
++                );
++                this.lastEntitySaveNull = false;
++                if (entitySave != null) {
++                    entitySave[0] = toWrite;
++                }
++
++                return true;
 +            }
 +
 +            final CompoundTag save = entities.save();
-+            if (mergeFrom != null) {
-+                if (save == null) {
-+                    // don't override the data on disk with nothing
-+                    return false;
-+                } else {
-+                    ChunkEntitySlices.copyEntities(mergeFrom, save);
-+                }
-+            }
 +            if (save == null && this.lastEntitySaveNull) {
 +                return false;
 +            }
 +
 +            MoonriseRegionFileIO.scheduleSave(this.world, this.chunkX, this.chunkZ, save, MoonriseRegionFileIO.RegionFileType.ENTITY_DATA);
 +            this.lastEntitySaveNull = save == null;
-+            if (unloading) {
-+                this.lastEntityUnload = save;
++            if (entitySave != null) {
++                entitySave[0] = Completable.completed(save);
 +            }
 +        } catch (final Throwable thr) {
 +            LOGGER.error("Failed to save entity data (" + this.chunkX + "," + this.chunkZ + ") in world '" + WorldUtil.getWorldName(this.world) + "'", thr);
@@ -11183,21 +11187,18 @@ index 0000000000000000000000000000000000000000..2409c83b03cfa1f0285f6f7c3508dbdf
 +    }
 +
 +    private boolean lastPoiSaveNull;
-+    private boolean savePOI(final PoiChunk poi, final boolean unloading) {
++    private boolean savePOI(final PoiChunk poi, final boolean unloading, final Completable<CompoundTag>[] poiSave) {
 +        try {
 +            final CompoundTag save = poi.save();
 +            poi.setDirty(false);
 +            if (save == null && this.lastPoiSaveNull) {
-+                if (unloading) {
-+                    this.poiDataUnload.completable().complete(null);
-+                }
 +                return false;
 +            }
 +
 +            MoonriseRegionFileIO.scheduleSave(this.world, this.chunkX, this.chunkZ, save, MoonriseRegionFileIO.RegionFileType.POI_DATA);
 +            this.lastPoiSaveNull = save == null;
-+            if (unloading) {
-+                this.poiDataUnload.completable().complete(save);
++            if (poiSave != null) {
++                poiSave[0] = Completable.completed(save);
 +            }
 +        } catch (final Throwable thr) {
 +            LOGGER.error("Failed to save poi data (" + this.chunkX + "," + this.chunkZ + ") in world '" + WorldUtil.getWorldName(this.world) + "'", thr);
@@ -23066,7 +23067,7 @@ index 13424bce076493f146bdc5fd0b1f2e09805bd5e7..2de7072c8ccc005e514673bba494b64d
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e627770ed 100644
+index ab95014e66a7e217024ad9845669cc77fbbb13c2..40730d5775ed81bd715960b2c7dd710ca11dcb0e 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -177,7 +177,7 @@ import net.minecraft.world.phys.Vec2;
@@ -23078,7 +23079,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
      private static MinecraftServer SERVER; // Paper
      public static final Logger LOGGER = LogUtils.getLogger();
      public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
-@@ -392,6 +392,93 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -393,6 +393,93 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return minecraftServer;
      }
  
@@ -23172,7 +23173,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
      public MinecraftServer(
          // CraftBukkit start
          joptsimple.OptionSet options,
-@@ -824,7 +911,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -825,7 +912,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && serverLevel.getGameRules().getBoolean(GameRules.RULE_SPAWN_MONSTERS)); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
          this.updateEffectiveRespawnData();
          this.forceTicks = false; // CraftBukkit
@@ -23181,7 +23182,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
          new org.bukkit.event.world.WorldLoadEvent(serverLevel.getWorld()).callEvent(); // Paper - call WorldLoadEvent
      }
  
-@@ -847,6 +934,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -848,6 +935,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public abstract boolean shouldRconBroadcast();
  
      public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
@@ -23193,7 +23194,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
          boolean flag = false;
  
          for (ServerLevel serverLevel : this.getAllLevels()) {
-@@ -854,7 +946,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -855,7 +947,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  LOGGER.info("Saving chunks for level '{}'/{}", serverLevel, serverLevel.dimension().location());
              }
  
@@ -23202,7 +23203,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
              flag = true;
          }
  
-@@ -944,7 +1036,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -945,7 +1037,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
  
@@ -23211,7 +23212,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel serverLevelx : this.getAllLevels()) {
-@@ -954,18 +1046,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -955,18 +1047,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.waitUntilNextTick();
          }
@@ -23237,7 +23238,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
  
          this.isSaving = false;
          this.resources.close();
-@@ -985,6 +1073,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -986,6 +1074,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.services().nameToIdCache().save(false); // Paper - Perf: Async GameProfileCache saving
          }
          // Spigot end
@@ -23252,7 +23253,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
          // Paper start - Improved watchdog support - move final shutdown items here
          Util.shutdownExecutors();
          try {
-@@ -1077,16 +1173,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1080,16 +1176,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              // execute small amounts of other tasks just in case the number of tasks we are
              // draining is large - chunk system and packet processing may be latency sensitive
  
@@ -23287,7 +23288,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
          profiler.pop(); // moonrise:run_all_chunk
          profiler.pop(); // moonrise:run_all_tasks
  
-@@ -1227,11 +1338,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1222,11 +1333,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                      ProfilerFiller profilerFiller = Profiler.get();
                      profilerFiller.push("tick");
                      this.tickFrame.start();
@@ -23306,7 +23307,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
                      this.tickFrame.end();
                      this.recordEndOfTick(); // Paper - improve tick loop
                      profilerFiller.popPush("nextTickWait");
-@@ -1404,6 +1519,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1399,6 +1514,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      private boolean pollTaskInternal() {
          if (super.pollTask()) {
@@ -23314,7 +23315,7 @@ index 61e4ddb9665fb3bc4900c865ad8887d344ff7f7c..8afe24c382e18e799101662ccf87022e
              return true;
          } else {
              boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
-@@ -2579,6 +2695,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2574,6 +2690,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -25711,7 +25712,7 @@ index 302841522cf990c38b1493b716048c0f2db40726..7932a6676db7b652d63be5ae4dcf9bcf
          }
      }
 diff --git a/net/minecraft/server/level/PlayerSpawnFinder.java b/net/minecraft/server/level/PlayerSpawnFinder.java
-index fbbddc9ae0ed4e28602ab1103d860e4639f19c8f..0766c5a6de4d43c24fac1f5318ebf94bb333f307 100644
+index fbbddc9ae0ed4e28602ab1103d860e4639f19c8f..f637d14b0188728192b543d7841e99a98f0c5269 100644
 --- a/net/minecraft/server/level/PlayerSpawnFinder.java
 +++ b/net/minecraft/server/level/PlayerSpawnFinder.java
 @@ -122,9 +122,7 @@ public class PlayerSpawnFinder {
@@ -25721,7 +25722,7 @@ index fbbddc9ae0ed4e28602ab1103d860e4639f19c8f..0766c5a6de4d43c24fac1f5318ebf94b
 -            this.level
 -                .getChunkSource()
 -                .addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(sectionPosX, sectionPosZ), 0)
-+            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(sectionPosX, sectionPosZ), radius, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, ca.spottedleaf.concurrentutil.util.Priority.HIGH) // Paper - rewrite chunk system
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(sectionPosX, sectionPosZ), 0, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, ca.spottedleaf.concurrentutil.util.Priority.HIGH) // Paper - rewrite chunk system
                  .whenCompleteAsync((object, throwable) -> {
                      if (throwable == null) {
                          try {
@@ -32615,7 +32616,7 @@ index f2aa944dedf917f01d669a703a9b9f4f35af78c2..116efc09663cac3b0f4b8c157e93201e
          this.chunkType = chunkType;
          this.heightmapsAfter = heightmapsAfter;
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index 2f83f615fb358ef7e6ae915f0bdfbc500407c09a..06e560d9c1deda605e131d0d4da499f90118a3e1 100644
+index 98e85820ac5aad77a003be4b6f7a59346524ae81..d620862e95abf9f098bb53a76825883f2b1f4bbf 100644
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -193,7 +193,7 @@ public class ChunkStatusTasks {
@@ -32627,22 +32628,19 @@ index 2f83f615fb358ef7e6ae915f0bdfbc500407c09a..06e560d9c1deda605e131d0d4da499f9
                      }
                  });
                  generationChunkHolder.replaceProtoChunk(new ImposterProtoChunk(wrapped, false));
-@@ -209,7 +209,7 @@ public class ChunkStatusTasks {
+@@ -209,12 +209,12 @@ public class ChunkStatusTasks {
          }, worldGenContext.mainThreadExecutor());
      }
  
 -    public static void postLoadProtoChunk(ServerLevel level, ValueInput.ValueInputList input) {
 +    public static void postLoadProtoChunk(ServerLevel level, ValueInput.ValueInputList input, ChunkPos pos) { // Paper - rewrite chunk system - add ChunkPos param
          if (!input.isEmpty()) {
-             // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
+             // Paper start - duplicate uuid resolving
              level.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(input, level, EntitySpawnReason.LOAD).filter((entity) -> {
-@@ -221,7 +221,7 @@ public class ChunkStatusTasks {
-                 }
-                 checkDupeUUID(level, entity); // Paper - duplicate uuid resolving
-                 return !needsRemoval;
+                 return !checkDupeUUID(level, entity);
 -            }));
 +            }), pos); // Paper - rewrite chunk system
-             // CraftBukkit end
+             // Paper end - duplicate uuid resolving
          }
      }
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStep.java b/net/minecraft/world/level/chunk/status/ChunkStep.java
