@@ -202,7 +202,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag HORSE_ARMORS = new MaterialSetTag(keyFor("horse_armors"))
         .endsWith("_HORSE_ARMOR")
-        .ensureSize("HORSE_ARMORS", 5).lock();
+        .ensureSize("HORSE_ARMORS", 6).lock();
 
     /**
      * Covers the variants of infested blocks.
