@@ -105,13 +105,16 @@ public class CraftWorldBorder implements WorldBorder {
     }
 
     @Override
-    public int getWarningTime() {
+    public long getWarningTimeTicks() {
         return this.handle.getWarningTime();
     }
 
     @Override
-    public void setWarningTime(int time) {
-        this.handle.setWarningTime(time);
+    public void setWarningTime(final TimeUnit unit, final long time) {
+        Preconditions.checkArgument(unit != null, "TimeUnit cannot be null.");
+        Preconditions.checkArgument(time >= 0, "time cannot be lower than 0");
+
+        this.handle.setWarningTime(Tick.tick().fromDuration(Duration.of(time, unit.toChronoUnit())));
     }
 
     @Override

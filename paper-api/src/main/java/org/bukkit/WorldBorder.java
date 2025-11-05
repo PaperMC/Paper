@@ -43,6 +43,7 @@ public interface WorldBorder {
      * @param seconds The time in seconds in which the border grows or shrinks from the previous size to that being set.
      *
      * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @see #setSize(double, TimeUnit, long)
      */
     void setSize(double newSize, long seconds);
 
@@ -117,15 +118,40 @@ public interface WorldBorder {
      * Gets the current border warning time in seconds.
      *
      * @return The current border warning time in seconds.
+     * @deprecated Use {@link #getWarningTimeTicks()} instead
      */
-    int getWarningTime();
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    default int getWarningTime() {
+        return (int) Tick.of(this.getWarningTimeTicks()).toSeconds();
+    }
+
+    /**
+     * Gets the current border warning time in ticks.
+     *
+     * @return The current border warning time in ticks.
+     */
+    long getWarningTimeTicks();
 
     /**
      * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
      *
-     * @param seconds The amount of time in seconds. (The default is 15 seconds.)
+     * @param seconds The amount of time in seconds.
+     * @deprecated Use {@link #setWarningTime(TimeUnit, long)} instead
      */
-    void setWarningTime(int seconds);
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    default void setWarningTime(int seconds) {
+        this.setWarningTime(TimeUnit.SECONDS, seconds);
+    }
+
+    /**
+     * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
+     *
+     * @param unit The time unit.
+     * @param time The time that causes the screen to be tinted red when a contracting border will reach.
+     *
+     * @see Tick
+     */
+    void setWarningTime(@NotNull TimeUnit unit, long time);
 
     /**
      * Gets the current border warning distance.
