@@ -471,7 +471,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public org.bukkit.NamespacedKey getKey() {
-        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().identifier());
     }
 
     public boolean lineOfSightExists(Location from, Location to) {

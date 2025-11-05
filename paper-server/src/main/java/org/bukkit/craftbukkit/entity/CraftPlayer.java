@@ -99,7 +99,7 @@ import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTabListPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
@@ -797,7 +797,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (loc == null || sound == null || category == null || this.getHandle().connection == null) return;
 
-        this.playSound0(loc, Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
+        this.playSound0(loc, Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(Location loc, Holder<SoundEvent> soundEffectHolder, net.minecraft.sounds.SoundSource categoryNMS, float volume, float pitch, long seed) {
@@ -830,7 +830,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
 
-        this.playSound0(entity, Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
+        this.playSound0(entity, Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(org.bukkit.entity.Entity entity, Holder<SoundEvent> soundEffectHolder, net.minecraft.sounds.SoundSource categoryNMS, float volume, float pitch, long seed) {
@@ -849,7 +849,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void stopSound(String sound, org.bukkit.SoundCategory category) {
         if (this.getHandle().connection == null) return;
 
-        this.getHandle().connection.send(new ClientboundStopSoundPacket(ResourceLocation.parse(sound), category == null ? net.minecraft.sounds.SoundSource.MASTER : net.minecraft.sounds.SoundSource.valueOf(category.name())));
+        this.getHandle().connection.send(new ClientboundStopSoundPacket(Identifier.parse(sound), category == null ? net.minecraft.sounds.SoundSource.MASTER : net.minecraft.sounds.SoundSource.valueOf(category.name())));
     }
 
     @Override
@@ -1428,7 +1428,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public Set<NamespacedKey> getDiscoveredRecipes() {
         ImmutableSet.Builder<NamespacedKey> bukkitRecipeKeys = ImmutableSet.builder();
-        this.getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.location())));
+        this.getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.identifier())));
         return bukkitRecipeKeys.build();
     }
 
@@ -2201,12 +2201,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (this.getHandle().connection == null) return;
 
         if (this.channels().contains(channel)) {
-            ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
+            Identifier id = Identifier.parse(StandardMessenger.validateAndCorrectChannel(channel));
             this.sendCustomPayload(id, message);
         }
     }
 
-    private void sendCustomPayload(ResourceLocation id, byte[] message) {
+    private void sendCustomPayload(Identifier id, byte[] message) {
         ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
         this.getHandle().connection.send(packet);
     }
@@ -3122,7 +3122,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper start
     @Override
     public Duration getIdleDuration() {
-        return Duration.ofMillis(net.minecraft.Util.getMillis() - this.getHandle().getLastActionTime());
+        return Duration.ofMillis(net.minecraft.util.Util.getMillis() - this.getHandle().getLastActionTime());
     }
 
     @Override

@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundHorseScreenOpenPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.HumanoidArm;
@@ -645,7 +645,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public int getCooldown(ItemStack item) {
         Preconditions.checkArgument(item != null, "Item cannot be null");
 
-        ResourceLocation group = this.getHandle().getCooldowns().getCooldownGroup(CraftItemStack.asNMSCopy(item));
+        Identifier group = this.getHandle().getCooldowns().getCooldownGroup(CraftItemStack.asNMSCopy(item));
         if (group == null) {
             return 0;
         }

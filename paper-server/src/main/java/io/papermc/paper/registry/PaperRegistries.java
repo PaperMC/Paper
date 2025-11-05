@@ -189,7 +189,7 @@ public final class PaperRegistries {
     }
 
     public static <M, T> TypedKey<T> fromNms(final ResourceKey<M> resourceKey) {
-        return TypedKey.create(registryFromNms(resourceKey.registryKey()), CraftNamespacedKey.fromMinecraft(resourceKey.location()));
+        return TypedKey.create(registryFromNms(resourceKey.registryKey()), CraftNamespacedKey.fromMinecraft(resourceKey.identifier()));
     }
 
     @SuppressWarnings({"unchecked", "RedundantCast"})

@@ -3,7 +3,7 @@ package io.papermc.paper.datacomponent.item;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +31,7 @@ public record PaperUseCooldown(
     static final class BuilderImpl implements Builder {
 
         private final float seconds;
-        private Optional<ResourceLocation> cooldownGroup = Optional.empty();
+        private Optional<Identifier> cooldownGroup = Optional.empty();
 
         BuilderImpl(final float seconds) {
             this.seconds = seconds;

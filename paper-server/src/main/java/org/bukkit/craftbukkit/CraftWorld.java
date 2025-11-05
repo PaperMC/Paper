@@ -46,7 +46,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
@@ -348,7 +348,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             this.world.serverLevelData.setSpawn(
                 new LevelData.RespawnData(
                     GlobalPos.of(
-                        ResourceKey.create(Registries.DIMENSION, this.world.dimension().location()),
+                        ResourceKey.create(Registries.DIMENSION, this.world.dimension().identifier()),
                         new BlockPos(x, y, z)
                     ),
                     Mth.wrapDegrees(yaw),
@@ -789,7 +789,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(this.world.dimension().location());
+        return CraftNamespacedKey.fromMinecraft(this.world.dimension().identifier());
     }
 
     @Override
@@ -1575,7 +1575,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         double y = loc.getY();
         double z = loc.getZ();
 
-        ClientboundSoundPacket packet = new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), SoundSource.valueOf(category.name()), x, y, z, volume, pitch, seed);
+        ClientboundSoundPacket packet = new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), SoundSource.valueOf(category.name()), x, y, z, volume, pitch, seed);
         this.world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
     }
 
@@ -1615,7 +1615,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
 
-        ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
+        ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         ChunkMap.TrackedEntity entityTracker = this.getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
             entityTracker.sendToTrackingPlayersAndSelf(packet);
@@ -1931,7 +1931,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(structure != null, "Structure cannot be null");
 
         net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.Structure> registry = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
-        ResourceLocation key = registry.getKey(CraftStructure.bukkitToMinecraft(structure));
+        Identifier key = registry.getKey(CraftStructure.bukkitToMinecraft(structure));
 
         return this.getStructures(x, z, struct -> registry.getKey(struct).equals(key));
     }

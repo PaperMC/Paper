@@ -1849,7 +1849,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerRecipeDiscoverEvent callPlayerRecipeListUpdateEvent(net.minecraft.world.entity.player.Player player, RecipeHolder<?> recipeHolder) {
-        PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().location()), recipeHolder.value().showNotification());
+        PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().identifier()), recipeHolder.value().showNotification());
         event.callEvent();
         return event;
     }

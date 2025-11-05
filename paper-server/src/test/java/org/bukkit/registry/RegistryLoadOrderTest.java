@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -51,11 +51,11 @@ public class RegistryLoadOrderTest {
     public void testRegistryLoadOrder(Supplier<Boolean> init, Class<Keyed> keyedClass, BiFunction<NamespacedKey, MinecraftTestType, Keyed> minecraftToBukkit, Supplier<Keyed> first, Supplier<Keyed> second) {
         this.testClassNotLoaded(init.get());
 
-        ResourceKey<net.minecraft.core.Registry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(ResourceLocation.tryBuild("bukkit", "test-registry"));
+        ResourceKey<net.minecraft.core.Registry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(Identifier.tryBuild("bukkit", "test-registry"));
         MappedRegistry<MinecraftTestType> minecraftRegistry = new MappedRegistry<>(resourceKey, Lifecycle.experimental());
 
-        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
-        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, Identifier.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, Identifier.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
         minecraftRegistry.freeze();
 
         RegistryLoadOrderTest.registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);

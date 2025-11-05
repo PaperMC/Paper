@@ -34,11 +34,11 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.arguments.NbtPathArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -73,9 +73,9 @@ public class WorldConfiguration extends ConfigurationPart {
     static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 
     private final transient SpigotWorldConfig spigotConfig;
-    private final transient ResourceLocation worldKey;
+    private final transient Identifier worldKey;
 
-    WorldConfiguration(final SpigotWorldConfig spigotConfig, final ResourceLocation worldKey) {
+    WorldConfiguration(final SpigotWorldConfig spigotConfig, final Identifier worldKey) {
         this.spigotConfig = spigotConfig;
         this.worldKey = worldKey;
     }

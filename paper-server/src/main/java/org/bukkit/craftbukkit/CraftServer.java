@@ -54,7 +54,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.server.WorldLoader;
@@ -1283,7 +1283,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             dimensionKey = net.minecraft.world.level.Level.END;
         } else {
-            dimensionKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
+            dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
         ServerLevel serverLevel = new ServerLevel(
@@ -2555,7 +2555,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(registry != null, "registry cannot be null");
         Preconditions.checkArgument(tag != null, "NamespacedKey tag cannot be null");
         Preconditions.checkArgument(clazz != null, "Class clazz cannot be null");
-        ResourceLocation key = CraftNamespacedKey.toMinecraft(tag);
+        Identifier key = CraftNamespacedKey.toMinecraft(tag);
 
         switch (registry) {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {

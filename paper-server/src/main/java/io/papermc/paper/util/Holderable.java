@@ -55,7 +55,7 @@ public interface Holderable<M> extends Handleable<M> {
                 final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
                 yield new JsonObjectWrapper(directCodec.encodeStart(ops, direct.value()).getOrThrow().getAsJsonObject());
             }
-            case final Holder.Reference<M> reference -> reference.key().location().toString();
+            case final Holder.Reference<M> reference -> reference.key().identifier().toString();
             default -> throw new IllegalArgumentException("Cannot serialize " + this.getHolder());
         };
     }

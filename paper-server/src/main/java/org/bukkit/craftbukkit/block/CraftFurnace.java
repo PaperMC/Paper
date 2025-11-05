@@ -74,7 +74,7 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     public Map<CookingRecipe<?>, Integer> getRecipesUsed() {
         ImmutableMap.Builder<CookingRecipe<?>, Integer> recipesUsed = ImmutableMap.builder();
         this.getSnapshot().recipesUsed.reference2IntEntrySet().fastForEach(entrySet -> {
-            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey().location()));
+            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey().identifier()));
             if (recipe instanceof CookingRecipe<?> cookingRecipe) {
                 recipesUsed.put(cookingRecipe, entrySet.getValue());
             }

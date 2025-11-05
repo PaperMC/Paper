@@ -66,7 +66,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         } else if (resourceKey.isEmpty()) {
             throw new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft));
         }
-        final B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(resourceKey.get().location()));
+        final B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(resourceKey.get().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
 
@@ -119,7 +119,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (registry instanceof final CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
             return Optional.of(((CraftRegistry<T, M>) registry).createBukkit(value));
         }
-        return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
+        return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.identifier())));
     }
     // Paper end - fixup upstream being dum
 

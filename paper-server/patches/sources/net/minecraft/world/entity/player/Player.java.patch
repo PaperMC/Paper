@@ -209,7 +209,7 @@
      }
  
      @Override
-@@ -947,16 +_,26 @@
+@@ -947,15 +_,25 @@
      }
  
      public void attack(Entity target) {
@@ -228,10 +228,9 @@
              ItemStack weaponItem = this.getWeaponItem();
 -            DamageSource damageSource = this.createAttackSource(weaponItem);
 +            DamageSource damageSource = this.createAttackSource(weaponItem); final DamageSource dmgSourceFinal = damageSource; // Paper - damage events
-             float f1 = this.getEnchantedDamage(target, f, damageSource) - f;
              float attackStrengthScale = this.getAttackStrengthScale(0.5F);
-             f *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
-             f1 *= attackStrengthScale;
+             float f1 = attackStrengthScale * (this.getEnchantedDamage(target, f, damageSource) - f);
+             f *= this.baseDamageScaleFactor();
              this.onAttack();
 -            if (!this.deflectProjectile(target)) {
 +            final float dmgFinal = f1; // Paper - damage events
@@ -239,7 +238,7 @@
                  if (f > 0.0F || f1 > 0.0F) {
                      boolean flag = attackStrengthScale > 0.9F;
                      boolean flag1;
-@@ -969,7 +_,9 @@
+@@ -968,7 +_,9 @@
  
                      f += weaponItem.getItem().getAttackDamageBonus(target, f, damageSource);
                      boolean flag2 = flag && this.canCriticalAttack(target);
@@ -249,7 +248,7 @@
                          f *= 1.5F;
                      }
  
-@@ -1011,11 +_,12 @@
+@@ -1014,11 +_,12 @@
          return !target.isAttackable() || target.skipAttackInteraction(this);
      }
  
@@ -264,7 +263,7 @@
              return true;
          } else {
              return false;
-@@ -1108,21 +_,43 @@
+@@ -1111,21 +_,43 @@
      public void causeExtraKnockback(Entity target, float strength, Vec3 currentMovement) {
          if (strength > 0.0F) {
              if (target instanceof LivingEntity livingEntity) {
@@ -309,7 +308,7 @@
          }
      }
  
-@@ -1143,7 +_,10 @@
+@@ -1146,7 +_,10 @@
                      && !(livingEntity instanceof ArmorStand armorStand && armorStand.isMarker())
                      && this.distanceToSqr(livingEntity) < 9.0) {
                      float f1 = this.getEnchantedDamage(livingEntity, var12, damageSource) * strengthScale;
@@ -321,7 +320,7 @@
                          livingEntity.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
                          EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity, damageSource);
                      }
-@@ -1170,13 +_,22 @@
+@@ -1178,14 +_,23 @@
  
      @Override
      public boolean stabAttack(EquipmentSlot slot, Entity target, float damageAmount, boolean damage, boolean knockback, boolean dismount) {
@@ -340,13 +339,14 @@
          } else {
              ItemStack itemBySlot = this.getItemBySlot(slot);
              DamageSource damageSource = this.createAttackSource(itemBySlot);
-             float f = this.getEnchantedDamage(target, damageAmount, damageSource) - damageAmount;
+             float f = this.getAttackStrengthScale(0.5F) * (this.getEnchantedDamage(target, damageAmount, damageSource) - damageAmount);
+             damageAmount *= this.baseDamageScaleFactor();
 -            if (knockback && this.deflectProjectile(target)) {
 +            if (knockback && this.deflectProjectile(target, () -> !org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(target, damageSource, f, false))) { // Paper - damage events
                  return true;
              } else {
                  float f1 = damage ? damageAmount + f : 0.0F;
-@@ -1204,7 +_,7 @@
+@@ -1213,7 +_,7 @@
                      this.setLastHurtMob(target);
                      this.itemAttackInteraction(target, itemBySlot, damageSource, flag);
                      this.damageStatsAndHearts(target, f2);
@@ -355,7 +355,7 @@
                      return true;
                  }
              }
-@@ -1215,8 +_,8 @@
+@@ -1224,8 +_,8 @@
      }
  
      @Override
@@ -366,7 +366,7 @@
          this.inventoryMenu.removed(this);
          if (this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1284,6 +_,12 @@
+@@ -1293,6 +_,12 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos bedPos) {
@@ -379,7 +379,7 @@
          this.startSleeping(bedPos);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1395,7 +_,7 @@
+@@ -1404,7 +_,7 @@
  
      @Override
      public boolean causeFallDamage(double fallDistance, float damageMultiplier, DamageSource damageSource) {
@@ -388,7 +388,7 @@
              return false;
          } else {
              if (fallDistance >= 2.0) {
-@@ -1436,7 +_,15 @@
+@@ -1445,7 +_,15 @@
      }
  
      public void startFallFlying() {
@@ -405,7 +405,7 @@
      }
  
      @Override
-@@ -1534,7 +_,7 @@
+@@ -1543,7 +_,7 @@
  
          if (levels > 0 && this.experienceLevel % 5 == 0 && this.lastLevelUpTime < this.tickCount - 100.0F) {
              float f = this.experienceLevel > 30 ? 1.0F : this.experienceLevel / 30.0F;
@@ -414,7 +414,7 @@
              this.lastLevelUpTime = this.tickCount;
          }
      }
-@@ -1542,15 +_,35 @@
+@@ -1551,15 +_,35 @@
      public int getXpNeededForNextLevel() {
          if (this.experienceLevel >= 30) {
              return 112 + (this.experienceLevel - 30) * 9;
@@ -452,7 +452,7 @@
              }
          }
      }
-@@ -1805,7 +_,7 @@
+@@ -1818,7 +_,7 @@
  
      @Override
      public void onAttack() {
@@ -461,7 +461,7 @@
          super.onAttack();
      }
  
-@@ -1840,17 +_,32 @@
+@@ -1853,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -496,7 +496,7 @@
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack item = this.inventory.getItem(i);
-@@ -1859,6 +_,7 @@
+@@ -1872,6 +_,7 @@
                      }
                  }
  
@@ -504,7 +504,7 @@
                  return this.hasInfiniteMaterials() ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
              }
          }
-@@ -1945,12 +_,20 @@
+@@ -1958,12 +_,20 @@
      }
  
      public boolean hasClientLoaded() {

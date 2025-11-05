@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import java.util.Locale;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.EnchantmentTags;
@@ -236,7 +236,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
 
     @Override
     public String getTranslationKey() {
-        return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().location());
+        return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().identifier());
     }
 
     @Override

@@ -30,7 +30,6 @@ import net.minecraft.world.level.ClipBlockStateContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -95,11 +94,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     @Override
     public ServerLevel getMinecraftWorld() {
         return this.delegate.getMinecraftWorld();
-    }
-
-    @Override
-    public long dayTime() {
-        return this.delegate.dayTime();
     }
 
     @Override
@@ -245,21 +239,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     @Override
     public BlockPos getHeightmapPos(Heightmap.Types heightmap, BlockPos pos) {
         return this.delegate.getHeightmapPos(heightmap, pos);
-    }
-
-    @Override
-    public float getMoonBrightness() {
-        return this.delegate.getMoonBrightness();
-    }
-
-    @Override
-    public float getTimeOfDay(float tickDelta) {
-        return this.delegate.getTimeOfDay(tickDelta);
-    }
-
-    @Override
-    public MoonPhase getMoonPhase() {
-        return this.delegate.getMoonPhase();
     }
 
     @Override
