@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Registry;
 import org.bukkit.support.environment.AllFeatures;
-import org.bukkit.support.extension.AllFeaturesExtension;
 import org.bukkit.support.provider.RegistriesArgumentProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
