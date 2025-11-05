@@ -2799,7 +2799,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * zombified piglins.
      *
      * @return true if world is natural
+     * @deprecated replaced by the gameplay/eyeblossom_open and gameplay/creaking_active environment attributes
      */
+    @Deprecated(since = "1.21.11")
     public boolean isNatural();
 
     /**

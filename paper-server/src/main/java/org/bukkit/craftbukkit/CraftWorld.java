@@ -1370,7 +1370,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isNatural() {
-        return this.world.dimensionType().natural();
+        throw new UnsupportedOperationException("// TODO - snapshot");
     }
 
     @Override
