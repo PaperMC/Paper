@@ -152,13 +152,13 @@ public interface WorldBorder {
      *
      * @return The current border warning time in ticks.
      */
-    long getWarningTimeTicks();
+    int getWarningTimeTicks();
 
     /**
      * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
      *
      * @param seconds The amount of time in seconds.
-     * @deprecated Use {@link #setWarningTimeTicks(long)} instead
+     * @deprecated Use {@link #setWarningTimeTicks(int)} instead
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
     default void setWarningTime(int seconds) {
@@ -170,7 +170,7 @@ public interface WorldBorder {
      *
      * @param ticks The number of ticks.
      */
-    void setWarningTimeTicks(long ticks);
+    void setWarningTimeTicks(int ticks);
 
     /**
      * Gets the current border warning distance.
