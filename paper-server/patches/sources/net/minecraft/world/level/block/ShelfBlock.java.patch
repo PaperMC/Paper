@@ -12,3 +12,51 @@
                  BlockState blockState = state.setValue(POWERED, hasNeighborSignal);
                  if (!hasNeighborSignal) {
                      blockState = blockState.setValue(SIDE_CHAIN_PART, SideChainPart.UNCONNECTED);
+@@ -215,12 +_,41 @@
+                     for (int i1 = 0; i1 < shelfBlockEntity.getContainerSize(); i1++) {
+                         int i2 = 9 - (allBlocksConnectedTo.size() - i) * shelfBlockEntity.getContainerSize() + i1;
+                         if (i2 >= 0 && i2 <= inventory.getContainerSize()) {
+-                            ItemStack itemStack = inventory.removeItemNoUpdate(i2);
+-                            ItemStack itemStack1 = shelfBlockEntity.swapItemNoUpdate(i1, itemStack);
+-                            if (!itemStack.isEmpty() || !itemStack1.isEmpty()) {
+-                                inventory.setItem(i2, itemStack1);
+-                                flag = true;
+-                            }
++                            // Paper start - Add PlayerShelfHotbarSwapEvent (cancellable per-slot)
++                            ItemStack pre = inventory.getItem(i2);
++                            boolean swapped = false;
++                            if (pre != null && !pre.isEmpty() && inventory.player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++                                final io.papermc.paper.event.player.PlayerShelfHotbarSwapEvent event = new io.papermc.paper.event.player.PlayerShelfHotbarSwapEvent(
++                                    serverPlayer.getBukkitEntity(),
++                                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                                    i2,
++                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(pre.copy())
++                                );
++                                if (event.callEvent()) {
++                                    final net.minecraft.world.item.ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem());
++                                    // Remove original from player slot
++                                    inventory.removeItemNoUpdate(i2);
++                                    // Swap with shelf using (possibly) modified stack
++                                    ItemStack shelfPrev = shelfBlockEntity.swapItemNoUpdate(i1, eventStack);
++                                    if (!shelfPrev.isEmpty() || !eventStack.isEmpty()) {
++                                        inventory.setItem(i2, shelfPrev);
++                                        flag = true;
++                                    }
++                                    swapped = true;
++                                } else {
++                                    // cancelled: skip this slot transfer entirely
++                                    swapped = true;
++                                }
++                            }
++                            if (!swapped) {
++                                ItemStack itemStack = inventory.removeItemNoUpdate(i2);
++                                ItemStack itemStack1 = shelfBlockEntity.swapItemNoUpdate(i1, itemStack);
++                                if (!itemStack.isEmpty() || !itemStack1.isEmpty()) {
++                                    inventory.setItem(i2, itemStack1);
++                                    flag = true;
++                                }
++                            }
++                            // Paper end - Add PlayerShelfHotbarSwapEvent
+                         }
+                     }
+ 
