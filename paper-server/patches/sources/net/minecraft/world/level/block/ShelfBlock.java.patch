@@ -12,3 +12,28 @@
                  BlockState blockState = state.setValue(POWERED, hasNeighborSignal);
                  if (!hasNeighborSignal) {
                      blockState = blockState.setValue(SIDE_CHAIN_PART, SideChainPart.UNCONNECTED);
+@@ -214,9 +_,22 @@
+                 if (shelfBlockEntity != null) {
+                     for (int i1 = 0; i1 < shelfBlockEntity.getContainerSize(); i1++) {
+                         int i2 = 9 - (allBlocksConnectedTo.size() - i) * shelfBlockEntity.getContainerSize() + i1;
+-                        if (i2 >= 0 && i2 <= inventory.getContainerSize()) {
++                        if (i2 >= 0 && i2 < inventory.getContainerSize()) {
++                            // Paper start - Fire PlayerShelfHotbarSwapEvent before removing from hotbar
++                            final org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) inventory.player.getBukkitEntity();
++                            final org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at((net.minecraft.server.level.ServerLevel) level, allBlocksConnectedTo.get(i));
++                            final org.bukkit.inventory.ItemStack aboutToPull = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(inventory.getItem(i2));
++                            final io.papermc.paper.event.player.PlayerShelfHotbarSwapEvent event = new io.papermc.paper.event.player.PlayerShelfHotbarSwapEvent(bukkitPlayer, bukkitBlock, i2, aboutToPull);
++                            ((net.minecraft.server.level.ServerLevel) level).getCraftServer().getPluginManager().callEvent(event);
++                            if (event.isCancelled()) {
++                                continue; // only skip this slot; rest of chain continues
++                            }
++                            // consume the original item from the player's hotbar slot
+                             ItemStack itemStack = inventory.removeItemNoUpdate(i2);
+-                            ItemStack itemStack1 = shelfBlockEntity.swapItemNoUpdate(i1, itemStack);
++                            // insert the (possibly replaced) item into the shelf slot
++                            final ItemStack replacement = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack());
++                            ItemStack itemStack1 = shelfBlockEntity.swapItemNoUpdate(i1, replacement);
++                            // Paper end - Fire PlayerShelfHotbarSwapEvent
+                             if (!itemStack.isEmpty() || !itemStack1.isEmpty()) {
+                                 inventory.setItem(i2, itemStack1);
+                                 flag = true;
