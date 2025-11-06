@@ -162,7 +162,7 @@ public interface WorldBorder {
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
     default void setWarningTime(int seconds) {
-        this.setWarningTime(((long) seconds));
+        this.getWarningTimeTicks(seconds);
     }
 
     /**
@@ -170,7 +170,7 @@ public interface WorldBorder {
      *
      * @param ticks The number of ticks.
      */
-    void setWarningTime(long ticks);
+    void getWarningTimeTicks(long ticks);
 
     /**
      * Gets the current border warning distance.

@@ -104,7 +104,7 @@ public class CraftWorldBorder implements WorldBorder {
     }
 
     @Override
-    public void setWarningTime(final long ticks) {
+    public void getWarningTimeTicks(final long ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks cannot be lower than 0");
 
         this.handle.setWarningTime(((int) ticks));
