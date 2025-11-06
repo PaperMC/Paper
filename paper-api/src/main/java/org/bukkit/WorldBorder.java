@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.util.Tick;
+import net.kyori.adventure.util.Ticks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,7 +163,7 @@ public interface WorldBorder {
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
     default void setWarningTime(int seconds) {
-        this.setWarningTimeTicks(seconds);
+        this.setWarningTimeTicks(Tick.tick().fromDuration(Duration.ofSeconds(seconds)));
     }
 
     /**
