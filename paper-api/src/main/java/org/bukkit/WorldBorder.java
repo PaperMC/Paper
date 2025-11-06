@@ -44,8 +44,23 @@ public interface WorldBorder {
      *
      * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
      * @see #setSize(double, TimeUnit, long)
+     * @deprecated Use {@link #changeSize(double, long)} instead
      */
-    void setSize(double newSize, long seconds);
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    default void setSize(double newSize, long seconds) {
+        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.clamp(seconds, 0L, Integer.MAX_VALUE));
+    }
+
+    /**
+     * Sets the border to a square region with the specified side length in blocks.
+     *
+     * @param newSize The new side length of the border.
+     * @param ticks The time in ticks in which the border grows or shrinks from the previous size to that being set.
+     *
+     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @throws IllegalArgumentException if ticks are less than 0
+     */
+    void changeSize(double newSize, long ticks);
 
     /**
      * Sets the border to a square region with the specified side length in blocks.
