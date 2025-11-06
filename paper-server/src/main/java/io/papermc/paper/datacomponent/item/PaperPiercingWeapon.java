@@ -75,14 +75,14 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            ApiPreconditions.validateFloatRange(minReach, 0, 128, "maxReach");
+            ApiPreconditions.validateFloatRange(minReach, 0, 128, "minReach");
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            ApiPreconditions.validateFloatRange(minReach, 0, 128, "maxReach");
+            ApiPreconditions.validateFloatRange(maxReach, 0, 128, "maxReach");
             this.maxReach = maxReach;
             return this;
         }

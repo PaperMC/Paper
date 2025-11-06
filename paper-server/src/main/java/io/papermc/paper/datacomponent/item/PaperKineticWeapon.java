@@ -152,7 +152,7 @@ public record PaperKineticWeapon(
 
         @Override
         public KineticWeapon.Builder maxReach(final float maxReach) {
-            ApiPreconditions.validateFloatRange(minReach, 0, 128, "maxReach");
+            ApiPreconditions.validateFloatRange(maxReach, 0, 128, "maxReach");
             this.maxReach = maxReach;
             return this;
         }
