@@ -61,7 +61,6 @@ public record PaperPiercingWeapon(
             .orElse(null);
     }
 
-
     static final class BuilderImpl implements PiercingWeapon.Builder {
 
         private float minReach = 0.0F;
@@ -76,21 +75,21 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            Preconditions.checkArgument(minReach >= 0.0F, "minReach must be non-negative");
+            Preconditions.checkArgument(minReach >= 0.0F && minReach <= 128.0F, "minReach must be in range [0,128] was %s", minReach);
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be non-negative");
+            Preconditions.checkArgument(maxReach >= 0.0F && maxReach <= 128.0F, "maxReach must be in range [0,128] was %s", maxReach);
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be non-negative");
+            Preconditions.checkArgument(hitboxMargin >= 0.0F && hitboxMargin <= 1.0F, "hitboxMargin must be in range [0,1] was %s", hitboxMargin);
             this.hitboxMargin = hitboxMargin;
             return this;
         }

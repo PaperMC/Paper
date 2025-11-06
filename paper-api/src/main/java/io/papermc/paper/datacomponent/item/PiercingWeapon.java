@@ -2,9 +2,9 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
-import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -22,11 +22,11 @@ public interface PiercingWeapon {
         return ItemComponentTypesBridge.bridge().piercingWeapon();
     }
 
-    @NonNegative float minReach();
+    @Range(from = 0, to = 128) float minReach();
 
-    @NonNegative float maxReach();
+    @Range(from = 0, to = 128) float maxReach();
 
-    @NonNegative float hitboxMargin();
+    @Range(from = 0, to = 1) float hitboxMargin();
 
     boolean dealsKnockback();
 
@@ -44,13 +44,13 @@ public interface PiercingWeapon {
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(@NonNegative float minReach);
+        Builder minReach(@Range(from = 0, to = 128) float minReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(@NonNegative float maxReach);
+        Builder maxReach(@Range(from = 0, to = 128) float maxReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(@NonNegative float hitboxMargin);
+        Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder dealsKnockback(boolean dealsKnockback);

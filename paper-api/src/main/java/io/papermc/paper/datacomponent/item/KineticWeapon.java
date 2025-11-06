@@ -5,6 +5,7 @@ import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -32,13 +33,13 @@ public interface KineticWeapon {
     }
 
     @Contract(pure = true)
-    @NonNegative float minReach();
+    @Range(from = 0, to = 128) float minReach();
 
     @Contract(pure = true)
-    @NonNegative float maxReach();
+    @Range(from = 0, to = 128) float maxReach();
 
     @Contract(pure = true)
-    @NonNegative float hitboxMargin();
+    @Range(from = 0, to = 1) float hitboxMargin();
 
     @Contract(pure = true)
     @NonNegative int contactCooldownTicks();
@@ -85,13 +86,13 @@ public interface KineticWeapon {
     interface Builder extends DataComponentBuilder<KineticWeapon> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(@NonNegative float minReach);
+        Builder minReach(@Range(from = 0, to = 128) float minReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(@NonNegative float maxReach);
+        Builder maxReach(@Range(from = 0, to = 128) float maxReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(@NonNegative float hitboxMargin);
+        Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder contactCooldownTicks(@NonNegative int ticks);
