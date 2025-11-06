@@ -72,6 +72,7 @@ import org.bukkit.entity.Salmon;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -383,6 +384,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
     public static final DataComponentType.Valued<Llama.Color> LLAMA_VARIANT = valued("llama/variant");
     public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");
+    public static final DataComponentType.Valued<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = valued("zombie_nautilus/variant");
     public static final DataComponentType.Valued<Cat.Type> CAT_VARIANT = valued("cat/variant");
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");

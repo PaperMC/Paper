@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.nautilus.ZombieNautilus;
 import net.minecraft.world.entity.monster.Parched;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Skeleton;
