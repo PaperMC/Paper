@@ -68,7 +68,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     @SuppressWarnings("unchecked")
     @Override
     public Class<T> getType() {
-        return (Class<T>) switch (this.holder.value().gameRuleType()) {
+        return (Class<T>) switch (this.getHandle().gameRuleType()) {
             case INT -> Integer.class;
             case BOOL -> Boolean.class;
         };
@@ -76,7 +76,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
 
     @Override
     public String translationKey() {
-        return this.holder.value().id();
+        return this.getHandle().getDescriptionId();
     }
 
     public static class LegacyGameRuleWrapper<LEGACY, MODERN> extends CraftGameRule<LEGACY> {
