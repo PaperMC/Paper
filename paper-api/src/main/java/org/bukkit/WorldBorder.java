@@ -72,7 +72,9 @@ public interface WorldBorder {
      * @throws IllegalArgumentException if unit is <code>null</code> or newSize is less than 1.0D or greater than {@link #getMaxSize()}
      *
      * @see Tick
+     * @deprecated Use {@link #changeSize(double, long)} instead
      */
+    @Deprecated(since = "1.21.11", forRemoval = true)
     void setSize(double newSize, @NotNull TimeUnit unit, long time);
 
     /**
