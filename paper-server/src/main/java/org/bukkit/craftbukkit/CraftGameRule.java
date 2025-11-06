@@ -6,7 +6,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -62,13 +61,13 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     }
 
     @Override
-    public @NotNull String getName() {
+    public String getName() {
         return this.holder.getRegisteredName();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull Class<T> getType() {
+    public Class<T> getType() {
         return (Class<T>) switch (this.holder.value().gameRuleType()) {
             case INT -> Integer.class;
             case BOOL -> Boolean.class;
@@ -76,7 +75,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     }
 
     @Override
-    public @NotNull String translationKey() {
+    public String translationKey() {
         return this.holder.value().id();
     }
 
@@ -103,7 +102,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
         }
 
         @Override
-        public @NotNull Class<LEGACY> getType() {
+        public Class<LEGACY> getType() {
             return this.typeOverride;
         }
     }
