@@ -10,6 +10,8 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
@@ -27,9 +29,6 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {

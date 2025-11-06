@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import io.papermc.paper.util.Holderable;
+import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameRule;
@@ -8,8 +9,6 @@ import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Function;
 
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
