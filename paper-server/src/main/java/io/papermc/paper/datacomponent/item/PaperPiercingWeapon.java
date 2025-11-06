@@ -1,8 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Optional;
+import io.papermc.paper.util.ApiPreconditions;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -61,7 +61,6 @@ public record PaperPiercingWeapon(
             .orElse(null);
     }
 
-
     static final class BuilderImpl implements PiercingWeapon.Builder {
 
         private float minReach = 0.0F;
@@ -76,21 +75,21 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            Preconditions.checkArgument(minReach >= 0 && minReach <= 128, "minReach out of range (%s), must be in range [0,128]", minReach);
+            ApiPreconditions.validateFloatRange(minReach, 0, 128, "maxReach");
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            Preconditions.checkArgument(maxReach >= 0 && maxReach <= 128, "maxReach out of range (%s), must be in range [0,128]", maxReach);
+            ApiPreconditions.validateFloatRange(minReach, 0, 128, "maxReach");
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            Preconditions.checkArgument(hitboxMargin >= 0 && hitboxMargin <= 1, "hitboxMargin out of range (%s), must be in range [0,1]", hitboxMargin);
+            ApiPreconditions.validateFloatRange(hitboxMargin, 0, 1, "hitboxMargin");
             this.hitboxMargin = hitboxMargin;
             return this;
         }
