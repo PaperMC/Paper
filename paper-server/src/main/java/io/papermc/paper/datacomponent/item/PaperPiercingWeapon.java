@@ -2,7 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Optional;
-import io.papermc.paper.util.ApiPreconditions;
+import io.papermc.paper.util.MorePreconditions;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -75,21 +75,21 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            ApiPreconditions.validateFloatRange(minReach, 0, 128, "minReach");
+            MorePreconditions.validateFloatRange(minReach, 0, 128, "minReach");
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            ApiPreconditions.validateFloatRange(maxReach, 0, 128, "maxReach");
+            MorePreconditions.validateFloatRange(maxReach, 0, 128, "maxReach");
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            ApiPreconditions.validateFloatRange(hitboxMargin, 0, 1, "hitboxMargin");
+            MorePreconditions.validateFloatRange(hitboxMargin, 0, 1, "hitboxMargin");
             this.hitboxMargin = hitboxMargin;
             return this;
         }

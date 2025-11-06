@@ -5,8 +5,8 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @ApiStatus.Internal
-public final class ApiPreconditions {
-    private ApiPreconditions() {
+public final class MorePreconditions {
+    private MorePreconditions() {
     }
 
     public static void validateFloatRange(final float value, final float min, final float max, final String valueName) {
