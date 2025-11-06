@@ -1,9 +1,6 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import io.papermc.paper.util.Tick;
 import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -104,7 +101,7 @@ public class CraftWorldBorder implements WorldBorder {
     }
 
     @Override
-    public void getWarningTimeTicks(final long ticks) {
+    public void setWarningTimeTicks(final long ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks cannot be lower than 0");
 
         this.handle.setWarningTime(((int) ticks));
