@@ -76,21 +76,21 @@ public record PaperPiercingWeapon(
 
         @Override
         public PiercingWeapon.Builder minReach(final float minReach) {
-            Preconditions.checkArgument(minReach >= 0.0F, "minReach must be non-negative");
+            Preconditions.checkArgument(minReach >= 0 && minReach <= 128, "minReach out of range (%s), must be in range [0,128]", minReach);
             this.minReach = minReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder maxReach(final float maxReach) {
-            Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be non-negative");
+            Preconditions.checkArgument(maxReach >= 0 && maxReach <= 128, "maxReach out of range (%s), must be in range [0,128]", maxReach);
             this.maxReach = maxReach;
             return this;
         }
 
         @Override
         public PiercingWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be non-negative");
+            Preconditions.checkArgument(hitboxMargin >= 0 && hitboxMargin <= 1, "hitboxMargin out of range (%s), must be in range [0,1]", hitboxMargin);
             this.hitboxMargin = hitboxMargin;
             return this;
         }
