@@ -41,7 +41,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize) {
-        this.setSize(newSize, TimeUnit.MILLISECONDS, 0);
+        this.changeSize(newSize, 0);
     }
 
     @Override
@@ -115,6 +115,13 @@ public class CraftWorldBorder implements WorldBorder {
     @Override
     public long getWarningTimeTicks() {
         return this.handle.getWarningTime();
+    }
+
+    @Override
+    public void setWarningTime(final long ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks cannot be lower than 0");
+
+        this.handle.setWarningTime(((int) ticks));
     }
 
     @Override

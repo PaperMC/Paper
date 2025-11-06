@@ -161,6 +161,13 @@ public interface WorldBorder {
     /**
      * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
      *
+     * @param ticks The number of ticks.
+     */
+    void setWarningTime(long ticks);
+
+    /**
+     * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
+     *
      * @param unit The time unit.
      * @param time The time that causes the screen to be tinted red when a contracting border will reach.
      *
