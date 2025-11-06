@@ -1,6 +1,8 @@
 package org.bukkit;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.util.Tick;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,7 +77,10 @@ public interface WorldBorder {
      * @deprecated Use {@link #changeSize(double, long)} instead
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
-    void setSize(double newSize, @NotNull TimeUnit unit, long time);
+    default void setSize(double newSize, @NotNull TimeUnit unit, long time) {
+        Preconditions.checkArgument(unit != null, "TimeUnit cannot be null.");
+        this.changeSize(newSize, Tick.tick().fromDuration(Duration.of(time, unit.toChronoUnit())));
+    }
 
     /**
      * Gets the current border center.

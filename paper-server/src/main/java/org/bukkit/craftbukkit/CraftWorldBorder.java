@@ -58,20 +58,6 @@ public class CraftWorldBorder implements WorldBorder {
     }
 
     @Override
-    public void setSize(double newSize, TimeUnit unit, long time) {
-        Preconditions.checkArgument(unit != null, "TimeUnit cannot be null.");
-        Preconditions.checkArgument(time >= 0, "time cannot be lower than 0");
-        Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
-
-        if (time > 0L) {
-            final long startTime = (this.getWorld() != null) ? this.getWorld().getGameTime() : 0; // Virtual Borders don't have a World
-            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, Tick.tick().fromDuration(Duration.of(time, unit.toChronoUnit())), startTime);
-        } else {
-            this.handle.setSize(newSize);
-        }
-    }
-
-    @Override
     public Location getCenter() {
         double x = this.handle.getCenterX();
         double z = this.handle.getCenterZ();
