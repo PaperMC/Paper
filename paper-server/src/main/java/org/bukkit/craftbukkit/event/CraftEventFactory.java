@@ -2216,13 +2216,17 @@ public class CraftEventFactory {
     }
 
     public static <T> GameRuleSetResult<T> handleGameRuleSet(GameRule<@NotNull T> rule, T value, ServerLevel level, @Nullable CommandSender sender) {
-        final var event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(
-                level.getWorld(),
-                sender,
-                CraftGameRule.minecraftToBukkit(rule),
-                String.valueOf(value)
+        String valueStr = rule.serialize(value);
+        final var event = new io.papermc.paper.event.world.PaperWorldGameRuleChangeEvent(
+            level.getWorld(),
+            sender,
+            CraftGameRule.minecraftToBukkit(rule),
+            valueStr
         );
         if (event.callEvent()) {
+            if (!event.getValue().equals(valueStr)) {
+                value = rule.deserialize(event.getValue()).getOrThrow(); // should never throw value is checked in the event
+            }
             level.getGameRules().set(rule, value, level);
             return new GameRuleSetResult<>(value, false);
         } else {

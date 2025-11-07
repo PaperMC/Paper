@@ -16,7 +16,6 @@ import io.papermc.generator.rewriter.types.simple.CraftBlockDataMapping;
 import io.papermc.generator.rewriter.types.simple.CraftBlockEntityStateMapping;
 import io.papermc.generator.rewriter.types.simple.CraftPotionUtilRewriter;
 import io.papermc.generator.rewriter.types.simple.EntityTypeRewriter;
-import io.papermc.generator.rewriter.types.simple.GameRuleTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
@@ -51,6 +50,7 @@ import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
@@ -192,6 +192,14 @@ public final class Rewriters {
                     return keyedName;
                 }
             })
+            .register("GameRules", GameRules.class, new RegistryFieldRewriter<>(Registries.GAME_RULE, "getRule") {
+                @Override
+                protected String rewriteFieldType(Holder.Reference<net.minecraft.world.level.gamerules.GameRule<?>> reference) {
+                    return "%s<%s>".formatted(
+                        this.registryEntry.apiClass().getSimpleName(), this.importCollector.getShortName(reference.value().valueClass())
+                    );
+                }
+            })
             .register("DamageTypeTags", DamageTypeTags.class, new RegistryTagRewriter<>(Registries.DAMAGE_TYPE, DamageType.class))
             .register("MapCursorType", MapCursor.Type.class, new RegistryFieldRewriter<>(Registries.MAP_DECORATION_TYPE, "getType"))
             .register("Structure", Structure.class, new RegistryFieldRewriter<>(Registries.STRUCTURE, "getStructure"))
@@ -217,7 +225,6 @@ public final class Rewriters {
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            .register("GameRule", GameRule.class, new GameRuleTypeRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())

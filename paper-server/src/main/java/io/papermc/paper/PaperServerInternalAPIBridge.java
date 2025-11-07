@@ -113,7 +113,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, @Nullable Function<LEGACY, MODERN> fromLegacyToModern, @Nullable Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
+    public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
         return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
     }
 }

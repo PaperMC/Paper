@@ -2288,7 +2288,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2445,7 +2445,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2462,7 +2462,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public boolean getPVP();
@@ -2471,7 +2471,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Sets the PVP setting for this world.
      *
      * @param pvp True/False whether PVP should be Enabled.
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public void setPVP(boolean pvp);

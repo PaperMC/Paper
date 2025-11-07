@@ -8,13 +8,12 @@ import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
 @Normal
+@Deprecated
 public class GameRuleTest {
 
     @Test
     public void testBukkitRules() {
-        GameRule<?>[] rules = GameRule.values();
-
-        for (GameRule<?> rule : rules) {
+        for (GameRule<?> rule : Registry.GAME_RULE) {
             GameRule<?> registeredRule = GameRule.getByName(rule.getName());
             assertNotNull(registeredRule, "Null GameRule");
             assertEquals(rule, registeredRule, "Invalid GameRule equality");
@@ -23,7 +22,7 @@ public class GameRuleTest {
 
     @Test
     public void nullGameRuleName() {
-        assertThrows(NullPointerException.class, () -> GameRule.getByName(null));
+        assertThrows(IllegalArgumentException.class, () -> GameRule.getByName(null));
     }
 
     @Test

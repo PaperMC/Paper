@@ -7,7 +7,6 @@ import net.minecraft.core.registries.Registries;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
@@ -20,7 +19,7 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<net.minecraft.world.level.gamerules.GameRule<?>> bukkitToMinecraftHolder(GameRule<?> bukkit) {
+    public static <T> Holder<net.minecraft.world.level.gamerules.GameRule<T>> bukkitToMinecraftHolder(GameRule<T> bukkit) {
         return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
@@ -31,8 +30,9 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
         this.holder = (Holder) holder;
     }
 
-    public static <LEGACY, MODERN> GameRule<LEGACY> wrap(GameRule<MODERN> rule, @Nullable Function<LEGACY, MODERN> fromLegacyToModern, @Nullable Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
-        return new LegacyGameRuleWrapper<>(bukkitToMinecraftHolder(rule), fromLegacyToModern, toLegacyFromModern, legacyClass);
+    @SuppressWarnings("unchecked")
+    public static <LEGACY, MODERN> GameRule<LEGACY> wrap(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
+        return new LegacyGameRuleWrapper<>(((CraftGameRule) rule).getHolder(), fromLegacyToModern, toLegacyFromModern, legacyClass);
     }
 
     @Override
@@ -82,23 +82,22 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     public static class LegacyGameRuleWrapper<LEGACY, MODERN> extends CraftGameRule<LEGACY> {
 
         private final Class<LEGACY> typeOverride;
-        private final @Nullable Function<LEGACY, MODERN> fromLegacyToModern;
-        private final @Nullable Function<MODERN, LEGACY> toLegacyFromModern;
+        private final Function<LEGACY, MODERN> fromLegacyToModern;
+        private final Function<MODERN, LEGACY> toLegacyFromModern;
 
-        public LegacyGameRuleWrapper(Holder<net.minecraft.world.level.gamerules.GameRule<?>> holder, @Nullable Function<LEGACY, MODERN> fromLegacyToModern, @Nullable Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> typeOverride) {
+        public LegacyGameRuleWrapper(Holder<net.minecraft.world.level.gamerules.GameRule<?>> holder, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> typeOverride) {
             super(holder);
             this.fromLegacyToModern = fromLegacyToModern;
             this.toLegacyFromModern = toLegacyFromModern;
             this.typeOverride = typeOverride;
         }
 
-
-        public @Nullable Function<LEGACY, MODERN> getFromLegacyToModern() {
-            return fromLegacyToModern;
+        public Function<LEGACY, MODERN> getFromLegacyToModern() {
+            return this.fromLegacyToModern;
         }
 
-        public @Nullable Function<MODERN, LEGACY> getToLegacyFromModern() {
-            return toLegacyFromModern;
+        public Function<MODERN, LEGACY> getToLegacyFromModern() {
+            return this.toLegacyFromModern;
         }
 
         @Override

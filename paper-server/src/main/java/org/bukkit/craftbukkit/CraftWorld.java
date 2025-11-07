@@ -1656,13 +1656,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (rule == null) {
             return null;
         }
-        GameRule<?> nms = CraftGameRule.bukkitToMinecraft(org.bukkit.GameRule.getByName(rule));
-        GameRules gameRules = this.getHandle().getGameRules();
-        if (!gameRules.rules.has(nms)) {
-            return "";
+
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+        if (bukkit == null) {
+            throw new IllegalArgumentException("Unknown gamerule: " + rule);
         }
 
-        return gameRules.getAsString(nms);
+        return this.getHandle().getGameRules().getAsString(CraftGameRule.bukkitToMinecraft(bukkit));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1671,12 +1671,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // No null values allowed
         if (rule == null || value == null) return false;
 
-        if (!this.isGameRule(rule)) return false;
-        // Paper start - Add WorldGameRuleChangeEvent
         org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+        if (bukkit == null) {
+            return false;
+        }
 
         GameRule nms = CraftGameRule.bukkitToMinecraft(bukkit);
-
+        if (!this.getHandle().getGameRules().rules.has(nms)) {
+            return false;
+        }
         return !CraftEventFactory.handleGameRuleSet(nms, nms.deserialize(value).getOrThrow(), this.getHandle(), null).cancelled();
     }
 
@@ -1692,15 +1695,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(rule != null, "String rule cannot be null");
         Preconditions.checkArgument(!rule.isEmpty(), "String rule cannot be empty");
 
-        GameRule<?> nms = CraftGameRule.bukkitToMinecraft(org.bukkit.GameRule.getByName(rule));
-        GameRules gameRules = this.getHandle().getGameRules();
-        return gameRules.rules.has(nms);
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+        if (bukkit == null) {
+            return false;
+        }
+
+        return this.getHandle().getGameRules().rules.has(CraftGameRule.bukkitToMinecraft(bukkit));
     }
 
     public static <T> T shimLegacyValue(T value, org.bukkit.GameRule<?> gameRule){
-        //noinspection all
+        //noinspection rawtypes unchecked
         if (gameRule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
-            //noinspection all
+            //noinspection unchecked
             return (T) legacyGameRuleWrapper.getToLegacyFromModern().apply(value);
         }
 
@@ -1727,10 +1733,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public <T> boolean setGameRule(org.bukkit.@NotNull GameRule<T> rule, @NotNull T newValue) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
         Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
+
         GameRule<@NotNull T> nms = CraftGameRule.bukkitToMinecraft(rule);
         if (!this.getHandle().getGameRules().rules.has(nms)) {
             return false;
         }
+
         if (rule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
             newValue = (T) legacyGameRuleWrapper.getFromLegacyToModern().apply(newValue);
         }
