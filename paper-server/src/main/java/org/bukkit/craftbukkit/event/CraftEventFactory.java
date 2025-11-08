@@ -1630,6 +1630,8 @@ public class CraftEventFactory {
             case TIME_SINCE_REST:
             case AVIATE_ONE_CM:
             case STRIDER_ONE_CM:
+            case HAPPY_GHAST_ONE_CM:
+            case NAUTILUS_ONE_CM:
                 // Do not process event for these - too spammy
                 return null;
             default:
