@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
+import com.mojang.serialization.DataResult;
 import io.papermc.paper.util.Holderable;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -10,6 +12,10 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
+
+    public static final BiFunction<String, DataResult.Error<?>, IllegalArgumentException> INVALID_VALUE = (value, error) -> {
+        return new IllegalArgumentException("Invalid value: %s (%s)".formatted(value, error.message()));
+    };
 
     public static <T> GameRule<T> minecraftToBukkit(net.minecraft.world.level.gamerules.GameRule<T> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.GAME_RULE);

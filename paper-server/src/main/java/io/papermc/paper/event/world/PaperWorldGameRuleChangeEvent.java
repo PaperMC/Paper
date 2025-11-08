@@ -17,7 +17,7 @@ public class PaperWorldGameRuleChangeEvent extends WorldGameRuleChangeEvent {
     @Override
     public void setValue(final String value) {
         ((CraftGameRule<?>) this.gameRule).getHandle().deserialize(value).ifError(error -> {
-            throw new IllegalArgumentException("Invalid value: %s (%s)".formatted(value, error.message()));
+            throw CraftGameRule.INVALID_VALUE.apply(value, error);
         });
         super.setValue(value);
     }
