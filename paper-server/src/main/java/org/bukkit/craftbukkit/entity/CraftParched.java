@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.monster.Parched;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Skeleton;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftParched extends CraftAbstractSkeleton implements org.bukkit.entity.Parched {
     public CraftParched(final CraftServer server, final Parched entity) {
@@ -16,7 +15,7 @@ public class CraftParched extends CraftAbstractSkeleton implements org.bukkit.en
     }
 
     @Override
-    public Skeleton.@NotNull SkeletonType getSkeletonType() {
+    public Skeleton.SkeletonType getSkeletonType() {
         return Skeleton.SkeletonType.PARCHED;
     }
 }

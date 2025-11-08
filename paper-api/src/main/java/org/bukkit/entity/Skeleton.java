@@ -76,7 +76,7 @@ public interface Skeleton extends AbstractSkeleton {
          */
         BOGGED,
         /**
-         * Parched skeleton
+         * Parched skeleton.
          */
         PARCHED;
     }
