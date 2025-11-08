@@ -47,7 +47,7 @@ import net.minecraft.world.entity.animal.CatVariants;
 import net.minecraft.world.entity.animal.ChickenVariants;
 import net.minecraft.world.entity.animal.CowVariants;
 import net.minecraft.world.entity.animal.PigVariants;
-import net.minecraft.world.entity.animal.ZombieNautilusVariant;
+import net.minecraft.world.entity.animal.ZombieNautilusVariants;
 import net.minecraft.world.entity.animal.frog.FrogVariants;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.animal.wolf.WolfVariants;
@@ -191,7 +191,7 @@ public final class RegistryEntries {
         entry(Registries.CHICKEN_VARIANT, ChickenVariants.class, Chicken.Variant.class).writableApiRegistryBuilder(ChickenVariantRegistryEntry.Builder.class, "PaperChickenVariantRegistryEntry.PaperBuilder"),
         entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class).writableApiRegistryBuilder(CowVariantRegistryEntry.Builder.class, "PaperCowVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
-        entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariant.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
+        entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
     );
 
