@@ -1,6 +1,5 @@
 package org.bukkit.entity;
 
-import org.bukkit.GameRule;
 import org.bukkit.GameRules;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;

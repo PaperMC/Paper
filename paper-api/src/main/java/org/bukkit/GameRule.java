@@ -42,7 +42,7 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      * @deprecated renamed to {@link GameRules#PLAYER_MOVEMENT_CHECK} (inverted)
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
-    public static final GameRule<Boolean> DISABLE_PLAYER_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.PLAYER_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
+    public static final GameRule<Boolean> DISABLE_PLAYER_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.PLAYER_MOVEMENT_CHECK, inverseBool(), inverseBool(), Boolean.class);
     /**
      * Whether the server should skip checking player speed when the player is
      * wearing elytra.
@@ -50,7 +50,7 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      * @deprecated renamed to {@link GameRules#ELYTRA_MOVEMENT_CHECK} (inverted)
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
-    public static final GameRule<Boolean> DISABLE_ELYTRA_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.ELYTRA_MOVEMENT_CHECK, inverseBool(),  inverseBool(), Boolean.class);
+    public static final GameRule<Boolean> DISABLE_ELYTRA_MOVEMENT_CHECK = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.ELYTRA_MOVEMENT_CHECK, inverseBool(), inverseBool(), Boolean.class);
     /**
      * Whether time progresses from the current moment.
      *
@@ -320,7 +320,7 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
      * @deprecated use {@link GameRules#FIRE_SPREAD_RADIUS_AROUND_PLAYER}
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
-    public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? 128 : 0, (value) -> value != 0, Boolean.class);
+    public static final GameRule<Boolean> ALLOW_FIRE_TICKS_AWAY_FROM_PLAYER = InternalAPIBridge.get().legacyGameRuleBridge(GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER, (value) -> value ? -1 : 128, (value) -> value == -1, Boolean.class);
     /**
      * Whether primed tnt explodes.
      *

@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
 
-    public static GameRule<?> minecraftToBukkit(net.minecraft.world.level.gamerules.GameRule minecraft) {
+    public static <T> GameRule<T> minecraftToBukkit(net.minecraft.world.level.gamerules.GameRule<T> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.GAME_RULE);
     }
 

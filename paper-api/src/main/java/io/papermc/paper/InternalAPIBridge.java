@@ -99,6 +99,5 @@ public interface InternalAPIBridge {
 
     Component defaultMannequinDescription();
 
-    <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, @Nullable Function<LEGACY, MODERN> fromLegacyToModern, @Nullable Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+    <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
 }
-
