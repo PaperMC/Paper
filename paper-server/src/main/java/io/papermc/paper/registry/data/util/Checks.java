@@ -71,6 +71,10 @@ public final class Checks {
         return value;
     }
 
+    public static float asArgumentRange(final float value, final String field, final float min, final float max) {
+        return asArgumentMinExclusive(value, field, min, max);
+    }
+
     public static float asArgumentMinExclusive(final float value, final String field, final float min) {
         if (!(Float.compare(value, min) > 0)) {
             throw new IllegalArgumentException("argument " + field + " must be (" + min + ",+inf]");
