@@ -6,6 +6,9 @@ import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
+
 public record NumberRangeDialogInputImpl(
     String key,
     int width,
@@ -38,8 +41,7 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl width(final int width) {
-            Preconditions.checkArgument(width >= 1 && width <= 1024, "width must be between 1 and 1024");
-            this.width = width;
+            this.width = asArgumentRange(width, "width", 1, 1024);
             return this;
         }
 
@@ -51,17 +53,13 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
-            if (initial != null) {
-                Preconditions.checkArgument(initial >= this.start && initial <= this.end, "initial must be within the range");
-            }
-            this.initial = initial;
+            this.initial = (initial == null ? null : asArgumentRange(initial, "initial", this.start, this.end));
             return this;
         }
 
         @Override
         public BuilderImpl step(final @Nullable Float step) {
-            Preconditions.checkArgument(step == null || step > 0, "step must be null or greater than 0");
-            this.step = step;
+            this.step = (step == null ? null : asArgumentPositive(step, "step"));
             return this;
         }
 
