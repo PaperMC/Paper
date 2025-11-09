@@ -17,6 +17,8 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+
 public record PaperItemTool(
     net.minecraft.world.item.component.Tool impl
 ) implements Tool, Handleable<net.minecraft.world.item.component.Tool> {
@@ -57,8 +59,7 @@ public record PaperItemTool(
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-            Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive");
-            return new PaperRule(blocks, speed, correctForDrops);
+            return new PaperRule(blocks, (speed == null) ? null : asArgumentPositive(speed, "speed"), correctForDrops);
         }
     }
 

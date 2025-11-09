@@ -9,12 +9,13 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import java.util.Optional;
-import io.papermc.paper.util.MorePreconditions;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -73,15 +74,13 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder blockDelaySeconds(final float delay) {
-            MorePreconditions.validateFloatNonNegative(delay, "delay");
-            this.blockDelaySeconds = delay;
+            this.blockDelaySeconds = asArgumentNonNegative(delay, "delay");
             return this;
         }
 
         @Override
         public Builder disableCooldownScale(final float scale) {
-            MorePreconditions.validateFloatNonNegative(scale, "scale");
-            this.disableCooldownScale = scale;
+            this.disableCooldownScale = asArgumentNonNegative(scale, "scale");
             return this;
         }
 
