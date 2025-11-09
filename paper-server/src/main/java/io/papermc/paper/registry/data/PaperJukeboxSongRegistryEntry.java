@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMinExclusive;
+import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
 import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
@@ -98,7 +98,7 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
         @Override
         public JukeboxSongRegistryEntry.Builder lengthInSeconds(final @Positive float lengthInSeconds) {
-            this.lengthInSeconds = asArgumentMinExclusive(lengthInSeconds, "lengthInSeconds", 0);
+            this.lengthInSeconds = asArgumentPositive(lengthInSeconds, "lengthInSeconds");
             return this;
         }
 
