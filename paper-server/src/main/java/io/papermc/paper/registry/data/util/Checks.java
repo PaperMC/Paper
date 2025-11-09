@@ -58,35 +58,35 @@ public final class Checks {
     }
 
     public static float asArgumentNonNegative(final float value, final String field) {
-        if (!(Float.compare(value, 0.0F) > 0 && Float.compare(value, Float.MAX_VALUE) <= 0)) {
-            throw new IllegalArgumentException("argument " + field + " must be non-negative");
+        if (Float.compare(value, 0.0F) > 0 && Float.compare(value, Float.MAX_VALUE) <= 0) {
+            return value;
         }
-        return value;
+        throw new IllegalArgumentException("argument " + field + " must be non-negative");
     }
 
     public static float asArgumentPositive(final float value, final String field) {
-        if (!(Float.compare(value, 0.0F) >= 0 && Float.compare(value, Float.MAX_VALUE) <= 0)) {
-            throw new IllegalArgumentException("argument " + field + " must be positive");
+        if (Float.compare(value, 0.0F) >= 0 && Float.compare(value, Float.MAX_VALUE) <= 0) {
+            return value;
         }
-        return value;
+        throw new IllegalArgumentException("argument " + field + " must be positive");
     }
 
     public static float asArgumentRange(final float value, final String field, final float min, final float max) {
         return asArgumentMinExclusive(value, field, min, max);
     }
 
-    public static float asArgumentMinExclusive(final float value, final String field, final float min) {
-        if (!(Float.compare(value, min) > 0)) {
-            throw new IllegalArgumentException("argument " + field + " must be (" + min + ",+inf]");
+    public static float asArgumentMinExclusive(final float value, final String field, final float min, final float max) {
+        if (Float.compare(value, min) > 0 && Float.compare(value, max) <= 0) {
+            return value;
         }
-        return value;
+        throw new IllegalArgumentException("argument " + field + " must be (" + min + "," + max +"]");
     }
 
-    public static float asArgumentMinExclusive(final float value, final String field, final float min, final float max) {
-        if (!(Float.compare(value, min) > 0 && Float.compare(value, max) <= 0)) {
-            throw new IllegalArgumentException("argument " + field + " must be (" + min + "," + max +"]");
+    public static float asArgumentMinInclusive(final float value, final String field, final float min, final float max) {
+        if (Float.compare(value, min) >= 0 && Float.compare(value, max) <= 0) {
+            return value;
         }
-        return value;
+        throw new IllegalArgumentException("argument " + field + " must be (" + min + "," + max +"]");
     }
 
     private Checks() {
