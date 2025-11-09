@@ -6,6 +6,7 @@ import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgumentMinInclusive;
 import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
 import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 
@@ -53,7 +54,7 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
-            this.initial = (initial == null ? null : asArgumentRange(initial, "initial", this.start, this.end));
+            this.initial = (initial == null ? null : asArgumentMinInclusive(initial, "initial", this.start, this.end));
             return this;
         }
 
