@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
@@ -17,6 +16,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
 import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
 
 public record PaperItemTool(
@@ -72,8 +72,7 @@ public record PaperItemTool(
 
         @Override
         public Builder damagePerBlock(final int damage) {
-            Preconditions.checkArgument(damage >= 0, "damage must be non-negative, was %s", damage);
-            this.damage = damage;
+            this.damage = asArgumentNonNegative(damage, "damage");
             return this;
         }
 
