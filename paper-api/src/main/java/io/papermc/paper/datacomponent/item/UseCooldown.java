@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
@@ -23,7 +24,7 @@ public interface UseCooldown {
      * @return builder
      */
     @Contract(value = "_ -> new", pure = true)
-    static UseCooldown.Builder useCooldown(final float seconds) {
+    static UseCooldown.Builder useCooldown(@Positive final float seconds) {
         return ItemComponentTypesBridge.bridge().useCooldown(seconds);
     }
 
@@ -33,6 +34,7 @@ public interface UseCooldown {
      * @return cooldown seconds
      */
     @Contract(pure = true)
+    @Positive
     float seconds();
 
     /**
