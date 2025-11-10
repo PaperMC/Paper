@@ -3613,7 +3613,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param firework The {@link Material#FIREWORK_ROCKET} to boost the player with
      * @return The {@link Firework} boosting the Player or null if the spawning of the entity was cancelled
-     * @throws IllegalArgumentException if the {@code firework} isn't a {@link Material#FIREWORK_ROCKET}
      * @throws IllegalStateException if {@link #isGliding()} is false
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
      * check if the player is gliding or not.
