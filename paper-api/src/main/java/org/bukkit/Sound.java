@@ -3267,6 +3267,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_ZOMBIE_HORSE_DEATH = getSound("entity.zombie_horse.death");
 
+    Sound ENTITY_ZOMBIE_HORSE_EAT = getSound("entity.zombie_horse.eat");
+
     Sound ENTITY_ZOMBIE_HORSE_HURT = getSound("entity.zombie_horse.hurt");
 
     Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT = getSound("entity.zombie_nautilus.ambient");

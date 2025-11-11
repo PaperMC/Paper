@@ -11380,6 +11380,13 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_ZOMBIE_HORSE_DEATH = create(key("entity.zombie_horse.death"));
 
     /**
+     * {@code minecraft:entity.zombie_horse.eat}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_HORSE_EAT = create(key("entity.zombie_horse.eat"));
+
+    /**
      * {@code minecraft:entity.zombie_horse.hurt}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
