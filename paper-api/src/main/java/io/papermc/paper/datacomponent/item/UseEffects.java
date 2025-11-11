@@ -23,6 +23,9 @@ public interface UseEffects {
     boolean canSprint();
 
     @Contract(pure = true)
+    boolean interactVibrations();
+
+    @Contract(pure = true)
     float speedMultiplier();
 
     /**
@@ -41,6 +44,16 @@ public interface UseEffects {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder canSprint(boolean canSprint);
+
+        /**
+         * Sets whether using the item generates interaction vibrations.
+         *
+         * @param interactVibrations true to generate vibrations
+         * @return the builder for chaining
+         * @see #interactVibrations()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder interactVibrations(boolean interactVibrations);
 
         /**
          * Sets the speed multiplier while using the item.

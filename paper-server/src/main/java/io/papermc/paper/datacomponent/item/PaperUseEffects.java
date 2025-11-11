@@ -18,6 +18,11 @@ public record PaperUseEffects(
     }
 
     @Override
+    public boolean interactVibrations() {
+        return this.impl.interactVibrations();
+    }
+
+    @Override
     public float speedMultiplier() {
         return this.impl.speedMultiplier();
     }
@@ -25,11 +30,18 @@ public record PaperUseEffects(
     static final class BuilderImpl implements UseEffects.Builder {
 
         private boolean canSprint = net.minecraft.world.item.component.UseEffects.DEFAULT.canSprint();
+        private boolean interactVibrations = net.minecraft.world.item.component.UseEffects.DEFAULT.interactVibrations();
         private float speedMultiplier = net.minecraft.world.item.component.UseEffects.DEFAULT.speedMultiplier();
 
         @Override
         public UseEffects.Builder canSprint(final boolean canSprint) {
             this.canSprint = canSprint;
+            return this;
+        }
+
+        @Override
+        public UseEffects.Builder interactVibrations(final boolean interactVibrations) {
+            this.interactVibrations = interactVibrations;
             return this;
         }
 
@@ -45,6 +57,7 @@ public record PaperUseEffects(
             return new PaperUseEffects(
                 new net.minecraft.world.item.component.UseEffects(
                     this.canSprint,
+                    this.interactVibrations,
                     this.speedMultiplier
                 )
             );

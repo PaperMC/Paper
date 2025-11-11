@@ -11,18 +11,20 @@ import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundHorseScreenOpenPacket;
+import net.minecraft.network.protocol.game.ClientboundMountScreenOpenPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.HorseInventoryMenu;
+import net.minecraft.world.inventory.AbstractMountInventoryMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -473,14 +475,23 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
         if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
         if (!player.isImmobile()) {
-            if (container instanceof HorseInventoryMenu horse) {
-                player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
+            if (container instanceof AbstractMountInventoryMenu mountMenu) {
+                player.connection.send(new ClientboundMountScreenOpenPacket(mountMenu.containerId, getMountInventoryColumns(mountMenu), mountMenu.mount.getId()));
             } else {
                 player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title)));
             }
         }
         player.containerMenu = container;
         player.initMenu(container);
+    }
+
+    private static int getMountInventoryColumns(final AbstractMountInventoryMenu mountMenu) {
+        if (mountMenu.mount instanceof AbstractHorse horse) {
+            return horse.getInventoryColumns();
+        } else if (mountMenu.mount instanceof AbstractNautilus nautilus) {
+            return nautilus.getInventoryColumns();
+        }
+        throw new UnsupportedOperationException("Cannot get inventory columns for " + mountMenu.mount.getType().getDescriptionId());
     }
 
     @Override
