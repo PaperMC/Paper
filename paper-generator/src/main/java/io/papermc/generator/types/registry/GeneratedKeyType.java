@@ -24,11 +24,9 @@ import java.util.function.Supplier;
 import javax.lang.model.SourceVersion;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.level.gamerules.GameRule;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -51,7 +49,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
         super(entry.keyClassName().concat("Keys"), packageName);
         this.entry = entry;
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(entry.registry()));
-        this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(entry.registryKey()) || entry.registryKey().equals(Registries.GAME_RULE); // TODO: GAME RULE SUCKS - SNAPSHOT
+        this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(entry.registryKey());
     }
 
     private MethodSpec.Builder createMethod(TypeName returnType) {
@@ -133,14 +131,6 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
 
     protected @Nullable SingleFlagHolder getRequiredFeature(Holder.Reference<T> reference) {
         if (this.isFilteredRegistry) {
-            // TODO: GAME RULE SUCKS - SNAPSHOT
-            if (reference.value() instanceof GameRule<?> gameRule) {
-                if (FeatureFlags.isExperimental(gameRule.requiredFeatures())) {
-                    return SingleFlagHolder.fromSet(gameRule.requiredFeatures());
-                }
-                return null;
-            }
-            // TODO: GAME RULE SUCKS - SNAPSHOT
             // built-in registry
             FeatureElement element = (FeatureElement) reference.value();
             if (FeatureFlags.isExperimental(element.requiredFeatures())) {

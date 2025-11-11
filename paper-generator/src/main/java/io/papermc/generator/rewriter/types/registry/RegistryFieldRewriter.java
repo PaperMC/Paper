@@ -20,11 +20,9 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.level.gamerules.GameRule;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -49,7 +47,7 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
 
     public RegistryFieldRewriter(ResourceKey<? extends Registry<T>> registryKey, @Nullable String fetchMethod) {
         this.registryEntry = RegistryEntries.byRegistryKey(registryKey);
-        this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(registryKey) || registryKey.equals(Registries.GAME_RULE); // TODO: GAME RULE SUCKS - SNAPSHOT
+        this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(registryKey);
         this.fetchMethod = fetchMethod;
     }
 
@@ -129,15 +127,6 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
 
     protected @Nullable SingleFlagHolder getRequiredFeature(Holder.Reference<T> reference) {
         if (this.isFilteredRegistry) {
-            // TODO: GAME RULE SUCKS - SNAPSHOT
-            if (reference.value() instanceof GameRule<?> gameRule) {
-                if (FeatureFlags.isExperimental(gameRule.requiredFeatures())) {
-                    return SingleFlagHolder.fromSet(gameRule.requiredFeatures());
-                }
-                return null;
-            }
-            // TODO: GAME RULE SUCKS - SNAPSHOT
-
             // built-in registry
             FeatureElement element = (FeatureElement) reference.value();
             if (FeatureFlags.isExperimental(element.requiredFeatures())) {
