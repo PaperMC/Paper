@@ -1,4 +1,6 @@
 package org.bukkit.entity;
 
-public interface AbstractNautilus extends Animals, Tameable {
+import org.bukkit.inventory.InventoryHolder;
+
+public interface AbstractNautilus extends Animals, InventoryHolder, Tameable {
 }
