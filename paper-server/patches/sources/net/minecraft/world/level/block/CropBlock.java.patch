@@ -5,7 +5,7 @@
              if (age < this.getMaxAge()) {
                  float growthSpeed = getGrowthSpeed(this, level, pos);
 -                if (random.nextInt((int)(25.0F / growthSpeed) + 1) == 0) {
--                    level.setBlock(pos, this.getStateForAge(age + 1), 2);
+-                    level.setBlock(pos, this.getStateForAge(age + 1), Block.UPDATE_CLIENTS);
 +                // Spigot start
 +                int modifier = 100;
 +                if (this == Blocks.BEETROOTS) {
@@ -32,7 +32,7 @@
  
      public void growCrops(Level level, BlockPos pos, BlockState state) {
          int min = Math.min(this.getMaxAge(), this.getAge(state) + this.getBonemealAgeIncrease(level));
--        level.setBlock(pos, this.getStateForAge(min), 2);
+-        level.setBlock(pos, this.getStateForAge(min), Block.UPDATE_CLIENTS);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, this.getStateForAge(min), 2); // CraftBukkit
      }
  
@@ -40,7 +40,7 @@
 @@ -151,7 +_,8 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
 -        if (level instanceof ServerLevel serverLevel && entity instanceof Ravager && serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
 +        if (level instanceof ServerLevel serverLevel && entity instanceof Ravager && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
