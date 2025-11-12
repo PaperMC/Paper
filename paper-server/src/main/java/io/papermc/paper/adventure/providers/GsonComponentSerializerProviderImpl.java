@@ -1,6 +1,7 @@
 package io.papermc.paper.adventure.providers;
 
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.json.JSONOptions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
@@ -19,7 +20,7 @@ public class GsonComponentSerializerProviderImpl implements GsonComponentSeriali
     public @NotNull GsonComponentSerializer gsonLegacy() {
         return GsonComponentSerializer.builder()
             .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
-            .downsampleColors()
+            .editOptions(editor -> editor.value(JSONOptions.EMIT_RGB, false))
             .build();
     }
 

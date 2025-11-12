@@ -129,7 +129,7 @@ public final class EntityCommand implements PaperSubcommand {
                         final int z = (e.getKey().z << 4) + 8;
                         final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
                             .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
+                            .clickEvent(ClickEvent.runCommand("/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
                         sender.sendMessage(message);
                     });
             } else {
