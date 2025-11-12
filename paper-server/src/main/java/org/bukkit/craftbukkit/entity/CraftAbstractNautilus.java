@@ -5,7 +5,6 @@ import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftSaddledInventory;
 import org.bukkit.inventory.Inventory;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftAbstractNautilus extends CraftTameableAnimal implements org.bukkit.entity.AbstractNautilus {
     public CraftAbstractNautilus(final CraftServer server, final AbstractNautilus entity) {
@@ -18,7 +17,7 @@ public class CraftAbstractNautilus extends CraftTameableAnimal implements org.bu
     }
 
     @Override
-    public @NotNull Inventory getInventory() {
+    public Inventory getInventory() {
         return new CraftSaddledInventory(
             getHandle().inventory,
             this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
