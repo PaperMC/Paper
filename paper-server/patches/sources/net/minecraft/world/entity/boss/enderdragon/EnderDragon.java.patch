@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
-@@ -88,6 +_,10 @@
+@@ -89,6 +_,10 @@
      private final Node[] nodes = new Node[24];
      private final int[] nodeAdjacency = new int[24];
      private final BinaryHeap openSet = new BinaryHeap();
@@ -9,9 +9,9 @@
 +    @Nullable private BlockPos podium;
 +    // Paper end
  
-     public EnderDragon(EntityType<? extends EnderDragon> entityType, Level level) {
+     public EnderDragon(EntityType<? extends EnderDragon> type, Level level) {
          super(EntityType.ENDER_DRAGON, level);
-@@ -103,6 +_,7 @@
+@@ -104,6 +_,7 @@
          this.setHealth(this.getMaxHealth());
          this.noPhysics = true;
          this.phaseManager = new EnderDragonPhaseManager(this);
@@ -19,7 +19,7 @@
      }
  
      public void setDragonFight(EndDragonFight dragonFight) {
-@@ -121,6 +_,19 @@
+@@ -122,6 +_,19 @@
          return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.CAMERA_DISTANCE, 16.0);
      }
  
@@ -39,7 +39,7 @@
      @Override
      public boolean isFlapping() {
          float cos = Mth.cos(this.flapTime * (float) (Math.PI * 2));
-@@ -212,7 +_,7 @@
+@@ -213,7 +_,7 @@
                      }
  
                      Vec3 flyTargetLocation = currentPhase.getFlyTargetLocation();
@@ -48,7 +48,7 @@
                          double d = flyTargetLocation.x - this.getX();
                          double d1 = flyTargetLocation.y - this.getY();
                          double d2 = flyTargetLocation.z - this.getZ();
-@@ -367,7 +_,12 @@
+@@ -368,7 +_,12 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
@@ -62,7 +62,7 @@
              }
          }
  
-@@ -397,7 +_,7 @@
+@@ -398,7 +_,7 @@
                  double d2 = entity.getX() - d;
                  double d3 = entity.getZ() - d1;
                  double max = Math.max(d2 * d2 + d3 * d3, 0.1);
@@ -71,7 +71,7 @@
                  if (!this.phaseManager.getCurrentPhase().isSitting() && livingEntity.getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      DamageSource damageSource = this.damageSources().mobAttack(this);
                      entity.hurtServer(level, damageSource, 5.0F);
-@@ -430,6 +_,7 @@
+@@ -431,6 +_,7 @@
          int floor5 = Mth.floor(box.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -79,7 +79,7 @@
  
          for (int i = floor; i <= floor3; i++) {
              for (int i1 = floor1; i1 <= floor4; i1++) {
-@@ -438,7 +_,11 @@
+@@ -439,7 +_,11 @@
                      BlockState blockState = level.getBlockState(blockPos);
                      if (!blockState.isAir() && !blockState.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !blockState.is(BlockTags.DRAGON_IMMUNE)) {
@@ -92,7 +92,7 @@
                          } else {
                              flag = true;
                          }
-@@ -447,6 +_,58 @@
+@@ -448,6 +_,58 @@
              }
          }
  
@@ -151,7 +151,7 @@
          if (flag1) {
              BlockPos blockPos1 = new BlockPos(
                  floor + this.random.nextInt(floor3 - floor + 1),
-@@ -504,7 +_,15 @@
+@@ -505,7 +_,15 @@
  
      @Override
      public void kill(ServerLevel level) {
@@ -168,7 +168,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -526,18 +_,41 @@
+@@ -527,18 +_,41 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + f, this.getY() + 2.0 + f1, this.getZ() + f2, 0.0, 0.0, 0.0);
          }
  
@@ -190,7 +190,7 @@
              }
  
              if (this.dragonDeathTime == 1 && !this.isSilent()) {
--                serverLevel.globalLevelEvent(1028, this.blockPosition(), 0);
+-                serverLevel.globalLevelEvent(LevelEvent.SOUND_DRAGON_DEATH, this.blockPosition(), 0);
 +                // CraftBukkit start - Use relative location for far away sounds
 +                // serverLevel.globalLevelEvent(1028, this.blockPosition(), 0);
 +                int viewDistance = serverLevel.getCraftServer().getViewDistance() * 16;
@@ -213,7 +213,7 @@
              }
          }
  
-@@ -550,15 +_,15 @@
+@@ -551,15 +_,15 @@
          }
  
          if (this.dragonDeathTime == 200 && this.level() instanceof ServerLevel serverLevel1) {
@@ -232,7 +232,7 @@
              this.gameEvent(GameEvent.ENTITY_DIE);
          }
      }
-@@ -740,6 +_,7 @@
+@@ -741,6 +_,7 @@
          super.addAdditionalSaveData(output);
          output.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          output.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -240,7 +240,7 @@
      }
  
      @Override
-@@ -747,6 +_,7 @@
+@@ -748,6 +_,7 @@
          super.readAdditionalSaveData(input);
          input.getInt("DragonPhase").ifPresent(integer -> this.phaseManager.setPhase(EnderDragonPhase.getById(integer)));
          this.dragonDeathTime = input.getIntOr("DragonDeathTime", 0);
@@ -248,7 +248,7 @@
      }
  
      @Override
-@@ -787,7 +_,7 @@
+@@ -788,7 +_,7 @@
          EnderDragonPhase<? extends DragonPhaseInstance> phase = currentPhase.getPhase();
          Vec3 viewVector;
          if (phase == EnderDragonPhase.LANDING || phase == EnderDragonPhase.TAKEOFF) {
@@ -257,7 +257,7 @@
              float max = Math.max((float)Math.sqrt(heightmapPos.distToCenterSqr(this.position())) / 4.0F, 1.0F);
              float f = 6.0F / max;
              float xRot = this.getXRot();
-@@ -875,4 +_,19 @@
+@@ -876,4 +_,19 @@
      protected float sanitizeScale(float scale) {
          return 1.0F;
      }

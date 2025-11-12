@@ -7,7 +7,7 @@ Inline bit operations and reduce instruction count to make these hot
 operations faster
 
 diff --git a/net/minecraft/core/BlockPos.java b/net/minecraft/core/BlockPos.java
-index ab4e5240411b321a2af0861a1f40f57495c425cc..46538c243c5a9b95bb859a1fcc9a37f05ef11daf 100644
+index eb3b7b71fefd1e4db9766ad926ece7a13d1143f6..5083959b61ec88868c0ede65a46087608e22983a 100644
 --- a/net/minecraft/core/BlockPos.java
 +++ b/net/minecraft/core/BlockPos.java
 @@ -52,15 +52,17 @@ public class BlockPos extends Vec3i {
@@ -84,7 +84,7 @@ index ab4e5240411b321a2af0861a1f40f57495c425cc..46538c243c5a9b95bb859a1fcc9a37f0
  
      public static long getFlatIndex(long packedPos) {
 diff --git a/net/minecraft/core/SectionPos.java b/net/minecraft/core/SectionPos.java
-index f351cea4d1bf831e1c21a1d3aef0aebabe9b7f30..f18b3cb63ec1f6a63d3706a8776fb905407e9681 100644
+index a31e7af294d574c2c9711de75d33022ed86984c4..7a9889333d6a82a58731a54c612bddfaa1a3ec6a 100644
 --- a/net/minecraft/core/SectionPos.java
 +++ b/net/minecraft/core/SectionPos.java
 @@ -42,7 +42,7 @@ public class SectionPos extends Vec3i {
@@ -161,14 +161,14 @@ index f351cea4d1bf831e1c21a1d3aef0aebabe9b7f30..f18b3cb63ec1f6a63d3706a8776fb905
 @@ -181,7 +186,7 @@ public class SectionPos extends Vec3i {
      }
  
-     public static long blockToSection(long levelPos) {
--        return asLong(blockToSectionCoord(BlockPos.getX(levelPos)), blockToSectionCoord(BlockPos.getY(levelPos)), blockToSectionCoord(BlockPos.getZ(levelPos)));
-+        return (((long) (int) (levelPos >> 42) & 4194303L) << 42) | (((long) (int) ((levelPos << 52) >> 56) & 1048575L)) | (((long) (int) ((levelPos << 26) >> 42) & 4194303L) << 20); // Simplify to reduce instruction count
+     public static long blockToSection(long pos) {
+-        return asLong(blockToSectionCoord(BlockPos.getX(pos)), blockToSectionCoord(BlockPos.getY(pos)), blockToSectionCoord(BlockPos.getZ(pos)));
++        return (((long) (int) (pos >> 42) & 4194303L) << 42) | (((long) (int) ((pos << 52) >> 56) & 1048575L)) | (((long) (int) ((pos << 26) >> 42) & 4194303L) << 20); // Simplify to reduce instruction count
      }
  
      public static long getZeroNode(int x, int z) {
 @@ -213,15 +218,17 @@ public class SectionPos extends Vec3i {
-         return asLong(blockToSectionCoord(blockPos.getX()), blockToSectionCoord(blockPos.getY()), blockToSectionCoord(blockPos.getZ()));
+         return asLong(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
      }
  
 +    // Paper start

@@ -792,4 +792,9 @@ public class CraftBlockData implements BlockData {
         return this.state.isRandomlyTicking();
     }
     // Paper end - Block tick API
+
+    @Override
+    public boolean isReplaceable() {
+        return this.state.canBeReplaced();
+    }
 }
