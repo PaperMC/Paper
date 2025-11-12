@@ -2958,7 +2958,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void openBook(ItemStack book) {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
-        net.minecraft.world.item.ItemStack bookItem = CraftItemStack.unwrap(book);
+
+        net.minecraft.world.item.ItemStack bookItem = CraftItemStack.asNMSCopy(book);
         ServerPlayer serverPlayer = this.getHandle();
         net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, serverPlayer.createCommandSourceStack(), serverPlayer);
         sendBookOpen(bookItem);
