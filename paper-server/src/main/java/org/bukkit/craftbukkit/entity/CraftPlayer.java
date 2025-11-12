@@ -2958,23 +2958,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void openBook(ItemStack book) {
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
-
-        sendBookOpen(book);
+        
+        net.minecraft.world.item.ItemStack bookItem = CraftItemStack.unwrap(book);
+        ServerPlayer serverPlayer = this.getHandle();
+        net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, serverPlayer.createCommandSourceStack(), serverPlayer);
+        sendBookOpen(bookItem);
     }
 
     @Override
     public void openBook(final Book book) {
         final ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item
         mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()));
-        sendBookOpen(mutatedItem);
+        sendBookOpen(CraftItemStack.unwrap(mutatedItem));
     }
 
-    private void sendBookOpen(ItemStack bookItem) {
+    private void sendBookOpen(net.minecraft.world.item.ItemStack bookItem) {
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
         final int slot = this.getHandle().getInventory().getSelectedSlot();
         this.getHandle().connection.send(new ClientboundBundlePacket(
             List.of(
-                new ClientboundSetPlayerInventoryPacket(slot, CraftItemStack.unwrap(bookItem)),
+                new ClientboundSetPlayerInventoryPacket(slot, bookItem),
                 new ClientboundOpenBookPacket(InteractionHand.MAIN_HAND),
                 new ClientboundSetPlayerInventoryPacket(slot, selectedItem)
             )
