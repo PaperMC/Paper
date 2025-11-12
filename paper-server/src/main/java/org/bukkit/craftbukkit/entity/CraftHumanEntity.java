@@ -351,6 +351,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             this.getHandle().openMenu(menuProvider);
         } else if (inventory instanceof CraftInventorySaddledMount craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
             this.getHandle().openHorseInventory(horse.getHandle(), craft.getInventory());
+        } else if (inventory instanceof CraftInventorySaddledMount craft && craft.getInventory().getOwner() instanceof CraftAbstractNautilus nautilus) {
+            this.getHandle().openNautilusInventory(nautilus.getHandle(), craft.getInventory());
         } else {
             MenuType<?> container = CraftContainer.getNotchInventoryType(inventory);
             CraftHumanEntity.openCustomInventory(inventory, player, container);
