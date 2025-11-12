@@ -6,6 +6,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
+import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -14,17 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
-import io.papermc.paper.connection.PlayerConnection;
-import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -76,6 +75,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.PortalType;
 import org.bukkit.Statistic.Type;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -183,6 +183,7 @@ import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
@@ -238,6 +239,7 @@ import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerItemMendEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerRecipeBookClickEvent;
 import org.bukkit.event.player.PlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
@@ -245,6 +247,7 @@ import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
 import org.bukkit.event.raid.RaidFinishEvent;
 import org.bukkit.event.raid.RaidSpawnWaveEvent;
@@ -585,16 +588,6 @@ public class CraftEventFactory {
 
         org.bukkit.event.Cancellable event = null;
         if (entity instanceof net.minecraft.world.entity.LivingEntity && !(entity instanceof ServerPlayer)) {
-            boolean isAnimal = entity instanceof Animal || entity instanceof WaterAnimal || entity instanceof AbstractGolem;
-            boolean isMonster = entity instanceof Monster || entity instanceof Ghast || entity instanceof Slime;
-
-            if (spawnReason != SpawnReason.CUSTOM) {
-                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters()) {
-                    entity.discard(null); // Add Bukkit remove cause
-                    return false;
-                }
-            }
-
             event = CraftEventFactory.callCreatureSpawnEvent((net.minecraft.world.entity.LivingEntity) entity, spawnReason);
         } else if (entity instanceof ItemEntity) {
             event = CraftEventFactory.callItemSpawnEvent((ItemEntity) entity);
@@ -1540,8 +1533,8 @@ public class CraftEventFactory {
     }
 
     public static boolean handlePlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
-        if (!(leashed instanceof final Entity leashedEntity)) return false;
-        return callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).callEvent();
+        if (!(leashed instanceof final Entity leashedEntity)) return true;
+        return !callPlayerLeashEntityEvent(leashedEntity, leashHolder, player, hand).isCancelled();
     }
 
     public static @Nullable PlayerLeashEntityEvent callPlayerLeashEntityEvent(Leashable leashed, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
@@ -1942,6 +1935,71 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
+    }
+
+    public static @Nullable PortalEventResult handlePortalEvents(
+        Entity entity,
+        Location to,
+        PortalType type,
+        int searchRadius, int createRadius
+    ) {
+        final PortalEventResult result;
+        if (entity instanceof ServerPlayer player) {
+            final PlayerTeleportEvent.TeleportCause cause = switch (type) {
+                case PortalType.ENDER -> PlayerTeleportEvent.TeleportCause.END_PORTAL;
+                case PortalType.NETHER -> PlayerTeleportEvent.TeleportCause.NETHER_PORTAL;
+                case PortalType.END_GATEWAY -> PlayerTeleportEvent.TeleportCause.END_GATEWAY; // not actually used yet, the Player/EntityTeleportEndGatewayEvent is called instead
+                case PortalType.CUSTOM -> PlayerTeleportEvent.TeleportCause.PLUGIN;
+            };
+            result = callPlayerPortalEvent(player, to, cause, searchRadius, createRadius);
+        } else {
+            result = callEntityPortalEvent(entity, to, type, searchRadius, createRadius);
+        }
+        return result;
+    }
+
+    public static @Nullable PortalEventResult callPlayerPortalEvent(
+        ServerPlayer player,
+        Location to,
+        PlayerTeleportEvent.TeleportCause cause,
+        int searchRadius, int createRadius
+    ) {
+        Player bukkitPlayer = player.getBukkitEntity();
+        Location from = bukkitPlayer.getLocation();
+        PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
+        event.callEvent();
+        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
+            return null;
+        }
+
+        return new PortalEventResult(
+            event.getTo(),
+            event.getSearchRadius(),
+            event.getCreationRadius(),
+            event.getCanCreatePortal()
+        );
+    }
+
+    public static @Nullable PortalEventResult callEntityPortalEvent(
+        Entity entity,
+        Location to,
+        PortalType type,
+        int searchRadius, int createRadius
+    ) {
+        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+        Location from = bukkitEntity.getLocation();
+        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, from, to, searchRadius, true, createRadius, type);
+        event.callEvent();
+        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
+            return null;
+        }
+
+        return new PortalEventResult(
+            event.getTo(),
+            event.getSearchRadius(),
+            event.getCreationRadius(),
+            event.getCanCreatePortal()
+        );
     }
 
     public static boolean callEntityInteractEvent(Entity nmsEntity, Block block) {

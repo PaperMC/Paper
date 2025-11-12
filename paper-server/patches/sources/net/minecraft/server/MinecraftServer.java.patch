@@ -41,7 +41,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -278,10 +_,108 @@
+@@ -278,10 +_,109 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
@@ -81,6 +81,7 @@
 +    private long lastTickStart;
 +    private long currentTickStart;
 +    private long scheduledTickStart;
++    private long taskExecutionTime;
 +    private final Object statsLock = new Object();
 +    private @Nullable double[] tps;
 +    private @Nullable ca.spottedleaf.moonrise.common.time.TickData.MSPTData msptData5s;
@@ -630,7 +631,7 @@
          this.running = false;
          if (waitForShutdown) {
              try {
-@@ -730,6 +_,124 @@
+@@ -730,6 +_,118 @@
          }
      }
  
@@ -663,9 +664,11 @@
 +            0L,
 +            now,
 +            0L,
-+            false,
-+            true
++            this.taskExecutionTime,
++            0L,
++            false
 +        );
++        this.taskExecutionTime = 0L;
 +
 +        this.addTickTime(time);
 +    }
@@ -723,15 +726,7 @@
 +                final long now = Util.getNanos();
 +
 +                // record execution time
-+                this.addTickTime(
-+                    new ca.spottedleaf.moonrise.common.time.TickTime(
-+                        ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET, ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET,
-+                        start, 0L,
-+                        now, 0L,
-+                        false,
-+                        false
-+                    )
-+                );
++                this.taskExecutionTime += (now - start);
 +
 +                // wait for unpark or deadline
 +                final long toWait = deadline - now;

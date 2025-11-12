@@ -2675,11 +2675,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Sets the spawn flags for this.
+     * <p>Note that setting {@code false} for either only affects
+     * natural spawning. It doesn't affect spawn eggs, summon command, mobs
+     * spawned from structure generation, spawners, etc.</p>
      *
      * @param allowMonsters - if true, monsters are allowed to spawn in this
-     *     world.
+     *     world via natural spawning mechanisms.
      * @param allowAnimals - if true, animals are allowed to spawn in this
-     *     world.
+     *     world via natural spawning mechanisms.
      */
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 

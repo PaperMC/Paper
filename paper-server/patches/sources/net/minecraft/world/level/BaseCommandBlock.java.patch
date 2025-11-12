@@ -25,6 +25,18 @@
                      }
                  } catch (Throwable var8) {
                      CrashReport crashReport = CrashReport.forThrowable(var8, "Executing command block");
+@@ -133,9 +_,8 @@
+         }
+     }
+ 
+-    @Nullable
+-    private BaseCommandBlock.CloseableCommandBlockSource createSource() {
+-        return this.trackOutput ? new BaseCommandBlock.CloseableCommandBlockSource() : null;
++    public BaseCommandBlock.CloseableCommandBlockSource createSource() { // Paper - public, remove nullable
++        return new BaseCommandBlock.CloseableCommandBlockSource(this.trackOutput); // Paper - add back source when output disabled
+     }
+ 
+     public Component getName() {
 @@ -168,7 +_,7 @@
      }
  
@@ -34,7 +46,7 @@
              return InteractionResult.PASS;
          } else {
              if (player.level().isClientSide()) {
-@@ -185,7 +_,7 @@
+@@ -185,10 +_,21 @@
  
      public abstract boolean isValid();
  
@@ -43,10 +55,35 @@
          private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT);
          private boolean closed;
  
-@@ -207,6 +_,7 @@
++        // Paper start - add back source when output disabled
++        private final boolean trackOutput;
++        public CloseableCommandBlockSource(final boolean trackOutput) {
++            this.trackOutput = trackOutput;
++        }
++        @io.papermc.paper.annotation.DoNotUse @Deprecated
++        public CloseableCommandBlockSource() {
++            this(true);
++        }
++        // Paper end - add back source when output disabled
++
+         @Override
+         public boolean acceptsSuccess() {
+             return !this.closed && BaseCommandBlock.this.getLevel().getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK);
+@@ -196,7 +_,7 @@
+ 
+         @Override
+         public boolean acceptsFailure() {
+-            return !this.closed;
++            return this.trackOutput && !this.closed; // Paper - add back source when output disabled
+         }
+ 
+         @Override
+@@ -206,7 +_,8 @@
+ 
          @Override
          public void sendSystemMessage(Component message) {
-             if (!this.closed) {
+-            if (!this.closed) {
++            if (this.trackOutput && !this.closed) { // Paper - add back source when output disabled
 +                org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper - Don't broadcast messages to command blocks
                  BaseCommandBlock.this.lastOutput = Component.literal("[" + TIME_FORMAT.format(ZonedDateTime.now()) + "] ").append(message);
                  BaseCommandBlock.this.onUpdated();
