@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 +++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
-@@ -48,6 +_,7 @@
+@@ -49,6 +_,7 @@
      public int lifetime = 0;
      @Nullable
      public LivingEntity attachedToEntity;
 +    @Nullable public java.util.UUID spawningEntity; // Paper
  
-     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> entityType, Level level) {
-         super(entityType, level);
-@@ -163,7 +_,7 @@
+     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level level) {
+         super(type, level);
+@@ -164,7 +_,7 @@
          }
  
          if (!this.noPhysics && this.isAlive() && hitResultOnMoveVector.getType() != HitResult.Type.MISS) {
@@ -17,7 +17,7 @@
              this.hasImpulse = true;
          }
  
-@@ -187,7 +_,11 @@
+@@ -188,7 +_,11 @@
          }
  
          if (this.life > this.lifetime && this.level() instanceof ServerLevel serverLevel) {
@@ -30,8 +30,8 @@
          }
      }
  
-@@ -195,14 +_,18 @@
-         level.broadcastEntityEvent(this, (byte)17);
+@@ -196,14 +_,18 @@
+         level.broadcastEntityEvent(this, EntityEvent.FIREWORKS_EXPLODE);
          this.gameEvent(GameEvent.EXPLODE, this.getOwner());
          this.dealExplosionDamage(level);
 -        this.discard();
@@ -51,9 +51,9 @@
          }
      }
  
-@@ -211,7 +_,11 @@
+@@ -212,7 +_,11 @@
          BlockPos blockPos = new BlockPos(result.getBlockPos());
-         this.level().getBlockState(blockPos).entityInside(this.level(), blockPos, this, InsideBlockEffectApplier.NOOP);
+         this.level().getBlockState(blockPos).entityInside(this.level(), blockPos, this, InsideBlockEffectApplier.NOOP, true);
          if (this.level() instanceof ServerLevel serverLevel && this.hasExplosion()) {
 -            this.explode(serverLevel);
 +            // Paper start - Call FireworkExplodeEvent
@@ -64,7 +64,7 @@
          }
  
          super.onHitBlock(result);
-@@ -283,6 +_,7 @@
+@@ -284,6 +_,7 @@
          output.putInt("LifeTime", this.lifetime);
          output.store("FireworksItem", ItemStack.CODEC, this.getItem());
          output.putBoolean("ShotAtAngle", this.entityData.get(DATA_SHOT_AT_ANGLE));
@@ -72,7 +72,7 @@
      }
  
      @Override
-@@ -292,6 +_,7 @@
+@@ -293,6 +_,7 @@
          this.lifetime = input.getIntOr("LifeTime", 0);
          this.entityData.set(DATA_ID_FIREWORKS_ITEM, input.read("FireworksItem", ItemStack.CODEC).orElse(getDefaultItem()));
          this.entityData.set(DATA_SHOT_AT_ANGLE, input.getBooleanOr("ShotAtAngle", false));

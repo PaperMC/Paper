@@ -23,21 +23,21 @@
 +        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
      }
  
-     private Optional<NameAndId> lookupGameProfile(GameProfileRepository profileRepository, String username) {
-         if (!StringUtil.isValidPlayerName(username)) {
-             return this.createUnknownProfile(username);
+     private Optional<NameAndId> lookupGameProfile(GameProfileRepository profileRepository, String name) {
+         if (!StringUtil.isValidPlayerName(name)) {
+             return this.createUnknownProfile(name);
          } else {
--            Optional<NameAndId> optional = profileRepository.findProfileByName(username).map(NameAndId::new);
-+            final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(username)  // Paper - Don't lookup a profile with a blank name
+-            Optional<NameAndId> optional = profileRepository.findProfileByName(name).map(NameAndId::new);
++            final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name)  // Paper - Don't lookup a profile with a blank name
 +                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
-+            Optional<NameAndId> optional = shouldLookup ? profileRepository.findProfileByName(username).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
-             return optional.isEmpty() ? this.createUnknownProfile(username) : optional;
++            Optional<NameAndId> optional = shouldLookup ? profileRepository.findProfileByName(name).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
+             return optional.isEmpty() ? this.createUnknownProfile(name) : optional;
          }
      }
  
-     private Optional<NameAndId> createUnknownProfile(String username) {
--        return this.resolveOfflineUsers ? Optional.of(NameAndId.createOffline(username)) : Optional.empty();
-+        return !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? Optional.of(NameAndId.createOffline(username)) : Optional.empty(); // Paper - Add setting for proxy online mode status
+     private Optional<NameAndId> createUnknownProfile(String name) {
+-        return this.resolveOfflineUsers ? Optional.of(NameAndId.createOffline(name)) : Optional.empty();
++        return !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? Optional.of(NameAndId.createOffline(name)) : Optional.empty(); // Paper - Add setting for proxy online mode status
      }
  
      @Override
@@ -69,8 +69,8 @@
 +    // Paper end
 +
      @Override
-     public Optional<NameAndId> get(String username) {
-         String string = username.toLowerCase(Locale.ROOT);
+     public Optional<NameAndId> get(String name) {
+         String string = name.toLowerCase(Locale.ROOT);
 +        boolean stateLocked = true; try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
          CachedUserNameToIdResolver.GameProfileInfo gameProfileInfo = this.profilesByName.get(string);
          boolean flag = false;
@@ -85,7 +85,7 @@
 +            Optional<NameAndId> optional1;
 +            stateLocked = false; this.stateLock.unlock(); // Paper - Fix GameProfileCache concurrency
 +            try { this.lookupLock.lock(); // Paper - Fix GameProfileCache concurrency
-+            optional1 = this.lookupGameProfile(this.profileRepository, username); // CraftBukkit - use correct case for offline players
++                optional1 = this.lookupGameProfile(this.profileRepository, name); // CraftBukkit - use correct case for offline players
 +            } finally { this.lookupLock.unlock(); } // Paper - Fix GameProfileCache concurrency
              if (optional1.isPresent()) {
                  optional = Optional.of(this.addInternal(optional1.get()).nameAndId());
@@ -101,7 +101,7 @@
          }
  
          return optional;
-+        } finally { if (stateLocked) {  this.stateLock.unlock(); } } // Paper - Fix GameProfileCache concurrency
++        } finally { if (stateLocked) { this.stateLock.unlock(); } } // Paper - Fix GameProfileCache concurrency
      }
  
      @Override
@@ -122,31 +122,32 @@
  
              return (List<CachedUserNameToIdResolver.GameProfileInfo>)var9;
          } catch (FileNotFoundException var7) {
-+        // Spigot start
++            // Spigot start
 +        } catch (com.google.gson.JsonSyntaxException | NullPointerException ex) {
-+            LOGGER.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
++            LOGGER.warn("Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues.");
 +            this.file.delete();
-+        // Spigot end
++            // Spigot end
          } catch (JsonParseException | IOException var8) {
              LOGGER.warn("Failed to load profile cache {}", this.file, var8);
          }
-@@ -172,23 +_,50 @@
+@@ -172,23 +_,51 @@
  
      @Override
      public void save() {
 +        // Paper start - Perf: Async GameProfileCache saving
 +        this.save(false);
 +    }
++
 +    @Override
 +    public void save(boolean asyncSave) {
 +        // Paper end - Perf: Async GameProfileCache saving
          JsonArray jsonArray = new JsonArray();
          DateFormat dateFormat = createDateFormat();
 -        this.getTopMRUProfiles(1000).forEach(gameProfileInfo -> jsonArray.add(writeGameProfile(gameProfileInfo, dateFormat)));
-+        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((info) -> jsonArray.add(writeGameProfile(info, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
++        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(gameProfileInfo -> jsonArray.add(writeGameProfile(gameProfileInfo, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
          String string = this.gson.toJson((JsonElement)jsonArray);
-+        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
  
++        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
          try (Writer writer = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
              writer.write(string);
          } catch (IOException var9) {
@@ -161,23 +162,23 @@
 +        // Paper end - Perf: Async GameProfileCache saving
      }
  
-     private Stream<CachedUserNameToIdResolver.GameProfileInfo> getTopMRUProfiles(int count) {
+     private Stream<CachedUserNameToIdResolver.GameProfileInfo> getTopMRUProfiles(int limit) {
 -        return ImmutableList.copyOf(this.profilesByUUID.values())
 -            .stream()
 -            .sorted(Comparator.comparing(CachedUserNameToIdResolver.GameProfileInfo::lastAccess).reversed())
--            .limit(count);
+-            .limit(limit);
 -    }
 +        // Paper start - Fix GameProfileCache concurrency
-+       return this.listTopMRUProfiles(count).stream();
++        return this.listTopMRUProfiles(limit).stream();
 +    }
 +
-+    private List<CachedUserNameToIdResolver.GameProfileInfo> listTopMRUProfiles(int count) {
++    private List<CachedUserNameToIdResolver.GameProfileInfo> listTopMRUProfiles(int limit) {
 +        try {
 +            this.stateLock.lock();
 +            return this.profilesByUUID.values()
 +                .stream()
 +                .sorted(Comparator.comparing(CachedUserNameToIdResolver.GameProfileInfo::lastAccess).reversed())
-+                .limit(count)
++                .limit(limit)
 +                .toList();
 +        } finally {
 +            this.stateLock.unlock();
@@ -185,5 +186,5 @@
 +    }
 +    // Paper end - Fix GameProfileCache concurrency
  
-     private static JsonElement writeGameProfile(CachedUserNameToIdResolver.GameProfileInfo profile, DateFormat format) {
+     private static JsonElement writeGameProfile(CachedUserNameToIdResolver.GameProfileInfo profileInfo, DateFormat format) {
          JsonObject jsonObject = new JsonObject();
