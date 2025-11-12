@@ -7,7 +7,7 @@ import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftSaddledInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventorySaddledHorse;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Horse;
@@ -115,7 +115,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public AbstractHorseInventory getInventory() {
-        return new CraftSaddledInventory(
+        return new CraftInventorySaddledHorse(
             this.getHandle().inventory,
             this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
             this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
