@@ -4,7 +4,7 @@
      double centerZ;
      int absoluteMaxSize = 29999984;
      WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
-+    public net.minecraft.server.level.ServerLevel world; // CraftBukkit
++    public net.minecraft.server.level.@org.jspecify.annotations.Nullable ServerLevel world; // CraftBukkit
  
      public WorldBorder() {
          this(WorldBorder.Settings.DEFAULT);
@@ -52,8 +52,8 @@
 +        if (this.world != null) {
 +            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), size, 0);
 +            if (!event.callEvent()) return;
-+            if (event.getType() == io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDuration() > 0) { // If changed to a timed transition
-+                lerpSizeBetween(event.getOldSize(), event.getNewSize(), event.getDuration(), this.world.getGameTime());
++            if (event.getType() == io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDurationTicks() > 0) { // If changed to a timed transition
++                lerpSizeBetween(event.getOldSize(), event.getNewSize(), event.getDurationTicks(), this.world.getGameTime());
 +                return;
 +            }
 +            size = event.getNewSize();
@@ -77,7 +77,7 @@
 +            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), type, oldSize, newSize, time);
 +            if (!event.callEvent()) return;
 +            newSize = event.getNewSize();
-+            time = event.getDuration();
++            time = event.getDurationTicks();
 +        }
 +        // Paper end - Add worldborder events
          this.extent = (WorldBorder.BorderExtent)(oldSize == newSize
@@ -91,7 +91,7 @@
          this.listeners.add(listener);
      }
  
-@@ -298,6 +_,21 @@
+@@ -298,6 +_,22 @@
          }
      }
  
@@ -103,7 +103,8 @@
 +        this.setWarningBlocks(settings.warningBlocks());
 +        this.setWarningTime(settings.warningTime());
 +        if (settings.lerpTime() > 0L) {
-+            this.lerpSizeBetween(settings.size(), settings.lerpTarget(), settings.lerpTime(), this.world.getGameTime());
++            final long startTime = (this.world != null) ? this.world.getGameTime() : 0; // Virtual Borders don't have a World
++            this.lerpSizeBetween(settings.size(), settings.lerpTarget(), settings.lerpTime(), startTime);
 +        } else {
 +            this.setSize(settings.size());
 +        }
