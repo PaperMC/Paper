@@ -1043,7 +1043,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1342,14 +_,25 @@
+@@ -1342,27 +_,49 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1069,6 +1069,32 @@
          this.connection.send(new ClientboundMountScreenOpenPacket(this.containerCounter, inventoryColumns, horse.getId()));
 -        this.containerMenu = new HorseInventoryMenu(this.containerCounter, this.getInventory(), inventory, horse, inventoryColumns);
 +        this.containerMenu = container; // CraftBukkit
+         this.initMenu(this.containerMenu);
+     }
+ 
+     @Override
+     public void openNautilusInventory(AbstractNautilus nautilus, Container inventory) {
++        // Paper start - Inventory open hook
++        this.nextContainerCounter(); // moved up from below
++        AbstractContainerMenu menu = new NautilusInventoryMenu(this.containerCounter, this.getInventory(), inventory, nautilus, nautilus.getInventoryColumns());
++        menu.setTitle(nautilus.getDisplayName());
++        menu = org.bukkit.craftbukkit.event.CraftEventFactory.callInventoryOpenEvent(this, containerMenu);
++
++        if (menu == null) {
++            inventory.stopOpen(this);
++            return;
++        }
++        // Paper end
+         if (this.containerMenu != this.inventoryMenu) {
+             this.closeContainer();
+         }
+ 
+-        this.nextContainerCounter();
++        // this.nextContainerCounter(); Paper - Move Up
+         int inventoryColumns = nautilus.getInventoryColumns();
+         this.connection.send(new ClientboundMountScreenOpenPacket(this.containerCounter, inventoryColumns, nautilus.getId()));
+-        this.containerMenu = new NautilusInventoryMenu(this.containerCounter, this.getInventory(), inventory, nautilus, inventoryColumns);
++        this.containerMenu = menu; // Paper - Moved up declaration
          this.initMenu(this.containerMenu);
      }
  
