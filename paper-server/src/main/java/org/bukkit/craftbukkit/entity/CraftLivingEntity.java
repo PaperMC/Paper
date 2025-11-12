@@ -82,7 +82,6 @@ import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -347,6 +346,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setArrowCooldown(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "Amount of ticks before next arrow removal must be non-negative");
         this.getHandle().removeArrowTime = ticks;
     }
 
@@ -357,7 +357,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setArrowsInBody(final int count, final boolean fireEvent) { // Paper
-        Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
+        Preconditions.checkArgument(count >= 0, "New arrow amount must be non-negative");
         if (!fireEvent) {
             this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
         } else {
@@ -365,56 +365,32 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
     }
 
-    // Paper start - Add methods for working with arrows stuck in living entities
-    @Override
-    public void setNextArrowRemoval(final int ticks) {
-        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next arrow removal must be >= 0");
-        this.getHandle().removeArrowTime = ticks;
-    }
-
-    @Override
-    public int getNextArrowRemoval() {
-        return this.getHandle().removeArrowTime;
-    }
-    // Paper end - Add methods for working with arrows stuck in living entities
-
     @Override
     public boolean isInvulnerable() {
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
     }
-    // Paper start - Bee Stinger API
+
     @Override
     public int getBeeStingerCooldown() {
-        return getHandle().removeStingerTime;
+        return this.getHandle().removeStingerTime;
     }
 
     @Override
     public void setBeeStingerCooldown(int ticks) {
-        getHandle().removeStingerTime = ticks;
+        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next bee stinger removal must be non-negative");
+        this.getHandle().removeStingerTime = ticks;
     }
 
     @Override
     public int getBeeStingersInBody() {
-        return getHandle().getStingerCount();
+        return this.getHandle().getStingerCount();
     }
 
     @Override
     public void setBeeStingersInBody(int count) {
         Preconditions.checkArgument(count >= 0, "New bee stinger amount must be >= 0");
-        getHandle().setStingerCount(count);
+        this.getHandle().setStingerCount(count);
     }
-
-    @Override
-    public void setNextBeeStingerRemoval(final int ticks) {
-        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next bee stinger removal must be >= 0");
-        this.getHandle().removeStingerTime = ticks;
-    }
-
-    @Override
-    public int getNextBeeStingerRemoval() {
-        return this.getHandle().removeStingerTime;
-    }
-    // Paper end - Bee Stinger API
 
     @Override
     public void damage(double amount) {
@@ -625,7 +601,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             }
 
             launch.projectileSource = this;
-            launch.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported
             launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
@@ -734,15 +709,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else {
             return this.getHandle().bukkitPickUpLoot;
         }
-    }
-
-    @Override
-    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-        if (this.getHealth() == 0) {
-            return false;
-        }
-
-        return super.teleport(location, cause);
     }
 
     @Override
@@ -964,16 +930,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public float getUpwardsMovement() {
         return this.getHandle().yya;
-    }
-
-    @Override
-    public int getArrowsStuck() {
-        return this.getHandle().getArrowCount();
-    }
-
-    @Override
-    public void setArrowsStuck(final int arrows) {
-        this.getHandle().setArrowCount(arrows);
     }
 
     @Override

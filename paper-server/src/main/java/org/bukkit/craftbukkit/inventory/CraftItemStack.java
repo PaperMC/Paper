@@ -497,6 +497,11 @@ public final class CraftItemStack extends ItemStack {
     private final io.papermc.paper.persistence.PaperPersistentDataContainerView pdcView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(REGISTRY) {
 
         @Override
+        public int getSize() {
+            return CraftItemStack.this.getPdcTag().size();
+        }
+
+        @Override
         public net.minecraft.nbt.CompoundTag toTagCompound() {
             return CraftItemStack.this.getPdcTag();
         }
