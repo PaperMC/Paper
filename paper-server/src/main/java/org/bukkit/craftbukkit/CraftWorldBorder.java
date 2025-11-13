@@ -43,8 +43,10 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void changeSize(double newSize, long ticks) {
-        Preconditions.checkArgument(ticks >= 0, "ticks cannot be lower than 0");
+        Preconditions.checkArgument(ticks >= 0, "ticks out of range [0,%s]", Long.MAX_VALUE);
         Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
+
+        ticks = Math.clamp(ticks, 0L, Long.MAX_VALUE);
 
         if (ticks > 0L) {
             final long startTime = (this.getWorld() != null) ? this.getWorld().getGameTime() : 0; // Virtual Borders don't have a World
