@@ -1416,7 +1416,9 @@ public final class CraftServer implements Server {
 
     @Override
     public WorldBorder createWorldBorder() {
-        return new CraftWorldBorder(new net.minecraft.world.level.border.WorldBorder());
+        CraftWorldBorder craftWorldBorder = new CraftWorldBorder(new net.minecraft.world.level.border.WorldBorder());
+        craftWorldBorder.getHandle().applyInitialSettings(0L); // Like the ServerLevel#getWorldBorder we make sure the Settings are applied
+        return craftWorldBorder;
     }
 
     @Override
