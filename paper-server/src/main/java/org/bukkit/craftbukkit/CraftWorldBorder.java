@@ -43,7 +43,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void changeSize(double newSize, long ticks) {
-        Preconditions.checkArgument(ticks >= 0, "ticks out of range [0,%s]", Long.MAX_VALUE);
+        Preconditions.checkArgument(ticks >= 0, "cannot be lower than 0");
         Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
 
         ticks = Math.clamp(ticks, 0L, Long.MAX_VALUE);
