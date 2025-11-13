@@ -24,8 +24,8 @@ import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentMin;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
@@ -143,13 +143,13 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
         @Override
         public Builder description(final net.kyori.adventure.text.Component description) {
-            this.description = this.conversions.asVanilla(asArgument(description, "description"));
+            this.description = this.conversions.asVanilla(requireArgument(description, "description"));
             return this;
         }
 
         @Override
         public Builder supportedItems(final RegistryKeySet<ItemType> supportedItems) {
-            this.supportedItems = PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), asArgument(supportedItems, "supportedItems"));
+            this.supportedItems = PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), requireArgument(supportedItems, "supportedItems"));
             return this;
         }
 
@@ -161,45 +161,45 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
         @Override
         public Builder weight(final @Range(from = 1, to = 1024) int weight) {
-            this.weight = OptionalInt.of(Checks.asArgumentRange(weight, "weight", 1, 1024));
+            this.weight = OptionalInt.of(Checks.requireArgumentRange(weight, "weight", 1, 1024));
             return this;
         }
 
         @Override
         public Builder maxLevel(final @Range(from = 1, to = 255) int maxLevel) {
-            this.maxLevel = OptionalInt.of(Checks.asArgumentRange(maxLevel, "maxLevel", 1, 255));
+            this.maxLevel = OptionalInt.of(Checks.requireArgumentRange(maxLevel, "maxLevel", 1, 255));
             return this;
         }
 
         @Override
         public Builder minimumCost(final EnchantmentCost minimumCost) {
-            final EnchantmentCost validCost = asArgument(minimumCost, "minimumCost");
+            final EnchantmentCost validCost = requireArgument(minimumCost, "minimumCost");
             this.minimumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
             return this;
         }
 
         @Override
         public Builder maximumCost(final EnchantmentCost maximumCost) {
-            final EnchantmentCost validCost = asArgument(maximumCost, "maximumCost");
+            final EnchantmentCost validCost = requireArgument(maximumCost, "maximumCost");
             this.maximumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
             return this;
         }
 
         @Override
         public Builder anvilCost(final @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost) {
-            this.anvilCost = OptionalInt.of(asArgumentMin(anvilCost, "anvilCost", 0));
+            this.anvilCost = OptionalInt.of(requireArgumentMin(anvilCost, "anvilCost", 0));
             return this;
         }
 
         @Override
         public Builder activeSlots(final Iterable<org.bukkit.inventory.EquipmentSlotGroup> activeSlots) {
-            this.activeSlots = Lists.newArrayList(Iterables.transform(asArgument(activeSlots, "activeSlots"), CraftEquipmentSlot::getNMSGroup));
+            this.activeSlots = Lists.newArrayList(Iterables.transform(requireArgument(activeSlots, "activeSlots"), CraftEquipmentSlot::getNMSGroup));
             return this;
         }
 
         @Override
         public Builder exclusiveWith(final RegistryKeySet<org.bukkit.enchantments.Enchantment> exclusiveWith) {
-            this.exclusiveWith = PaperRegistrySets.convertToNms(Registries.ENCHANTMENT, this.conversions.lookup(), asArgument(exclusiveWith, "exclusiveWith"));
+            this.exclusiveWith = PaperRegistrySets.convertToNms(Registries.ENCHANTMENT, this.conversions.lookup(), requireArgument(exclusiveWith, "exclusiveWith"));
             return this;
         }
 

@@ -11,7 +11,7 @@ import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
 
 public record PaperDamageReduction(
     net.minecraft.world.item.component.BlocksAttacks.DamageReduction internal
@@ -53,7 +53,7 @@ public record PaperDamageReduction(
 
         @Override
         public Builder horizontalBlockingAngle(final @Positive float horizontalBlockingAngle) {
-            this.horizontalBlockingAngle = asArgumentPositive(horizontalBlockingAngle, "horizontalBlockingAngle");
+            this.horizontalBlockingAngle = requireArgumentPositive(horizontalBlockingAngle, "horizontalBlockingAngle");
             return this;
         }
 

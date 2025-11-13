@@ -10,7 +10,7 @@ import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Pig;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
@@ -57,13 +57,13 @@ public class PaperPigVariantRegistryEntry implements PigVariantRegistryEntry {
 
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = this.conversions.asVanilla(requireArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder model(final Model model) {
-            this.model = switch (asArgument(model, "model")) {
+            this.model = switch (requireArgument(model, "model")) {
                 case NORMAL -> PigVariant.ModelType.NORMAL;
                 case COLD -> PigVariant.ModelType.COLD;
             };

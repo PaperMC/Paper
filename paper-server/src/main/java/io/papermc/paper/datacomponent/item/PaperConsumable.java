@@ -15,7 +15,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperConsumable(
     net.minecraft.world.item.component.Consumable impl
@@ -74,7 +74,7 @@ public record PaperConsumable(
 
         @Override
         public Builder consumeSeconds(final @NonNegative float consumeSeconds) {
-            this.consumeSeconds = asArgumentNonNegative(consumeSeconds, "consumeSeconds");
+            this.consumeSeconds = requireArgumentNonNegative(consumeSeconds, "consumeSeconds");
             return this;
         }
 

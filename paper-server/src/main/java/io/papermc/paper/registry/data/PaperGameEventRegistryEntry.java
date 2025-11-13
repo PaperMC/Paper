@@ -7,7 +7,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentMin;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
@@ -40,7 +40,7 @@ public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
 
         @Override
         public GameEventRegistryEntry.Builder range(final @Range(from = 0, to = Integer.MAX_VALUE) int range) {
-            this.range = OptionalInt.of(asArgumentMin(range, "range", 0));
+            this.range = OptionalInt.of(requireArgumentMin(range, "range", 0));
             return this;
         }
 

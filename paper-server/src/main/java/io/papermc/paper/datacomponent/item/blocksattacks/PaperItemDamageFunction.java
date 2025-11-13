@@ -3,7 +3,7 @@ package io.papermc.paper.datacomponent.item.blocksattacks;
 import net.minecraft.world.item.component.BlocksAttacks;
 import org.checkerframework.checker.index.qual.NonNegative;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperItemDamageFunction(
     net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction internal
@@ -37,7 +37,7 @@ public record PaperItemDamageFunction(
 
         @Override
         public Builder threshold(final @NonNegative float threshold) {
-            this.threshold = asArgumentNonNegative(threshold, "threshold");
+            this.threshold = requireArgumentNonNegative(threshold, "threshold");
             return this;
         }
 

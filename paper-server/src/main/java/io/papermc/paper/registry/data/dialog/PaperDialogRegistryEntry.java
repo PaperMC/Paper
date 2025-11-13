@@ -10,7 +10,7 @@ import net.minecraft.server.dialog.CommonDialogData;
 import net.minecraft.server.dialog.Dialog;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperDialogRegistryEntry implements DialogRegistryEntry {
@@ -56,13 +56,13 @@ public class PaperDialogRegistryEntry implements DialogRegistryEntry {
 
         @Override
         public Builder base(final DialogBase dialogBase) {
-            this.dialogBase = asArgument(dialogBase, "dialogBase");
+            this.dialogBase = requireArgument(dialogBase, "dialogBase");
             return this;
         }
 
         @Override
         public Builder type(final DialogType dialogType) {
-            this.dialogType = asArgument(dialogType, "dialogType");
+            this.dialogType = requireArgument(dialogType, "dialogType");
             return this;
         }
 

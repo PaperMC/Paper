@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -13,8 +14,8 @@ import org.bukkit.Art;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry {
@@ -74,13 +75,13 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
 
         @Override
         public Builder width(final @Range(from = 1, to = 16) int width) {
-            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
+            this.width = OptionalInt.of(Checks.requireArgumentRange(width, "width", 1, 16));
             return this;
         }
 
         @Override
         public Builder height(final @Range(from = 1, to = 16) int height) {
-            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
+            this.height = OptionalInt.of(Checks.requireArgumentRange(height, "height", 1, 16));
             return this;
         }
 
@@ -98,7 +99,7 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
 
         @Override
         public Builder assetId(final Key assetId) {
-            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
+            this.assetId = PaperAdventure.asVanilla(requireArgument(assetId, "assetId"));
             return this;
         }
 

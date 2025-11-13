@@ -44,13 +44,13 @@ public class PaperBannerPatternRegistryEntry implements BannerPatternRegistryEnt
 
         @Override
         public Builder assetId(final Key assetId) {
-            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
+            this.assetId = PaperAdventure.asVanilla(requireArgument(assetId, "assetId"));
             return this;
         }
 
         @Override
         public Builder translationKey(final String translationKey) {
-            this.translationKey = asArgument(translationKey, "translationKey");
+            this.translationKey = requireArgument(translationKey, "translationKey");
             return this;
         }
 

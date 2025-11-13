@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
 
 public record PaperUseCooldown(
     net.minecraft.world.item.component.UseCooldown impl
@@ -36,7 +36,7 @@ public record PaperUseCooldown(
         private Optional<ResourceLocation> cooldownGroup = Optional.empty();
 
         BuilderImpl(final float seconds) {
-            this.seconds = asArgumentPositive(seconds, "seconds");
+            this.seconds = requireArgumentPositive(seconds, "seconds");
         }
 
         @Override

@@ -14,8 +14,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.NullMarked;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMinInclusive;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentMinInclusive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
 
 @NullMarked
 public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
@@ -25,7 +25,7 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
         return new PaperApplyStatusEffects(
             new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(
                 new ArrayList<>(Lists.transform(effectList, CraftPotionUtil::fromBukkit)),
-                asArgumentMinInclusive(probability, "probability", 0.0F, 1.0F)
+                requireArgumentMinInclusive(probability, "probability", 0.0F, 1.0F)
             )
         );
     }
@@ -54,7 +54,7 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
     @Override
     public ConsumeEffect.TeleportRandomly teleportRandomlyEffect(final float diameter) {
         return new PaperTeleportRandomly(
-            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(asArgumentPositive(diameter, "diameter"))
+            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(requireArgumentPositive(diameter, "diameter"))
         );
     }
 }

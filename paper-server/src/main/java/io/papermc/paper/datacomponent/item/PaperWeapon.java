@@ -1,8 +1,9 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.registry.data.util.Checks;
 import org.bukkit.craftbukkit.util.Handleable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperWeapon(
     net.minecraft.world.item.component.Weapon impl
@@ -30,13 +31,13 @@ public record PaperWeapon(
 
         @Override
         public Builder itemDamagePerAttack(final int damage) {
-            this.itemDamagePerAttack = asArgumentNonNegative(damage, "damage");
+            this.itemDamagePerAttack = Checks.requireArgumentNonNegative(damage, "damage");
             return this;
         }
 
         @Override
         public Builder disableBlockingForSeconds(final float seconds) {
-            this.disableBlockingForSeconds = asArgumentNonNegative(seconds, "seconds");
+            this.disableBlockingForSeconds = requireArgumentNonNegative(seconds, "seconds");
             return this;
         }
 

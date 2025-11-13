@@ -15,7 +15,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -74,13 +74,13 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder blockDelaySeconds(final float delay) {
-            this.blockDelaySeconds = asArgumentNonNegative(delay, "delay");
+            this.blockDelaySeconds = requireArgumentNonNegative(delay, "delay");
             return this;
         }
 
         @Override
         public Builder disableCooldownScale(final float scale) {
-            this.disableCooldownScale = asArgumentNonNegative(scale, "scale");
+            this.disableCooldownScale = requireArgumentNonNegative(scale, "scale");
             return this;
         }
 

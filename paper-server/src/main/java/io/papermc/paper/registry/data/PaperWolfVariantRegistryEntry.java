@@ -9,7 +9,7 @@ import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Wolf;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
@@ -60,19 +60,19 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
 
         @Override
         public Builder angryClientTextureAsset(final ClientTextureAsset angryClientTextureAsset) {
-            this.angryClientTextureAsset = this.conversions.asVanilla(asArgument(angryClientTextureAsset, "angryClientTextureAsset"));
+            this.angryClientTextureAsset = this.conversions.asVanilla(requireArgument(angryClientTextureAsset, "angryClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder wildClientTextureAsset(final ClientTextureAsset wildClientTextureAsset) {
-            this.wildClientTextureAsset = this.conversions.asVanilla(asArgument(wildClientTextureAsset, "wildClientTextureAsset"));
+            this.wildClientTextureAsset = this.conversions.asVanilla(requireArgument(wildClientTextureAsset, "wildClientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder tameClientTextureAsset(final ClientTextureAsset tameClientTextureAsset) {
-            this.tameClientTextureAsset = this.conversions.asVanilla(asArgument(tameClientTextureAsset, "tameClientTextureAsset"));
+            this.tameClientTextureAsset = this.conversions.asVanilla(requireArgument(tameClientTextureAsset, "tameClientTextureAsset"));
             return this;
         }
 

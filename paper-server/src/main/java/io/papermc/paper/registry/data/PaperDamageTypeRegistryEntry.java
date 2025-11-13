@@ -11,7 +11,7 @@ import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.damage.DamageEffect;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
@@ -71,13 +71,13 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
         @Override
         public Builder messageId(final String messageId) {
-            this.messageId = asArgument(messageId, "messageId");
+            this.messageId = requireArgument(messageId, "messageId");
             return this;
         }
 
         @Override
         public Builder damageScaling(final org.bukkit.damage.DamageScaling scaling) {
-            this.scaling = CraftDamageType.damageScalingToNMS(asArgument(scaling, "scaling"));
+            this.scaling = CraftDamageType.damageScalingToNMS(requireArgument(scaling, "scaling"));
             return this;
         }
 
@@ -89,13 +89,13 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
         @Override
         public Builder damageEffect(final DamageEffect effect) {
-            this.effects = ((CraftDamageEffect) asArgument(effect, "effects")).getHandle();
+            this.effects = ((CraftDamageEffect) requireArgument(effect, "effects")).getHandle();
             return this;
         }
 
         @Override
         public Builder deathMessageType(final org.bukkit.damage.DeathMessageType deathMessageType) {
-            this.deathMessageType = CraftDamageType.deathMessageTypeToNMS(asArgument(deathMessageType, "deathMessageType"));
+            this.deathMessageType = CraftDamageType.deathMessageTypeToNMS(requireArgument(deathMessageType, "deathMessageType"));
             return this;
         }
 

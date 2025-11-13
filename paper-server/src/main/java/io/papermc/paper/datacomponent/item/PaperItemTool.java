@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -16,8 +17,8 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgumentNonNegative;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
 
 public record PaperItemTool(
     net.minecraft.world.item.component.Tool impl
@@ -59,7 +60,7 @@ public record PaperItemTool(
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-            return new PaperRule(blocks, (speed == null) ? null : asArgumentPositive(speed, "speed"), correctForDrops);
+            return new PaperRule(blocks, (speed == null) ? null : requireArgumentPositive(speed, "speed"), correctForDrops);
         }
     }
 
@@ -72,7 +73,7 @@ public record PaperItemTool(
 
         @Override
         public Builder damagePerBlock(final int damage) {
-            this.damage = asArgumentNonNegative(damage, "damage");
+            this.damage = Checks.requireArgumentNonNegative(damage, "damage");
             return this;
         }
 

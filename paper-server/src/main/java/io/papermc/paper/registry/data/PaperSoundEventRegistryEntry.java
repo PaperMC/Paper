@@ -10,7 +10,7 @@ import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 /**
@@ -51,7 +51,7 @@ public class PaperSoundEventRegistryEntry implements SoundEventRegistryEntry {
 
         @Override
         public SoundEventRegistryEntry.Builder location(final Key location) {
-            this.location = PaperAdventure.asVanilla(asArgument(location, "location"));
+            this.location = PaperAdventure.asVanilla(requireArgument(location, "location"));
             return this;
         }
 
