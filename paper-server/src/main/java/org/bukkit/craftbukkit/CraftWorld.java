@@ -6,7 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.JavaOps;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
@@ -58,6 +57,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.NullOps;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -1742,7 +1742,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (rule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
             convertedValue = (T) legacyGameRuleWrapper.getFromLegacyToModern().apply(newValue);
         } else {
-            nms.valueCodec().encodeStart(JavaOps.INSTANCE, newValue).ifError(error -> {
+            nms.valueCodec().encodeStart(NullOps.INSTANCE, newValue).ifError(error -> {
                 throw CraftGameRule.INVALID_VALUE.apply(newValue.toString(), error);
             });
             convertedValue = newValue;

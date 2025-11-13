@@ -49,7 +49,6 @@ import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
-import org.bukkit.GameRule;
 import org.bukkit.GameRules;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Material;

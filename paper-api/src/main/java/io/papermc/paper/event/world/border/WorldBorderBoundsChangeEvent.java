@@ -1,14 +1,16 @@
 package io.papermc.paper.event.world.border;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.util.Tick;
+import java.time.Duration;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
-import java.time.Duration;
 
 /**
  * Called when a world border changes its bounds, either over time, or instantly.
@@ -66,7 +68,7 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * @param newSize the new size
      */
     public void setNewSize(final double newSize) {
-        this.newSize = Math.min(this.worldBorder.getMaxSize(), Math.max(1.0D, newSize));
+        this.newSize = Math.clamp(newSize, 1.0D, this.worldBorder.getMaxSize());
     }
 
     /**
@@ -74,8 +76,22 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      *
      * @return the time in ticks for the change
      */
-    public long getDurationTicks() {
+    public @Range(from = 0, to = Integer.MAX_VALUE) long getDurationTicks() {
         return this.duration;
+    }
+
+    /**
+     * Sets the time in ticks for the change. Will change {@link #getType()} to return
+     * {@link Type#STARTED_MOVE}.
+     *
+     * @param duration the time in ticks for the change
+     */
+    public void setDurationTicks(final @Range(from = 0, to = Integer.MAX_VALUE) long duration) {
+        Preconditions.checkArgument(duration >= 0 && duration <= Integer.MAX_VALUE, "duration must be between 0-%s", Integer.MAX_VALUE);
+        this.duration = duration;
+        if (this.type == Type.INSTANT_MOVE) {
+            this.type = Type.STARTED_MOVE;
+        }
     }
 
     /**
@@ -85,21 +101,8 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * @deprecated in favor of {@link #getDurationTicks()}
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
-    public long getDuration() {
-        return Tick.of(this.duration).toMillis();
-    }
-
-    /**
-     * Sets the time in ticks for the change. Will change {@link #getType()} to return
-     * {@link Type#STARTED_MOVE}.
-     *
-     * @param duration the time in ticks for the change
-     */
-    public void setDurationTicks(@Range(from = 0, to = Integer.MAX_VALUE) final long duration) {
-        this.duration = Math.clamp(duration, 0L, Integer.MAX_VALUE);
-        if (this.type == Type.INSTANT_MOVE) {
-            this.type = Type.STARTED_MOVE;
-        }
+    public @NonNegative long getDuration() {
+        return Tick.of(this.getDurationTicks()).toMillis();
     }
 
     /**
@@ -110,8 +113,8 @@ public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Ca
      * @deprecated in favor of {@link #setDurationTicks(long)}
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
-    public void setDuration(final long duration) {
-        this.setDurationTicks(Tick.tick().fromDuration(Duration.ofMillis(Math.clamp(duration, 0L, Integer.MAX_VALUE))));
+    public void setDuration(final @NonNegative long duration) {
+        this.setDurationTicks(Tick.tick().fromDuration(Duration.ofMillis(duration)));
     }
 
     @Override

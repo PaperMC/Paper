@@ -1,11 +1,13 @@
 package org.bukkit;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.util.Tick;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 public interface WorldBorder {
 
@@ -35,23 +37,9 @@ public interface WorldBorder {
      * @param newSize The new size of the border.
      *
      * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @see #changeSize(double, long)
      */
     void setSize(double newSize);
-
-    /**
-     * Sets the border to a square region with the specified side length in blocks.
-     *
-     * @param newSize The new side length of the border.
-     * @param seconds The time in seconds in which the border grows or shrinks from the previous size to that being set.
-     *
-     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
-     * @see #setSize(double, TimeUnit, long)
-     * @deprecated Use {@link #changeSize(double, long)} instead
-     */
-    @Deprecated(since = "1.21.11", forRemoval = true)
-    default void setSize(double newSize, long seconds) {
-        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.clamp(seconds, 0L, Integer.MAX_VALUE));
-    }
 
     /**
      * Sets the border to a square region with the specified side length in blocks.
@@ -60,9 +48,24 @@ public interface WorldBorder {
      * @param ticks The time in ticks in which the border grows or shrinks from the previous size to that being set.
      *
      * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
-     * @throws IllegalArgumentException if ticks are less than 0
+     * @throws IllegalArgumentException if ticks is out of range
+     * @see #setSize(double)
      */
-    void changeSize(double newSize, long ticks);
+    void changeSize(double newSize, @Range(from = 0, to = Integer.MAX_VALUE) long ticks);
+
+    /**
+     * Sets the border to a square region with the specified side length in blocks.
+     *
+     * @param newSize The new side length of the border.
+     * @param seconds The time in seconds in which the border grows or shrinks from the previous size to that being set.
+     *
+     * @throws IllegalArgumentException if seconds is out of range once converted in ticks
+     * @deprecated Use {@link #changeSize(double, long)} instead
+     */
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    default void setSize(double newSize, long seconds) {
+        this.changeSize(Math.clamp(newSize, 1.0D, this.getMaxSize()), Tick.tick().fromDuration(Duration.ofSeconds(seconds)));
+    }
 
     /**
      * Sets the border to a square region with the specified side length in blocks.
@@ -71,13 +74,12 @@ public interface WorldBorder {
      * @param unit The time unit.
      * @param time The time in which the border grows or shrinks from the previous size to that being set.
      *
-     * @throws IllegalArgumentException if unit is <code>null</code> or newSize is less than 1.0D or greater than {@link #getMaxSize()}
-     *
-     * @see Tick
+     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @throws IllegalArgumentException if time is out of range once converted in ticks
      * @deprecated Use {@link #changeSize(double, long)} instead
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
-    default void setSize(double newSize, @NotNull TimeUnit unit, long time) {
+    default void setSize(double newSize, @NotNull TimeUnit unit, @NonNegative long time) {
         Preconditions.checkArgument(unit != null, "TimeUnit cannot be null.");
         this.changeSize(newSize, Tick.tick().fromDuration(Duration.of(time, unit.toChronoUnit())));
     }
@@ -143,16 +145,9 @@ public interface WorldBorder {
      * @deprecated Use {@link #getWarningTimeTicks()} instead
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
-    default int getWarningTime() {
+    default @NonNegative int getWarningTime() {
         return (int) Tick.of(this.getWarningTimeTicks()).toSeconds();
     }
-
-    /**
-     * Gets the current border warning time in ticks.
-     *
-     * @return The current border warning time in ticks.
-     */
-    int getWarningTimeTicks();
 
     /**
      * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
@@ -161,16 +156,25 @@ public interface WorldBorder {
      * @deprecated Use {@link #setWarningTimeTicks(int)} instead
      */
     @Deprecated(since = "1.21.11", forRemoval = true)
-    default void setWarningTime(int seconds) {
+    default void setWarningTime(@NonNegative int seconds) {
+        Preconditions.checkArgument(seconds >= 0, "seconds cannot be lower than 0");
+
         this.setWarningTimeTicks(Tick.tick().fromDuration(Duration.ofSeconds(seconds)));
     }
+
+    /**
+     * Gets the current border warning time in ticks.
+     *
+     * @return The current border warning time in ticks.
+     */
+    @NonNegative int getWarningTimeTicks();
 
     /**
      * Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
      *
      * @param ticks The number of ticks.
      */
-    void setWarningTimeTicks(int ticks);
+    void setWarningTimeTicks(@NonNegative int ticks);
 
     /**
      * Gets the current border warning distance.
