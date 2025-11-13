@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.RemovalReason;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
@@ -484,6 +485,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kick(net.kyori.adventure.text.Component)} in this case instead
      */
     public void remove();
+
+    /**
+     * {@return true if it was removed by a plugin}
+     */
+    boolean isPluginRemoved();
+
+    /**
+     * {@return the reason this entity was removed}
+     */
+    @Nullable RemovalReason getRemovalReason();
 
     /**
      * Returns true if this entity has been marked for removal.
