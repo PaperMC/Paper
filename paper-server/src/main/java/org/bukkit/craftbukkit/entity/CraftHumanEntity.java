@@ -45,7 +45,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
+import org.bukkit.craftbukkit.inventory.CraftInventorySaddledMount;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
@@ -349,8 +349,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         if (menuProvider != null) {
             this.getHandle().openMenu(menuProvider);
-        } else if (inventory instanceof CraftInventoryAbstractHorse craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
+        } else if (inventory instanceof CraftInventorySaddledMount craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
             this.getHandle().openHorseInventory(horse.getHandle(), craft.getInventory());
+        } else if (inventory instanceof CraftInventorySaddledMount craft && craft.getInventory().getOwner() instanceof CraftAbstractNautilus nautilus) {
+            this.getHandle().openNautilusInventory(nautilus.getHandle(), craft.getInventory());
         } else {
             MenuType<?> container = CraftContainer.getNotchInventoryType(inventory);
             CraftHumanEntity.openCustomInventory(inventory, player, container);

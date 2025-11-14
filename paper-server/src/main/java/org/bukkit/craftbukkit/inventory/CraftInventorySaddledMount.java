@@ -7,12 +7,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.inventory.AbstractHorseInventory;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryAbstractHorse extends CraftInventory implements AbstractHorseInventory {
+public class CraftInventorySaddledMount extends CraftInventory implements AbstractHorseInventory {
 
     private final Container bodyArmorInventory;
     private final Container saddleInventory;
 
-    public CraftInventoryAbstractHorse(Container inventory, final Container bodyArmorInventory, final Container saddleInventory) {
+    public CraftInventorySaddledMount(Container inventory, final Container bodyArmorInventory, final Container saddleInventory) {
         super(inventory);
         this.bodyArmorInventory = bodyArmorInventory;
         this.saddleInventory = saddleInventory;
