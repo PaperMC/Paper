@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexandra-Myers <bia416cat@gmail.com>
+Date: Tue, 23 Sep 2025 21:19:33 -0400
+Subject: [PATCH] Relocate tracker tick to fix MC-297196
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index ce53eb1e966e07b04e6a13785a858a3318b2c573..a522c0d84b7f3c992e7b42cebc27cafafac04a9b 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1007,7 +1007,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     // Paper start - optimise entity tracker
+-    private void newTrackerTick() {
++    // Paper - Relocate tracker tick to fix MC-297196
++    protected void newTrackerTick() {
+         final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+ 
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
+@@ -1030,7 +1031,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     protected void tick() {
+         // Paper start - optimise entity tracker
+         if (true) {
+-            this.newTrackerTick();
++            // Paper - Relocate tracker tick to fix MC-297196
+             return;
+         }
+         // Paper end - optimise entity tracker
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index c0ed4e023b35a076b554fa387e9a2324166b2fae..14586f6e00c37e5be588df35c6a24bdc72935edc 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -850,6 +850,10 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+         profilerFiller.push("entityManagement");
+         // Paper - rewrite chunk system
++        // Paper start - Relocate tracker tick to fix MC-297196
++        profilerFiller.popPush("tracker");
++        this.getChunkSource().chunkMap.newTrackerTick();
++        // Paper end - Relocate tracker tick to fix MC-297196
+         profilerFiller.pop();
+         profilerFiller.push("debugSynchronizers");
+         if (this.debugSynchronizers.hasAnySubscriberFor(DebugSubscriptions.NEIGHBOR_UPDATES)) {
