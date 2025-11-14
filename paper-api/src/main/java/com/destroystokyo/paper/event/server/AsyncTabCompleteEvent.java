@@ -240,6 +240,8 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
 
     /**
      * A rich tab completion, consisting of a string suggestion, and a nullable {@link Component} tooltip.
+     *
+     * <p><b>Warning:</b> In a future update, this class will no longer implement Examinable.</p>
      */
     public interface Completion extends Examinable {
 
@@ -258,6 +260,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
         @Nullable Component tooltip();
 
         @Override
+        @Deprecated(forRemoval = true, since = "1.21.10")
         default Stream<? extends ExaminableProperty> examinableProperties() {
             return Stream.of(ExaminableProperty.of("suggestion", this.suggestion()), ExaminableProperty.of("tooltip", this.tooltip()));
         }
