@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mickey42302 <bgoodwin423@gmail.com>
+Date: Mon, 10 Nov 2025 21:30:04 -0500
+Subject: [PATCH] Add permissions for gamemaster blocks
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 89bd3a39f410215f773de79238bebb77e81196ec..e1af76d8da4afe9344b6fcf037ca10ffd835b770 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1119,7 +1119,7 @@ public class ServerGamePacketListenerImpl
+     @Override
+     public void handleSetStructureBlock(ServerboundSetStructureBlockPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        if (this.player.canUseGameMasterBlocks()) {
++        if (this.player.canUseGameMasterBlocks() || this.player.getBukkitEntity().hasPermission("minecraft.structureblock")) {
+             BlockPos pos = packet.getPos();
+             BlockState blockState = this.player.level().getBlockState(pos);
+             if (this.player.level().getBlockEntity(pos) instanceof StructureBlockEntity structureBlockEntity) {
+@@ -1172,7 +1172,7 @@ public class ServerGamePacketListenerImpl
+     @Override
+     public void handleSetTestBlock(ServerboundSetTestBlockPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        if (this.player.canUseGameMasterBlocks()) {
++        if (this.player.canUseGameMasterBlocks() || this.player.getBukkitEntity().hasPermission("minecraft.testblock")) {
+             BlockPos blockPos = packet.position();
+             BlockState blockState = this.player.level().getBlockState(blockPos);
+             if (this.player.level().getBlockEntity(blockPos) instanceof TestBlockEntity testBlockEntity) {
+@@ -1188,7 +1188,7 @@ public class ServerGamePacketListenerImpl
+     public void handleTestInstanceBlockAction(ServerboundTestInstanceBlockActionPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+         BlockPos blockPos = packet.pos();
+-        if (this.player.canUseGameMasterBlocks() && this.player.level().getBlockEntity(blockPos) instanceof TestInstanceBlockEntity testInstanceBlockEntity) {
++        if (this.player.canUseGameMasterBlocks() || this.player.getBukkitEntity().hasPermission("minecraft.testinstanceblock") && this.player.level().getBlockEntity(blockPos) instanceof TestInstanceBlockEntity testInstanceBlockEntity) {
+             if (packet.action() != ServerboundTestInstanceBlockActionPacket.Action.QUERY
+                 && packet.action() != ServerboundTestInstanceBlockActionPacket.Action.INIT) {
+                 testInstanceBlockEntity.set(packet.data());
+@@ -1231,7 +1231,7 @@ public class ServerGamePacketListenerImpl
+     @Override
+     public void handleSetJigsawBlock(ServerboundSetJigsawBlockPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        if (this.player.canUseGameMasterBlocks()) {
++        if (this.player.canUseGameMasterBlocks() || this.player.getBukkitEntity().hasPermission("minecraft.jigsawblock")) {
+             BlockPos pos = packet.getPos();
+             BlockState blockState = this.player.level().getBlockState(pos);
+             if (this.player.level().getBlockEntity(pos) instanceof JigsawBlockEntity jigsawBlockEntity) {
+@@ -1251,7 +1251,7 @@ public class ServerGamePacketListenerImpl
+     @Override
+     public void handleJigsawGenerate(ServerboundJigsawGeneratePacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        if (this.player.canUseGameMasterBlocks()) {
++        if (this.player.canUseGameMasterBlocks() || this.player.getBukkitEntity().hasPermission("minecraft.jigsawblock")) {
+             BlockPos pos = packet.getPos();
+             if (this.player.level().getBlockEntity(pos) instanceof JigsawBlockEntity jigsawBlockEntity) {
+                 jigsawBlockEntity.generate(this.player.level(), packet.levels(), packet.keepJigsaws());
+diff --git a/net/minecraft/world/level/block/JigsawBlock.java b/net/minecraft/world/level/block/JigsawBlock.java
+index 5b5b0ba3d132be18403fb763039ccc723e2b7b46..792631a1702d44d8699e8e5edf53e8272b9fe9dc 100644
+--- a/net/minecraft/world/level/block/JigsawBlock.java
++++ b/net/minecraft/world/level/block/JigsawBlock.java
+@@ -68,7 +68,8 @@ public class JigsawBlock extends Block implements EntityBlock, GameMasterBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+         BlockEntity blockEntity = level.getBlockEntity(pos);
+-        if (blockEntity instanceof JigsawBlockEntity && player.canUseGameMasterBlocks()) {
++        if (blockEntity instanceof JigsawBlockEntity && player.canUseGameMasterBlocks() || (player.isCreative() && player.getBukkitEntity().hasPermission("minecraft.jigsawblock"))) {
++            assert blockEntity instanceof net.minecraft.world.level.block.entity.JigsawBlockEntity;
+             player.openJigsawBlock((JigsawBlockEntity)blockEntity);
+             return InteractionResult.SUCCESS;
+         } else {
+diff --git a/net/minecraft/world/level/block/LecternBlock.java b/net/minecraft/world/level/block/LecternBlock.java
+index 8e18ff02e9773a76ec27e2f62b75a05ec0241dc0..72758f78fdb505b7d38368ca83fa6c2a47065f7d 100644
+--- a/net/minecraft/world/level/block/LecternBlock.java
++++ b/net/minecraft/world/level/block/LecternBlock.java
+@@ -83,7 +83,7 @@ public class LecternBlock extends BaseEntityBlock {
+         ItemStack itemInHand = context.getItemInHand();
+         Player player = context.getPlayer();
+         boolean flag = false;
+-        if (!level.isClientSide() && player != null && player.canUseGameMasterBlocks()) {
++        if (!level.isClientSide() && player != null && player.canUseGameMasterBlocks() || java.util.Objects.requireNonNull(player).getBukkitEntity().hasPermission("minecraft.lecternblock")) {
+             TypedEntityData<BlockEntityType<?>> typedEntityData = itemInHand.get(DataComponents.BLOCK_ENTITY_DATA);
+             if (typedEntityData != null && typedEntityData.contains("Book")) {
+                 flag = true;
+diff --git a/net/minecraft/world/level/block/LightBlock.java b/net/minecraft/world/level/block/LightBlock.java
+index 49613d6862946cd2034c298990cde3eda51d5a3d..d8d9acb233d8fbb96484bf346dc0ae7821b42c43 100644
+--- a/net/minecraft/world/level/block/LightBlock.java
++++ b/net/minecraft/world/level/block/LightBlock.java
+@@ -59,7 +59,7 @@ public class LightBlock extends Block implements SimpleWaterloggedBlock {
+ 
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+-        if (!level.isClientSide() && player.canUseGameMasterBlocks()) {
++        if (!level.isClientSide() && player.canUseGameMasterBlocks() || (player.isCreative() && player.getBukkitEntity().hasPermission("minecraft.lightblock"))) {
+             level.setBlock(pos, state.cycle(LEVEL), Block.UPDATE_CLIENTS);
+             return InteractionResult.SUCCESS_SERVER;
+         } else {
+diff --git a/net/minecraft/world/level/block/TestBlock.java b/net/minecraft/world/level/block/TestBlock.java
+index b0d321b499601db3d1423768d37b529b4c698dae..c4a6a2a5439c848f749d72570cef6dfa6467864b 100644
+--- a/net/minecraft/world/level/block/TestBlock.java
++++ b/net/minecraft/world/level/block/TestBlock.java
+@@ -62,7 +62,7 @@ public class TestBlock extends BaseEntityBlock implements GameMasterBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+         if (level.getBlockEntity(pos) instanceof TestBlockEntity testBlockEntity) {
+-            if (!player.canUseGameMasterBlocks()) {
++            if (!player.canUseGameMasterBlocks() && !player.getBukkitEntity().hasPermission("minecraft.testblock")) {
+                 return InteractionResult.PASS;
+             } else {
+                 if (level.isClientSide()) {
+diff --git a/net/minecraft/world/level/block/TestInstanceBlock.java b/net/minecraft/world/level/block/TestInstanceBlock.java
+index 123a6ccd4e4a703d65eb8af6401492fa1e3354bf..98494e8994007fedb230508499eac9aa73db8f61 100644
+--- a/net/minecraft/world/level/block/TestInstanceBlock.java
++++ b/net/minecraft/world/level/block/TestInstanceBlock.java
+@@ -28,7 +28,7 @@ public class TestInstanceBlock extends BaseEntityBlock implements GameMasterBloc
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+         if (level.getBlockEntity(pos) instanceof TestInstanceBlockEntity testInstanceBlockEntity) {
+-            if (!player.canUseGameMasterBlocks()) {
++            if (!player.canUseGameMasterBlocks() && !player.getBukkitEntity().hasPermission("minecraft.testinstanceblock")) {
+                 return InteractionResult.PASS;
+             } else {
+                 if (player.level().isClientSide()) {
+diff --git a/net/minecraft/world/level/block/entity/StructureBlockEntity.java b/net/minecraft/world/level/block/entity/StructureBlockEntity.java
+index 1e7fd762aec7fd0cb396d339b4b1490c829d5c7e..8c28d96deb8e9135ed060a8c9e990bf4eb9e41f1 100644
+--- a/net/minecraft/world/level/block/entity/StructureBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/StructureBlockEntity.java
+@@ -148,7 +148,7 @@ public class StructureBlockEntity extends BlockEntity implements BoundingBoxRend
+     }
+ 
+     public boolean usedBy(Player player) {
+-        if (!player.canUseGameMasterBlocks()) {
++        if (!player.canUseGameMasterBlocks() || !(player.isCreative() && player.getBukkitEntity().hasPermission("minecraft.structureblock"))) {
+             return false;
+         } else {
+             if (player.level().isClientSide()) {
