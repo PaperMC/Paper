@@ -5,6 +5,7 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.holder.PaperRegistryHolders;
 import io.papermc.paper.registry.holder.RegistryHolder;
@@ -20,9 +21,9 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMinExclusive;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
@@ -74,13 +75,13 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
         @Override
         public JukeboxSongRegistryEntry.Builder soundEvent(final TypedKey<Sound> soundEvent) {
-            this.soundEvent = this.conversions.getReferenceHolder(PaperRegistries.toNms(asArgument(soundEvent, "soundEvent")));
+            this.soundEvent = this.conversions.getReferenceHolder(PaperRegistries.toNms(requireArgument(soundEvent, "soundEvent")));
             return this;
         }
 
         @Override
         public JukeboxSongRegistryEntry.Builder soundEvent(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent) {
-            this.soundEvent = this.conversions.createHolderFromBuilder(RegistryKey.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
+            this.soundEvent = this.conversions.createHolderFromBuilder(RegistryKey.SOUND_EVENT, requireArgument(soundEvent, "soundEvent"));
             return this;
         }
 
@@ -92,19 +93,19 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
         @Override
         public JukeboxSongRegistryEntry.Builder description(final net.kyori.adventure.text.Component description) {
-            this.description = this.conversions.asVanilla(asArgument(description, "description"));
+            this.description = this.conversions.asVanilla(requireArgument(description, "description"));
             return this;
         }
 
         @Override
         public JukeboxSongRegistryEntry.Builder lengthInSeconds(final @Positive float lengthInSeconds) {
-            this.lengthInSeconds = asArgumentMinExclusive(lengthInSeconds, "lengthInSeconds", 0);
+            this.lengthInSeconds = requireArgumentPositive(lengthInSeconds, "lengthInSeconds");
             return this;
         }
 
         @Override
         public JukeboxSongRegistryEntry.Builder comparatorOutput(final @Range(from = 0, to = 15) int comparatorOutput) {
-            this.comparatorOutput = OptionalInt.of(asArgumentRange(comparatorOutput, "comparatorOutput", Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX));
+            this.comparatorOutput = OptionalInt.of(Checks.requireArgumentRange(comparatorOutput, "comparatorOutput", Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX));
             return this;
         }
 
