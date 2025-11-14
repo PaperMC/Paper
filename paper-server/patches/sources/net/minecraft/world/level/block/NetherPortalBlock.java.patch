@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/level/block/NetherPortalBlock.java
 +++ b/net/minecraft/world/level/block/NetherPortalBlock.java
-@@ -65,7 +_,7 @@
+@@ -66,7 +_,7 @@
  
      @Override
      protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
--        if (level.dimensionType().natural()
-+        if (level.spigotConfig.enableZombiePigmenPortalSpawns && level.dimensionType().natural() // Spigot
-             && level.isSpawningMonsters()
+-        if (level.isSpawningMonsters()
++        if (level.spigotConfig.enableZombiePigmenPortalSpawns && level.isSpawningMonsters() // Spigot
+             && level.environmentAttributes().getValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS, pos)
              && random.nextInt(2000) < level.getDifficulty().getId()
              && level.anyPlayerCloseEnoughForSpawning(pos)) {
-@@ -74,9 +_,13 @@
+@@ -75,9 +_,13 @@
              }
  
              if (level.getBlockState(pos).isValidSpawn(level, pos, EntityType.ZOMBIFIED_PIGLIN)) {
@@ -24,7 +24,7 @@
                      Entity vehicle = entity.getVehicle();
                      if (vehicle != null) {
                          vehicle.setPortalCooldown();
-@@ -107,7 +_,13 @@
+@@ -108,7 +_,13 @@
  
      @Override
      protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
@@ -38,10 +38,10 @@
              entity.setAsInsidePortal(this, pos);
          }
      }
-@@ -130,22 +_,46 @@
-     @Nullable
+@@ -126,23 +_,47 @@
+ 
      @Override
-     public TeleportTransition getPortalDestination(ServerLevel level, Entity entity, BlockPos pos) {
+     public @Nullable TeleportTransition getPortalDestination(ServerLevel level, Entity entity, BlockPos pos) {
 -        ResourceKey<Level> resourceKey = level.dimension() == Level.NETHER ? Level.OVERWORLD : Level.NETHER;
 +        // CraftBukkit start
 +        ResourceKey<Level> resourceKey = level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER;
@@ -82,15 +82,16 @@
          }
      }
  
-     @Nullable
--    private TeleportTransition getExitPortal(ServerLevel level, Entity entity, BlockPos pos, BlockPos exitPos, boolean isNether, WorldBorder worldBorder) {
+     private @Nullable TeleportTransition getExitPortal(
+-        ServerLevel level, Entity entity, BlockPos pos, BlockPos exitPos, boolean isNether, WorldBorder worldBorder
++        ServerLevel level, Entity entity, BlockPos pos, BlockPos exitPos, WorldBorder worldBorder, org.bukkit.craftbukkit.event.PortalEventResult result // CraftBukkit
+     ) {
 -        Optional<BlockPos> optional = level.getPortalForcer().findClosestPortalPosition(exitPos, isNether, worldBorder);
-+    private TeleportTransition getExitPortal(ServerLevel level, Entity entity, BlockPos pos, BlockPos exitPos, WorldBorder worldBorder, org.bukkit.craftbukkit.event.PortalEventResult result) { // CraftBukkit
 +        Optional<BlockPos> optional = level.getPortalForcer().findClosestPortalPosition(exitPos, worldBorder, result.searchRadius()); // CraftBukkit
          BlockUtil.FoundRectangle largestRectangleAround;
          TeleportTransition.PostTeleportTransition postTeleportTransition;
          if (optional.isPresent()) {
-@@ -160,17 +_,22 @@
+@@ -157,17 +_,22 @@
                  blockPos1 -> level.getBlockState(blockPos1) == blockState
              );
              postTeleportTransition = TeleportTransition.PLAY_PORTAL_SOUND.then(entity1 -> entity1.placePortalTicket(blockPos));
@@ -116,7 +117,7 @@
  
          return getDimensionTransitionFromExit(entity, pos, largestRectangleAround, level, postTeleportTransition);
      }
-@@ -216,7 +_,7 @@
+@@ -213,7 +_,7 @@
          boolean flag = axis1 == Direction.Axis.X;
          Vec3 vec3 = new Vec3(blockPos.getX() + (flag ? d2 : d4), blockPos.getY() + d3, blockPos.getZ() + (flag ? d4 : d2));
          Vec3 vec31 = PortalShape.findCollisionFreePosition(vec3, level, entity, dimensions);

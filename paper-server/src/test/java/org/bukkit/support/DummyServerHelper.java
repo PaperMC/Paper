@@ -48,7 +48,7 @@ public final class DummyServerHelper {
         when(instance.getTag(any(), any(), any())).then(mock -> {
             String registry = mock.getArgument(0);
             Class<?> clazz = mock.getArgument(2);
-            net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+            net.minecraft.resources.Identifier key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
 
             switch (registry) {
                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {

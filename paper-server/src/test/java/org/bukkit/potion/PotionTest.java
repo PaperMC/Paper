@@ -5,7 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.alchemy.Potion;
@@ -20,7 +20,7 @@ public class PotionTest {
     @Test
     public void testEffectType() {
         for (MobEffect nms : BuiltInRegistries.MOB_EFFECT) {
-            ResourceLocation key = BuiltInRegistries.MOB_EFFECT.getKey(nms);
+            Identifier key = BuiltInRegistries.MOB_EFFECT.getKey(nms);
 
             PotionEffectType bukkit = CraftPotionEffectType.minecraftToBukkit(nms);
 

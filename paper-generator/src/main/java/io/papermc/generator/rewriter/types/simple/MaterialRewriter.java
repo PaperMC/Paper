@@ -39,7 +39,7 @@ public class MaterialRewriter {
             if (BlockStateMapping.MAPPING.containsKey(block.getClass())) {
                 // some block can also be represented as item in that enum
                 // doing a double job
-                Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().location());
+                Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().identifier());
 
                 if (equivalentItem.isEmpty() && block instanceof WallSignBlock) {
                     // wall sign block stack size is 16 for some reason like the sign item?
@@ -84,7 +84,7 @@ public class MaterialRewriter {
 
         @Override
         protected Iterable<Holder.Reference<Item>> getValues() {
-            return BuiltInRegistries.ITEM.listElements().filter(reference -> BuiltInRegistries.BLOCK.getOptional(reference.key().location()).isEmpty() || reference.value().equals(net.minecraft.world.item.Items.AIR))
+            return BuiltInRegistries.ITEM.listElements().filter(reference -> BuiltInRegistries.BLOCK.getOptional(reference.key().identifier()).isEmpty() || reference.value().equals(net.minecraft.world.item.Items.AIR))
                 .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 

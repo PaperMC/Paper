@@ -20,7 +20,7 @@ import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
@@ -46,7 +46,7 @@ public class ParticleTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testBukkitValuesPresent(ResourceLocation minecraft) {
+    public void testBukkitValuesPresent(Identifier minecraft) {
         // TODO: 10/19/23 Remove with enum PR, it is then no longer needed, since the enum PR has a extra test for this
         assertNotNull(Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(minecraft)), String.format("""
                 No bukkit particle found for minecraft particle %s.

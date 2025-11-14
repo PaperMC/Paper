@@ -1,15 +1,14 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -86,7 +_,7 @@
+@@ -87,13 +_,21 @@
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
      public boolean loaded;
 -    public final Level level;
 +    public final ServerLevel level; // CraftBukkit - type
-     @Nullable
-     private Supplier<FullChunkStatus> fullStatus;
-     @Nullable
-@@ -95,6 +_,14 @@
+     private @Nullable Supplier<FullChunkStatus> fullStatus;
+     private LevelChunk.@Nullable PostLoadProcessor postLoad;
+     private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
      private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
      private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
@@ -24,7 +23,7 @@
  
      public LevelChunk(Level level, ChunkPos pos) {
          this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -112,7 +_,7 @@
+@@ -111,7 +_,7 @@
          @Nullable BlendingData blendingData
      ) {
          super(pos, data, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
@@ -33,7 +32,7 @@
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types types : Heightmap.Types.values()) {
-@@ -164,6 +_,10 @@
+@@ -163,6 +_,10 @@
          this.skyLightSources = chunk.skyLightSources;
          this.setLightCorrect(chunk.isLightCorrect());
          this.markUnsaved();
@@ -44,7 +43,7 @@
      }
  
      public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
-@@ -172,6 +_,12 @@
+@@ -171,6 +_,12 @@
              unsavedListener.setUnsaved(this.chunkPos);
          }
      }
@@ -57,7 +56,7 @@
  
      @Override
      public void markUnsaved() {
-@@ -205,8 +_,28 @@
+@@ -204,8 +_,28 @@
              : super.getListenerRegistry(sectionY);
      }
  
@@ -86,7 +85,7 @@
          int x = pos.getX();
          int y = pos.getY();
          int z = pos.getZ();
-@@ -241,28 +_,42 @@
+@@ -240,28 +_,42 @@
          }
      }
  
@@ -130,8 +129,8 @@
 +        */ // Paper - Perf: Optimise Chunk#getFluid
      }
  
-     @Nullable
-@@ -324,7 +_,7 @@
+     @Override
+@@ -322,7 +_,7 @@
                  if (!section.getBlockState(i, i1, i2).is(block)) {
                      return null;
                  } else {
@@ -140,10 +139,10 @@
                          state.onPlace(this.level, pos, blockState, flag1);
                      }
  
-@@ -378,7 +_,12 @@
+@@ -373,7 +_,12 @@
+     }
  
-     @Nullable
-     public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
+     public @Nullable BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
 -        BlockEntity blockEntity = this.blockEntities.get(pos);
 +        // CraftBukkit start
 +        BlockEntity blockEntity = this.level.capturedTileEntities.get(pos);
@@ -154,7 +153,7 @@
          if (blockEntity == null) {
              CompoundTag compoundTag = this.pendingBlockEntities.remove(pos);
              if (compoundTag != null) {
-@@ -433,7 +_,13 @@
+@@ -428,7 +_,13 @@
          BlockPos blockPos = blockEntity.getBlockPos();
          BlockState blockState = this.getBlockState(blockPos);
          if (!blockState.hasBlockEntity()) {
@@ -169,7 +168,7 @@
          } else {
              BlockState blockState1 = blockEntity.getBlockState();
              if (blockState != blockState1) {
-@@ -481,6 +_,11 @@
+@@ -475,6 +_,11 @@
      public void removeBlockEntity(BlockPos pos) {
          if (this.isInLevel()) {
              BlockEntity blockEntity = this.blockEntities.remove(pos);
@@ -181,7 +180,7 @@
              if (blockEntity != null) {
                  if (this.level instanceof ServerLevel serverLevel) {
                      this.removeGameEventListener(blockEntity, serverLevel);
-@@ -524,6 +_,65 @@
+@@ -518,6 +_,65 @@
          }
      }
  
@@ -247,7 +246,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -762,23 +_,24 @@
+@@ -756,23 +_,24 @@
                          if (this.blockEntity.getType().isValid(blockState)) {
                              this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
                              this.loggedInvalidBlockState = false;

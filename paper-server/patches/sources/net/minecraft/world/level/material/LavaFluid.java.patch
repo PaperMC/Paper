@@ -1,35 +1,35 @@
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
 @@ -94,6 +_,13 @@
-                         BlockState blockState = level.getBlockState(blockPos);
-                         if (blockState.isAir()) {
-                             if (this.hasFlammableNeighbours(level, blockPos)) {
-+                                // CraftBukkit start - Prevent lava putting something on fire
-+                                if (!level.getBlockState(blockPos).is(Blocks.FIRE)) {
-+                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, pos).isCancelled()) {
-+                                        continue;
-+                                    }
-+                                }
-+                                // CraftBukkit end
-                                 level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
-                                 return;
-                             }
-@@ -109,6 +_,14 @@
-                         }
- 
-                         if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
+                     BlockState blockState = level.getBlockState(blockPos);
+                     if (blockState.isAir()) {
+                         if (this.hasFlammableNeighbours(level, blockPos)) {
 +                            // CraftBukkit start - Prevent lava putting something on fire
-+                            BlockPos up = blockPos1.above();
-+                            if (!level.getBlockState(up).is(Blocks.FIRE)) {
-+                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, up, pos).isCancelled()) {
++                            if (!level.getBlockState(blockPos).is(Blocks.FIRE)) {
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, pos).isCancelled()) {
 +                                    continue;
 +                                }
 +                            }
-+                            // CraftBukkit end - Prevent lava putting something on fire
-                             level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
++                            // CraftBukkit end
+                             level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
+                             return;
                          }
+@@ -109,6 +_,14 @@
                      }
-@@ -119,9 +_,10 @@
+ 
+                     if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
++                        // CraftBukkit start - Prevent lava putting something on fire
++                        BlockPos up = blockPos1.above();
++                        if (!level.getBlockState(up).is(Blocks.FIRE)) {
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, up, pos).isCancelled()) {
++                                continue;
++                            }
++                        }
++                        // CraftBukkit end - Prevent lava putting something on fire
+                         level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
+                     }
+                 }
+@@ -118,9 +_,10 @@
  
      @Override
      protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
@@ -41,7 +41,7 @@
      }
  
      private boolean hasFlammableNeighbours(LevelReader level, BlockPos pos) {
-@@ -209,7 +_,11 @@
+@@ -207,7 +_,11 @@
              FluidState fluidState1 = level.getFluidState(pos);
              if (this.is(FluidTags.LAVA) && fluidState1.is(FluidTags.WATER)) {
                  if (state.getBlock() instanceof LiquidBlock) {
@@ -54,7 +54,7 @@
                  }
  
                  this.fizz(level, pos);
-@@ -227,7 +_,7 @@
+@@ -225,7 +_,7 @@
  
      @Override
      protected float getExplosionResistance() {

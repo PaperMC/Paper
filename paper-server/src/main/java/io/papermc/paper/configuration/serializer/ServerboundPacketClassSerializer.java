@@ -23,7 +23,7 @@ import net.minecraft.network.protocol.handshake.HandshakePacketTypes;
 import net.minecraft.network.protocol.login.LoginPacketTypes;
 import net.minecraft.network.protocol.ping.PingPacketTypes;
 import net.minecraft.network.protocol.status.StatusPacketTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
@@ -44,12 +44,12 @@ public final class ServerboundPacketClassSerializer extends ScalarSerializer<Cla
         CookiePacketTypes.class,
         GamePacketTypes.class
     );
-    private static final Map<ResourceLocation, PacketInfo> ID_TO_INFO;
+    private static final Map<Identifier, PacketInfo> ID_TO_INFO;
     private static final Map<Class<?>, PacketInfo> CLASS_TO_INFO;
 
     static {
         try {
-            final ImmutableMap.Builder<ResourceLocation, PacketInfo> idBuilder = ImmutableMap.builder();
+            final ImmutableMap.Builder<Identifier, PacketInfo> idBuilder = ImmutableMap.builder();
             final ImmutableMap.Builder<Class<?>, PacketInfo> classBuilder = ImmutableMap.builder();
             for (final Class<?> holder : PACKET_CLASS_HOLDERS) {
                 for (final Field field : holder.getDeclaredFields()) {
@@ -85,9 +85,9 @@ public final class ServerboundPacketClassSerializer extends ScalarSerializer<Cla
 
     @Override
     public Class<? extends Packet<?>> deserialize(final Type type, final Object obj) throws SerializationException {
-        final ResourceLocation location = ResourceLocation.tryParse(obj.toString());
+        final Identifier location = Identifier.tryParse(obj.toString());
         if (location == null) {
-            throw new SerializationException(ResourceLocation.class, "Could not deserialize a packet from " + obj);
+            throw new SerializationException(Identifier.class, "Could not deserialize a packet from " + obj);
         }
         final PacketInfo info = ID_TO_INFO.get(location);
         if (info == null) {

@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.gui;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.TimeUtil;
 

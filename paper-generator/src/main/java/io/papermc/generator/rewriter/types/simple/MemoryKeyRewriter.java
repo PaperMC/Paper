@@ -109,7 +109,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         return "new %s<>(%s.minecraft(%s), %s.class)".formatted(
             this.registryEntry.apiClass().getSimpleName(),
             NamespacedKey.class.getSimpleName(),
-            quoted(reference.key().location().getPath()),
+            quoted(reference.key().identifier().getPath()),
             this.apiMemoryType.getSimpleName() // assume the type is already import (see above in rewriteFieldType)
         );
     }

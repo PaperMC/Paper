@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBiMap;
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 public record SingleFlagHolder(FeatureFlag flag) implements FlagHolder { // todo support multiple flags?
 
     private static final Map<String, FeatureFlag> FEATURE_FLAG_CACHE = new HashMap<>();
-    private static final Map<FeatureFlag, ResourceLocation> FEATURE_FLAG_NAME = HashBiMap.create(FeatureFlags.REGISTRY.names).inverse();
+    private static final Map<FeatureFlag, Identifier> FEATURE_FLAG_NAME = HashBiMap.create(FeatureFlags.REGISTRY.names).inverse();
 
     static SingleFlagHolder fromValue(FeatureFlag flag) {
         return new SingleFlagHolder(flag);
@@ -35,7 +35,7 @@ public record SingleFlagHolder(FeatureFlag flag) implements FlagHolder { // todo
 
     public static SingleFlagHolder fromName(String name) {
         return fromValue(FEATURE_FLAG_CACHE.computeIfAbsent(name, key -> {
-            return FeatureFlags.REGISTRY.names.get(ResourceLocation.withDefaultNamespace(key));
+            return FeatureFlags.REGISTRY.names.get(Identifier.withDefaultNamespace(key));
         }));
     }
 

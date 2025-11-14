@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.util.context.ContextKeySet;
@@ -34,7 +34,7 @@ import org.bukkit.loot.LootContext;
 
 public class CraftLootTable implements org.bukkit.loot.LootTable {
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceLocation minecraft) {
+    public static org.bukkit.loot.LootTable minecraftToBukkit(Identifier minecraft) {
         return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
     }
 
@@ -43,7 +43,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.location());
+        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.identifier());
     }
 
     public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {

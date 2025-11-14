@@ -2288,7 +2288,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2445,7 +2445,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2462,7 +2462,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public boolean getPVP();
@@ -2471,7 +2471,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Sets the PVP setting for this world.
      *
      * @param pvp True/False whether PVP should be Enabled.
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public void setPVP(boolean pvp);
@@ -2802,7 +2802,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * zombified piglins.
      *
      * @return true if world is natural
+     * @deprecated replaced by the gameplay/eyeblossom_open and gameplay/creaking_active environment attributes
      */
+    @Deprecated(since = "1.21.11")
     public boolean isNatural();
 
     /**
@@ -2862,7 +2864,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * </ul>
      *
      * @return true if this world has the above mechanics
+     * @deprecated as of 1.21.11, ultra warm is replaced by the WATER_EVAPORATES, FAST_LAVA, and DEFAULT_DRIPSTONE_PARTICLE environment attributes.
      */
+    @Deprecated(since = "1.21.11")
     public boolean isUltraWarm();
 
     /**
@@ -3789,7 +3793,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return String value of rule
      * @deprecated use {@link #getGameRuleValue(GameRule)} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.21.11", forRemoval = true)
     @Contract("null -> null; !null -> !null")
     @Nullable
     public String getGameRuleValue(@Nullable String rule);
@@ -3807,7 +3811,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return True if rule was set
      * @deprecated use {@link #setGameRule(GameRule, Object)} instead.
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public boolean setGameRuleValue(@NotNull String rule, @NotNull String value);
 
     /**

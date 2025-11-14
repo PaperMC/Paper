@@ -35,7 +35,7 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
 
         getOrEmpty(tag, CraftMetaKnowledgeBook.BOOK_RECIPES).ifPresent((recipes) -> {
             for (ResourceKey<?> recipe : recipes) {
-                this.addRecipe(CraftNamespacedKey.fromMinecraft(recipe.location()));
+                this.addRecipe(CraftNamespacedKey.fromMinecraft(recipe.identifier()));
             }
         });
     }

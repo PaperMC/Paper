@@ -83,19 +83,19 @@
              this.properties.store(bufferedWriter, "Minecraft server properties");
          } catch (IOException var7) {
              LOGGER.error("Failed to store properties to file: {}", filePath);
-@@ -94,7 +_,7 @@
+@@ -93,7 +_,7 @@
+     }
  
-     @Nullable
-     public String getStringRaw(String key) {
+     public @Nullable String getStringRaw(String key) {
 -        return (String)this.properties.get(key);
 +        return (String)this.getOverride(key, this.properties.getProperty(key)); // CraftBukkit
      }
  
-     @Nullable
-@@ -109,6 +_,15 @@
+     protected <V> @Nullable V getLegacy(String key, Function<String, V> serializer) {
+@@ -107,6 +_,15 @@
      }
  
-     protected <V> V get(String key, Function<String, V> serializer, Function<V, String> deserializer, V defaultValue) {
+     protected <V> V get(String key, Function<String, @Nullable V> serializer, Function<V, String> deserializer, V defaultValue) {
 +        // CraftBukkit start
 +        try {
 +            return this.get0(key, serializer, deserializer, defaultValue);
@@ -103,12 +103,12 @@
 +            throw new RuntimeException("Could not load invalidly configured property '" + key + "'", ex);
 +        }
 +    }
-+    private <V> V get0(String key, Function<String, V> serializer, Function<V, String> deserializer, V defaultValue) {
++    private <V> V get0(String key, Function<String, @Nullable V> serializer, Function<V, String> deserializer, V defaultValue) {
 +        // CraftBukkit end
          String stringRaw = this.getStringRaw(key);
          V object = MoreObjects.firstNonNull(stringRaw != null ? serializer.apply(stringRaw) : null, defaultValue);
          this.properties.put(key, deserializer.apply(object));
-@@ -185,7 +_,7 @@
+@@ -181,7 +_,7 @@
          return map;
      }
  
@@ -117,7 +117,7 @@
  
      public class MutableValue<V> implements Supplier<V> {
          private final String key;
-@@ -206,7 +_,7 @@
+@@ -202,7 +_,7 @@
          public T update(RegistryAccess registryAccess, V newValue) {
              Properties map = Settings.this.cloneProperties();
              map.put(this.key, this.serializer.apply(newValue));

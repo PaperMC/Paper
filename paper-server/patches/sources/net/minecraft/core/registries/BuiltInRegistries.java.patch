@@ -1,7 +1,7 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -336,6 +_,11 @@
-     public static final Registry<MapCodec<? extends DialogBody>> DIALOG_BODY_TYPE = registerSimple(Registries.DIALOG_BODY_TYPE, DialogBodyTypes::bootstrap);
+@@ -356,6 +_,11 @@
+     public static final Registry<MapCodec<? extends SlotSource>> SLOT_SOURCE_TYPE = registerSimple(Registries.SLOT_SOURCE_TYPE, SlotSources::bootstrap);
      public static final Registry<Consumer<GameTestHelper>> TEST_FUNCTION = registerSimple(Registries.TEST_FUNCTION, BuiltinTestFunctions::bootstrap);
      public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
 +    // Paper start - add built-in registry conversions
@@ -12,15 +12,15 @@
  
      private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> registryKey, BuiltInRegistries.RegistryBootstrap<T> bootstrap) {
          return internalRegister(registryKey, new MappedRegistry<>(registryKey, Lifecycle.stable(), false), bootstrap);
-@@ -363,6 +_,7 @@
+@@ -383,6 +_,7 @@
          ResourceKey<? extends Registry<T>> registryKey, R registry, BuiltInRegistries.RegistryBootstrap<T> bootstrap
      ) {
-         Bootstrap.checkBootstrapCalled(() -> "registry " + registryKey.location());
+         Bootstrap.checkBootstrapCalled(() -> "registry " + registryKey.identifier());
 +        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry); // Paper - initialize API registry
-         ResourceLocation resourceLocation = registryKey.location();
-         LOADERS.put(resourceLocation, () -> bootstrap.run(registry));
+         Identifier identifier = registryKey.identifier();
+         LOADERS.put(identifier, () -> bootstrap.run(registry));
          WRITABLE_REGISTRY.register((ResourceKey)registryKey, registry, RegistrationInfo.BUILT_IN);
-@@ -370,16 +_,34 @@
+@@ -390,16 +_,34 @@
      }
  
      public static void bootStrap() {
@@ -47,15 +47,15 @@
 +            throw new RuntimeException(ex);
 +        }
 +        // Paper end - class-load org.bukkit.Registry
-         LOADERS.forEach((resourceLocation, supplier) -> {
+         LOADERS.forEach((identifier, supplier) -> {
              if (supplier.get() == null) {
-                 LOGGER.error("Unable to bootstrap registry '{}'", resourceLocation);
+                 LOGGER.error("Unable to bootstrap registry '{}'", identifier);
              }
-+            io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(ResourceKey.createRegistryKey(resourceLocation)); // Paper - lock reference holder creation
++            io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(ResourceKey.createRegistryKey(identifier)); // Paper - lock reference holder creation
          });
      }
  
-@@ -388,6 +_,7 @@
+@@ -408,6 +_,7 @@
  
          for (Registry<?> registry : REGISTRY) {
              bindBootstrappedTagsToEmpty(registry);

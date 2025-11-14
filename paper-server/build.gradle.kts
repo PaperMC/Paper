@@ -14,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.10+build.9")
+    mache("io.papermc:mache:25w46a+build.3")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -24,7 +24,7 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = true
+        enabled = false
         buildDataRef = "42d18d4c4653ffc549778dbe223f6994a031d69e"
         packageVersion = "v1_21_R6" // also needs to be updated in MappingEnvironment
     }
@@ -40,6 +40,10 @@ paperweight {
         "org.bukkit.craftbukkit",
         "org.spigotmc",
     )
+
+    updatingMinecraft {
+        // oldPaperCommit = "a121fb9e8a925df319579b67609972a33a32a643"
+    }
 }
 
 tasks.generateDevelopmentBundle {
@@ -51,29 +55,26 @@ tasks.generateDevelopmentBundle {
 
 abstract class Services {
     @get:Inject
-    abstract val softwareComponentFactory: SoftwareComponentFactory
-
-    @get:Inject
     abstract val archiveOperations: ArchiveOperations
 }
 val services = objects.newInstance<Services>()
 
 if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-    val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
+    val devBundleComponent = publishing.softwareComponentFactory.adhoc("devBundle")
     components.add(devBundleComponent)
 
     val devBundle = configurations.consumable("devBundle") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
         outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
     }
-    devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
+    devBundleComponent.addVariantsFromConfiguration(devBundle) {}
 
     val runtime = configurations.consumable("serverRuntimeClasspath") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
         extendsFrom(configurations.runtimeClasspath.get())
     }
-    devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
+    devBundleComponent.addVariantsFromConfiguration(runtime) {
         mapToMavenScope("runtime")
     }
 
@@ -82,7 +83,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
         extendsFrom(configurations.compileClasspath.get())
     }
-    devBundleComponent.addVariantsFromConfiguration(compile.get()) {
+    devBundleComponent.addVariantsFromConfiguration(compile) {
         mapToMavenScope("compile")
     }
 
@@ -361,7 +362,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.BETA
+        channel = BuildChannel.ALPHA
 
         downloads {
             register("server:default") {

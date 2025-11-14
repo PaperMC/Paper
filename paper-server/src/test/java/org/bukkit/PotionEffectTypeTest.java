@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffectCategory;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectTypeCategory;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -23,7 +23,7 @@ public class PotionEffectTypeTest {
     public void verifyMapping() {
         List<PotionEffectType> effects = Lists.newArrayList(PotionEffectType.values());
 
-        for (ResourceLocation key : BuiltInRegistries.MOB_EFFECT.keySet()) {
+        for (Identifier key : BuiltInRegistries.MOB_EFFECT.keySet()) {
             String name = key.getPath();
             PotionEffectType effect = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(key));
 

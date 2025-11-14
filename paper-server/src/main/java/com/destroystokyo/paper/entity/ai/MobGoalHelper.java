@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -135,6 +135,11 @@ public class MobGoalHelper {
         map.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         map.put(net.minecraft.world.entity.animal.HappyGhast.class, HappyGhast.class);
         map.put(net.minecraft.world.entity.animal.coppergolem.CopperGolem.class, CopperGolem.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.AbstractNautilus.class, AbstractNautilus.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.Nautilus.class, Nautilus.class);
+        map.put(net.minecraft.world.entity.animal.nautilus.ZombieNautilus.class, ZombieNautilus.class);
+        map.put(net.minecraft.world.entity.animal.camel.CamelHusk.class, CamelHusk.class);
+        map.put(net.minecraft.world.entity.monster.Parched.class, Parched.class);
         // End generate - MobGoalHelper#BUKKIT_BRIDGE
         //</editor-fold>
     });

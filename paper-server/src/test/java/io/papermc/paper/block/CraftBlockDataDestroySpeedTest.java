@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static net.minecraft.resources.ResourceLocation.fromNamespaceAndPath;
+import static net.minecraft.resources.Identifier.fromNamespaceAndPath;
 
 /**
  * CraftBlockData's {@link org.bukkit.craftbukkit.block.data.CraftBlockData#getDestroySpeed(ItemStack, boolean)}

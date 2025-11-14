@@ -1,49 +1,46 @@
 --- a/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -131,7 +_,13 @@
+@@ -124,7 +_,12 @@
+     }
  
-     @Nullable
-     public Path createPath(BlockPos pos, int reachRange) {
+     public @Nullable Path createPath(BlockPos pos, int reachRange) {
 -        return this.createPath(ImmutableSet.of(pos), 8, false, reachRange);
 +        // Paper start - EntityPathfindEvent
 +        return this.createPath(pos, null, reachRange);
 +    }
-+    @Nullable
-+    public Path createPath(BlockPos target, @Nullable Entity entity, int reachRange) {
++    public @Nullable Path createPath(BlockPos target, @Nullable Entity entity, int reachRange) {
 +        return this.createPath(ImmutableSet.of(target), entity, 8, false, reachRange);
 +        // Paper end - EntityPathfindEvent
      }
  
-     @Nullable
-@@ -141,7 +_,7 @@
+     public @Nullable Path createPath(BlockPos pos, int reachRange, int followRange) {
+@@ -132,7 +_,7 @@
+     }
  
-     @Nullable
-     public Path createPath(Entity entity, int reachRange) {
+     public @Nullable Path createPath(Entity entity, int reachRange) {
 -        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, reachRange);
 +        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, reachRange); // Paper - EntityPathfindEvent
      }
  
-     @Nullable
-@@ -151,6 +_,18 @@
+     protected @Nullable Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int reachRange) {
+@@ -140,6 +_,16 @@
+     }
  
-     @Nullable
-     protected Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
+     protected @Nullable Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
 +        // Paper start - EntityPathfindEvent
 +        return this.createPath(targets, null, regionOffset, offsetUpward, reachRange, followRange);
 +    }
 +
-+    @Nullable
-+    protected Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange) {
++    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange) {
 +        return this.createPath(targets, target, regionOffset, offsetUpward, reachRange, this.getMaxPathLength());
 +    }
 +
-+    @Nullable
-+    protected Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
++    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
 +        // Paper end - EntityPathfindEvent
          if (targets.isEmpty()) {
              return null;
          } else if (this.mob.getY() < this.level.getMinY()) {
-@@ -160,6 +_,23 @@
+@@ -149,6 +_,23 @@
          } else if (this.path != null && !this.path.isDone() && targets.contains(this.targetPos)) {
              return this.path;
          } else {
@@ -67,7 +64,7 @@
              ProfilerFiller profilerFiller = Profiler.get();
              profilerFiller.push("pathfind");
              BlockPos blockPos = offsetUpward ? this.mob.blockPosition().above() : this.mob.blockPosition();
-@@ -177,6 +_,11 @@
+@@ -166,6 +_,11 @@
          }
      }
  
@@ -79,7 +76,7 @@
      public boolean moveTo(double x, double y, double z, double speedModifier) {
          return this.moveTo(this.createPath(x, y, z, 1), speedModifier);
      }
-@@ -186,8 +_,23 @@
+@@ -175,8 +_,23 @@
      }
  
      public boolean moveTo(Entity entity, double speedModifier) {

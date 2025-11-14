@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.Bukkit;
@@ -492,10 +492,10 @@ public class RegistryClassTest {
     @MethodSource("fieldData")
     public <T extends Keyed> void testMissingConstants(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey) throws IllegalAccessException {
         net.minecraft.core.Registry<Object> registry = RegistryHelper.getRegistry().lookupOrThrow(registryKey);
-        List<ResourceLocation> missingKeys = new ArrayList<>();
+        List<Identifier> missingKeys = new ArrayList<>();
 
         for (Object nmsObject : registry) {
-            ResourceLocation minecraftKey = registry.getKey(nmsObject);
+            Identifier minecraftKey = registry.getKey(nmsObject);
 
             try {
                 Field field = type.getField(this.convertToFieldName(minecraftKey.getPath()));

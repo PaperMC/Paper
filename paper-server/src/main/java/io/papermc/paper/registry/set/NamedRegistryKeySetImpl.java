@@ -32,7 +32,7 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
     public @Unmodifiable Collection<TypedKey<T>> values() {
         final ImmutableList.Builder<TypedKey<T>> builder = ImmutableList.builder();
         for (final Holder<M> holder : this.namedSet) {
-            builder.add(TypedKey.create(this.tagKey.registryKey(), CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().location())));
+            builder.add(TypedKey.create(this.tagKey.registryKey(), CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().identifier())));
         }
         return builder.build();
     }
@@ -53,7 +53,7 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
     public @Unmodifiable Collection<T> resolve(final Registry<T> registry) {
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (final Holder<M> holder : this.namedSet) {
-            builder.add(registry.getOrThrow(CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().location())));
+            builder.add(registry.getOrThrow(CraftNamespacedKey.fromMinecraft(((Holder.Reference<?>) holder).key().identifier())));
         }
         return builder.build();
     }

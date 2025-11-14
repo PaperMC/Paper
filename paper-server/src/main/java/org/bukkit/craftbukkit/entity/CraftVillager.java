@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
@@ -103,7 +104,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         while (amount > 0) {
-            this.getHandle().increaseMerchantCareer();
+            this.getHandle().increaseMerchantCareer((ServerLevel) this.getHandle().level());
             amount--;
         }
         return true;

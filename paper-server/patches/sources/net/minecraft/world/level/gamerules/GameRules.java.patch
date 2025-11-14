@@ -1,0 +1,69 @@
+--- a/net/minecraft/world/level/gamerules/GameRules.java
++++ b/net/minecraft/world/level/gamerules/GameRules.java
+@@ -17,6 +_,14 @@
+ import org.jspecify.annotations.Nullable;
+ 
+ public class GameRules {
++    // Paper start - allow disabling gamerule limits
++    private static final boolean DISABLE_LIMITS = Boolean.getBoolean("paper.disableGameRuleLimits");
++
++    private static int limit(final int limit, final int unlimited) {
++        return DISABLE_LIMITS ? unlimited : limit;
++    }
++    // Paper end - allow disabling gamerule limits
++
+     public static final GameRule<Boolean> ADVANCE_TIME = registerBoolean("advance_time", GameRuleCategory.UPDATES, !SharedConstants.DEBUG_WORLD_RECREATE);
+     public static final GameRule<Boolean> ADVANCE_WEATHER = registerBoolean("advance_weather", GameRuleCategory.UPDATES, !SharedConstants.DEBUG_WORLD_RECREATE);
+     public static final GameRule<Boolean> ALLOW_ENTERING_NETHER_USING_PORTALS = registerBoolean(
+@@ -114,13 +_,15 @@
+         }
+     }
+ 
+-    public <T> void set(GameRule<T> rule, T value, @Nullable MinecraftServer server) {
++    public <T> void set(GameRule<T> rule, T value, net.minecraft.server.level.@Nullable ServerLevel level) { // Paper - per-world game rules
+         if (!this.rules.has(rule)) {
+             throw new IllegalArgumentException("Tried to set invalid game rule");
+         } else {
+             this.rules.set(rule, value);
+-            if (server != null) {
+-                server.onGameRuleChanged(rule, value);
++            // Paper start - per-world game rules
++            if (level != null) {
++                level.getServer().onGameRuleChanged(level, rule, value);
++                // Paper end - per-world game rules
+             }
+         }
+     }
+@@ -129,16 +_,22 @@
+         return new GameRules(enabledFeatures, this.rules);
+     }
+ 
+-    public void setAll(GameRules gameRules, @Nullable MinecraftServer server) {
+-        this.setAll(gameRules.rules, server);
+-    }
+-
+-    public void setAll(GameRuleMap rules, @Nullable MinecraftServer server) {
+-        rules.keySet().forEach(rule -> this.setFromOther(rules, (GameRule<?>)rule, server));
+-    }
+-
+-    private <T> void setFromOther(GameRuleMap rules, GameRule<T> rule, @Nullable MinecraftServer server) {
+-        this.set(rule, Objects.requireNonNull(rules.get(rule)), server);
++    // Paper start - per-world game rules
++    public void setAll(GameRules gameRules, net.minecraft.server.level.@Nullable ServerLevel level) {
++        this.setAll(gameRules.rules, level);
++        // Paper end - per-world game rules
++    }
++
++    // Paper start - per-world game rules
++    public void setAll(GameRuleMap rules, net.minecraft.server.level.@Nullable ServerLevel level) {
++        rules.keySet().forEach(rule -> this.setFromOther(rules, (GameRule<?>)rule, level));
++        // Paper end - per-world game rules
++    }
++
++    // Paper start - per-world game rules
++    private <T> void setFromOther(GameRuleMap rules, GameRule<T> rule, net.minecraft.server.level.@Nullable ServerLevel level) {
++        this.set(rule, Objects.requireNonNull(rules.get(rule)), level);
++        // Paper end - per-world game rules
+     }
+ 
+     public void visitGameRuleTypes(GameRuleTypeVisitor visitor) {

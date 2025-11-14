@@ -52,7 +52,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
@@ -141,12 +141,12 @@ public final class PaperAdventure {
 
     // Key
 
-    public static Key asAdventure(final ResourceLocation key) {
+    public static Key asAdventure(final Identifier key) {
         return Key.key(key.getNamespace(), key.getPath());
     }
 
-    public static ResourceLocation asVanilla(final Key key) {
-        return ResourceLocation.fromNamespaceAndPath(key.namespace(), key.value());
+    public static Identifier asVanilla(final Key key) {
+        return Identifier.fromNamespaceAndPath(key.namespace(), key.value());
     }
 
     public static <T> ResourceKey<T> asVanilla(
@@ -157,10 +157,10 @@ public final class PaperAdventure {
     }
 
     public static Key asAdventureKey(final ResourceKey<?> key) {
-        return asAdventure(key.location());
+        return asAdventure(key.identifier());
     }
 
-    public static @Nullable ResourceLocation asVanillaNullable(final Key key) {
+    public static @Nullable Identifier asVanillaNullable(final Key key) {
         if (key == null) {
             return null;
         }
@@ -168,7 +168,7 @@ public final class PaperAdventure {
     }
 
     public static Holder<SoundEvent> resolveSound(final Key key) {
-        ResourceLocation id = asVanilla(key);
+        Identifier id = asVanilla(key);
         Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
         if (vanilla.isPresent()) {
             return vanilla.get();
@@ -180,7 +180,7 @@ public final class PaperAdventure {
 
     // Component
 
-    public static @NotNull Component asAdventure(@Nullable final net.minecraft.network.chat.Component component) {
+    public static @NotNull Component asAdventure(final net.minecraft.network.chat.@Nullable Component component) {
         return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
     }
 
@@ -256,7 +256,7 @@ public final class PaperAdventure {
         );
     }
 
-    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final org.bukkit.entity.@Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
         Boolean previous = null;
         if (css != null && bypassPermissions) {
@@ -354,7 +354,7 @@ public final class PaperAdventure {
     }
 
     public static Packet<?> asSoundPacket(final Sound sound, final double x, final double y, final double z, final long seed, @Nullable BiConsumer<Packet<?>, Float> packetConsumer) {
-        final ResourceLocation name = asVanilla(sound.name());
+        final Identifier name = asVanilla(sound.name());
         final Optional<SoundEvent> soundEvent = BuiltInRegistries.SOUND_EVENT.getOptional(name);
         final SoundSource source = asVanilla(sound.source());
 
@@ -367,7 +367,7 @@ public final class PaperAdventure {
     }
 
     public static Packet<?> asSoundPacket(final Sound sound, final Entity emitter, final long seed, @Nullable BiConsumer<Packet<?>, Float> packetConsumer) {
-        final ResourceLocation name = asVanilla(sound.name());
+        final Identifier name = asVanilla(sound.name());
         final Optional<SoundEvent> soundEvent = BuiltInRegistries.SOUND_EVENT.getOptional(name);
         final SoundSource source = asVanilla(sound.source());
 

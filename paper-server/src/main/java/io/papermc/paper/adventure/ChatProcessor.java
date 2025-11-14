@@ -22,13 +22,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Optionull;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.command.ConsoleCommandSender;
@@ -50,7 +50,7 @@ import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializ
 
 @DefaultQualifier(NonNull.class)
 public final class ChatProcessor {
-    static final ResourceKey<ChatType> PAPER_RAW = ResourceKey.create(Registries.CHAT_TYPE, ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "raw"));
+    static final ResourceKey<ChatType> PAPER_RAW = ResourceKey.create(Registries.CHAT_TYPE, Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "raw"));
     static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
     final MinecraftServer server;
     final ServerPlayer player;
@@ -280,7 +280,7 @@ public final class ChatProcessor {
 
         private net.kyori.adventure.chat.ChatType.Bound adventure(ChatType.Bound chatType) {
             @Subst("key:value") final String stringKey = Objects.requireNonNull(
-                chatType.chatType().unwrapKey().orElseThrow().location(),
+                chatType.chatType().unwrapKey().orElseThrow().identifier(),
                 () -> "No key for '%s' in CHAT_TYPE registry.".formatted(chatType)
             ).toString();
             net.kyori.adventure.chat.@Nullable ChatType adventure = BUILT_IN_CHAT_TYPES.get(stringKey);

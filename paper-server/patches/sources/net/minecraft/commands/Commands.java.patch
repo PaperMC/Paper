@@ -1,13 +1,22 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -172,12 +_,18 @@
+@@ -155,6 +_,7 @@
+ import org.slf4j.Logger;
+ 
+ public class Commands {
++    public interface RestrictedMarker { } // Paper - restricted api
+     public static final String COMMAND_PREFIX = "/";
+     private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -179,6 +_,7 @@
  
          @Override
          public boolean isRestricted(CommandNode<CommandSourceStack> node) {
-+            if (node.getRequirement() instanceof PermissionSource.RestrictedMarker) return true; // Paper - restricted api
-             return node.getRequirement() instanceof PermissionCheck<?> permissionCheck && permissionCheck.requiredLevel() > 0;
++            if (node.getRequirement() instanceof RestrictedMarker) return true; // Paper - restricted api
+             Predicate<CommandSourceStack> requirement = node.getRequirement();
+             return !requirement.test(this.noPermissionSource);
          }
-     };
+@@ -186,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
@@ -19,7 +28,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -287,6 +_,42 @@
+@@ -296,6 +_,42 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -27,7 +36,7 @@
 +        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
 +            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
 +                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
-+            } else if (node.getRequirement() instanceof net.minecraft.commands.PermissionSource.Check<CommandSourceStack> check) {
++            } else if (node.getRequirement() instanceof PermissionProviderCheck<CommandSourceStack> check) {
 +                check.vanillaNode().set(node);
 +            }
 +        }
@@ -62,7 +71,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -306,6 +_,13 @@
+@@ -315,6 +_,13 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
@@ -76,7 +85,7 @@
          CommandSourceStack commandSourceStack = parseResults.getContext().getSource();
          Profiler.get().push(() -> "/" + command);
          ContextChain<CommandSourceStack> contextChain = finishParsing(parseResults, command, commandSourceStack);
-@@ -319,10 +_,13 @@
+@@ -328,10 +_,13 @@
                      )
                  );
              }
@@ -93,14 +102,7 @@
                  StackTraceElement[] stackTrace = var12.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -348,13 +_,17 @@
-     }
- 
-     @Nullable
--    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-+    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-         try {
-             validateParseResults(parseResults);
+@@ -364,7 +_,11 @@
              return ContextChain.tryFlatten(parseResults.getContext().build(command))
                  .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseResults.getReader()));
          } catch (CommandSyntaxException var7) {
@@ -113,7 +115,7 @@
              if (var7.getInput() != null && var7.getCursor() >= 0) {
                  int min = Math.min(var7.getInput().length(), var7.getCursor());
                  MutableComponent mutableComponent = Component.empty()
-@@ -371,7 +_,17 @@
+@@ -381,7 +_,17 @@
                  }
  
                  mutableComponent.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -132,7 +134,7 @@
              }
  
              return null;
-@@ -399,17 +_,110 @@
+@@ -409,17 +_,110 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -246,7 +248,7 @@
                  if (argumentBuilder.getRedirect() != null) {
                      argumentBuilder.redirect(output.get(argumentBuilder.getRedirect()));
                  }
-@@ -418,7 +_,7 @@
+@@ -428,7 +_,7 @@
                  output.put(commandNode, commandNode1);
                  current.addChild(commandNode1);
                  if (!commandNode.getChildren().isEmpty()) {

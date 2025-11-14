@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java
 +++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
-@@ -37,10 +_,17 @@
-     @Nullable
-     private PrepareSpawnTask.State state;
+@@ -36,10 +_,17 @@
+     final LevelLoadListener loadListener;
+     private PrepareSpawnTask.@Nullable State state;
  
 -    public PrepareSpawnTask(MinecraftServer server, NameAndId nameAndId) {
 +    // Paper start - passthrough profile and packet listener
@@ -21,7 +21,7 @@
      }
  
      @Override
-@@ -50,15 +_,57 @@
+@@ -49,15 +_,57 @@
                  .getPlayerList()
                  .loadPlayerData(this.nameAndId)
                  .map(compoundTag -> TagValueInput.create(scopedCollector, this.server.registryAccess(), compoundTag));
@@ -83,7 +83,7 @@
              CompletableFuture<Vec3> completableFuture = savedPosition.position()
                  .map(CompletableFuture::completedFuture)
                  .orElseGet(() -> PlayerSpawnFinder.findSpawn(serverLevel, respawnData.pos()));
-@@ -113,11 +_,12 @@
+@@ -112,10 +_,11 @@
      }
  
      final class Preparing implements PrepareSpawnTask.State {
@@ -93,13 +93,12 @@
 +        private ServerLevel spawnLevel; // Paper - remove final
 +        private CompletableFuture<Vec3> spawnPosition; // Paper - remove final
 +        private Vec2 spawnAngle; // Paper - remove final
-         @Nullable
-         private CompletableFuture<?> chunkLoadFuture;
+         private @Nullable CompletableFuture<?> chunkLoadFuture;
 +        private @Nullable CompletableFuture<org.bukkit.Location> eventFuture; // Paper
          private final ChunkLoadCounter chunkLoadCounter = new ChunkLoadCounter();
  
          Preparing(final ServerLevel spawnLevel, final CompletableFuture<Vec3> spawnPosition, final Vec2 spawnAngle) {
-@@ -137,6 +_,50 @@
+@@ -134,6 +_,50 @@
              } else {
                  Vec3 vec3 = this.spawnPosition.join();
                  if (this.chunkLoadFuture == null) {
@@ -150,7 +149,7 @@
                      ChunkPos chunkPos = new ChunkPos(BlockPos.containing(vec3));
                      this.chunkLoadCounter
                          .track(
-@@ -177,15 +_,48 @@
+@@ -174,15 +_,48 @@
          public ServerPlayer spawn(Connection connection, CommonListenerCookie cookie) {
              ChunkPos chunkPos = new ChunkPos(BlockPos.containing(this.spawnPosition));
              this.spawnLevel.waitForEntities(chunkPos, 3);

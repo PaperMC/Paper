@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/LightningBolt.java
 +++ b/net/minecraft/world/entity/LightningBolt.java
-@@ -40,6 +_,7 @@
-     private ServerPlayer cause;
+@@ -39,6 +_,7 @@
+     private @Nullable ServerPlayer cause;
      private final Set<Entity> hitEntities = Sets.newHashSet();
      private int blocksSetOnFire;
 +    public boolean isEffect; // Paper - Properly handle lightning effects api
  
      public LightningBolt(EntityType<? extends LightningBolt> type, Level level) {
          super(type, level);
-@@ -77,7 +_,7 @@
+@@ -75,7 +_,7 @@
      @Override
      public void tick() {
          super.tick();
@@ -17,7 +17,7 @@
              if (this.level().isClientSide()) {
                  this.level()
                      .playLocalSound(
-@@ -108,7 +_,7 @@
+@@ -106,7 +_,7 @@
                  }
  
                  this.powerLightningRod();
@@ -26,7 +26,7 @@
                  this.gameEvent(GameEvent.LIGHTNING_STRIKE);
              }
          }
-@@ -131,7 +_,7 @@
+@@ -129,7 +_,7 @@
                      }
                  }
  
@@ -35,7 +35,7 @@
              } else if (this.life < -this.random.nextInt(10)) {
                  this.flashes--;
                  this.life = 1;
-@@ -140,10 +_,10 @@
+@@ -138,10 +_,10 @@
              }
          }
  
@@ -48,37 +48,31 @@
                  List<Entity> entities = this.level()
                      .getEntities(
                          this,
-@@ -169,44 +_,57 @@
+@@ -167,34 +_,43 @@
      }
  
      private void spawnFire(int extraIgnitions) {
--        if (!this.visualOnly && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
-+        if (!this.visualOnly && !this.isEffect && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) { // Paper - prevent any fire if only effect
-             BlockPos blockPos = this.blockPosition();
-             BlockState state = BaseFireBlock.getState(this.level(), blockPos);
-             if (this.level().getBlockState(blockPos).isAir() && state.canSurvive(this.level(), blockPos)) {
--                this.level().setBlockAndUpdate(blockPos, state);
--                this.blocksSetOnFire++;
-+                // CraftBukkit start
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos, this).isCancelled()) {
-+                    this.level().setBlockAndUpdate(blockPos, state);
-+                    this.blocksSetOnFire++;
-+                }
-+                // CraftBukkit end
-             }
+-        if (!this.visualOnly && this.level() instanceof ServerLevel serverLevel) {
++        if (!this.visualOnly && !this.isEffect && this.level() instanceof ServerLevel serverLevel) { // Paper - Properly handle lightning effects api
+             BlockPos var7 = this.blockPosition();
+             if (serverLevel.canSpreadFireAround(var7)) {
+                 BlockState state = BaseFireBlock.getState(serverLevel, var7);
+                 if (serverLevel.getBlockState(var7).isAir() && state.canSurvive(serverLevel, var7)) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), var7, this).isCancelled()) { // CraftBukkit
+                     serverLevel.setBlockAndUpdate(var7, state);
+                     this.blocksSetOnFire++;
++                    } // CraftBukkit
+                 }
  
-             for (int i = 0; i < extraIgnitions; i++) {
-                 BlockPos blockPos1 = blockPos.offset(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
-                 state = BaseFireBlock.getState(this.level(), blockPos1);
-                 if (this.level().getBlockState(blockPos1).isAir() && state.canSurvive(this.level(), blockPos1)) {
--                    this.level().setBlockAndUpdate(blockPos1, state);
--                    this.blocksSetOnFire++;
-+                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos1, this).isCancelled()) {
-+                        this.level().setBlockAndUpdate(blockPos1, state);
-+                        this.blocksSetOnFire++;
-+                    }
-+                    // CraftBukkit end
+                 for (int i = 0; i < extraIgnitions; i++) {
+                     BlockPos blockPos1 = var7.offset(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
+                     state = BaseFireBlock.getState(serverLevel, blockPos1);
+                     if (serverLevel.getBlockState(blockPos1).isAir() && state.canSurvive(serverLevel, blockPos1)) {
++                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos1, this).isCancelled()) { // CraftBukkit
+                         serverLevel.setBlockAndUpdate(blockPos1, state);
+                         this.blocksSetOnFire++;
++                        } // CraftBukkit
+                     }
                  }
              }
          }
@@ -87,16 +81,21 @@
 -    private static void clearCopperOnLightningStrike(Level level, BlockPos pos) {
 +    private static void clearCopperOnLightningStrike(Level level, BlockPos pos, Entity lightning) { // Paper - Call EntityChangeBlockEvent
          BlockState blockState = level.getBlockState(pos);
-         if (blockState.getBlock() instanceof WeatheringCopper) {
--            level.setBlockAndUpdate(pos, WeatheringCopper.getFirst(level.getBlockState(pos)));
-+            // Paper start - Call EntityChangeBlockEvent
-+            BlockState newBlockState = WeatheringCopper.getFirst(level.getBlockState(pos));
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(lightning, pos, newBlockState)) {
-+                level.setBlockAndUpdate(pos, newBlockState);
-+            }
-+            // Paper end - Call EntityChangeBlockEvent
+         boolean flag = HoneycombItem.WAX_OFF_BY_BLOCK.get().get(blockState.getBlock()) != null;
+         boolean flag1 = blockState.getBlock() instanceof WeatheringCopper;
+         if (flag1 || flag) {
+             if (flag1) {
+-                level.setBlockAndUpdate(pos, WeatheringCopper.getFirst(level.getBlockState(pos)));
++                // Paper start - Call EntityChangeBlockEvent
++                BlockState newBlockState = WeatheringCopper.getFirst(level.getBlockState(pos));
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(lightning, pos, newBlockState)) {
++                    level.setBlockAndUpdate(pos, newBlockState);
++                }
++                // Paper end - Call EntityChangeBlockEvent
+             }
+ 
              BlockPos.MutableBlockPos mutableBlockPos = pos.mutable();
-             int i = level.random.nextInt(3) + 3;
+@@ -202,16 +_,16 @@
  
              for (int i1 = 0; i1 < i; i1++) {
                  int i2 = level.random.nextInt(8) + 1;
@@ -116,7 +115,7 @@
              if (optional.isEmpty()) {
                  break;
              }
-@@ -215,11 +_,17 @@
+@@ -220,11 +_,17 @@
          }
      }
  

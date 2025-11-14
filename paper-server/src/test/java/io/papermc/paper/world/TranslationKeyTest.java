@@ -5,7 +5,6 @@ import java.util.Map;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureFlags;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.Biome;
 import org.bukkit.Difficulty;
@@ -26,14 +25,6 @@ public class TranslationKeyTest {
     public void testDifficultyKeys() {
         for (Difficulty bukkitDifficulty : Difficulty.values()) {
             Assertions.assertEquals(((TranslatableContents) net.minecraft.world.Difficulty.byId(bukkitDifficulty.ordinal()).getDisplayName().getContents()).getKey(), bukkitDifficulty.translationKey(), bukkitDifficulty + "'s translation key doesn't match");
-        }
-    }
-
-    @Test
-    public void testGameruleKeys() {
-        final Map<String, GameRules.Key<?>> gameRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
-        for (GameRule<?> rule : GameRule.values()) {
-            Assertions.assertEquals(gameRules.get(rule.getName()).getDescriptionId(), rule.translationKey(), rule.getName() + "'s translation doesn't match");
         }
     }
 
@@ -67,8 +58,8 @@ public class TranslationKeyTest {
     @Test
     public void testBiome() {
         for (Map.Entry<ResourceKey<Biome>, Biome> nms : RegistryHelper.getBiomes().entrySet()) {
-            org.bukkit.block.Biome bukkit = org.bukkit.block.Biome.valueOf(nms.getKey().location().getPath().toUpperCase(Locale.ROOT));
-            Assertions.assertEquals(nms.getKey().location().toLanguageKey("biome"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
+            org.bukkit.block.Biome bukkit = org.bukkit.block.Biome.valueOf(nms.getKey().identifier().getPath().toUpperCase(Locale.ROOT));
+            Assertions.assertEquals(nms.getKey().identifier().toLanguageKey("biome"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
         }
     }
 }

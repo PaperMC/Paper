@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -61,11 +61,11 @@ public class RegistryConstantsTest {
     }
 
     private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<net.minecraft.core.Registry<M>> nmsRegistryKey) {
-        List<ResourceLocation> missingKeys = new ArrayList<>();
+        List<Identifier> missingKeys = new ArrayList<>();
 
         net.minecraft.core.Registry<M> nmsRegistry = RegistryHelper.getRegistry().lookupOrThrow(nmsRegistryKey);
         for (M nmsObject : nmsRegistry) {
-            ResourceLocation minecraftKey = nmsRegistry.getKey(nmsObject);
+            Identifier minecraftKey = nmsRegistry.getKey(nmsObject);
 
             try {
                 @SuppressWarnings("unchecked")

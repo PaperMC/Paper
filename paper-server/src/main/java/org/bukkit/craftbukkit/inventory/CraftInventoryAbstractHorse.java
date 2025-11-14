@@ -65,8 +65,8 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
         items[HorseInventoryMenu.SLOT_SADDLE] = this.getSaddle();
         items[HorseInventoryMenu.SLOT_BODY_ARMOR] = this.getArmor();
 
-        for (int i = HorseInventoryMenu.SLOT_HORSE_INVENTORY_START; i < items.length; i++) {
-            net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(i - HorseInventoryMenu.SLOT_HORSE_INVENTORY_START);
+        for (int i = HorseInventoryMenu.SLOT_INVENTORY_START; i < items.length; i++) {
+            net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(i - HorseInventoryMenu.SLOT_INVENTORY_START);
             items[i] = item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
 
@@ -80,9 +80,9 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
         this.setSaddle(ArrayUtils.get(items, HorseInventoryMenu.SLOT_SADDLE));
         this.setArmor(ArrayUtils.get(items, HorseInventoryMenu.SLOT_BODY_ARMOR));
 
-        for (int i = HorseInventoryMenu.SLOT_HORSE_INVENTORY_START; i < this.getSize(); i++) {
+        for (int i = HorseInventoryMenu.SLOT_INVENTORY_START; i < this.getSize(); i++) {
             net.minecraft.world.item.ItemStack item = i >= items.length ? net.minecraft.world.item.ItemStack.EMPTY : CraftItemStack.asNMSCopy(items[i]);
-            this.getMainInventory().setItem(i - HorseInventoryMenu.SLOT_HORSE_INVENTORY_START, item);
+            this.getMainInventory().setItem(i - HorseInventoryMenu.SLOT_INVENTORY_START, item);
         }
     }
 

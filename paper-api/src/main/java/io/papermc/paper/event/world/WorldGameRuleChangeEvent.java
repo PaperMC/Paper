@@ -19,7 +19,7 @@ public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final @Nullable CommandSender commandSender;
-    private final GameRule<?> gameRule;
+    protected final GameRule<?> gameRule;
     private String value;
     private boolean cancelled;
 

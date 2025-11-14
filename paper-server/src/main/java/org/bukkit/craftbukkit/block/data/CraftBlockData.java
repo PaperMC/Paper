@@ -579,7 +579,7 @@ public class CraftBlockData implements BlockData {
         if (blockType != null) {
             Block block = CraftBlockType.bukkitToMinecraftNew(blockType);
             if (block != null) {
-                net.minecraft.resources.ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
+                net.minecraft.resources.Identifier key = BuiltInRegistries.BLOCK.getKey(block);
                 data = data == null ? key.toString() : key + data;
             }
         }

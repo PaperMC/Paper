@@ -13,11 +13,11 @@ public enum EquipmentSlot {
     CHEST(() -> EquipmentSlotGroup.CHEST),
     HEAD(() -> EquipmentSlotGroup.HEAD),
     /**
-     * Only for certain entities such as horses, happy ghasts and wolves.
+     * Only for certain entities such as horses, wolves, happy ghasts and nautiluses.
      */
     BODY(() -> EquipmentSlotGroup.BODY),
     /**
-     * Only for certain entities such as pigs, horses, striders and copper golems.
+     * Only for certain entities such as pigs, horses, striders, copper golems and nautiluses.
      */
     SADDLE(() -> EquipmentSlotGroup.SADDLE);
 

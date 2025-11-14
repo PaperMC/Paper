@@ -16,7 +16,7 @@ import java.util.Optional;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.bukkit.NamespacedKey;
@@ -37,7 +37,7 @@ public class CraftStructureManager implements StructureManager {
     @Override
     public Map<NamespacedKey, Structure> getStructures() {
         Map<NamespacedKey, Structure> cachedStructures = new HashMap<>();
-        for (Map.Entry<ResourceLocation, Optional<StructureTemplate>> entry : this.structureManager.structureRepository.entrySet()) {
+        for (Map.Entry<Identifier, Optional<StructureTemplate>> entry : this.structureManager.structureRepository.entrySet()) {
             entry.getValue().ifPresent(definedStructure -> cachedStructures.put(CraftNamespacedKey.fromMinecraft(entry.getKey()), new CraftStructure(definedStructure, this.registry)));
         }
         return Collections.unmodifiableMap(cachedStructures);
@@ -56,7 +56,7 @@ public class CraftStructureManager implements StructureManager {
 
     @Override
     public Structure loadStructure(NamespacedKey structureKey, boolean register) {
-        ResourceLocation minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
+        Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
 
         Optional<StructureTemplate> structure = this.structureManager.structureRepository.get(minecraftKey);
         structure = structure == null ? Optional.empty() : structure;
@@ -77,7 +77,7 @@ public class CraftStructureManager implements StructureManager {
 
     @Override
     public void saveStructure(NamespacedKey structureKey) {
-        ResourceLocation minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
+        Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
 
         this.structureManager.save(minecraftKey);
     }
@@ -96,7 +96,7 @@ public class CraftStructureManager implements StructureManager {
     public Structure registerStructure(NamespacedKey structureKey, Structure structure) {
         Preconditions.checkArgument(structureKey != null, "NamespacedKey structureKey cannot be null");
         Preconditions.checkArgument(structure != null, "Structure cannot be null");
-        ResourceLocation minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
+        Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
 
         final Optional<StructureTemplate> optionalDefinedStructure = Optional.of(((CraftStructure) structure).getHandle());
         final Optional<StructureTemplate> previousStructure = this.structureManager.structureRepository.put(minecraftKey, optionalDefinedStructure);
@@ -106,7 +106,7 @@ public class CraftStructureManager implements StructureManager {
     @Override
     public Structure unregisterStructure(NamespacedKey structureKey) {
         Preconditions.checkArgument(structureKey != null, "NamespacedKey structureKey cannot be null");
-        ResourceLocation minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
+        Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
 
         final Optional<StructureTemplate> previousStructure = this.structureManager.structureRepository.remove(minecraftKey);
         return previousStructure == null ? null : previousStructure.map((s) -> new CraftStructure(s, this.registry)).orElse(null);
@@ -119,7 +119,7 @@ public class CraftStructureManager implements StructureManager {
 
     @Override
     public void deleteStructure(NamespacedKey structureKey, boolean unregister) throws IOException {
-        ResourceLocation key = CraftNamespacedKey.toMinecraft(structureKey);
+        Identifier key = CraftNamespacedKey.toMinecraft(structureKey);
 
         if (unregister) {
             this.structureManager.structureRepository.remove(key);
@@ -130,7 +130,7 @@ public class CraftStructureManager implements StructureManager {
 
     @Override
     public File getStructureFile(NamespacedKey structureKey) {
-        ResourceLocation minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
+        Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
         return this.structureManager.createAndValidatePathToGeneratedStructure(minecraftKey, ".nbt").toFile();
     }
 
@@ -172,10 +172,10 @@ public class CraftStructureManager implements StructureManager {
         return new CraftStructure(new StructureTemplate(), this.registry);
     }
 
-    private ResourceLocation createAndValidateMinecraftStructureKey(NamespacedKey structureKey) {
+    private Identifier createAndValidateMinecraftStructureKey(NamespacedKey structureKey) {
         Preconditions.checkArgument(structureKey != null, "NamespacedKey structureKey cannot be null");
 
-        ResourceLocation key = CraftNamespacedKey.toMinecraft(structureKey);
+        Identifier key = CraftNamespacedKey.toMinecraft(structureKey);
         Preconditions.checkArgument(!key.getPath().contains("//"), "Resource key for Structures can not contain \"//\"");
         return key;
     }

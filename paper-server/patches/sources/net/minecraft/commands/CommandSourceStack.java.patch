@@ -1,11 +1,11 @@
 --- a/net/minecraft/commands/CommandSourceStack.java
 +++ b/net/minecraft/commands/CommandSourceStack.java
-@@ -47,7 +_,7 @@
- import net.minecraft.world.phys.Vec2;
+@@ -48,7 +_,7 @@
  import net.minecraft.world.phys.Vec3;
+ import org.jspecify.annotations.Nullable;
  
--public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, PermissionSource, SharedSuggestionProvider {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, PermissionSource, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
+-public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
@@ -31,7 +31,7 @@
 +            new Vec3(location.x(), location.y(), location.z()),
 +            new Vec2(location.getPitch(), location.getYaw()),
 +            ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
-+            this.permissionLevel,
++            this.permissions,
 +            this.textName,
 +            this.displayName,
 +            this.server,
@@ -48,8 +48,8 @@
      public CommandSourceStack withRotation(Vec2 rotation) {
          return this.rotation.equals(rotation)
              ? this
-@@ -396,6 +_,32 @@
-         return this.permissionLevel >= level;
+@@ -379,6 +_,32 @@
+         return this.permissions;
      }
  
 +    // Paper start - Fix permission levels for command blocks
@@ -59,14 +59,14 @@
 +    // Paper end - Fix permission levels for command blocks
 +
 +    // CraftBukkit start
-+    public boolean hasPermission(int i, String bukkitPermission) {
++    public boolean hasPermission(net.minecraft.server.permissions.Permission permission, String bukkitPermission) {
 +        // Paper start - Fix permission levels for command blocks
 +        final java.util.function.BooleanSupplier hasBukkitPerm = () -> this.source == CommandSource.NULL /*treat NULL as having all bukkit perms*/ || this.getBukkitSender().hasPermission(bukkitPermission); // lazily check bukkit perms to the benefit of custom permission setups
 +        // if the server is null, we must check the vanilla perm level system
 +        // if ignoreVanillaPermissions is true, we can skip vanilla perms and just run the bukkit perm check
 +        //noinspection ConstantValue
 +        if (this.getServer() == null || !this.getServer().server.ignoreVanillaPermissions) { // server & level are null for command function loading
-+            final boolean hasPermLevel = this.permissionLevel >= i;
++            final boolean hasPermLevel = this.permissions.hasPermission(permission);
 +            if (this.forceRespectPermissionLevel()) { // NULL CommandSource and command blocks (if setting is enabled) should always pass the vanilla perm check
 +                return hasPermLevel && hasBukkitPerm.getAsBoolean();
 +            } else { // otherwise check vanilla perm first then bukkit perm, matching upstream behavior
@@ -81,9 +81,9 @@
      public Vec3 getPosition() {
          return this.worldPosition;
      }
-@@ -500,20 +_,25 @@
-         Component component = Component.translatable("chat.type.admin", this.getDisplayName(), message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
-         if (this.server.getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK)) {
+@@ -482,20 +_,25 @@
+         GameRules gameRules = this.level.getGameRules();
+         if (gameRules.get(GameRules.SEND_COMMAND_FEEDBACK)) {
              for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
 -                if (serverPlayer.commandSource() != this.source && this.server.getPlayerList().isOp(serverPlayer.nameAndId())) {
 +                if (serverPlayer.commandSource() != this.source && serverPlayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
@@ -92,8 +92,8 @@
              }
          }
  
--        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
-+        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+-        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS)) {
++        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
              this.server.sendSystemMessage(component);
          }
      }
@@ -110,7 +110,7 @@
          }
      }
  
-@@ -524,7 +_,7 @@
+@@ -506,7 +_,7 @@
  
      @Override
      public Collection<String> getOnlinePlayerNames() {
@@ -119,7 +119,7 @@
      }
  
      @Override
-@@ -604,4 +_,16 @@
+@@ -586,4 +_,16 @@
      public boolean isSilent() {
          return this.silent;
      }

@@ -4,18 +4,18 @@
      List<CompoundTag> entities,
      List<CompoundTag> blockEntities,
      CompoundTag structureData
-+    , @Nullable net.minecraft.nbt.Tag persistentDataContainer // CraftBukkit - persistentDataContainer
++    , net.minecraft.nbt.@Nullable Tag persistentDataContainer // CraftBukkit - persistentDataContainer
  ) {
      private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
      private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
-@@ -107,12 +_,38 @@
+@@ -107,11 +_,37 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
 +    // Paper start - guard against serializing mismatching coordinates
 +    // TODO Note: This needs to be re-checked each update
 +    public static ChunkPos getChunkCoordinate(final CompoundTag chunkData) {
-+        final int dataVersion = ChunkStorage.getVersion(chunkData);
++        final int dataVersion = NbtUtils.getDataVersion(chunkData);
 +        if (dataVersion < 2842) { // Level tag is removed after this version
 +            final CompoundTag levelData = chunkData.getCompoundOrEmpty("Level");
 +            return new ChunkPos(levelData.getIntOr("xPos", 0), levelData.getIntOr("zPos", 0));
@@ -30,7 +30,6 @@
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
 +    // Paper end - Do not let the server load chunks from newer versions
 +
-     @Nullable
      public static SerializableChunkData parse(LevelHeightAccessor level, PalettedContainerFactory containerFactory, CompoundTag tag) {
          if (tag.getString("Status").isEmpty()) {
              return null;
@@ -48,16 +47,16 @@
              long longOr = tag.getLongOr("LastUpdate", 0L);
              long longOr1 = tag.getLongOr("InhabitedTime", 0L);
              ChunkStatus chunkStatus = tag.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -149,7 +_,7 @@
+@@ -150,7 +_,7 @@
              CompoundTag compoundOrEmpty = tag.getCompoundOrEmpty("structures");
-             ListTag listOrEmpty2 = tag.getListOrEmpty("sections");
-             List<SerializableChunkData.SectionData> list5 = new ArrayList<>(listOrEmpty2.size());
+             ListTag listOrEmpty1 = tag.getListOrEmpty("sections");
+             List<SerializableChunkData.SectionData> list5 = new ArrayList<>(listOrEmpty1.size());
 -            Codec<PalettedContainerRO<Holder<Biome>>> codec = containerFactory.biomeContainerCodec();
 +            Codec<PalettedContainer<Holder<Biome>>> codec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
              Codec<PalettedContainer<BlockState>> codec1 = containerFactory.blockStatesContainerCodec();
  
-             for (int i2 = 0; i2 < listOrEmpty2.size(); i2++) {
-@@ -166,7 +_,7 @@
+             for (int i2 = 0; i2 < listOrEmpty1.size(); i2++) {
+@@ -167,7 +_,7 @@
                                      .getOrThrow(SerializableChunkData.ChunkReadException::new)
                              )
                              .orElseGet(containerFactory::createForBlockStates);
@@ -66,7 +65,7 @@
                              .map(
                                  compoundTag1 -> codec.parse(NbtOps.INSTANCE, compoundTag1)
                                      .promotePartial(string -> logErrors(chunkPos, byteOr, string))
-@@ -203,6 +_,7 @@
+@@ -204,6 +_,7 @@
                  list3,
                  list4,
                  compoundOrEmpty
@@ -74,7 +73,7 @@
              );
          }
      }
-@@ -287,6 +_,12 @@
+@@ -288,6 +_,12 @@
              }
          }
  
@@ -87,7 +86,7 @@
          chunkAccess.setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> set = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -390,6 +_,12 @@
+@@ -394,6 +_,12 @@
              CompoundTag compoundTag = packStructureData(
                  StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences()
              );
@@ -100,7 +99,7 @@
              return new SerializableChunkData(
                  level.palettedContainerFactory(),
                  pos,
-@@ -409,6 +_,7 @@
+@@ -413,6 +_,7 @@
                  list2,
                  list1,
                  compoundTag
@@ -108,7 +107,7 @@
              );
          }
      }
-@@ -476,6 +_,11 @@
+@@ -480,6 +_,11 @@
          this.heightmaps.forEach((types, longs) -> compoundTag2.put(types.getSerializationKey(), new LongArrayTag(longs)));
          compoundTag.put("Heightmaps", compoundTag2);
          compoundTag.put("structures", this.structureData);
@@ -120,7 +119,7 @@
          return compoundTag;
      }
  
-@@ -557,6 +_,12 @@
+@@ -560,6 +_,12 @@
              } else {
                  StructureStart structureStart = StructureStart.loadStaticStart(context, compoundOrEmpty.getCompoundOrEmpty(string), seed);
                  if (structureStart != null) {

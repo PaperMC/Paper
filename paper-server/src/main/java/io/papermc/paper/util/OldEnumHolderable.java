@@ -26,10 +26,10 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends Holdera
             // in case plugins use for example the name as key in a config file to receive registry item specific values.
             // Custom registry items will return the key with namespace. For a plugin this should look than like a new registry item
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
-            if (NamespacedKey.MINECRAFT.equals(reference.key().location().getNamespace())) {
-                this.name = reference.key().location().getPath().toUpperCase(Locale.ROOT);
+            if (NamespacedKey.MINECRAFT.equals(reference.key().identifier().getNamespace())) {
+                this.name = reference.key().identifier().getPath().toUpperCase(Locale.ROOT);
             } else {
-                this.name = reference.key().location().toString();
+                this.name = reference.key().identifier().toString();
             }
         } else {
             this.name = null;

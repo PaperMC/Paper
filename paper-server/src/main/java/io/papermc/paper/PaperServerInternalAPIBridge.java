@@ -10,12 +10,16 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
-import net.minecraft.commands.PermissionSource;
+import net.minecraft.commands.Commands;
 import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.decoration.Mannequin;
+import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
@@ -25,7 +29,6 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.function.Predicate;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -84,7 +87,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
-        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, PermissionSource.RestrictedMarker {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, Commands.RestrictedMarker {
             @Override
             public boolean test(final CommandSourceStack commandSourceStack) {
                 return this.predicate.test(commandSourceStack);
@@ -107,5 +110,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public Component defaultMannequinDescription() {
         return PaperAdventure.asAdventure(Mannequin.DEFAULT_DESCRIPTION);
+    }
+
+    @Override
+    public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
+        return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
     }
 }

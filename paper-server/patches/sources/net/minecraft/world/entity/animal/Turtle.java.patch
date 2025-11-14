@@ -1,16 +1,16 @@
 --- a/net/minecraft/world/entity/animal/Turtle.java
 +++ b/net/minecraft/world/entity/animal/Turtle.java
-@@ -261,7 +_,9 @@
+@@ -255,7 +_,9 @@
      protected void ageBoundaryReached() {
          super.ageBoundaryReached();
-         if (!this.isBaby() && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+         if (!this.isBaby() && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.MOB_DROPS)) {
 +            this.forceDrops = true; // CraftBukkit
              this.dropFromGiftLootTable(serverLevel, BuiltInLootTables.TURTLE_GROW, this::spawnAtLocation);
 +            this.forceDrops = false; // CraftBukkit
          }
      }
  
-@@ -286,7 +_,7 @@
+@@ -276,7 +_,7 @@
  
      @Override
      public void thunderHit(ServerLevel level, LightningBolt lightning) {
@@ -19,7 +19,7 @@
      }
  
      @Override
-@@ -313,6 +_,10 @@
+@@ -303,6 +_,10 @@
              if (loveCause == null && this.partner.getLoveCause() != null) {
                  loveCause = this.partner.getLoveCause();
              }
@@ -30,16 +30,16 @@
  
              if (loveCause != null) {
                  loveCause.awardStat(Stats.ANIMALS_BRED);
-@@ -326,7 +_,7 @@
+@@ -316,7 +_,7 @@
              this.partner.resetLove();
              RandomSource random = this.animal.getRandom();
-             if (getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+             if (getServerLevel(this.level).getGameRules().get(GameRules.MOB_DROPS)) {
 -                this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), random.nextInt(7) + 1));
 +                if (event.getExperience() > 0) this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.position(), Vec3.ZERO, event.getExperience(), org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, this.turtle)); // Paper - Add EntityFertilizeEggEvent event
              }
          }
      }
-@@ -349,7 +_,7 @@
+@@ -339,7 +_,7 @@
                  && (
                      this.turtle.hasEgg()
                          || this.turtle.getRandom().nextInt(reducedTickDelay(700)) == 0 && !this.turtle.homePos.closerToCenterThan(this.turtle.position(), 64.0)
@@ -48,7 +48,7 @@
          }
  
          @Override
-@@ -457,14 +_,20 @@
+@@ -447,14 +_,20 @@
              BlockPos blockPos = this.turtle.blockPosition();
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {

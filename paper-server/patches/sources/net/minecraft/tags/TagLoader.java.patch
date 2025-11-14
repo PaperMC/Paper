@@ -4,15 +4,15 @@
          return list.isEmpty() ? Either.right(List.copyOf(set)) : Either.left(list);
      }
  
--    public Map<ResourceLocation, List<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> builders) {
+-    public Map<Identifier, List<T>> build(Map<Identifier, List<TagLoader.EntryWithSource>> builders) {
 +    // Paper start - fire tag registrar events
-+    public Map<ResourceLocation, List<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> builders, @Nullable io.papermc.paper.tag.TagEventConfig<T, ?> eventConfig) {
++    public Map<Identifier, List<T>> build(Map<Identifier, List<TagLoader.EntryWithSource>> builders, io.papermc.paper.tag.@Nullable TagEventConfig<T, ?> eventConfig) {
 +        builders = io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.firePreFlattenEvent(builders, eventConfig);
 +        // Paper end
-         final Map<ResourceLocation, List<T>> map = new HashMap<>();
+         final Map<Identifier, List<T>> map = new HashMap<>();
          TagEntry.Lookup<T> lookup = new TagEntry.Lookup<T>() {
-             @Nullable
-@@ -114,7 +_,7 @@
+             @Override
+@@ -112,7 +_,7 @@
                  )
                  .ifRight(list -> map.put(path, (List<T>)list))
          );
@@ -21,7 +21,7 @@
      }
  
      public static <T> void loadTagsFromNetwork(TagNetworkSerialization.NetworkPayload payload, WritableRegistry<T> registry) {
-@@ -122,16 +_,27 @@
+@@ -120,16 +_,27 @@
      }
  
      public static List<Registry.PendingTags<?>> loadTagsForExistingRegistries(ResourceManager resourceManager, RegistryAccess registryAccess) {
@@ -48,10 +48,10 @@
          TagLoader<Holder<T>> tagLoader = new TagLoader<>(TagLoader.ElementLookup.fromWritableRegistry(registry), Registries.tagsDirPath(resourceKey));
 -        tagLoader.build(tagLoader.load(resourceManager))
 +        tagLoader.build(tagLoader.load(resourceManager), io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause)) // Paper - tag lifecycle - add registrar event cause
-             .forEach((resourceLocation, list) -> registry.bindTag(TagKey.create(resourceKey, resourceLocation), (List<Holder<T>>)list));
+             .forEach((identifier, list) -> registry.bindTag(TagKey.create(resourceKey, identifier), (List<Holder<T>>)list));
      }
  
-@@ -139,12 +_,12 @@
+@@ -137,12 +_,12 @@
          return tags.entrySet().stream().collect(Collectors.toUnmodifiableMap(entry -> TagKey.create(registryKey, entry.getKey()), Entry::getValue));
      }
  

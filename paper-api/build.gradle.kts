@@ -1,3 +1,5 @@
+import paper.libs.com.google.gson.Gson
+
 plugins {
     `java-library`
     `maven-publish`
@@ -136,20 +138,36 @@ configure<PublishingExtension> {
     }
 }
 
-val generateApiVersioningFile by tasks.registering {
-    inputs.property("version", project.version)
-    val pomProps = layout.buildDirectory.file("pom.properties")
-    outputs.file(pomProps)
-    val projectVersion = project.version
-    doLast {
-        pomProps.get().asFile.writeText("version=$projectVersion")
+abstract class GenerateApiVersioningFile : DefaultTask() {
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @get:Input
+    abstract val projectVersion: Property<String>
+
+    @get:Input
+    abstract val apiVersion: Property<String>
+
+    @TaskAction
+    fun generate() {
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        val map = mapOf(
+            "version" to projectVersion.get(),
+            "currentApiVersion" to apiVersion.get()
+        )
+        file.writeText(Gson().toJson(map))
     }
 }
 
+val generateApiVersioningFile = tasks.register<GenerateApiVersioningFile>("generateApiVersioningFile") {
+    outputFile.set(layout.buildDirectory.file("apiVersioning.json"))
+    projectVersion.set(project.version.toString())
+    apiVersion.set(rootProject.providers.gradleProperty("apiVersion"))
+}
+
 tasks.jar {
-    from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
-        into("META-INF/maven/${project.group}/${project.name}")
-    }
+    from(generateApiVersioningFile.flatMap { it.outputFile })
     manifest {
         attributes(
             "Automatic-Module-Name" to "org.bukkit"

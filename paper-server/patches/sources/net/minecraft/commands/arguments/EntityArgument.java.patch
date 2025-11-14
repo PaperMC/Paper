@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/net/minecraft/commands/arguments/EntityArgument.java
-@@ -105,9 +_,14 @@
+@@ -106,9 +_,14 @@
      }
  
      private EntitySelector parse(StringReader reader, boolean allowSelectors) throws CommandSyntaxException {
@@ -16,17 +16,19 @@
          if (entitySelector.getMaxResults() > 1 && this.single) {
              if (this.playersOnly) {
                  reader.setCursor(0);
-@@ -129,7 +_,13 @@
+@@ -130,9 +_,15 @@
          if (context.getSource() instanceof SharedSuggestionProvider sharedSuggestionProvider) {
              StringReader stringReader = new StringReader(builder.getInput());
              stringReader.setCursor(builder.getStart());
--            EntitySelectorParser entitySelectorParser = new EntitySelectorParser(stringReader, EntitySelectorParser.allowSelectors(sharedSuggestionProvider));
 +            // Paper start - Fix EntityArgument permissions
 +            final boolean permission = sharedSuggestionProvider instanceof CommandSourceStack stack
-+                ? stack.bypassSelectorPermissions || stack.hasPermission(2, "minecraft.command.selector")
++                ? stack.bypassSelectorPermissions || stack.hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS, "minecraft.command.selector")
 +                // Only CommandSourceStack implements SharedSuggestionProvider. If *somehow* anything else ends up here, try to query its permission level, otherwise yield false.
-+                : (sharedSuggestionProvider instanceof final net.minecraft.commands.PermissionSource permissionSource && permissionSource.hasPermission(2));
-+            EntitySelectorParser entitySelectorParser = new EntitySelectorParser(stringReader, permission);
++                : sharedSuggestionProvider.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS);
+             EntitySelectorParser entitySelectorParser = new EntitySelectorParser(
+-                stringReader, sharedSuggestionProvider.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS)
++                stringReader, permission
+             );
 +            // Paper end - Fix EntityArgument permissions
  
              try {

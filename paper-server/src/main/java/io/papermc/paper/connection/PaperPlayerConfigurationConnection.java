@@ -26,7 +26,7 @@ import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
@@ -134,7 +134,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
         if (this.channels().contains(channel)) {
             @SuppressWarnings("deprecation") // "not an API method" does not apply to us
-            ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
+            Identifier id = Identifier.parse(StandardMessenger.validateAndCorrectChannel(channel));
             ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
             this.handle.send(packet);
         }
