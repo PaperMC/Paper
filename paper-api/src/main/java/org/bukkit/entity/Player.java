@@ -3586,12 +3586,33 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     float getCooldownPeriod();
 
     /**
-     * Returns the percentage of attack power available based on the cooldown (zero to one).
+     * Returns the percentage of attack power available based on the cooldown (0.0 to 1.0).
+     *
+     * @return Percentage of attack power available
+     * @see #getCooledAttackStrength(float)
+     * @since 1.21.8
+     */
+    default float getCooledAttackStrength() {
+        return getCooledAttackStrength(0F);
+    }
+
+    /**
+     * Returns the percentage of attack power available based on the cooldown (0.0 to 1.0).
      *
      * @param adjustTicks Amount of ticks to add to cooldown counter for this calculation
      * @return Percentage of attack power available
+     * @see #setCooledAttackStrength(float)
      */
     float getCooledAttackStrength(float adjustTicks);
+
+    /**
+     * Sets the percentage of attack power available (0.0 to 1.0).
+     *
+     * @param strength The new percentage of attack power available
+     * @see #getCooledAttackStrength(float)
+     * @since 1.21.8
+     */
+    void setCooledAttackStrength(float strength);
 
     /**
      * Reset the cooldown counter to 0, effectively starting the cooldown period.
