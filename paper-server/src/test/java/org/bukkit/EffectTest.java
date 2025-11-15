@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.world.level.block.LevelEvent;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Normal
 public class EffectTest {
 
     private static boolean isNotDeprecated(Effect effect) throws ReflectiveOperationException {
