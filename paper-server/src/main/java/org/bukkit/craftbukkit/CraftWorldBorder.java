@@ -38,6 +38,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize) {
+        Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
         this.handle.setSize(newSize);
     }
 
