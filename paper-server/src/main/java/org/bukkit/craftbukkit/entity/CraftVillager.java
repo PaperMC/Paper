@@ -166,16 +166,8 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public static class CraftType extends OldEnumHolderable<Type, VillagerType> implements Type {
         private static int count = 0;
 
-        public static Type minecraftToBukkit(VillagerType minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE);
-        }
-
         public static Type minecraftHolderToBukkit(Holder<VillagerType> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.VILLAGER_TYPE);
-        }
-
-        public static VillagerType bukkitToMinecraft(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<VillagerType> bukkitToMinecraftHolder(Type bukkit) {
@@ -196,14 +188,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
         public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit);
-        }
-
-        public static Profession minecraftToBukkit(VillagerProfession minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
-        }
-
-        public static VillagerProfession bukkitToMinecraft(Profession bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public CraftProfession(final Holder<VillagerProfession> holder) {

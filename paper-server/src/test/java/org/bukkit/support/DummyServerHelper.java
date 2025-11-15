@@ -43,7 +43,7 @@ public final class DummyServerHelper {
         when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
 
         when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                RegistryHelper.getDataPack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
+                RegistryHelper.context().datapack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
 
         when(instance.getTag(any(), any(), any())).then(mock -> {
             String registry = mock.getArgument(0);
@@ -99,12 +99,12 @@ public final class DummyServerHelper {
         when(instance.getPluginManager()).thenReturn(pluginManager);
         // Paper end - testing additions
 
-        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(RegistryHelper.getRegistry()); // Paper - configuration files - setup global configuration test base
+        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(RegistryHelper.registryAccess()); // Paper - configuration files - setup global configuration test base
 
         // Paper start - add test for recipe conversion
         when(instance.recipeIterator()).thenAnswer(ignored ->
             com.google.common.collect.Iterators.transform(
-                RegistryHelper.getDataPack().getRecipeManager().recipes.byType.entries().iterator(),
+                RegistryHelper.context().datapack().getRecipeManager().recipes.byType.entries().iterator(),
                 input -> input.getValue().toBukkitRecipe()
             )
         );

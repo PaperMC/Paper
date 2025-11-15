@@ -84,16 +84,8 @@ public class CraftPig extends CraftAnimals implements Pig {
 
     public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
 
-        public static Variant minecraftToBukkit(PigVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
-
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
-
-        public static PigVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<PigVariant> bukkitToMinecraftHolder(Variant bukkit) {

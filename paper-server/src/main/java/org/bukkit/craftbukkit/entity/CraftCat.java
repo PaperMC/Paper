@@ -46,16 +46,8 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
     public static class CraftType extends OldEnumHolderable<Type, CatVariant> implements Type {
         private static int count = 0;
 
-        public static Type minecraftToBukkit(CatVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.CAT_VARIANT);
-        }
-
         public static Type minecraftHolderToBukkit(Holder<CatVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CAT_VARIANT);
-        }
-
-        public static CatVariant bukkitToMinecraft(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<CatVariant> bukkitToMinecraftHolder(Type bukkit) {

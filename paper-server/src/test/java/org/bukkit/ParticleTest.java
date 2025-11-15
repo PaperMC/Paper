@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -29,7 +28,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +36,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@AllFeatures
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+@VanillaFeature
 public class ParticleTest {
 
     public static Stream<Arguments> data() {

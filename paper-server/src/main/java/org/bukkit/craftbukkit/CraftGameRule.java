@@ -25,10 +25,6 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static <T> Holder<net.minecraft.world.level.gamerules.GameRule<T>> bukkitToMinecraftHolder(GameRule<T> bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
-    }
-
     private final Holder<net.minecraft.world.level.gamerules.GameRule<T>> holder;
 
     @SuppressWarnings("unchecked")

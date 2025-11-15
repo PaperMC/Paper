@@ -34,7 +34,7 @@ public class StructureSeedConfigTest {
         final SpigotWorldConfig config = PaperConfigurations.SPIGOT_WORLD_DEFAULTS.get();
 
 
-        final Registry<StructureSet> structureSets = RegistryHelper.getRegistry().lookupOrThrow(Registries.STRUCTURE_SET);
+        final Registry<StructureSet> structureSets = RegistryHelper.registryAccess().lookupOrThrow(Registries.STRUCTURE_SET);
         for (final ResourceKey<StructureSet> setKey : structureSets.registryKeySet()) {
             assertEquals(Identifier.DEFAULT_NAMESPACE, setKey.identifier().getNamespace());
             final StructureSet set = structureSets.getValueOrThrow(setKey);

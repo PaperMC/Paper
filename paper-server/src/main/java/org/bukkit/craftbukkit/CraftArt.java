@@ -12,16 +12,8 @@ public class CraftArt extends OldEnumHolderable<Art, PaintingVariant> implements
 
     private static int count = 0;
 
-    public static Art minecraftToBukkit(PaintingVariant minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.PAINTING_VARIANT);
-    }
-
     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PAINTING_VARIANT);
-    }
-
-    public static PaintingVariant bukkitToMinecraft(Art bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {

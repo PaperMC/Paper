@@ -237,7 +237,7 @@ class AdventureCodecsTest {
             JavaOps.INSTANCE,
             JsonOps.INSTANCE
         )
-            .map(ops -> RegistryHelper.getRegistry().createSerializationContext(ops))
+            .map(ops -> RegistryHelper.registryAccess().createSerializationContext(ops))
             .toList();
     }
 

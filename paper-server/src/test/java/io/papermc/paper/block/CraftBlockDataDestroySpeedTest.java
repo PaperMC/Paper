@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -40,7 +40,7 @@ import static net.minecraft.resources.Identifier.fromNamespaceAndPath;
  * This test is responsible for ensuring that said logic emits the expected destroy speed under heavy attribute
  * modifier use.
  */
-@AllFeatures
+@VanillaFeature
 public class CraftBlockDataDestroySpeedTest {
 
     @Test

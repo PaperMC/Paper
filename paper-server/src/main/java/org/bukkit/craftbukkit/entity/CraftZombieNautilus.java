@@ -35,16 +35,8 @@ public class CraftZombieNautilus extends CraftAbstractNautilus implements org.bu
 
     public static class CraftVariant extends HolderableBase<ZombieNautilusVariant> implements org.bukkit.entity.ZombieNautilus.Variant {
 
-        public static org.bukkit.entity.ZombieNautilus.Variant minecraftToBukkit(ZombieNautilusVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.ZOMBIE_NAUTILUS_VARIANT);
-        }
-
         public static org.bukkit.entity.ZombieNautilus.Variant minecraftHolderToBukkit(Holder<ZombieNautilusVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ZOMBIE_NAUTILUS_VARIANT);
-        }
-
-        public static ZombieNautilusVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<ZombieNautilusVariant> bukkitToMinecraftHolder(Variant bukkit) {

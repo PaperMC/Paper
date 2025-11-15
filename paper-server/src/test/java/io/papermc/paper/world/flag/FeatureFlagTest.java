@@ -81,7 +81,7 @@ class FeatureFlagTest {
     }
 
     static Stream<RegistryKey<?>> nonFeatureFilteredRegistries() {
-        return RegistryHelper.getRegistry().registries().filter(r -> {
+        return RegistryHelper.registryAccess().registries().filter(r -> {
             final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(r.key());
             // has an API registry and isn't a filtered registry
             return entry != null && !FeatureElement.FILTERED_REGISTRIES.contains(r.key());

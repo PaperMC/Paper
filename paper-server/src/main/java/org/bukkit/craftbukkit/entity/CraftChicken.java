@@ -36,16 +36,8 @@ public class CraftChicken extends CraftAnimals implements Chicken {
 
     public static class CraftVariant extends HolderableBase<ChickenVariant> implements Variant {
 
-        public static Variant minecraftToBukkit(ChickenVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.CHICKEN_VARIANT);
-        }
-
         public static Variant minecraftHolderToBukkit(Holder<ChickenVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CHICKEN_VARIANT);
-        }
-
-        public static ChickenVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<ChickenVariant> bukkitToMinecraftHolder(Variant bukkit) {
