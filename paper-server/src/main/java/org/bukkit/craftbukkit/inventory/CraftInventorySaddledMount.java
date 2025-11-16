@@ -4,10 +4,10 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.AbstractMountInventoryMenu;
 import org.apache.commons.lang3.ArrayUtils;
-import org.bukkit.inventory.AbstractHorseInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.SaddledMountInventory;
 
-public class CraftInventorySaddledMount extends CraftInventory implements AbstractHorseInventory {
+public class CraftInventorySaddledMount extends CraftInventory implements SaddledMountInventory {
 
     private final Container bodyArmorInventory;
     private final Container saddleInventory;
