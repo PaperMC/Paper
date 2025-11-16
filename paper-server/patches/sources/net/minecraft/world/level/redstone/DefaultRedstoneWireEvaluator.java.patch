@@ -1,20 +1,17 @@
 --- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
 +++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-@@ -18,7 +_,16 @@
+@@ -18,7 +_,13 @@
      @Override
      public void updatePowerStrength(Level level, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean updateShape) {
          int i = this.calculateTargetStrength(level, pos);
 -        if (state.getValue(RedStoneWireBlock.POWER) != i) {
-+        // CraftBukkit start
++        // Paper start - Call BlockRedstoneEvent
 +        int oldPower = state.getValue(RedStoneWireBlock.POWER);
-+        if (oldPower != i) {
-+            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), oldPower, i);
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+
-+            i = event.getNewCurrent();
++        if (oldPower != i && level.getBlockState(pos) == state) {
++            i = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, oldPower, i).getNewCurrent();
 +        }
 +        if (oldPower != i) {
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              if (level.getBlockState(pos) == state) {
                  level.setBlock(pos, state.setValue(RedStoneWireBlock.POWER, i), Block.UPDATE_CLIENTS);
              }
