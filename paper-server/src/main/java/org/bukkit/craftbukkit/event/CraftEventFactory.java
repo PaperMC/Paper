@@ -1283,17 +1283,17 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container) {
+    public static @Nullable AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container) {
         // Paper start - Add titleOverride to InventoryOpenEvent
         return callInventoryOpenEventWithTitle(player, container).getSecond();
     }
 
-    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container) {
-        return CraftEventFactory.callInventoryOpenEventWithTitle(player, container, false);
+    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@Nullable Component, @Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container) {
+        return callInventoryOpenEventWithTitle(player, container, false);
         // Paper end - Add titleOverride to InventoryOpenEvent
     }
 
-    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
+    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@Nullable Component, @Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
         container.startOpen(); // delegate start open logic to before InventoryOpenEvent is fired
         if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
             player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
