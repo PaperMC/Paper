@@ -11,9 +11,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the color of the fish's pattern.
-     * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
-     * calling this method.
      *
      * @return pattern color
      */
@@ -22,9 +19,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Sets the color of the fish's pattern.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param color pattern color
      */
@@ -32,9 +26,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the color of the fish's body.
-     * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
-     * calling this method.
      *
      * @return pattern color
      */
@@ -43,9 +34,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Sets the color of the fish's body.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param color body color
      */
@@ -53,9 +41,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the fish's pattern.
-     * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
-     * calling this method.
      *
      * @return pattern
      */
@@ -64,9 +49,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Sets the fish's pattern.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param pattern new pattern
      */
@@ -77,7 +59,9 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      * spawned.
      *
      * @return if there is a variant
+     * @deprecated The colors and pattern are separate components now
      */
+    @Deprecated(forRemoval = true, since = "1.21.10")
     boolean hasVariant();
 
     @Override
