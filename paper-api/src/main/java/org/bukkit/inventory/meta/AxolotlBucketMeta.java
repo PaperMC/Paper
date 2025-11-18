@@ -11,8 +11,9 @@ public interface AxolotlBucketMeta extends ItemMeta {
     /**
      * Get the variant of the axolotl in the bucket.
      * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
+     * Plugins should check that hasVariant() returns {@code true} before
      * calling this method.
+     *
      * @return axolotl variant
      */
     @NotNull
@@ -26,7 +27,7 @@ public interface AxolotlBucketMeta extends ItemMeta {
     void setVariant(@NotNull Axolotl.Variant variant);
 
     /**
-     * Checks for existence of a variant tag indicating a specific axolotl will be
+     * Checks for existence of a variant indicating a specific axolotl will be
      * spawned.
      *
      * @return if there is a variant

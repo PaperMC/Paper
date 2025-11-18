@@ -59,7 +59,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      * spawned.
      *
      * @return if there is a variant
-     * @deprecated The colors and pattern are separate components now
+     * @deprecated the variant tag is no longer used and instead split into its own set of components
      */
     @Deprecated(forRemoval = true, since = "1.21.10")
     boolean hasVariant();
