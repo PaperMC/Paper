@@ -1,11 +1,12 @@
 package org.bukkit.inventory.meta;
 
 import org.bukkit.entity.Axolotl;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a bucket of axolotl.
  */
+@NullMarked
 public interface AxolotlBucketMeta extends ItemMeta {
 
     /**
@@ -15,8 +16,8 @@ public interface AxolotlBucketMeta extends ItemMeta {
      * calling this method.
      *
      * @return axolotl variant
+     * @throws IllegalStateException if hasVariant() returns {@code false}
      */
-    @NotNull
     Axolotl.Variant getVariant();
 
     /**
@@ -24,7 +25,7 @@ public interface AxolotlBucketMeta extends ItemMeta {
      *
      * @param variant axolotl variant
      */
-    void setVariant(@NotNull Axolotl.Variant variant);
+    void setVariant(Axolotl.Variant variant);
 
     /**
      * Checks for the existence of a variant indicating a specific axolotl will be
@@ -35,6 +36,5 @@ public interface AxolotlBucketMeta extends ItemMeta {
     boolean hasVariant();
 
     @Override
-    @NotNull
     AxolotlBucketMeta clone();
 }

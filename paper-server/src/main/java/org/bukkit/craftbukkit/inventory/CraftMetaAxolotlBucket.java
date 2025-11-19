@@ -121,7 +121,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
     @Override
     public Axolotl.Variant getVariant() {
-        com.google.common.base.Preconditions.checkState(this.variant != null, "Variant is absent, check hasVariant first!");
+        com.google.common.base.Preconditions.checkState(this.hasVariant(), "Variant is absent, check hasVariant first!");
         return Axolotl.Variant.values()[this.variant.ordinal()];
     }
 
@@ -143,8 +143,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         }
         if (meta instanceof final CraftMetaAxolotlBucket other) {
             return Objects.equals(this.variant, other.variant)
-                    && Objects.equals(this.entityTag, other.entityTag)
-                    && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
+                && Objects.equals(this.entityTag, other.entityTag)
+                && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
         }
         return true;
     }
