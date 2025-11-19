@@ -27,7 +27,7 @@ public interface AxolotlBucketMeta extends ItemMeta {
     void setVariant(@NotNull Axolotl.Variant variant);
 
     /**
-     * Checks for existence of a variant indicating a specific axolotl will be
+     * Checks for the existence of a variant indicating a specific axolotl will be
      * spawned.
      *
      * @return if there is a variant
