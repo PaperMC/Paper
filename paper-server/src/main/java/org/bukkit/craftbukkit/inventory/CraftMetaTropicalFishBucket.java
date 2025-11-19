@@ -156,45 +156,63 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     }
 
     boolean isBucketEmpty() {
-        return !(this.hasVariant() || this.entityTag != null || this.bucketEntityTag != null);
+        return !(this.hasPattern() || this.hasPatternColor() || this.hasBodyColor() || this.entityTag != null || this.bucketEntityTag != null);
     }
 
     @Override
     public DyeColor getPatternColor() {
-        Preconditions.checkState(this.patternColor != null); // todo nullable?
+        Preconditions.checkState(this.hasPatternColor());
         return DyeColor.values()[this.patternColor.ordinal()];
     }
 
     @Override
     public void setPatternColor(DyeColor color) {
+        Preconditions.checkArgument(color != null, "Pattern color cannot be null!");
         this.patternColor = net.minecraft.world.item.DyeColor.byId(color.ordinal());
     }
 
     @Override
     public DyeColor getBodyColor() {
-        Preconditions.checkState(this.baseColor != null);
+        Preconditions.checkState(this.hasBodyColor());
         return DyeColor.values()[this.baseColor.ordinal()];
     }
 
     @Override
     public void setBodyColor(DyeColor color) {
+        Preconditions.checkArgument(color != null, "Body color cannot be null!");
         this.baseColor = net.minecraft.world.item.DyeColor.byId(color.ordinal());
     }
 
     @Override
     public TropicalFish.Pattern getPattern() {
-        Preconditions.checkState(this.pattern != null);
+        Preconditions.checkState(this.hasPattern());
         return TropicalFish.Pattern.values()[this.pattern.ordinal()];
     }
 
     @Override
     public void setPattern(TropicalFish.Pattern pattern) {
+        Preconditions.checkArgument(pattern != null, "Pattern cannot be null!");
         this.pattern = net.minecraft.world.entity.animal.TropicalFish.Pattern.values()[pattern.ordinal()];
     }
 
     @Override
     public boolean hasVariant() {
-        return this.pattern != null || this.patternColor != null || this.baseColor != null;
+        return this.hasPattern() || this.hasPatternColor() || this.hasBodyColor();
+    }
+
+    @Override
+    public boolean hasPattern() {
+        return this.pattern != null;
+    }
+
+    @Override
+    public boolean hasBodyColor() {
+        return this.baseColor != null;
+    }
+
+    @Override
+    public boolean hasPatternColor() {
+        return this.patternColor != null;
     }
 
     @Override
