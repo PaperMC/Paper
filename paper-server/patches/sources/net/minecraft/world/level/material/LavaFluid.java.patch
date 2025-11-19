@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
-@@ -92,6 +_,13 @@
+@@ -94,6 +_,13 @@
                          BlockState blockState = level.getBlockState(blockPos);
                          if (blockState.isAir()) {
                              if (this.hasFlammableNeighbours(level, blockPos)) {
@@ -14,7 +14,7 @@
                                  level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
                                  return;
                              }
-@@ -107,6 +_,14 @@
+@@ -109,6 +_,14 @@
                          }
  
                          if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
@@ -29,22 +29,23 @@
                              level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
                          }
                      }
-@@ -117,8 +_,9 @@
+@@ -119,9 +_,10 @@
  
      @Override
      protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        BlockPos savedPos = pos.immutable(); // Paper - track lava contact
+         effectApplier.apply(InsideBlockEffectType.CLEAR_FREEZE);
          effectApplier.apply(InsideBlockEffectType.LAVA_IGNITE);
 -        effectApplier.runAfter(InsideBlockEffectType.LAVA_IGNITE, Entity::lavaHurt);
 +        effectApplier.runAfter(InsideBlockEffectType.LAVA_IGNITE, ignitedEntity -> ignitedEntity.lavaHurt(savedPos)); // Paper - track lava contact
      }
  
      private boolean hasFlammableNeighbours(LevelReader level, BlockPos pos) {
-@@ -206,7 +_,11 @@
+@@ -209,7 +_,11 @@
              FluidState fluidState1 = level.getFluidState(pos);
              if (this.is(FluidTags.LAVA) && fluidState1.is(FluidTags.WATER)) {
-                 if (blockState.getBlock() instanceof LiquidBlock) {
--                    level.setBlock(pos, Blocks.STONE.defaultBlockState(), 3);
+                 if (state.getBlock() instanceof LiquidBlock) {
+-                    level.setBlock(pos, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
 +                    // CraftBukkit start
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level.getMinecraftWorld(), pos, Blocks.STONE.defaultBlockState(), 3)) {
 +                        return;
@@ -53,7 +54,7 @@
                  }
  
                  this.fizz(level, pos);
-@@ -224,7 +_,7 @@
+@@ -227,7 +_,7 @@
  
      @Override
      protected float getExplosionResistance() {

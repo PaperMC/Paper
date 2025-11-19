@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -71,6 +_,7 @@
+@@ -72,6 +_,7 @@
      private final int[] nextHeadUpdate = new int[2];
      private final int[] idleHeadUpdates = new int[2];
      private int destroyBlocksTick;
@@ -8,7 +8,7 @@
      public final ServerBossEvent bossEvent = (ServerBossEvent)new ServerBossEvent(
              this.getDisplayName(), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS
          )
-@@ -262,15 +_,40 @@
+@@ -263,15 +_,40 @@
              int i = this.getInvulnerableTicks() - 1;
              this.bossEvent.setProgress(1.0F - i / 220.0F);
              if (i <= 0) {
@@ -22,7 +22,7 @@
 +                }
 +                // CraftBukkit end
                  if (!this.isSilent()) {
--                    level.globalLevelEvent(1023, this.blockPosition(), 0);
+-                    level.globalLevelEvent(LevelEvent.SOUND_WITHER_BOSS_SPAWN, this.blockPosition(), 0);
 +                    // CraftBukkit start - Use relative location for far away sounds
 +                    // level.globalLevelEvent(1023, this.blockPosition(), 0);
 +                    int viewDistance = level.getCraftServer().getViewDistance() * 16;
@@ -52,7 +52,7 @@
              }
          } else {
              super.customServerAiStep(level);
-@@ -307,6 +_,7 @@
+@@ -308,6 +_,7 @@
                          );
                          if (!nearbyEntities.isEmpty()) {
                              LivingEntity livingEntity1 = nearbyEntities.get(this.random.nextInt(nearbyEntities.size()));
@@ -60,7 +60,7 @@
                              this.setAlternativeTarget(ix, livingEntity1.getId());
                          }
                      }
-@@ -336,6 +_,11 @@
+@@ -337,6 +_,11 @@
                      )) {
                          BlockState blockState = level.getBlockState(blockPos);
                          if (canDestroy(blockState)) {
@@ -72,7 +72,7 @@
                              flag = level.destroyBlock(blockPos, true, this) || flag;
                          }
                      }
-@@ -347,7 +_,7 @@
+@@ -348,7 +_,7 @@
              }
  
              if (this.tickCount % 20 == 0) {
@@ -81,7 +81,7 @@
              }
  
              this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
-@@ -485,16 +_,16 @@
+@@ -486,16 +_,16 @@
      @Override
      protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
          super.dropCustomDeathLoot(level, damageSource, recentlyHit);
@@ -95,14 +95,14 @@
  
      @Override
      public void checkDespawn() {
--        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
 -            this.discard();
-+        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldActuallyDespawnInPeaceful()) { //Paper - allow changing despawnInPeaceful
++        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) { // Paper - allow changing despawnInPeaceful
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              this.noActionTime = 0;
          }
-@@ -549,12 +_,18 @@
+@@ -550,12 +_,18 @@
  
      @Override
      public boolean canUsePortal(boolean allowPassengers) {
@@ -118,9 +118,9 @@
 +    // Paper end
  
      @Override
-     public boolean canBeAffected(MobEffectInstance potioneffect) {
--        return !potioneffect.is(MobEffects.WITHER) && super.canBeAffected(potioneffect);
-+        return (!potioneffect.is(MobEffects.WITHER) || !this.level().paperConfig().entities.mobEffects.immuneToWitherEffect.wither) && super.canBeAffected(potioneffect);
+     public boolean canBeAffected(MobEffectInstance effectInstance) {
+-        return !effectInstance.is(MobEffects.WITHER) && super.canBeAffected(effectInstance);
++        return (!effectInstance.is(MobEffects.WITHER) || !this.level().paperConfig().entities.mobEffects.immuneToWitherEffect.wither) && super.canBeAffected(effectInstance);
      }
  
      class WitherDoNothingGoal extends Goal {

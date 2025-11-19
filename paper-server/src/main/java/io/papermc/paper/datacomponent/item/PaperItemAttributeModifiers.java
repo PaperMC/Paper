@@ -24,7 +24,7 @@ public record PaperItemAttributeModifiers(
         return MCUtil.transformUnmodifiable(nmsModifiers.modifiers(), nms -> new PaperEntry(
             CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
             CraftAttributeInstance.convert(nms.modifier(), nms.slot()),
-            PaperAttributeModifierDisplay.fromNms(nms.display())
+            PaperAttributeModifierDisplay.fromVanilla(nms.display())
         ));
     }
 
@@ -59,7 +59,7 @@ public record PaperItemAttributeModifiers(
                 CraftAttribute.bukkitToMinecraftHolder(attribute),
                 CraftAttributeInstance.convert(modifier),
                 CraftEquipmentSlot.getNMSGroup(equipmentSlotGroup),
-                PaperAttributeModifierDisplay.toNms(display)
+                PaperAttributeModifierDisplay.toVanilla(display)
             ));
             return this;
         }

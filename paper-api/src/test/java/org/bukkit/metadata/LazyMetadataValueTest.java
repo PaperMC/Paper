@@ -2,12 +2,12 @@ package org.bukkit.metadata;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.Callable;
-import org.bukkit.plugin.TestPlugin;
+import org.bukkit.plugin.BukkitTestPlugin;
 import org.junit.jupiter.api.Test;
 
 public class LazyMetadataValueTest {
     private LazyMetadataValue subject;
-    private TestPlugin plugin = new TestPlugin("x");
+    private BukkitTestPlugin plugin = new BukkitTestPlugin("x");
 
     @Test
     public void testLazyInt() {

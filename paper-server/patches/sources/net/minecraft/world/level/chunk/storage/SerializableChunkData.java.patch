@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -93,6 +_,7 @@
+@@ -92,6 +_,7 @@
      List<CompoundTag> entities,
      List<CompoundTag> blockEntities,
      CompoundTag structureData
 +    , @Nullable net.minecraft.nbt.Tag persistentDataContainer // CraftBukkit - persistentDataContainer
  ) {
-     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(
-         Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState()
-@@ -111,12 +_,38 @@
+     private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
+     private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
+@@ -107,12 +_,38 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -31,7 +31,7 @@
 +    // Paper end - Do not let the server load chunks from newer versions
 +
      @Nullable
-     public static SerializableChunkData parse(LevelHeightAccessor levelHeightAccessor, RegistryAccess registries, CompoundTag tag) {
+     public static SerializableChunkData parse(LevelHeightAccessor level, PalettedContainerFactory containerFactory, CompoundTag tag) {
          if (tag.getString("Status").isEmpty()) {
              return null;
          } else {
@@ -48,25 +48,25 @@
              long longOr = tag.getLongOr("LastUpdate", 0L);
              long longOr1 = tag.getLongOr("InhabitedTime", 0L);
              ChunkStatus chunkStatus = tag.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -156,7 +_,7 @@
+@@ -149,7 +_,7 @@
+             CompoundTag compoundOrEmpty = tag.getCompoundOrEmpty("structures");
              ListTag listOrEmpty2 = tag.getListOrEmpty("sections");
              List<SerializableChunkData.SectionData> list5 = new ArrayList<>(listOrEmpty2.size());
-             Registry<Biome> registry = registries.lookupOrThrow(Registries.BIOME);
--            Codec<PalettedContainerRO<Holder<Biome>>> codec = makeBiomeCodec(registry);
-+            Codec<PalettedContainer<Holder<Biome>>> codec = makeBiomeCodecRW(registry); // CraftBukkit - read/write
+-            Codec<PalettedContainerRO<Holder<Biome>>> codec = containerFactory.biomeContainerCodec();
++            Codec<PalettedContainer<Holder<Biome>>> codec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
+             Codec<PalettedContainer<BlockState>> codec1 = containerFactory.blockStatesContainerCodec();
  
              for (int i2 = 0; i2 < listOrEmpty2.size(); i2++) {
-                 Optional<CompoundTag> compound = listOrEmpty2.getCompound(i2);
-@@ -176,7 +_,7 @@
-                                     Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES
-                                 )
-                             );
+@@ -166,7 +_,7 @@
+                                     .getOrThrow(SerializableChunkData.ChunkReadException::new)
+                             )
+                             .orElseGet(containerFactory::createForBlockStates);
 -                        PalettedContainerRO<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes")
 +                        PalettedContainer<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes") // CraftBukkit - read/write
                              .map(
                                  compoundTag1 -> codec.parse(NbtOps.INSTANCE, compoundTag1)
                                      .promotePartial(string -> logErrors(chunkPos, byteOr, string))
-@@ -217,6 +_,7 @@
+@@ -203,6 +_,7 @@
                  list3,
                  list4,
                  compoundOrEmpty
@@ -74,7 +74,7 @@
              );
          }
      }
-@@ -294,6 +_,12 @@
+@@ -287,6 +_,12 @@
              }
          }
  
@@ -87,20 +87,7 @@
          chunkAccess.setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> set = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -348,6 +_,12 @@
-         );
-     }
- 
-+    // CraftBukkit start - read/write
-+    private static Codec<PalettedContainer<Holder<Biome>>> makeBiomeCodecRW(Registry<Biome> biomeRegistry) {
-+        return PalettedContainer.codecRW(biomeRegistry.asHolderIdMap(), biomeRegistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, biomeRegistry.getOrThrow(Biomes.PLAINS));
-+    }
-+    // CraftBukkit end
-+
-     public static SerializableChunkData copyOf(ServerLevel level, ChunkAccess chunk) {
-         if (!chunk.canBeSerialized()) {
-             throw new IllegalArgumentException("Chunk can't be serialized: " + chunk);
-@@ -406,6 +_,12 @@
+@@ -390,6 +_,12 @@
              CompoundTag compoundTag = packStructureData(
                  StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences()
              );
@@ -111,9 +98,9 @@
 +            }
 +            // CraftBukkit end
              return new SerializableChunkData(
-                 level.registryAccess().lookupOrThrow(Registries.BIOME),
+                 level.palettedContainerFactory(),
                  pos,
-@@ -425,6 +_,7 @@
+@@ -409,6 +_,7 @@
                  list2,
                  list1,
                  compoundTag
@@ -121,7 +108,7 @@
              );
          }
      }
-@@ -491,6 +_,11 @@
+@@ -476,6 +_,11 @@
          this.heightmaps.forEach((types, longs) -> compoundTag2.put(types.getSerializationKey(), new LongArrayTag(longs)));
          compoundTag.put("Heightmaps", compoundTag2);
          compoundTag.put("structures", this.structureData);
@@ -133,7 +120,7 @@
          return compoundTag;
      }
  
-@@ -572,6 +_,12 @@
+@@ -557,6 +_,12 @@
              } else {
                  StructureStart structureStart = StructureStart.loadStaticStart(context, compoundOrEmpty.getCompoundOrEmpty(string), seed);
                  if (structureStart != null) {

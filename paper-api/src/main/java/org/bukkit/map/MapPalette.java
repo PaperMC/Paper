@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents the palette that map items use.
  * <p>
- * These fields are hee base color ranges. Each entry corresponds to four
+ * These fields are the base color ranges. Each entry corresponds to four
  * colors of varying shades with values entry to entry + 3.
  */
 public final class MapPalette {
@@ -27,7 +27,7 @@ public final class MapPalette {
         // All weights are 512x their original to avoid floating point division
         int weightR = 1024 + rsum;
         int weightG = 2048;
-        int weightB = 1024 + (255*2 - rsum);
+        int weightB = 1024 + (255 * 2 - rsum);
 
         // Division by 256 here is unnecessary as this won't change the result of the sort
         return weightR * r * r + weightG * g * g + weightB * b * b;
@@ -37,7 +37,6 @@ public final class MapPalette {
     @NotNull
     static final Color[] colors = {
         // Start generate - MapPalette#colors
-        // @GeneratedFrom 1.21.8
         new Color(0x00000000, true),
         new Color(0x00000000, true),
         new Color(0x00000000, true),
@@ -459,6 +458,18 @@ public final class MapPalette {
     public static Color getColor(byte index) {
         // Minecraft has 248 colors, some of which have negative byte representations
         return colors[index >= 0 ? index : index + 256];
+    }
+
+    /**
+     * Gets the closest {@link Color} in the map palette.
+     *
+     * @param color to match against the map palette
+     * @return the nearest {@link Color} from the map palette
+     */
+    @NotNull
+    public static Color getNearestColor(@NotNull Color color) {
+        byte b = matchColor(color);
+        return getColor(b);
     }
 
     private static MapColorCache mapColorCache;

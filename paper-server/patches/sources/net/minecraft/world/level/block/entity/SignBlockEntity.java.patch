@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -57,10 +_,15 @@
+@@ -58,10 +_,15 @@
      }
  
      public boolean isFacingFrontText(Player player) {
@@ -18,22 +18,22 @@
              float yRotationDegrees = signBlock.getYRotationDegrees(this.getBlockState());
              float f = (float)(Mth.atan2(d1, d) * 180.0F / (float)Math.PI) - 90.0F;
              return Mth.degreesDifferenceAbs(yRotationDegrees, f) <= 90.0F;
-@@ -128,11 +_,13 @@
+@@ -129,11 +_,13 @@
  
      public void updateSignText(Player player, boolean isFrontText, List<FilteredText> filteredText) {
          if (!this.isWaxed() && player.getUUID().equals(this.getPlayerWhoMayEdit()) && this.level != null) {
 -            this.updateText(signText -> this.setMessages(player, filteredText, signText), isFrontText);
 +            this.updateText(signText -> this.setMessages(player, filteredText, signText, isFrontText), isFrontText); // CraftBukkit
              this.setAllowedPlayerEditor(null);
-             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
          } else {
-             LOGGER.warn("Player {} just tried to change non-editable sign", player.getName().getString());
+             LOGGER.warn("Player {} just tried to change non-editable sign", player.getPlainTextName());
 +            if (player.distanceToSqr(this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ()) < Mth.square(32)) // Paper - Don't send far away sign update
 +            ((net.minecraft.server.level.ServerPlayer) player).connection.send(this.getUpdatePacket()); // CraftBukkit
          }
      }
  
-@@ -141,19 +_,41 @@
+@@ -142,19 +_,41 @@
          return this.setText(updater.apply(text), isFrontText);
      }
  
@@ -78,7 +78,7 @@
          return text;
      }
  
-@@ -192,7 +_,23 @@
+@@ -193,7 +_,23 @@
              Style style = component.getStyle();
              switch (style.getClickEvent()) {
                  case ClickEvent.RunCommand runCommand:
@@ -91,7 +91,7 @@
 +                    io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent(
 +                        (org.bukkit.entity.Player) player.getBukkitEntity(),
 +                        command,
-+                        new org.bukkit.craftbukkit.util.LazyPlayerSet(player.getServer()),
++                        new org.bukkit.craftbukkit.util.LazyPlayerSet(level.getServer()),
 +                        (org.bukkit.block.Sign) org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition).getState(),
 +                        isFrontText ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK
 +                    );
@@ -103,7 +103,7 @@
                      flag = true;
                      break;
                  case ClickEvent.ShowDialog showDialog:
-@@ -211,10 +_,55 @@
+@@ -212,10 +_,55 @@
          return flag;
      }
  
@@ -137,7 +137,7 @@
 +
 +    private CommandSourceStack createCommandSourceStack(@Nullable Player player, ServerLevel level, BlockPos pos) {
 +        // CraftBukkit end
-         String string = player == null ? "Sign" : player.getName().getString();
+         String string = player == null ? "Sign" : player.getPlainTextName();
          Component component = (Component)(player == null ? Component.literal("Sign") : player.getDisplayName());
 -        return new CommandSourceStack(CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, level, 2, string, component, level.getServer(), player);
 +
@@ -161,7 +161,7 @@
      }
  
      @Override
-@@ -233,12 +_,17 @@
+@@ -234,12 +_,17 @@
  
      @Nullable
      public UUID getPlayerWhoMayEdit() {
@@ -175,7 +175,7 @@
  
      private void markUpdated() {
          this.setChanged();
--        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+-        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
 +        if (this.level != null) this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
      }
  

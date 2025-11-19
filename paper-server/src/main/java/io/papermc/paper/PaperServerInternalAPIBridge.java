@@ -1,12 +1,18 @@
 package io.papermc.paper;
 
+import com.destroystokyo.paper.PaperSkinParts;
+import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import java.util.Random;
 import java.util.function.Predicate;
+import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.PermissionSource;
 import net.minecraft.core.Holder;
@@ -14,6 +20,7 @@ import net.minecraft.core.IdMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.FallLocation;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.bukkit.block.Biome;
@@ -98,6 +105,21 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         }
 
         return new RestrictedPredicate(predicate);
+    }
+
+    @Override
+    public ResolvableProfile defaultMannequinProfile() {
+        return new PaperResolvableProfile(net.minecraft.world.entity.decoration.Mannequin.DEFAULT_PROFILE);
+    }
+
+    @Override
+    public SkinParts.Mutable allSkinParts() {
+        return new PaperSkinParts.Mutable(net.minecraft.world.entity.decoration.Mannequin.ALL_LAYERS);
+    }
+
+    @Override
+    public Component defaultMannequinDescription() {
+        return PaperAdventure.asAdventure(Mannequin.DEFAULT_DESCRIPTION);
     }
 
     @Override

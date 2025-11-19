@@ -1,5 +1,13 @@
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -68,6 +_,7 @@
+     private final TicketStorage ticketStorage;
+     private long lastInhabitedUpdate;
+     public boolean spawnEnemies = true;
++    public boolean spawnFriendlies = true; // Paper - add back spawnFriendlies field
+     private static final int CACHE_SIZE = 4;
+     private final long[] lastChunkPos = new long[4];
+     private final ChunkStatus[] lastChunkStatus = new ChunkStatus[4];
 @@ -77,6 +_,13 @@
      @Nullable
      @VisibleForDebug
@@ -14,7 +22,7 @@
  
      public ServerChunkCache(
          ServerLevel level,
-@@ -127,6 +_,64 @@
+@@ -125,6 +_,64 @@
          this.clearCache();
      }
  
@@ -79,7 +87,7 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -166,7 +_,7 @@
+@@ -160,7 +_,7 @@
              for (int i = 0; i < 4; i++) {
                  if (packedChunkPos == this.lastChunkPos[i] && chunkStatus == this.lastChunkStatus[i]) {
                      ChunkAccess chunkAccess = this.lastChunk[i];
@@ -88,7 +96,7 @@
                          return chunkAccess;
                      }
                  }
-@@ -175,6 +_,7 @@
+@@ -169,6 +_,7 @@
              profilerFiller.incrementCounter("getChunkCacheMiss");
              CompletableFuture<ChunkResult<ChunkAccess>> chunkFutureMainThread = this.getChunkFutureMainThread(x, z, chunkStatus, requireChunk);
              this.mainThreadProcessor.managedBlock(chunkFutureMainThread::isDone);
@@ -96,7 +104,7 @@
              ChunkResult<ChunkAccess> chunkResult = chunkFutureMainThread.join();
              ChunkAccess chunkAccess1 = chunkResult.orElse(null);
              if (chunkAccess1 == null && requireChunk) {
-@@ -246,7 +_,15 @@
+@@ -240,7 +_,15 @@
          long packedChunkPos = chunkPos.toLong();
          int i = ChunkLevel.byStatus(chunkStatus);
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(packedChunkPos);
@@ -113,7 +121,7 @@
              this.addTicket(new Ticket(TicketType.UNKNOWN, i), chunkPos);
              if (this.chunkAbsent(visibleChunkIfPresent, i)) {
                  ProfilerFiller profilerFiller = Profiler.get();
-@@ -266,7 +_,7 @@
+@@ -260,7 +_,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder chunkHolder, int status) {
@@ -122,7 +130,7 @@
      }
  
      @Override
-@@ -321,17 +_,39 @@
+@@ -315,17 +_,39 @@
  
      @Override
      public void close() throws IOException {
@@ -164,17 +172,18 @@
              this.ticketStorage.purgeStaleTickets(this.chunkMap);
          }
  
-@@ -388,12 +_,20 @@
+@@ -381,12 +_,20 @@
+             naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap)
          );
          this.lastSpawnState = spawnState;
-         profiler.popPush("spawnAndTick");
 -        boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING);
 +        boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
          int _int = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
          List<MobCategory> filteredSpawningCategories;
-         if (_boolean && (this.spawnEnemies || this.spawnFriendlies)) {
+-        if (_boolean) {
 -            boolean flag = this.level.getLevelData().getGameTime() % 400L == 0L;
--            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnState, this.spawnFriendlies, this.spawnEnemies, flag);
+-            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnState, true, this.spawnEnemies, flag);
++        if (_boolean && (this.spawnEnemies || this.spawnFriendlies)) { // Paper
 +            // Paper start - PlayerNaturallySpawnCreaturesEvent
 +            for (ServerPlayer entityPlayer : this.level.players()) {
 +                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, entityPlayer.getBukkitEntity().getViewDistance());
@@ -188,7 +197,7 @@
          } else {
              filteredSpawningCategories = List.of();
          }
-@@ -547,8 +_,13 @@
+@@ -559,7 +_,13 @@
  
      @Override
      public void setSpawnSettings(boolean spawnSettings) {
@@ -197,13 +206,12 @@
 +    }
 +    public void setSpawnSettings(boolean spawnSettings, boolean spawnFriendlies) {
          this.spawnEnemies = spawnSettings;
--        this.spawnFriendlies = this.spawnFriendlies;
 +        this.spawnFriendlies = spawnFriendlies;
 +        // CraftBukkit end
      }
  
      public String getChunkDebugData(ChunkPos chunkPos) {
-@@ -621,12 +_,18 @@
+@@ -632,12 +_,18 @@
  
          @Override
          public boolean pollTask() {

@@ -1,17 +1,19 @@
 --- a/net/minecraft/server/level/TicketType.java
 +++ b/net/minecraft/server/level/TicketType.java
-@@ -13,11 +_,24 @@
-     public static final TicketType PORTAL = register("portal", 300L, true, TicketType.TicketUse.LOADING_AND_SIMULATION);
-     public static final TicketType ENDER_PEARL = register("ender_pearl", 40L, false, TicketType.TicketUse.LOADING_AND_SIMULATION);
-     public static final TicketType UNKNOWN = register("unknown", 1L, false, TicketType.TicketUse.LOADING);
-+    public static final TicketType PLUGIN = register("plugin", 0L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // CraftBukkit
-+    public static final TicketType POST_TELEPORT = register("post_teleport", 5L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType PLUGIN_TICKET = register("plugin_ticket", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType FUTURE_AWAIT = register("future_await", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType CHUNK_LOAD = register("chunk_load", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING); // Paper - moonrise
+@@ -19,6 +_,11 @@
+     public static final TicketType PORTAL = register("portal", 300L, FLAG_PERSIST | FLAG_LOADING | FLAG_SIMULATION | FLAG_KEEP_DIMENSION_ACTIVE);
+     public static final TicketType ENDER_PEARL = register("ender_pearl", 40L, FLAG_LOADING | FLAG_SIMULATION | FLAG_KEEP_DIMENSION_ACTIVE);
+     public static final TicketType UNKNOWN = register("unknown", 1L, FLAG_CAN_EXPIRE_IF_UNLOADED | FLAG_LOADING);
++    public static final TicketType PLUGIN = register("plugin", 0L, FLAG_LOADING | FLAG_SIMULATION); // CraftBukkit
++    public static final TicketType POST_TELEPORT = register("post_teleport", 5L, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType PLUGIN_TICKET = register("plugin_ticket", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType FUTURE_AWAIT = register("future_await", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType CHUNK_LOAD = register("chunk_load", NO_TIMEOUT, FLAG_LOADING); // Paper - moonrise
  
-     public static TicketType register(String name, long timeout, boolean persist, TicketType.TicketUse use) {
-         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, persist, use));
+     private static TicketType register(String name, long timeout, int flags) {
+         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, flags));
+@@ -44,7 +_,14 @@
+         return (this.flags & 16) != 0;
      }
  
 +    // Paper start - chunk-gc config
@@ -20,17 +22,9 @@
 +    public long timeout() {
 +        return this == PLUGIN ? PLUGIN_TYPE_TIMEOUT : this.timeout;
 +    }
-+    // Paper end - chunk-gc config
-+
-     public boolean doesLoad() {
-         return this.use == TicketType.TicketUse.LOADING || this.use == TicketType.TicketUse.LOADING_AND_SIMULATION;
-     }
-@@ -27,7 +_,7 @@
-     }
- 
      public boolean hasTimeout() {
 -        return this.timeout != 0L;
-+        return this.timeout() != 0L; // Paper - chunk-gc config
++        return this.timeout() != 0L;
++        // Paper end - chunk-gc config
      }
- 
-     public static enum TicketUse {
+ }

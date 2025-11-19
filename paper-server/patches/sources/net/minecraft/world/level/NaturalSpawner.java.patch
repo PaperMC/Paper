@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -73,6 +_,13 @@
+@@ -75,6 +_,13 @@
              if (!(entity instanceof Mob mob && (mob.isPersistenceRequired() || mob.requiresCustomPersistence()))) {
                  MobCategory category = entity.getType().getCategory();
                  if (category != MobCategory.MISC) {
@@ -14,7 +14,7 @@
                      BlockPos blockPos = entity.blockPosition();
                      chunkGetter.query(ChunkPos.asLong(blockPos), chunk -> {
                          MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(blockPos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
-@@ -97,17 +_,34 @@
+@@ -99,17 +_,34 @@
          return chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
      }
  
@@ -51,7 +51,7 @@
              }
          }
  
-@@ -127,6 +_,16 @@
+@@ -129,6 +_,16 @@
          profilerFiller.pop();
      }
  
@@ -68,7 +68,7 @@
      public static void spawnCategoryForChunk(
          MobCategory category, ServerLevel level, LevelChunk chunk, NaturalSpawner.SpawnPredicate filter, NaturalSpawner.AfterSpawnCallback callback
      ) {
-@@ -152,8 +_,8 @@
+@@ -154,8 +_,8 @@
          StructureManager structureManager = level.structureManager();
          ChunkGenerator generator = level.getChunkSource().getGenerator();
          int y = pos.getY();
@@ -79,7 +79,7 @@
              BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
              int i = 0;
  
-@@ -175,7 +_,7 @@
+@@ -177,7 +_,7 @@
                      Player nearestPlayer = level.getNearestPlayer(d, y, d1, -1.0, false);
                      if (nearestPlayer != null) {
                          double d2 = nearestPlayer.distanceToSqr(d, y, d1);
@@ -88,7 +88,7 @@
                              if (spawnerData == null) {
                                  Optional<MobSpawnSettings.SpawnerData> randomSpawnMobAt = getRandomSpawnMobAt(
                                      level, structureManager, generator, category, level.random, mutableBlockPos
-@@ -188,7 +_,13 @@
+@@ -190,7 +_,13 @@
                                  ceil = spawnerData.minCount() + level.random.nextInt(1 + spawnerData.maxCount() - spawnerData.minCount());
                              }
  
@@ -103,7 +103,7 @@
                                  && filter.test(spawnerData.type(), mutableBlockPos, chunk)) {
                                  Mob mobForSpawn = getMobForSpawn(level, spawnerData.type());
                                  if (mobForSpawn == null) {
-@@ -200,10 +_,15 @@
+@@ -202,10 +_,15 @@
                                      spawnGroupData = mobForSpawn.finalizeSpawn(
                                          level, level.getCurrentDifficultyAt(mobForSpawn.blockPosition()), EntitySpawnReason.NATURAL, spawnGroupData
                                      );
@@ -123,7 +123,7 @@
                                      if (i >= mobForSpawn.getMaxSpawnClusterSize()) {
                                          return;
                                      }
-@@ -231,7 +_,15 @@
+@@ -237,7 +_,15 @@
          }
      }
  
@@ -140,7 +140,7 @@
          ServerLevel level,
          MobCategory category,
          StructureManager structureManager,
-@@ -241,7 +_,19 @@
+@@ -247,7 +_,19 @@
          double distance
      ) {
          EntityType<?> entityType = data.type();
@@ -161,7 +161,7 @@
              && (
                  entityType.canSpawnFarFromPlayer()
                      || !(distance > entityType.getCategory().getDespawnDistance() * entityType.getCategory().getDespawnDistance())
-@@ -251,6 +_,7 @@
+@@ -257,6 +_,7 @@
              && SpawnPlacements.isSpawnPositionOk(entityType, level, pos)
              && SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random)
              && level.noCollision(entityType.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
@@ -169,7 +169,7 @@
      }
  
      @Nullable
-@@ -263,6 +_,7 @@
+@@ -269,6 +_,7 @@
              LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(entityType));
          } catch (Exception var4) {
              LOGGER.warn("Failed to create mob", (Throwable)var4);
@@ -177,24 +177,24 @@
          }
  
          return null;
-@@ -369,6 +_,7 @@
-                                     entity = spawnerData.type().create(levelAccessor.getLevel(), EntitySpawnReason.NATURAL);
+@@ -375,6 +_,7 @@
+                                     entity = spawnerData.type().create(level.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception var27) {
                                      LOGGER.warn("Failed to create mob", (Throwable)var27);
 +                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(var27); // Paper - ServerExceptionEvent
                                      continue;
                                  }
  
-@@ -386,7 +_,7 @@
-                                         EntitySpawnReason.CHUNK_GENERATION,
-                                         spawnGroupData
+@@ -389,7 +_,7 @@
+                                     spawnGroupData = mob.finalizeSpawn(
+                                         level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, spawnGroupData
                                      );
--                                    levelAccessor.addFreshEntityWithPassengers(mob);
-+                                    levelAccessor.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
+-                                    level.addFreshEntityWithPassengers(mob);
++                                    level.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
                                      flag = true;
                                  }
                              }
-@@ -506,8 +_,10 @@
+@@ -509,8 +_,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  

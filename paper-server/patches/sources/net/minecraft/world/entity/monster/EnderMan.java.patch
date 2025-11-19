@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EnderMan.java
 +++ b/net/minecraft/world/entity/monster/EnderMan.java
-@@ -114,9 +_,20 @@
+@@ -120,9 +_,20 @@
              .add(Attributes.STEP_HEIGHT, 1.0);
      }
  
@@ -11,19 +11,19 @@
 +    // Paper end - EndermanEscapeEvent
 +
      @Override
--    public void setTarget(@Nullable LivingEntity livingEntity) {
--        super.setTarget(livingEntity);
+-    public void setTarget(@Nullable LivingEntity target) {
+-        super.setTarget(target);
 +    // CraftBukkit start - fire event
-+    public boolean setTarget(@Nullable LivingEntity livingEntity, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
-+        if (!super.setTarget(livingEntity, reason)) {
++    public boolean setTarget(@Nullable LivingEntity target, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
++        if (!super.setTarget(target, reason)) {
 +            return false;
 +        }
-+        livingEntity = this.getTarget();
++        target = this.getTarget();
 +        // CraftBukkit end
          AttributeInstance attribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
-         if (livingEntity == null) {
+         if (target == null) {
              this.targetChangeTime = 0;
-@@ -130,6 +_,7 @@
+@@ -136,6 +_,7 @@
                  attribute.addTransientModifier(SPEED_MODIFIER_ATTACKING);
              }
          }
@@ -31,7 +31,7 @@
      }
  
      @Override
-@@ -203,6 +_,15 @@
+@@ -209,6 +_,15 @@
      }
  
      boolean isBeingStaredBy(Player player) {
@@ -47,7 +47,7 @@
          return LivingEntity.PLAYER_NOT_WEARING_DISGUISE_ITEM.test(player) && this.isLookingAtMe(player, 0.025, true, false, new double[]{this.getEyeY()});
      }
  
-@@ -242,7 +_,7 @@
+@@ -248,7 +_,7 @@
              float lightLevelDependentMagicValue = this.getLightLevelDependentMagicValue();
              if (lightLevelDependentMagicValue > 0.5F
                  && level.canSeeSky(this.blockPosition())
@@ -56,7 +56,7 @@
                  this.setTarget(null);
                  this.teleport();
              }
-@@ -355,21 +_,25 @@
+@@ -361,21 +_,25 @@
              AbstractThrownPotion abstractThrownPotion1 = damageSource.getDirectEntity() instanceof AbstractThrownPotion abstractThrownPotion
                  ? abstractThrownPotion
                  : null;
@@ -83,7 +83,7 @@
  
                  return flag;
              }
-@@ -394,6 +_,16 @@
+@@ -400,6 +_,16 @@
          this.entityData.set(DATA_STARED_AT, true);
      }
  
@@ -100,7 +100,7 @@
      @Override
      public boolean requiresCustomPersistence() {
          return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
-@@ -453,16 +_,19 @@
+@@ -459,16 +_,19 @@
              int floor1 = Mth.floor(this.enderman.getY() + random.nextDouble() * 2.0);
              int floor2 = Mth.floor(this.enderman.getZ() - 1.0 + random.nextDouble() * 2.0);
              BlockPos blockPos = new BlockPos(floor, floor1, floor2);
@@ -114,14 +114,14 @@
                  carriedBlock = Block.updateFromNeighbourShapes(carriedBlock, this.enderman.level(), blockPos);
                  if (this.canPlaceBlock(level, blockPos, carriedBlock, blockState, blockState1, blockPos1)) {
 +                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockPos, carriedBlock)) { // CraftBukkit - Place event
-                     level.setBlock(blockPos, carriedBlock, 3);
+                     level.setBlock(blockPos, carriedBlock, Block.UPDATE_ALL);
                      level.gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(this.enderman, carriedBlock));
                      this.enderman.setCarriedBlock(null);
 +                    } // CraftBukkit
                  }
              }
          }
-@@ -560,7 +_,7 @@
+@@ -566,7 +_,7 @@
              } else {
                  if (this.target != null && !this.enderman.isPassenger()) {
                      if (this.enderman.isBeingStaredBy((Player)this.target)) {
@@ -130,7 +130,7 @@
                              this.enderman.teleport();
                          }
  
-@@ -599,15 +_,18 @@
+@@ -605,15 +_,18 @@
              int floor1 = Mth.floor(this.enderman.getY() + random.nextDouble() * 3.0);
              int floor2 = Mth.floor(this.enderman.getZ() - 2.0 + random.nextDouble() * 4.0);
              BlockPos blockPos = new BlockPos(floor, floor1, floor2);

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -79,7 +_,7 @@
+@@ -86,7 +_,7 @@
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
      public boolean loaded;
@@ -9,7 +9,7 @@
      @Nullable
      private Supplier<FullChunkStatus> fullStatus;
      @Nullable
-@@ -88,6 +_,14 @@
+@@ -95,6 +_,14 @@
      private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
      private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
@@ -24,16 +24,16 @@
  
      public LevelChunk(Level level, ChunkPos pos) {
          this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -105,7 +_,7 @@
+@@ -112,7 +_,7 @@
          @Nullable BlendingData blendingData
      ) {
-         super(pos, data, level, level.registryAccess().lookupOrThrow(Registries.BIOME), inhabitedTime, sections, blendingData);
+         super(pos, data, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
 -        this.level = level;
 +        this.level = (ServerLevel) level; // CraftBukkit - type
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types types : Heightmap.Types.values()) {
-@@ -157,6 +_,10 @@
+@@ -164,6 +_,10 @@
          this.skyLightSources = chunk.skyLightSources;
          this.setLightCorrect(chunk.isLightCorrect());
          this.markUnsaved();
@@ -44,7 +44,7 @@
      }
  
      public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
-@@ -165,6 +_,12 @@
+@@ -172,6 +_,12 @@
              unsavedListener.setUnsaved(this.chunkPos);
          }
      }
@@ -57,7 +57,7 @@
  
      @Override
      public void markUnsaved() {
-@@ -198,8 +_,28 @@
+@@ -205,8 +_,28 @@
              : super.getListenerRegistry(sectionY);
      }
  
@@ -86,7 +86,7 @@
          int x = pos.getX();
          int y = pos.getY();
          int z = pos.getZ();
-@@ -234,28 +_,42 @@
+@@ -241,28 +_,42 @@
          }
      }
  
@@ -131,16 +131,16 @@
      }
  
      @Nullable
-@@ -315,7 +_,7 @@
+@@ -324,7 +_,7 @@
                  if (!section.getBlockState(i, i1, i2).is(block)) {
                      return null;
                  } else {
--                    if (!this.level.isClientSide && (flags & 512) == 0) {
-+                    if (!this.level.isClientSide && (flags & 512) == 0 && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+-                    if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0) {
++                    if (!this.level.isClientSide() && (flags & 512) == 0 && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
                          state.onPlace(this.level, pos, blockState, flag1);
                      }
  
-@@ -369,7 +_,12 @@
+@@ -378,7 +_,12 @@
  
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
@@ -154,7 +154,7 @@
          if (blockEntity == null) {
              CompoundTag compoundTag = this.pendingBlockEntities.remove(pos);
              if (compoundTag != null) {
-@@ -424,7 +_,13 @@
+@@ -433,7 +_,13 @@
          BlockPos blockPos = blockEntity.getBlockPos();
          BlockState blockState = this.getBlockState(blockPos);
          if (!blockState.hasBlockEntity()) {
@@ -169,7 +169,7 @@
          } else {
              BlockState blockState1 = blockEntity.getBlockState();
              if (blockState != blockState1) {
-@@ -472,6 +_,11 @@
+@@ -481,6 +_,11 @@
      public void removeBlockEntity(BlockPos pos) {
          if (this.isInLevel()) {
              BlockEntity blockEntity = this.blockEntities.remove(pos);
@@ -181,7 +181,7 @@
              if (blockEntity != null) {
                  if (this.level instanceof ServerLevel serverLevel) {
                      this.removeGameEventListener(blockEntity, serverLevel);
-@@ -514,6 +_,65 @@
+@@ -524,6 +_,65 @@
          }
      }
  
@@ -247,7 +247,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -726,23 +_,24 @@
+@@ -762,23 +_,24 @@
                          if (this.blockEntity.getType().isValid(blockState)) {
                              this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
                              this.loggedInvalidBlockState = false;

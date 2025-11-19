@@ -2,14 +2,14 @@
 +++ b/net/minecraft/world/level/block/ComposterBlock.java
 @@ -252,6 +_,11 @@
          if (levelValue < 8 && COMPOSTABLES.containsKey(stack.getItem())) {
-             if (levelValue < 7 && !level.isClientSide) {
+             if (levelValue < 7 && !level.isClientSide()) {
                  BlockState blockState = addItem(player, state, level, pos, stack);
 +                // Paper start - handle cancelled events
 +                if (blockState == null) {
 +                    return InteractionResult.PASS;
 +                }
 +                // Paper end
-                 level.levelEvent(1500, pos, state != blockState ? 1 : 0);
+                 level.levelEvent(LevelEvent.COMPOSTER_FILL, pos, state != blockState ? 1 : 0);
                  player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
                  stack.consume(1, player);
 @@ -277,7 +_,19 @@
@@ -45,7 +45,7 @@
 +            }
 +        }
 +        // CraftBukkit end
-         if (!level.isClientSide) {
+         if (!level.isClientSide()) {
              Vec3 vec3 = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandom(level.random, 0.7F);
              ItemEntity itemEntity = new ItemEntity(level, vec3.x(), vec3.y(), vec3.z(), new ItemStack(Items.BONE_MEAL));
 @@ -305,14 +_,39 @@
@@ -86,7 +86,7 @@
 +                return null;
 +            }
 +            // Paper end
-             level.setBlock(pos, blockState, 3);
+             level.setBlock(pos, blockState, Block.UPDATE_ALL);
              level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(entity, blockState));
              if (i == 7) {
 @@ -357,13 +_,14 @@
@@ -123,7 +123,7 @@
 +                    return;
 +                }
 +                // Paper end - Add CompostItemEvent and EntityCompostItemEvent
-                 this.level.levelEvent(1500, this.pos, blockState != this.state ? 1 : 0);
+                 this.level.levelEvent(LevelEvent.COMPOSTER_FILL, this.pos, blockState != this.state ? 1 : 0);
                  this.removeItemNoUpdate(0);
              }
 @@ -435,6 +_,7 @@

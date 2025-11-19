@@ -1,54 +1,56 @@
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -83,16 +_,45 @@
-                 Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
-                 EntityType<?> type = ((SpawnEggItem)item.getItem()).getType(blockSource.level().registryAccess(), item);
- 
-+                // CraftBukkit start
-+                ServerLevel serverLevel = blockSource.level();
-+                ItemStack singleItemStack = item.copyWithCount(1);
-+                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
-+                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
+@@ -87,10 +_,38 @@
+                 if (type == null) {
+                     return item;
+                 } else {
++                    // CraftBukkit start
++                    ServerLevel serverLevel = blockSource.level();
++                    ItemStack singleItemStack = item.copyWithCount(1);
++                    org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
++                    org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
 +
-+                org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
-+                serverLevel.getCraftServer().getPluginManager().callEvent(event);
++                    org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
++                    serverLevel.getCraftServer().getPluginManager().callEvent(event);
 +
-+                if (event.isCancelled()) {
-+                    return item;
-+                }
-+
-+                boolean shrink = true;
-+                if (!event.getItem().equals(craftItem)) {
-+                    shrink = false;
-+                    // Chain to handler for new item
-+                    ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+                    DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
-+                    if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
-+                        dispenseBehavior.dispense(blockSource, eventStack);
++                    if (event.isCancelled()) {
 +                        return item;
 +                    }
-+                    // Paper start - track changed items in the dispense event
-+                    singleItemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem()); // unwrap is safe because the stack won't be modified
-+                    type = ((SpawnEggItem) singleItemStack.getItem()).getType(serverLevel.registryAccess(), singleItemStack);
-+                    // Paper end - track changed item from dispense event
-+                }
-                 try {
-                     type.spawn(
--                        blockSource.level(), item, null, blockSource.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false
-+                        blockSource.level(), singleItemStack, null, blockSource.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false // Paper - track changed item in dispense event
-                     );
-                 } catch (Exception var6) {
-                     LOGGER.error("Error while dispensing spawn egg from dispenser at {}", blockSource.pos(), var6);
-                     return ItemStack.EMPTY;
-                 }
++
++                    boolean shrink = true;
++                    if (!event.getItem().equals(craftItem)) {
++                        shrink = false;
++                        // Chain to handler for new item
++                        ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                        DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
++                        if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                            dispenseBehavior.dispense(blockSource, eventStack);
++                            return item;
++                        }
++                        // Paper start - track changed items in the dispense event
++                        singleItemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem()); // unwrap is safe because the stack won't be modified
++                        type = ((SpawnEggItem) singleItemStack.getItem()).getType(singleItemStack);
++                        // Paper end - track changed item from dispense event
++                    }
+                     try {
+                         type.spawn(
+                             blockSource.level(),
+-                            item,
++                            singleItemStack, // Paper - track changed item in dispense event
+                             null,
+                             blockSource.pos().relative(direction),
+                             EntitySpawnReason.DISPENSER,
+@@ -102,7 +_,8 @@
+                         return ItemStack.EMPTY;
+                     }
  
--                item.shrink(1);
-+                if (shrink) item.shrink(1);
-+                // CraftBukkit end
-                 blockSource.level().gameEvent(null, GameEvent.ENTITY_PLACE, blockSource.pos());
-                 return item;
-             }
-@@ -110,12 +_,38 @@
+-                    item.shrink(1);
++                    if (shrink) item.shrink(1);
++                    // CraftBukkit end
+                     blockSource.level().gameEvent(null, GameEvent.ENTITY_PLACE, blockSource.pos());
+                     return item;
+                 }
+@@ -121,12 +_,38 @@
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
                      ServerLevel serverLevel = blockSource.level();
@@ -89,7 +91,7 @@
                      }
  
                      return item;
-@@ -135,8 +_,35 @@
+@@ -146,8 +_,35 @@
                              new AABB(blockPos),
                              abstractChestedHorse1 -> abstractChestedHorse1.isAlive() && !abstractChestedHorse1.hasChest()
                          )) {
@@ -127,7 +129,7 @@
                              this.setSuccess(true);
                              return item;
                          }
-@@ -174,8 +_,45 @@
+@@ -185,8 +_,45 @@
                  DispensibleContainerItem dispensibleContainerItem = (DispensibleContainerItem)item.getItem();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  Level level = blockSource.level();
@@ -174,7 +176,7 @@
                      return this.consumeWithRemainder(blockSource, item, new ItemStack(Items.BUCKET));
                  } else {
                      return this.defaultDispenseItemBehavior.dispense(blockSource, item);
-@@ -198,12 +_,19 @@
+@@ -209,12 +_,19 @@
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  BlockState blockState = levelAccessor.getBlockState(blockPos);
                  if (blockState.getBlock() instanceof BucketPickup bucketPickup) {
@@ -195,7 +197,7 @@
                          return this.consumeWithRemainder(blockSource, item, new ItemStack(item1));
                      }
                  } else {
-@@ -218,15 +_,26 @@
+@@ -229,15 +_,26 @@
                  this.setSuccess(true);
                  Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                  BlockPos blockPos = blockSource.pos().relative(direction);
@@ -225,7 +227,7 @@
                          serverLevel.removeBlock(blockPos, false);
                      } else {
                          this.setSuccess(false);
-@@ -248,11 +_,46 @@
+@@ -259,11 +_,46 @@
                  this.setSuccess(true);
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -239,15 +241,15 @@
 +                level.captureTreeGeneration = true; // CraftBukkit
                  if (!BoneMealItem.growCrop(item, level, blockPos) && !BoneMealItem.growWaterPlant(item, level, blockPos, null)) {
                      this.setSuccess(false);
-                 } else if (!level.isClientSide) {
-                     level.levelEvent(1505, blockPos, 15);
+                 } else if (!level.isClientSide()) {
+                     level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, blockPos, 15);
                  }
 +                // CraftBukkit start
 +                level.captureTreeGeneration = false;
 +                if (!level.capturedBlockStates.isEmpty()) {
 +                    org.bukkit.TreeType treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
 +                    net.minecraft.world.level.block.SaplingBlock.treeType = null;
-+                    org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(blockPos, level.getWorld());
++                    org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(blockPos, level);
 +                    List<org.bukkit.block.BlockState> states = new java.util.ArrayList<>(level.capturedBlockStates.values());
 +                    level.capturedBlockStates.clear();
 +                    org.bukkit.event.world.StructureGrowEvent structureEvent = null;
@@ -272,7 +274,7 @@
  
                  return item;
              }
-@@ -266,11 +_,36 @@
+@@ -277,11 +_,36 @@
                      return item;
                  } else {
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -312,7 +314,7 @@
                      this.setSuccess(true);
                      return item;
                  }
-@@ -284,6 +_,13 @@
+@@ -295,6 +_,13 @@
                      Level level = blockSource.level();
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
@@ -326,7 +328,7 @@
                      if (level.isEmptyBlock(blockPos) && WitherSkullBlock.canSpawnMob(level, blockPos, item)) {
                          level.setBlock(
                              blockPos,
-@@ -299,7 +_,7 @@
+@@ -310,7 +_,7 @@
                          item.shrink(1);
                          this.setSuccess(true);
                      } else {
@@ -335,7 +337,7 @@
                      }
  
                      return item;
-@@ -312,6 +_,13 @@
+@@ -323,6 +_,13 @@
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  CarvedPumpkinBlock carvedPumpkinBlock = (CarvedPumpkinBlock)Blocks.CARVED_PUMPKIN;
@@ -347,9 +349,9 @@
 +                }
 +                // Paper end - Call BlockDispenseEvent
                  if (level.isEmptyBlock(blockPos) && carvedPumpkinBlock.canSpawnGolem(level, blockPos)) {
-                     if (!level.isClientSide) {
-                         level.setBlock(blockPos, carvedPumpkinBlock.defaultBlockState(), 3);
-@@ -321,7 +_,7 @@
+                     if (!level.isClientSide()) {
+                         level.setBlock(blockPos, carvedPumpkinBlock.defaultBlockState(), Block.UPDATE_ALL);
+@@ -332,7 +_,7 @@
                      item.shrink(1);
                      this.setSuccess(true);
                  } else {
@@ -358,7 +360,7 @@
                  }
  
                  return item;
-@@ -347,6 +_,12 @@
+@@ -358,6 +_,12 @@
                      ServerLevel serverLevel = blockSource.level();
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                      BlockState blockState = serverLevel.getBlockState(blockPos);
@@ -371,7 +373,7 @@
                      if (blockState.is(
                              BlockTags.BEEHIVES,
                              blockStateBase -> blockStateBase.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockStateBase.getBlock() instanceof BeehiveBlock
-@@ -375,6 +_,13 @@
+@@ -386,6 +_,13 @@
                  this.setSuccess(true);
                  if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
                      if (blockState.getValue(RespawnAnchorBlock.CHARGE) != 4) {
@@ -385,7 +387,7 @@
                          RespawnAnchorBlock.charge(null, level, blockPos, blockState);
                          item.shrink(1);
                      } else {
-@@ -398,6 +_,28 @@
+@@ -409,6 +_,28 @@
                      this.setSuccess(false);
                      return item;
                  } else {
@@ -412,9 +414,9 @@
 +                    }
 +                    // CraftBukkit end
                      for (Armadillo armadillo : entitiesOfClass) {
-                         if (armadillo.brushOffScute()) {
+                         if (armadillo.brushOffScute(null, item)) {
                              item.hurtAndBreak(16, serverLevel, null, item1 -> {});
-@@ -418,6 +_,13 @@
+@@ -429,6 +_,13 @@
                  BlockState blockState = level.getBlockState(blockPos);
                  Optional<BlockState> waxed = HoneycombItem.getWaxed(blockState);
                  if (waxed.isPresent()) {
@@ -426,9 +428,9 @@
 +                    }
 +                    // Paper end - Call BlockDispenseEvent
                      level.setBlockAndUpdate(blockPos, waxed.get());
-                     level.levelEvent(3003, blockPos, 0);
+                     level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_WAX_ON, blockPos, 0);
                      item.shrink(1);
-@@ -445,6 +_,12 @@
+@@ -456,6 +_,12 @@
                          if (!serverLevel.getBlockState(blockPos1).is(BlockTags.CONVERTABLE_TO_MUD)) {
                              return this.defaultDispenseItemBehavior.dispense(blockSource, item);
                          } else {
@@ -438,6 +440,6 @@
 +                                return result;
 +                            }
 +                            // Paper end - Call BlockDispenseEvent
-                             if (!serverLevel.isClientSide) {
+                             if (!serverLevel.isClientSide()) {
                                  for (int i = 0; i < 5; i++) {
                                      serverLevel.sendParticles(

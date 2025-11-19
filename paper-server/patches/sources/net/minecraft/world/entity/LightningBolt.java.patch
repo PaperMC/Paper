@@ -6,8 +6,8 @@
      private int blocksSetOnFire;
 +    public boolean isEffect; // Paper - Properly handle lightning effects api
  
-     public LightningBolt(EntityType<? extends LightningBolt> entityType, Level level) {
-         super(entityType, level);
+     public LightningBolt(EntityType<? extends LightningBolt> type, Level level) {
+         super(type, level);
 @@ -77,7 +_,7 @@
      @Override
      public void tick() {
@@ -48,7 +48,7 @@
                  List<Entity> entities = this.level()
                      .getEntities(
                          this,
-@@ -169,26 +_,34 @@
+@@ -169,44 +_,57 @@
      }
  
      private void spawnFire(int extraIgnitions) {
@@ -87,17 +87,12 @@
 -    private static void clearCopperOnLightningStrike(Level level, BlockPos pos) {
 +    private static void clearCopperOnLightningStrike(Level level, BlockPos pos, Entity lightning) { // Paper - Call EntityChangeBlockEvent
          BlockState blockState = level.getBlockState(pos);
-         BlockPos blockPos;
-         BlockState blockState1;
-@@ -201,22 +_,27 @@
-         }
- 
-         if (blockState1.getBlock() instanceof WeatheringCopper) {
--            level.setBlockAndUpdate(blockPos, WeatheringCopper.getFirst(level.getBlockState(blockPos)));
+         if (blockState.getBlock() instanceof WeatheringCopper) {
+-            level.setBlockAndUpdate(pos, WeatheringCopper.getFirst(level.getBlockState(pos)));
 +            // Paper start - Call EntityChangeBlockEvent
-+            BlockState newBlockState = WeatheringCopper.getFirst(level.getBlockState(blockPos));
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(lightning, blockPos, newBlockState)) {
-+                level.setBlockAndUpdate(blockPos, newBlockState);
++            BlockState newBlockState = WeatheringCopper.getFirst(level.getBlockState(pos));
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(lightning, pos, newBlockState)) {
++                level.setBlockAndUpdate(pos, newBlockState);
 +            }
 +            // Paper end - Call EntityChangeBlockEvent
              BlockPos.MutableBlockPos mutableBlockPos = pos.mutable();
@@ -105,8 +100,8 @@
  
              for (int i1 = 0; i1 < i; i1++) {
                  int i2 = level.random.nextInt(8) + 1;
--                randomWalkCleaningCopper(level, blockPos, mutableBlockPos, i2);
-+                randomWalkCleaningCopper(level, blockPos, mutableBlockPos, i2, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+-                randomWalkCleaningCopper(level, pos, mutableBlockPos, i2);
++                randomWalkCleaningCopper(level, pos, mutableBlockPos, i2, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
              }
          }
      }
@@ -121,7 +116,7 @@
              if (optional.isEmpty()) {
                  break;
              }
-@@ -225,11 +_,17 @@
+@@ -215,11 +_,17 @@
          }
      }
  
@@ -138,6 +133,6 @@
 +                    }
 +                });
 +                // Paper end - call EntityChangeBlockEvent
-                 level.levelEvent(3002, blockPos, -1);
+                 level.levelEvent(LevelEvent.PARTICLES_ELECTRIC_SPARK, blockPos, -1);
                  return Optional.of(blockPos);
              }

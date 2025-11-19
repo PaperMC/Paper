@@ -6,7 +6,7 @@ plugins {
 }
 
 paperweight {
-    atFile.set(layout.projectDirectory.file("wideners.at"))
+    atFile = layout.projectDirectory.file("wideners.at")
 }
 
 val serverRuntimeClasspath by configurations.registering { // resolvable?
@@ -78,27 +78,6 @@ tasks.register("generate") {
     dependsOn(generateApi, generateImpl)
 }
 
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanOldGeneratedSourceCode by tasks.registering(JavaExec::class) {
-        group = "verification"
-        description = "Scan source code to detect outdated generated code"
-        javaLauncher = javaToolchains.defaultJavaLauncher(project)
-        mainClass.set("io.papermc.generator.rewriter.utils.ScanOldGeneratedSourceCode")
-        classpath(sourceSets.main.map { it.runtimeClasspath })
-
-        val projectDirs = listOf("paper-api", "paper-server").map { rootProject.layout.projectDirectory.dir(it) }
-        args(projectDirs.map { it.asFile.absolutePath })
-        val workDirs = projectDirs.map { it.dir("src/main/java") }
-
-        workDirs.forEach { inputs.dir(it) }
-        inputs.property("gameVersion", gameVersion)
-        outputs.dirs(workDirs)
-    }
-    tasks.check {
-        dependsOn(scanOldGeneratedSourceCode)
-    }
-}
-
 fun TaskContainer.registerGenerationTask(
     name: String,
     rewrite: Boolean,
@@ -109,9 +88,10 @@ fun TaskContainer.registerGenerationTask(
     group = "generation"
     dependsOn(project.tasks.test)
     javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
+    maxHeapSize = "2G"
     inputs.property("gameVersion", gameVersion)
     inputs.dir(layout.projectDirectory.dir("src/main/java")).withPathSensitivity(PathSensitivity.RELATIVE)
-    mainClass.set("io.papermc.generator.Main")
+    mainClass = "io.papermc.generator.Main"
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val provider = objects.newInstance<GenerationArgumentProvider>()
@@ -164,7 +144,7 @@ abstract class GenerationArgumentProvider : CommandLineArgumentProvider {
         }
 
         if (bootstrapTags.get()) {
-            args.add(("--bootstrap-tags"))
+            args.add("--bootstrap-tags")
         }
         return args.toList()
     }

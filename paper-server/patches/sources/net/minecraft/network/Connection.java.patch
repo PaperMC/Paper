@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -74,13 +_,13 @@
+@@ -73,13 +_,13 @@
      public static final Marker PACKET_RECEIVED_MARKER = Util.make(MarkerFactory.getMarker("PACKET_RECEIVED"), marker -> marker.add(PACKET_MARKER));
      public static final Marker PACKET_SENT_MARKER = Util.make(MarkerFactory.getMarker("PACKET_SENT"), marker -> marker.add(PACKET_MARKER));
      public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(
@@ -17,7 +17,7 @@
      );
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
-@@ -88,6 +_,11 @@
+@@ -87,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -29,7 +29,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -106,6 +_,42 @@
+@@ -105,6 +_,43 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -67,32 +67,33 @@
 +    // Paper end - packet limiter
 +    @Nullable public SocketAddress haProxyAddress; // Paper - Add API to get player's proxy address
 +    public @Nullable java.util.Optional<net.minecraft.network.chat.Component> legacySavedLoginEventResultOverride; // Paper - playerloginevent
-+    public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLoginEventLegacy; // Paper - playerloginevent
++    public boolean handledLegacyLoginEvent; // Paper - playerloginevent
++    public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
 +    public @Nullable org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -116,6 +_,7 @@
-         super.channelActive(context);
-         this.channel = context.channel();
+@@ -115,6 +_,7 @@
+         super.channelActive(ctx);
+         this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
 +        this.preparing = false; // Spigot
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -128,14 +_,31 @@
+@@ -127,14 +_,31 @@
  
      @Override
-     public void exceptionCaught(ChannelHandlerContext context, Throwable exception) {
+     public void exceptionCaught(ChannelHandlerContext ctx, Throwable exception) {
 +        // Paper start - Handle large packets disconnecting client
 +        if (exception instanceof io.netty.handler.codec.EncoderException && exception.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            if (packet.packetTooLarge(this)) {
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
++                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else if (packet.isSkippable()) {
 +                Connection.LOGGER.debug("Skipping packet due to errors", exception.getCause());
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
++                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else {
 +                exception = exception.getCause();
@@ -112,7 +113,7 @@
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
                      Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + exception);
-@@ -147,9 +_,11 @@
+@@ -146,9 +_,11 @@
                          disconnectionDetails = new DisconnectionDetails(component);
                      }
  
@@ -125,7 +126,7 @@
                              Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(component)
                                  : new ClientboundDisconnectPacket(component));
-@@ -166,6 +_,7 @@
+@@ -165,6 +_,7 @@
                  }
              }
          }
@@ -133,7 +134,7 @@
      }
  
      @Override
-@@ -175,10 +_,60 @@
+@@ -174,10 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {
@@ -172,7 +173,7 @@
 +
 +                                        String playerName;
 +                                        if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
-+                                            playerName = impl.getOwner().getName();
++                                            playerName = impl.getOwner().name();
 +                                        } else {
 +                                            playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
 +                                        }
@@ -194,7 +195,7 @@
                      } catch (RejectedExecutionException var6) {
                          this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException var7) {
-@@ -373,10 +_,30 @@
+@@ -370,10 +_,30 @@
          }
      }
  
@@ -215,17 +216,17 @@
 +                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
 +                || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
 +            // Paper start - detailed watchdog information
-+            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
++            net.minecraft.network.PacketProcessor.packetProcessing.push(this.packetListener);
 +            try {
              tickablePacketListener.tick();
 +            } finally {
-+                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
++                net.minecraft.network.PacketProcessor.packetProcessing.pop();
 +            } // Paper end - detailed watchdog information
 +            } // Paper end - Buffer joins to world
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -384,7 +_,7 @@
+@@ -381,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -234,7 +235,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -420,12 +_,13 @@
+@@ -417,12 +_,13 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
@@ -249,7 +250,7 @@
              this.disconnectionDetails = disconnectionDetails;
          }
      }
-@@ -572,6 +_,13 @@
+@@ -569,6 +_,13 @@
          }
      }
  
@@ -263,7 +264,7 @@
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -585,6 +_,7 @@
+@@ -582,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
@@ -271,7 +272,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -593,6 +_,7 @@
+@@ -590,6 +_,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -279,7 +280,7 @@
          }
      }
  
-@@ -610,6 +_,26 @@
+@@ -607,6 +_,26 @@
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }
@@ -288,8 +289,8 @@
 +                if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
 +                    /* Player was logged in, either game listener or configuration listener */
 +                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
-+                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(),
-+                        profile.getName(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
++                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(),
++                        profile.name(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
 +                    /* Player is login stage */
 +                    switch (loginListener.state) {
@@ -298,7 +299,7 @@
 +                        case PROTOCOL_SWITCHING:
 +                        case ACCEPTED:
 +                            final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
-+                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
++                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(), profile.name(),
 +                                ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                    }
 +                }

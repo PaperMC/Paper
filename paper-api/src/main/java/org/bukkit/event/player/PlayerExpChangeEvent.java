@@ -5,7 +5,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -21,13 +20,13 @@ public class PlayerExpChangeEvent extends PlayerEvent {
 
     @ApiStatus.Internal
     public PlayerExpChangeEvent(@NotNull final Player player, final int expAmount) {
-          this(player, null, expAmount);
+        this(player, null, expAmount);
     }
 
     @ApiStatus.Internal
     public PlayerExpChangeEvent(@NotNull final Player player, @Nullable final Entity sourceEntity, final int expAmount) {
-         super(player);
-         this.source = sourceEntity;
+        super(player);
+        this.source = sourceEntity;
         this.exp = expAmount;
     }
 

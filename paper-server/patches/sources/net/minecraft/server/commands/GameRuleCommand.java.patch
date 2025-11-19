@@ -1,13 +1,15 @@
 --- a/net/minecraft/server/commands/GameRuleCommand.java
 +++ b/net/minecraft/server/commands/GameRuleCommand.java
-@@ -30,14 +_,14 @@
+@@ -30,15 +_,15 @@
  
-     static <T extends GameRules.Value<T>> int setRule(CommandContext<CommandSourceStack> source, GameRules.Key<T> gameRule) {
-         CommandSourceStack commandSourceStack = source.getSource();
+     static <T extends GameRules.Value<T>> int setRule(CommandContext<CommandSourceStack> context, GameRules.Key<T> gameRule) {
+         CommandSourceStack commandSourceStack = context.getSource();
 -        T rule = commandSourceStack.getServer().getGameRules().getRule(gameRule);
--        rule.setFromArgument(source, "value");
+-        rule.setFromArgument(context, "value");
+-        commandSourceStack.getServer().onGameRuleChanged(gameRule.getId(), rule);
 +        T rule = commandSourceStack.getLevel().getGameRules().getRule(gameRule); // CraftBukkit
-+        rule.setFromArgument(source, "value", gameRule); // Paper - Add WorldGameRuleChangeEvent
++        rule.setFromArgument(context, "value", gameRule); // Paper - Add WorldGameRuleChangeEvent
++        commandSourceStack.getServer().notificationManager().onGameRuleChanged(commandSourceStack.getLevel(), gameRule.getId(), rule); // Paper - per-world game rules
          commandSourceStack.sendSuccess(() -> Component.translatable("commands.gamerule.set", gameRule.getId(), rule.toString()), true);
          return rule.getCommandResult();
      }

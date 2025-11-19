@@ -25,11 +25,11 @@
                      ItemStack itemStack = bucketPickup.pickupBlock(player, level, blockPos, blockState);
                      if (!itemStack.isEmpty()) {
                          player.awardStat(Stats.ITEM_USED.get(this));
-                         bucketPickup.getPickupSound().ifPresent(soundEvent -> player.playSound(soundEvent, 1.0F, 1.0F));
+                         bucketPickup.getPickupSound().ifPresent(sound -> player.playSound(sound, 1.0F, 1.0F));
                          level.gameEvent(player, GameEvent.FLUID_PICKUP, blockPos);
 -                        ItemStack itemStack1 = ItemUtils.createFilledResult(itemInHand, player, itemStack);
 +                        ItemStack itemStack1 = ItemUtils.createFilledResult(itemInHand, player, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
-                         if (!level.isClientSide) {
+                         if (!level.isClientSide()) {
                              CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, itemStack);
                          }
 @@ -74,7 +_,7 @@
@@ -68,13 +68,12 @@
          if (!(this.content instanceof FlowingFluid flowingFluid)) {
              return false;
          } else {
-@@ -110,8 +_,19 @@
-                 || canBeReplaced
+@@ -111,8 +_,18 @@
                  || block instanceof LiquidBlockContainer liquidBlockContainer
                      && liquidBlockContainer.canPlaceLiquid(entity, level, pos, blockState, this.content);
-+
+             boolean flag2 = blockState.isAir() || flag1 && (!flag || hitResult == null);
 +            // CraftBukkit start
-+            if (flag && entity instanceof Player player) {
++            if (flag2 && entity instanceof Player player) {
 +                org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, clicked, direction, itemstack, hand);
 +                if (event.isCancelled()) {
 +                    player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
@@ -83,7 +82,7 @@
 +                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
 +            }
 +            // CraftBukkit end
-             if (!flag) {
+             if (!flag2) {
 -                return hitResult != null && this.emptyContents(entity, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null);
 +                return hitResult != null && this.emptyContents(entity, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null, direction, clicked, itemstack, hand); // CraftBukkit
              } else if (level.dimensionType().ultraWarm() && this.content.is(FluidTags.WATER)) {

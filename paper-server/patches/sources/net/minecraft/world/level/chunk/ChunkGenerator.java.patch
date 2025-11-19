@@ -11,32 +11,32 @@
      }
  
      public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
-@@ -127,6 +_,24 @@
-     public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
-         ServerLevel level, HolderSet<Structure> structure, BlockPos pos, int searchRadius, boolean skipKnownStructures
-     ) {
-+        // Paper start - StructuresLocateEvent
-+        final org.bukkit.World bukkitWorld = level.getWorld();
-+        final org.bukkit.Location origin = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
-+        final List<org.bukkit.generator.structure.Structure> apiStructures = structure.stream().map(Holder::value).map(nms -> org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(nms)).toList();
-+        if (!apiStructures.isEmpty()) {
-+            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, searchRadius, skipKnownStructures);
-+            if (!event.callEvent()) {
-+                return null;
+@@ -130,6 +_,24 @@
+         if (SharedConstants.DEBUG_DISABLE_FEATURES) {
+             return null;
+         } else {
++            // Paper start - StructuresLocateEvent
++            final org.bukkit.World bukkitWorld = level.getWorld();
++            final org.bukkit.Location origin = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
++            final List<org.bukkit.generator.structure.Structure> apiStructures = structure.stream().map(Holder::value).map(nms -> org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(nms)).toList();
++            if (!apiStructures.isEmpty()) {
++                final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, radius, skipKnownStructures);
++                if (!event.callEvent()) {
++                    return null;
++                }
++                if (event.getResult() != null) {
++                    return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), level.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(event.getResult().structure())));
++                }
++                pos = org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(event.getOrigin());
++                radius = event.getRadius();
++                skipKnownStructures = event.shouldFindUnexplored();
++                structure = HolderSet.direct(api -> level.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(api)), event.getStructures());
 +            }
-+            if (event.getResult() != null) {
-+                return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), level.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(event.getResult().structure())));
-+            }
-+            pos = org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(event.getOrigin());
-+            searchRadius = event.getRadius();
-+            skipKnownStructures = event.shouldFindUnexplored();
-+            structure = HolderSet.direct(api -> level.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(api)), event.getStructures());
-+        }
-+        // Paper end
-         ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
-         Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap<>();
++            // Paper end
+             ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
+             Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap<>();
  
-@@ -221,6 +_,7 @@
+@@ -225,6 +_,7 @@
              BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
  
              for (ChunkPos chunkPos : ringPositionsFor) {
@@ -44,7 +44,7 @@
                  mutableBlockPos.set(SectionPos.sectionToBlockCoord(chunkPos.x, 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z, 8));
                  double d1 = mutableBlockPos.distSqr(pos);
                  boolean flag = pair == null || d1 < d;
-@@ -254,11 +_,15 @@
+@@ -258,11 +_,15 @@
          int spacing = spreadPlacement.spacing();
  
          for (int i = -z; i <= z; i++) {
@@ -64,7 +64,7 @@
                      int i2 = x + spacing * i;
                      int i3 = y + spacing * i1;
                      ChunkPos potentialStructureChunk = spreadPlacement.getPotentialStructureChunk(seed, i2, i3);
-@@ -311,7 +_,7 @@
+@@ -315,7 +_,7 @@
          }
      }
  
@@ -73,7 +73,7 @@
          ChunkPos pos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(pos)) {
              SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
-@@ -382,7 +_,14 @@
+@@ -386,7 +_,14 @@
                              int i3 = ints[i2];
                              PlacedFeature placedFeature = stepFeatureData1.features().get(i3);
                              Supplier<String> supplier1 = () -> registry1.getResourceKey(placedFeature).map(Object::toString).orElseGet(placedFeature::toString);
@@ -89,7 +89,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(supplier1);
-@@ -404,6 +_,32 @@
+@@ -411,6 +_,32 @@
              }
          }
      }
@@ -122,16 +122,16 @@
  
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos pos = chunk.getPos();
-@@ -478,7 +_,7 @@
+@@ -488,7 +_,7 @@
+                             }
                          }
-                     }
  
--                    if (structurePlacement.isStructureChunk(structureState, pos.x, pos.z)) {
-+                    if (structurePlacement.isStructureChunk(structureState, pos.x, pos.z, structurePlacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
-                         if (list.size() == 1) {
-                             this.tryGenerateStructure(
-                                 list.get(0),
-@@ -572,6 +_,14 @@
+-                        if (structurePlacement.isStructureChunk(structureState, pos.x, pos.z)) {
++                        if (structurePlacement.isStructureChunk(structureState, pos.x, pos.z, structurePlacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
+                             if (list.size() == 1) {
+                                 this.tryGenerateStructure(
+                                     list.get(0),
+@@ -583,6 +_,14 @@
              predicate
          );
          if (structureStart.isValid()) {
