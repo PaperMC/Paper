@@ -23,11 +23,11 @@ public interface AttackRange {
 
     @Contract(pure = true)
     @Range(from = 0, to = 64)
-    float minRange();
+    float minReach();
 
     @Contract(pure = true)
     @Range(from = 0, to = 64)
-    float maxRange();
+    float maxReach();
 
     @Contract(pure = true)
     @Range(from = 0, to = 1)
@@ -45,10 +45,10 @@ public interface AttackRange {
     interface Builder extends DataComponentBuilder<AttackRange> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minRange(@Range(from = 0, to = 64) float minRange);
+        Builder minReach(@Range(from = 0, to = 64) float minReach);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxRange(@Range(from = 0, to = 64) float maxReach);
+        Builder maxReach(@Range(from = 0, to = 64) float maxReach);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);

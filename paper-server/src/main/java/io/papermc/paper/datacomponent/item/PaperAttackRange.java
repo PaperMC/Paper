@@ -13,12 +13,12 @@ public record PaperAttackRange(
     }
 
     @Override
-    public float minRange() {
+    public float minReach() {
         return this.impl.minRange();
     }
 
     @Override
-    public float maxRange() {
+    public float maxReach() {
         return this.impl.maxRange();
     }
 
@@ -34,22 +34,22 @@ public record PaperAttackRange(
 
     static final class BuilderImpl implements AttackRange.Builder {
 
-        private float minRange = net.minecraft.world.item.component.AttackRange.DEFAULT.minRange();
-        private float maxRange = net.minecraft.world.item.component.AttackRange.DEFAULT.maxRange();
+        private float minReach = net.minecraft.world.item.component.AttackRange.DEFAULT.minRange();
+        private float maxReach = net.minecraft.world.item.component.AttackRange.DEFAULT.maxRange();
         private float hitboxMargin = net.minecraft.world.item.component.AttackRange.DEFAULT.hitboxMargin();
         private float mobFactor = net.minecraft.world.item.component.AttackRange.DEFAULT.mobFactor();
 
         @Override
-        public AttackRange.Builder minRange(final float minRange) {
-            Preconditions.checkArgument(minRange >= 0.0F && minRange <= 64.0F, "minRange must be in range [0,64] was %s", minRange);
-            this.minRange = minRange;
+        public AttackRange.Builder minReach(final float minReach) {
+            Preconditions.checkArgument(minReach >= 0.0F && minReach <= 64.0F, "minReach must be in range [0,64] was %s", minReach);
+            this.minReach = minReach;
             return this;
         }
 
         @Override
-        public AttackRange.Builder maxRange(final float maxRange) {
-            Preconditions.checkArgument(maxRange >= 0.0F && maxRange <= 64.0F, "maxRange must be in range [0,64] was %s", maxRange);
-            this.maxRange = maxRange;
+        public AttackRange.Builder maxReach(final float maxReach) {
+            Preconditions.checkArgument(maxReach >= 0.0F && maxReach <= 64.0F, "maxReach must be in range [0,64] was %s", maxReach);
+            this.maxReach = maxReach;
             return this;
         }
 
@@ -71,8 +71,8 @@ public record PaperAttackRange(
         public AttackRange build() {
             return new PaperAttackRange(
                 new net.minecraft.world.item.component.AttackRange(
-                    this.minRange,
-                    this.maxRange,
+                    this.minReach,
+                    this.maxReach,
                     this.hitboxMargin,
                     this.mobFactor
                 )
