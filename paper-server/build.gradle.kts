@@ -14,9 +14,8 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:25w46a+build.3")
+    mache("io.papermc:mache:1.21.11-pre1+build.2")
     paperclip("io.papermc:paperclip:3.0.3")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 paperweight {
@@ -42,7 +41,7 @@ paperweight {
     )
 
     updatingMinecraft {
-        // oldPaperCommit = "a121fb9e8a925df319579b67609972a33a32a643"
+        oldPaperCommit = "926d6304e09d05e451668ac1915248530165007b"
     }
 }
 
@@ -164,6 +163,7 @@ dependencies {
     }
 
     testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testImplementation("org.junit.platform:junit-platform-suite-engine:1.12.2")
     testImplementation("org.hamcrest:hamcrest:2.2")
