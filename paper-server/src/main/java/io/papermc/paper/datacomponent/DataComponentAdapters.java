@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datacomponent.item.PaperAttackRange;
 import io.papermc.paper.datacomponent.item.PaperBannerPatternLayers;
 import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
 import io.papermc.paper.datacomponent.item.PaperBlocksAttacks;
@@ -180,6 +181,7 @@ public final class DataComponentAdapters {
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
         register(DataComponents.PIERCING_WEAPON, PaperPiercingWeapon::new);
         register(DataComponents.KINETIC_WEAPON, PaperKineticWeapon::new);
+        register(DataComponents.ATTACK_RANGE, PaperAttackRange::new);
         register(DataComponents.SWING_ANIMATION, PaperSwingAnimation::new);
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
