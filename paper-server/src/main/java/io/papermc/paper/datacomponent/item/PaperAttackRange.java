@@ -41,14 +41,14 @@ public record PaperAttackRange(
 
         @Override
         public AttackRange.Builder minRange(final float minRange) {
-            Preconditions.checkArgument(minRange >= 0.0F && minRange <= 64.0F, "minRange must be in range [0,128] was %s", minRange);
+            Preconditions.checkArgument(minRange >= 0.0F && minRange <= 64.0F, "minRange must be in range [0,64] was %s", minRange);
             this.minRange = minRange;
             return this;
         }
 
         @Override
         public AttackRange.Builder maxRange(final float maxRange) {
-            Preconditions.checkArgument(maxRange >= 0.0F && maxRange <= 64, "maxRange must be in range [0,128] was %s", maxRange);
+            Preconditions.checkArgument(maxRange >= 0.0F && maxRange <= 64, "maxRange must be in range [0,64] was %s", maxRange);
             this.maxRange = maxRange;
             return this;
         }
@@ -62,7 +62,7 @@ public record PaperAttackRange(
 
         @Override
         public AttackRange.Builder mobFactor(final float mobFactor) {
-            Preconditions.checkArgument(mobFactor >= 0.0F && mobFactor <= 1.0F, "mobFactor must be in range [0,1] was %s", mobFactor);
+            Preconditions.checkArgument(mobFactor >= 0.0F && mobFactor <= 2.0F, "mobFactor must be in range [0,2] was %s", mobFactor);
             this.mobFactor = mobFactor;
             return this;
         }
