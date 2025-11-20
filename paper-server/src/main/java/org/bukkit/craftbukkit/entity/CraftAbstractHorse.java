@@ -15,13 +15,13 @@ import org.bukkit.inventory.AbstractHorseInventory;
 
 public abstract class CraftAbstractHorse extends CraftAnimals implements AbstractHorse {
 
-    public CraftAbstractHorse(CraftServer server, net.minecraft.world.entity.animal.horse.AbstractHorse entity) {
+    public CraftAbstractHorse(CraftServer server, net.minecraft.world.entity.animal.equine.AbstractHorse entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.horse.AbstractHorse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.AbstractHorse) this.entity;
+    public net.minecraft.world.entity.animal.equine.AbstractHorse getHandle() {
+        return (net.minecraft.world.entity.animal.equine.AbstractHorse) this.entity;
     }
 
     @Override

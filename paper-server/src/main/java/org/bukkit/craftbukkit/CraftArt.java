@@ -5,7 +5,7 @@ import io.papermc.paper.util.OldEnumHolderable;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import org.bukkit.Art;
 
 public class CraftArt extends OldEnumHolderable<Art, PaintingVariant> implements Art {

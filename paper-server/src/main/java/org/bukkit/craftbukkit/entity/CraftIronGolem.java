@@ -4,13 +4,13 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.IronGolem;
 
 public class CraftIronGolem extends CraftGolem implements IronGolem {
-    public CraftIronGolem(CraftServer server, net.minecraft.world.entity.animal.IronGolem entity) {
+    public CraftIronGolem(CraftServer server, net.minecraft.world.entity.animal.golem.IronGolem entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.IronGolem getHandle() {
-        return (net.minecraft.world.entity.animal.IronGolem) this.entity;
+    public net.minecraft.world.entity.animal.golem.IronGolem getHandle() {
+        return (net.minecraft.world.entity.animal.golem.IronGolem) this.entity;
     }
 
     @Override

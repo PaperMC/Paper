@@ -693,7 +693,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(direction != null, "Vector cannot be null");
         Preconditions.checkArgument(clazz != null, "clazz Entity for the arrow cannot be null");
 
-        net.minecraft.world.entity.projectile.AbstractArrow arrow;
+        net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow;
         if (TippedArrow.class.isAssignableFrom(clazz)) {
             arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
             ((Arrow) arrow.getBukkitEntity()).setBasePotionType(PotionType.WATER);

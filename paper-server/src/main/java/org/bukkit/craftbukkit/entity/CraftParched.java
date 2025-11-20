@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.monster.Parched;
+import net.minecraft.world.entity.monster.skeleton.Parched;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Skeleton;
 

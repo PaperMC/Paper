@@ -48,8 +48,8 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Vindicator;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.illager.Vindicator;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -238,7 +238,7 @@ public class WorldConfiguration extends ConfigurationPart {
 
             public class WanderingTrader extends ConfigurationPart {
                 public int spawnMinuteLength = 1200;
-                public int spawnDayLength = net.minecraft.world.entity.npc.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
+                public int spawnDayLength = net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
                 public int spawnChanceFailureIncrement = 25;
                 public int spawnChanceMin = 25;
                 public int spawnChanceMax = 75;

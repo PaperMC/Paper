@@ -6,13 +6,13 @@ import org.bukkit.entity.SkeletonHorse;
 
 public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHorse {
 
-    public CraftSkeletonHorse(CraftServer server, net.minecraft.world.entity.animal.horse.SkeletonHorse entity) {
+    public CraftSkeletonHorse(CraftServer server, net.minecraft.world.entity.animal.equine.SkeletonHorse entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.horse.SkeletonHorse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.SkeletonHorse) this.entity;
+    public net.minecraft.world.entity.animal.equine.SkeletonHorse getHandle() {
+        return (net.minecraft.world.entity.animal.equine.SkeletonHorse) this.entity;
     }
 
     @Override
