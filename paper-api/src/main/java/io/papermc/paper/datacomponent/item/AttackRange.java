@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 public interface AttackRange {
 
     /**
-     * Returns a new builder for creating a Kinetic Weapon.
+     * Returns a new builder for creating an Attack Range.
      *
      * @return a builder instance
      */
