@@ -200,11 +200,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(velocity != null, "velocity");
         velocity.checkFinite();
         // Paper start - Warn server owners when plugins try to set super high velocities
+        // and clamp overly large velocities for non-projectile / non-minecart entities to
+        // avoid extreme physics/networking behaviour introduced by very large motion values.
         if (!(this instanceof org.bukkit.entity.Projectile || this instanceof org.bukkit.entity.Minecart) && isUnsafeVelocity(velocity)) {
             CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity " + entity.getScoreboardName() + " id #" + getEntityId() + " to (" + velocity.getX() + "," + velocity.getY() + "," + velocity.getZ() + ").");
+            // Clamp velocity to a sane maximum to retain direction while preventing extreme values
+            double clampedX = clamp(velocity.getX(), -4.0D, 4.0D);
+            double clampedY = clamp(velocity.getY(), -4.0D, 4.0D);
+            double clampedZ = clamp(velocity.getZ(), -4.0D, 4.0D);
+            this.entity.setDeltaMovement(CraftVector.toVec3(new Vector(clampedX, clampedY, clampedZ)));
+        } else {
+            this.entity.setDeltaMovement(CraftVector.toVec3(velocity));
         }
         // Paper end
-        this.entity.setDeltaMovement(CraftVector.toVec3(velocity));
         this.entity.hurtMarked = true;
     }
 
@@ -229,6 +237,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         return false;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
     }
 
     @Override
