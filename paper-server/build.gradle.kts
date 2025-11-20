@@ -1,10 +1,7 @@
 import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
-import io.papermc.paperweight.util.data.FileEntry
-import paper.libs.com.google.gson.annotations.SerializedName
 import java.time.Instant
-import kotlin.io.path.readText
 
 plugins {
     `java-library`
@@ -17,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.10+build.1")
+    mache("io.papermc:mache:1.21.10+build.9")
     paperclip("io.papermc:paperclip:3.0.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -131,7 +128,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.5")
+    implementation("ca.spottedleaf:concurrentutil:0.0.7")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -364,7 +361,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.ALPHA
+        channel = BuildChannel.STABLE
 
         downloads {
             register("server:default") {

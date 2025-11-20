@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Fox.java
 +++ b/net/minecraft/world/entity/animal/Fox.java
-@@ -430,7 +_,7 @@
+@@ -432,7 +_,7 @@
          input.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
          this.setSleeping(input.getBooleanOr("Sleeping", false));
          this.setVariant(input.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
@@ -9,7 +9,7 @@
          this.setIsCrouching(input.getBooleanOr("Crouching", false));
          if (this.level() instanceof ServerLevel) {
              this.setTargetGoals();
-@@ -447,6 +_,12 @@
+@@ -449,6 +_,12 @@
      }
  
      public void setSitting(boolean sitting) {
@@ -19,10 +19,10 @@
 +    public void setSitting(boolean sitting, boolean fireEvent) {
 +        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
 +        // Paper end - Add EntityToggleSitEvent
-         this.setFlag(1, sitting);
+         this.setFlag(FLAG_SITTING, sitting);
      }
  
-@@ -506,19 +_,20 @@
+@@ -508,19 +_,20 @@
              itemEntity.setPickUpDelay(40);
              itemEntity.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
@@ -46,7 +46,7 @@
              int count = item.getCount();
              if (count > 1) {
                  this.dropItemStack(item.split(count - 1));
-@@ -529,7 +_,7 @@
+@@ -531,7 +_,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, item.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(entity, item.getCount());
@@ -55,22 +55,22 @@
              this.ticksSinceEaten = 0;
          }
      }
-@@ -620,12 +_,12 @@
+@@ -622,12 +_,12 @@
      }
  
      @Override
--    public void setTarget(@Nullable LivingEntity livingEntity) {
-+    public boolean setTarget(@Nullable LivingEntity livingEntity, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) { // CraftBukkit
-         if (this.isDefending() && livingEntity == null) {
+-    public void setTarget(@Nullable LivingEntity target) {
++    public boolean setTarget(@Nullable LivingEntity target, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) { // CraftBukkit
+         if (this.isDefending() && target == null) {
              this.setDefending(false);
          }
  
--        super.setTarget(livingEntity);
-+        return super.setTarget(livingEntity, reason); // CraftBukkit
+-        super.setTarget(target);
++        return super.setTarget(target, reason); // CraftBukkit
      }
  
      void wakeUp() {
-@@ -689,15 +_,33 @@
+@@ -691,15 +_,33 @@
          return this.getTrustedEntities().anyMatch(entityReference -> entityReference.matches(entity));
      }
  
@@ -108,7 +108,7 @@
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
-@@ -873,6 +_,19 @@
+@@ -875,6 +_,19 @@
                      fox.addTrustedEntity(loveCause1);
                  }
  
@@ -128,7 +128,7 @@
                  if (serverPlayer != null) {
                      serverPlayer.awardStat(Stats.ANIMALS_BRED);
                      CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this.animal, this.partner, fox);
-@@ -882,14 +_,12 @@
+@@ -884,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -136,7 +136,7 @@
 -                fox.snapTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
 -                serverLevel.addFreshEntityWithPassengers(fox);
 +                serverLevel.addFreshEntityWithPassengers(fox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-                 this.level.broadcastEntityEvent(this.animal, (byte)18);
+                 this.level.broadcastEntityEvent(this.animal, EntityEvent.IN_LOVE_HEARTS);
 -                if (serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 +                if (experience > 0 && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - call EntityBreedEvent
                      this.level
@@ -146,7 +146,7 @@
                          );
                  }
              }
-@@ -953,6 +_,7 @@
+@@ -955,6 +_,7 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);
              state.setValue(SweetBerryBushBlock.AGE, 1);

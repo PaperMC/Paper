@@ -157,4 +157,9 @@ public interface PersistentDataContainerView {
      * @throws java.io.IOException if we fail to write this container to a byte array
      */
     byte[] serializeToBytes() throws java.io.IOException;
+
+    /**
+     * {@return the size of the data container}
+     */
+    int getSize();
 }

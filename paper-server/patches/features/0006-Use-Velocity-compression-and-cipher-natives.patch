@@ -5,7 +5,7 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/net/minecraft/network/CipherDecoder.java b/net/minecraft/network/CipherDecoder.java
-index 429325ffb7db2b85ed271ddf3da64c6fdc593673..d764552aea825af7bbf0f47c9d88af527d9dbe62 100644
+index b284b0b9907743a1736c95a4d111a727b789fc94..1467be3de89009529471c1cf4db2590128a6d792 100644
 --- a/net/minecraft/network/CipherDecoder.java
 +++ b/net/minecraft/network/CipherDecoder.java
 @@ -7,14 +7,30 @@ import java.util.List;
@@ -22,10 +22,10 @@ index 429325ffb7db2b85ed271ddf3da64c6fdc593673..d764552aea825af7bbf0f47c9d88af52
      }
  
      @Override
-     protected void decode(ChannelHandlerContext context, ByteBuf in, List<Object> out) throws Exception {
--        out.add(this.cipher.decipher(context, in));
+     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+-        out.add(this.cipher.decipher(ctx, in));
 +        // Paper start - Use Velocity cipher
-+        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.cipher, in);
++        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.cipher, in);
 +        try {
 +            this.cipher.process(compatible);
 +            out.add(compatible);
@@ -44,7 +44,7 @@ index 429325ffb7db2b85ed271ddf3da64c6fdc593673..d764552aea825af7bbf0f47c9d88af52
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/CipherEncoder.java b/net/minecraft/network/CipherEncoder.java
-index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..b927c85923147d2b346e892a3e4deee48b3d073e 100644
+index 8f0d47bf46bb5ddf61a84c43891a8dbc1e9f04e1..08363d710fb9c9d91967919b85fdd722e64d4d12 100644
 --- a/net/minecraft/network/CipherEncoder.java
 +++ b/net/minecraft/network/CipherEncoder.java
 @@ -5,15 +5,31 @@ import io.netty.channel.ChannelHandlerContext;
@@ -64,10 +64,10 @@ index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..b927c85923147d2b346e892a3e4deee4
  
 +    // Paper start - Use Velocity cipher
      @Override
--    protected void encode(ChannelHandlerContext context, ByteBuf message, ByteBuf out) throws Exception {
+-    protected void encode(ChannelHandlerContext ctx, ByteBuf message, ByteBuf out) throws Exception {
 -        this.cipher.encipher(message, out);
-+    protected void encode(ChannelHandlerContext context, ByteBuf message, java.util.List<Object> list) throws Exception {
-+        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.cipher, message);
++    protected void encode(ChannelHandlerContext ctx, ByteBuf message, java.util.List<Object> list) throws Exception {
++        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.cipher, message);
 +        try {
 +            this.cipher.process(compatible);
 +            list.add(compatible);
@@ -86,7 +86,7 @@ index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..b927c85923147d2b346e892a3e4deee4
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/CompressionDecoder.java b/net/minecraft/network/CompressionDecoder.java
-index c1df0923682fc79d118fdec870bb843fff848ea3..dabaa7c63a4119391993cd1691a813b9a752971a 100644
+index 7e16d73f6fe852ca2dfd19cdd4592dedc9c54960..624c5d3d30282cf0d54faabc88d81ca0a9a8c785 100644
 --- a/net/minecraft/network/CompressionDecoder.java
 +++ b/net/minecraft/network/CompressionDecoder.java
 @@ -12,14 +12,22 @@ import java.util.zip.Inflater;
@@ -119,7 +119,7 @@ index c1df0923682fc79d118fdec870bb843fff848ea3..dabaa7c63a4119391993cd1691a813b9
  
 +            if (inflater != null) { // Paper - Use Velocity cipher; fallback to vanilla inflater
              this.setupInflaterInput(in);
-             ByteBuf byteBuf = this.inflate(context, i);
+             ByteBuf byteBuf = this.inflate(ctx, i);
              this.inflater.reset();
              out.add(byteBuf);
 +            return; // Paper - Use Velocity cipher
@@ -127,8 +127,8 @@ index c1df0923682fc79d118fdec870bb843fff848ea3..dabaa7c63a4119391993cd1691a813b9
 +
 +            // Paper start - Use Velocity cipher
 +            int claimedUncompressedSize = i; // OBFHELPER
-+            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.compressor, in);
-+            ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(context.alloc(), this.compressor, claimedUncompressedSize);
++            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.compressor, in);
++            ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(ctx.alloc(), this.compressor, claimedUncompressedSize);
 +            try {
 +                this.compressor.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
 +                out.add(uncompressed);
@@ -170,7 +170,7 @@ index c1df0923682fc79d118fdec870bb843fff848ea3..dabaa7c63a4119391993cd1691a813b9
          this.validateDecompressed = validateDecompressed;
      }
 diff --git a/net/minecraft/network/CompressionEncoder.java b/net/minecraft/network/CompressionEncoder.java
-index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f0075b18f 100644
+index 35b8a2bddeefff2b1ba8ed75ec780c41d59ce92f..1baa8daf880c5f87f1d72ecf0e1b93c7f749648d 100644
 --- a/net/minecraft/network/CompressionEncoder.java
 +++ b/net/minecraft/network/CompressionEncoder.java
 @@ -6,17 +6,31 @@ import io.netty.handler.codec.MessageToByteEncoder;
@@ -203,8 +203,8 @@ index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f
      }
  
      @Override
--    protected void encode(ChannelHandlerContext context, ByteBuf encodingByteBuf, ByteBuf byteBuf) {
-+    protected void encode(ChannelHandlerContext context, ByteBuf encodingByteBuf, ByteBuf byteBuf) throws Exception { // Paper - Use Velocity cipher
+-    protected void encode(ChannelHandlerContext ctx, ByteBuf encodingByteBuf, ByteBuf byteBuf) {
++    protected void encode(ChannelHandlerContext ctx, ByteBuf encodingByteBuf, ByteBuf byteBuf) throws Exception { // Paper - Use Velocity cipher
          int i = encodingByteBuf.readableBytes();
          if (i > 8388608) {
              throw new IllegalArgumentException("Packet too big (is " + i + ", should be less than 8388608)");
@@ -225,7 +225,7 @@ index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f
 +                }
 +
 +                VarInt.write(byteBuf, i);
-+                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.compressor, encodingByteBuf);
++                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.compressor, encodingByteBuf);
 +                try {
 +                    this.compressor.deflate(compatibleIn, byteBuf);
 +                } finally {
@@ -267,10 +267,10 @@ index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 73efdf094dc98ef0a2e84c4e040fdaf1106adbe8..c5b3f7544a968f835b13819cc61cfacf06af53a2 100644
+index c48d0a951f36e4449e9474994a21596d8a2d2e16..14addbaf68b7ad80490187d12d9c9b00891e2ce1 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -764,11 +764,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -762,11 +762,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return connection;
      }
  
@@ -297,7 +297,7 @@ index 73efdf094dc98ef0a2e84c4e040fdaf1106adbe8..c5b3f7544a968f835b13819cc61cfacf
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -807,16 +818,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -805,16 +816,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      // Paper end - add proper async disconnect
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {

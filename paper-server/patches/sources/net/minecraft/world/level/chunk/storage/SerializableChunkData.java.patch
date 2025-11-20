@@ -31,7 +31,7 @@
 +    // Paper end - Do not let the server load chunks from newer versions
 +
      @Nullable
-     public static SerializableChunkData parse(LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory palettedContainerFactory, CompoundTag tag) {
+     public static SerializableChunkData parse(LevelHeightAccessor level, PalettedContainerFactory containerFactory, CompoundTag tag) {
          if (tag.getString("Status").isEmpty()) {
              return null;
          } else {
@@ -48,25 +48,25 @@
              long longOr = tag.getLongOr("LastUpdate", 0L);
              long longOr1 = tag.getLongOr("InhabitedTime", 0L);
              ChunkStatus chunkStatus = tag.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -151,7 +_,7 @@
+@@ -149,7 +_,7 @@
              CompoundTag compoundOrEmpty = tag.getCompoundOrEmpty("structures");
              ListTag listOrEmpty2 = tag.getListOrEmpty("sections");
              List<SerializableChunkData.SectionData> list5 = new ArrayList<>(listOrEmpty2.size());
--            Codec<PalettedContainerRO<Holder<Biome>>> codec = palettedContainerFactory.biomeContainerCodec();
-+            Codec<PalettedContainer<Holder<Biome>>> codec = palettedContainerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
-             Codec<PalettedContainer<BlockState>> codec1 = palettedContainerFactory.blockStatesContainerCodec();
+-            Codec<PalettedContainerRO<Holder<Biome>>> codec = containerFactory.biomeContainerCodec();
++            Codec<PalettedContainer<Holder<Biome>>> codec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
+             Codec<PalettedContainer<BlockState>> codec1 = containerFactory.blockStatesContainerCodec();
  
              for (int i2 = 0; i2 < listOrEmpty2.size(); i2++) {
-@@ -168,7 +_,7 @@
+@@ -166,7 +_,7 @@
                                      .getOrThrow(SerializableChunkData.ChunkReadException::new)
                              )
-                             .orElseGet(palettedContainerFactory::createForBlockStates);
+                             .orElseGet(containerFactory::createForBlockStates);
 -                        PalettedContainerRO<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes")
 +                        PalettedContainer<Holder<Biome>> palettedContainerRo = compoundTag.getCompound("biomes") // CraftBukkit - read/write
                              .map(
                                  compoundTag1 -> codec.parse(NbtOps.INSTANCE, compoundTag1)
                                      .promotePartial(string -> logErrors(chunkPos, byteOr, string))
-@@ -205,6 +_,7 @@
+@@ -203,6 +_,7 @@
                  list3,
                  list4,
                  compoundOrEmpty
@@ -74,7 +74,7 @@
              );
          }
      }
-@@ -289,6 +_,12 @@
+@@ -287,6 +_,12 @@
              }
          }
  
@@ -87,7 +87,7 @@
          chunkAccess.setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> set = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -392,6 +_,12 @@
+@@ -390,6 +_,12 @@
              CompoundTag compoundTag = packStructureData(
                  StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences()
              );
@@ -100,7 +100,7 @@
              return new SerializableChunkData(
                  level.palettedContainerFactory(),
                  pos,
-@@ -411,6 +_,7 @@
+@@ -409,6 +_,7 @@
                  list2,
                  list1,
                  compoundTag
@@ -108,7 +108,7 @@
              );
          }
      }
-@@ -478,6 +_,11 @@
+@@ -476,6 +_,11 @@
          this.heightmaps.forEach((types, longs) -> compoundTag2.put(types.getSerializationKey(), new LongArrayTag(longs)));
          compoundTag.put("Heightmaps", compoundTag2);
          compoundTag.put("structures", this.structureData);
@@ -120,7 +120,7 @@
          return compoundTag;
      }
  
-@@ -559,6 +_,12 @@
+@@ -557,6 +_,12 @@
              } else {
                  StructureStart structureStart = StructureStart.loadStaticStart(context, compoundOrEmpty.getCompoundOrEmpty(string), seed);
                  if (structureStart != null) {
