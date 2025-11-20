@@ -74,8 +74,8 @@
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
 @@ -115,6 +_,7 @@
-         super.channelActive(context);
-         this.channel = context.channel();
+         super.channelActive(ctx);
+         this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
 +        this.preparing = false; // Spigot
          if (this.delayedDisconnect != null) {
@@ -84,16 +84,16 @@
 @@ -127,14 +_,31 @@
  
      @Override
-     public void exceptionCaught(ChannelHandlerContext context, Throwable exception) {
+     public void exceptionCaught(ChannelHandlerContext ctx, Throwable exception) {
 +        // Paper start - Handle large packets disconnecting client
 +        if (exception instanceof io.netty.handler.codec.EncoderException && exception.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            if (packet.packetTooLarge(this)) {
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
++                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else if (packet.isSkippable()) {
 +                Connection.LOGGER.debug("Skipping packet due to errors", exception.getCause());
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
++                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else {
 +                exception = exception.getCause();
@@ -195,7 +195,7 @@
                      } catch (RejectedExecutionException var6) {
                          this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException var7) {
-@@ -372,10 +_,30 @@
+@@ -370,10 +_,30 @@
          }
      }
  
@@ -226,7 +226,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -383,7 +_,7 @@
+@@ -381,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -235,7 +235,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -419,12 +_,13 @@
+@@ -417,12 +_,13 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
@@ -250,7 +250,7 @@
              this.disconnectionDetails = disconnectionDetails;
          }
      }
-@@ -571,6 +_,13 @@
+@@ -569,6 +_,13 @@
          }
      }
  
@@ -264,7 +264,7 @@
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -584,6 +_,7 @@
+@@ -582,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
@@ -272,7 +272,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -592,6 +_,7 @@
+@@ -590,6 +_,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -280,7 +280,7 @@
          }
      }
  
-@@ -609,6 +_,26 @@
+@@ -607,6 +_,26 @@
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }

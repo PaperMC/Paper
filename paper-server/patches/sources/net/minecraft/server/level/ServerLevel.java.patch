@@ -15,7 +15,7 @@
  
 +    // CraftBukkit start
 +    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
-+    public final java.util.UUID uuid;
++    public final UUID uuid;
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
@@ -31,15 +31,15 @@
 +    }
 +
 +    // Paper start
-+    public final boolean areChunksLoadedForMove(AABB axisalignedbb) {
-+        // copied code from collision methods, so that we can guarantee that they wont load chunks (we don't override
-+        // ICollisionAccess methods for VoxelShapes)
++    public final boolean areChunksLoadedForMove(AABB box) {
++        // copied code from collision methods, so that we can guarantee that they won't load chunks (we don't override
++        // CollisionGetter methods for VoxelShapes)
 +        // be more strict too, add a block (dumb plugins in move events?)
-+        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
-+        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
++        int minBlockX = Mth.floor(box.minX - 1.0E-7D) - 3;
++        int maxBlockX = Mth.floor(box.maxX + 1.0E-7D) + 3;
 +
-+        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
-+        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++        int minBlockZ = Mth.floor(box.minZ - 1.0E-7D) - 3;
++        int maxBlockZ = Mth.floor(box.maxZ + 1.0E-7D) + 3;
 +
 +        int minChunkX = minBlockX >> 4;
 +        int maxChunkX = maxBlockX >> 4;
@@ -60,19 +60,19 @@
 +        return true;
 +    }
 +
-+    public final void loadChunksForMoveAsync(AABB axisalignedbb, ca.spottedleaf.concurrentutil.util.Priority priority,
++    public final void loadChunksForMoveAsync(AABB box, ca.spottedleaf.concurrentutil.util.Priority priority,
 +                                             java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
 +        if (Thread.currentThread() != this.thread) {
 +            this.getChunkSource().mainThreadProcessor.execute(() -> {
-+                this.loadChunksForMoveAsync(axisalignedbb, priority, onLoad);
++                this.loadChunksForMoveAsync(box, priority, onLoad);
 +            });
 +            return;
 +        }
-+        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
-+        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++        int minBlockX = Mth.floor(box.minX - 1.0E-7D) - 3;
++        int minBlockZ = Mth.floor(box.minZ - 1.0E-7D) - 3;
 +
-+        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
-+        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++        int maxBlockX = Mth.floor(box.maxX + 1.0E-7D) + 3;
++        int maxBlockZ = Mth.floor(box.maxZ + 1.0E-7D) + 3;
 +
 +        int minChunkX = minBlockX >> 4;
 +        int minChunkZ = minBlockZ >> 4;
@@ -128,7 +128,7 @@
 +    // Paper start - optimise getPlayerByUUID
 +    @Nullable
 +    @Override
-+    public Player getPlayerByUUID(java.util.UUID uuid) {
++    public Player getPlayerByUUID(UUID uuid) {
 +        final Player player = this.getServer().getPlayerList().getPlayer(uuid);
 +        return player != null && player.level() == this ? player : null;
 +    }
@@ -137,9 +137,9 @@
      public ServerLevel(
          MinecraftServer server,
          Executor dispatcher,
-         LevelStorageSource.LevelStorageAccess storageSource,
--        ServerLevelData levelData,
-+        net.minecraft.world.level.storage.PrimaryLevelData levelData, // CraftBukkit
+         LevelStorageSource.LevelStorageAccess levelStorageAccess,
+-        ServerLevelData serverLevelData,
++        net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, // CraftBukkit
          ResourceKey<Level> dimension,
          LevelStem levelStem,
          boolean isDebug,
@@ -152,27 +152,27 @@
 +        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
 +        org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
      ) {
--        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
+-        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
 +        // CraftBukkit start
-+        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(storageSource.levelDirectory.path(), levelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), levelData.getGameRules()))); // Paper - create paper world configs
-+        this.levelStorageAccess = storageSource;
++        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
++        this.levelStorageAccess = levelStorageAccess;
 +        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
 +        // CraftBukkit end
          this.tickTime = tickTime;
          this.server = server;
          this.customSpawners = customSpawners;
-         this.serverLevelData = levelData;
+         this.serverLevelData = serverLevelData;
          ChunkGenerator chunkGenerator = levelStem.generator();
 +        // CraftBukkit start
 +        this.serverLevelData.setWorld(this);
 +
 +        if (biomeProvider != null) {
-+            net.minecraft.world.level.biome.BiomeSource worldChunkManager = new org.bukkit.craftbukkit.generator.CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().lookupOrThrow(Registries.BIOME), chunkGenerator.getBiomeSource()); // Paper - add vanillaBiomeProvider
-+            if (chunkGenerator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator cga) {
-+                chunkGenerator = new net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator(worldChunkManager, cga.settings);
-+            } else if (chunkGenerator instanceof net.minecraft.world.level.levelgen.FlatLevelSource cpf) {
-+                chunkGenerator = new net.minecraft.world.level.levelgen.FlatLevelSource(cpf.settings(), worldChunkManager);
++            net.minecraft.world.level.biome.BiomeSource biomeSource = new org.bukkit.craftbukkit.generator.CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().lookupOrThrow(Registries.BIOME), chunkGenerator.getBiomeSource()); // Paper - add vanillaBiomeProvider
++            if (chunkGenerator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseBased) {
++                chunkGenerator = new net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator(biomeSource, noiseBased.settings);
++            } else if (chunkGenerator instanceof net.minecraft.world.level.levelgen.FlatLevelSource flatLevel) {
++                chunkGenerator = new net.minecraft.world.level.levelgen.FlatLevelSource(flatLevel.settings(), biomeSource);
 +            }
 +        }
 +
@@ -342,11 +342,11 @@
              }
          }
 @@ -560,7 +_,7 @@
-         BlockPos blockPos1 = heightmapPos.below();
+         BlockPos blockPos = heightmapPos.below();
          Biome biome = this.getBiome(heightmapPos).value();
-         if (biome.shouldFreeze(this, blockPos1)) {
--            this.setBlockAndUpdate(blockPos1, Blocks.ICE.defaultBlockState());
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos1, Blocks.ICE.defaultBlockState(), 3, null); // CraftBukkit
+         if (biome.shouldFreeze(this, blockPos)) {
+-            this.setBlockAndUpdate(blockPos, Blocks.ICE.defaultBlockState());
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos, Blocks.ICE.defaultBlockState(), 3, null); // CraftBukkit
          }
  
          if (this.isRaining()) {
@@ -380,8 +380,8 @@
          } else {
              AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
              List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
--                LivingEntity.class, aabb, livingEntity -> livingEntity != null && livingEntity.isAlive() && this.canSeeSky(livingEntity.blockPosition())
-+                LivingEntity.class, aabb, livingEntity -> livingEntity != null && livingEntity.isAlive() && this.canSeeSky(livingEntity.blockPosition()) && !livingEntity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
+-                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition())
++                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
              );
              if (!entitiesOfClass.isEmpty()) {
                  return entitiesOfClass.get(this.random.nextInt(entitiesOfClass.size())).blockPosition();
@@ -865,56 +865,54 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayGameRule) {
-@@ -1251,7 +_,7 @@
+@@ -1251,19 +_,55 @@
      public <T extends ParticleOptions> int sendParticles(
-         T type, double posX, double posY, double posZ, int particleCount, double xOffset, double yOffset, double zOffset, double speed
+         T options, double x, double y, double z, int count, double xDist, double yDist, double zDist, double speed
      ) {
--        return this.sendParticles(type, false, false, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
-+        return this.sendParticlesSource(null, type, false, false, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed); // CraftBukkit - visibility api support
+-        return this.sendParticles(options, false, false, x, y, z, count, xDist, yDist, zDist, speed);
++        return this.sendParticlesSource(null, options, false, false, x, y, z, count, xDist, yDist, zDist, speed); // CraftBukkit - visibility api support
      }
  
      public <T extends ParticleOptions> int sendParticles(
-@@ -1267,13 +_,49 @@
-         double zOffset,
-         double speed
+         T options, boolean overrideLimiter, boolean alwaysShow, double x, double y, double z, int count, double xDist, double yDist, double zDist, double speed
      ) {
-+    // Paper start - visibility api support
-+        return this.sendParticlesSource(null, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
++        // Paper start - visibility api support
++        return this.sendParticlesSource(null, options, overrideLimiter, alwaysShow, x, y, z, count, xDist, yDist, zDist, speed);
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
 +        @Nullable Entity sender,
-+        T type,
++        T options,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
-+        double posX,
-+        double posY,
-+        double posZ,
-+        int particleCount,
-+        double xOffset,
-+        double yOffset,
-+        double zOffset,
++        double x,
++        double y,
++        double z,
++        int count,
++        double xDist,
++        double yDist,
++        double zDist,
 +        double speed
 +    ) {
-+        return sendParticlesSource(this.players, sender, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
++        return sendParticlesSource(this.players, sender, options, overrideLimiter, alwaysShow, x, y, z, count, xDist, yDist, zDist, speed);
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
 +        List<ServerPlayer> receivers,
 +        @Nullable Entity sender,
-+        T type,
++        T options,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
-+        double posX,
-+        double posY,
-+        double posZ,
-+        int particleCount,
-+        double xOffset,
-+        double yOffset,
-+        double zOffset,
++        double x,
++        double y,
++        double z,
++        int count,
++        double xDist,
++        double yDist,
++        double zDist,
 +        double speed
 +    ) {
-+    // Paper end - visibility api support
++        // Paper end - visibility api support
          ClientboundLevelParticlesPacket clientboundLevelParticlesPacket = new ClientboundLevelParticlesPacket(
-             type, overrideLimiter, alwaysShow, posX, posY, posZ, (float)xOffset, (float)yOffset, (float)zOffset, (float)speed, particleCount
+             options, overrideLimiter, alwaysShow, x, y, z, (float)xDist, (float)yDist, (float)zDist, (float)speed, count
          );
          int i = 0;
  
@@ -923,19 +921,19 @@
 +        for (int i1 = 0; i1 < receivers.size(); i1++) { // Paper - particle API
 +            ServerPlayer serverPlayer = receivers.get(i1); // Paper - particle API
 +            if (sender != null && !serverPlayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
-             if (this.sendParticles(serverPlayer, overrideLimiter, posX, posY, posZ, clientboundLevelParticlesPacket)) {
+             if (this.sendParticles(serverPlayer, overrideLimiter, x, y, z, clientboundLevelParticlesPacket)) {
                  i++;
              }
-@@ -1362,7 +_,7 @@
+@@ -1352,7 +_,7 @@
  
      @Nullable
-     public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipExistingChunks) {
+     public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipKnownStructures) {
 -        if (!this.server.getWorldData().worldGenOptions().generateStructures()) {
 +        if (!this.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1414,10 +_,36 @@
+@@ -1404,10 +_,36 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId mapId) {
@@ -973,7 +971,7 @@
          this.getServer().overworld().getDataStorage().set(MapItemSavedData.type(mapId), data);
      }
  
-@@ -1427,7 +_,19 @@
+@@ -1417,7 +_,19 @@
  
      @Override
      public void setRespawnData(LevelData.RespawnData respawnData) {
@@ -994,7 +992,7 @@
      }
  
      @Override
-@@ -1464,6 +_,11 @@
+@@ -1454,6 +_,11 @@
                  this.debugSynchronizers.dropPoi(blockPos);
              }));
              optional1.ifPresent(holder -> this.getServer().execute(() -> {
@@ -1006,7 +1004,7 @@
                  PoiRecord poiRecord = this.getPoiManager().add(blockPos, (Holder<PoiType>)holder);
                  if (poiRecord != null) {
                      this.debugSynchronizers.registerPoi(poiRecord);
-@@ -1618,12 +_,12 @@
+@@ -1608,12 +_,12 @@
      }
  
      public boolean isFlat() {
@@ -1021,7 +1019,7 @@
      }
  
      @Nullable
-@@ -1674,6 +_,7 @@
+@@ -1664,6 +_,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1029,7 +1027,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1782,6 +_,28 @@
+@@ -1772,6 +_,28 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1058,7 +1056,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
-@@ -1810,6 +_,7 @@
+@@ -1800,6 +_,7 @@
              if (entity instanceof WaypointTransmitter waypointTransmitter && waypointTransmitter.isTransmittingWaypoint()) {
                  ServerLevel.this.getWaypointManager().trackWaypoint(waypointTransmitter);
              }
@@ -1066,7 +1064,7 @@
          }
  
          @Override
-@@ -1823,17 +_,24 @@
+@@ -1813,17 +_,24 @@
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1092,7 +1090,7 @@
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.add(serverPlayer);
                  if (serverPlayer.isReceivingWaypoints()) {
-@@ -1848,7 +_,7 @@
+@@ -1838,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1101,7 +1099,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1865,10 +_,52 @@
+@@ -1855,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1154,7 +1152,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.remove(serverPlayer);
-@@ -1877,7 +_,7 @@
+@@ -1867,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1163,7 +1161,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1895,6 +_,15 @@
+@@ -1885,6 +_,15 @@
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
              ServerLevel.this.debugSynchronizers.dropEntity(entity);
@@ -1179,7 +1177,7 @@
          }
  
          @Override
-@@ -1902,4 +_,24 @@
+@@ -1892,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }

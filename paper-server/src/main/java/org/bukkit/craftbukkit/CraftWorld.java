@@ -4,6 +4,7 @@ import ca.spottedleaf.moonrise.common.list.ReferenceList;
 import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.RayTraceTarget;
@@ -1791,7 +1792,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
         this.getHandle().sendParticlesSource(
-                receivers == null ? this.getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
+                receivers == null ? this.getHandle().players() : Lists.transform(receivers, player -> ((CraftPlayer) player).getHandle()), // Paper -  Particle API
                 sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
                 CraftParticle.createParticleParam(particle, data), // Particle
                 force,
@@ -1983,15 +1984,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.persistentDataContainer;
     }
 
-    public void storeBukkitValues(CompoundTag c) {
+    public void storeBukkitValues(CompoundTag tag) {
         if (!this.persistentDataContainer.isEmpty()) {
-            c.put("BukkitValues", this.persistentDataContainer.toTagCompound());
+            tag.put("BukkitValues", this.persistentDataContainer.toTagCompound());
         }
     }
 
-    public void readBukkitValues(Tag c) {
-        if (c instanceof CompoundTag) {
-            this.persistentDataContainer.putAll((CompoundTag) c);
+    public void readBukkitValues(Tag tag) {
+        if (tag instanceof CompoundTag compoundTag) {
+            this.persistentDataContainer.putAll(compoundTag);
         }
     }
 

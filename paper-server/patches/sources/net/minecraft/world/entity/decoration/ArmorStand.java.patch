@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -85,9 +_,16 @@
+@@ -86,9 +_,16 @@
      private boolean invisible = false;
      public long lastHit;
      public int disabledSlots = 0;
@@ -11,13 +11,13 @@
 +    private boolean noTickEquipmentDirty = false;
 +    // Paper end - Allow ArmorStands not to tick
  
-     public ArmorStand(EntityType<? extends ArmorStand> entityType, Level level) {
-         super(entityType, level);
+     public ArmorStand(EntityType<? extends ArmorStand> type, Level level) {
+         super(type, level);
 +        if (level != null) this.canTick = level.paperConfig().entities.armorStands.tick; // Paper - Allow ArmorStands not to tick
      }
  
      public ArmorStand(Level level, double x, double y, double z) {
-@@ -99,6 +_,13 @@
+@@ -100,6 +_,13 @@
          return createLivingAttributes().add(Attributes.STEP_HEIGHT, 0.0);
      }
  
@@ -31,7 +31,7 @@
      @Override
      public void refreshDimensions() {
          double x = this.getX();
-@@ -134,6 +_,14 @@
+@@ -135,6 +_,14 @@
          return slot != EquipmentSlot.BODY && slot != EquipmentSlot.SADDLE && !this.isDisabled(slot);
      }
  
@@ -46,7 +46,7 @@
      @Override
      protected void addAdditionalSaveData(ValueOutput output) {
          super.addAdditionalSaveData(output);
-@@ -147,6 +_,7 @@
+@@ -148,6 +_,7 @@
          }
  
          output.store("Pose", ArmorStand.ArmorStandPose.CODEC, this.getArmorStandPose());
@@ -54,7 +54,7 @@
      }
  
      @Override
-@@ -160,10 +_,16 @@
+@@ -161,10 +_,16 @@
          this.setMarker(input.getBooleanOr("Marker", false));
          this.noPhysics = !this.hasPhysics();
          input.read("Pose", ArmorStand.ArmorStandPose.CODEC).ifPresent(this::setArmorStandPose);
@@ -72,7 +72,7 @@
          return false;
      }
  
-@@ -173,6 +_,7 @@
+@@ -174,6 +_,7 @@
  
      @Override
      protected void pushEntities() {
@@ -80,7 +80,7 @@
          for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
              if (this.distanceToSqr(entity) <= 0.2) {
                  entity.push(this);
-@@ -245,7 +_,25 @@
+@@ -246,7 +_,25 @@
              return false;
          } else if (itemBySlot.isEmpty() && (this.disabledSlots & 1 << slot.getFilterBit(16)) != 0) {
              return false;
@@ -107,7 +107,7 @@
              this.setItemSlot(slot, stack.copyWithCount(1));
              return true;
          } else if (stack.isEmpty() || stack.getCount() <= 1) {
-@@ -258,6 +_,7 @@
+@@ -259,6 +_,7 @@
              this.setItemSlot(slot, stack.split(1));
              return true;
          }
@@ -115,7 +115,7 @@
      }
  
      @Override
-@@ -267,15 +_,32 @@
+@@ -268,15 +_,32 @@
          } else if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && damageSource.getEntity() instanceof Mob) {
              return false;
          } else if (damageSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -152,7 +152,7 @@
              if (this.isOnFire()) {
                  this.causeDamage(level, damageSource, 0.15F);
              } else {
-@@ -284,9 +_,19 @@
+@@ -285,9 +_,19 @@
  
              return false;
          } else if (damageSource.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
@@ -172,7 +172,7 @@
              boolean isCanBreakArmorStand = damageSource.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
              boolean isAlwaysKillsArmorStands = damageSource.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
              if (!isCanBreakArmorStand && !isAlwaysKillsArmorStands) {
-@@ -296,7 +_,7 @@
+@@ -297,7 +_,7 @@
              } else if (damageSource.isCreativePlayer()) {
                  this.playBrokenSound();
                  this.showBreakingParticles();
@@ -181,7 +181,7 @@
                  return true;
              } else {
                  long gameTime = level.getGameTime();
-@@ -305,9 +_,9 @@
+@@ -306,9 +_,9 @@
                      this.gameEvent(GameEvent.ENTITY_DAMAGE, damageSource.getEntity());
                      this.lastHit = gameTime;
                  } else {
@@ -193,7 +193,7 @@
                  }
  
                  return true;
-@@ -359,31 +_,42 @@
+@@ -360,31 +_,42 @@
          float health = this.getHealth();
          health -= damageAmount;
          if (health <= 0.5F) {
@@ -247,7 +247,7 @@
      }
  
      private void playBrokenSound() {
-@@ -431,9 +_,40 @@
+@@ -432,9 +_,40 @@
          return this.isSmall();
      }
  
@@ -289,7 +289,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
  
-@@ -684,4 +_,13 @@
+@@ -685,4 +_,13 @@
                  .apply(instance, ArmorStand.ArmorStandPose::new)
          );
      }
