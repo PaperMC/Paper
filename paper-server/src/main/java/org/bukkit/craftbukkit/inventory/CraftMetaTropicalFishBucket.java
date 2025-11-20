@@ -33,8 +33,8 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 
     private net.minecraft.world.entity.animal.TropicalFish.@Nullable Pattern pattern;
-    private net.minecraft.world.item.@Nullable DyeColor patternColor;
     private net.minecraft.world.item.@Nullable DyeColor baseColor;
+    private net.minecraft.world.item.@Nullable DyeColor patternColor;
 
     private @Nullable CompoundTag entityTag;
     private @Nullable CompoundTag bucketEntityTag;
@@ -97,9 +97,9 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
                 this.pattern = net.minecraft.world.entity.animal.TropicalFish.Pattern.valueOf(pattern);
             }
 
-            String bodyColor = SerializableMeta.getString(map, CraftMetaTropicalFishBucket.BASE_COLOR.BUKKIT, true);
-            if (bodyColor != null) {
-                this.baseColor = net.minecraft.world.item.DyeColor.valueOf(bodyColor);
+            String baseColor = SerializableMeta.getString(map, CraftMetaTropicalFishBucket.BASE_COLOR.BUKKIT, true);
+            if (baseColor != null) {
+                this.baseColor = net.minecraft.world.item.DyeColor.valueOf(baseColor);
             }
 
             String patternColor = SerializableMeta.getString(map, CraftMetaTropicalFishBucket.PATTERN_COLOR.BUKKIT, true);
@@ -142,11 +142,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (this.pattern != null) {
             tag.put(CraftMetaTropicalFishBucket.PATTERN, this.pattern);
         }
-        if (this.patternColor != null) {
-            tag.put(CraftMetaTropicalFishBucket.PATTERN_COLOR, this.patternColor);
-        }
         if (this.baseColor != null) {
             tag.put(CraftMetaTropicalFishBucket.BASE_COLOR, this.baseColor);
+        }
+        if (this.patternColor != null) {
+            tag.put(CraftMetaTropicalFishBucket.PATTERN_COLOR, this.patternColor);
         }
     }
 
@@ -156,12 +156,12 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     }
 
     boolean isBucketEmpty() {
-        return !(this.hasPattern() || this.hasPatternColor() || this.hasBodyColor() || this.entityTag != null || this.bucketEntityTag != null);
+        return !(this.hasPattern() || this.hasBodyColor() || this.hasPatternColor() || this.entityTag != null || this.bucketEntityTag != null);
     }
 
     @Override
     public DyeColor getPatternColor() {
-        Preconditions.checkState(this.hasPatternColor());
+        Preconditions.checkState(this.hasPatternColor(), "Pattern color is absent, check hasPatternColor first!");
         return DyeColor.values()[this.patternColor.ordinal()];
     }
 
@@ -173,7 +173,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
 
     @Override
     public DyeColor getBodyColor() {
-        Preconditions.checkState(this.hasBodyColor());
+        Preconditions.checkState(this.hasBodyColor(), "Body color is absent, check hasBodyColor first!");
         return DyeColor.values()[this.baseColor.ordinal()];
     }
 
@@ -185,7 +185,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
 
     @Override
     public TropicalFish.Pattern getPattern() {
-        Preconditions.checkState(this.hasPattern());
+        Preconditions.checkState(this.hasPattern(), "Pattern is absent, check hasPattern first!");
         return TropicalFish.Pattern.values()[this.pattern.ordinal()];
     }
 
@@ -193,11 +193,6 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     public void setPattern(TropicalFish.Pattern pattern) {
         Preconditions.checkArgument(pattern != null, "Pattern cannot be null!");
         this.pattern = net.minecraft.world.entity.animal.TropicalFish.Pattern.values()[pattern.ordinal()];
-    }
-
-    @Override
-    public boolean hasVariant() {
-        return this.hasPattern() || this.hasPatternColor() || this.hasBodyColor();
     }
 
     @Override
@@ -216,14 +211,19 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     }
 
     @Override
+    public boolean hasVariant() {
+        return this.hasPattern() || this.hasBodyColor() || this.hasPatternColor();
+    }
+
+    @Override
     boolean equalsCommon(CraftMetaItem meta) {
         if (!super.equalsCommon(meta)) {
             return false;
         }
         if (meta instanceof final CraftMetaTropicalFishBucket other) {
             return Objects.equals(this.pattern, other.pattern)
-                    && Objects.equals(this.patternColor, other.patternColor)
                     && Objects.equals(this.baseColor, other.baseColor)
+                    && Objects.equals(this.patternColor, other.patternColor)
                     && Objects.equals(this.entityTag, other.entityTag)
                     && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
         }
@@ -243,11 +243,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (this.pattern != null) {
             hash = 61 * hash + this.pattern.hashCode();
         }
-        if (this.patternColor != null) {
-            hash = 61 * hash + this.patternColor.hashCode();
-        }
         if (this.baseColor != null) {
             hash = 61 * hash + this.baseColor.hashCode();
+        }
+        if (this.patternColor != null) {
+            hash = 61 * hash + this.patternColor.hashCode();
         }
         if (this.entityTag != null) {
             hash = 61 * hash + this.entityTag.hashCode();
@@ -283,11 +283,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (this.pattern != null) {
             builder.put(CraftMetaTropicalFishBucket.PATTERN.BUKKIT, this.pattern.name());
         }
-        if (this.patternColor != null) {
-            builder.put(CraftMetaTropicalFishBucket.PATTERN_COLOR.BUKKIT, this.patternColor.name());
-        }
         if (this.baseColor != null) {
             builder.put(CraftMetaTropicalFishBucket.BASE_COLOR.BUKKIT, this.baseColor.name());
+        }
+        if (this.patternColor != null) {
+            builder.put(CraftMetaTropicalFishBucket.PATTERN_COLOR.BUKKIT, this.patternColor.name());
         }
 
         return builder;

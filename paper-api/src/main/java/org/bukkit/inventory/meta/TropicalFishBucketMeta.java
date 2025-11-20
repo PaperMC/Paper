@@ -12,6 +12,9 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the color of the fish's pattern.
+     * <p>
+     * Plugins should check that hasPatternColor() returns {@code true} before
+     * calling this method.
      *
      * @return pattern color
      * @throws IllegalStateException if no pattern color is set
@@ -27,6 +30,9 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the color of the fish's body.
+     * <p>
+     * Plugins should check that hasBodyColor() returns {@code true} before
+     * calling this method.
      *
      * @return pattern color
      * @throws IllegalStateException if no body color is set
@@ -42,6 +48,9 @@ public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the fish's pattern.
+     * <p>
+     * Plugins should check that hasPattern() returns {@code true} before
+     * calling this method.
      *
      * @return pattern
      * @throws IllegalStateException if no pattern is set
@@ -54,16 +63,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      * @param pattern new pattern
      */
     void setPattern(TropicalFish.Pattern pattern);
-
-    /**
-     * Checks for the existence of a variant tag indicating a specific fish will be
-     * spawned.
-     *
-     * @return if there is a variant
-     * @deprecated the variant tag is no longer used and instead split into its own set of components
-     */
-    @Deprecated(forRemoval = true, since = "1.21.10")
-    boolean hasVariant();
 
     /**
      * Checks for the existence of a pattern.
@@ -85,6 +84,16 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      * @return if there is a pattern color
      */
     boolean hasPatternColor();
+
+    /**
+     * Checks for the existence of a variant tag indicating a specific fish will be
+     * spawned.
+     *
+     * @return if there is a variant
+     * @deprecated the variant tag is no longer used and instead split into its own set of components
+     */
+    @Deprecated(forRemoval = true, since = "1.21.10")
+    boolean hasVariant();
 
     @Override
     TropicalFishBucketMeta clone();
