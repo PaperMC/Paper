@@ -48,7 +48,7 @@ public record PaperAttackRange(
 
         @Override
         public AttackRange.Builder maxRange(final float maxRange) {
-            Preconditions.checkArgument(maxRange >= 0.0F && maxRange <= 64, "maxRange must be in range [0,64] was %s", maxRange);
+            Preconditions.checkArgument(maxRange >= 0.0F && maxRange <= 64.0F, "maxRange must be in range [0,64] was %s", maxRange);
             this.maxRange = maxRange;
             return this;
         }
