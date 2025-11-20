@@ -45,7 +45,7 @@ public interface AttackRange {
     interface Builder extends DataComponentBuilder<AttackRange> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder minRange(@Range(from = 0, to = 64) float minReach);
+        Builder minRange(@Range(from = 0, to = 64) float minRange);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder maxRange(@Range(from = 0, to = 64) float maxReach);
