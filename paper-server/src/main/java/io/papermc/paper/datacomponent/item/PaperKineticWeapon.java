@@ -29,21 +29,6 @@ public record PaperKineticWeapon(
     }
 
     @Override
-    public float minReach() {
-        return this.impl.minReach();
-    }
-
-    @Override
-    public float maxReach() {
-        return this.impl.maxReach();
-    }
-
-    @Override
-    public float hitboxMargin() {
-        return this.impl.hitboxMargin();
-    }
-
-    @Override
     public int contactCooldownTicks() {
         return this.impl.contactCooldownTicks();
     }
@@ -126,9 +111,6 @@ public record PaperKineticWeapon(
 
     static final class BuilderImpl implements KineticWeapon.Builder {
 
-        private float minReach = 0.0F;
-        private float maxReach = 3.0F;
-        private float hitboxMargin = 0.3F;
         private int contactCooldownTicks = 10;
         private int delayTicks = 0;
 
@@ -141,27 +123,6 @@ public record PaperKineticWeapon(
 
         private float damageMultiplier = 1;
         private float forwardMovement = 0.0F;
-
-        @Override
-        public KineticWeapon.Builder minReach(final float minReach) {
-            Preconditions.checkArgument(minReach >= 0.0F, "minReach must be non-negative");
-            this.minReach = minReach;
-            return this;
-        }
-
-        @Override
-        public KineticWeapon.Builder maxReach(final float maxReach) {
-            Preconditions.checkArgument(maxReach >= 0.0F, "maxReach must be non-negative");
-            this.maxReach = maxReach;
-            return this;
-        }
-
-        @Override
-        public KineticWeapon.Builder hitboxMargin(final float hitboxMargin) {
-            Preconditions.checkArgument(hitboxMargin >= 0.0F, "hitboxMargin must be non-negative");
-            this.hitboxMargin = hitboxMargin;
-            return this;
-        }
 
         @Override
         public KineticWeapon.Builder contactCooldownTicks(final int ticks) {
@@ -223,9 +184,6 @@ public record PaperKineticWeapon(
         public KineticWeapon build() {
             return new PaperKineticWeapon(
                 new net.minecraft.world.item.component.KineticWeapon(
-                    this.minReach,
-                    this.maxReach,
-                    this.hitboxMargin,
                     this.contactCooldownTicks,
                     this.delayTicks,
                     Optional.ofNullable(this.dismountConditions),

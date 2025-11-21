@@ -124,6 +124,8 @@ interface ItemComponentTypesBridge {
 
     PiercingWeapon.Builder piercingWeapon();
 
+    AttackRange.Builder attackRange();
+
     SwingAnimation.Builder swingAnimation();
 
     KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);

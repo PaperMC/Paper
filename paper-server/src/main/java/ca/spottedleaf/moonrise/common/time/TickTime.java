@@ -10,13 +10,13 @@ public final record TickTime(
     long tickStartCPU,
     long tickEnd,
     long tickEndCPU,
-    boolean supportCPUTime,
-    boolean isTickExecution
+    long intermediateTaskExecutionTime,
+    long intermediateTaskExecutionTimeCPU,
+    boolean supportCPUTime
 ) {
     /**
      * The difference between the start tick time and the scheduled start tick time. This value is
      * < 0 if the tick started before the scheduled tick time.
-     * Only valid when {@link #isTickExecution()} is {@code true}.
      */
     public final long startOvershoot() {
         return this.tickStart - this.scheduledTickStart;
@@ -45,7 +45,6 @@ public final record TickTime(
      * The difference in time from the start of the last tick to the start of the current tick. If there is no
      * last tick, then this value is max(tickInterval, tickLength).
      * @param tickInterval The expected interval between ticks.
-     * Only valid when {@link #isTickExecution()} is {@code true}.
      */
     public final long differenceFromLastTick(final long tickInterval) {
         if (this.hasLastTick()) {
@@ -56,7 +55,6 @@ public final record TickTime(
 
     /**
      * Returns whether there was a tick that occurred before this one.
-     * Only valid when {@link #isTickExecution()} is {@code true}.
      */
     public boolean hasLastTick() {
         return this.previousTickStart != SchedulerThreadPool.DEADLINE_NOT_SET;

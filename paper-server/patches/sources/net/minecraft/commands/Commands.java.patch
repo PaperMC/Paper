@@ -6,9 +6,9 @@
  public class Commands {
 +    public interface RestrictedMarker { } // Paper - restricted api
      public static final String COMMAND_PREFIX = "/";
-     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
+     private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -180,6 +_,7 @@
+@@ -179,6 +_,7 @@
  
          @Override
          public boolean isRestricted(CommandNode<CommandSourceStack> node) {
@@ -16,7 +16,7 @@
              Predicate<CommandSourceStack> requirement = node.getRequirement();
              return !requirement.test(this.noPermissionSource);
          }
-@@ -187,6 +_,11 @@
+@@ -186,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
@@ -28,7 +28,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -297,6 +_,42 @@
+@@ -296,6 +_,42 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -71,7 +71,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -316,6 +_,13 @@
+@@ -315,6 +_,13 @@
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
@@ -85,7 +85,7 @@
          CommandSourceStack commandSourceStack = parseResults.getContext().getSource();
          Profiler.get().push(() -> "/" + command);
          ContextChain<CommandSourceStack> contextChain = finishParsing(parseResults, command, commandSourceStack);
-@@ -329,10 +_,13 @@
+@@ -328,10 +_,13 @@
                      )
                  );
              }
@@ -102,14 +102,7 @@
                  StackTraceElement[] stackTrace = var12.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -358,13 +_,17 @@
-     }
- 
-     @Nullable
--    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-+    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-         try {
-             validateParseResults(parseResults);
+@@ -364,7 +_,11 @@
              return ContextChain.tryFlatten(parseResults.getContext().build(command))
                  .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseResults.getReader()));
          } catch (CommandSyntaxException var7) {

@@ -30,7 +30,6 @@ import net.minecraft.world.level.ClipBlockStateContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -95,11 +94,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     @Override
     public ServerLevel getMinecraftWorld() {
         return this.delegate.getMinecraftWorld();
-    }
-
-    @Override
-    public long dayTime() {
-        return this.delegate.dayTime();
     }
 
     @Override
@@ -178,7 +172,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
+    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int flags, int recursionLeft) {
         this.delegate.neighborShapeChanged(direction, pos, neighborPos, neighborState, flags, recursionLeft);
     }
 
@@ -245,21 +239,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     @Override
     public BlockPos getHeightmapPos(Heightmap.Types heightmap, BlockPos pos) {
         return this.delegate.getHeightmapPos(heightmap, pos);
-    }
-
-    @Override
-    public float getMoonBrightness() {
-        return this.delegate.getMoonBrightness();
-    }
-
-    @Override
-    public float getTimeOfDay(float tickDelta) {
-        return this.delegate.getTimeOfDay(tickDelta);
-    }
-
-    @Override
-    public MoonPhase getMoonPhase() {
-        return this.delegate.getMoonPhase();
     }
 
     @Override
@@ -683,12 +662,12 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         return this.delegate.setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         return this.delegate.setBlock(pos, state, flags);
     }
 
@@ -718,7 +697,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean addFreshEntity(Entity entity, @Nullable CreatureSpawnEvent.SpawnReason reason) {
+    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.@Nullable SpawnReason reason) {
         return this.delegate.addFreshEntity(entity, reason);
     }
 

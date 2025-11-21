@@ -97,79 +97,52 @@ public final class TickData {
         );
     }
 
-    private static record TickInformation(
-        long differenceFromLastTick,
-        long tickTime,
-        long tickTimeCPU
-    ) {}
-
     public Double getTPSAverage(final TickTime inProgress, final long tickInterval) {
-        return this.getTPSAverage(inProgress, tickInterval, false);
-    }
-
-    public Double getTPSAverage(final TickTime inProgress, final long tickInterval, final boolean createFakeTick) {
         if (this.timeData.isEmpty() && inProgress == null) {
             return null;
         }
 
-        final List<TickTime> allData = new ArrayList<>(this.timeData);
-        if (inProgress != null) {
-            allData.add(inProgress);
-        }
-
-        final List<TickInformation> collapsedData = collapseData(allData, tickInterval, createFakeTick);
-        if (collapsedData.isEmpty()) {
-            return null;
-        }
-
         long totalTimeBetweenTicks = 0L;
-        int collectedTicks = 0;
-        for (final TickInformation time : collapsedData) {
-            totalTimeBetweenTicks += time.differenceFromLastTick();
+        int collectedTicks = this.timeData.size();
+
+        if (inProgress != null) {
             ++collectedTicks;
+            totalTimeBetweenTicks += inProgress.differenceFromLastTick(tickInterval);
         }
-        return (double)collectedTicks / ((double)totalTimeBetweenTicks / 1.0E9);
+
+        for (final TickTime time : this.timeData) {
+            totalTimeBetweenTicks += time.differenceFromLastTick(tickInterval);
+        }
+        return Double.valueOf((double)collectedTicks / ((double)totalTimeBetweenTicks / 1.0E9));
     }
 
     public record MSPTData(double avg, long[] rawData) {}
 
     public MSPTData getMSPTData(final TickTime inProgress, final long tickInterval) {
-        return this.getMSPTData(inProgress, tickInterval, false);
-    }
-
-    public MSPTData getMSPTData(final TickTime inProgress, final long tickInterval, final boolean createFakeTick) {
         if (this.timeData.isEmpty() && inProgress == null) {
-            return null;
-        }
-
-        final List<TickTime> allData = new ArrayList<>(this.timeData);
-        if (inProgress != null) {
-            allData.add(inProgress);
-        }
-
-        final List<TickInformation> collapsedData = collapseData(allData, tickInterval, createFakeTick);
-        if (collapsedData.isEmpty()) {
             return null;
         }
 
         long totalTimeTicking = 0L;
-        int collectedTicks = 0;
-        final long[] timePerTickDataRaw = new long[collapsedData.size()];
-        for (int i = 0; i < collapsedData.size(); ++i) {
-            final TickInformation time = collapsedData.get(i);
-            totalTimeTicking += time.tickTime();
-            timePerTickDataRaw[i] = time.tickTime();
-            ++collectedTicks;
+        final long[] timePerTickDataRaw = new long[this.timeData.size() + (inProgress != null ? 1 : 0)];
+        int index = 0;
+        for (TickTime time : this.timeData) {
+            final long totalLength = time.tickLength() + time.intermediateTaskExecutionTime();
+            totalTimeTicking += totalLength;
+            timePerTickDataRaw[index++] = totalLength;
         }
-        return new MSPTData((double)totalTimeTicking / (double)collectedTicks * 1.0E-6, timePerTickDataRaw);
-    }
 
-    public TickReportData generateTickReport(final TickTime inProgress, final long endTime, final long tickInterval) {
-        return this.generateTickReport(inProgress, endTime, tickInterval, false);
+        if (inProgress != null) {
+            final long totalLength = inProgress.tickLength() + inProgress.intermediateTaskExecutionTime();
+            totalTimeTicking += totalLength;
+            timePerTickDataRaw[index++] = totalLength;
+        }
+
+        return new MSPTData((double)totalTimeTicking / (double)timePerTickDataRaw.length * 1.0E-6, timePerTickDataRaw);
     }
 
     // rets null if there is no data
-    public TickReportData generateTickReport(final TickTime inProgress, final long endTime, final long tickInterval, final boolean createFakeTick) {
+    public TickReportData generateTickReport(final TickTime inProgress, final long endTime, final long tickInterval) {
         if (this.timeData.isEmpty() && inProgress == null) {
             return null;
         }
@@ -177,11 +150,6 @@ public final class TickData {
         final List<TickTime> allData = new ArrayList<>(this.timeData);
         if (inProgress != null) {
             allData.add(inProgress);
-        }
-
-        final List<TickInformation> collapsedData = collapseData(allData, tickInterval, createFakeTick);
-        if (collapsedData.isEmpty()) {
-            return null;
         }
 
         final long intervalStart = allData.get(0).tickStart();
@@ -205,7 +173,7 @@ public final class TickData {
             }
         }
 
-        final int collectedTicks = collapsedData.size();
+        final int collectedTicks = allData.size();
         final long[] tickStartToStartDifferences = new long[collectedTicks];
         final long[] timePerTickDataRaw = new long[collectedTicks];
         final long[] missingCPUTimeDataRaw = new long[collectedTicks];
@@ -213,10 +181,12 @@ public final class TickData {
         long totalTimeTicking = 0L;
 
         int i = 0;
-        for (final TickInformation time : collapsedData) {
-            tickStartToStartDifferences[i] = time.differenceFromLastTick();
-            final long timePerTick = timePerTickDataRaw[i] = time.tickTime();
-            missingCPUTimeDataRaw[i] = Math.max(0L, timePerTick - time.tickTimeCPU());
+        for (final TickTime time : allData) {
+            tickStartToStartDifferences[i] = time.differenceFromLastTick(tickInterval);
+            final long timePerTick = timePerTickDataRaw[i] = time.tickLength() + time.intermediateTaskExecutionTime();
+            if (time.supportCPUTime()) {
+                missingCPUTimeDataRaw[i] = Math.max(0L, timePerTick - (time.tickCpuTime() + time.intermediateTaskExecutionTimeCPU()));
+            }
 
             ++i;
 
@@ -283,88 +253,6 @@ public final class TickData {
             timePerTickData,
             missingCPUTimeData
         );
-    }
-
-    private static List<TickInformation> collapseData(final List<TickTime> allData, final long tickInterval, final boolean createFakeTick) {
-        // we only care about ticks, but because of inbetween tick task execution
-        // there will be data in allData that isn't ticks. But, that data cannot
-        // be ignored since it contributes to utilisation.
-        // So, we will "compact" the data by merging any inbetween tick times
-        // the next tick.
-        // If there is no "next tick", then we will create one.
-        final List<TickInformation> collapsedData = new ArrayList<>();
-        for (int i = 0, len = allData.size(); i < len; ++i) {
-            final List<TickTime> toCollapse = new ArrayList<>();
-            TickTime lastTick = null;
-            for (;i < len; ++i) {
-                final TickTime time = allData.get(i);
-                if (!time.isTickExecution()) {
-                    toCollapse.add(time);
-                    continue;
-                }
-                lastTick = time;
-                break;
-            }
-
-            if (toCollapse.isEmpty()) {
-                // nothing to collapse
-                final TickTime last = allData.get(i);
-                collapsedData.add(
-                    new TickInformation(
-                        last.differenceFromLastTick(tickInterval),
-                        last.tickLength(),
-                        last.supportCPUTime() ? last.tickCpuTime() : 0L
-                    )
-                );
-            } else {
-                long totalTickTime = 0L;
-                long totalCpuTime = 0L;
-                for (int k = 0, len2 = toCollapse.size(); k < len2; ++k) {
-                    final TickTime time = toCollapse.get(k);
-                    totalTickTime += time.tickLength();
-                    totalCpuTime += time.supportCPUTime() ? time.tickCpuTime() : 0L;
-                }
-                if (i < len) {
-                    // we know there is a tick to collapse into
-                    final TickTime last = allData.get(i);
-                    collapsedData.add(
-                        new TickInformation(
-                            last.differenceFromLastTick(tickInterval),
-                            last.tickLength() + totalTickTime,
-                            (last.supportCPUTime() ? last.tickCpuTime() : 0L) + totalCpuTime
-                        )
-                    );
-                } else if (createFakeTick) {
-                    // we do not have a tick to collapse into, so we must make one up
-                    // we will assume that the tick is "starting now" and ongoing
-
-                    // compute difference between imaginary tick and last tick
-                    final long differenceBetweenTicks;
-                    if (lastTick != null) {
-                        // we have a last tick, use it
-                        differenceBetweenTicks = lastTick.tickStart();
-                    } else {
-                        // we don't have a last tick, so we must make one up that makes sense
-                        // if the current interval exceeds the max tick time, then use it
-
-                        // Otherwise use the interval length.
-                        // This is how differenceFromLastTick() works on TickTime when there is no previous interval.
-                        differenceBetweenTicks = Math.max(
-                            tickInterval, totalTickTime
-                        );
-                    }
-
-                    collapsedData.add(
-                        new TickInformation(
-                            differenceBetweenTicks,
-                            totalTickTime,
-                            totalCpuTime
-                        )
-                    );
-                }
-            }
-        }
-        return collapsedData;
     }
 
     public static final record TickReportData(

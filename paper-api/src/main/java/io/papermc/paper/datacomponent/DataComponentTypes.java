@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent;
 
+import io.papermc.paper.datacomponent.item.AttackRange;
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
@@ -72,6 +73,7 @@ import org.bukkit.entity.Salmon;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -221,6 +223,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<BlocksAttacks> BLOCKS_ATTACKS = valued("blocks_attacks");
     public static final DataComponentType.Valued<PiercingWeapon> PIERCING_WEAPON = valued("piercing_weapon");
     public static final DataComponentType.Valued<KineticWeapon> KINETIC_WEAPON = valued("kinetic_weapon");
+    public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
     public static final DataComponentType.Valued<SwingAnimation> SWING_ANIMATION = valued("swing_animation");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
@@ -383,6 +386,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
     public static final DataComponentType.Valued<Llama.Color> LLAMA_VARIANT = valued("llama/variant");
     public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");
+    public static final DataComponentType.Valued<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = valued("zombie_nautilus/variant");
     public static final DataComponentType.Valued<Cat.Type> CAT_VARIANT = valued("cat/variant");
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");

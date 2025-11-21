@@ -25,7 +25,7 @@
 -            this.updateText(signText -> this.setMessages(player, filteredText, signText), isFrontText);
 +            this.updateText(signText -> this.setMessages(player, filteredText, signText, isFrontText), isFrontText); // CraftBukkit
              this.setAllowedPlayerEditor(null);
-             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
          } else {
              LOGGER.warn("Player {} just tried to change non-editable sign", player.getPlainTextName());
 +            if (player.distanceToSqr(this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ()) < Mth.square(32)) // Paper - Don't send far away sign update
@@ -164,10 +164,10 @@
      }
  
      @Override
-@@ -236,12 +_,17 @@
+@@ -235,12 +_,17 @@
+     }
  
-     @Nullable
-     public UUID getPlayerWhoMayEdit() {
+     public @Nullable UUID getPlayerWhoMayEdit() {
 +        // CraftBukkit start - unnecessary sign ticking removed, so do this lazily
 +        if (this.level != null && this.playerWhoMayEdit != null) {
 +            this.clearInvalidPlayerWhoMayEdit(this, this.level, this.playerWhoMayEdit);
@@ -178,7 +178,7 @@
  
      private void markUpdated() {
          this.setChanged();
--        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+-        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
 +        if (this.level != null) this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
      }
  

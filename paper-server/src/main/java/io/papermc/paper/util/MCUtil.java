@@ -199,17 +199,6 @@ public final class MCUtil {
         ASYNC_EXECUTOR.execute(run);
     }
 
-    public static <T> ResourceKey<T> toResourceKey(
-        final ResourceKey<? extends net.minecraft.core.Registry<T>> registry,
-        final NamespacedKey namespacedKey
-    ) {
-        return ResourceKey.create(registry, CraftNamespacedKey.toMinecraft(namespacedKey));
-    }
-
-    public static NamespacedKey fromResourceKey(final ResourceKey<?> key) {
-        return CraftNamespacedKey.fromMinecraft(key.location());
-    }
-
     public static <A, M> List<A> transformUnmodifiable(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
         return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
     }

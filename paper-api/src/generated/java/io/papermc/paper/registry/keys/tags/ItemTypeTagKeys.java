@@ -173,6 +173,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CAMEL_FOOD = create(key("camel_food"));
 
     /**
+     * {@code #minecraft:camel_husk_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CAMEL_HUSK_FOOD = create(key("camel_husk_food"));
+
+    /**
      * {@code #minecraft:candles}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

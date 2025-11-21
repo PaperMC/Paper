@@ -1384,6 +1384,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> CALIBRATED_SCULK_SENSOR = create(key("calibrated_sculk_sensor"));
 
     /**
+     * {@code minecraft:camel_husk_spawn_egg}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> CAMEL_HUSK_SPAWN_EGG = create(key("camel_husk_spawn_egg"));
+
+    /**
      * {@code minecraft:camel_spawn_egg}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6130,6 +6137,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> NETHERITE_HOE = create(key("netherite_hoe"));
 
     /**
+     * {@code minecraft:netherite_horse_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> NETHERITE_HORSE_ARMOR = create(key("netherite_horse_armor"));
+
+    /**
      * {@code minecraft:netherite_ingot}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -6786,6 +6800,13 @@ public final class ItemTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<ItemType> PAPER = create(key("paper"));
+
+    /**
+     * {@code minecraft:parched_spawn_egg}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> PARCHED_SPAWN_EGG = create(key("parched_spawn_egg"));
 
     /**
      * {@code minecraft:parrot_spawn_egg}

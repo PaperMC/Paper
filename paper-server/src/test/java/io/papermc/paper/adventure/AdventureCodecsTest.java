@@ -37,7 +37,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.support.RegistryHelper;
@@ -108,7 +108,7 @@ class AdventureCodecsTest {
         final Key key = key("hello", "there");
         final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
         assertEquals("\"" + key.asString() + "\"", result.toString());
-        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
+        final Identifier location = Identifier.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
         assertEquals(key.asString(), location.toString());
     }
 
@@ -138,7 +138,7 @@ class AdventureCodecsTest {
                 assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), value);
             case net.minecraft.network.chat.ClickEvent.ChangePage(int page) ->
                 assertEquals(((ClickEvent.Payload.Int) event.payload()).integer(), page);
-            case net.minecraft.network.chat.ClickEvent.Custom(ResourceLocation id, Optional<Tag> payload) -> {
+            case net.minecraft.network.chat.ClickEvent.Custom(Identifier id, Optional<Tag> payload) -> {
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).key().toString(), id.toString());
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).nbt(), payload.orElseThrow().asString());
             }
@@ -237,7 +237,7 @@ class AdventureCodecsTest {
             JavaOps.INSTANCE,
             JsonOps.INSTANCE
         )
-            .map(ops -> RegistryHelper.getRegistry().createSerializationContext(ops))
+            .map(ops -> RegistryHelper.registryAccess().createSerializationContext(ops))
             .toList();
     }
 

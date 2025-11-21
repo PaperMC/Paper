@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
-@@ -65,13 +_,15 @@
+@@ -65,12 +_,14 @@
      private Vec3 lastSentMovement;
      private int tickCount;
      private int teleportDelay;
@@ -8,8 +8,7 @@
 +    private List<Entity> lastPassengers = com.google.common.collect.ImmutableList.of(); // Paper - optimize passenger checks
      private boolean wasRiding;
      private boolean wasOnGround;
-     @Nullable
-     private List<SynchedEntityData.DataValue<?>> trackedDataValues;
+     private @Nullable List<SynchedEntityData.DataValue<?>> trackedDataValues;
 +    private final Set<net.minecraft.server.network.ServerPlayerConnection> trackedPlayers; // Paper
  
 -    public ServerEntity(ServerLevel level, Entity entity, int updateInterval, boolean trackDelta, ServerEntity.Synchronizer synchronizer) {
@@ -18,7 +17,7 @@
          this.level = level;
          this.synchronizer = synchronizer;
          this.entity = entity;
-@@ -95,16 +_,22 @@
+@@ -94,16 +_,22 @@
                      new ClientboundSetPassengersPacket(this.entity),
                      serverPlayer1 -> passengers.contains(serverPlayer1) == this.lastPassengers.contains(serverPlayer1)
                  );
@@ -45,7 +44,7 @@
                          savedData.tickCarriedBy(serverPlayer, item);
                          Packet<?> updatePacket = savedData.getUpdatePacket(mapId, serverPlayer);
                          if (updatePacket != null) {
-@@ -137,7 +_,13 @@
+@@ -136,7 +_,13 @@
              } else {
                  this.teleportDelay++;
                  Vec3 vec3 = this.entity.trackingPosition();
@@ -60,7 +59,7 @@
                  Packet<ClientGamePacketListener> packet = null;
                  boolean flag2 = flag1 || this.tickCount % 60 == 0;
                  boolean flag3 = false;
-@@ -219,6 +_,25 @@
+@@ -218,6 +_,25 @@
  
          this.tickCount++;
          if (this.entity.hurtMarked) {
@@ -86,7 +85,7 @@
              this.entity.hurtMarked = false;
              this.synchronizer.sendToTrackingPlayersAndSelf(new ClientboundSetEntityMotionPacket(this.entity));
          }
-@@ -270,7 +_,10 @@
+@@ -269,7 +_,10 @@
      public void sendPairingData(ServerPlayer player, Consumer<Packet<ClientGamePacketListener>> consumer) {
          this.entity.updateDataBeforeSync();
          if (this.entity.isRemoved()) {
@@ -98,7 +97,7 @@
          }
  
          Packet<ClientGamePacketListener> addEntityPacket = this.entity.getAddEntityPacket(this);
-@@ -281,6 +_,11 @@
+@@ -280,6 +_,11 @@
  
          if (this.entity instanceof LivingEntity livingEntity) {
              Collection<AttributeInstance> syncableAttributes = livingEntity.getAttributes().getSyncableAttributes();
@@ -110,7 +109,7 @@
              if (!syncableAttributes.isEmpty()) {
                  consumer.accept(new ClientboundUpdateAttributesPacket(this.entity.getId(), syncableAttributes));
              }
-@@ -297,8 +_,9 @@
+@@ -296,8 +_,9 @@
              }
  
              if (!list.isEmpty()) {
@@ -121,7 +120,7 @@
          }
  
          if (!this.entity.getPassengers().isEmpty()) {
-@@ -345,6 +_,11 @@
+@@ -344,6 +_,11 @@
          if (this.entity instanceof LivingEntity) {
              Set<AttributeInstance> attributesToSync = ((LivingEntity)this.entity).getAttributes().getAttributesToSync();
              if (!attributesToSync.isEmpty()) {

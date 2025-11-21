@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/EventLoopGroupHolder.java
 +++ b/net/minecraft/server/network/EventLoopGroupHolder.java
-@@ -38,15 +_,37 @@
+@@ -48,11 +_,20 @@
              return LocalIoHandler.newFactory();
          }
      };
@@ -15,21 +15,30 @@
      private final String type;
      private final Class<? extends Channel> channelCls;
      private final Class<? extends ServerChannel> serverChannelCls;
-     @Nullable
-     private volatile EventLoopGroup group;
+     private volatile @Nullable EventLoopGroup group;
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use variant with address param
      public static EventLoopGroupHolder remote(boolean tryNativeTransport) {
-         return tryNativeTransport && Epoll.isAvailable() ? EPOLL : NIO;
+         if (tryNativeTransport) {
+             if (KQueue.isAvailable()) {
+@@ -66,6 +_,25 @@
+ 
+         return NIO;
      }
 +
 +    // Paper start - Unix domain socket support
 +    public static EventLoopGroupHolder remote(java.net.SocketAddress address, boolean tryNativeTransport) {
-+        if (tryNativeTransport && Epoll.isAvailable()) {
-+            if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
-+                return EPOLL_UNIX_DOMAIN;
-+            } else {
-+                return EPOLL;
++        if (tryNativeTransport) {
++            if (KQueue.isAvailable()) {
++                return KQUEUE;
++            }
++
++            if (Epoll.isAvailable()) {
++                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                    return EPOLL_UNIX_DOMAIN;
++                } else {
++                    return EPOLL;
++                }
 +            }
 +        }
 +        return NIO;

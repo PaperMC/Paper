@@ -2,9 +2,9 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
-import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -22,12 +22,6 @@ public interface PiercingWeapon {
         return ItemComponentTypesBridge.bridge().piercingWeapon();
     }
 
-    @NonNegative float minReach();
-
-    @NonNegative float maxReach();
-
-    @NonNegative float hitboxMargin();
-
     boolean dealsKnockback();
 
     boolean dismounts();
@@ -42,15 +36,6 @@ public interface PiercingWeapon {
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(@NonNegative float minReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(@NonNegative float maxReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(@NonNegative float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder dealsKnockback(boolean dealsKnockback);

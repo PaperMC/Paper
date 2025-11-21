@@ -16,10 +16,6 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
 
     private static int count = 0;
 
-    public static Attribute minecraftToBukkit(net.minecraft.world.entity.ai.attributes.Attribute minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ATTRIBUTE);
-    }
-
     public static Attribute minecraftHolderToBukkit(Holder<net.minecraft.world.entity.ai.attributes.Attribute> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ATTRIBUTE);
     }
@@ -36,10 +32,6 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
 
         // Now also convert from when keys where saved
         return CraftRegistry.get(RegistryKey.ATTRIBUTE, key, ApiVersion.CURRENT);
-    }
-
-    public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<net.minecraft.world.entity.ai.attributes.Attribute> bukkitToMinecraftHolder(Attribute bukkit) {

@@ -474,6 +474,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_CAMEL_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("camel_food"), Material.class);
 
+    Tag<Material> ITEMS_CAMEL_HUSK_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("camel_husk_food"), Material.class);
+
     Tag<Material> ITEMS_CANDLES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("candles"), Material.class);
 
     Tag<Material> ITEMS_CAT_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cat_food"), Material.class);
@@ -857,6 +859,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<EntityType> ENTITY_TYPES_CAN_EQUIP_HARNESS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_equip_harness"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_CAN_EQUIP_SADDLE = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_equip_saddle"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_CAN_FLOAT_WHILE_RIDDEN = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_float_while_ridden"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_CAN_TURN_IN_BOATS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_turn_in_boats"), EntityType.class);
 

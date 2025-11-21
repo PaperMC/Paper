@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -84,6 +_,16 @@
- import net.minecraft.world.scores.Scoreboard;
+@@ -86,6 +_,16 @@
  import org.apache.commons.lang3.mutable.MutableBoolean;
+ import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
 +import java.util.Map;
@@ -16,15 +16,15 @@
 +
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-     public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
-@@ -126,6 +_,57 @@
-     private final EnvironmentAttributeSystem environmentAttributes;
+     public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
+@@ -127,6 +_,57 @@
+     private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
 +    // CraftBukkit start
 +    private final CraftWorld world;
 +    public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
-+    public @Nullable org.bukkit.generator.ChunkGenerator generator;
++    public org.bukkit.generator.@Nullable ChunkGenerator generator;
 +
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
@@ -75,14 +75,14 @@
      protected Level(
          WritableLevelData levelData,
          ResourceKey<Level> dimension,
-@@ -134,8 +_,24 @@
+@@ -135,8 +_,24 @@
          boolean isClientSide,
          boolean isDebug,
          long biomeZoomSeed,
 -        int maxChainedNeighborUpdates
 +        int maxChainedNeighborUpdates,
-+        @Nullable org.bukkit.generator.ChunkGenerator generator, // Paper
-+        @Nullable org.bukkit.generator.BiomeProvider biomeProvider, // Paper
++        org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
++        org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
 +        org.bukkit.World.Environment environment, // Paper
 +        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 +        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
@@ -102,7 +102,7 @@
          this.dimensionTypeRegistration = dimensionTypeRegistration;
          this.dimension = dimension;
 @@ -150,6 +_,46 @@
-         this.environmentAttributes = new EnvironmentAttributeSystem(dimensionTypeRegistration, registryAccess, this.biomeManager);
+         this.damageSources = new DamageSources(registryAccess);
      }
  
 +    // Paper start - Cancel hit for vanished players
@@ -148,7 +148,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -161,8 +_,15 @@
+@@ -160,8 +_,15 @@
          return null;
      }
  
@@ -165,7 +165,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -170,21 +_,86 @@
+@@ -169,21 +_,86 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -255,9 +255,9 @@
 +    }
 +    // Paper end
  
-     @Nullable
      @Override
-@@ -204,6 +_,22 @@
+     public @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
+@@ -202,6 +_,22 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
@@ -280,7 +280,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide() && this.isDebug()) {
-@@ -211,11 +_,31 @@
+@@ -209,11 +_,31 @@
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -312,7 +312,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -243,12 +_,68 @@
+@@ -241,12 +_,68 @@
  
                      this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
                  }
@@ -381,12 +381,12 @@
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
      }
  
-@@ -265,13 +_,31 @@
+@@ -263,13 +_,31 @@
              return false;
          } else {
              FluidState fluidState = this.getFluidState(pos);
 -            if (!(blockState.getBlock() instanceof BaseFireBlock)) {
--                this.levelEvent(2001, pos, Block.getId(blockState));
+-                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
 +            // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
 +            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
@@ -415,8 +415,8 @@
 +                blockState.getBlock().popExperience((ServerLevel) this, pos, xp, entity); // Paper - Properly handle xp dropping; custom amount
              }
  
-             boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), 3, recursionLeft);
-@@ -337,10 +_,18 @@
+             boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
+@@ -335,10 +_,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -436,7 +436,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -453,31 +_,47 @@
+@@ -437,31 +_,47 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -492,10 +492,10 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -602,6 +_,12 @@
-     @Nullable
+@@ -585,6 +_,12 @@
+ 
      @Override
-     public BlockEntity getBlockEntity(BlockPos pos) {
+     public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
 +        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
 +        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(pos)) != null) {
@@ -505,7 +505,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
-@@ -614,6 +_,12 @@
+@@ -597,6 +_,12 @@
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockPos = blockEntity.getBlockPos();
          if (!this.isOutsideBuildHeight(blockPos)) {
@@ -518,7 +518,7 @@
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1029,7 +_,8 @@
+@@ -1001,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),

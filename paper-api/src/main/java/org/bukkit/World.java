@@ -2289,7 +2289,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2446,7 +2446,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Note that if a non-null {@code source} Entity is provided and {@code
      * breakBlocks} is {@code true}, the value of {@code breakBlocks} will be
-     * ignored if {@link GameRule#MOB_GRIEFING} is {@code false} in the world
+     * ignored if {@link GameRules#MOB_GRIEFING} is {@code false} in the world
      * in which the explosion occurs. In other words, the mob griefing gamerule
      * will take priority over {@code breakBlocks} if explosions are not allowed.
      *
@@ -2463,7 +2463,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public boolean getPVP();
@@ -2472,7 +2472,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Sets the PVP setting for this world.
      *
      * @param pvp True/False whether PVP should be Enabled.
-     * @deprecated use {@link GameRule#PVP} instead
+     * @deprecated use {@link GameRules#PVP} instead
      */
     @Deprecated(since = "1.21.9")
     public void setPVP(boolean pvp);
@@ -2676,11 +2676,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Sets the spawn flags for this.
+     * <p>Note that setting {@code false} for either only affects
+     * natural spawning. It doesn't affect spawn eggs, summon command, mobs
+     * spawned from structure generation, spawners, etc.</p>
      *
      * @param allowMonsters - if true, monsters are allowed to spawn in this
-     *     world.
+     *     world via natural spawning mechanisms.
      * @param allowAnimals - if true, animals are allowed to spawn in this
-     *     world.
+     *     world via natural spawning mechanisms.
      */
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 
@@ -2798,7 +2801,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * When false, the moon is not visible and eyeblossoms do not open/close
      *
      * @return true if world is natural
+     * @deprecated replaced by the gameplay/eyeblossom_open and gameplay/creaking_active environment attributes
      */
+    @Deprecated(since = "1.21.11")
     public boolean isNatural();
 
     /**
@@ -3790,7 +3795,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return String value of rule
      * @deprecated use {@link #getGameRuleValue(GameRule)} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.21.11", forRemoval = true)
     @Contract("null -> null; !null -> !null")
     @Nullable
     public String getGameRuleValue(@Nullable String rule);
@@ -3808,7 +3813,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return True if rule was set
      * @deprecated use {@link #setGameRule(GameRule, Object)} instead.
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public boolean setGameRuleValue(@NotNull String rule, @NotNull String value);
 
     /**
