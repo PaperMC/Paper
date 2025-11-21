@@ -23,6 +23,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.memory.SpearAttack;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 import static io.papermc.generator.utils.Formatting.quoted;
@@ -61,7 +62,8 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
     );
 
     private static final Map<Class<?>, Class<?>> API_BRIDGE = Map.of(
-        GlobalPos.class, Location.class
+        GlobalPos.class, Location.class,
+        net.minecraft.world.entity.ai.behavior.SpearAttack.SpearStatus.class, SpearAttack.SpearStatus.class
     );
 
     private static final Map<String, String> FIELD_RENAMES = Map.of(
@@ -106,11 +108,15 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
 
     @Override
     protected String rewriteFieldValue(Holder.Reference<MemoryModuleType<?>> reference) {
+        String apiMemoryTypeClassName = this.apiMemoryType.getSimpleName();
+        if (this.apiMemoryType.getEnclosingClass() != null && this.apiMemoryType.isEnum()) {
+            apiMemoryTypeClassName = this.apiMemoryType.getEnclosingClass().getSimpleName() + "." + this.apiMemoryType.getSimpleName();
+        }
         return "new %s<>(%s.minecraft(%s), %s.class)".formatted(
             this.registryEntry.apiClass().getSimpleName(),
             NamespacedKey.class.getSimpleName(),
             quoted(reference.key().identifier().getPath()),
-            this.apiMemoryType.getSimpleName() // assume the type is already import (see above in rewriteFieldType)
+            apiMemoryTypeClassName // assume the type is already import (see above in rewriteFieldType)
         );
     }
 }

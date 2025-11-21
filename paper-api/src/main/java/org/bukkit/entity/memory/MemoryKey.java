@@ -125,7 +125,7 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Integer> SPEAR_FLEEING_TIME = new MemoryKey<>(NamespacedKey.minecraft("spear_fleeing_time"), Integer.class);
 
-    public static final MemoryKey<SpearAttack.SpearStatus> SPEAR_STATUS = new MemoryKey<>(NamespacedKey.minecraft("spear_status"), SpearAttack.SpearStatus.class); // TODO - snapshot: SpearStatus API
+    public static final MemoryKey<SpearAttack.SpearStatus> SPEAR_STATUS = new MemoryKey<>(NamespacedKey.minecraft("spear_status"), SpearAttack.SpearStatus.class);
 
     public static final MemoryKey<Integer> TEMPTATION_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("temptation_cooldown_ticks"), Integer.class);
 
