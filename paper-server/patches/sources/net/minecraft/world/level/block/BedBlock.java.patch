@@ -9,11 +9,11 @@
                  bedRule.errorMessage().ifPresent(component -> player.displayClientMessage(component, true));
                  level.removeBlock(pos, false);
                  BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
-@@ -103,22 +_,56 @@
+@@ -103,22 +_,59 @@
                  level.explode(null, level.damageSources().badRespawnPointExplosion(center), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                  return InteractionResult.SUCCESS_SERVER;
              } else if (state.getValue(OCCUPIED)) {
-+                if (!bedRule.explodes()) return this.explodeBed(state, level, pos); // Paper - check explode first
++                if (bedRule.explodes()) return this.explodeBed(state, level, pos); // Paper - check explode first
                  if (!this.kickVillagerOutOfBed(level, pos)) {
                      player.displayClientMessage(Component.translatable("block.minecraft.bed.occupied"), true);
                  }
@@ -25,7 +25,11 @@
 +                final BlockPos finalBlockPos = pos;
 +                // CraftBukkit end
                  player.startSleepInBed(pos).ifLeft(bedSleepingProblem -> {
+-                    if (bedSleepingProblem.message() != null) {
 +                    // Paper start - PlayerBedFailEnterEvent
++                    if (false && bedSleepingProblem.message() != null) { // Moved down
+                         player.displayClientMessage(bedSleepingProblem.message(), true);
+                     }
 +                    if (bedSleepingProblem != null) {
 +                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalBlockPos, bedSleepingProblem);
 +                        if (event.isCancelled()) {
@@ -35,14 +39,13 @@
 +                    // CraftBukkit start - handling bed explosion from below here
 +                    if (event.getWillExplode()) { // Paper - PlayerBedFailEnterEvent
 +                        this.explodeBed(finalBlockState, level, finalBlockPos);
-+                    } else
++                    }
 +                    // CraftBukkit end
-                     if (bedSleepingProblem.message() != null) {
--                        player.displayClientMessage(bedSleepingProblem.message(), true);
-+                        final net.kyori.adventure.text.Component message = event.getMessage(); // Paper - PlayerBedFailEnterEvent
-+                        if (message != null) player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true); // Paper - PlayerBedFailEnterEvent
-                     }
-+                    } // Paper - PlayerBedFailEnterEvent
++                    // Paper start - PlayerBedFailEnterEvent
++                    final net.kyori.adventure.text.Component message = event.getMessage();
++                    if (message != null) player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true);
++                    }
++                    // Paper end - PlayerBedFailEnterEvent
                  });
                  return InteractionResult.SUCCESS_SERVER;
              }

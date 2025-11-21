@@ -870,18 +870,24 @@
              this.enteredNetherPosition = null;
          }
      }
-@@ -1161,9 +_,8 @@
+@@ -1161,11 +_,12 @@
          this.containerMenu.broadcastChanges();
      }
  
 -    @Override
 -    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos bedPos) {
 -        Direction direction = this.level().getBlockState(bedPos).getValue(HorizontalDirectionalBlock.FACING);
+-        if (!this.isSleeping() && this.isAlive()) {
+-            BedRule bedRule = this.level().environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, bedPos);
 +    // CraftBukkit start - moved bed result checks from below into separate method
 +    private Either<Player.BedSleepingProblem, Unit> getBedResult(BlockPos bedPos, Direction direction) {
-         if (!this.isSleeping() && this.isAlive()) {
-             BedRule bedRule = this.level().environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, bedPos);
++        BedRule bedRule = this.level().environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, bedPos);
++        if (bedRule.explodes()) {
++            return Either.left(Player.BedSleepingProblem.EXPLOSION);
++        } else if (!this.isSleeping() && this.isAlive()) {
              boolean canSleep = bedRule.canSleep(this.level());
+             boolean canSetSpawn = bedRule.canSetSpawn(this.level());
+             if (!canSetSpawn && !canSleep) {
 @@ -1177,7 +_,7 @@
              } else {
                  if (canSetSpawn) {

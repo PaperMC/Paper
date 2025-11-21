@@ -43,6 +43,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2796,10 +2797,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets if this world is natural.
-     *
-     * When false, compasses spin randomly, and using a bed to set the respawn
-     * point or sleep, is disabled. When true, nether portals can spawn
-     * zombified piglins.
+     * <p>
+     * When false, the moon is not visible and eyeblossoms do not open/close
      *
      * @return true if world is natural
      * @deprecated replaced by the gameplay/eyeblossom_open and gameplay/creaking_active environment attributes
@@ -2809,12 +2808,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Gets if beds work in this world.
-     *
-     * A non-working bed will blow up when trying to sleep. {@link #isNatural()}
-     * defines if a bed can be used to set spawn point.
+     * <p>
+     * A non-working bed can blow up when trying to sleep, but that may
+     * not always be the case.
      *
      * @return true if beds work in this world
+     * @deprecated Due to 1.21.11 beds changes, a boolean no longer
+     * represents if they work. There is no replacement API yet
      */
+    @ApiStatus.Obsolete(since = "1.21.11")
     public boolean isBedWorks();
 
     /**

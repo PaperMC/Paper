@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import io.papermc.paper.block.bed.BedEnterAction;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -17,22 +18,39 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
 
     private final FailReason failReason;
     private final Block bed;
+    private final BedEnterAction enterAction;
     private boolean willExplode;
     private @Nullable Component message;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message) {
+    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message, BedEnterAction enterAction) {
         super(player);
         this.failReason = failReason;
         this.bed = bed;
+        this.enterAction = enterAction;
         this.willExplode = willExplode;
         this.message = message;
     }
 
+    /**
+     * @deprecated This enum has been replaced with a system that better
+     * represents how beds work. See {@link #enterAction}
+     */
+    @ApiStatus.Obsolete(since = "1.21.11")
     public FailReason getFailReason() {
         return this.failReason;
+    }
+
+    /**
+     * This describes the default outcome of this event.
+     *
+     * @return the action representing the default outcome of this event
+     */
+    @ApiStatus.Experimental
+    public BedEnterAction enterAction() {
+        return this.enterAction;
     }
 
     public Block getBed() {
@@ -80,14 +98,17 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         return HANDLER_LIST;
     }
 
+    /**
+     * @deprecated Enums no longer represents reliably how beds work and fail. This has been
+     * replaced with {@link BedEnterAction} that better fits the new beds
+     */
+    @ApiStatus.Obsolete(since = "1.21.11")
     public enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering
-         * the bed is prevented and the bed explodes.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
+         * the bed is prevented but the bed doesn't explode. When the bed
+         * explodes, {@link #EXPLOSION} is used instead.
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_HERE,
         /**
          * Entering the bed is prevented due to it not being night nor
@@ -96,10 +117,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
          * If the event is forcefully allowed during daytime, the player will
          * enter the bed (and set its bed location), but might get immediately
          * thrown out again.
-         *
-         * @deprecated TODO - snapshot - no longer exists in vanilla
          */
-        @Deprecated(since = "1.21.11")
         NOT_POSSIBLE_NOW,
         /**
          * Entering the bed is prevented due to the player being too far away.
@@ -116,6 +134,10 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
         /**
          * Entering the bed is prevented due to there being monsters nearby.
          */
-        NOT_SAFE
+        NOT_SAFE,
+        /**
+         * Entering the bed is prevented and the bed explodes.
+         */
+        EXPLOSION
     }
 }
