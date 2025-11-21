@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
@@ -308,16 +309,16 @@ public class CraftEventFactory {
             failReason = PlayerBedFailEnterEvent.FailReason.EXPLOSION;
             enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
             errorMessage = bedRule.errorMessage().orElse(null);
-        } else if (sleepingProblem.message() != null) {
-            if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
-                failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
-            } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
-                failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW;
-            }
+        } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
+            failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_HERE;
+        } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
+            failReason = PlayerBedFailEnterEvent.FailReason.NOT_POSSIBLE_NOW;
         }
 
         if (failReason == null) {
-            throw new IllegalArgumentException(sleepingProblem.toString());
+            // Don't know what the fail reason is, defaulting to OTHER to prevent server crashes
+            failReason = PlayerBedFailEnterEvent.FailReason.OTHER_PROBLEM;
+            enterProblem = BedEnterProblem.OTHER;
         }
 
         return com.mojang.datafixers.util.Pair.of(
@@ -384,16 +385,16 @@ public class CraftEventFactory {
                 enterResult = BedEnterResult.EXPLOSION;
                 enterProblem = io.papermc.paper.block.bed.BedEnterProblem.EXPLOSION;
                 errorMessage = bedRule.errorMessage().orElse(null);
-            } else if (sleepingProblem.message() != null) {
-                if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
-                    enterResult = BedEnterResult.NOT_POSSIBLE_HERE;
-                } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
-                    enterResult = BedEnterResult.NOT_POSSIBLE_NOW;
-                }
+            } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.NEVER) {
+                enterResult = BedEnterResult.NOT_POSSIBLE_HERE;
+            } else if (bedRule.canSleep() == net.minecraft.world.attribute.BedRule.Rule.WHEN_DARK) {
+                enterResult = BedEnterResult.NOT_POSSIBLE_NOW;
             }
 
             if (enterResult == null) {
-                throw new IllegalStateException(sleepingProblem.toString());
+                // Don't know what the fail reason is, defaulting to OTHER to prevent server crashes
+                enterResult = BedEnterResult.OTHER_PROBLEM;
+                enterProblem = BedEnterProblem.OTHER;
             }
 
             return com.mojang.datafixers.util.Pair.of(

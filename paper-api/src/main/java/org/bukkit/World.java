@@ -43,6 +43,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2810,7 +2811,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Due to 1.21.11 beds changes, a boolean no longer
      * represents if they work. There is no replacement API yet
      */
-    @Deprecated(since = "1.21.11")
+    @ApiStatus.Obsolete(since = "1.21.11")
     public boolean isBedWorks();
 
     /**

@@ -16,7 +16,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final @Deprecated(since = "1.21.11") FailReason failReason;
+    private final FailReason failReason;
     private final Block bed;
     private final BedEnterAction enterAction;
     private boolean willExplode;
@@ -38,7 +38,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      * @deprecated This enum has been replaced with a system that better
      * represents how beds work. See {@link #enterAction}
      */
-    @Deprecated(since = "1.21.11")
+    @ApiStatus.Obsolete(since = "1.21.11")
     public FailReason getFailReason() {
         return this.failReason;
     }
@@ -102,7 +102,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      * @deprecated Enums no longer represents reliably how beds work and fail. This has been
      * replaced with {@link BedEnterAction} that better fits the new beds
      */
-    @Deprecated(since = "1.21.11")
+    @ApiStatus.Obsolete(since = "1.21.11")
     public enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering

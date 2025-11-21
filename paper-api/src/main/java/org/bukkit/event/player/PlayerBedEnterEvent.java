@@ -17,7 +17,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Block bed;
-    private final @Deprecated(since = "1.21.11") BedEnterResult bedEnterResult;
+    private final BedEnterResult bedEnterResult;
     private final @NotNull BedEnterAction enterAction;
     private Result useBed = Result.DEFAULT;
 
@@ -47,7 +47,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * represents how beds work. See {@link #enterAction}
      */
     @NotNull
-    @Deprecated(since = "1.21.11")
+    @ApiStatus.Obsolete(since = "1.21.11")
     public BedEnterResult getBedEnterResult() {
         return this.bedEnterResult;
     }
@@ -139,7 +139,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @deprecated Enums no longer represents reliably how beds work and fail. This has been
      * replaced with {@link BedEnterAction} that better fits the new beds
      */
-    @Deprecated(since = "1.21.11")
+    @ApiStatus.Obsolete(since = "1.21.11")
     public enum BedEnterResult {
         /**
          * The player will enter the bed.
