@@ -1741,11 +1741,17 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_BABY_NAUTILUS_AMBIENT = getSound("entity.baby_nautilus.ambient");
 
+    Sound ENTITY_BABY_NAUTILUS_AMBIENT_LAND = getSound("entity.baby_nautilus.ambient_land");
+
     Sound ENTITY_BABY_NAUTILUS_DEATH = getSound("entity.baby_nautilus.death");
+
+    Sound ENTITY_BABY_NAUTILUS_DEATH_LAND = getSound("entity.baby_nautilus.death_land");
 
     Sound ENTITY_BABY_NAUTILUS_EAT = getSound("entity.baby_nautilus.eat");
 
     Sound ENTITY_BABY_NAUTILUS_HURT = getSound("entity.baby_nautilus.hurt");
+
+    Sound ENTITY_BABY_NAUTILUS_HURT_LAND = getSound("entity.baby_nautilus.hurt_land");
 
     Sound ENTITY_BABY_NAUTILUS_SWIM = getSound("entity.baby_nautilus.swim");
 
@@ -2473,15 +2479,25 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_NAUTILUS_AMBIENT = getSound("entity.nautilus.ambient");
 
+    Sound ENTITY_NAUTILUS_AMBIENT_LAND = getSound("entity.nautilus.ambient_land");
+
     Sound ENTITY_NAUTILUS_DASH = getSound("entity.nautilus.dash");
+
+    Sound ENTITY_NAUTILUS_DASH_LAND = getSound("entity.nautilus.dash_land");
 
     Sound ENTITY_NAUTILUS_DASH_READY = getSound("entity.nautilus.dash_ready");
 
+    Sound ENTITY_NAUTILUS_DASH_READY_LAND = getSound("entity.nautilus.dash_ready_land");
+
     Sound ENTITY_NAUTILUS_DEATH = getSound("entity.nautilus.death");
+
+    Sound ENTITY_NAUTILUS_DEATH_LAND = getSound("entity.nautilus.death_land");
 
     Sound ENTITY_NAUTILUS_EAT = getSound("entity.nautilus.eat");
 
     Sound ENTITY_NAUTILUS_HURT = getSound("entity.nautilus.hurt");
+
+    Sound ENTITY_NAUTILUS_HURT_LAND = getSound("entity.nautilus.hurt_land");
 
     Sound ENTITY_NAUTILUS_RIDING = getSound("entity.nautilus.riding");
 
@@ -3273,15 +3289,25 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT = getSound("entity.zombie_nautilus.ambient");
 
+    Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT_LAND = getSound("entity.zombie_nautilus.ambient_land");
+
     Sound ENTITY_ZOMBIE_NAUTILUS_DASH = getSound("entity.zombie_nautilus.dash");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_LAND = getSound("entity.zombie_nautilus.dash_land");
 
     Sound ENTITY_ZOMBIE_NAUTILUS_DASH_READY = getSound("entity.zombie_nautilus.dash_ready");
 
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_READY_LAND = getSound("entity.zombie_nautilus.dash_ready_land");
+
     Sound ENTITY_ZOMBIE_NAUTILUS_DEATH = getSound("entity.zombie_nautilus.death");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DEATH_LAND = getSound("entity.zombie_nautilus.death_land");
 
     Sound ENTITY_ZOMBIE_NAUTILUS_EAT = getSound("entity.zombie_nautilus.eat");
 
     Sound ENTITY_ZOMBIE_NAUTILUS_HURT = getSound("entity.zombie_nautilus.hurt");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_HURT_LAND = getSound("entity.zombie_nautilus.hurt_land");
 
     Sound ENTITY_ZOMBIE_NAUTILUS_SWIM = getSound("entity.zombie_nautilus.swim");
 

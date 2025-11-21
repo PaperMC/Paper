@@ -26,6 +26,13 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class DataComponentTypeKeys {
     /**
+     * {@code minecraft:attack_range}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> ATTACK_RANGE = create(key("attack_range"));
+
+    /**
      * {@code minecraft:attribute_modifiers}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

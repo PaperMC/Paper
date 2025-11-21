@@ -6039,11 +6039,25 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_AMBIENT = create(key("entity.baby_nautilus.ambient"));
 
     /**
+     * {@code minecraft:entity.baby_nautilus.ambient_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_AMBIENT_LAND = create(key("entity.baby_nautilus.ambient_land"));
+
+    /**
      * {@code minecraft:entity.baby_nautilus.death}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_DEATH = create(key("entity.baby_nautilus.death"));
+
+    /**
+     * {@code minecraft:entity.baby_nautilus.death_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_DEATH_LAND = create(key("entity.baby_nautilus.death_land"));
 
     /**
      * {@code minecraft:entity.baby_nautilus.eat}
@@ -6058,6 +6072,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_HURT = create(key("entity.baby_nautilus.hurt"));
+
+    /**
+     * {@code minecraft:entity.baby_nautilus.hurt_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_BABY_NAUTILUS_HURT_LAND = create(key("entity.baby_nautilus.hurt_land"));
 
     /**
      * {@code minecraft:entity.baby_nautilus.swim}
@@ -8601,11 +8622,25 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_NAUTILUS_AMBIENT = create(key("entity.nautilus.ambient"));
 
     /**
+     * {@code minecraft:entity.nautilus.ambient_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_NAUTILUS_AMBIENT_LAND = create(key("entity.nautilus.ambient_land"));
+
+    /**
      * {@code minecraft:entity.nautilus.dash}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_NAUTILUS_DASH = create(key("entity.nautilus.dash"));
+
+    /**
+     * {@code minecraft:entity.nautilus.dash_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_NAUTILUS_DASH_LAND = create(key("entity.nautilus.dash_land"));
 
     /**
      * {@code minecraft:entity.nautilus.dash_ready}
@@ -8615,11 +8650,25 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_NAUTILUS_DASH_READY = create(key("entity.nautilus.dash_ready"));
 
     /**
+     * {@code minecraft:entity.nautilus.dash_ready_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_NAUTILUS_DASH_READY_LAND = create(key("entity.nautilus.dash_ready_land"));
+
+    /**
      * {@code minecraft:entity.nautilus.death}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_NAUTILUS_DEATH = create(key("entity.nautilus.death"));
+
+    /**
+     * {@code minecraft:entity.nautilus.death_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_NAUTILUS_DEATH_LAND = create(key("entity.nautilus.death_land"));
 
     /**
      * {@code minecraft:entity.nautilus.eat}
@@ -8634,6 +8683,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_NAUTILUS_HURT = create(key("entity.nautilus.hurt"));
+
+    /**
+     * {@code minecraft:entity.nautilus.hurt_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_NAUTILUS_HURT_LAND = create(key("entity.nautilus.hurt_land"));
 
     /**
      * {@code minecraft:entity.nautilus.riding}
@@ -11401,11 +11457,25 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_AMBIENT = create(key("entity.zombie_nautilus.ambient"));
 
     /**
+     * {@code minecraft:entity.zombie_nautilus.ambient_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_AMBIENT_LAND = create(key("entity.zombie_nautilus.ambient_land"));
+
+    /**
      * {@code minecraft:entity.zombie_nautilus.dash}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DASH = create(key("entity.zombie_nautilus.dash"));
+
+    /**
+     * {@code minecraft:entity.zombie_nautilus.dash_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DASH_LAND = create(key("entity.zombie_nautilus.dash_land"));
 
     /**
      * {@code minecraft:entity.zombie_nautilus.dash_ready}
@@ -11415,11 +11485,25 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DASH_READY = create(key("entity.zombie_nautilus.dash_ready"));
 
     /**
+     * {@code minecraft:entity.zombie_nautilus.dash_ready_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DASH_READY_LAND = create(key("entity.zombie_nautilus.dash_ready_land"));
+
+    /**
      * {@code minecraft:entity.zombie_nautilus.death}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DEATH = create(key("entity.zombie_nautilus.death"));
+
+    /**
+     * {@code minecraft:entity.zombie_nautilus.death_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_DEATH_LAND = create(key("entity.zombie_nautilus.death_land"));
 
     /**
      * {@code minecraft:entity.zombie_nautilus.eat}
@@ -11434,6 +11518,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_HURT = create(key("entity.zombie_nautilus.hurt"));
+
+    /**
+     * {@code minecraft:entity.zombie_nautilus.hurt_land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_ZOMBIE_NAUTILUS_HURT_LAND = create(key("entity.zombie_nautilus.hurt_land"));
 
     /**
      * {@code minecraft:entity.zombie_nautilus.swim}
