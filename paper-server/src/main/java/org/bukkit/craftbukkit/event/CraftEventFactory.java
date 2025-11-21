@@ -2267,8 +2267,7 @@ public class CraftEventFactory {
                 return false;
             }
         }
-        // Shouldn't happen
-        return false;
+        return true;
     }
 
     public static boolean sendChestLockedNotifications(Vec3 pos) {
