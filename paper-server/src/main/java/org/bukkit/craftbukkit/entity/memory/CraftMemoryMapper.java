@@ -14,7 +14,7 @@ public final class CraftMemoryMapper {
         if (object instanceof GlobalPos globalPos) {
             return CraftLocation.fromGlobalPos(globalPos);
         } else if (object instanceof SpearAttack.SpearStatus spearStatus) {
-            return CraftSpearAttack.statusFromNms(spearStatus);
+            return CraftSpearAttack.fromNms(spearStatus);
         } else if (object instanceof Long longValue) {
             return longValue;
         } else if (object instanceof UUID uuid) {
@@ -32,7 +32,7 @@ public final class CraftMemoryMapper {
         if (object == null) {
             return null;
         } else if (object instanceof org.bukkit.entity.memory.SpearAttack.SpearStatus spearStatus) {
-            return CraftSpearAttack.statusFromBukkit(spearStatus);
+            return CraftSpearAttack.toNms(spearStatus);
         } else if (object instanceof Location location) {
             return CraftLocation.toGlobalPos(location);
         } else if (object instanceof Long longValue) {
