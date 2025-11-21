@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
@@ -33,6 +34,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.LockCode;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -64,6 +66,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.gamerules.GameRule;
@@ -2238,5 +2241,48 @@ public class CraftEventFactory {
 
     public record GameRuleSetResult<T>(T value, boolean cancelled) {
 
+    }
+
+    private static BlockLockCheckEvent LAST_BLOCK_LOCK_CHECK_EVENT = null;
+
+    public static boolean callBlockLockCheckEvent(
+        BlockEntity blockEntity,
+        LockCode code,
+        Component displayName,
+        net.minecraft.world.entity.player.Player p
+    ) {
+        if (p instanceof net.minecraft.server.level.ServerPlayer player
+            && blockEntity != null
+            && blockEntity.getLevel() != null
+            && blockEntity.getLevel().getBlockEntity(blockEntity.getBlockPos()) == blockEntity) {
+            final org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos());
+            net.kyori.adventure.text.Component lockedMessage = net.kyori.adventure.text.Component.translatable("container.isLocked", io.papermc.paper.adventure.PaperAdventure.asAdventure(displayName));
+            net.kyori.adventure.sound.Sound lockedSound = net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.BLOCK_CHEST_LOCKED, net.kyori.adventure.sound.Sound.Source.BLOCK, 1.0F, 1.0F);
+            final io.papermc.paper.event.block.BlockLockCheckEvent event = new io.papermc.paper.event.block.BlockLockCheckEvent(block, player.getBukkitEntity(), lockedMessage, lockedSound);
+            event.callEvent();
+            if (event.getResult() == org.bukkit.event.Event.Result.ALLOW) {
+                return true;
+            } else if (event.getResult() == org.bukkit.event.Event.Result.DENY || !code.canUnlock(player, event.isUsingCustomKeyItemStack() ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getKeyItem()) : player.getMainHandItem())) {
+                LAST_BLOCK_LOCK_CHECK_EVENT = event;
+                return false;
+            }
+        }
+        // Shouldn't happen
+        return false;
+    }
+
+    public static boolean sendChestLockedNotifications(Vec3 pos) {
+        if (LAST_BLOCK_LOCK_CHECK_EVENT != null) {
+            final io.papermc.paper.event.block.BlockLockCheckEvent event = LAST_BLOCK_LOCK_CHECK_EVENT;
+            LAST_BLOCK_LOCK_CHECK_EVENT = null;
+            if (event.getLockedMessage() != null) {
+                event.getPlayer().sendActionBar(event.getLockedMessage());
+            }
+            if (event.getLockedSound() != null) {
+                event.getPlayer().getWorld().playSound(event.getLockedSound(), pos.x(), pos.y(), pos.z());
+            }
+            return true;
+        }
+        return false;
     }
 }
