@@ -41,7 +41,7 @@ paperweight {
     )
 
     updatingMinecraft {
-        oldPaperCommit = "c82b438b5b4ea0b230439b8e690e34708cd11ab3"
+        // oldPaperCommit = "c82b438b5b4ea0b230439b8e690e34708cd11ab3"
     }
 }
 
