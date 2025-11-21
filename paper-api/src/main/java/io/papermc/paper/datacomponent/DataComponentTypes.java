@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent;
 
+import io.papermc.paper.datacomponent.item.AttackRange;
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
@@ -222,6 +223,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<BlocksAttacks> BLOCKS_ATTACKS = valued("blocks_attacks");
     public static final DataComponentType.Valued<PiercingWeapon> PIERCING_WEAPON = valued("piercing_weapon");
     public static final DataComponentType.Valued<KineticWeapon> KINETIC_WEAPON = valued("kinetic_weapon");
+    public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
     public static final DataComponentType.Valued<SwingAnimation> SWING_ANIMATION = valued("swing_animation");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
