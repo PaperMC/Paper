@@ -22,12 +22,6 @@ public interface PiercingWeapon {
         return ItemComponentTypesBridge.bridge().piercingWeapon();
     }
 
-    @Range(from = 0, to = 128) float minReach();
-
-    @Range(from = 0, to = 128) float maxReach();
-
-    @Range(from = 0, to = 1) float hitboxMargin();
-
     boolean dealsKnockback();
 
     boolean dismounts();
@@ -42,15 +36,6 @@ public interface PiercingWeapon {
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(@Range(from = 0, to = 128) float minReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(@Range(from = 0, to = 128) float maxReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder dealsKnockback(boolean dealsKnockback);

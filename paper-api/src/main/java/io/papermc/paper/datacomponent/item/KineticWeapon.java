@@ -33,15 +33,6 @@ public interface KineticWeapon {
     }
 
     @Contract(pure = true)
-    @Range(from = 0, to = 128) float minReach();
-
-    @Contract(pure = true)
-    @Range(from = 0, to = 128) float maxReach();
-
-    @Contract(pure = true)
-    @Range(from = 0, to = 1) float hitboxMargin();
-
-    @Contract(pure = true)
     @NonNegative int contactCooldownTicks();
 
     @Contract(pure = true)
@@ -84,15 +75,6 @@ public interface KineticWeapon {
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<KineticWeapon> {
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder minReach(@Range(from = 0, to = 128) float minReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder maxReach(@Range(from = 0, to = 128) float maxReach);
-
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder contactCooldownTicks(@NonNegative int ticks);

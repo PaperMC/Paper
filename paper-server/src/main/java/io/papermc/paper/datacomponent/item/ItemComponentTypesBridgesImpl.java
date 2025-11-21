@@ -273,6 +273,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public AttackRange.Builder attackRange() {
+        return new PaperAttackRange.BuilderImpl();
+    }
+
+    @Override
     public SwingAnimation.Builder swingAnimation() {
         return new PaperSwingAnimation.BuilderImpl();
     }
