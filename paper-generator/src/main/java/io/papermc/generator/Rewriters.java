@@ -79,6 +79,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.memory.MemoryKey;
+import org.bukkit.entity.memory.SpearAttack;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemRarity;
@@ -228,7 +229,8 @@ public final class Rewriters {
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
-            .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());
+            .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter())
+            .register("SpearStatus", SpearAttack.SpearStatus.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.behavior.SpearAttack.SpearStatus.class));
         RegistryBootstrapper.bootstrapApi(sourceSet);
     }
 
