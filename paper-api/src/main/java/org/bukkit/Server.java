@@ -836,7 +836,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <p>
      * Note that world borders created by the server will not respect any world
      * scaling effects (i.e. coordinates are not divided by 8 in the nether)
-     * and not make damage if the player is out of bounds.
+     * and will not deal damage to players outside their bounds.
      *
      * @return the created world border instance
      *
