@@ -66,7 +66,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * This controls the action to take with the bed that was clicked on.
      * <p>
      * In case of {@link Result#DEFAULT}, the default outcome is described by
-     * {@link #getBedEnterResult()}.
+     * {@link #enterAction()}.
      *
      * @return the action to take with the interacted bed
      * @see #setUseBed(Result)
@@ -80,13 +80,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * Sets the action to take with the interacted bed.
      * <p>
      * {@link Result#ALLOW} will result in the player sleeping, regardless of
-     * the default outcome described by {@link #getBedEnterResult()}.
+     * the default outcome described by {@link #enterAction()}.
      * <br>
      * {@link Result#DENY} will prevent the player from sleeping. This has the
      * same effect as canceling the event via {@link #setCancelled(boolean)}.
      * <br>
      * {@link Result#DEFAULT} will result in the outcome described by
-     * {@link #getBedEnterResult()}.
+     * {@link #enterAction()}.
      *
      * @param useBed the action to take with the interacted bed
      * @see #useBed()
@@ -104,7 +104,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * <p>
      * For backwards compatibility reasons this also returns {@code true} if
      * {@link #useBed()} is {@link Result#DEFAULT} and the
-     * {@link #getBedEnterResult() default action} is to prevent bed entering.
+     * {@link #enterAction() default action} is to prevent bed entering.
      *
      * @return boolean cancellation state
      */
@@ -136,6 +136,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Represents the default possible outcomes of this event.
+     *
      * @deprecated Enums no longer represents reliably how beds work and fail. This has been
      * replaced with {@link BedEnterAction} that better fits the new beds
      */

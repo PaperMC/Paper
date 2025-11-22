@@ -22,20 +22,16 @@ public interface AttackRange {
     }
 
     @Contract(pure = true)
-    @Range(from = 0, to = 64)
-    float minReach();
+    @Range(from = 0, to = 64) float minReach();
 
     @Contract(pure = true)
-    @Range(from = 0, to = 64)
-    float maxReach();
+    @Range(from = 0, to = 64) float maxReach();
 
     @Contract(pure = true)
-    @Range(from = 0, to = 1)
-    float hitboxMargin();
+    @Range(from = 0, to = 1) float hitboxMargin();
 
     @Contract(pure = true)
-    @Range(from = 0, to = 2)
-    float mobFactor();
+    @Range(from = 0, to = 2) float mobFactor();
 
     /**
      * Builder for {@link AttackRange}.

@@ -4,11 +4,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * @hidden
- */
 @ApiStatus.Internal
-public interface BedEnterActionBridge {
+interface BedEnterActionBridge {
 
     static BedEnterActionBridge instance() {
         final class Holder {
