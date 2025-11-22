@@ -64,10 +64,32 @@
                  this.access.execute((level, pos) -> {
                      IdMap<Holder<Enchantment>> holderIdMap = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
                      int i1 = 0;
-@@ -119,6 +_,42 @@
+@@ -97,27 +_,42 @@
                          }
                      }
  
+-                    this.random.setSeed(this.enchantmentSeed.get());
+-
+-                    for (int i2 = 0; i2 < 3; i2++) {
+-                        this.costs[i2] = EnchantmentHelper.getEnchantmentCost(this.random, i2, i1, item);
+-                        this.enchantClue[i2] = -1;
+-                        this.levelClue[i2] = -1;
+-                        if (this.costs[i2] < i2 + 1) {
+-                            this.costs[i2] = 0;
+-                        }
+-                    }
+-
+-                    for (int i2x = 0; i2x < 3; i2x++) {
+-                        if (this.costs[i2x] > 0) {
+-                            List<EnchantmentInstance> enchantmentList = this.getEnchantmentList(level.registryAccess(), item, i2x, this.costs[i2x]);
+-                            if (enchantmentList != null && !enchantmentList.isEmpty()) {
+-                                EnchantmentInstance enchantmentInstance = enchantmentList.get(this.random.nextInt(enchantmentList.size()));
+-                                this.enchantClue[i2x] = holderIdMap.getId(enchantmentInstance.enchantment());
+-                                this.levelClue[i2x] = enchantmentInstance.level();
+-                            }
+-                        }
+-                    }
++                    fillEnchantmentOffers(this.random, this.enchantmentSeed.get(), i1, item, level.registryAccess(), this.costs, this.enchantClue, this.levelClue); // Paper - extracted into net.minecraft.world.inventory.EnchantmentMenu.fillEnchantmentOffers
 +                    // CraftBukkit start
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack craftItemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(item);
 +                    org.bukkit.enchantments.EnchantmentOffer[] offers = new org.bukkit.enchantments.EnchantmentOffer[3];
@@ -103,10 +125,53 @@
 +                        }
 +                    }
 +                    // CraftBukkit end
-+
+ 
                      this.broadcastChanges();
                  });
-             } else {
+@@ -131,6 +_,43 @@
+         }
+     }
+ 
++    // Paper - extract offer generation
++    // Extracted over modifications in place given nearly every line has diff to account for non-instance fields for
++    // cost, enchantment and level clues.
++    public static void fillEnchantmentOffers(
++        final RandomSource random,
++        final int seed,
++        final int i1,
++        final ItemStack item,
++        final RegistryAccess registryAccess,
++        final int[] costs,
++        final int[] enchantClue,
++        final int[] levelClue
++    ) {
++        random.setSeed(seed);
++
++        for (int i2 = 0; i2 < costs.length; i2++) {
++            costs[i2] = EnchantmentHelper.getEnchantmentCost(random, i2, i1, item);
++            enchantClue[i2] = -1;
++            levelClue[i2] = -1;
++            if (costs[i2] < i2 + 1) {
++                costs[i2] = 0;
++            }
++        }
++
++        for (int i2x = 0; i2x < costs.length; i2x++) {
++            if (costs[i2x] > 0) {
++                List<EnchantmentInstance> enchantmentList = getEnchantmentList(registryAccess, item, i2x, costs[i2x], random, seed);
++                if (enchantmentList != null && !enchantmentList.isEmpty()) {
++                    EnchantmentInstance enchantmentInstance = enchantmentList.get(random.nextInt(enchantmentList.size()));
++                    enchantClue[i2x] = registryAccess.lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap().getId(enchantmentInstance.enchantment());
++                    levelClue[i2x] = enchantmentInstance.level();
++                }
++            }
++        }
++    }
++    // Paper - extract offer generation
++
+     @Override
+     public boolean clickMenuButton(Player player, int id) {
+         if (id >= 0 && id < this.costs.length) {
 @@ -145,19 +_,52 @@
                  return false;
              } else {
@@ -171,6 +236,29 @@
                          item1.consume(i, player);
                          if (item1.isEmpty()) {
                              this.enchantSlots.setItem(1, ItemStack.EMPTY);
+@@ -183,14 +_,19 @@
+     }
+ 
+     private List<EnchantmentInstance> getEnchantmentList(RegistryAccess registryAccess, ItemStack stack, int slot, int cost) {
+-        this.random.setSeed(this.enchantmentSeed.get() + slot);
++    // Paper start - make static and public
++        return getEnchantmentList(registryAccess, stack, slot, cost, this.random, this.enchantmentSeed.get());
++    }
++    public static List<EnchantmentInstance> getEnchantmentList(RegistryAccess registryAccess, ItemStack stack, int slot, int cost, RandomSource random, int seed) {
++    // Paper end - make static and public
++        random.setSeed(seed + slot); // Paper - make static and public
+         Optional<HolderSet.Named<Enchantment>> optional = registryAccess.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
+         if (optional.isEmpty()) {
+             return List.of();
+         } else {
+-            List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(this.random, stack, cost, optional.get().stream());
++            List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(random, stack, cost, optional.get().stream()); // Paper - make static and public
+             if (stack.is(Items.BOOK) && list.size() > 1) {
+-                list.remove(this.random.nextInt(list.size()));
++                list.remove(random.nextInt(list.size())); // Paper start - make static and public
+             }
+ 
+             return list;
 @@ -202,6 +_,12 @@
          return item.isEmpty() ? 0 : item.getCount();
      }

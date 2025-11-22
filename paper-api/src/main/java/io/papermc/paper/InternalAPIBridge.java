@@ -5,18 +5,19 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -97,5 +98,22 @@ public interface InternalAPIBridge {
     SkinParts.Mutable allSkinParts();
 
     Component defaultMannequinDescription();
+
+    /**
+     * Rolls a new set of enchantment offers based on a target item stack, a seed and a bookshelf count.
+     *
+     * @param targetStack    the itemstack for which the enchantment offers are rolled.
+     * @param seed           the seed used for random selection of enchantments.
+     *                       Mirrors {@link org.bukkit.inventory.view.EnchantmentView#getEnchantmentSeed()}.
+     * @param bookshelfCount the number of virtual bookshelves to consider when rolling the enchantments.
+     * @param offerAmount    the amount of enchantment offers to roll.
+     * @return an array of enchantment offers with size {@code offerAmount}.
+     */
+    @Nullable EnchantmentOffer[] rollEnchantmentOffers(
+        final ItemStack targetStack,
+        final int seed,
+        final int bookshelfCount,
+        final int offerAmount
+    );
 }
 
