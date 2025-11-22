@@ -1367,7 +1367,7 @@
          this.setTicksFrozen(0);
      }
  
-@@ -2720,11 +_,43 @@
+@@ -2720,11 +_,42 @@
  
      public void thunderHit(ServerLevel level, LightningBolt lightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -1386,20 +1386,19 @@
 +            pluginManager.callEvent(entityCombustEvent);
 +            if (!entityCombustEvent.isCancelled()) {
 +                this.igniteForSeconds(entityCombustEvent.getDuration(), false);
-+            // Paper start - fix EntityCombustEvent cancellation
++                // Paper start - fix EntityCombustEvent cancellation
 +            } else {
 +                this.setRemainingFireTicks(this.remainingFireTicks - 1);
-+            // Paper end - fix EntityCombustEvent cancellation
++                // Paper end - fix EntityCombustEvent cancellation
 +            }
 +            // CraftBukkit end
 +        }
 +
 +        // CraftBukkit start
++        DamageSource damageSource = this.damageSources().lightningBolt().eventEntityDamager(lightning);
 +        if (thisBukkitEntity instanceof org.bukkit.entity.Hanging) {
-+            org.bukkit.event.hanging.HangingBreakByEntityEvent hangingEvent = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) thisBukkitEntity, stormBukkitEntity);
-+            pluginManager.callEvent(hangingEvent);
-+
-+            if (hangingEvent.isCancelled()) {
++            org.bukkit.event.hanging.HangingBreakByEntityEvent hangingEvent = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) thisBukkitEntity, stormBukkitEntity, new org.bukkit.craftbukkit.damage.CraftDamageSource(damageSource));
++            if (!hangingEvent.callEvent()) {
 +                return;
 +            }
 +        }
@@ -1408,7 +1407,7 @@
 +            return;
 +        }
 +
-+        if (!this.hurtServer(level, this.damageSources().lightningBolt().eventEntityDamager(lightning), 5.0F)) { // Paper - fix DamageSource API
++        if (!this.hurtServer(level, damageSource, 5.0F)) { // Paper - fix DamageSource API
 +            return;
 +        }
 +        // CraftBukkit end
