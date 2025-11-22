@@ -324,7 +324,7 @@ public class CraftEventFactory {
      * Entity Harvest Block Event
      */
     public static EntityHarvestBlockEvent callEntityHarvestBlockEvent(Level world, BlockPos blockposition, net.minecraft.world.entity.Entity who, List<ItemStack> itemsToHarvest) {
-        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).map(org.bukkit.inventory.ItemStack::clone).collect(Collectors.toList());
         org.bukkit.entity.Entity entity = who.getBukkitEntity();
         EntityHarvestBlockEvent entityHarvestBlockEvent = new EntityHarvestBlockEvent(entity, CraftBlock.at(world, blockposition), bukkitItemsToHarvest);
         entityHarvestBlockEvent.callEvent();

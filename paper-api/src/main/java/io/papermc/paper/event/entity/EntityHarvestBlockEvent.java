@@ -8,6 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,7 +30,7 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
 
     private boolean cancel = false;
     private final Block harvestedBlock;
-    private final List<ItemStack> itemsHarvested;
+    private List<ItemStack> itemsHarvested;
 
     @ApiStatus.Internal
     public EntityHarvestBlockEvent(final Entity entity, final Block harvestedBlock, final List<ItemStack> itemsHarvested) {
@@ -44,24 +45,34 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
      * @return The block that is being harvested
      */
     public Block getHarvestedBlock() {
-        return harvestedBlock;
+        return this.harvestedBlock;
     }
 
     /**
-     * Gets a list of items that are being harvested from this block.
+     * Gets an immutable list of items that are being harvested from this block.
      *
-     * @return A mutable list of items that are being harvested from this block
+     * @return An immutable list of items that are being harvested from this block
      * @apiNote {@link org.bukkit.entity.Fox} has a behavior where, if it does not have
      * an item in its mouth ({@link org.bukkit.inventory.EquipmentSlot#HAND}), it will
      * take one unit from the first ItemStack in this harvest and put it there.
+     * @apiNote This list contains copy of the items; you need to set the items to the list to change them.
      */
     public List<ItemStack> getItemsHarvested() {
-        return itemsHarvested;
+        return Collections.unmodifiableList(this.itemsHarvested);
+    }
+
+    /**
+     * Sets the items that are being harvested from this block.
+     *
+     * @param itemsHarvested A list of items that are being harvested from this block
+     */
+    public void setItemsHarvested(List<ItemStack> itemsHarvested) {
+        this.itemsHarvested = itemsHarvested;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancel;
     }
 
     @Override
