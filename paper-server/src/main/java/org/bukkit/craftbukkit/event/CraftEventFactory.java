@@ -10,6 +10,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.EntityHarvestBlockEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -319,10 +320,21 @@ public class CraftEventFactory {
         return entityEnterLoveModeEvent;
     }
 
+    /**
+     * Entity Harvest Block Event
+     */
+    public static EntityHarvestBlockEvent callEntityHarvestBlockEvent(Level world, BlockPos blockposition, net.minecraft.world.entity.Entity who, List<ItemStack> itemsToHarvest) {
+        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+        org.bukkit.entity.Entity entity = who.getBukkitEntity();
+        EntityHarvestBlockEvent entityHarvestBlockEvent = new EntityHarvestBlockEvent(entity, CraftBlock.at(world, blockposition), bukkitItemsToHarvest);
+        entityHarvestBlockEvent.callEvent();
+        return entityHarvestBlockEvent;
+    }
+
     public static PlayerHarvestBlockEvent callPlayerHarvestBlockEvent(Level world, BlockPos pos, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<ItemStack> itemsToHarvest) {
-        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = new ArrayList<>(itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
+        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent((Player) player.getBukkitEntity(), CraftBlock.at(world, pos), CraftEquipmentSlot.getHand(hand), bukkitItemsToHarvest);
-        Bukkit.getPluginManager().callEvent(playerHarvestBlockEvent);
+        playerHarvestBlockEvent.callEvent();
         return playerHarvestBlockEvent;
     }
 
