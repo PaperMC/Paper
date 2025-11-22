@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -79,39 +_,71 @@
+@@ -80,39 +_,71 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (level instanceof ServerLevel serverLevel) {
              BlockPos blockPos = pos.immutable();
@@ -37,11 +37,11 @@
      }
  
      public static void lowerFillLevel(BlockState state, Level level, BlockPos pos) {
-+    // Paper start
++        // Paper start
 +        lowerFillLevel(state, level, pos, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.UNKNOWN);
 +    }
 +    public static boolean lowerFillLevel(BlockState state, Level level, BlockPos pos, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
-+    // Paper end
++        // Paper end
          int i = state.getValue(LEVEL) - 1;
          BlockState blockState = i == 0 ? Blocks.CAULDRON.defaultBlockState() : state.setValue(LEVEL, i);
 -        level.setBlockAndUpdate(pos, blockState);
@@ -61,8 +61,8 @@
 +        newState.setData(newBlock);
 +
 +        org.bukkit.event.block.CauldronLevelChangeEvent event = new org.bukkit.event.block.CauldronLevelChangeEvent(
-+                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
-+                (entity == null) ? null : entity.getBukkitEntity(), reason, newState
++            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++            (entity == null) ? null : entity.getBukkitEntity(), reason, newState
 +        );
 +        if (!event.callEvent()) {
 +            return false;
@@ -83,7 +83,7 @@
          }
      }
  
-@@ -129,8 +_,11 @@
+@@ -130,8 +_,11 @@
      protected void receiveStalactiteDrip(BlockState state, Level level, BlockPos pos, Fluid fluid) {
          if (!this.isFull(state)) {
              BlockState blockState = state.setValue(LEVEL, state.getValue(LEVEL) + 1);
@@ -94,6 +94,6 @@
 +                return;
 +            }
 +            // CraftBukkit end
-             level.levelEvent(1047, pos, 0);
+             level.levelEvent(LevelEvent.SOUND_DRIP_WATER_INTO_CAULDRON, pos, 0);
          }
      }

@@ -2,12 +2,11 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
-@ApiStatus.Experimental
+@GeneratedClass
 public final class ItemTypeTagKeys {
     /**
      * {@code #minecraft:acacia_logs}
@@ -82,6 +80,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> BANNERS = create(key("banners"));
+
+    /**
+     * {@code #minecraft:bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> BARS = create(key("bars"));
 
     /**
      * {@code #minecraft:beacon_payment_items}
@@ -182,6 +187,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CAT_FOOD = create(key("cat_food"));
 
     /**
+     * {@code #minecraft:chains}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CHAINS = create(key("chains"));
+
+    /**
      * {@code #minecraft:cherry_logs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -245,11 +257,39 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> COMPLETES_FIND_TREE_TUTORIAL = create(key("completes_find_tree_tutorial"));
 
     /**
+     * {@code #minecraft:copper}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> COPPER = create(key("copper"));
+
+    /**
+     * {@code #minecraft:copper_chests}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> COPPER_CHESTS = create(key("copper_chests"));
+
+    /**
+     * {@code #minecraft:copper_golem_statues}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> COPPER_GOLEM_STATUES = create(key("copper_golem_statues"));
+
+    /**
      * {@code #minecraft:copper_ores}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> COPPER_ORES = create(key("copper_ores"));
+
+    /**
+     * {@code #minecraft:copper_tool_materials}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> COPPER_TOOL_MATERIALS = create(key("copper_tool_materials"));
 
     /**
      * {@code #minecraft:cow_food}
@@ -686,6 +726,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> JUNGLE_LOGS = create(key("jungle_logs"));
 
     /**
+     * {@code #minecraft:lanterns}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> LANTERNS = create(key("lanterns"));
+
+    /**
      * {@code #minecraft:lapis_ores}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -712,6 +759,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> LEG_ARMOR = create(key("leg_armor"));
+
+    /**
+     * {@code #minecraft:lightning_rods}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> LIGHTNING_RODS = create(key("lightning_rods"));
 
     /**
      * {@code #minecraft:llama_food}
@@ -924,6 +978,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> REPAIRS_CHAIN_ARMOR = create(key("repairs_chain_armor"));
 
     /**
+     * {@code #minecraft:repairs_copper_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> REPAIRS_COPPER_ARMOR = create(key("repairs_copper_armor"));
+
+    /**
      * {@code #minecraft:repairs_diamond_armor}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -985,6 +1046,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> SAPLINGS = create(key("saplings"));
+
+    /**
+     * {@code #minecraft:shearable_from_copper_golem}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SHEARABLE_FROM_COPPER_GOLEM = create(key("shearable_from_copper_golem"));
 
     /**
      * {@code #minecraft:sheep_food}
@@ -1239,6 +1307,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> WOODEN_PRESSURE_PLATES = create(key("wooden_pressure_plates"));
 
     /**
+     * {@code #minecraft:wooden_shelves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> WOODEN_SHELVES = create(key("wooden_shelves"));
+
+    /**
      * {@code #minecraft:wooden_slabs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1289,7 +1364,6 @@ public final class ItemTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<ItemType> create(final Key key) {
         return TagKey.create(RegistryKey.ITEM, key);
     }

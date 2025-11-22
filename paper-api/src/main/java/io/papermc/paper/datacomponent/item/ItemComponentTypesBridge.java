@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 @ApiStatus.Internal
 interface ItemComponentTypesBridge {
 
-    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class).findFirst();
+    Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class, ItemComponentTypesBridge.class.getClassLoader()).findFirst();
 
     static ItemComponentTypesBridge bridge() {
         return BRIDGE.orElseThrow();
@@ -69,6 +69,10 @@ interface ItemComponentTypesBridge {
     Fireworks.Builder fireworks();
 
     ResolvableProfile.Builder resolvableProfile();
+
+    ResolvableProfile.SkinPatchBuilder skinPatch();
+
+    ResolvableProfile.SkinPatch emptySkinPatch();
 
     ResolvableProfile resolvableProfile(PlayerProfile profile);
 

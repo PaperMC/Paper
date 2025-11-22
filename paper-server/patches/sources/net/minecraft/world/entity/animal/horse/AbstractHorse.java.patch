@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-@@ -123,6 +_,7 @@
+@@ -124,6 +_,7 @@
      protected int gallopSoundCounter;
      @Nullable
      public EntityReference<LivingEntity> owner;
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
-     protected AbstractHorse(EntityType<? extends AbstractHorse> entityType, Level level) {
-         super(entityType, level);
-@@ -252,7 +_,7 @@
+     protected AbstractHorse(EntityType<? extends AbstractHorse> type, Level level) {
+         super(type, level);
+@@ -253,7 +_,7 @@
      }
  
      @Override
@@ -17,7 +17,7 @@
          return !this.isVehicle();
      }
  
-@@ -303,7 +_,7 @@
+@@ -304,7 +_,7 @@
  
      public void createInventory() {
          SimpleContainer simpleContainer = this.inventory;
@@ -26,7 +26,7 @@
          if (simpleContainer != null) {
              int min = Math.min(simpleContainer.getContainerSize(), this.inventory.getContainerSize());
  
-@@ -397,7 +_,7 @@
+@@ -398,7 +_,7 @@
      }
  
      public int getMaxTemper() {
@@ -35,18 +35,18 @@
      }
  
      @Override
-@@ -456,7 +_,7 @@
+@@ -457,7 +_,7 @@
              i1 = 5;
-             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+             if (!this.level().isClientSide() && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                  flag = true;
 -                this.setInLove(player);
 +                this.setInLove(player, stack.copy()); // Paper - Fix EntityBreedEvent copying
              }
          } else if (stack.is(Items.GOLDEN_APPLE) || stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
              f = 10.0F;
-@@ -464,12 +_,12 @@
+@@ -465,12 +_,12 @@
              i1 = 10;
-             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+             if (!this.level().isClientSide() && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                  flag = true;
 -                this.setInLove(player);
 +                this.setInLove(player, stack.copy()); // Paper - Fix EntityBreedEvent copying
@@ -59,7 +59,7 @@
              flag = true;
          }
  
-@@ -540,7 +_,7 @@
+@@ -541,7 +_,7 @@
          super.aiStep();
          if (this.level() instanceof ServerLevel serverLevel && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
@@ -68,7 +68,7 @@
              }
  
              if (this.canEatGrass()) {
-@@ -642,6 +_,16 @@
+@@ -643,6 +_,16 @@
          }
      }
  
@@ -85,7 +85,7 @@
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
          if (this.isVehicle() || this.isBaby()) {
-@@ -788,6 +_,7 @@
+@@ -795,6 +_,7 @@
          output.putInt("Temper", this.getTemper());
          output.putBoolean("Tame", this.isTamed());
          EntityReference.store(this.owner, output, "Owner");
@@ -93,7 +93,7 @@
      }
  
      @Override
-@@ -798,6 +_,7 @@
+@@ -805,6 +_,7 @@
          this.setTemper(input.getIntOr("Temper", 0));
          this.setTamed(input.getBooleanOr("Tame", false));
          this.owner = EntityReference.readWithOldOwnerConversion(input, "Owner", this.level());
@@ -101,7 +101,7 @@
      }
  
      @Override
-@@ -886,6 +_,17 @@
+@@ -893,6 +_,17 @@
  
      @Override
      public void handleStartJump(int jumpPower) {

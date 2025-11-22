@@ -2,12 +2,11 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.EntityType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,9 +23,15 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
-@ApiStatus.Experimental
+@GeneratedClass
 public final class EntityTypeTagKeys {
+    /**
+     * {@code #minecraft:accepts_iron_golem_gift}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> ACCEPTS_IRON_GOLEM_GIFT = create(key("accepts_iron_golem_gift"));
+
     /**
      * {@code #minecraft:aquatic}
      *
@@ -110,6 +115,20 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> CAN_WEAR_HORSE_ARMOR = create(key("can_wear_horse_armor"));
+
+    /**
+     * {@code #minecraft:candidate_for_iron_golem_gift}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANDIDATE_FOR_IRON_GOLEM_GIFT = create(key("candidate_for_iron_golem_gift"));
+
+    /**
+     * {@code #minecraft:cannot_be_pushed_onto_boats}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANNOT_BE_PUSHED_ONTO_BOATS = create(key("cannot_be_pushed_onto_boats"));
 
     /**
      * {@code #minecraft:deflects_projectiles}
@@ -309,7 +328,6 @@ public final class EntityTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<EntityType> create(final Key key) {
         return TagKey.create(RegistryKey.ENTITY_TYPE, key);
     }

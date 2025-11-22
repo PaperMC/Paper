@@ -1,0 +1,204 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 4 Jun 2020 02:24:49 -0400
+Subject: [PATCH] Optimize Bit Operations by inlining
+
+Inline bit operations and reduce instruction count to make these hot
+operations faster
+
+diff --git a/net/minecraft/core/BlockPos.java b/net/minecraft/core/BlockPos.java
+index eb3b7b71fefd1e4db9766ad926ece7a13d1143f6..5083959b61ec88868c0ede65a46087608e22983a 100644
+--- a/net/minecraft/core/BlockPos.java
++++ b/net/minecraft/core/BlockPos.java
+@@ -52,15 +52,17 @@ public class BlockPos extends Vec3i {
+     };
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final BlockPos ZERO = new BlockPos(0, 0, 0);
+-    public static final int PACKED_HORIZONTAL_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
+-    public static final int PACKED_Y_LENGTH = 64 - 2 * PACKED_HORIZONTAL_LENGTH;
+-    private static final long PACKED_X_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
+-    private static final long PACKED_Y_MASK = (1L << PACKED_Y_LENGTH) - 1L;
+-    private static final long PACKED_Z_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
++    // Paper start - Optimize Bit Operations by inlining
++    public static final int PACKED_HORIZONTAL_LENGTH = 26;
++    public static final int PACKED_Y_LENGTH = 12;
++    private static final long PACKED_X_MASK = 67108863;
++    private static final long PACKED_Y_MASK = 4095;
++    private static final long PACKED_Z_MASK = 67108863;
+     private static final int Y_OFFSET = 0;
+-    private static final int Z_OFFSET = PACKED_Y_LENGTH;
+-    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_HORIZONTAL_LENGTH;
+-    public static final int MAX_HORIZONTAL_COORDINATE = (1 << PACKED_HORIZONTAL_LENGTH) / 2 - 1;
++    private static final int Z_OFFSET = 12;
++    private static final int X_OFFSET = 38;
++    public static final int MAX_HORIZONTAL_COORDINATE = 33554431;
++    // Paper end - Optimize Bit Operations by inlining
+ 
+     public BlockPos(int x, int y, int z) {
+         super(x, y, z);
+@@ -70,28 +72,29 @@ public class BlockPos extends Vec3i {
+         this(vector.getX(), vector.getY(), vector.getZ());
+     }
+ 
++    public static long getAdjacent(int baseX, int baseY, int baseZ, Direction direction) { return asLong(baseX + direction.getStepX(), baseY + direction.getStepY(), baseZ + direction.getStepZ()); } // Paper
+     public static long offset(long pos, Direction direction) {
+         return offset(pos, direction.getStepX(), direction.getStepY(), direction.getStepZ());
+     }
+ 
+     public static long offset(long pos, int dx, int dy, int dz) {
+-        return asLong(getX(pos) + dx, getY(pos) + dy, getZ(pos) + dz);
++        return asLong((int) (pos >> 38) + dx, (int) ((pos << 52) >> 52) + dy, (int) ((pos << 26) >> 38) + dz); // Paper - simplify/inline
+     }
+ 
+     public static int getX(long packedPos) {
+-        return (int)(packedPos << 64 - X_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
++        return (int) (packedPos >> 38); // Paper - simplify/inline
+     }
+ 
+     public static int getY(long packedPos) {
+-        return (int)(packedPos << 64 - PACKED_Y_LENGTH >> 64 - PACKED_Y_LENGTH);
++        return (int) ((packedPos << 52) >> 52); // Paper - simplify/inline
+     }
+ 
+     public static int getZ(long packedPos) {
+-        return (int)(packedPos << 64 - Z_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
++        return (int) ((packedPos << 26) >> 38); // Paper - simplify/inline
+     }
+ 
+     public static BlockPos of(long packedPos) {
+-        return new BlockPos(getX(packedPos), getY(packedPos), getZ(packedPos));
++        return new BlockPos((int) (packedPos >> 38), (int) ((packedPos << 52) >> 52), (int) ((packedPos << 26) >> 38)); // Paper - simplify/inline
+     }
+ 
+     public static BlockPos containing(double x, double y, double z) {
+@@ -115,10 +118,7 @@ public class BlockPos extends Vec3i {
+     }
+ 
+     public static long asLong(int x, int y, int z) {
+-        long l = 0L;
+-        l |= (x & PACKED_X_MASK) << X_OFFSET;
+-        l |= (y & PACKED_Y_MASK) << 0;
+-        return l | (z & PACKED_Z_MASK) << Z_OFFSET;
++        return ((x & 67108863L) << 38) | ((y &  4095L)) | ((z & 67108863L) << 12); // Paper - inline constants and simplify
+     }
+ 
+     public static long getFlatIndex(long packedPos) {
+diff --git a/net/minecraft/core/SectionPos.java b/net/minecraft/core/SectionPos.java
+index a31e7af294d574c2c9711de75d33022ed86984c4..7a9889333d6a82a58731a54c612bddfaa1a3ec6a 100644
+--- a/net/minecraft/core/SectionPos.java
++++ b/net/minecraft/core/SectionPos.java
+@@ -42,7 +42,7 @@ public class SectionPos extends Vec3i {
+     }
+ 
+     public static SectionPos of(BlockPos pos) {
+-        return new SectionPos(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
++        return new SectionPos(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4); // Paper
+     }
+ 
+     public static SectionPos of(ChunkPos chunkPos, int y) {
+@@ -58,7 +58,7 @@ public class SectionPos extends Vec3i {
+     }
+ 
+     public static SectionPos of(long packed) {
+-        return new SectionPos(x(packed), y(packed), z(packed));
++        return new SectionPos((int) (packed >> 42), (int) (packed << 44 >> 44), (int) (packed << 22 >> 42)); // Paper
+     }
+ 
+     public static SectionPos bottomOf(ChunkAccess chunk) {
+@@ -69,8 +69,16 @@ public class SectionPos extends Vec3i {
+         return offset(packed, direction.getStepX(), direction.getStepY(), direction.getStepZ());
+     }
+ 
++    // Paper start
++    public static long getAdjacentFromBlockPos(int x, int y, int z, Direction direction) {
++        return (((long) ((x >> 4) + direction.getStepX()) & 4194303L) << 42) | (((long) ((y >> 4) + direction.getStepY()) & 1048575L)) | (((long) ((z >> 4) + direction.getStepZ()) & 4194303L) << 20);
++    }
++    public static long getAdjacentFromSectionPos(int x, int y, int z, Direction direction) {
++        return (((long) (x + direction.getStepX()) & 4194303L) << 42) | (((long) ((y) + direction.getStepY()) & 1048575L)) | (((long) (z + direction.getStepZ()) & 4194303L) << 20);
++    }
++    // Paper end
+     public static long offset(long packed, int dx, int dy, int dz) {
+-        return asLong(x(packed) + dx, y(packed) + dy, z(packed) + dz);
++        return (((long) ((int) (packed >> 42) + dx) & 4194303L) << 42) | (((long) ((int) (packed << 44 >> 44) + dy) & 1048575L)) | (((long) ((int) (packed << 22 >> 42) + dz) & 4194303L) << 20); // Simplify to reduce instruction count
+     }
+ 
+     public static int posToSectionCoord(double pos) {
+@@ -90,10 +98,7 @@ public class SectionPos extends Vec3i {
+     }
+ 
+     public static short sectionRelativePos(BlockPos pos) {
+-        int relativeBlockPosX = sectionRelative(pos.getX());
+-        int relativeBlockPosY = sectionRelative(pos.getY());
+-        int relativeBlockPosZ = sectionRelative(pos.getZ());
+-        return (short)(relativeBlockPosX << 8 | relativeBlockPosZ << 4 | relativeBlockPosY << 0);
++        return (short) ((pos.getX() & 15) << 8 | (pos.getZ() & 15) << 4 | pos.getY() & 15); // Paper - simplify/inline
+     }
+ 
+     public static int sectionRelativeX(short x) {
+@@ -156,16 +161,16 @@ public class SectionPos extends Vec3i {
+         return this.getZ();
+     }
+ 
+-    public int minBlockX() {
+-        return sectionToBlockCoord(this.x());
++    public final int minBlockX() { // Paper - final
++        return this.getX() << 4; // Paper - inline
+     }
+ 
+-    public int minBlockY() {
+-        return sectionToBlockCoord(this.y());
++    public final int minBlockY() { // Paper - final
++        return this.getY() << 4; // Paper - inline
+     }
+ 
+-    public int minBlockZ() {
+-        return sectionToBlockCoord(this.z());
++    public final int minBlockZ() { // Paper - final
++        return this.getZ() << 4; // Paper - inline
+     }
+ 
+     public int maxBlockX() {
+@@ -181,7 +186,7 @@ public class SectionPos extends Vec3i {
+     }
+ 
+     public static long blockToSection(long pos) {
+-        return asLong(blockToSectionCoord(BlockPos.getX(pos)), blockToSectionCoord(BlockPos.getY(pos)), blockToSectionCoord(BlockPos.getZ(pos)));
++        return (((long) (int) (pos >> 42) & 4194303L) << 42) | (((long) (int) ((pos << 52) >> 56) & 1048575L)) | (((long) (int) ((pos << 26) >> 42) & 4194303L) << 20); // Simplify to reduce instruction count
+     }
+ 
+     public static long getZeroNode(int x, int z) {
+@@ -213,15 +218,17 @@ public class SectionPos extends Vec3i {
+         return asLong(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
+     }
+ 
++    // Paper start
++    public static long blockPosAsSectionLong(int x, int y, int z) {
++        return (((long) (x >> 4) & 4194303L) << 42) | (((long) (y >> 4) & 1048575L)) | (((long) (z >> 4) & 4194303L) << 20);
++    }
++    // Paper end
+     public static long asLong(int x, int y, int z) {
+-        long l = 0L;
+-        l |= (x & 4194303L) << 42;
+-        l |= (y & 1048575L) << 0;
+-        return l | (z & 4194303L) << 20;
++        return ((x & 4194303L) << 42) | ((y & 1048575L)) | ((z & 4194303L) << 20); // Paper - Simplify to reduce instruction count
+     }
+ 
+     public long asLong() {
+-        return asLong(this.x(), this.y(), this.z());
++        return ((this.getX() & 4194303L) << 42) | ((this.getY() & 1048575L)) | ((this.getZ() & 4194303L) << 20); // Paper - Simplify to reduce instruction count
+     }
+ 
+     @Override
+@@ -234,10 +241,7 @@ public class SectionPos extends Vec3i {
+     }
+ 
+     public static Stream<SectionPos> cube(SectionPos center, int radius) {
+-        int sectionX = center.x();
+-        int sectionY = center.y();
+-        int sectionZ = center.z();
+-        return betweenClosedStream(sectionX - radius, sectionY - radius, sectionZ - radius, sectionX + radius, sectionY + radius, sectionZ + radius);
++        return betweenClosedStream(center.getX() - radius, center.getY() - radius, center.getZ() - radius, center.getX() + radius, center.getY() + radius, center.getZ() + radius); // Paper - simplify/inline
+     }
+ 
+     public static Stream<SectionPos> aroundChunk(ChunkPos chunkPos, int radius, int minY, int maxY) {

@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -83,6 +_,16 @@
- import net.minecraft.world.phys.Vec3;
+@@ -85,6 +_,16 @@
  import net.minecraft.world.scores.Scoreboard;
+ import org.apache.commons.lang3.mutable.MutableBoolean;
  
 +// CraftBukkit start
 +import java.util.Map;
@@ -14,16 +14,16 @@
 +import org.bukkit.entity.SpawnCategory;
 +// CraftBukkit end
 +
- public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCloseable {
+ public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
-@@ -121,6 +_,57 @@
-     private final DamageSources damageSources;
+@@ -127,6 +_,57 @@
+     private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
 +    // CraftBukkit start
 +    private final CraftWorld world;
-+    public boolean pvpMode;
++    public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
 +    public @Nullable org.bukkit.generator.ChunkGenerator generator;
 +
 +    public boolean captureBlockStates = false;
@@ -75,7 +75,7 @@
      protected Level(
          WritableLevelData levelData,
          ResourceKey<Level> dimension,
-@@ -129,8 +_,24 @@
+@@ -135,8 +_,24 @@
          boolean isClientSide,
          boolean isDebug,
          long biomeZoomSeed,
@@ -100,66 +100,11 @@
 +        // CraftBukkit end
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
-         final DimensionType dimensionType = dimensionTypeRegistration.value();
-@@ -140,12 +_,12 @@
-             this.worldBorder = new WorldBorder() {
-                 @Override
-                 public double getCenterX() {
--                    return super.getCenterX() / dimensionType.coordinateScale();
-+                    return super.getCenterX(); // CraftBukkit
-                 }
- 
-                 @Override
-                 public double getCenterZ() {
--                    return super.getCenterZ() / dimensionType.coordinateScale();
-+                    return super.getCenterZ(); // CraftBukkit
-                 }
-             };
-         } else {
-@@ -158,7 +_,84 @@
-         this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
-         this.registryAccess = registryAccess;
+         DimensionType dimensionType = dimensionTypeRegistration.value();
+@@ -151,6 +_,46 @@
          this.damageSources = new DamageSources(registryAccess);
--    }
-+
-+        // CraftBukkit start
-+        this.getWorldBorder().world = (ServerLevel) this;
-+        // From PlayerList.setPlayerFileData
-+        this.getWorldBorder().addListener(new net.minecraft.world.level.border.BorderChangeListener() {
-+            @Override
-+            public void onBorderSizeSet(WorldBorder border, double size) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket(border), border.world);
-+            }
-+
-+            @Override
-+            public void onBorderSizeLerping(WorldBorder border, double fromSize, double toSize, long time) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket(border), border.world);
-+            }
-+
-+            @Override
-+            public void onBorderCenterSet(WorldBorder border, double centerX, double centerZ) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket(border), border.world);
-+            }
-+
-+            @Override
-+            public void onBorderSetWarningTime(WorldBorder border, int warningTime) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket(border), border.world);
-+            }
-+
-+            @Override
-+            public void onBorderSetWarningBlocks(WorldBorder border, int warningBlockDistance) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket(border), border.world);
-+            }
-+
-+            @Override
-+            public void onBorderSetDamagePerBlock(WorldBorder border, double damagePerBlock) {}
-+
-+            @Override
-+            public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
-+        });
-+        // CraftBukkit end
-+    }
-+
+     }
+ 
 +    // Paper start - Cancel hit for vanished players
 +    // ret true if no collision
 +    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
@@ -199,10 +144,11 @@
 +        return true;
 +    }
 +    // Paper end - Cancel hit for vanished players
- 
++
      @Override
      public boolean isClientSide() {
-@@ -171,8 +_,15 @@
+         return this.isClientSide;
+@@ -162,8 +_,15 @@
          return null;
      }
  
@@ -219,7 +165,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -180,21 +_,86 @@
+@@ -171,21 +_,86 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -311,7 +257,7 @@
  
      @Nullable
      @Override
-@@ -214,6 +_,22 @@
+@@ -205,6 +_,22 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
@@ -333,8 +279,8 @@
 +        // CraftBukkit end
          if (this.isOutsideBuildHeight(pos)) {
              return false;
-         } else if (!this.isClientSide && this.isDebug()) {
-@@ -221,11 +_,31 @@
+         } else if (!this.isClientSide() && this.isDebug()) {
+@@ -212,11 +_,31 @@
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -366,7 +312,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -253,12 +_,68 @@
+@@ -244,12 +_,68 @@
  
                      this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
                  }
@@ -400,13 +346,13 @@
 +                this.setBlocksDirty(pos, blockState, blockState1);
 +            }
 +
-+            if ((flags & 2) != 0 && (!this.isClientSide || (flags & 4) == 0) && (this.isClientSide || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++            if ((flags & 2) != 0 && (!this.isClientSide() || (flags & 4) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(pos, blockState, state, flags);
 +            }
 +
 +            if ((flags & 1) != 0) {
 +                this.updateNeighborsAt(pos, blockState.getBlock());
-+                if (!this.isClientSide && state.hasAnalogOutputSignal()) {
++                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
 +                }
 +            }
@@ -435,12 +381,12 @@
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
      }
  
-@@ -275,13 +_,31 @@
+@@ -266,13 +_,31 @@
              return false;
          } else {
              FluidState fluidState = this.getFluidState(pos);
 -            if (!(blockState.getBlock() instanceof BaseFireBlock)) {
--                this.levelEvent(2001, pos, Block.getId(blockState));
+-                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
 +            // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
 +            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
@@ -469,8 +415,8 @@
 +                blockState.getBlock().popExperience((ServerLevel) this, pos, xp, entity); // Paper - Properly handle xp dropping; custom amount
              }
  
-             boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), 3, recursionLeft);
-@@ -345,10 +_,18 @@
+             boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
+@@ -336,10 +_,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -490,7 +436,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -463,32 +_,48 @@
+@@ -452,31 +_,47 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -515,13 +461,12 @@
 +        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
  
          this.tickingBlockEntities = false;
-         profilerFiller.pop();
 +        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
-     public <T extends Entity> void guardEntityTick(Consumer<T> consumerEntity, T entity) {
+     public <T extends Entity> void guardEntityTick(Consumer<T> action, T entity) {
          try {
-             consumerEntity.accept(entity);
+             action.accept(entity);
          } catch (Throwable var6) {
 -            CrashReport crashReport = CrashReport.forThrowable(var6, "Ticking entity");
 -            CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being ticked");
@@ -547,7 +492,7 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -608,6 +_,12 @@
+@@ -601,6 +_,12 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -560,7 +505,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
-@@ -620,6 +_,12 @@
+@@ -613,6 +_,12 @@
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockPos = blockEntity.getBlockPos();
          if (!this.isOutsideBuildHeight(blockPos)) {
@@ -573,7 +518,7 @@
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1013,7 +_,8 @@
+@@ -1039,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),

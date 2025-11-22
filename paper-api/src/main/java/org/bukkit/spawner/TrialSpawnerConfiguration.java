@@ -3,11 +3,12 @@ package org.bukkit.spawner;
 import java.util.Map;
 import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents one of the configurations of a trial spawner.
  */
+@NullMarked
 @ApiStatus.Experimental
 public interface TrialSpawnerConfiguration extends BaseSpawner {
 
@@ -17,7 +18,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @return the number of entities
      */
-    public float getBaseSpawnsBeforeCooldown();
+    float getBaseSpawnsBeforeCooldown();
 
     /**
      * Sets the base number of entities the spawner will spawn before going into
@@ -25,7 +26,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @param amount the number of entities
      */
-    public void setBaseSpawnsBeforeCooldown(float amount);
+    void setBaseSpawnsBeforeCooldown(float amount);
 
     /**
      * Gets the base number of entities this spawner can track at once. <br>
@@ -34,7 +35,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @return the number of entities
      */
-    public float getBaseSimultaneousEntities();
+    float getBaseSimultaneousEntities();
 
     /**
      * Sets the base number of entities this spawner can track at once. <br>
@@ -43,7 +44,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @param amount the number of entities
      */
-    public void setBaseSimultaneousEntities(float amount);
+    void setBaseSimultaneousEntities(float amount);
 
     /**
      * Gets the additional number of entities the spawner will spawn per tracked player
@@ -51,7 +52,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @return the number of entities
      */
-    public float getAdditionalSpawnsBeforeCooldown();
+    float getAdditionalSpawnsBeforeCooldown();
 
     /**
      * Sets the additional number of entities the spawner will spawn per tracked player
@@ -59,7 +60,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @param amount the number of entities
      */
-    public void setAdditionalSpawnsBeforeCooldown(float amount);
+    void setAdditionalSpawnsBeforeCooldown(float amount);
 
     /**
      * Gets the additional number of entities this spawner can track at once per
@@ -69,7 +70,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @return the number of entities
      */
-    public float getAdditionalSimultaneousEntities();
+    float getAdditionalSimultaneousEntities();
 
     /**
      * Sets the additional number of entities this spawner can track at once per
@@ -79,26 +80,25 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @param amount the number of entities
      */
-    public void setAdditionalSimultaneousEntities(float amount);
+    void setAdditionalSimultaneousEntities(float amount);
 
     /**
      * Gets a list of {@link LootTable}s this spawner can pick a reward from as
      * well as their associated weight to be chosen.
      *
      * @return a map of loot tables and their associated weight, or an empty
-     *         map if there are none
+     *     map if there are none
      */
-    @NotNull
-    public Map<LootTable, Integer> getPossibleRewards();
+    Map<LootTable, Integer> getPossibleRewards();
 
     /**
      * Add a {@link LootTable} to the list of tables this spawner can pick a reward
      * from with a given weight.
      *
-     * @param table  the loot table
+     * @param table the loot table
      * @param weight the weight, must be at least 1
      */
-    public void addPossibleReward(@NotNull LootTable table, int weight);
+    void addPossibleReward(LootTable table, int weight);
 
     /**
      * Removes the provided {@link LootTable} from the list of tables this spawner
@@ -106,7 +106,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      *
      * @param table the loot table
      */
-    public void removePossibleReward(@NotNull LootTable table);
+    void removePossibleReward(LootTable table);
 
     /**
      * Sets the list of {@link LootTable}s and their weights this spawner can pick a
@@ -115,7 +115,7 @@ public interface TrialSpawnerConfiguration extends BaseSpawner {
      * 1.
      *
      * @param rewards a map of loot tables and their weights, or null to clear all
-     *                possible tables
+     *     possible tables
      */
-    public void setPossibleRewards(@NotNull Map<LootTable, Integer> rewards);
+    void setPossibleRewards(Map<LootTable, Integer> rewards);
 }

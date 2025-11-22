@@ -25,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 public interface Art extends OldEnum<Art>, Keyed {
 
     // Start generate - Art
-    // @GeneratedFrom 1.21.6-rc1
     Art ALBAN = getArt("alban");
 
     Art AZTEC = getArt("aztec");
@@ -53,6 +52,8 @@ public interface Art extends OldEnum<Art>, Keyed {
     Art COURBET = getArt("courbet");
 
     Art CREEBET = getArt("creebet");
+
+    Art DENNIS = getArt("dennis");
 
     Art DONKEY_KONG = getArt("donkey_kong");
 

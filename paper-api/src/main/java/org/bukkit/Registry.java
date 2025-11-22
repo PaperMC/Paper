@@ -122,7 +122,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see BlockType
      */
-    @ApiStatus.Experimental
     Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
     /**
      * Custom boss bars.
@@ -179,7 +178,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see ItemType
      */
-    @ApiStatus.Experimental
     Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
     /**
      * Default server loot tables.
@@ -480,7 +478,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #getTag(TagKey)
      */
-    @ApiStatus.Experimental
     boolean hasTag(TagKey<T> key);
 
     /**
@@ -491,7 +488,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
-     * @see #getTagValues(TagKey) 
+     * @see #getTagValues(TagKey)
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
@@ -507,8 +504,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Tag#resolve(Registry)
      */
     @ApiStatus.Experimental
-    default Collection<T> getTagValues(TagKey<T> key) {
-        Tag<T> tag = getTag(key);
+    default Collection<T> getTagValues(final TagKey<T> key) {
+        Tag<T> tag = this.getTag(key);
         return tag.resolve(this);
     }
 
@@ -577,6 +574,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     int size();
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -627,6 +627,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 

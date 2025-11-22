@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/net/minecraft/world/entity/projectile/FishingHook.java
-@@ -70,10 +_,26 @@
+@@ -71,10 +_,26 @@
      private final int lureSpeed;
      private final InterpolationHandler interpolationHandler = new InterpolationHandler(this);
  
@@ -16,8 +16,8 @@
 +    public boolean skyInfluenced = true;
 +    // CraftBukkit end
 +
-     private FishingHook(EntityType<? extends FishingHook> entityType, Level level, int luck, int lureSpeed) {
-         super(entityType, level);
+     private FishingHook(EntityType<? extends FishingHook> type, Level level, int luck, int lureSpeed) {
+         super(type, level);
          this.luck = Math.max(0, luck);
          this.lureSpeed = Math.max(0, lureSpeed);
 +        // Paper start - Configurable fishing time ranges
@@ -26,14 +26,14 @@
 +        // Paper end - Configurable fishing time ranges
      }
  
-     public FishingHook(EntityType<? extends FishingHook> entityType, Level level) {
-@@ -154,12 +_,12 @@
+     public FishingHook(EntityType<? extends FishingHook> type, Level level) {
+@@ -155,12 +_,12 @@
          super.tick();
          Player playerOwner = this.getPlayerOwner();
          if (playerOwner == null) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-         } else if (this.level().isClientSide || !this.shouldStopFishing(playerOwner)) {
+         } else if (this.level().isClientSide() || !this.shouldStopFishing(playerOwner)) {
              if (this.onGround()) {
                  this.life++;
                  if (this.life >= 1200) {
@@ -42,7 +42,7 @@
                      return;
                  }
              } else {
-@@ -177,12 +_,14 @@
+@@ -178,12 +_,14 @@
              if (this.currentState == FishingHook.FishHookState.FLYING) {
                  if (this.hookedIn != null) {
                      this.setDeltaMovement(Vec3.ZERO);
@@ -57,7 +57,7 @@
                      this.currentState = FishingHook.FishHookState.BOBBING;
                      return;
                  }
-@@ -195,6 +_,7 @@
+@@ -198,6 +_,7 @@
                              this.setPos(this.hookedIn.getX(), this.hookedIn.getY(0.8), this.hookedIn.getZ());
                          } else {
                              this.setHookedEntity(null);
@@ -65,14 +65,13 @@
                              this.currentState = FishingHook.FishHookState.FLYING;
                          }
                      }
-@@ -258,14 +_,14 @@
-         if (!player.isRemoved() && player.isAlive() && (isFishingRod || isFishingRod1) && !(this.distanceToSqr(player) > 1024.0)) {
-             return false;
-         } else {
--            this.discard();
-+            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-             return true;
+@@ -264,13 +_,13 @@
+             }
          }
+ 
+-        this.discard();
++        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         return true;
      }
  
      private void checkCollision() {
@@ -82,7 +81,7 @@
      }
  
      @Override
-@@ -296,11 +_,11 @@
+@@ -301,11 +_,11 @@
          ServerLevel serverLevel = (ServerLevel)this.level();
          int i = 1;
          BlockPos blockPos = pos.above();
@@ -96,7 +95,7 @@
              i--;
          }
  
-@@ -310,6 +_,10 @@
+@@ -315,6 +_,10 @@
                  this.timeUntilLured = 0;
                  this.timeUntilHooked = 0;
                  this.getEntityData().set(DATA_BITING, false);
@@ -107,7 +106,7 @@
              }
          } else if (this.timeUntilHooked > 0) {
              this.timeUntilHooked -= i;
-@@ -333,6 +_,12 @@
+@@ -338,6 +_,12 @@
                      serverLevel.sendParticles(ParticleTypes.FISHING, d, d1, d2, 0, -f2, 0.01, f1, 1.0);
                  }
              } else {
@@ -120,7 +119,7 @@
                  this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                  double d3 = this.getY() + 0.5;
                  serverLevel.sendParticles(
-@@ -384,14 +_,31 @@
+@@ -389,14 +_,31 @@
              }
  
              if (this.timeUntilLured <= 0) {
@@ -156,7 +155,7 @@
  
      public boolean calculateOpenWater(BlockPos pos) {
          FishingHook.OpenWaterType openWaterType = FishingHook.OpenWaterType.INVALID;
-@@ -450,15 +_,31 @@
+@@ -455,15 +_,31 @@
      protected void readAdditionalSaveData(ValueInput input) {
      }
  
@@ -170,7 +169,7 @@
 +    public int retrieve(ItemStack stack, net.minecraft.world.InteractionHand hand) {
 +        // Paper end - Add hand parameter to PlayerFishEvent
          Player playerOwner = this.getPlayerOwner();
-         if (!this.level().isClientSide && playerOwner != null && !this.shouldStopFishing(playerOwner)) {
+         if (!this.level().isClientSide() && playerOwner != null && !this.shouldStopFishing(playerOwner)) {
              int i = 0;
              if (this.hookedIn != null) {
 +                // CraftBukkit start
@@ -182,13 +181,13 @@
 +                // CraftBukkit end
                  this.pullEntity(this.hookedIn);
                  CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer)playerOwner, stack, this, Collections.emptyList());
-                 this.level().broadcastEntityEvent(this, (byte)31);
+                 this.level().broadcastEntityEvent(this, EntityEvent.FISHING_ROD_REEL_IN);
                  i = this.hookedIn instanceof ItemEntity ? 3 : 5;
 +                } // Paper - re-check to see if there is a hooked entity
              } else if (this.nibble > 0) {
                  LootParams lootParams = new LootParams.Builder((ServerLevel)this.level())
                      .withParameter(LootContextParams.ORIGIN, this.position())
-@@ -472,18 +_,27 @@
+@@ -477,18 +_,27 @@
  
                  for (ItemStack itemStack : randomItems) {
                      ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemStack);
@@ -222,7 +221,7 @@
                      if (itemStack.is(ItemTags.FISHES)) {
                          playerOwner.awardStat(Stats.FISH_CAUGHT, 1);
                      }
-@@ -493,10 +_,24 @@
+@@ -498,10 +_,24 @@
              }
  
              if (this.onGround()) {
@@ -248,7 +247,7 @@
              return i;
          } else {
              return 0;
-@@ -526,9 +_,9 @@
+@@ -531,9 +_,9 @@
      }
  
      @Override
@@ -260,7 +259,7 @@
      }
  
      @Override
-@@ -576,7 +_,7 @@
+@@ -581,7 +_,7 @@
          if (this.getPlayerOwner() == null) {
              int data = packet.getData();
              LOGGER.error("Failed to recreate fishing hook on client. {} (id: {}) is not a valid owner.", this.level().getEntity(data), data);

@@ -14,7 +14,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <T> registry entry type
  * @param <B> registry entry builder type
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 

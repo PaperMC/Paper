@@ -483,9 +483,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      */
     boolean isBurnable();
     /**
-     * Check if this block is replaceable
-     * <p>
-     * Determined by Minecraft, representing a block that is not AIR that you can still place a new block at, such as flowers.
+     * Checks if this block can be immediately replaced by another block, such as placing a new block in air or tall grass.
      * @return true if block is replaceable
      */
     boolean isReplaceable();
@@ -590,6 +588,18 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return true if the block was destroyed
      */
     boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience);
+
+    /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     * with a specific tool
+     *
+     * @param tool The tool or item in hand used for digging
+     * @param triggerEffect Play the block break particle effect and sound
+     * @param dropExperience drop exp if the block normally does so
+     * @param forceEffect Forces the break effect to be triggered even if the tool is not the correct tool for the block
+     * @return true if the block was destroyed
+     */
+    boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience, boolean forceEffect);
 
     /**
      * Causes the block to be ticked, this is different from {@link Block#randomTick()},

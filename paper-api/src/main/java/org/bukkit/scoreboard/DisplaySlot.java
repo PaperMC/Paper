@@ -8,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public enum DisplaySlot {
     // Start generate - DisplaySlot
-    // @GeneratedFrom 1.21.6-rc1
     PLAYER_LIST("list"),
     SIDEBAR("sidebar"),
     BELOW_NAME("below_name"),

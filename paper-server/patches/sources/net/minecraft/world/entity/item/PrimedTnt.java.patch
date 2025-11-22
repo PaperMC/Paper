@@ -19,8 +19,8 @@
      public float explosionPower = 4.0F;
 +    public boolean isIncendiary = false; // CraftBukkit
  
-     public PrimedTnt(EntityType<? extends PrimedTnt> entityType, Level level) {
-         super(entityType, level);
+     public PrimedTnt(EntityType<? extends PrimedTnt> type, Level level) {
+         super(type, level);
 @@ -61,7 +_,7 @@
      public PrimedTnt(Level level, double x, double y, double z, @Nullable LivingEntity owner) {
          this(EntityType.TNT, level);
@@ -48,43 +48,28 @@
          this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
          if (this.onGround()) {
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
-@@ -105,20 +_,50 @@
+@@ -105,20 +_,35 @@
          int i = this.getFuse() - 1;
          this.setFuse(i);
          if (i <= 0) {
 -            this.discard();
 +            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
 +            //this.discard();
-             if (!this.level().isClientSide) {
+             if (!this.level().isClientSide()) {
                  this.explode();
              }
 +            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
 +            // CraftBukkit end
          } else {
              this.updateInWaterStateAndDoFluidPushing();
-             if (this.level().isClientSide) {
+             if (this.level().isClientSide()) {
                  this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5, this.getZ(), 0.0, 0.0, 0.0);
              }
          }
 +        // Paper start - Option to prevent TNT from moving in water
 +        if (!this.isRemoved() && this.wasTouchingWater && this.level().paperConfig().fixes.preventTntFromMovingInWater) {
-+            /*
-+             * Author: Jedediah Smith <jedediah@silencegreys.com>
-+             */
-+            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
-+            // This does pretty well at keeping their clients in sync with the server.
-+            net.minecraft.server.level.ChunkMap.TrackedEntity ete = ((net.minecraft.server.level.ServerLevel) this.level()).getChunkSource().chunkMap.entityMap.get(this.getId());
-+            if (ete != null) {
-+                net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket velocityPacket = new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(this);
-+                net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket positionPacket = net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket.teleport(this.getId(), net.minecraft.world.entity.PositionMoveRotation.of(this), java.util.Set.of(), this.onGround);
-+
-+                ete.seenBy.stream()
-+                    .filter(viewer -> (viewer.getPlayer().getX() - this.getX()) * (viewer.getPlayer().getY() - this.getY()) * (viewer.getPlayer().getZ() - this.getZ()) < 16 * 16)
-+                    .forEach(viewer -> {
-+                        viewer.send(velocityPacket);
-+                        viewer.send(positionPacket);
-+                    });
-+            }
++            this.hurtMarked = true;
++            this.hasImpulse = true;
 +        }
 +        // Paper end - Option to prevent TNT from moving in water
      }

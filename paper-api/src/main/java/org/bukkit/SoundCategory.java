@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
 public enum SoundCategory implements Sound.Source.Provider {
 
     // Start generate - SoundCategory
-    // @GeneratedFrom 1.21.6-rc1
     MASTER,
     MUSIC,
     RECORDS,
@@ -37,7 +36,7 @@ public enum SoundCategory implements Sound.Source.Provider {
             case PLAYERS -> Sound.Source.PLAYER;
             case AMBIENT -> Sound.Source.AMBIENT;
             case VOICE -> Sound.Source.VOICE;
-            case UI -> throw new UnsupportedOperationException("Waiting on adventure release for the UI sound source"); // todo adventure
+            case UI -> Sound.Source.UI;
         };
     }
 }

@@ -1,11 +1,20 @@
 package io.papermc.paper;
 
+import com.destroystokyo.paper.PaperSkinParts;
+import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
+import net.minecraft.commands.PermissionSource;
 import net.minecraft.world.damagesource.FallLocation;
+import net.minecraft.world.entity.decoration.Mannequin;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
@@ -16,6 +25,7 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.function.Predicate;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -70,5 +80,32 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(
             damageSource, damage, fallLocation, fallDistance
         ));
+    }
+
+    @Override
+    public Predicate<CommandSourceStack> restricted(final Predicate<CommandSourceStack> predicate) {
+        record RestrictedPredicate(Predicate<CommandSourceStack> predicate) implements Predicate<CommandSourceStack>, PermissionSource.RestrictedMarker {
+            @Override
+            public boolean test(final CommandSourceStack commandSourceStack) {
+                return this.predicate.test(commandSourceStack);
+            }
+        }
+
+        return new RestrictedPredicate(predicate);
+    }
+
+    @Override
+    public ResolvableProfile defaultMannequinProfile() {
+        return new PaperResolvableProfile(net.minecraft.world.entity.decoration.Mannequin.DEFAULT_PROFILE);
+    }
+
+    @Override
+    public SkinParts.Mutable allSkinParts() {
+        return new PaperSkinParts.Mutable(net.minecraft.world.entity.decoration.Mannequin.ALL_LAYERS);
+    }
+
+    @Override
+    public Component defaultMannequinDescription() {
+        return PaperAdventure.asAdventure(Mannequin.DEFAULT_DESCRIPTION);
     }
 }

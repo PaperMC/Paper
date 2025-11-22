@@ -17,7 +17,12 @@ import org.jetbrains.annotations.Nullable;
  * by a {@link CacheStrategy} or invalidated at the individual or plugin
  * level. Once invalidated, the LazyMetadataValue will recompute its value
  * when asked.
+ *
+ * @deprecated This system is extremely misleading and does not cleanup values for metadatable entities that have been
+ * removed. It is recommended that when wanting persistent metadata, you use {@link org.bukkit.persistence.PersistentDataContainer}.
+ * If you want temporary values on an entity, just use the entity lifecycle events. (See {@link com.destroystokyo.paper.event.entity.EntityAddToWorldEvent}0
  */
+@Deprecated
 public class LazyMetadataValue extends MetadataValueAdapter {
     private Callable<Object> lazyValue;
     private CacheStrategy cacheStrategy;

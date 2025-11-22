@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
@@ -184,6 +185,11 @@ public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMin
     @Override
     public net.minecraft.world.level.Level getInternalWorld() {
         return this.getHandle().level();
+    }
+
+    @Override
+    public RegistryAccess getRegistryAccess() {
+        return this.getHandle().registryAccess();
     }
 
     @Override
