@@ -146,11 +146,39 @@
                          );
                  }
              }
-@@ -955,6 +_,7 @@
+@@ -955,15 +_,32 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);
              state.setValue(SweetBerryBushBlock.AGE, 1);
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(Fox.this, this.blockPos, state.setValue(SweetBerryBushBlock.AGE, 1))) return; // CraftBukkit - call EntityChangeBlockEvent
              int i = 1 + Fox.this.level().random.nextInt(2) + (ageValue == 3 ? 1 : 0);
              ItemStack itemBySlot = Fox.this.getItemBySlot(EquipmentSlot.MAINHAND);
++            // Paper start - call HarvestBlockEvent for the item dropped
++            ItemStack itemHarvest = new ItemStack(Items.SWEET_BERRIES, i);
++            io.papermc.paper.event.entity.EntityHarvestBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityHarvestBlockEvent(Fox.this.level(), this.blockPos, Fox.this, java.util.Collections.singletonList(itemHarvest));
++            java.util.ArrayList<org.bukkit.inventory.ItemStack> itemsHarvested = new java.util.ArrayList<>(event.getItemsHarvested());
++            if (event.isCancelled()) {
++                return;
++            }
              if (itemBySlot.isEmpty()) {
+-                Fox.this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.SWEET_BERRIES));
++                if (!itemsHarvested.isEmpty()) {
++                    org.bukkit.inventory.ItemStack firstItemForSlot = itemsHarvested.getFirst().clone();
++                    if (firstItemForSlot.getAmount() == 1) {
++                        itemsHarvested.removeFirst();
++                    } else {
++                        itemsHarvested.set(0, firstItemForSlot.subtract());
++                    }
++                    Fox.this.setItemSlot(EquipmentSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(firstItemForSlot.asOne()));
++                }
++                // Paper end
+                 i--;
+             }
+ 
+-            if (i > 0) {
+-                Block.popResource(Fox.this.level(), this.blockPos, new ItemStack(Items.SWEET_BERRIES, i));
++            for (org.bukkit.inventory.ItemStack itemStack : itemsHarvested) { // Paper - handle harvest items
++                Block.popResource(Fox.this.level(), this.blockPos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack)); // Paper
+             }
+ 
+             Fox.this.playSound(SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, 1.0F, 1.0F);

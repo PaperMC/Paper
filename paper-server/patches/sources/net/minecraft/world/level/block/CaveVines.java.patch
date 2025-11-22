@@ -13,14 +13,14 @@
                  Block.dropFromBlockInteractLootTable(
                      serverLevel,
                      BuiltInLootTables.HARVEST_CAVE_VINE,
-@@ -30,8 +_,25 @@
+@@ -30,8 +_,29 @@
                      level.getBlockEntity(pos),
                      null,
                      entity,
 -                    (serverLevel1, itemStack) -> Block.popResource(serverLevel1, pos, itemStack)
 +                    (serverLevel1, itemStack) -> drops.add(itemStack) // Paper - call player harvest block event - store drops from loottable
                  );
-+                // Paper start - call player harvest block event
++                // Paper start - call harvest block event
 +                if (entity instanceof net.minecraft.world.entity.player.Player player) {
 +                    org.bukkit.event.player.PlayerHarvestBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerHarvestBlockEvent(
 +                        level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND, drops
@@ -32,11 +32,15 @@
 +                        Block.popResource(level, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack));
 +                    }
 +                } else {
-+                    for (net.minecraft.world.item.ItemStack itemStack : drops) {
-+                        Block.popResource(level, pos, itemStack);
++                    io.papermc.paper.event.entity.EntityHarvestBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityHarvestBlockEvent(level, pos, entity, drops);
++                    if (event.isCancelled()) {
++                        return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
++                    }
++                    for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
++                        Block.popResource(level, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack));
 +                    }
 +                }
-+                // Paper end - call player harvest block event
++                // Paper end - call harvest block event
                  float f = Mth.randomBetween(serverLevel.random, 0.8F, 1.2F);
                  serverLevel.playSound(null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, f);
                  BlockState blockState = state.setValue(BERRIES, false);
