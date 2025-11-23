@@ -1,74 +1,144 @@
 --- a/net/minecraft/world/level/portal/TeleportTransition.java
 +++ b/net/minecraft/world/level/portal/TeleportTransition.java
-@@ -21,11 +_,18 @@
+@@ -21,7 +_,108 @@
      boolean asPassenger,
      Set<Relative> relatives,
      TeleportTransition.PostTeleportTransition postTeleportTransition
-+    , org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause // CraftBukkit
++    // Paper start - additional transition data
++    , org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
++    PassengerTeleportationMode passengerTeleportationMode
  ) {
++
++    public enum PassengerTeleportationMode {
++        RELATIVE,
++        POSITION_RIDER
++    }
++
++    // Vanilla compat constructor
++    public TeleportTransition(
++        final ServerLevel newLevel,
++        final Vec3 position,
++        final Vec3 deltaMovement,
++        final float yRot,
++        final float xRot,
++        final boolean missingRespawnBlock,
++        final boolean asPassenger,
++        final Set<Relative> relatives,
++        final TeleportTransition.PostTeleportTransition postTeleportTransition
++    ) {
++        this(
++            newLevel,
++            position,
++            deltaMovement,
++            yRot,
++            xRot,
++            missingRespawnBlock,
++            asPassenger,
++            relatives,
++            postTeleportTransition,
++            org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN,
++            PassengerTeleportationMode.RELATIVE
++        );
++    }
++
++    public TeleportTransition withChangedLocation(final org.bukkit.Location location) {
++        return new TeleportTransition(
++            ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
++            org.bukkit.craftbukkit.util.CraftLocation.toVec3(location),
++            this.deltaMovement(),
++            location.getYaw(),
++            location.getPitch(),
++            this.missingRespawnBlock(),
++            this.asPassenger(),
++            this.relatives(),
++            this.postTeleportTransition(),
++            this.cause(),
++            this.passengerTeleportationMode()
++        );
++    }
++
++    public TeleportTransition withVelocity(final Vec3 velocity) {
++        return new TeleportTransition(
++            this.newLevel(),
++            this.position(),
++            velocity,
++            this.yRot(),
++            this.xRot(),
++            this.missingRespawnBlock(),
++            this.asPassenger(),
++            this.relatives(),
++            this.postTeleportTransition(),
++            this.cause(),
++            this.passengerTeleportationMode()
++        );
++    }
++
++    public TeleportTransition withRelatives(final Set<Relative> relatives) {
++        return new TeleportTransition(
++            this.newLevel(),
++            this.position(),
++            this.deltaMovement(),
++            this.yRot(),
++            this.xRot(),
++            this.missingRespawnBlock(),
++            this.asPassenger(),
++            relatives,
++            this.postTeleportTransition(),
++            this.cause(),
++            this.passengerTeleportationMode()
++        );
++    }
++
++    public TeleportTransition withCause(final org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        return new TeleportTransition(
++            this.newLevel(),
++            this.position(),
++            this.deltaMovement(),
++            this.yRot(),
++            this.xRot(),
++            this.missingRespawnBlock(),
++            this.asPassenger(),
++            this.relatives(),
++            this.postTeleportTransition(),
++            cause,
++            this.passengerTeleportationMode()
++        );
++    }
++    // Paper end - additional transition data
++
      public static final TeleportTransition.PostTeleportTransition DO_NOTHING = entity -> {};
      public static final TeleportTransition.PostTeleportTransition PLAY_PORTAL_SOUND = TeleportTransition::playPortalSound;
      public static final TeleportTransition.PostTeleportTransition PLACE_PORTAL_TICKET = TeleportTransition::placePortalTicket;
- 
-+    // CraftBukkit start
-+    public TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 deltaMovement, float yRot, float xRot, boolean missingRespawnBlock, boolean asPassenger, Set<Relative> relatives, TeleportTransition.PostTeleportTransition postTeleportTransition) {
-+        this(newLevel, position, deltaMovement, yRot, xRot, missingRespawnBlock, asPassenger, relatives, postTeleportTransition, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
-+    }
-+    // CraftBukkit end
-+
-     public TeleportTransition(
-         ServerLevel newLevel, Vec3 position, Vec3 deltaMovement, float yRot, float xRot, TeleportTransition.PostTeleportTransition postTeleportTransition
-     ) {
-@@ -41,7 +_,21 @@
-         Set<Relative> relatives,
-         TeleportTransition.PostTeleportTransition postTeleportTransition
-     ) {
--        this(newLevel, position, deltaMovement, yRot, xRot, false, false, relatives, postTeleportTransition);
-+        // CraftBukkit start
-+        this(newLevel, position, deltaMovement, yRot, xRot, relatives, postTeleportTransition, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
-+    }
-+    public TeleportTransition(
-+        ServerLevel newLevel,
-+        Vec3 position,
-+        Vec3 deltaMovement,
-+        float yRot,
-+        float xRot,
-+        Set<Relative> relatives,
-+        TeleportTransition.PostTeleportTransition postTeleportTransition,
-+        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause
-+    ) {
-+        this(newLevel, position, deltaMovement, yRot, xRot, false, false, relatives, postTeleportTransition, cause);
-+        // CraftBukkit end
-     }
- 
-     private static void playPortalSound(Entity entity) {
-@@ -100,7 +_,8 @@
-             this.missingRespawnBlock(),
+@@ -101,6 +_,10 @@
              this.asPassenger(),
              this.relatives(),
--            this.postTeleportTransition()
-+            this.postTeleportTransition(),
-+            this.cause() // Paper - keep cause
+             this.postTeleportTransition()
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  
-@@ -114,7 +_,8 @@
-             this.missingRespawnBlock(),
+@@ -115,6 +_,10 @@
              this.asPassenger(),
              this.relatives(),
--            this.postTeleportTransition()
-+            this.postTeleportTransition(),
-+            this.cause() // Paper - keep cause
+             this.postTeleportTransition()
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  
-@@ -128,7 +_,8 @@
-             this.missingRespawnBlock(),
+@@ -129,6 +_,10 @@
              true,
              this.relatives(),
--            this.postTeleportTransition()
-+            this.postTeleportTransition(),
-+            this.cause() // Paper - keep cause
+             this.postTeleportTransition()
++            // Paper start - keep additional data
++            , this.cause(),
++            this.passengerTeleportationMode()
++            // Paper end - keep additional data
          );
      }
  

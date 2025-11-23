@@ -1492,7 +1492,7 @@
 +            }
 +            if (!to.equals(teleEvent.getTo())) {
 +                to = teleEvent.getTo();
-+                teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch(), teleportTransition.missingRespawnBlock(), teleportTransition.asPassenger(), Set.of(), teleportTransition.postTeleportTransition(), teleportTransition.cause());
++                teleportTransition = teleportTransition.withChangedLocation(to).withVelocity(Vec3.ZERO).withRelatives(Set.of());
 +                // Paper start - Call EntityPortalExitEvent
 +                velocity = Vec3.ZERO;
 +            }
@@ -1518,7 +1518,7 @@
 +                        to = event.getTo().clone();
 +                        velocity = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getAfter());
 +                    }
-+                    teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), velocity, to.getYaw(), to.getPitch(), teleportTransition.missingRespawnBlock(), teleportTransition.asPassenger(), Set.of(), teleportTransition.postTeleportTransition(), teleportTransition.cause());
++                    teleportTransition = teleportTransition.withChangedLocation(to).withRelatives(Set.of()).withVelocity(velocity);
 +                }
 +            }
 +            if (this.isRemoved()) {
@@ -1546,6 +1546,19 @@
  
              for (Entity entity2 : list) {
                  entity2.startRiding(entityx, true, false);
+@@ -3014,6 +_,12 @@
+     private TeleportTransition calculatePassengerTransition(TeleportTransition teleportTransition, Entity entity) {
+         float f = teleportTransition.yRot() + (teleportTransition.relatives().contains(Relative.Y_ROT) ? 0.0F : entity.getYRot() - this.getYRot());
+         float f1 = teleportTransition.xRot() + (teleportTransition.relatives().contains(Relative.X_ROT) ? 0.0F : entity.getXRot() - this.getXRot());
++        // Paper start - reposition entity as rider when teleporting via API call
++        // This change is mostly required for plugins teleporting entities *every* tick with passengers, specifically player passengers.
++        // The relative teleport of players, which base their location on the server -> client -> server teleport packet cycle, means player
++        // positions can quickly be desynced from their rider position, leading to infinitely growing offsets from their vehicle.
++        if (teleportTransition.passengerTeleportationMode() == TeleportTransition.PassengerTeleportationMode.POSITION_RIDER) this.positionRider(entity);
++        // Paper end - reposition entity as rider when teleporting via API call
+         Vec3 vec3 = entity.position().subtract(this.position());
+         Vec3 vec31 = teleportTransition.position()
+             .add(
 @@ -3078,9 +_,17 @@
      }
  
@@ -1588,7 +1601,7 @@
 +
 +    public boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
 +        // CraftBukkit end
-+        Entity entity = this.teleport(new TeleportTransition(level, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, relativeMovements, TeleportTransition.DO_NOTHING, cause)); // CraftBukkit
++        Entity entity = this.teleport(new TeleportTransition(level, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, relativeMovements, TeleportTransition.DO_NOTHING).withCause(cause)); // CraftBukkit
          return entity != null;
      }
  

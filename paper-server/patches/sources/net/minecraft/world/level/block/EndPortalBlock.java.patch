@@ -34,7 +34,7 @@
                  f = Direction.WEST.toYRot();
                  f1 = 0.0F;
                  set = Relative.union(Relative.DELTA, Set.of(Relative.X_ROT));
-@@ -97,15 +_,24 @@
+@@ -97,15 +_,25 @@
                  f1 = respawnData.pitch();
                  set = Relative.union(Relative.DELTA, Relative.ROTATION);
                  if (entity instanceof ServerPlayer serverPlayer) {
@@ -45,9 +45,6 @@
                  bottomCenter = entity.adjustSpawnLocation(level1, blockPos).getBottomCenter();
              }
  
--            return new TeleportTransition(
--                level1, bottomCenter, Vec3.ZERO, f, f1, set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET)
--            );
 +            // CraftBukkit start
 +            set.removeAll(Relative.ROTATION); // remove relative rotation flags to simplify event mutation
 +            float absoluteYaw = !flag ? f : entity.getYRot() + f;
@@ -57,9 +54,11 @@
 +                return null;
 +            }
 +            org.bukkit.Location to = result.to();
-+
-+            return new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch(), set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL);
 +            // CraftBukkit end
+             return new TeleportTransition(
+                 level1, bottomCenter, Vec3.ZERO, f, f1, set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET)
+-            );
++            ).withChangedLocation(to).withCause(org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - portal event & cause
          }
      }
  
