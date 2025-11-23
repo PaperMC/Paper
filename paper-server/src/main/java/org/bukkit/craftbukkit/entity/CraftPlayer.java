@@ -1534,6 +1534,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void setPlayerTime(long time, boolean relative) {
         this.getHandle().timeOffset = time;
         this.getHandle().relativeTime = relative;
+
+        if (this.getHandle().connection == null) {
+            return;
+        }
+
+        final long gameTime = this.getHandle().level().getGameTime();
+        final long dayTime = this.getHandle().getPlayerTime();
+        final boolean tickDayTime = this.getHandle().relativeTime && this.getHandle().level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DAYLIGHT);
+        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSetTimePacket(gameTime, dayTime, tickDayTime));
     }
 
     @Override
