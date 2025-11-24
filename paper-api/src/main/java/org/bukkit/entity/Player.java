@@ -3611,7 +3611,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * If the creation of the entity is cancelled, no boosting is done.
      * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param firework The {@link Material#FIREWORK_ROCKET} to boost the player with
+     * @param firework The itemstack to boost the player with
      * @return The {@link Firework} boosting the Player or null if the spawning of the entity was cancelled
      * @throws IllegalStateException if {@link #isGliding()} is false
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
