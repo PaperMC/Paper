@@ -3351,4 +3351,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             entity.remove();
         }
     }
+
+    @Override
+    public void resetPose() {
+        this.getHandle().fixedPose = false;
+        this.getHandle().updatePlayerPose();
+    }
 }
