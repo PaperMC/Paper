@@ -9,6 +9,7 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
+import org.bukkit.entity.EntityType;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -168,6 +169,13 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     @NotNull
     Sentiment getSentiment();
+
+    /**
+     * {@return the default value of this attribute}
+     * <p>
+     * Default attribute values may differ between entity types, use {@link EntityType#getDefaultAttributes()} to get default attribute values for a specific entity type.
+     */
+    double getDefaultValue();
 
     /**
      * @param name of the attribute.
