@@ -545,15 +545,18 @@ diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mo
 index 93f56d5d8b4af495c16bf0d953098cde574674d9..f2a321d94ddc9247a3820d42f4a04290ea3ce6f6 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -217,6 +217,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -217,6 +217,22 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          return this.lookControl;
      }
  
 +    // Paper start
++    int inactiveTickDisableCounter = 0;
++    io.papermc.paper.configuration.type.number.IntOr.Disabled throttleRate = level.paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate;
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (this.goalSelector.inactiveTick()) {
++        boolean isThrottled = throttleRate.enabled() && inactiveTickDisableCounter++ % throttleRate.intValue() != 0; // throttle inactive goal selector ticking
++        if (this.goalSelector.inactiveTick() && !isThrottled) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
