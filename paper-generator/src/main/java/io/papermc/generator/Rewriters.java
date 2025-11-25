@@ -11,6 +11,7 @@ import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
 import io.papermc.generator.rewriter.types.registry.RegistryTagRewriter;
 import io.papermc.generator.rewriter.types.registry.TagRewriter;
+import io.papermc.generator.rewriter.types.simple.BlockPropertiesRewriter;
 import io.papermc.generator.rewriter.types.simple.BlockTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.CraftBlockDataMapping;
 import io.papermc.generator.rewriter.types.simple.CraftBlockEntityStateMapping;
@@ -19,10 +20,12 @@ import io.papermc.generator.rewriter.types.simple.EntityTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
+import io.papermc.generator.rewriter.types.simple.PaperBlockPropertiesRewriter;
 import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
+import io.papermc.paper.block.property.BlockProperties;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.world.WeatheringCopperState;
@@ -208,6 +211,7 @@ public final class Rewriters {
             .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("BlockProperties", BlockProperties.class, new BlockPropertiesRewriter())
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
@@ -230,6 +234,7 @@ public final class Rewriters {
                 holder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))
             ))
             .register("PaperFeatureFlagProviderImpl#FLAGS", Types.PAPER_FEATURE_FLAG_PROVIDER_IMPL, new PaperFeatureFlagMapping())
+            .register("PaperBlockProperties", Types.PAPER_BLOCK_PROPERTIES, new PaperBlockPropertiesRewriter())
             .register("MobGoalHelper#BUKKIT_BRIDGE", Types.MOB_GOAL_HELPER, new SearchReplaceRewriter() {
                 @Override
                 protected void insert(SearchMetadata metadata, StringBuilder builder) {
