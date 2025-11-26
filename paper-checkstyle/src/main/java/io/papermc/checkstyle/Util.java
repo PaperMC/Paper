@@ -5,7 +5,6 @@ import com.puppycrawl.tools.checkstyle.api.CheckstyleException;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.DetailNode;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
-import com.puppycrawl.tools.checkstyle.utils.JavadocUtil;
 import com.puppycrawl.tools.checkstyle.utils.TokenUtil;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,9 +30,9 @@ public final class Util {
      * @return the previous sibling with the given type, or {@code null} if not found
      */
     public static @Nullable DetailNode getPreviousSibling(final DetailNode node, final int type) {
-        DetailNode sibling = JavadocUtil.getPreviousSibling(node);
+        DetailNode sibling = node.getPreviousSibling();
         while (sibling != null && sibling.getType() != type) {
-            sibling = JavadocUtil.getPreviousSibling(sibling);
+            sibling = node.getPreviousSibling();
         }
         return sibling;
     }

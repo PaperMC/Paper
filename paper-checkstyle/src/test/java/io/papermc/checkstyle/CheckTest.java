@@ -88,11 +88,11 @@ public @interface CheckTest {
                 final StringBuilder sb = new StringBuilder();
                 sb.append("Violations do not match for ").append(filePath).append("\n");
                 if (!extraViolations.isEmpty()) {
-                    sb.append("Extra violations: \n");
+                    sb.append("Violations not accounted for in test: \n");
                     extraViolations.forEach(v -> sb.append("  ").append(v).append("\n"));
                 }
                 if (!missingViolations.isEmpty()) {
-                    sb.append("Missing violations: \n");
+                    sb.append("Violations in tests that don't exist: \n");
                     missingViolations.forEach(v -> sb.append("  ").append(v).append("\n"));
                 }
                 throw new AssertionError(sb.toString());
