@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 045778402404d46610165d15d8d430d6ae968688..695b8b708ffda1a927d865ba9891bb85303d75af 100644
+index 485413cb6b20c4bd20fbc29a0db43c051993fe79..22f37a0779996c9e3a9416a2a1ba2bee74e3f568 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -48,20 +48,25 @@ public final class FeatureHooks {
@@ -55,7 +55,7 @@ index c9086bca5cbb780fd586f667e31a8fe1400ae58a..f828d07018d9a17aaa0142aac67ebed5
  
              if (buffer.writerIndex() != buffer.capacity()) {
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index bd9b29da33670afd6ad0ea86927dad8c4a69faca..33ca4c2110673dee34b66c8d05ee83c4df828f2e 100644
+index 919eaac837298c1936ec7aa06375c72a7acd2daa..19547e22620f16d01f05bbd13a4dcb9c0df636df 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -41,13 +41,23 @@ public class ClientboundLevelChunkPacketData {
@@ -103,7 +103,7 @@ index bd9b29da33670afd6ad0ea86927dad8c4a69faca..33ca4c2110673dee34b66c8d05ee83c4
  
          if (buffer.writerIndex() != buffer.capacity()) {
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-index fdd164cd45a26c7ef25f1153ab8985ba50c01b14..8578d1f78ddd1bb75f3230f04bfaa35af9f5f822 100644
+index 3c0f0a612cc57c9f03abfb0ccb1f891305d03d45..9f43cfbdd49df61de869fd65fb2cbea39a563260 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 @@ -18,18 +18,31 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
@@ -143,23 +143,23 @@ index fdd164cd45a26c7ef25f1153ab8985ba50c01b14..8578d1f78ddd1bb75f3230f04bfaa35a
  
      private ClientboundLevelChunkWithLightPacket(RegistryFriendlyByteBuf buffer) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index bf27fe05ee17b2483bb9bfe5a1b52c8d686e3737..5712b2fa9579c9ba92a2f3083ee2fc79c28ffaaf 100644
+index f0bfc37a0802397da1462e545e48f83d42b3d0c0..ab5efa15a1f56feda7d3e91009a517e98216e734 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -609,7 +609,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -615,7 +615,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
      ) {
          // CraftBukkit start
--        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
-+        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), dispatcher); // Paper - create paper world configs & Async-Anti-Xray: Pass executor
+-        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
++        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), dispatcher); // Paper - create paper world configs & Async-Anti-Xray: Pass executor
          this.levelStorageAccess = levelStorageAccess;
          this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
          this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index c7407319dc4f6c6c34428f7038cca407a0e43c61..7166889bce8065508030ecd5b1400ee9be031bf3 100644
+index e22368b036c35d32dca79b0e840f1008dce830a4..6771cbbae863fa181e19c5fb74d2018d3559ef4e 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -316,6 +316,7 @@ public class ServerPlayerGameMode {
+@@ -313,6 +313,7 @@ public class ServerPlayerGameMode {
                  org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageAbortEvent(this.player, pos, this.player.getInventory().getSelectedItem()); // CraftBukkit
              }
          }
@@ -184,10 +184,10 @@ index c65b274b965b95eae33690e63c5da2d5a9f2981a..644948d64791d0ffa4166375d0f4419f
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
              new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), packetListener.getPlayer().getBukkitEntity()).callEvent();
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 410be367549a345677c94e9f8d7db0b7fffbf073..015ffd8298989bdb597b18d79adc3debcffc0977 100644
+index a17d021269c65d98a2ba847c0059a421ea051863..9f86d1fc4ea4c6987fa207644573565aea7edead 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -323,7 +323,7 @@ public abstract class PlayerList {
+@@ -329,7 +329,7 @@ public abstract class PlayerList {
                  .getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
              player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
                  new net.minecraft.world.level.chunk.EmptyLevelChunk(serverLevel, player.chunkPosition(), plains),
@@ -197,7 +197,7 @@ index 410be367549a345677c94e9f8d7db0b7fffbf073..015ffd8298989bdb597b18d79adc3deb
          }
          // Paper end - Send empty chunk
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a86d023a0 100644
+index bc0824b42e2fde246f052afe1e1393de632ccfb7..7bfaec43c12fb61b3fd7bac2c01903b81404280f 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -139,6 +139,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -207,9 +207,9 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
 +    public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      private final CraftWorld world;
      public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
-     public @Nullable org.bukkit.generator.ChunkGenerator generator;
+     public org.bukkit.generator.@Nullable ChunkGenerator generator;
 @@ -831,7 +832,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
-         @Nullable org.bukkit.generator.BiomeProvider biomeProvider, // Paper
+         org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
          org.bukkit.World.Environment environment, // Paper
          java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 -        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
@@ -218,7 +218,7 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
      ) {
          // Paper start - getblock optimisations - cache world height/sections
          final DimensionType dimType = dimensionTypeRegistration.value();
-@@ -866,6 +868,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -865,6 +867,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          this.palettedContainerFactory = PalettedContainerFactory.create(registryAccess);
          this.damageSources = new DamageSources(registryAccess);
          this.entityLookup = new ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup(this); // Paper - rewrite chunk system
@@ -226,7 +226,7 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -1071,6 +1074,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1068,6 +1071,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                  snapshot.setFlags(flags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
              }
              BlockState blockState = chunkAt.setBlockState(pos, state, flags);
@@ -235,10 +235,10 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
              if (blockState == null) {
                  // CraftBukkit start - remove blockstate if failed (or the same)
 diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
-index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e1136175737abed7c 100644
+index a49a06662de4062a77112e358f536d45d65bf91f..54ddcf92e72b9cbd0eb442e5d0faa83c0cf3b33b 100644
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -164,7 +164,7 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
+@@ -161,7 +161,7 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
              }
          }
  
@@ -247,7 +247,7 @@ index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e11361757
          // Paper start - rewrite chunk system
          if (!((Object)this instanceof ImposterProtoChunk)) {
              this.starlight$setBlockNibbles(ca.spottedleaf.moonrise.patches.starlight.light.StarLightEngine.getFilledEmptyLight(levelHeightAccessor));
-@@ -177,10 +177,10 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
+@@ -174,10 +174,10 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
          // Paper end - get block chunk optimisation
      }
  
@@ -261,11 +261,11 @@ index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e11361757
          }
      }
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 4be0c11b3066bc56ac2b8658e064958038da44bf..de59760d27280555a334bda4f436164568cffbd6 100644
+index 356a89ef2396f245e438d59d65edd0445693cb8b..7f2fa1978c2ca5620f0f3c1f26570d924d7fb3e5 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -152,7 +152,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
-         @Nullable LevelChunk.PostLoadProcessor postLoad,
+@@ -151,7 +151,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         LevelChunk.@Nullable PostLoadProcessor postLoad,
          @Nullable BlendingData blendingData
      ) {
 -        super(pos, data, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
@@ -314,7 +314,7 @@ index 5a76746a27d04cc095585655f2ef19ac10528071..201ba8b6ea45f526fbd5292164bb4cb6
  
      public int getSerializedSize() {
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f96003452 100644
+index 0740775f2fa49c4313c1de6dd00f0a39fe2e0463..7c8f8772a6fba04dbafdb5dbf8098b6ebce6d6f2 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -26,6 +26,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
@@ -457,7 +457,7 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
 +    }
      @Override
 -    public synchronized void write(FriendlyByteBuf buffer) { // Paper - synchronize
-+    public synchronized void write(FriendlyByteBuf buffer, @Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { // Paper - synchronize
++    public synchronized void write(FriendlyByteBuf buffer, io.papermc.paper.antixray.@Nullable ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { // Paper - synchronize
          this.acquire();
  
          try {
@@ -508,7 +508,7 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
  
 -        public void write(FriendlyByteBuf buffer, IdMap<T> map) {
 +        // Paper start - Anti-Xray - Add chunk packet info
-+        public void write(FriendlyByteBuf buffer, IdMap<T> map, @Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) {
++        public void write(FriendlyByteBuf buffer, IdMap<T> map, io.papermc.paper.antixray.@Nullable ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) {
              buffer.writeByte(this.storage.getBits());
              this.palette.write(buffer, map);
 +            if (chunkPacketInfo != null) {
@@ -590,18 +590,18 @@ index bcf7d5cca1f6e70222fccbeb259b6e323aa4c21a..787f5173425f617a89033e5b76256688
      private static final Palette.Factory HASHMAP_PALETTE_FACTORY = HashMapPalette::create;
      static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 1652513d8a7e6036c82162517948dd22ca98d109..2e8a1898c9ef8bbfd58ea1e9fbd7f6a633822fb9 100644
+index 68874c0b6f6f7c5d8e3a79c9a7b391b9624ab748..95c8d65a4b6db8d0721460ae55cb8fb8143ea9a2 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -140,6 +140,7 @@ public record SerializableChunkData(
+@@ -139,6 +139,7 @@ public record SerializableChunkData(
+     // Paper end - Do not let the server load chunks from newer versions
  
-     @Nullable
      public static SerializableChunkData parse(LevelHeightAccessor level, PalettedContainerFactory containerFactory, CompoundTag tag) {
 +        net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) level; // Paper - Anti-Xray This is is seemingly only called from ChunkMap, where, we have a server level. We'll fight this later if needed.
          if (tag.getString("Status").isEmpty()) {
              return null;
          } else {
-@@ -198,9 +199,11 @@ public record SerializableChunkData(
+@@ -199,9 +200,11 @@ public record SerializableChunkData(
                      int byteOr = compoundTag.getByteOr("Y", (byte)0);
                      LevelChunkSection levelChunkSection;
                      if (byteOr >= level.getMinSectionY() && byteOr <= level.getMaxSectionY()) {
