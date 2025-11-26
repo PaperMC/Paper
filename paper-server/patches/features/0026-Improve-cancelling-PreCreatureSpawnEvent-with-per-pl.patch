@@ -6,10 +6,10 @@ Subject: [PATCH] Improve cancelling PreCreatureSpawnEvent with per player mob
 
 
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 2aad9f90a7c1815ec4855d338848657dc0d9a3c7..ce53eb1e966e07b04e6a13785a858a3318b2c573 100644
+index 0bf14bf6ece5136f9c9972439076c33a7036be5c..6f32fb08788605ebf00839d412a7f4d78137aadf 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -260,8 +260,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -266,8 +266,25 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -33,14 +33,14 @@ index 2aad9f90a7c1815ec4855d338848657dc0d9a3c7..ce53eb1e966e07b04e6a13785a858a33
      public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
 -        return player.mobCounts[mobCategory.ordinal()];
 +        return player.mobCounts[mobCategory.ordinal()] + player.mobBackoffCounts[mobCategory.ordinal()]; // Paper - per player mob count backoff
-      }
+     }
      // Paper end - Optional per player mob spawns
  
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index f31b7ddddf80e58c2323d85ff48a98c3e92e33e0..488fc6088d69148f60a913b42ffb964c48eb0324 100644
+index 9b8222bda0f119f272d90f980c9f9540211af84a..af67b07722bb0125acd081dab767d7e7b360623b 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -541,7 +541,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -535,7 +535,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
              // re-set mob counts
              for (ServerPlayer player : this.level.players) {
@@ -60,10 +60,10 @@ index f31b7ddddf80e58c2323d85ff48a98c3e92e33e0..488fc6088d69148f60a913b42ffb964c
              spawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
          } else {
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index ebca471ba92f49b00707a3d193cd424a94b956e4..e2fdaf72b9714d919938b3e82328971c887c7ab1 100644
+index b3d9c359d091637e6911b17483cf594099aa61f4..791296eb42c961287db7ce8e56959910cc3b04e1 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -423,6 +423,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+@@ -413,6 +413,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
      public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
      public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS];
      // Paper end - Optional per player mob spawns
@@ -72,10 +72,10 @@ index ebca471ba92f49b00707a3d193cd424a94b956e4..e2fdaf72b9714d919938b3e82328971c
      public @Nullable String lastKnownName; // Better rename detection
      public String displayName;
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index 47384eedbb67f2ea50a3846f8499f6a81fd38b82..911c5099a2bbb3e955c9314219114873642c7355 100644
+index 253268a70179139daa9ad587f9e0e2f48d61beb9..4e5078495037078922ab6350a500acdabe177ca5 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -281,6 +281,11 @@ public final class NaturalSpawner {
+@@ -282,6 +282,11 @@ public final class NaturalSpawner {
  
                              // Paper start - PreCreatureSpawnEvent
                              PreSpawnStatus doSpawning = isValidSpawnPostitionForType(level, category, structureManager, generator, spawnerData, mutableBlockPos, d2);

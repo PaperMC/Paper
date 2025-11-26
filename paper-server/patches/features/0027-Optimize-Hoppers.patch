@@ -48,22 +48,22 @@ index 0000000000000000000000000000000000000000..24a2090e068ad3c0d08705050944abdf
 +    }
 +}
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index d58ee455467b2c8307ea20f8a9d88f0f18053fc1..f63a5567a2e845de904c2dacfbb875049e3e0c65 100644
+index 0f56d83701ac770799970fceeb73eab57adf5c38..ba4a3f33e10111d6b278d27938907c76ff28c88b 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1791,6 +1791,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1804,6 +1804,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
              serverLevel.updateLagCompensationTick(); // Paper - lag compensation
 +            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = serverLevel.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
-             profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().location());
+             profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().identifier());
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index fc6f17db0bf4b4ea9f913bbf5d4c1d5cbb10dc03..47862c00e9e01c7cdd5fcd808cc1b76740b85a57 100644
+index c91797613b68cd9c624779a2c7cd3e76edf9423e..b00ad17852e9890f848fc2124e2287885c2b9c5d 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -808,10 +808,16 @@ public final class ItemStack implements DataComponentHolder {
+@@ -813,10 +813,16 @@ public final class ItemStack implements DataComponentHolder {
      }
  
      public ItemStack copy() {
@@ -83,10 +83,10 @@ index fc6f17db0bf4b4ea9f913bbf5d4c1d5cbb10dc03..47862c00e9e01c7cdd5fcd808cc1b767
              return itemStack;
          }
 diff --git a/net/minecraft/world/level/block/entity/BlockEntity.java b/net/minecraft/world/level/block/entity/BlockEntity.java
-index bdbc6df5787cd1ca77541bc0602ec563e8799fbc..bd038bdaa00fb1e09b098b4d2809d17e2382288b 100644
+index 647ef4c1715e151711e3de70dfcbbc5037ac12ab..fb22ebe9758014ebf2aebcda21155f1c4c83fafe 100644
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -37,6 +37,7 @@ import net.minecraft.world.level.storage.ValueOutput;
+@@ -37,6 +37,7 @@ import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
  public abstract class BlockEntity implements DebugValueSource {
@@ -94,7 +94,7 @@ index bdbc6df5787cd1ca77541bc0602ec563e8799fbc..bd038bdaa00fb1e09b098b4d2809d17e
      // CraftBukkit start - data containers
      private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
      public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
-@@ -229,6 +230,7 @@ public abstract class BlockEntity implements DebugValueSource {
+@@ -226,6 +227,7 @@ public abstract class BlockEntity implements DebugValueSource {
  
      public void setChanged() {
          if (this.level != null) {
@@ -103,7 +103,7 @@ index bdbc6df5787cd1ca77541bc0602ec563e8799fbc..bd038bdaa00fb1e09b098b4d2809d17e
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 96414f8bce0a89f11c64bf26924fc7bb4588e9be..28348e3881c3c8591053a01b193fb2a956f79726 100644
+index dbd03aa40f69522bc197ecaab88f53fd8bb6d7a9..ba554c02890d66a872f1c19723eb55b23ab7add2 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -144,18 +144,56 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -628,21 +628,21 @@ index 96414f8bce0a89f11c64bf26924fc7bb4588e9be..28348e3881c3c8591053a01b193fb2a9
                  stack = leftover; // Paper - Make hoppers respect inventory max stack size
                  flag = true;
              } else if (canMergeItems(item, stack)) {
-@@ -526,13 +775,19 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -522,12 +771,18 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     }
  
-     @Nullable
-     public static Container getContainerAt(Level level, BlockPos pos) {
+     public static @Nullable Container getContainerAt(Level level, BlockPos pos) {
 -        return getContainerAt(level, pos, level.getBlockState(pos), pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 +        return getContainerAt(level, pos, level.getBlockState(pos), pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, true); // Paper - Optimize hoppers
      }
  
-     @Nullable
-     private static Container getContainerAt(Level level, BlockPos pos, BlockState state, double x, double y, double z) {
+-    private static @Nullable Container getContainerAt(Level level, BlockPos pos, BlockState state, double x, double y, double z) {
++    @Nullable
++    private static Container getContainerAt(Level level, BlockPos pos, BlockState state, double x, double y, double z) {
 +        // Paper start - Perf: Optimize Hoppers
 +        return HopperBlockEntity.getContainerAt(level, pos, state, x, y, z, false);
 +    }
-+    @Nullable
-+    private static Container getContainerAt(Level level, BlockPos pos, BlockState state, double x, double y, double z, final boolean optimizeEntities) {
++    private static @Nullable Container getContainerAt(Level level, BlockPos pos, BlockState state, double x, double y, double z, final boolean optimizeEntities) {
 +        // Paper end - Perf: Optimize Hoppers
          Container blockContainer = getBlockContainer(level, pos, state);
 -        if (blockContainer == null) {
@@ -650,10 +650,10 @@ index 96414f8bce0a89f11c64bf26924fc7bb4588e9be..28348e3881c3c8591053a01b193fb2a9
              blockContainer = getEntityContainer(level, x, y, z);
          }
  
-@@ -558,14 +813,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -551,14 +806,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     }
  
-     @Nullable
-     private static Container getEntityContainer(Level level, double x, double y, double z) {
+     private static @Nullable Container getEntityContainer(Level level, double x, double y, double z) {
 -        List<Entity> entities = level.getEntities(
 -            (Entity)null, new AABB(x - 0.5, y - 0.5, z - 0.5, x + 0.5, y + 0.5, z + 0.5), EntitySelector.CONTAINER_ENTITY_SELECTOR
 +        List<Entity> entities = level.getEntitiesOfClass(
@@ -669,10 +669,10 @@ index 96414f8bce0a89f11c64bf26924fc7bb4588e9be..28348e3881c3c8591053a01b193fb2a9
  
      @Override
 diff --git a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index d2cd30ed072a3d75c32b49a72920a9c26ce29922..dc59465d63e36bd50a48a8ea4197424556736552 100644
+index 54c2c171c4bdc2d4d0ad048609dbdd0be8691017..4bf59f040ca2d6f35ef3c74cd8195c326234190a 100644
 --- a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -54,7 +54,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+@@ -52,7 +52,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
  
      @Override
      public ItemStack getItem(int index) {
