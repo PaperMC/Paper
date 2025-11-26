@@ -12,7 +12,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
@@ -28,10 +28,10 @@ public class V30_PacketIds implements TransformAction {
     private static final int VERSION = 30;
 
     private static final Gson GSON = new Gson();
-    private static final Map<String, ResourceLocation> MOJANG_TO_ID;
+    private static final Map<String, Identifier> MOJANG_TO_ID;
 
     static {
-        final ImmutableMap.Builder<String, ResourceLocation> builder2 = ImmutableMap.builder();
+        final ImmutableMap.Builder<String, Identifier> builder2 = ImmutableMap.builder();
         final InputStream input = V30_PacketIds.class.getResourceAsStream("/config-data/packet-limiter-upgrade-data.json");
         if (input == null) {
             throw new RuntimeException("Failed to load packet limiter upgrade data");
@@ -40,7 +40,7 @@ public class V30_PacketIds implements TransformAction {
             final JsonArray array = GSON.fromJson(reader, JsonArray.class);
             for (final JsonElement element : array) {
                 final JsonObject obj = element.getAsJsonObject();
-                builder2.put(obj.get("simple_class_name").getAsString(), ResourceLocation.parse(obj.get("id").getAsString()));
+                builder2.put(obj.get("simple_class_name").getAsString(), Identifier.parse(obj.get("id").getAsString()));
             }
         } catch (final IOException e) {
             throw new RuntimeException("Failed to load packet limiter upgrade data", e);

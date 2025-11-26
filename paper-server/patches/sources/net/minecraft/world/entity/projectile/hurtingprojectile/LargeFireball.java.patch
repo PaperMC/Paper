@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/entity/projectile/hurtingprojectile/LargeFireball.java
++++ b/net/minecraft/world/entity/projectile/hurtingprojectile/LargeFireball.java
+@@ -20,20 +_,27 @@
+ 
+     public LargeFireball(EntityType<? extends LargeFireball> type, Level level) {
+         super(type, level);
++        this.isIncendiary = (level instanceof ServerLevel serverLevel) && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING); // CraftBukkit
+     }
+ 
+     public LargeFireball(Level level, LivingEntity owner, Vec3 movement, int explosionPower) {
+         super(EntityType.FIREBALL, owner, movement, level);
+         this.explosionPower = explosionPower;
++        this.isIncendiary = (level instanceof ServerLevel serverLevel) && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING); // CraftBukkit
+     }
+ 
+     @Override
+     protected void onHit(HitResult result) {
+         super.onHit(result);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            boolean flag = serverLevel.getGameRules().get(GameRules.MOB_GRIEFING);
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), this.explosionPower, flag, Level.ExplosionInteraction.MOB);
+-            this.discard();
++            // boolean flag = serverLevel.getGameRules().get(GameRules.MOB_GRIEFING); // CraftBukkit - baked into fields (see constructor)
++            // CraftBukkit start - fire ExplosionPrimeEvent
++            org.bukkit.event.entity.ExplosionPrimeEvent event = new org.bukkit.event.entity.ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
++            if (event.callEvent()) {
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
++            }
++            // CraftBukkit end - fire ExplosionPrimeEvent
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -58,6 +_,6 @@
+     @Override
+     protected void readAdditionalSaveData(ValueInput input) {
+         super.readAdditionalSaveData(input);
+-        this.explosionPower = input.getByteOr("ExplosionPower", (byte)1);
++        this.bukkitYield = this.explosionPower = input.getByteOr("ExplosionPower", (byte)1); // CraftBukkit - set bukkitYield when setting explosionPower
+     }
+ }
