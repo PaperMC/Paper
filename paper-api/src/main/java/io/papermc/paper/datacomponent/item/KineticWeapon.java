@@ -98,9 +98,9 @@ public interface KineticWeapon {
         Builder damageMultiplier(float damageMultiplier);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder sound(Key sound);
+        Builder sound(@Nullable Key sound);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitSound(Key sound);
+        Builder hitSound(@Nullable Key sound);
     }
 }
