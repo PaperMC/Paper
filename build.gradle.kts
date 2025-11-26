@@ -4,7 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.19" apply false
 }
 
 subprojects {

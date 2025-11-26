@@ -2,7 +2,6 @@ import paper.libs.com.google.gson.Gson
 
 import io.papermc.paperweight.checkstyle.JavadocTag
 import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
-import io.papermc.paperweight.checkstyle.setCustomJavadocTags
 
 plugins {
     `java-library`
@@ -15,7 +14,7 @@ java {
     withJavadocJar()
 }
 
-val customJavadocTags = setOf(
+val projectCustomJavadocTags = setOf(
     JavadocTag("apiNote", "a", "API Note:"),
 )
 
@@ -24,11 +23,8 @@ paperCheckstyle {
         .fileContents(layout.projectDirectory.file(".checkstyle/packages.txt"))
         .asText.map { it.trim().split("\n").toSet() }
 
-    directoriesToSkip.set(packagesToSkipSource)
-}
-
-tasks.withType<PaperCheckstyleTask>().configureEach {
-    setCustomJavadocTags(customJavadocTags)
+    directoriesToSkip = packagesToSkipSource
+    customJavadocTags = projectCustomJavadocTags
 }
 
 val annotationsVersion = "26.0.2"
@@ -224,7 +220,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags(customJavadocTags.map { it.toOptionString() })
+    options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements
