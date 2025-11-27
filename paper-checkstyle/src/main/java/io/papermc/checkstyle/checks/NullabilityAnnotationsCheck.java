@@ -83,13 +83,13 @@ public final class NullabilityAnnotationsCheck extends AbstractCheck {
         final DetailAST identLoc;
         if (dot != null) {
             annotationHolder = dot.findFirstToken(TokenTypes.ANNOTATIONS);
-            identLoc = dot.findFirstToken(TokenTypes.IDENT);
+            identLoc = Util.getLastChild(dot, TokenTypes.IDENT);
         } else {
             annotationHolder = holderDef.findFirstToken(baseAnnotationHolderType);
             identLoc = type;
         }
         if (hasNoNullabilityAnnotationChildren(annotationHolder)) {
-            this.log(identLoc.getLineNo(), identLoc.getColumnNo() - 1, "Missing nullability annotation for '" + holderDef.findFirstToken(TokenTypes.IDENT).getText() + "'");
+            this.log(identLoc.getLineNo(), identLoc.getColumnNo(), "Missing nullability annotation for '" + holderDef.findFirstToken(TokenTypes.IDENT).getText() + "'");
         }
     }
 

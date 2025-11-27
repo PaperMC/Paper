@@ -53,6 +53,21 @@ public final class Util {
     }
 
     /**
+     * Gets the last child of the given node with the given type.
+     *
+     * @param node the node
+     * @param type the type
+     * @return the last child with the given type or {@code null} if not found
+     */
+    public static @Nullable DetailAST getLastChild(final DetailAST node, final int type) {
+        DetailAST child = node.getLastChild();
+        while (child != null && child.getType() != type) {
+            child = child.getPreviousSibling();
+        }
+        return child;
+    }
+
+    /**
      * Gets the enclosing type declaration of the given node.
      *
      * @param node the node
