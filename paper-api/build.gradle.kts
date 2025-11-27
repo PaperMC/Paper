@@ -20,7 +20,7 @@ val projectCustomJavadocTags = setOf(
 
 paperCheckstyle {
     val packagesToSkipSource = providers
-        .fileContents(layout.projectDirectory.file(".checkstyle/packages.txt"))
+        .fileContents(layout.projectDirectory.file(".checkstyle/ignored_packages.txt"))
         .asText.map { it.trim().split("\n").toSet() }
 
     directoriesToSkip = packagesToSkipSource
