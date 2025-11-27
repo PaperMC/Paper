@@ -32,8 +32,23 @@ public class NullabilityAnnotations {
         public static String method(final String param) {
             return "";
         }
+
+        public static final class InnerInnerClass {
+        }
     }
 
     public void method1(final @NonNull Integer param) {
+    }
+
+    public void innerClass(final NullabilityAnnotations.InnerClass param) {
+    }
+
+    public void innerClassCorrect(final NullabilityAnnotations.@Nullable InnerClass param) {
+    }
+
+    public void innerInnerClass(final NullabilityAnnotations.InnerClass.InnerInnerClass param) {
+    }
+
+    public void innerInnerClassCorrect(final NullabilityAnnotations.InnerClass.@Nullable InnerInnerClass param) {
     }
 }
