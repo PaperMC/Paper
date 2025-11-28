@@ -1,4 +1,4 @@
-package io.papermc.checkstyle.checks;
+package io.papermc.checkstyle.checks.util;
 
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
