@@ -28,7 +28,7 @@ subprojects {
         apply(plugin = "io.papermc.paperweight.paper-checkstyle")
         extensions.configure<PaperCheckstyleExt> {
             val typeUseAnnotationsProvider = providers
-                .fileContents(rootProject.layout.projectDirectory.file(".checkstyle/type-use-annotations.txt"))
+                .fileContents(rootProject.layout.projectDirectory.file(".checkstyle/type_use_annotations.txt"))
                 .asText.map { it.trim().split("\n").toSet() }
             typeUseAnnotations.set(typeUseAnnotationsProvider)
         }
