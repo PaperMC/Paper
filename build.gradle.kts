@@ -37,6 +37,10 @@ subprojects {
             configDirectory = rootProject.layout.projectDirectory.dir(".checkstyle")
             configFile = layout.projectDirectory.file(".checkstyle/checkstyle.xml").asFile
             maxHeapSize = "2g"
+            reports {
+                xml.required = true
+                html.required = true
+            }
         }
 
         dependencies {
