@@ -3,7 +3,7 @@ package io.papermc.checkstyle.checks;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 import io.papermc.checkstyle.Util;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -83,8 +83,8 @@ public class UnnecessaryFullyQualifiedImportCheck extends ImportAwareAbstractChe
             return;
         }
         final Pair<String, DetailAST> fullIdent = Util.extractFullIdent(dot);
-        final DetailAST startNode = fullIdent.getValue();
-        final String fullIdentName = fullIdent.getKey();
+        final DetailAST startNode = fullIdent.getRight();
+        final String fullIdentName = fullIdent.getLeft();
         if (Character.isUpperCase(fullIdentName.charAt(0))) {
             // not a package
             return;
