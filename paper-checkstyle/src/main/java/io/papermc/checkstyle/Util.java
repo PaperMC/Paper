@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Predicate;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
@@ -180,6 +180,6 @@ public final class Util {
         }
         parts.addFirst(ident.getText());
 
-        return new Pair<>(String.join(".", parts), ident);
+        return Pair.of(String.join(".", parts), ident);
     }
 }
