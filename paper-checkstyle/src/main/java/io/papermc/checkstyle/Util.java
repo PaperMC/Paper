@@ -9,18 +9,37 @@ import com.puppycrawl.tools.checkstyle.utils.TokenUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.function.Predicate;
+import javafx.util.Pair;
 import org.jspecify.annotations.Nullable;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Utility class containing utility methods for custom checkstyle checks.
  */
 public final class Util {
 
+    public static final Set<Integer> PRIMITIVE_TYPES = Set.of(
+        TokenTypes.LITERAL_VOID,
+        TokenTypes.LITERAL_BOOLEAN,
+        TokenTypes.LITERAL_BYTE,
+        TokenTypes.LITERAL_CHAR,
+        TokenTypes.LITERAL_SHORT,
+        TokenTypes.LITERAL_INT,
+        TokenTypes.LITERAL_LONG,
+        TokenTypes.LITERAL_FLOAT,
+        TokenTypes.LITERAL_DOUBLE
+    );
+
     private Util() {
     }
+
 
     /**
      * Gets the previous sibling of the given node with the given type.
@@ -32,7 +51,7 @@ public final class Util {
     public static @Nullable DetailNode getPreviousSibling(final DetailNode node, final int type) {
         DetailNode sibling = node.getPreviousSibling();
         while (sibling != null && sibling.getType() != type) {
-            sibling = node.getPreviousSibling();
+            sibling = sibling.getPreviousSibling();
         }
         return sibling;
     }
@@ -123,7 +142,7 @@ public final class Util {
         return packageInfoAst;
     }
 
-    public static boolean isPackageInfoAnnotated(final Path filePath, final Predicate<DetailAST> annotationPredicate) {
+    public static boolean isPackageInfoAnnotated(final Path filePath, final Predicate<? super DetailAST> annotationPredicate) {
         final DetailAST packageInfoAst = Util.findPackageInfoFor(filePath);
         if (packageInfoAst == null) {
             return false;
@@ -133,11 +152,34 @@ public final class Util {
             return false;
         }
         final DetailAST annotations = firstToken.findFirstToken(TokenTypes.ANNOTATIONS);
+        if (annotations == null) {
+            return false;
+        }
         for (final DetailAST annotation : Util.childrenIterator(annotations, TokenTypes.ANNOTATION)) {
             if (annotationPredicate.test(annotation)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static Pair<String, DetailAST> extractFullIdent(final DetailAST lastDot) {
+        final List<String> parts = new ArrayList<>();
+        DetailAST dot = lastDot;
+        while (dot.getChildCount(TokenTypes.DOT) > 0) {
+            parts.addFirst(requireNonNull(dot.findFirstToken(TokenTypes.IDENT)).getText());
+            dot = requireNonNull(dot.findFirstToken(TokenTypes.DOT));
+        }
+        if (dot.getChildCount(TokenTypes.IDENT) > 2) {
+            throw new IllegalArgumentException("Invalid AST structure, expected <= 2 IDENTs " + dot.getChildCount(TokenTypes.IDENT) + " " + dot.getLineNo() + " " + dot.getColumnNo());
+        }
+        final DetailAST ident = requireNonNull(dot.findFirstToken(TokenTypes.IDENT));
+        final DetailAST secondIdent = getNextSibling(ident, TokenTypes.IDENT);
+        if (secondIdent != null) {
+            parts.addFirst(secondIdent.getText());
+        }
+        parts.addFirst(ident.getText());
+
+        return new Pair<>(String.join(".", parts), ident);
     }
 }

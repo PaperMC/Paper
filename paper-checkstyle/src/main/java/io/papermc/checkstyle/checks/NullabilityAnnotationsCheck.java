@@ -16,18 +16,6 @@ public final class NullabilityAnnotationsCheck extends AbstractCheck {
 
     private static final Set<String> NULLABILITY_ANNOTATIONS = Set.of("Nullable", "NonNull");
 
-    private static final Set<Integer> TYPES_TO_SKIP = Set.of(
-        TokenTypes.LITERAL_VOID,
-        TokenTypes.LITERAL_BOOLEAN,
-        TokenTypes.LITERAL_BYTE,
-        TokenTypes.LITERAL_CHAR,
-        TokenTypes.LITERAL_SHORT,
-        TokenTypes.LITERAL_INT,
-        TokenTypes.LITERAL_LONG,
-        TokenTypes.LITERAL_FLOAT,
-        TokenTypes.LITERAL_DOUBLE
-    );
-
     @Override
     public int[] getDefaultTokens() {
         return this.getRequiredTokens();
@@ -74,7 +62,7 @@ public final class NullabilityAnnotationsCheck extends AbstractCheck {
                 this.log(arrayTypeStart.getLineNo(), arrayTypeStart.getColumnNo() - 1, "Array is missing nullability annotation");
             }
         }
-        if (TokenUtil.findFirstTokenByPredicate(type, t -> TYPES_TO_SKIP.contains(t.getType())).isPresent()) {
+        if (TokenUtil.findFirstTokenByPredicate(type, t -> Util.PRIMITIVE_TYPES.contains(t.getType())).isPresent()) {
             // skip primitive types
             return;
         }
