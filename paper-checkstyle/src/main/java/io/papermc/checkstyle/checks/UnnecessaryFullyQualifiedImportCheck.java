@@ -3,6 +3,7 @@ package io.papermc.checkstyle.checks;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 import io.papermc.checkstyle.Util;
+import io.papermc.checkstyle.checks.util.ImportAwareAbstractCheck;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
