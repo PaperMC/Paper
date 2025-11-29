@@ -8,8 +8,9 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
-// This class exists only to be implemented, implementations must override the following register method:
+// This class exists only to be implemented, implementations must override the following register methods:
 //   void register(final TYPE type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla)
+//   void register(final TYPE type, final Function<NMS, API> vanillaToApi)
 // BUT should NOT use the @Override annotation, this is a hack around generics limitations to prevent
 // having to define generics on each register call as seen below, making collectors easier to read:
 //   collector.<NMSType, APIType>register(...)
