@@ -1,12 +1,11 @@
-import paper.libs.com.google.gson.Gson
-
 import io.papermc.paperweight.checkstyle.JavadocTag
-import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
+import paper.libs.com.google.gson.Gson
 
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 java {
@@ -19,12 +18,8 @@ val projectCustomJavadocTags = setOf(
 )
 
 paperCheckstyle {
-    val packagesToSkipSource = providers
-        .fileContents(layout.projectDirectory.file(".checkstyle/ignored_packages.txt"))
-        .asText.map { it.trim().split("\n").toSet() }
-
-    directoriesToSkip = packagesToSkipSource
     customJavadocTags = projectCustomJavadocTags
+    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
 }
 
 val annotationsVersion = "26.0.2"

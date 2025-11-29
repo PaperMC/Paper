@@ -1,5 +1,6 @@
 plugins {
     java
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 val testData = sourceSets.create("testData")
