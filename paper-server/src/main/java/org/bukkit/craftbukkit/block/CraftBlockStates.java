@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 
@@ -236,6 +237,11 @@ public final class CraftBlockStates {
         Preconditions.checkNotNull(state, "state is null");
         BlockEntity blockEntity = (blockEntityTag == null) ? null : BlockEntity.loadStatic(pos, state, blockEntityTag, registry); // todo create block entity from the state
         return CraftBlockStates.getBlockState(null, pos, state, blockEntity);
+    }
+
+    public static TileState getTileState(final BlockEntity blockEntity) {
+        Preconditions.checkArgument(blockEntity.getLevel() != null, "blockEntity has no level");
+        return (TileState) CraftBlockStates.getBlockState(blockEntity.getLevel().getWorld(), blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity);
     }
 
     // See BlockStateFactory#createBlockState(World, BlockPos, BlockState, BlockEntity)
