@@ -1,5 +1,3 @@
-import io.papermc.paperweight.checkstyle.PaperCheckstyleExt
-import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
