@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import java.util.Collection;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
@@ -834,4 +835,6 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return {@code true} if the block can suffocate
      */
     boolean isSuffocating();
+
+    <T> @NotNull T getAttributeValue(@NotNull EnvironmentalAttributeType<T> type);
 }

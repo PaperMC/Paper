@@ -2055,7 +2055,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper end
 
     @Override
-    public @NotNull <T> EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull final EnvironmentalAttributeType<T> type) {
+    public @NotNull <T> PaperEnvironmentalAttribute<T, ?> getEnvironmentalAttribute(@NotNull final EnvironmentalAttributeType<T> type) {
         return new PaperEnvironmentalAttribute<>(this.getHandle().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
     }
 }

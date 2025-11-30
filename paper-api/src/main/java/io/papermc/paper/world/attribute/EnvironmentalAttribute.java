@@ -9,9 +9,7 @@ public interface EnvironmentalAttribute<T> {
 
     T getGlobal();
 
-    default T getPositioned(Position position) {
-        return this.getValue(EnvironmentalAttributeContext.builder().position(position).build());
-    }
+    T getPositioned(Position position);
 
     default T getTimed(long time) {
         return this.getValue(EnvironmentalAttributeContext.builder().time(time).build());
