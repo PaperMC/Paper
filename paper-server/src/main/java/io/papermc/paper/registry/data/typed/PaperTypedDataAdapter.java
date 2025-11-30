@@ -8,7 +8,7 @@ import net.minecraft.util.Unit;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jspecify.annotations.Nullable;
 
-public record PaperTypedDataAdapter<NMS, API>(
+public record PaperTypedDataAdapter<API, NMS>(
     Function<API, NMS> apiToVanilla,
     Function<NMS, API> vanillaToApi,
     @Nullable Codec<NMS> codec

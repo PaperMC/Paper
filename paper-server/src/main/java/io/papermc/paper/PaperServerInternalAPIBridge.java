@@ -6,6 +6,8 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeContext;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeContext;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
@@ -115,5 +117,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
         return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
+    }
+
+    @Override
+    public EnvironmentalAttributeContext.Builder environmentalAttributeContextBuilder() {
+        return new PaperEnvironmentalAttributeContext.PaperBuilder();
     }
 }

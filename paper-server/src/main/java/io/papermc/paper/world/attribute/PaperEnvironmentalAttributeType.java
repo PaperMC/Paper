@@ -69,9 +69,9 @@ public final class PaperEnvironmentalAttributeType<API, NMS> extends HolderableB
         }
     );
 
-    private final PaperTypedDataAdapter<NMS, API> adapter;
+    private final PaperTypedDataAdapter<API, NMS> adapter;
 
-    private PaperEnvironmentalAttributeType(Holder<EnvironmentAttribute<NMS>> holder, PaperTypedDataAdapter<NMS, API> adapter) {
+    private PaperEnvironmentalAttributeType(Holder<EnvironmentAttribute<NMS>> holder, PaperTypedDataAdapter<API, NMS> adapter) {
         super(holder);
 
         this.adapter = adapter;
@@ -79,7 +79,7 @@ public final class PaperEnvironmentalAttributeType<API, NMS> extends HolderableB
 
     @SuppressWarnings("unchecked")
     public static <NMS> EnvironmentalAttributeType<?> of(final Holder<?> holder) {
-        final PaperTypedDataAdapter<NMS, ?> adapter = PaperEnvironmentalAttributeType.ADAPTERS.getAdapter(holder.unwrapKey().orElseThrow());
+        final PaperTypedDataAdapter<?, NMS> adapter = PaperEnvironmentalAttributeType.ADAPTERS.getAdapter(holder.unwrapKey().orElseThrow());
         if (adapter == null) {
             throw new IllegalArgumentException("No adapter found for " + holder);
         }
@@ -94,7 +94,7 @@ public final class PaperEnvironmentalAttributeType<API, NMS> extends HolderableB
         return this.getAdapter().fromVanilla(this.getHandle().defaultValue());
     }
 
-    public PaperTypedDataAdapter<NMS, API> getAdapter() {
+    public PaperTypedDataAdapter<API, NMS> getAdapter() {
         return this.adapter;
     }
 }

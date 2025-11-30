@@ -90,7 +90,7 @@ import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
-public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>> implements DataComponentType {
+public abstract class PaperDataComponentType<API, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>> implements DataComponentType {
 
     private static final PaperTypedDataAdapters ADAPTERS = PaperTypedDataAdapters.create(
         BuiltInRegistries.DATA_COMPONENT_TYPE,
@@ -231,9 +231,9 @@ public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.
         return type.getAdapter().fromVanilla(nmsValue);
     }
 
-    private final PaperTypedDataAdapter<NMS, T> adapter;
+    private final PaperTypedDataAdapter<API, NMS> adapter;
 
-    private PaperDataComponentType(final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder, final PaperTypedDataAdapter<NMS, T> adapter) {
+    private PaperDataComponentType(final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder, final PaperTypedDataAdapter<API, NMS> adapter) {
         super(holder);
         this.adapter = adapter;
     }
@@ -243,13 +243,13 @@ public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.
         return !this.getHandle().isTransient();
     }
 
-    public PaperTypedDataAdapter<NMS, T> getAdapter() {
+    public PaperTypedDataAdapter<API, NMS> getAdapter() {
         return this.adapter;
     }
 
     @SuppressWarnings("unchecked")
     public static <NMS> DataComponentType of(final Holder<?> holder) {
-        final PaperTypedDataAdapter< NMS, ?> adapter = PaperDataComponentType.ADAPTERS.getAdapter(holder.unwrapKey().orElseThrow());
+        final PaperTypedDataAdapter<?, NMS> adapter = PaperDataComponentType.ADAPTERS.getAdapter(holder.unwrapKey().orElseThrow());
         if (adapter == null) {
             throw new IllegalArgumentException("No adapter found for " + holder);
         }
@@ -262,31 +262,31 @@ public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.
         }
     }
 
-    public static final class NonValuedImpl<T, NMS> extends PaperDataComponentType<T, NMS> implements NonValued {
+    public static final class NonValuedImpl<API, NMS> extends PaperDataComponentType<API, NMS> implements NonValued {
 
         NonValuedImpl(
             final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
-            final PaperTypedDataAdapter<NMS, T> adapter
+            final PaperTypedDataAdapter<API, NMS> adapter
         ) {
             super(holder, adapter);
         }
     }
 
-    public static final class ValuedImpl<T, NMS> extends PaperDataComponentType<T, NMS> implements Valued<T> {
+    public static final class ValuedImpl<API, NMS> extends PaperDataComponentType<API, NMS> implements Valued<API> {
 
         ValuedImpl(
             final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
-            final PaperTypedDataAdapter<NMS, T> adapter
+            final PaperTypedDataAdapter<API, NMS> adapter
         ) {
             super(holder, adapter);
         }
     }
 
-    public static final class Unimplemented<T, NMS> extends PaperDataComponentType<T, NMS> {
+    public static final class Unimplemented<API, NMS> extends PaperDataComponentType<API, NMS> {
 
         public Unimplemented(
             final Holder<net.minecraft.core.component.DataComponentType<NMS>> holder,
-            final PaperTypedDataAdapter<NMS, T> adapter
+            final PaperTypedDataAdapter<API, NMS> adapter
         ) {
             super(holder, adapter);
         }

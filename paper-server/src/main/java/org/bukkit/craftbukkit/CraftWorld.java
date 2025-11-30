@@ -12,6 +12,10 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.attribute.EnvironmentalAttribute;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttribute;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -57,8 +61,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.attribute.BedRule;
 import net.minecraft.util.NullOps;
+import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -2049,4 +2053,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return POINTERS_SUPPLIER.view(this);
     }
     // Paper end
+
+    @Override
+    public @NotNull <T> EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull final EnvironmentalAttributeType<T> type) {
+        return new PaperEnvironmentalAttribute<>(this.getHandle().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
+    }
 }
