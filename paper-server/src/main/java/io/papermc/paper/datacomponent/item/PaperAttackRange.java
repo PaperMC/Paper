@@ -2,7 +2,6 @@ package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.Range;
 
 public record PaperAttackRange(
     net.minecraft.world.item.component.AttackRange impl
@@ -45,12 +44,12 @@ public record PaperAttackRange(
 
     static final class BuilderImpl implements AttackRange.Builder {
 
-        private float minReach = -1;
-        private float maxReach = -1;
-        private float minCreativeReach = -1;
-        private float maxCreativeReach = -1;
-        private float hitboxMargin = -1;
-        private float mobFactor = -1;
+        private float minReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minRange();
+        private float maxReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxRange();
+        private float minCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minCreativeRange();
+        private float maxCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxCreativeRange();
+        private float hitboxMargin = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.hitboxMargin();
+        private float mobFactor = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.mobFactor();
 
         @Override
         public AttackRange.Builder minReach(final float minReach) {
@@ -96,12 +95,6 @@ public record PaperAttackRange(
 
         @Override
         public AttackRange build() {
-            Preconditions.checkArgument(this.minReach >= 0.0F, "minReach must be set");
-            Preconditions.checkArgument(this.maxReach >= 0.0F, "maxReach must be set");
-            Preconditions.checkArgument(this.minCreativeReach >= 0.0F, "minCreativeReach must be set");
-            Preconditions.checkArgument(this.maxCreativeReach >= 0.0F, "maxCreativeReach must be set");
-            Preconditions.checkArgument(this.hitboxMargin >= 0.0F, "hitboxMargin must be set");
-            Preconditions.checkArgument(this.mobFactor >= 0.0F, "mobFactor must be set");
             return new PaperAttackRange(
                 new net.minecraft.world.item.component.AttackRange(
                     this.minReach,
