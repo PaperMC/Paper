@@ -28,6 +28,12 @@ public interface AttackRange {
     @Range(from = 0, to = 64) float maxReach();
 
     @Contract(pure = true)
+    @Range(from = 0, to = 64) float minCreativeReach();
+
+    @Contract(pure = true)
+    @Range(from = 0, to = 64) float maxCreativeReach();
+
+    @Contract(pure = true)
     @Range(from = 0, to = 1) float hitboxMargin();
 
     @Contract(pure = true)
@@ -45,6 +51,12 @@ public interface AttackRange {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder maxReach(@Range(from = 0, to = 64) float maxReach);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder minCreativeReach(@Range(from = 0, to = 64) float minCreativeReach);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder maxCreativeReach(@Range(from = 0, to = 64) float maxCreativeReach);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hitboxMargin(@Range(from = 0, to = 1) float hitboxMargin);
