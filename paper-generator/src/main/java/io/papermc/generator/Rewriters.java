@@ -26,6 +26,7 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -112,6 +113,12 @@ public final class Rewriters {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
             .register("EntityType", EntityType.class, new EntityTypeRewriter())
+            .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(net.minecraft.world.entity.Entity.RemovalReason.class) {
+                @Override
+                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.Entity.RemovalReason reason) {
+                    return super.rewriteEnumValue(reason).arguments(Boolean.toString(reason.shouldDestroy()), Boolean.toString(reason.shouldSave()));
+                }
+            })
             .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.scores.DisplaySlot slot) {
