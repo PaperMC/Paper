@@ -346,7 +346,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("Whether the nether dimension is enabled and will be loaded.")
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
-        public boolean fixEndRings = true;
+        public boolean fixFarEndTerrainGeneration = true;
     }
 
     public BlockUpdates blockUpdates;
