@@ -2081,7 +2081,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public boolean unlistPlayer(@NonNull Player other) {
         Preconditions.checkNotNull(other, "hidden entity cannot be null");
         if (this.getHandle().connection == null) return false;
-        if (!this.canSee(other)) return false;
 
         if (unlistedEntities.add(other.getUniqueId())) {
             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), false));
@@ -2095,9 +2094,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public boolean listPlayer(@NonNull Player other) {
         Preconditions.checkNotNull(other, "hidden entity cannot be null");
         if (this.getHandle().connection == null) return false;
-        if (!this.canSee(other)) throw new IllegalStateException("Player cannot see other player");
-
-        if (this.unlistedEntities.remove(other.getUniqueId())) {
+        boolean removed = this.unlistedEntities.remove(other.getUniqueId());
+        if (!this.canSee(other)) { // unseen entities aren't immediately added to unlistedEntities
+            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(((CraftPlayer) other).getHandle(), true));
+            return true;
+        } else if (removed) {
             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), true));
             return true;
         } else {
