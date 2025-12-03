@@ -134,6 +134,7 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
     @Override
     public void startWobble(@NotNull final WobbleStyle style) {
         Preconditions.checkArgument(style != null, "style must not be null");
+        this.requirePlaced();
 
         DecoratedPotBlockEntity.WobbleStyle originalStyle = switch (style) {
             case POSITIVE -> DecoratedPotBlockEntity.WobbleStyle.POSITIVE;

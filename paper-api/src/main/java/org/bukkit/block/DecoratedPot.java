@@ -68,6 +68,7 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
      * Run the specified animation on the decorated pot.
      *
      * @param style the animation style
+     * @throws IllegalStateException if this block state is not placed
      */
     public void startWobble(@NotNull WobbleStyle style);
 
