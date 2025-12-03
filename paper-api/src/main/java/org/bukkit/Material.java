@@ -3001,13 +3001,14 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
 
     /**
-     * Checks if this Material is edible.
+     * Checks if this Material provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
+     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
      *
      * @return true if this Material is edible.
      */
     public boolean isEdible() {
         ItemType type = asItemType();
-        return type == null ? false : type.isEdible();
+        return type != null && type.isEdible();
     }
 
     /**

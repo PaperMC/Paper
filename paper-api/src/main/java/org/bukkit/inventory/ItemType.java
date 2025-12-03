@@ -3189,7 +3189,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     short getMaxDurability();
 
     /**
-     * Checks if this item type is edible.
+     * Checks if this item type provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
+     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
      *
      * @return true if this item type is edible.
      */
