@@ -12,7 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -374,7 +374,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                     Set.of()
                 );
 
-                public Map<ResourceLocation, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
+                public Map<Identifier, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
                     Objects.requireNonNull(net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL)),
                     new ItemObfuscationBinding.AssetObfuscationConfiguration(
                         true,

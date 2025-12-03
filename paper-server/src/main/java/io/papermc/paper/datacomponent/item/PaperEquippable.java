@@ -12,7 +12,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.equipment.EquipmentAsset;
@@ -114,7 +114,7 @@ public record PaperEquippable(
         private final net.minecraft.world.entity.EquipmentSlot equipmentSlot;
         private Holder<SoundEvent> equipSound = SoundEvents.ARMOR_EQUIP_GENERIC;
         private Optional<ResourceKey<EquipmentAsset>> assetId = Optional.empty();
-        private Optional<ResourceLocation> cameraOverlay = Optional.empty();
+        private Optional<Identifier> cameraOverlay = Optional.empty();
         private Optional<HolderSet<net.minecraft.world.entity.EntityType<?>>> allowedEntities = Optional.empty();
         private boolean dispensable = true;
         private boolean swappable = true;

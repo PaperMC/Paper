@@ -65,4 +65,5 @@ aerulion <aerulion@gmail.com>
 Lukas Planz <lukas.planz@web.de>
 granny <contact@granny.dev>
 mja00 <me@mja00.dev>
+roro1506HD <16260475+roro1506HD@users.noreply.github.com>
 ```

@@ -8,9 +8,10 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.monster.Zombie;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
@@ -24,13 +25,13 @@ import org.bukkit.event.entity.EntityTransformEvent;
 
 public class CraftVillager extends CraftAbstractVillager implements Villager {
 
-    public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.Villager entity) {
+    public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.villager.Villager entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.npc.Villager getHandle() {
-        return (net.minecraft.world.entity.npc.Villager) this.entity;
+    public net.minecraft.world.entity.npc.villager.Villager getHandle() {
+        return (net.minecraft.world.entity.npc.villager.Villager) this.entity;
     }
 
     @Override
@@ -91,11 +92,11 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public boolean increaseLevel(int amount) {
         Preconditions.checkArgument(amount > 0, "Level earned must be positive");
         int supposedFinalLevel = this.getVillagerLevel() + amount;
-        Preconditions.checkArgument(net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL,
-            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL));
+        Preconditions.checkArgument(net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL,
+            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL));
 
-        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.VillagerTrades.ItemListing[]> trades =
-            net.minecraft.world.entity.npc.VillagerTrades.TRADES.get((this.getHandle().getVillagerData().profession().unwrapKey().orElseThrow()));
+        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.villager.VillagerTrades.ItemListing[]> trades =
+            net.minecraft.world.entity.npc.villager.VillagerTrades.TRADES.get((this.getHandle().getVillagerData().profession().unwrapKey().orElseThrow()));
 
         if (trades == null || trades.isEmpty()) {
             this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(supposedFinalLevel));
@@ -103,7 +104,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
 
         while (amount > 0) {
-            this.getHandle().increaseMerchantCareer();
+            this.getHandle().increaseMerchantCareer((ServerLevel) this.getHandle().level());
             amount--;
         }
         return true;
@@ -158,23 +159,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public ZombieVillager zombify() {
-        net.minecraft.world.entity.monster.ZombieVillager entityzombievillager = Zombie.convertVillagerToZombieVillager(this.getHandle().level().getMinecraftWorld(), this.getHandle(), this.getHandle().blockPosition(), this.isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        net.minecraft.world.entity.monster.zombie.ZombieVillager entityzombievillager = Zombie.convertVillagerToZombieVillager(this.getHandle().level().getMinecraftWorld(), this.getHandle(), this.getHandle().blockPosition(), this.isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.CUSTOM);
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 
     public static class CraftType extends OldEnumHolderable<Type, VillagerType> implements Type {
         private static int count = 0;
 
-        public static Type minecraftToBukkit(VillagerType minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE);
-        }
-
         public static Type minecraftHolderToBukkit(Holder<VillagerType> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.VILLAGER_TYPE);
-        }
-
-        public static VillagerType bukkitToMinecraft(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<VillagerType> bukkitToMinecraftHolder(Type bukkit) {
@@ -195,14 +188,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
         public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit);
-        }
-
-        public static Profession minecraftToBukkit(VillagerProfession minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
-        }
-
-        public static VillagerProfession bukkitToMinecraft(Profession bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public CraftProfession(final Holder<VillagerProfession> holder) {

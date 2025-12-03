@@ -70,6 +70,8 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @GeneratedClass
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
+    GoalKey<AbstractHorse> HORSE_MOUNT_PANIC = create("horse_mount_panic", AbstractHorse.class);
+
     GoalKey<AbstractHorse> HORSE_RANDOM_STAND = create("horse_random_stand", AbstractHorse.class);
 
     GoalKey<AbstractHorse> HORSE_RUN_AROUND_LIKE_CRAZY = create("horse_run_around_like_crazy", AbstractHorse.class);
@@ -297,6 +299,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Monster> RANGED_BOW_ATTACK = create("ranged_bow_attack", Monster.class);
 
     GoalKey<Monster> RANGED_CROSSBOW_ATTACK = create("ranged_crossbow_attack", Monster.class);
+
+    GoalKey<Monster> SPEAR_USE = create("spear_use", Monster.class);
 
     GoalKey<Ocelot> OCELOT_AVOID_ENTITY = create("ocelot_avoid_entity", Ocelot.class);
 

@@ -6,26 +6,21 @@
      public boolean fixed = false;
 +    public @Nullable MapId cachedMapId; // Paper - Perf: Cache map ids on item frames
  
-     public ItemFrame(EntityType<? extends ItemFrame> entityType, Level level) {
-         super(entityType, level);
-@@ -102,9 +_,15 @@
+     public ItemFrame(EntityType<? extends ItemFrame> type, Level level) {
+         super(type, level);
+@@ -111,6 +_,11 @@
+     }
  
-     @Override
-     protected AABB calculateBoundingBox(BlockPos pos, Direction direction) {
-+        // Paper start - break out BB calc into own method
-+        return ItemFrame.calculateBoundingBoxStatic(pos, direction, this.hasFramedMap());
+     private AABB createBoundingBox(BlockPos pos, Direction direction, boolean hasFramedMap) {
++        // Paper start - add static method
++        return calculateBoundingBoxStatic(pos, direction, hasFramedMap);
 +    }
-+
 +    public static AABB calculateBoundingBoxStatic(BlockPos pos, Direction direction, boolean hasFramedMap) {
-+        // Paper end - break out BB calc into own method
++        // Paper end - add static method
          float f = 0.46875F;
          Vec3 vec3 = Vec3.atCenterOf(pos).relative(direction, -0.46875);
--        boolean hasFramedMap = this.hasFramedMap();
-+        // boolean hasFramedMap = this.hasFramedMap(); // Paper - break out BB calc into own method
          float f1 = hasFramedMap ? 1.0F : 0.75F;
-         float f2 = hasFramedMap ? 1.0F : 0.75F;
-         Direction.Axis axis = direction.getAxis();
-@@ -134,9 +_,9 @@
+@@ -142,9 +_,9 @@
      }
  
      @Override
@@ -37,7 +32,7 @@
          }
      }
  
-@@ -165,6 +_,18 @@
+@@ -173,6 +_,18 @@
              if (this.isInvulnerableToBase(damageSource)) {
                  return false;
              } else if (this.shouldDamageDropItem(damageSource)) {
@@ -56,22 +51,21 @@
                  this.dropItem(level, damageSource.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, damageSource.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -250,6 +_,14 @@
+@@ -258,6 +_,13 @@
          return this.getEntityData().get(DATA_ITEM);
      }
  
 +    // Paper start - Fix MC-123848 (spawn item frame drops above block)
-+    @Nullable
 +    @Override
-+    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ServerLevel serverLevel, ItemStack stack) {
++    public net.minecraft.world.entity.item.@Nullable ItemEntity spawnAtLocation(ServerLevel serverLevel, ItemStack stack) {
 +        return this.spawnAtLocation(serverLevel, stack, this.getDirection() == Direction.DOWN ? -0.6F : 0.0F);
 +    }
 +    // Paper end
 +
-     @Nullable
-     public MapId getFramedMapId(ItemStack stack) {
+     public @Nullable MapId getFramedMapId(ItemStack stack) {
          return stack.get(DataComponents.MAP_ID);
-@@ -264,13 +_,19 @@
+     }
+@@ -271,13 +_,19 @@
      }
  
      public void setItem(ItemStack stack, boolean updateNeighbours) {
@@ -92,7 +86,7 @@
              this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
          }
  
-@@ -297,6 +_,7 @@
+@@ -304,6 +_,7 @@
      }
  
      private void onItemChanged(ItemStack item) {
@@ -100,7 +94,7 @@
          if (!item.isEmpty() && item.getFrame() != this) {
              item.setEntityRepresentation(this);
          }
-@@ -365,7 +_,13 @@
+@@ -372,7 +_,13 @@
                      if (savedData != null && savedData.isTrackedCountOverLimit(256)) {
                          return InteractionResult.FAIL;
                      } else {
@@ -115,7 +109,7 @@
                          this.gameEvent(GameEvent.BLOCK_CHANGE, player);
                          itemInHand.consume(1, player);
                          return InteractionResult.SUCCESS;
-@@ -374,6 +_,13 @@
+@@ -381,6 +_,13 @@
                      return InteractionResult.PASS;
                  }
              } else {

@@ -205,6 +205,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BUCKET(-1, 16),
     BUNDLE(-1, 1),
     BURN_POTTERY_SHERD(-1),
+    CAMEL_HUSK_SPAWN_EGG(-1),
     CAMEL_SPAWN_EGG(-1),
     CARROT(-1),
     CARROT_ON_A_STICK(-1, 1),
@@ -248,9 +249,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     COPPER_HORSE_ARMOR(-1, 1),
     COPPER_INGOT(-1),
     COPPER_LEGGINGS(-1, 1),
+    COPPER_NAUTILUS_ARMOR(-1, 1),
     COPPER_NUGGET(-1),
     COPPER_PICKAXE(-1, 1),
     COPPER_SHOVEL(-1, 1),
+    COPPER_SPEAR(-1, 1),
     COPPER_SWORD(-1, 1),
     COW_SPAWN_EGG(-1),
     CREAKING_SPAWN_EGG(-1),
@@ -272,8 +275,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     DIAMOND_HOE(-1, 1),
     DIAMOND_HORSE_ARMOR(-1, 1),
     DIAMOND_LEGGINGS(-1, 1),
+    DIAMOND_NAUTILUS_ARMOR(-1, 1),
     DIAMOND_PICKAXE(-1, 1),
     DIAMOND_SHOVEL(-1, 1),
+    DIAMOND_SPEAR(-1, 1),
     DIAMOND_SWORD(-1, 1),
     DISC_FRAGMENT_5(-1),
     DOLPHIN_SPAWN_EGG(-1),
@@ -340,8 +345,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     GOLDEN_HOE(-1, 1),
     GOLDEN_HORSE_ARMOR(-1, 1),
     GOLDEN_LEGGINGS(-1, 1),
+    GOLDEN_NAUTILUS_ARMOR(-1, 1),
     GOLDEN_PICKAXE(-1, 1),
     GOLDEN_SHOVEL(-1, 1),
+    GOLDEN_SPEAR(-1, 1),
     GOLDEN_SWORD(-1, 1),
     GRAY_BUNDLE(-1, 1),
     GRAY_DYE(-1),
@@ -375,9 +382,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     IRON_HORSE_ARMOR(-1, 1),
     IRON_INGOT(-1),
     IRON_LEGGINGS(-1, 1),
+    IRON_NAUTILUS_ARMOR(-1, 1),
     IRON_NUGGET(-1),
     IRON_PICKAXE(-1, 1),
     IRON_SHOVEL(-1, 1),
+    IRON_SPEAR(-1, 1),
     IRON_SWORD(-1, 1),
     ITEM_FRAME(-1),
     JUNGLE_BOAT(-1, 1),
@@ -446,6 +455,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     MUTTON(-1),
     NAME_TAG(-1),
     NAUTILUS_SHELL(-1),
+    NAUTILUS_SPAWN_EGG(-1),
     NETHER_BRICK(-1),
     NETHER_STAR(-1),
     NETHERITE_AXE(-1, 1),
@@ -453,11 +463,14 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     NETHERITE_CHESTPLATE(-1, 1),
     NETHERITE_HELMET(-1, 1),
     NETHERITE_HOE(-1, 1),
+    NETHERITE_HORSE_ARMOR(-1, 1),
     NETHERITE_INGOT(-1),
     NETHERITE_LEGGINGS(-1, 1),
+    NETHERITE_NAUTILUS_ARMOR(-1, 1),
     NETHERITE_PICKAXE(-1, 1),
     NETHERITE_SCRAP(-1),
     NETHERITE_SHOVEL(-1, 1),
+    NETHERITE_SPEAR(-1, 1),
     NETHERITE_SWORD(-1, 1),
     NETHERITE_UPGRADE_SMITHING_TEMPLATE(-1),
     OAK_BOAT(-1, 1),
@@ -473,6 +486,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     PALE_OAK_CHEST_BOAT(-1, 1),
     PANDA_SPAWN_EGG(-1),
     PAPER(-1),
+    PARCHED_SPAWN_EGG(-1),
     PARROT_SPAWN_EGG(-1),
     PHANTOM_MEMBRANE(-1),
     PHANTOM_SPAWN_EGG(-1),
@@ -564,6 +578,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     STONE_HOE(-1, 1),
     STONE_PICKAXE(-1, 1),
     STONE_SHOVEL(-1, 1),
+    STONE_SPEAR(-1, 1),
     STONE_SWORD(-1, 1),
     STRAY_SPAWN_EGG(-1),
     STRIDER_SPAWN_EGG(-1),
@@ -612,6 +627,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WOODEN_HOE(-1, 1),
     WOODEN_PICKAXE(-1, 1),
     WOODEN_SHOVEL(-1, 1),
+    WOODEN_SPEAR(-1, 1),
     WOODEN_SWORD(-1, 1),
     WRITABLE_BOOK(-1, 1),
     WRITTEN_BOOK(-1, 16),
@@ -620,6 +636,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     YELLOW_HARNESS(-1, 1),
     ZOGLIN_SPAWN_EGG(-1),
     ZOMBIE_HORSE_SPAWN_EGG(-1),
+    ZOMBIE_NAUTILUS_SPAWN_EGG(-1),
     ZOMBIE_SPAWN_EGG(-1),
     ZOMBIE_VILLAGER_SPAWN_EGG(-1),
     ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
@@ -2984,13 +3001,14 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
 
     /**
-     * Checks if this Material is edible.
+     * Checks if this Material provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
+     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
      *
      * @return true if this Material is edible.
      */
     public boolean isEdible() {
         ItemType type = asItemType();
-        return type == null ? false : type.isEdible();
+        return type != null && type.isEdible();
     }
 
     /**

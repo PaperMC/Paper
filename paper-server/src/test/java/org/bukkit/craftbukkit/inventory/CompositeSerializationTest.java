@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,10 +10,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
-@AllFeatures
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+
+@VanillaFeature
 public class CompositeSerializationTest {
 
     public YamlConfiguration getConfig() {

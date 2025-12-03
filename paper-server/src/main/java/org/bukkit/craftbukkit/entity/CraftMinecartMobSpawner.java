@@ -8,7 +8,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
-import net.minecraft.world.entity.vehicle.MinecartSpawner;
+import net.minecraft.world.entity.vehicle.minecart.MinecartSpawner;
 import net.minecraft.world.level.SpawnData;
 import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.block.spawner.SpawnRule;

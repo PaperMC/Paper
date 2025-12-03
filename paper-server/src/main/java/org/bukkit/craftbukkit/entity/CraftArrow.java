@@ -20,13 +20,13 @@ import org.bukkit.potion.PotionType;
 
 public class CraftArrow extends CraftAbstractArrow implements Arrow {
 
-    public CraftArrow(CraftServer server, net.minecraft.world.entity.projectile.Arrow entity) {
+    public CraftArrow(CraftServer server, net.minecraft.world.entity.projectile.arrow.Arrow entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.projectile.Arrow getHandle() {
-        return (net.minecraft.world.entity.projectile.Arrow) this.entity;
+    public net.minecraft.world.entity.projectile.arrow.Arrow getHandle() {
+        return (net.minecraft.world.entity.projectile.arrow.Arrow) this.entity;
     }
 
     @Override
@@ -110,7 +110,7 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
 
     @Override
     public void setColor(Color color) {
-        int colorRGB = (color == null) ? net.minecraft.world.entity.projectile.Arrow.NO_EFFECT_COLOR : color.asARGB(); // Paper
+        int colorRGB = (color == null) ? net.minecraft.world.entity.projectile.arrow.Arrow.NO_EFFECT_COLOR : color.asARGB(); // Paper
         PotionContents old = this.getHandle().getPotionContents();
         this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(colorRGB), old.customEffects(), old.customName()));
     }
@@ -118,7 +118,7 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
     @Override
     public Color getColor() {
         int color = this.getHandle().getColor(); // Paper
-        if (color == net.minecraft.world.entity.projectile.Arrow.NO_EFFECT_COLOR) { // Paper
+        if (color == net.minecraft.world.entity.projectile.arrow.Arrow.NO_EFFECT_COLOR) { // Paper
             return null;
         }
         return Color.fromARGB(color); // Paper

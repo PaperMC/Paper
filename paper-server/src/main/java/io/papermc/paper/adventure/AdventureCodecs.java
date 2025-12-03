@@ -195,7 +195,7 @@ public final class AdventureCodecs {
     ).apply(instance, (key, uuid, component) -> HoverEvent.showEntity(key, uuid, component.orElse(null))));
 
     static final MapCodec<HoverEvent<HoverEvent.ShowItem>> SHOW_ITEM_CODEC = net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.xmap(internal -> {
-        @Subst("key") final String typeKey = internal.item().getItemHolder().unwrapKey().orElseThrow().location().toString();
+        @Subst("key") final String typeKey = internal.item().getItemHolder().unwrapKey().orElseThrow().identifier().toString();
         return HoverEvent.showItem(Key.key(typeKey), internal.item().getCount(), PaperAdventure.asAdventure(internal.item().getComponentsPatch()));
     }, adventure -> {
         final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(adventure.value().item()));

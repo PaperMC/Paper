@@ -1,142 +1,144 @@
 package org.bukkit.support;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagLoader;
+import net.minecraft.util.Util;
 import net.minecraft.world.flag.FeatureFlagSet;
-import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 
 public final class RegistryHelper {
 
-    private static ReloadableServerResources dataPack;
-    private static RegistryAccess.Frozen registry;
-    private static Registry<Biome> biomes;
-    private static PalettedContainerFactory palettedContainerFactory;
+    private static SetupContext setupContext;
 
     private RegistryHelper() {
     }
 
-    public static ReloadableServerResources getDataPack() {
-        if (RegistryHelper.dataPack == null) {
-            RegistryHelper.throwError("dataPack");
-        }
-        return RegistryHelper.dataPack;
+    public static RegistryAccess registryAccess() {
+        return context().registries();
     }
 
-    public static RegistryAccess.Frozen getRegistry() {
-        if (RegistryHelper.registry == null) {
-            RegistryHelper.throwError("registry");
+    public static SetupContext context() {
+        if (setupContext == null) {
+            throw new IllegalStateException("""
+                Trying to access shared context while it is not setup.
+                Make sure that either the class or method you test has the right test environment annotation present.
+                You can find them in the package src/test/java/org.bukkit.support.environment""");
         }
-        return RegistryHelper.registry;
+        return setupContext;
     }
 
-    public static Registry<Biome> getBiomes() {
-        if (RegistryHelper.biomes == null) {
-            RegistryHelper.throwError("biomes");
-        }
-        return RegistryHelper.biomes;
+    public record SetupContext(
+        ReloadableServerResources datapack,
+        RegistryAccess registries,
+        Supplier<PalettedContainerFactory> palettedContainerFactory
+    ) {
     }
 
-    public static PalettedContainerFactory palettedContainerFactory() {
-        if (RegistryHelper.palettedContainerFactory == null) {
-            RegistryHelper.throwError("palettedContainerFactory");
+    public record PackedRegistries(LayeredRegistryAccess<RegistryLayer> layers, List<Registry.PendingTags<?>> pendingTags) {
+
+        public RegistryAccess access() {
+            return this.layers.compositeAccess().freeze();
         }
-        return RegistryHelper.palettedContainerFactory;
     }
 
-    public static RegistryAccess.Frozen createRegistry(FeatureFlagSet featureFlagSet) {
-        MultiPackResourceManager ireloadableresourcemanager = RegistryHelper.createResourceManager(featureFlagSet);
+    public static PackedRegistries createRegistries(FeatureFlagSet enabledFeatures) {
+        return createRegistries(RegistryHelper.createResourceManager(enabledFeatures));
+    }
+
+    public static PackedRegistries createRegistries(ResourceManager resourceManager) {
         // add tags and loot tables for unit tests
-        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
-        List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
-        RegistryAccess.Frozen iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
-        List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
-        RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
-        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
-        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
-        try {
-            Class.forName("org.bukkit.Registry");
-        } catch (final ClassNotFoundException ignored) {}
-        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
+        LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
+        List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
 
-        return layers.compositeAccess().freeze();
+        List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
+        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        layers = layers.replaceFrom(RegistryLayer.WORLDGEN, worldGenRegistries);
+
+        List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
+        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES);
+        layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
+        // load registry here to ensure bukkit object registry are correctly delayed if needed
+        try {
+            Class.forName(org.bukkit.Registry.class.getName());
+        } catch (final ClassNotFoundException ignored) {
+        }
+
+        return new PackedRegistries(layers, pendingTags);
     }
 
-    public static void setup(FeatureFlagSet featureFlagSet) {
+    public static void setup(FeatureFlagSet enabledFeatures) {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
+        Bootstrap.validate();
 
-        MultiPackResourceManager ireloadableresourcemanager = RegistryHelper.createResourceManager(featureFlagSet);
-        // add tags and loot tables for unit tests
-        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
-        List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
-        RegistryAccess.Frozen iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
-        List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
-        RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
-        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
-        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
-        try {
-            Class.forName("org.bukkit.Registry");
-        } catch (final ClassNotFoundException ignored) {}
-        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
-        RegistryHelper.registry = layers.compositeAccess().freeze();
-        // Register vanilla pack
-        RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        ResourceManager resourceManager = RegistryHelper.createResourceManager(enabledFeatures);
+        PackedRegistries registries = createRegistries(resourceManager);
+
+        // Register vanilla packs
+        ReloadableServerResources datapack = ReloadableServerResources.loadResources(resourceManager, registries.layers(), registries.pendingTags(), enabledFeatures, Commands.CommandSelection.DEDICATED, LevelBasedPermissionSet.ALL_PERMISSIONS, Util.backgroundExecutor(), Runnable::run).join();
         // Bind tags
-        RegistryHelper.dataPack.updateStaticRegistryTags();
-        // Biome shortcut
-        RegistryHelper.biomes = RegistryHelper.registry.lookupOrThrow(Registries.BIOME);
-        // PalettedContainerFactory shortcut
-        RegistryHelper.palettedContainerFactory = PalettedContainerFactory.create(RegistryHelper.registry);
+        datapack.updateStaticRegistryTags();
+
+        RegistryAccess registryAccess = registries.access();
+        setupContext = new SetupContext(
+            datapack,
+            registryAccess,
+            () -> PalettedContainerFactory.create(registryAccess)
+        );
     }
 
-    public static <T extends Keyed> Class<T> updateClass(Class<T> aClass, NamespacedKey key) {
-        Class<T> theClass;
+    public static <T extends Keyed> Class<T> getFieldType(Class<T> apiClass, NamespacedKey key) {
+        Class<T> fieldType = apiClass;
         // Some registries have extra Typed classes such as BlockType and ItemType.
         // To avoid class cast exceptions during init mock the Typed class.
         // To get the correct class, we just use the field type.
         try {
-            theClass = (Class<T>) aClass.getField(key.getKey().toUpperCase(Locale.ROOT).replace('.', '_')).getType();
-        } catch (ClassCastException | NoSuchFieldException e) {
+            fieldType = (Class<T>) apiClass.getField(formatKeyAsField(key.getKey())).getType();
+        } catch (NoSuchFieldException e) {
+            // continue with the less accurate type
+        } catch (ClassCastException e) {
             throw new RuntimeException(e);
         }
 
-        return theClass;
+        return fieldType;
     }
 
-    private static MultiPackResourceManager createResourceManager(FeatureFlagSet featureFlagSet) {
-        // Populate available packs
-        PackRepository resourceRepository = ServerPacksSource.createVanillaTrustedRepository();
-        resourceRepository.reload();
-        // Set up resource manager
-        return new MultiPackResourceManager(PackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().filter(pack -> pack.getRequestedFeatures().isSubsetOf(featureFlagSet)).map(Pack::open).toList());
+    private static MultiPackResourceManager createResourceManager(FeatureFlagSet enabledFeatures) {
+        PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
+        MinecraftServer.configurePackRepository(packRepository, new WorldDataConfiguration(new DataPackConfig(FeatureFlags.REGISTRY.toNames(enabledFeatures).stream().map(Identifier::getPath).toList(), List.of()), enabledFeatures), true, false);
+        return new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.openAllSelected());
     }
 
-    private static void throwError(String field) {
-        throw new IllegalStateException(String.format("""
-                Trying to access %s will it is not setup.
-                Make sure that either the class or method you test has the right test environment annotation present.
-                You can find them in the package src/test/java/org.bukkit.support.environment""", field));
+    private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
+
+    public static String formatKeyAsField(String path) {
+        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 }

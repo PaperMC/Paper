@@ -62,7 +62,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
             .addCode("return $T.create($T.$L, $N);", TypedKey.class, RegistryKey.class, this.entry.registryKeyField(), keyParam)
             .returns(returnType);
         if (publicCreateKeyMethod) {
-            create.addJavadoc(Javadocs.CREATE_TYPED_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().location().toString());
+            create.addJavadoc(Javadocs.CREATE_TYPED_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().identifier().toString());
         }
         return create;
     }
@@ -98,7 +98,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
         boolean allExperimental = true;
         for (Holder.Reference<T> reference : this.entry.registry().listElements().sorted(Formatting.HOLDER_ORDER).toList()) {
             ResourceKey<T> key = reference.key();
-            String keyPath = key.location().getPath();
+            String keyPath = key.identifier().getPath();
             String fieldName = Formatting.formatKeyAsField(keyPath);
             if (!SourceVersion.isIdentifier(fieldName) && this.entry.getFieldNames().containsKey(key)) {
                 fieldName = this.entry.getFieldNames().get(key);
@@ -106,7 +106,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
 
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKeyType, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
-                .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
+                .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.identifier().toString());
 
             SingleFlagHolder requiredFeature = this.getRequiredFeature(reference);
             if (requiredFeature != null) {

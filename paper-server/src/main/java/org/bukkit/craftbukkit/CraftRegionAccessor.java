@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -375,7 +376,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
         if (nmsEntity.level() != this.getHandle().getLevel()) {
-            nmsEntity = nmsEntity.teleport(new TeleportTransition(this.getHandle().getLevel(), nmsEntity, TeleportTransition.DO_NOTHING));
+            throw new IllegalArgumentException(entity + " wasn't created with this world, you must create the entity with the world you want to add it to.");
         }
 
         this.addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
@@ -465,12 +466,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / Level.TICKS_PER_DAY);
+        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
     }
 
     @Override
     public org.bukkit.NamespacedKey getKey() {
-        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().identifier());
     }
 
     public boolean lineOfSightExists(Location from, Location to) {

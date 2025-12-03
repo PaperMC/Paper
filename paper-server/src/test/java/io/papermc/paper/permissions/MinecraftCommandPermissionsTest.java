@@ -40,7 +40,7 @@ public class MinecraftCommandPermissionsTest {
         CraftDefaultPermissions.registerCorePermissions();
         Set<String> perms = collectMinecraftCommandPerms();
 
-        Commands commands = new Commands(Commands.CommandSelection.DEDICATED, CommandBuildContext.simple(RegistryHelper.getRegistry(), FeatureFlags.VANILLA_SET), true);
+        Commands commands = new Commands(Commands.CommandSelection.DEDICATED, CommandBuildContext.simple(RegistryHelper.registryAccess(), FeatureFlags.VANILLA_SET), true);
         RootCommandNode<CommandSourceStack> root = commands.getDispatcher().getRoot();
         Set<String> missing = new LinkedHashSet<>();
         Set<String> foundPerms = new HashSet<>();

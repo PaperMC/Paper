@@ -1,6 +1,7 @@
 package org.bukkit.event.player;
 
-import org.bukkit.World;
+import io.papermc.paper.block.bed.BedEnterAction;
+import io.papermc.paper.block.bed.BedRuleResult;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -17,19 +18,15 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
     private final Block bed;
     private final BedEnterResult bedEnterResult;
+    private final @NotNull BedEnterAction enterAction;
     private Result useBed = Result.DEFAULT;
 
     @ApiStatus.Internal
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
+    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult, @NotNull BedEnterAction enterAction) {
         super(player);
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.13.2", forRemoval = true)
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
-        this(player, bed, BedEnterResult.OK);
+        this.enterAction = enterAction;
     }
 
     /**
@@ -46,17 +43,30 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * This describes the default outcome of this event.
      *
      * @return the bed enter result representing the default outcome of this event
+     * @deprecated This enum has been replaced with a system that better
+     * represents how beds work. See {@link #enterAction}
      */
     @NotNull
+    @ApiStatus.Obsolete(since = "1.21.11")
     public BedEnterResult getBedEnterResult() {
         return this.bedEnterResult;
+    }
+
+    /**
+     * This describes the default outcome of this event.
+     *
+     * @return the action representing the default outcome of this event
+     */
+    @ApiStatus.Experimental
+    public @NotNull BedEnterAction enterAction() {
+        return this.enterAction;
     }
 
     /**
      * This controls the action to take with the bed that was clicked on.
      * <p>
      * In case of {@link Result#DEFAULT}, the default outcome is described by
-     * {@link #getBedEnterResult()}.
+     * {@link #enterAction()}.
      *
      * @return the action to take with the interacted bed
      * @see #setUseBed(Result)
@@ -70,13 +80,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * Sets the action to take with the interacted bed.
      * <p>
      * {@link Result#ALLOW} will result in the player sleeping, regardless of
-     * the default outcome described by {@link #getBedEnterResult()}.
+     * the default outcome described by {@link #enterAction()}.
      * <br>
      * {@link Result#DENY} will prevent the player from sleeping. This has the
      * same effect as canceling the event via {@link #setCancelled(boolean)}.
      * <br>
      * {@link Result#DEFAULT} will result in the outcome described by
-     * {@link #getBedEnterResult()}.
+     * {@link #enterAction()}.
      *
      * @param useBed the action to take with the interacted bed
      * @see #useBed()
@@ -94,13 +104,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * <p>
      * For backwards compatibility reasons this also returns {@code true} if
      * {@link #useBed()} is {@link Result#DEFAULT} and the
-     * {@link #getBedEnterResult() default action} is to prevent bed entering.
+     * {@link #enterAction() default action} is to prevent bed entering.
      *
      * @return boolean cancellation state
      */
     @Override
     public boolean isCancelled() {
-        return this.useBed == Result.DENY || this.useBed == Result.DEFAULT && this.bedEnterResult != BedEnterResult.OK;
+        return this.useBed == Result.DENY || this.useBed == Result.DEFAULT && this.enterAction.canSleep() != BedRuleResult.ALLOWED;
     }
 
     /**
@@ -126,19 +136,23 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Represents the default possible outcomes of this event.
+     *
+     * @deprecated Enums no longer represents reliably how beds work and fail. This has been
+     * replaced with {@link BedEnterAction} that better fits the new beds
      */
+    @ApiStatus.Obsolete(since = "1.21.11")
     public enum BedEnterResult {
         /**
          * The player will enter the bed.
          */
         OK,
         /**
-         * The world doesn't allow sleeping or saving the spawn point (eg,
-         * Nether, The End or Custom Worlds). This is based on
-         * {@link World#isBedWorks()} and {@link World#isNatural()}.
+         * The world doesn't allow sleeping (eg, Nether, The End or Custom Worlds), but
+         * saving the spawn point may still be allowed. See {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}.
+         * for spawn point changes. This is only called when sleeping isn't allowed and the bed
+         * doesn't explode. When the bed explodes, {@link #EXPLOSION} is called instead.
          * <p>
-         * Entering the bed is prevented and if {@link World#isBedWorks()} is
-         * {@code false} then the bed explodes.
+         * Entering the bed is prevented
          */
         NOT_POSSIBLE_HERE,
         /**
@@ -165,6 +179,10 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         /**
          * Entering the bed is prevented due to there being some other problem.
          */
-        OTHER_PROBLEM;
+        OTHER_PROBLEM,
+        /**
+         * Entering the bed is prevented and the bed explodes.
+         */
+        EXPLOSION;
     }
 }

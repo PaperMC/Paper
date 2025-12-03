@@ -5,8 +5,11 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.Services;
+import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
@@ -15,8 +18,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Predicate;
 
 /**
  * Static bridge to the server internals.
@@ -97,5 +98,6 @@ public interface InternalAPIBridge {
     SkinParts.Mutable allSkinParts();
 
     Component defaultMannequinDescription();
-}
 
+    <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+}

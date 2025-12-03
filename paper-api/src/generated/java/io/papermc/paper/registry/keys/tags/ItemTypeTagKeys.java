@@ -173,6 +173,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> CAMEL_FOOD = create(key("camel_food"));
 
     /**
+     * {@code #minecraft:camel_husk_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> CAMEL_HUSK_FOOD = create(key("camel_husk_food"));
+
+    /**
      * {@code #minecraft:candles}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -488,11 +495,25 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> ENCHANTABLE_LEG_ARMOR = create(key("enchantable/leg_armor"));
 
     /**
+     * {@code #minecraft:enchantable/lunge}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> ENCHANTABLE_LUNGE = create(key("enchantable/lunge"));
+
+    /**
      * {@code #minecraft:enchantable/mace}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> ENCHANTABLE_MACE = create(key("enchantable/mace"));
+
+    /**
+     * {@code #minecraft:enchantable/melee_weapon}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> ENCHANTABLE_MELEE_WEAPON = create(key("enchantable/melee_weapon"));
 
     /**
      * {@code #minecraft:enchantable/mining}
@@ -516,11 +537,11 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> ENCHANTABLE_SHARP_WEAPON = create(key("enchantable/sharp_weapon"));
 
     /**
-     * {@code #minecraft:enchantable/sword}
+     * {@code #minecraft:enchantable/sweeping}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<ItemType> ENCHANTABLE_SWORD = create(key("enchantable/sword"));
+    public static final TagKey<ItemType> ENCHANTABLE_SWEEPING = create(key("enchantable/sweeping"));
 
     /**
      * {@code #minecraft:enchantable/trident}
@@ -815,6 +836,27 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> MEAT = create(key("meat"));
+
+    /**
+     * {@code #minecraft:nautilus_bucket_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> NAUTILUS_BUCKET_FOOD = create(key("nautilus_bucket_food"));
+
+    /**
+     * {@code #minecraft:nautilus_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> NAUTILUS_FOOD = create(key("nautilus_food"));
+
+    /**
+     * {@code #minecraft:nautilus_taming_items}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> NAUTILUS_TAMING_ITEMS = create(key("nautilus_taming_items"));
 
     /**
      * {@code #minecraft:netherite_tool_materials}
@@ -1132,6 +1174,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> SOUL_FIRE_BASE_BLOCKS = create(key("soul_fire_base_blocks"));
 
     /**
+     * {@code #minecraft:spears}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SPEARS = create(key("spears"));
+
+    /**
      * {@code #minecraft:spruce_logs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1354,6 +1403,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> WOOL_CARPETS = create(key("wool_carpets"));
+
+    /**
+     * {@code #minecraft:zombie_horse_food}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> ZOMBIE_HORSE_FOOD = create(key("zombie_horse_food"));
 
     private ItemTypeTagKeys() {
     }

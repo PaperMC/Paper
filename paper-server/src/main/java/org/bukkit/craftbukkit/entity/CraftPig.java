@@ -5,7 +5,7 @@ import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.animal.PigVariant;
+import net.minecraft.world.entity.animal.pig.PigVariant;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.Material;
@@ -17,13 +17,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftPig extends CraftAnimals implements Pig {
 
-    public CraftPig(CraftServer server, net.minecraft.world.entity.animal.Pig entity) {
+    public CraftPig(CraftServer server, net.minecraft.world.entity.animal.pig.Pig entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Pig getHandle() {
-        return (net.minecraft.world.entity.animal.Pig) this.entity;
+    public net.minecraft.world.entity.animal.pig.Pig getHandle() {
+        return (net.minecraft.world.entity.animal.pig.Pig) this.entity;
     }
 
     @Override
@@ -84,16 +84,8 @@ public class CraftPig extends CraftAnimals implements Pig {
 
     public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
 
-        public static Variant minecraftToBukkit(PigVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
-
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
-
-        public static PigVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<PigVariant> bukkitToMinecraftHolder(Variant bukkit) {

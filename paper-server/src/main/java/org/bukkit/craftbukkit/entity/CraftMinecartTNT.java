@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.vehicle.MinecartTNT;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 

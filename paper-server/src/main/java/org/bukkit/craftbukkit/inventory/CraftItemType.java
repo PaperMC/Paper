@@ -143,7 +143,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isEdible() {
-        return this.getHandle().components().has(DataComponents.FOOD);
+        return this.getHandle().components().has(DataComponents.FOOD) && this.getHandle().components().has(DataComponents.CONSUMABLE);
     }
 
     @Override

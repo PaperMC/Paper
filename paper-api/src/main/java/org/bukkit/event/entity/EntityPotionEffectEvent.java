@@ -219,6 +219,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         MILK,
         /**
+         * When the entity gets the effect from a nautilus.
+         */
+        NAUTILUS,
+        /**
          * When a player gets bad omen after killing a patrol captain.
          *
          * @deprecated no longer used, player now gets an ominous bottle instead

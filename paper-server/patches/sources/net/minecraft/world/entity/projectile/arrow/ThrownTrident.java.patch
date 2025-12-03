@@ -1,0 +1,58 @@
+--- a/net/minecraft/world/entity/projectile/arrow/ThrownTrident.java
++++ b/net/minecraft/world/entity/projectile/arrow/ThrownTrident.java
+@@ -51,6 +_,12 @@
+         this.entityData.set(ID_FOIL, pickupItemStack.hasFoil());
+     }
+ 
++    // Paper start - Allow trident custom damage
++    {
++        this.setBaseDamage(net.minecraft.world.item.TridentItem.BASE_DAMAGE);
++    }
++    // Paper end - Allow trident custom damage
++
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+         super.defineSynchedData(builder);
+@@ -72,10 +_,10 @@
+                     this.spawnAtLocation(serverLevel, this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+             } else {
+                 if (!(owner instanceof Player) && this.position().distanceTo(owner.getEyePosition()) < owner.getBbWidth() + 1.0) {
+-                    this.discard();
++                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                     return;
+                 }
+ 
+@@ -104,6 +_,20 @@
+         return this.entityData.get(ID_FOIL);
+     }
+ 
++    // Paper start
++    public void setFoil(boolean foil) {
++        this.entityData.set(ThrownTrident.ID_FOIL, foil);
++    }
++
++    public int getLoyalty() {
++        return this.entityData.get(ThrownTrident.ID_LOYALTY);
++    }
++
++    public void setLoyalty(byte loyalty) {
++        this.entityData.set(ThrownTrident.ID_LOYALTY, loyalty);
++    }
++    // Paper end
++
+     @Override
+     protected @Nullable EntityHitResult findHitEntity(Vec3 startVec, Vec3 endVec) {
+         return this.dealtDamage ? null : super.findHitEntity(startVec, endVec);
+@@ -118,7 +_,7 @@
+     @Override
+     protected void onHitEntity(EntityHitResult result) {
+         Entity entity = result.getEntity();
+-        float f = 8.0F;
++        float f = (float) this.baseDamage; // Paper - Allow trident custom damage
+         Entity owner = this.getOwner();
+         DamageSource damageSource = this.damageSources().trident(this, (Entity)(owner == null ? this : owner));
+         if (this.level() instanceof ServerLevel serverLevel) {

@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/entity/monster/illager/Illusioner.java
++++ b/net/minecraft/world/entity/monster/illager/Illusioner.java
+@@ -174,7 +_,8 @@
+ 
+     @Override
+     public void performRangedAttack(LivingEntity target, float distanceFactor) {
+-        ItemStack itemInHand = this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, Items.BOW));
++        net.minecraft.world.InteractionHand hand = ProjectileUtil.getWeaponHoldingHand(this, Items.BOW); // Paper - call EntityShootBowEvent
++        ItemStack itemInHand = this.getItemInHand(hand); // Paper - call EntityShootBowEvent
+         ItemStack projectile = this.getProjectile(itemInHand);
+         AbstractArrow mobArrow = ProjectileUtil.getMobArrow(this, projectile, distanceFactor, itemInHand);
+         double d = target.getX() - this.getX();
+@@ -182,9 +_,21 @@
+         double d2 = target.getZ() - this.getZ();
+         double squareRoot = Math.sqrt(d * d + d2 * d2);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileUsingShoot(
++            Projectile.Delayed<AbstractArrow> delayedEntity = Projectile.spawnProjectileUsingShootDelayed( // Paper - delayed
+                 mobArrow, serverLevel, projectile, d, d1 + squareRoot * 0.2F, d2, 1.6F, 14 - serverLevel.getDifficulty().getId() * 4
+             );
++
++            // Paper start - call EntityShootBowEvent
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, itemInHand, mobArrow.getPickupItem(), mobArrow, hand, distanceFactor, true);
++            if (event.isCancelled()) {
++                event.getProjectile().remove();
++                return;
++            }
++
++            if (event.getProjectile() == mobArrow.getBukkitEntity()) {
++                delayedEntity.spawn();
++            }
++            // Paper end - call EntityShootBowEvent
+         }
+ 
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+@@ -231,7 +_,7 @@
+ 
+         @Override
+         protected void performSpellCasting() {
+-            Illusioner.this.getTarget().addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 400), Illusioner.this);
++            Illusioner.this.getTarget().addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 400), Illusioner.this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+         }
+ 
+         @Override
+@@ -263,7 +_,7 @@
+ 
+         @Override
+         protected void performSpellCasting() {
+-            Illusioner.this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 1200));
++            Illusioner.this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 1200), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ILLUSION); // CraftBukkit
+         }
+ 
+         @Override

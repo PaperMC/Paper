@@ -32,12 +32,12 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
-import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
-import net.minecraft.world.entity.projectile.ThrownEgg;
-import net.minecraft.world.entity.projectile.ThrownEnderpearl;
-import net.minecraft.world.entity.projectile.ThrownExperienceBottle;
-import net.minecraft.world.entity.projectile.ThrownTrident;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
@@ -90,7 +90,6 @@ import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -355,6 +354,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setArrowCooldown(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "Amount of ticks before next arrow removal must be non-negative");
         this.getHandle().removeArrowTime = ticks;
     }
 
@@ -365,7 +365,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setArrowsInBody(final int count, final boolean fireEvent) { // Paper
-        Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
+        Preconditions.checkArgument(count >= 0, "New arrow amount must be non-negative");
         if (!fireEvent) {
             this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
         } else {
@@ -373,56 +373,32 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
     }
 
-    // Paper start - Add methods for working with arrows stuck in living entities
-    @Override
-    public void setNextArrowRemoval(final int ticks) {
-        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next arrow removal must be >= 0");
-        this.getHandle().removeArrowTime = ticks;
-    }
-
-    @Override
-    public int getNextArrowRemoval() {
-        return this.getHandle().removeArrowTime;
-    }
-    // Paper end - Add methods for working with arrows stuck in living entities
-
     @Override
     public boolean isInvulnerable() {
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
     }
-    // Paper start - Bee Stinger API
+
     @Override
     public int getBeeStingerCooldown() {
-        return getHandle().removeStingerTime;
+        return this.getHandle().removeStingerTime;
     }
 
     @Override
     public void setBeeStingerCooldown(int ticks) {
-        getHandle().removeStingerTime = ticks;
+        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next bee stinger removal must be non-negative");
+        this.getHandle().removeStingerTime = ticks;
     }
 
     @Override
     public int getBeeStingersInBody() {
-        return getHandle().getStingerCount();
+        return this.getHandle().getStingerCount();
     }
 
     @Override
     public void setBeeStingersInBody(int count) {
         Preconditions.checkArgument(count >= 0, "New bee stinger amount must be >= 0");
-        getHandle().setStingerCount(count);
+        this.getHandle().setStingerCount(count);
     }
-
-    @Override
-    public void setNextBeeStingerRemoval(final int ticks) {
-        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next bee stinger removal must be >= 0");
-        this.getHandle().removeStingerTime = ticks;
-    }
-
-    @Override
-    public int getNextBeeStingerRemoval() {
-        return this.getHandle().removeStingerTime;
-    }
-    // Paper end - Bee Stinger API
 
     @Override
     public void damage(double amount) {
@@ -576,7 +552,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         net.minecraft.world.entity.Entity launch = null;
 
         if (Snowball.class.isAssignableFrom(projectile)) {
-            launch = new net.minecraft.world.entity.projectile.Snowball(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SNOWBALL));
+            launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SNOWBALL));
             ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemSnowball
         } else if (Egg.class.isAssignableFrom(projectile)) {
             launch = new ThrownEgg(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.EGG));
@@ -586,21 +562,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEnderPearl
         } else if (AbstractArrow.class.isAssignableFrom(projectile)) {
             if (TippedArrow.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
+                launch = new net.minecraft.world.entity.projectile.arrow.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
                 ((Arrow) launch.getBukkitEntity()).setBasePotionType(PotionType.WATER);
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.SpectralArrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SPECTRAL_ARROW), null);
+                launch = new net.minecraft.world.entity.projectile.arrow.SpectralArrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SPECTRAL_ARROW), null);
             } else if (Trident.class.isAssignableFrom(projectile)) {
                 launch = new ThrownTrident(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TRIDENT));
             } else {
-                launch = new net.minecraft.world.entity.projectile.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
+                launch = new net.minecraft.world.entity.projectile.arrow.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
             }
-            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
+            ((net.minecraft.world.entity.projectile.arrow.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.ThrownLingeringPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
+                launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
             } else {
-                launch = new net.minecraft.world.entity.projectile.ThrownSplashPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
+                launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
             }
             ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F, 1.0F); // ItemSplashPotion
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
@@ -614,11 +590,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             Vec3 vec = new Vec3(direction.getX(), direction.getY(), direction.getZ());
 
             if (SmallFireball.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.SmallFireball(world, this.getHandle(), vec);
+                launch = new net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball(world, this.getHandle(), vec);
             } else if (WitherSkull.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.WitherSkull(world, this.getHandle(), vec);
+                launch = new net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull(world, this.getHandle(), vec);
             } else if (DragonFireball.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.DragonFireball(world, this.getHandle(), vec);
+                launch = new net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball(world, this.getHandle(), vec);
             } else if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
                 if (BreezeWindCharge.class.isAssignableFrom(projectile)) {
                     launch = EntityType.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
@@ -626,14 +602,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                     launch = EntityType.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
                 }
 
-                ((net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge) launch).setOwner(this.getHandle());
-                ((net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // WindChargeItem
+                ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).setOwner(this.getHandle());
+                ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // WindChargeItem
             } else {
                 launch = new LargeFireball(world, this.getHandle(), vec, 1);
             }
 
             launch.projectileSource = this;
-            launch.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported
             launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
@@ -742,15 +717,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else {
             return this.getHandle().bukkitPickUpLoot;
         }
-    }
-
-    @Override
-    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-        if (this.getHealth() == 0) {
-            return false;
-        }
-
-        return super.teleport(location, cause);
     }
 
     @Override
@@ -975,16 +941,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public int getArrowsStuck() {
-        return this.getHandle().getArrowCount();
-    }
-
-    @Override
-    public void setArrowsStuck(final int arrows) {
-        this.getHandle().setArrowCount(arrows);
-    }
-
-    @Override
     public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
         Preconditions.checkArgument(hand != null, "hand must not be null");
         this.getHandle().startUsingItem(CraftEquipmentSlot.getHand(hand));
@@ -1148,7 +1104,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Key getWaypointStyle() {
-        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.location());
+        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.identifier());
     }
 
     @Override

@@ -25,9 +25,9 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
   - Paper requires JDK 21 to build, however, makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
-    feature to allow building with only JRE 11 or later installed. (Gradle will
+    feature to allow building with only JRE 17 or later installed. (Gradle will
     automatically provision JDK 21 for compilation if it cannot find an existing
-    install).
+    installation).
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).
@@ -191,6 +191,30 @@ and your server.
 
 While we will fix minor formatting issues, you should stick to the guide below
 when making and submitting changes.
+
+### Branches and Minecraft Versions
+
+Generally, PRs should be targeted at the `main` branch, where active development for
+the latest Minecraft release happens.
+
+If a new Minecraft release is imminent, it may be wise to wait until it's released
+and merged to `main` to avoid having to rebase your PR, as the `main` branch will be
+frozen during this time (you can ask in the Paper Discord if you're unsure).
+
+For old Minecraft versions - we are unlikely to accept PRs targeting any versions not
+marked as supported at https://fill-ui.papermc.io/projects/paper.
+
+For snapshots and other pre-release versions - you should only target these branches
+for changes specific to features or changes in those versions. For example, if Copper
+Golem is going to be added in 1.21.9, you can PR to the relevant dev branch as it would
+not make sense to merge that into `main`. Or, if you are fixing a bug that only exists in
+a dev branch, you should target that branch. When submitting PRs to dev branches, please
+coordinate with the dev team in Discord or open an issue before starting work to ensure
+it's an area we want to accept changes for. The team prefers to handle initial updating
+work through to the server running ourselves, so do not attempt to PR version updates
+(i.e. 25w42a -> 25w43a, etc.) or while there are still unapplied source patches. Feature
+patches are also not applied until at earliest the pre-release phase to avoid unnecessary
+churn.
 
 ## Formatting
 
@@ -452,6 +476,17 @@ If you use Maven to build your plugin:
   If you use Windows and don't usually build using WSL, you might not need to
   do this.
 
+## Tips and Tricks
+
+### IntelliJ IDEA
+
+- Under `Settings > Appearance & Behavior > System Settings`, disable
+  `Sync external changes: Periodically when the IDE is inactive (experimental)`.
+  When disabled, the IDE will not attempt to reindex files while patches are applying
+  unless you interact with the IDE during the process. This avoids severe slowdowns and freezes.
+- Under `Settings > Appearance & Behavior > System Settings`, you may also want to
+  disable `Reopen projects on startup` to avoid freeze loops.
+
 ## Frequently Asked Questions
 
 ### My commit doesn't need a build, what do I do?
@@ -469,11 +504,11 @@ release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 In order to speed up patching process on Windows, it's recommended you get WSL 2.
 This is available in Windows 10 v2004, build 19041 or higher. (You can check
 your version by running `winver` in the run window (Windows key + R)). If you're
-using an out of date version of Windows 10, update your system with the
+using an out-of-date version of Windows 10, update your system with the
 [Windows 10 Update Assistant](https://www.microsoft.com/en-us/software-download/windows10) or [Windows 11 Update Assistant](https://www.microsoft.com/en-us/software-download/windows11).
 
 To set up WSL 2, follow the information here:
-<https://docs.microsoft.com/en-us/windows/wsl/install>
+<https://learn.microsoft.com/en-us/windows/wsl/install>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
@@ -482,5 +517,5 @@ required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
 everything like usual.
 
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
-> in Windows like described here:
-> <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
+> in Windows as described here:
+> <https://learn.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>

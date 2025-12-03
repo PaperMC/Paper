@@ -1,19 +1,6 @@
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -50,10 +_,10 @@
- public class ServerConnectionListener {
-     private static final Logger LOGGER = LogUtils.getLogger();
-     public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(
--        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Server IO #%d").setDaemon(true).build())
-+        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
-     );
-     public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(
--        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build())
-+        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
-     );
-     final MinecraftServer server;
-     public volatile boolean running;
-@@ -65,12 +_,35 @@
+@@ -48,9 +_,31 @@
          this.running = true;
      }
  
@@ -36,34 +23,17 @@
 +    public void startTcpServerListener(SocketAddress address) throws IOException {
 +        // Paper end - Unix domain socket support
          synchronized (this.channels) {
--            Class<? extends ServerSocketChannel> clazz;
-+            Class<? extends io.netty.channel.ServerChannel> clazz; // Paper - Unix domain socket support
-             EventLoopGroup eventLoopGroup;
-             if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
-+                // Paper start - Unix domain socket support
-+                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
-+                    clazz = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
-+                } else {
-                 clazz = EpollServerSocketChannel.class;
-+                }
-+                // Paper end - Unix domain socket support
-                 eventLoopGroup = SERVER_EPOLL_EVENT_GROUP.get();
-                 LOGGER.info("Using epoll channel type");
-             } else {
-@@ -79,6 +_,12 @@
-                 LOGGER.info("Using default channel type");
-             }
- 
+-            EventLoopGroupHolder eventLoopGroupHolder = EventLoopGroupHolder.remote(this.server.useNativeTransport());
++            EventLoopGroupHolder eventLoopGroupHolder = EventLoopGroupHolder.remote(address, this.server.useNativeTransport()); // Paper - Unix domain socket support
 +            // Paper start - Warn people with console access that HAProxy is in use.
 +            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
 +                LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
 +            }
 +            // Paper end - Warn people with console access that HAProxy is in use.
-+
              this.channels
                  .add(
                      new ServerBootstrap()
-@@ -102,22 +_,64 @@
+@@ -74,22 +_,64 @@
                                      Connection connection = (Connection)(rateLimitPacketsPerSecond > 0
                                          ? new RateKickingConnection(rateLimitPacketsPerSecond)
                                          : new Connection(PacketFlow.SERVERBOUND));
@@ -107,7 +77,7 @@
                                  }
                              }
                          )
-                         .group(eventLoopGroup)
+                         .group(eventLoopGroupHolder.eventLoopGroup())
 -                        .localAddress(address, port)
 +                        .localAddress(address) // Paper - Unix domain socket support
 +                        .option(ChannelOption.AUTO_READ, false) // CraftBukkit
@@ -130,7 +100,7 @@
      public SocketAddress startMemoryChannel() {
          ChannelFuture channelFuture;
          synchronized (this.channels) {
-@@ -169,6 +_,13 @@
+@@ -141,6 +_,13 @@
  
      public void tick() {
          synchronized (this.connections) {
@@ -144,7 +114,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -188,6 +_,7 @@
+@@ -160,6 +_,7 @@
                              connection.setReadOnly();
                          }
                      } else {

@@ -40,13 +40,6 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT = create(key("allows_tropical_fish_spawns_at_any_height"));
 
     /**
-     * {@code #minecraft:has_closer_water_fog}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> HAS_CLOSER_WATER_FOG = create(key("has_closer_water_fog"));
-
-    /**
      * {@code #minecraft:has_structure/ancient_city}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -285,13 +278,6 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> HAS_STRUCTURE_WOODLAND_MANSION = create(key("has_structure/woodland_mansion"));
 
     /**
-     * {@code #minecraft:increased_fire_burnout}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> INCREASED_FIRE_BURNOUT = create(key("increased_fire_burnout"));
-
-    /**
      * {@code #minecraft:is_badlands}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -404,13 +390,6 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> MORE_FREQUENT_DROWNED_SPAWNS = create(key("more_frequent_drowned_spawns"));
 
     /**
-     * {@code #minecraft:plays_underwater_music}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> PLAYS_UNDERWATER_MUSIC = create(key("plays_underwater_music"));
-
-    /**
      * {@code #minecraft:polar_bears_spawn_on_alternate_blocks}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -439,13 +418,6 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> REQUIRED_OCEAN_MONUMENT_SURROUNDING = create(key("required_ocean_monument_surrounding"));
 
     /**
-     * {@code #minecraft:snow_golem_melts}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> SNOW_GOLEM_MELTS = create(key("snow_golem_melts"));
-
-    /**
      * {@code #minecraft:spawns_cold_variant_farm_animals}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -458,6 +430,13 @@ public final class BiomeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Biome> SPAWNS_COLD_VARIANT_FROGS = create(key("spawns_cold_variant_frogs"));
+
+    /**
+     * {@code #minecraft:spawns_coral_variant_zombie_nautilus}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> SPAWNS_CORAL_VARIANT_ZOMBIE_NAUTILUS = create(key("spawns_coral_variant_zombie_nautilus"));
 
     /**
      * {@code #minecraft:spawns_gold_rabbits}
@@ -507,13 +486,6 @@ public final class BiomeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Biome> WATER_ON_MAP_OUTLINES = create(key("water_on_map_outlines"));
-
-    /**
-     * {@code #minecraft:without_patrol_spawns}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<Biome> WITHOUT_PATROL_SPAWNS = create(key("without_patrol_spawns"));
 
     /**
      * {@code #minecraft:without_wandering_trader_spawns}

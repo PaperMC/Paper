@@ -1,0 +1,102 @@
+--- a/net/minecraft/world/entity/monster/skeleton/AbstractSkeleton.java
++++ b/net/minecraft/world/entity/monster/skeleton/AbstractSkeleton.java
+@@ -66,6 +_,7 @@
+             AbstractSkeleton.this.setAggressive(true);
+         }
+     };
++    private boolean shouldBurnInDay = true; // Paper - shouldBurnInDay API
+ 
+     protected AbstractSkeleton(EntityType<? extends AbstractSkeleton> type, Level level) {
+         super(type, level);
+@@ -90,6 +_,21 @@
+         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25);
+     }
+ 
++    // Paper start - shouldBurnInDay API
++    public boolean shouldBurnInDay() {
++        return this.shouldBurnInDay;
++    }
++
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
++    }
++
++    @Override
++    public boolean isSunBurnTick() {
++        return this.shouldBurnInDay && super.isSunBurnTick();
++    }
++    // Paper end - shouldBurnInDay API
++
+     @Override
+     protected void playStepSound(BlockPos pos, BlockState block) {
+         this.playSound(this.getStepSound(), 0.15F, 1.0F);
+@@ -120,7 +_,7 @@
+         this.populateDefaultEquipmentSlots(random, difficulty);
+         this.populateDefaultEquipmentEnchantments(level, random, difficulty);
+         this.reassessWeaponGoal();
+-        this.setCanPickUpLoot(random.nextFloat() < 0.55F * difficulty.getSpecialMultiplier());
++        this.setCanPickUpLoot(level.getLevel().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.skeletons || random.nextFloat() < 0.55F * difficulty.getSpecialMultiplier()); // Paper - Add world settings for mobs picking up loot
+         if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty() && SpecialDates.isHalloween() && random.nextFloat() < 0.25F) {
+             this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(random.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+             this.setDropChance(EquipmentSlot.HEAD, 0.0F);
+@@ -158,7 +_,8 @@
+ 
+     @Override
+     public void performRangedAttack(LivingEntity target, float distanceFactor) {
+-        ItemStack itemInHand = this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, Items.BOW));
++        net.minecraft.world.InteractionHand hand = ProjectileUtil.getWeaponHoldingHand(this, Items.BOW); // Paper - call EntityShootBowEvent
++        ItemStack itemInHand = this.getItemInHand(hand); // Paper - call EntityShootBowEvent
+         ItemStack projectile = this.getProjectile(itemInHand);
+         AbstractArrow arrow = this.getArrow(projectile, distanceFactor, itemInHand);
+         double d = target.getX() - this.getX();
+@@ -166,9 +_,21 @@
+         double d2 = target.getZ() - this.getZ();
+         double squareRoot = Math.sqrt(d * d + d2 * d2);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileUsingShoot(
++            Projectile.Delayed<AbstractArrow> delayedEntity = Projectile.spawnProjectileUsingShootDelayed( // Paper - delayed
+                 arrow, serverLevel, projectile, d, d1 + squareRoot * 0.2F, d2, 1.6F, 14 - serverLevel.getDifficulty().getId() * 4
+             );
++
++            // Paper start - call EntityShootBowEvent
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, itemInHand, arrow.getPickupItem(), arrow, hand, distanceFactor, true);
++            if (event.isCancelled()) {
++                event.getProjectile().remove();
++                return;
++            }
++
++            if (event.getProjectile() == arrow.getBukkitEntity()) {
++                delayedEntity.spawn();
++            }
++            // Paper end - call EntityShootBowEvent
+         }
+ 
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+@@ -192,11 +_,22 @@
+     protected void readAdditionalSaveData(ValueInput input) {
+         super.readAdditionalSaveData(input);
+         this.reassessWeaponGoal();
+-    }
+-
+-    @Override
+-    public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
+-        super.onEquipItem(slot, oldItem, newItem);
++        this.shouldBurnInDay = input.getBooleanOr("Paper.ShouldBurnInDay", true); // Paper - shouldBurnInDay API
++    }
++
++    // Paper start - shouldBurnInDay API
++    @Override
++    protected void addAdditionalSaveData(final net.minecraft.world.level.storage.ValueOutput output) {
++        super.addAdditionalSaveData(output);
++        output.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
++    }
++    // Paper end - shouldBurnInDay API
++
++    // Paper start - silent equipping
++    @Override
++    public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem, boolean silent) {
++        super.onEquipItem(slot, oldItem, newItem, silent);
++        // Paper end - silent equipping
+         if (!this.level().isClientSide()) {
+             this.reassessWeaponGoal();
+         }

@@ -10,13 +10,13 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperShearable {
-    public CraftCopperGolem(final CraftServer server, final net.minecraft.world.entity.animal.coppergolem.CopperGolem entity) {
+    public CraftCopperGolem(final CraftServer server, final net.minecraft.world.entity.animal.golem.CopperGolem entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.coppergolem.CopperGolem getHandle() {
-        return (net.minecraft.world.entity.animal.coppergolem.CopperGolem) this.entity;
+    public net.minecraft.world.entity.animal.golem.CopperGolem getHandle() {
+        return (net.minecraft.world.entity.animal.golem.CopperGolem) this.entity;
     }
 
     @Override
@@ -33,9 +33,9 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
     @Override
     public Oxidizing getOxidizing() {
         long value = this.getHandle().nextWeatheringTick;
-        if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.UNSET_WEATHERING_TICK) {
+        if (value == net.minecraft.world.entity.animal.golem.CopperGolem.UNSET_WEATHERING_TICK) {
             return Oxidizing.unset();
-        } else if (value == net.minecraft.world.entity.animal.coppergolem.CopperGolem.IGNORE_WEATHERING_TICK) {
+        } else if (value == net.minecraft.world.entity.animal.golem.CopperGolem.IGNORE_WEATHERING_TICK) {
             return Oxidizing.waxed();
         }
         if (value < 0) {
@@ -49,8 +49,8 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
     public void setOxidizing(final Oxidizing oxidizing) {
         Preconditions.checkArgument(oxidizing != null, "oxidizing cannot be null");
         switch (oxidizing) {
-            case Oxidizing.Waxed waxed -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.coppergolem.CopperGolem.IGNORE_WEATHERING_TICK;
-            case Oxidizing.Unset unset -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.coppergolem.CopperGolem.UNSET_WEATHERING_TICK;
+            case Oxidizing.Waxed waxed -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.golem.CopperGolem.IGNORE_WEATHERING_TICK;
+            case Oxidizing.Unset unset -> this.getHandle().nextWeatheringTick = net.minecraft.world.entity.animal.golem.CopperGolem.UNSET_WEATHERING_TICK;
             case Oxidizing.AtTime atTime -> this.getHandle().nextWeatheringTick = atTime.time();
             default -> throw new IllegalStateException("Unexpected value: " + oxidizing);
         }

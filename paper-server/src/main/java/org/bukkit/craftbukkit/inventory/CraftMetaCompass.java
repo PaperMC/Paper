@@ -11,7 +11,7 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.component.LodestoneTracker;
@@ -54,7 +54,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         super(map);
         String lodestoneWorldKey = SerializableMeta.getString(map, CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, true);
         if (lodestoneWorldKey != null) {
-            ResourceKey<net.minecraft.world.level.Level> lodestoneWorld = ResourceKey.create(Registries.DIMENSION, ResourceLocation.tryParse(lodestoneWorldKey));
+            ResourceKey<net.minecraft.world.level.Level> lodestoneWorld = ResourceKey.create(Registries.DIMENSION, Identifier.tryParse(lodestoneWorldKey));
             int lodestoneX = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_X.BUKKIT);
             int lodestoneY = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT);
             int lodestoneZ = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Z.BUKKIT);
@@ -182,7 +182,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
 
         if (this.isLodestoneCompass()) {
             if (this.tracker.target().isPresent()) {
-                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().location().toString());
+                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().identifier().toString());
                 builder.put(CraftMetaCompass.LODESTONE_POS_X.BUKKIT, this.tracker.target().get().pos().getX());
                 builder.put(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT, this.tracker.target().get().pos().getY());
                 builder.put(CraftMetaCompass.LODESTONE_POS_Z.BUKKIT, this.tracker.target().get().pos().getZ());

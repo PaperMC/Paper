@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.AbstractBoat;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import org.bukkit.TreeSpecies;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
@@ -89,7 +89,7 @@ public abstract class CraftBoat extends CraftVehicle implements Boat, io.papermc
     @Override
     public Status getStatus() {
         // Paper start - Fix NPE on Boat getStatus
-        final net.minecraft.world.entity.vehicle.AbstractBoat handle = this.getHandle();
+        final net.minecraft.world.entity.vehicle.boat.AbstractBoat handle = this.getHandle();
         if (handle.status == null) {
             if (handle.valid) {
                 // Don't actually set the status because it would skew the old status check in the next tick
@@ -142,7 +142,7 @@ public abstract class CraftBoat extends CraftVehicle implements Boat, io.papermc
         throw new EnumConstantNotPresentException(Type.class, boatType.toString());
     }
 
-    public static Status boatStatusFromNms(net.minecraft.world.entity.vehicle.AbstractBoat.Status enumStatus) { // Paper - remap fixes
+    public static Status boatStatusFromNms(net.minecraft.world.entity.vehicle.boat.AbstractBoat.Status enumStatus) { // Paper - remap fixes
         return switch (enumStatus) {
             default -> throw new EnumConstantNotPresentException(Status.class, enumStatus.name());
             case IN_AIR -> Status.IN_AIR;

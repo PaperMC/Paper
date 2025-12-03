@@ -13,7 +13,7 @@ import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.ServerboundPacketClassSerializer;
-import io.papermc.paper.configuration.serializer.ResourceLocationSerializer;
+import io.papermc.paper.configuration.serializer.IdentifierSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collection.TableSerializer;
 import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSerializer;
@@ -56,12 +56,12 @@ import java.util.function.Supplier;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -191,7 +191,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .register(Duration.SERIALIZER)
             .register(DurationOrDisabled.SERIALIZER)
             .register(NbtPathSerializer.SERIALIZER)
-            .register(ResourceLocationSerializer.INSTANCE)
+            .register(IdentifierSerializer.INSTANCE)
         );
     }
 
@@ -347,10 +347,10 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
-        return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+        return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().identifier(), level.spigotConfig, level.registryAccess(), level.getGameRules());
     }
 
-    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final ResourceLocation worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
+    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final Identifier worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
         return ContextMap.builder()
             .put(WORLD_DIRECTORY, dir)
             .put(WORLD_NAME, levelName)

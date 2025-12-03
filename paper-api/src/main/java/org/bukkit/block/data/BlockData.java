@@ -317,4 +317,10 @@ public interface BlockData extends Cloneable {
      */
     boolean isRandomlyTicked();
     // Paper end - Tick API
+
+    /**
+     * Checks if this block can be immediately replaced by another block, such as placing a new block in air or tall grass.
+     * @return true if block is replaceable
+     */
+    boolean isReplaceable();
 }

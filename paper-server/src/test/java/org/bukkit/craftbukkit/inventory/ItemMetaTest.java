@@ -156,21 +156,6 @@ public class ItemMetaTest {
         assertThat(bukkit, is(craft));
     }
 
-    @Test
-    public void testSpawnEggsHasMeta() {
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof net.minecraft.world.item.SpawnEggItem) {
-                Material material = CraftItemType.minecraftToBukkit(item);
-                CraftMetaItem baseMeta = (CraftMetaItem) Bukkit.getItemFactory().getItemMeta(material);
-                ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
-
-                assertTrue(baseMeta instanceof CraftMetaSpawnEgg, material + " is not handled in CraftItemFactory");
-                assertTrue(baseMeta.applicableTo(material), material + " is not applicable to CraftMetaSpawnEgg");
-                assertTrue(baseMetaItem instanceof SpawnEggMeta, material + " is not handled in CraftItemStack");
-            }
-        }
-    }
-
     // Paper start - check entity tag metas
     private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
         CraftMetaEntityTag.class,

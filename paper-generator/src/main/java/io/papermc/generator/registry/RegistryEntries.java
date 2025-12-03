@@ -18,6 +18,7 @@ import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -42,16 +43,17 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.animal.CatVariants;
-import net.minecraft.world.entity.animal.ChickenVariants;
-import net.minecraft.world.entity.animal.CowVariants;
-import net.minecraft.world.entity.animal.PigVariants;
+import net.minecraft.world.entity.animal.feline.CatVariants;
+import net.minecraft.world.entity.animal.chicken.ChickenVariants;
+import net.minecraft.world.entity.animal.cow.CowVariants;
+import net.minecraft.world.entity.animal.pig.PigVariants;
+import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariants;
 import net.minecraft.world.entity.animal.frog.FrogVariants;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.animal.wolf.WolfVariants;
-import net.minecraft.world.entity.decoration.PaintingVariants;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.entity.decoration.painting.PaintingVariants;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.Instruments;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.JukeboxSongs;
@@ -62,12 +64,14 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Keyed;
 import org.bukkit.MusicInstrument;
@@ -87,6 +91,7 @@ import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -164,7 +169,8 @@ public final class RegistryEntries {
         entry(Registries.ATTRIBUTE, Attributes.class, Attribute.class).serializationUpdater("ATTRIBUTE_RENAME"),
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
-        entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of")
+        entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
+        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/ // only preload once the old names are removed
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
@@ -185,6 +191,7 @@ public final class RegistryEntries {
         entry(Registries.CHICKEN_VARIANT, ChickenVariants.class, Chicken.Variant.class).writableApiRegistryBuilder(ChickenVariantRegistryEntry.Builder.class, "PaperChickenVariantRegistryEntry.PaperBuilder"),
         entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class).writableApiRegistryBuilder(CowVariantRegistryEntry.Builder.class, "PaperCowVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
+        entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
     );
 

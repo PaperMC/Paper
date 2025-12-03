@@ -4,7 +4,7 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.core.ClientAsset;
-import net.minecraft.world.entity.animal.PigVariant;
+import net.minecraft.world.entity.animal.pig.PigVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Pig;

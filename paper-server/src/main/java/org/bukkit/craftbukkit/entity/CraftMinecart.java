@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;

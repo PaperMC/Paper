@@ -369,7 +369,7 @@ class ItemStackDataComponentTest {
     void testJukeboxWithEitherHolder() {
         final net.minecraft.world.item.ItemStack internalStack = new net.minecraft.world.item.ItemStack(Items.STONE);
         internalStack.set(DataComponents.JUKEBOX_PLAYABLE, new net.minecraft.world.item.JukeboxPlayable(
-            new EitherHolder<>(RegistryHelper.getRegistry().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE))
+            new EitherHolder<>(RegistryHelper.registryAccess().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE))
         ));
 
         final ItemStack apiStack = CraftItemStack.asBukkitCopy(internalStack);

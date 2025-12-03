@@ -17,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.sound.Sound;
@@ -41,7 +40,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
@@ -54,14 +52,11 @@ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.network.Filterable;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.WrittenBookContent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
@@ -76,7 +71,6 @@ import static java.util.Objects.requireNonNull;
 public final class PaperAdventure {
     private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
     public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
-        .nestingLimit(30) // todo: should this be configurable? a system property or config value?
         .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
             final Language language = Language.getInstance();
             final @Nullable String fallback = translatable.fallback();
@@ -147,12 +141,12 @@ public final class PaperAdventure {
 
     // Key
 
-    public static Key asAdventure(final ResourceLocation key) {
+    public static Key asAdventure(final Identifier key) {
         return Key.key(key.getNamespace(), key.getPath());
     }
 
-    public static ResourceLocation asVanilla(final Key key) {
-        return ResourceLocation.fromNamespaceAndPath(key.namespace(), key.value());
+    public static Identifier asVanilla(final Key key) {
+        return Identifier.fromNamespaceAndPath(key.namespace(), key.value());
     }
 
     public static <T> ResourceKey<T> asVanilla(
@@ -163,10 +157,10 @@ public final class PaperAdventure {
     }
 
     public static Key asAdventureKey(final ResourceKey<?> key) {
-        return asAdventure(key.location());
+        return asAdventure(key.identifier());
     }
 
-    public static @Nullable ResourceLocation asVanillaNullable(final Key key) {
+    public static @Nullable Identifier asVanillaNullable(final Key key) {
         if (key == null) {
             return null;
         }
@@ -174,7 +168,7 @@ public final class PaperAdventure {
     }
 
     public static Holder<SoundEvent> resolveSound(final Key key) {
-        ResourceLocation id = asVanilla(key);
+        Identifier id = asVanilla(key);
         Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
         if (vanilla.isPresent()) {
             return vanilla.get();
@@ -186,7 +180,7 @@ public final class PaperAdventure {
 
     // Component
 
-    public static @NotNull Component asAdventure(@Nullable final net.minecraft.network.chat.Component component) {
+    public static @NotNull Component asAdventure(final net.minecraft.network.chat.@Nullable Component component) {
         return component == null ? Component.empty() : WRAPPER_AWARE_SERIALIZER.deserialize(component);
     }
 
@@ -262,7 +256,7 @@ public final class PaperAdventure {
         );
     }
 
-    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final org.bukkit.entity.@Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
         Boolean previous = null;
         if (css != null && bypassPermissions) {
@@ -334,28 +328,6 @@ public final class PaperAdventure {
         }
     }
 
-    // Book
-
-    public static ItemStack asItemStack(final Book book, final Locale locale) {
-        final ItemStack item = new ItemStack(net.minecraft.world.item.Items.WRITTEN_BOOK, 1);
-        item.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(
-            Filterable.passThrough(validateField(asPlain(book.title(), locale), WrittenBookContent.TITLE_MAX_LENGTH, "title")),
-            asPlain(book.author(), locale),
-            0,
-            book.pages().stream().map(c -> Filterable.passThrough(PaperAdventure.asVanilla(c))).toList(), // TODO should we validate length?
-            false
-        ));
-        return item;
-    }
-
-    private static String validateField(final String content, final int length, final String name) {
-        final int actual = content.length();
-        if (actual > length) {
-            throw new IllegalArgumentException("Field '" + name + "' has a maximum length of " + length + " but was passed '" + content + "', which was " + actual + " characters long.");
-        }
-        return content;
-    }
-
     // Sounds
 
     public static SoundSource asVanilla(final Sound.Source source) {
@@ -382,7 +354,7 @@ public final class PaperAdventure {
     }
 
     public static Packet<?> asSoundPacket(final Sound sound, final double x, final double y, final double z, final long seed, @Nullable BiConsumer<Packet<?>, Float> packetConsumer) {
-        final ResourceLocation name = asVanilla(sound.name());
+        final Identifier name = asVanilla(sound.name());
         final Optional<SoundEvent> soundEvent = BuiltInRegistries.SOUND_EVENT.getOptional(name);
         final SoundSource source = asVanilla(sound.source());
 
@@ -395,7 +367,7 @@ public final class PaperAdventure {
     }
 
     public static Packet<?> asSoundPacket(final Sound sound, final Entity emitter, final long seed, @Nullable BiConsumer<Packet<?>, Float> packetConsumer) {
-        final ResourceLocation name = asVanilla(sound.name());
+        final Identifier name = asVanilla(sound.name());
         final Optional<SoundEvent> soundEvent = BuiltInRegistries.SOUND_EVENT.getOptional(name);
         final SoundSource source = asVanilla(sound.source());
 

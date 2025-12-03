@@ -243,7 +243,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Separate from the portal game rule.
      *
      * @return whether this server allows the Nether or not
-     * @see GameRule#ALLOW_ENTERING_NETHER_USING_PORTALS
+     * @see GameRules#ALLOW_ENTERING_NETHER_USING_PORTALS
      */
     public boolean getAllowNether();
 
@@ -835,7 +835,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Create a new virtual {@link WorldBorder}.
      * <p>
      * Note that world borders created by the server will not respect any world
-     * scaling effects (i.e. coordinates are not divided by 8 in the nether).
+     * scaling effects (i.e. coordinates are not divided by 8 in the nether)
+     * and will not deal damage to players outside their bounds.
      *
      * @return the created world border instance
      *
