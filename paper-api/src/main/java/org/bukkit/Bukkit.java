@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.world.explosion.Explosion;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
@@ -911,6 +912,14 @@ public final class Bukkit {
     @NotNull
     public static WorldBorder createWorldBorder() {
         return server.createWorldBorder();
+    }
+
+    /**
+     * {@return the explosion builder}
+     */
+    @NotNull
+    public static Explosion.Builder createExplosion() {
+        return server.createExplosion();
     }
 
     /**
