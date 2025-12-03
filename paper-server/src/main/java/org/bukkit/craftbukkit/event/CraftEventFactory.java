@@ -1001,7 +1001,6 @@ public class CraftEventFactory {
             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 
             drop.runConsumer(s -> world.dropItem(entity.getLocation(), s)); // Paper - Restore vanilla drops behavior
-            if (stack instanceof CraftItemStack) stack.setAmount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe, but don't nuke bukkit stacks of manually added items
         }
 
         return event;
