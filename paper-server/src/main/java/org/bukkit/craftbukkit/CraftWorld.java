@@ -220,13 +220,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - Provide fast information methods
     @Override
     public int getEntityCount() {
-        int ret = 0;
-        for (net.minecraft.world.entity.Entity entity : this.world.getEntities().getAll()) {
-            if (entity.getBukkitEntity().isValid()) {
-                ++ret;
-            }
-        }
-        return ret;
+        return this.world.getEntityCount();
     }
 
     @Override
