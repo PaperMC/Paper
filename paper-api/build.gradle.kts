@@ -1,14 +1,25 @@
+import io.papermc.paperweight.checkstyle.JavadocTag
 import paper.libs.com.google.gson.Gson
 
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+val projectCustomJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+paperCheckstyle {
+    customJavadocTags = projectCustomJavadocTags
+    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
 }
 
 val annotationsVersion = "26.0.2"
@@ -83,7 +94,7 @@ dependencies {
 
     // Test dependencies
     testImplementation("org.apache.commons:commons-lang3:3.17.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
     testImplementation("org.ow2.asm:asm-tree:9.8")
@@ -204,7 +215,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements
