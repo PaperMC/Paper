@@ -19,6 +19,8 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.statistic.PaperStatistics;
+import io.papermc.paper.statistic.Statistic;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
@@ -153,7 +155,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.ServerLinks;
 import org.bukkit.Sound;
-import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
 import org.bukkit.WorldBorder;
 import org.bukkit.ban.IpBanList;
@@ -176,7 +177,6 @@ import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftServerLinks;
 import org.bukkit.craftbukkit.CraftSound;
-import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.CraftWorldBorder;
 import org.bukkit.craftbukkit.advancement.CraftAdvancement;
@@ -200,7 +200,6 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EnderPearl;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -1441,93 +1440,30 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void incrementStatistic(Statistic statistic) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, this.getHandle());
+    public void decrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
+        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, -amount, this.getHandle());
     }
 
     @Override
-    public void decrementStatistic(Statistic statistic) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, this.getHandle());
+    public void incrementStatistic(final Statistic<?> statistic, final int amount) {
+        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
+        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
     }
 
     @Override
-    public int getStatistic(Statistic statistic) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic);
+    public void setStatistic(final Statistic<?> statistic, final int newAmount) {
+        PaperStatistics.setStatistic(this.getHandle().getStats(), statistic, newAmount, this.getHandle());
     }
 
     @Override
-    public void incrementStatistic(Statistic statistic, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
+    public int getStatistic(final Statistic<?> statistic) {
+        return PaperStatistics.getStatistic(this.getHandle().getStats(), statistic);
     }
 
     @Override
-    public void decrementStatistic(Statistic statistic, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
-    }
-
-    @Override
-    public void setStatistic(Statistic statistic, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, newValue, this.getHandle());
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, Material material) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, material, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, Material material) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, material, this.getHandle());
-    }
-
-    @Override
-    public int getStatistic(Statistic statistic, Material material) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic, material);
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, Material material, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, material, amount, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, Material material, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, material, amount, this.getHandle());
-    }
-
-    @Override
-    public void setStatistic(Statistic statistic, Material material, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, material, newValue, this.getHandle());
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, EntityType entityType) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, entityType, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, EntityType entityType) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, entityType, this.getHandle());
-    }
-
-    @Override
-    public int getStatistic(Statistic statistic, EntityType entityType) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic, entityType);
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, entityType, amount, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, EntityType entityType, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, entityType, amount, this.getHandle());
-    }
-
-    @Override
-    public void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, entityType, newValue, this.getHandle());
+    public String getFormattedValue(final Statistic<?> statistic) {
+        return PaperStatistics.getFormattedValue(this.getHandle().getStats(), statistic);
     }
 
     @Override

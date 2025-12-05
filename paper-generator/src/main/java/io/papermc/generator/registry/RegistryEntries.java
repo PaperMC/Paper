@@ -20,6 +20,10 @@ import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.CustomStatistics;
+import io.papermc.paper.statistic.StatisticType;
+import io.papermc.paper.statistic.StatisticTypes;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -39,6 +43,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -153,7 +158,9 @@ public final class RegistryEntries {
 
     public static final Set<Class<?>> REGISTRY_CLASS_NAME_BASED_ON_API = Set.of(
         BlockType.class,
-        ItemType.class
+        ItemType.class,
+        CustomStatistic.class,
+        StatisticType.class
     );
 
     public static final List<RegistryEntry<?>> BUILT_IN = List.of(
@@ -170,7 +177,9 @@ public final class RegistryEntries {
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
-        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/ // only preload once the old names are removed
+        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1),/*.preload(org.bukkit.GameRules.class)*/ // only preload once the old names are removed
+        entry(Registries.CUSTOM_STAT, Stats.class, CustomStatistic.class, "Paper").preload(CustomStatistics.class),
+        entry(Registries.STAT_TYPE, Stats.class, StatisticType.class, "Paper").genericArgCount(1).preload(StatisticTypes.class).apiAccessName("create")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
