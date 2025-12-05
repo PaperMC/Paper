@@ -345,6 +345,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean preventNegativeVillagerDemand = false;
         @Comment("Whether the nether dimension is enabled and will be loaded.")
         public boolean enableNether = true;
+        @Comment("Weather hurting projectiles like LargeFireBall from Ghast or WitherSkull from Wither explodes when entity is dead")
+        public boolean skipHurtingProjectileExplosionOnDeadEntity = false;
     }
 
     public BlockUpdates blockUpdates;
