@@ -3,6 +3,7 @@ package io.papermc.paper;
 import com.destroystokyo.paper.SkinParts;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeContext;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import java.util.function.Function;
@@ -100,4 +101,6 @@ public interface InternalAPIBridge {
     Component defaultMannequinDescription();
 
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+
+    EnvironmentalAttributeContext.Builder environmentalAttributeContextBuilder();
 }

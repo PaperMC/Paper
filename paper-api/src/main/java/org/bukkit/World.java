@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import io.papermc.paper.world.attribute.EnvironmentalAttribute;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -4591,6 +4593,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     public Collection<GeneratedStructure> getStructures(int x, int z, @NotNull Structure structure);
+
+    @NotNull <T> EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
 
     /**
      * Represents various map environment types that a world may be
