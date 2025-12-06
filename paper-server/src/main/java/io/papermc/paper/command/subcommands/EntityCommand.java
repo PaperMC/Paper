@@ -14,7 +14,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
@@ -73,7 +73,7 @@ public final class EntityCommand implements PaperSubcommand {
                 filter = args[1];
             }
             final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
-            Set<ResourceLocation> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+            Set<Identifier> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
                 .filter(n -> n.toString().matches(cleanfilter))
                 .collect(Collectors.toSet());
             if (names.isEmpty()) {
@@ -92,7 +92,7 @@ public final class EntityCommand implements PaperSubcommand {
                 sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
                 return;
             }
-            Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
+            Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
             @Nullable World bukkitWorld = Bukkit.getWorld(worldName);
             if (bukkitWorld == null) {
                 sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
@@ -100,10 +100,10 @@ public final class EntityCommand implements PaperSubcommand {
                 return;
             }
             ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
-            Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
+            Map<Identifier, Integer> nonEntityTicking = Maps.newHashMap();
             ServerChunkCache chunkProviderServer = world.getChunkSource();
             FeatureHooks.getAllEntities(world).forEach(e -> {
-                ResourceLocation key = EntityType.getKey(e.getType());
+                Identifier key = EntityType.getKey(e.getType());
 
                 MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                 ChunkPos chunk = e.chunkPosition();
@@ -114,7 +114,7 @@ public final class EntityCommand implements PaperSubcommand {
                 }
             });
             if (names.size() == 1) {
-                ResourceLocation name = names.iterator().next();
+                Identifier name = names.iterator().next();
                 Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
                 int nonTicking = nonEntityTicking.getOrDefault(name, 0);
                 if (info == null) {
@@ -133,7 +133,7 @@ public final class EntityCommand implements PaperSubcommand {
                         sender.sendMessage(message);
                     });
             } else {
-                List<Pair<ResourceLocation, Integer>> info = list.entrySet().stream()
+                List<Pair<Identifier, Integer>> info = list.entrySet().stream()
                     .filter(e -> names.contains(e.getKey()))
                     .map(e -> Pair.of(e.getKey(), e.getValue().left))
                     .sorted((a, b) -> !a.getRight().equals(b.getRight()) ? b.getRight() - a.getRight() : a.getKey().toString().compareTo(b.getKey().toString()))
