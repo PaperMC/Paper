@@ -11,6 +11,7 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -1185,8 +1186,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
-        return this.getHandle().spawnReason;
+    public CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
+        return Optional.ofNullable(this.getHandle().spawnReason).orElse(CreatureSpawnEvent.SpawnReason.DEFAULT);
     }
 
     @Override
