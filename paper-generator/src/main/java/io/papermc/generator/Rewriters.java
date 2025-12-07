@@ -23,6 +23,7 @@ import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
+import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.world.WeatheringCopperState;
@@ -36,16 +37,19 @@ import javax.lang.model.SourceVersion;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.SwingAnimationType;
 import net.minecraft.world.level.block.WeatheringCopper;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRules;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
@@ -73,6 +77,7 @@ import org.bukkit.entity.Sniffer;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -121,18 +126,18 @@ public final class Rewriters {
                 }
             })
             .register("SnifferState", Sniffer.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.sniffer.Sniffer.State.class))
-            .register("PandaGene", Panda.Gene.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Panda.Gene.class) {
+            .register("PandaGene", Panda.Gene.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.panda.Panda.Gene.class) {
                 @Override
-                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.animal.Panda.Gene gene) {
+                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.animal.panda.Panda.Gene gene) {
                     return super.rewriteEnumValue(gene).argument(String.valueOf(gene.isRecessive()));
                 }
             })
             .register("CookingBookCategory", CookingBookCategory.class, new EnumCloneRewriter<>(net.minecraft.world.item.crafting.CookingBookCategory.class))
             .register("CraftingBookCategory", CraftingBookCategory.class, new EnumCloneRewriter<>(net.minecraft.world.item.crafting.CraftingBookCategory.class))
-            .register("TropicalFishPattern", TropicalFish.Pattern.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.TropicalFish.Pattern.class))
-            .register("BoatStatus", Boat.Status.class, new EnumCloneRewriter<>(net.minecraft.world.entity.vehicle.Boat.Status.class))
-            .register("FoxType", Fox.Type.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Fox.Variant.class))
-            .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Salmon.Variant.class))
+            .register("TropicalFishPattern", TropicalFish.Pattern.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.fish.TropicalFish.Pattern.class))
+            .register("BoatStatus", Boat.Status.class, new EnumCloneRewriter<>(net.minecraft.world.entity.vehicle.boat.Boat.Status.class))
+            .register("FoxType", Fox.Type.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.fox.Fox.Variant.class))
+            .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.fish.Salmon.Variant.class))
             .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
@@ -141,17 +146,18 @@ public final class Rewriters {
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
                     protected EnumValue.Builder rewriteEnumValue(ChatVisiblity visibility) {
-                        return super.rewriteEnumValue(visibility).argument(quoted(visibility.getKey()));
+                        return super.rewriteEnumValue(visibility).argument(quoted(((TranslatableContents) visibility.caption().getContents()).getKey()));
                     }
                 }.reachEnd(false)),
                 holder("ParticleVisibility", ClientOption.ParticleVisibility.class, new EnumCloneRewriter<>(ParticleStatus.class) {
                     @Override
                     protected EnumValue.Builder rewriteEnumValue(ParticleStatus status) {
-                        return super.rewriteEnumValue(status).argument(quoted(status.getKey()));
+                        return super.rewriteEnumValue(status).argument(quoted(((TranslatableContents) status.caption().getContents()).getKey()));
                     }
                 })
             ))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
+            .register("SwingAnimationType", SwingAnimation.Animation.class, new EnumCloneRewriter<>(SwingAnimationType.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(Rarity rarity) {
@@ -185,6 +191,14 @@ public final class Rewriters {
                     return keyedName;
                 }
             })
+            .register("GameRules", GameRules.class, new RegistryFieldRewriter<>(Registries.GAME_RULE, "getRule") {
+                @Override
+                protected String rewriteFieldType(Holder.Reference<net.minecraft.world.level.gamerules.GameRule<?>> reference) {
+                    return "%s<%s>".formatted(
+                        this.registryEntry.apiClass().getSimpleName(), this.importCollector.getShortName(reference.value().valueClass())
+                    );
+                }
+            })
             .register("DamageTypeTags", DamageTypeTags.class, new RegistryTagRewriter<>(Registries.DAMAGE_TYPE, DamageType.class))
             .register("MapCursorType", MapCursor.Type.class, new RegistryFieldRewriter<>(Registries.MAP_DECORATION_TYPE, "getType"))
             .register("Structure", Structure.class, new RegistryFieldRewriter<>(Registries.STRUCTURE, "getStructure"))
@@ -207,6 +221,7 @@ public final class Rewriters {
             .register("ChickenVariant", Chicken.Variant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
             .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
+            .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type

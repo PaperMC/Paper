@@ -5,13 +5,13 @@ import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Objects;
 import com.mojang.datafixers.util.Either;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.Bukkit;
@@ -35,11 +35,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
-    static final ItemMetaKeyType<ResourceLocation> NOTE_BLOCK_SOUND = new ItemMetaKeyType<>(DataComponents.NOTE_BLOCK_SOUND, "note_block_sound");
+    static final ItemMetaKeyType<Identifier> NOTE_BLOCK_SOUND = new ItemMetaKeyType<>(DataComponents.NOTE_BLOCK_SOUND, "note_block_sound");
     static final int MAX_OWNER_LENGTH = 16;
 
     private ResolvableProfile profile;
-    private ResourceLocation noteBlockSound;
+    private Identifier noteBlockSound;
 
     CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
@@ -93,7 +93,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         tag.getCompound(CraftMetaSkull.BLOCK_ENTITY_TAG.NBT)
             .flatMap(blockEntityTag -> blockEntityTag.copy().getString(CraftMetaSkull.NOTE_BLOCK_SOUND.NBT))
             .ifPresent(noteBlockSound -> {
-                this.noteBlockSound = ResourceLocation.tryParse(noteBlockSound);
+                this.noteBlockSound = Identifier.tryParse(noteBlockSound);
             });
     }
 
@@ -148,7 +148,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
-    public void setPlayerProfile(@Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
+    public void setPlayerProfile(com.destroystokyo.paper.profile.@Nullable PlayerProfile profile) {
         setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asResolvableProfileCopy(profile));
     }
 

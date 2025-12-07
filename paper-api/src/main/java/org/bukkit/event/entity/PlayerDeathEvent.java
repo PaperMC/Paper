@@ -92,7 +92,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Get whether the death message should be shown.
-     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     * By default, this is determined by {@link org.bukkit.GameRules#SHOW_DEATH_MESSAGES}.
      *
      * @return whether the death message should be shown
      * @see #deathMessage()
@@ -104,7 +104,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Set whether the death message should be shown.
-     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     * By default, this is determined by {@link org.bukkit.GameRules#SHOW_DEATH_MESSAGES}.
      *
      * @param displayDeathMessage whether the death message should be shown
      * @see #deathMessage()

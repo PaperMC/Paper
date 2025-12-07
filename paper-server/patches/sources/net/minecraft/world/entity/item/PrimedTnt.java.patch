@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -28,6 +_,12 @@
- import net.minecraft.world.level.storage.ValueInput;
  import net.minecraft.world.level.storage.ValueOutput;
+ import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -13,15 +13,15 @@
  public class PrimedTnt extends Entity implements TraceableEntity {
      private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.INT);
      private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.BLOCK_STATE);
-@@ -52,6 +_,7 @@
-     public EntityReference<LivingEntity> owner;
+@@ -51,6 +_,7 @@
+     public @Nullable EntityReference<LivingEntity> owner;
      private boolean usedPortal;
      public float explosionPower = 4.0F;
 +    public boolean isIncendiary = false; // CraftBukkit
  
      public PrimedTnt(EntityType<? extends PrimedTnt> type, Level level) {
          super(type, level);
-@@ -61,7 +_,7 @@
+@@ -60,7 +_,7 @@
      public PrimedTnt(Level level, double x, double y, double z, @Nullable LivingEntity owner) {
          this(EntityType.TNT, level);
          this.setPos(x, y, z);
@@ -30,7 +30,7 @@
          this.setDeltaMovement(-Math.sin(d) * 0.02, 0.2F, -Math.cos(d) * 0.02);
          this.setFuse(80);
          this.xo = x;
-@@ -93,10 +_,17 @@
+@@ -92,10 +_,17 @@
  
      @Override
      public void tick() {
@@ -48,7 +48,7 @@
          this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
          if (this.onGround()) {
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
-@@ -105,20 +_,35 @@
+@@ -104,20 +_,35 @@
          int i = this.getFuse() - 1;
          this.setFuse(i);
          if (i <= 0) {
@@ -69,13 +69,13 @@
 +        // Paper start - Option to prevent TNT from moving in water
 +        if (!this.isRemoved() && this.wasTouchingWater && this.level().paperConfig().fixes.preventTntFromMovingInWater) {
 +            this.hurtMarked = true;
-+            this.hasImpulse = true;
++            this.needsSync = true;
 +        }
 +        // Paper end - Option to prevent TNT from moving in water
      }
  
      private void explode() {
-         if (this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_TNT_EXPLODES)) {
+         if (this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES)) {
 +            // CraftBukkit start
 +            ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
 +            if (event.isCancelled()) {
@@ -85,7 +85,7 @@
              this.level()
                  .explode(
                      this,
-@@ -127,8 +_,8 @@
+@@ -126,8 +_,8 @@
                      this.getX(),
                      this.getY(0.0625),
                      this.getZ(),
@@ -96,7 +96,7 @@
                      Level.ExplosionInteraction.TNT
                  );
          }
-@@ -202,4 +_,11 @@
+@@ -199,4 +_,11 @@
      public final boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
          return false;
      }

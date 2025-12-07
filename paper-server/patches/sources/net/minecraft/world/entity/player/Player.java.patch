@@ -1,16 +1,16 @@
 --- a/net/minecraft/world/entity/player/Player.java
 +++ b/net/minecraft/world/entity/player/Player.java
-@@ -148,7 +_,7 @@
-     private static final boolean DEFAULT_IGNORE_FALL_DAMAGE_FROM_CURRENT_IMPULSE = false;
+@@ -151,7 +_,7 @@
      private static final int DEFAULT_CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME = 0;
+     public static final float CREATIVE_ENTITY_INTERACTION_RANGE_MODIFIER_VALUE = 2.0F;
      final Inventory inventory;
 -    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer();
 +    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer(this); // CraftBukkit - add "this" to constructor
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -179,6 +_,18 @@
-     public Entity currentExplosionCause;
+@@ -177,6 +_,18 @@
+     public @Nullable Entity currentExplosionCause;
      private boolean ignoreFallDamageFromCurrentImpulse = false;
      private int currentImpulseContextResetGraceTime = 0;
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
@@ -28,7 +28,7 @@
  
      public Player(Level level, GameProfile gameProfile) {
          super(EntityType.PLAYER, level);
-@@ -246,6 +_,13 @@
+@@ -244,6 +_,13 @@
  
          if (this.isSleeping()) {
              this.sleepCounter++;
@@ -51,7 +51,7 @@
      }
  
      private boolean isEquipped(Item item) {
-@@ -431,6 +_,18 @@
+@@ -428,6 +_,18 @@
          }
      }
  
@@ -70,7 +70,7 @@
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
      }
-@@ -442,8 +_,14 @@
+@@ -439,8 +_,14 @@
      public void rideTick() {
          if (!this.level().isClientSide() && this.wantsToStopRiding() && this.isPassenger()) {
              this.stopRiding();
@@ -87,7 +87,7 @@
              super.rideTick();
          }
      }
-@@ -704,10 +_,10 @@
+@@ -699,10 +_,10 @@
              if (this.isDeadOrDying()) {
                  return false;
              } else {
@@ -100,7 +100,7 @@
                      }
  
                      if (level.getDifficulty() == Difficulty.EASY) {
-@@ -719,7 +_,14 @@
+@@ -714,7 +_,14 @@
                      }
                  }
  
@@ -116,7 +116,7 @@
              }
          }
      }
-@@ -731,7 +_,7 @@
+@@ -726,7 +_,7 @@
          BlocksAttacks blocksAttacks = itemBlockingWith != null ? itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS) : null;
          float secondsToDisableBlocking = entity.getSecondsToDisableBlocking();
          if (secondsToDisableBlocking > 0.0F && blocksAttacks != null) {
@@ -125,7 +125,7 @@
          }
      }
  
-@@ -741,9 +_,29 @@
+@@ -736,9 +_,29 @@
      }
  
      public boolean canHarmPlayer(Player other) {
@@ -158,7 +158,7 @@
      }
  
      @Override
-@@ -757,7 +_,12 @@
+@@ -752,7 +_,12 @@
      }
  
      @Override
@@ -172,7 +172,7 @@
          if (!this.isInvulnerableTo(level, damageSource)) {
              amount = this.getDamageAfterArmorAbsorb(damageSource, amount);
              amount = this.getDamageAfterMagicAbsorb(damageSource, amount);
-@@ -769,7 +_,7 @@
+@@ -764,7 +_,7 @@
              }
  
              if (var8 != 0.0F) {
@@ -181,7 +181,7 @@
                  this.getCombatTracker().recordDamage(damageSource, var8);
                  this.setHealth(this.getHealth() - var8);
                  if (var8 < 3.4028235E37F) {
-@@ -779,6 +_,7 @@
+@@ -774,6 +_,7 @@
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
              }
          }
@@ -189,7 +189,7 @@
      }
  
      public boolean isTextFilteringEnabled() {
-@@ -862,14 +_,16 @@
+@@ -860,14 +_,16 @@
      }
  
      @Override
@@ -209,14 +209,13 @@
      }
  
      @Override
-@@ -948,8 +_,17 @@
+@@ -946,15 +_,25 @@
      }
  
      public void attack(Entity target) {
--        if (target.isAttackable()) {
--            if (!target.skipAttackInteraction(this)) {
+-        if (!this.cannotAttack(target)) {
 +        // Paper start - PlayerAttackEntityEvent
-+        boolean willAttack = target.isAttackable() && !target.skipAttackInteraction(this); // Vanilla logic
++        boolean willAttack = !this.cannotAttack(target); // Vanilla logic
 +        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
 +            (org.bukkit.entity.Player) this.getBukkitEntity(),
 +            target.getBukkitEntity(),
@@ -224,175 +223,172 @@
 +        );
 +
 +        if (playerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
-+            {
 +        // Paper end - PlayerAttackEntityEvent
-                 float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-                 ItemStack weaponItem = this.getWeaponItem();
-                 DamageSource damageSource = Optional.ofNullable(weaponItem.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
-@@ -957,18 +_,25 @@
-                 float attackStrengthScale = this.getAttackStrengthScale(0.5F);
-                 f *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
-                 f1 *= attackStrengthScale;
--                this.resetAttackStrengthTicker();
-+                // this.resetAttackStrengthTicker(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
-                 if (target.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE)
--                    && target instanceof Projectile projectile
--                    && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
--                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
--                } else {
-+                    && target instanceof Projectile projectile) {
-+                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(target, damageSource, f1, false)) {
-+                            return;
-+                        }
-+                        if (projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
-+                            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
-+                            return;
-+                        }
-+                }
-+                {
-+                    // CraftBukkit end
-                     if (f > 0.0F || f1 > 0.0F) {
-                         boolean flag = attackStrengthScale > 0.9F;
-                         boolean flag1;
-                         if (this.isSprinting() && flag) {
--                            this.level()
--                                .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
-+                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
-                             flag1 = true;
-                         } else {
-                             flag1 = false;
-@@ -984,7 +_,9 @@
-                             && !this.isPassenger()
-                             && target instanceof LivingEntity
-                             && !this.isSprinting();
-+                        flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
-                         if (flag2) {
-+                            damageSource = damageSource.critical(); // Paper - critical damage API
-                             f *= 1.5F;
-                         }
+             float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+             ItemStack weaponItem = this.getWeaponItem();
+-            DamageSource damageSource = this.createAttackSource(weaponItem);
++            DamageSource damageSource = this.createAttackSource(weaponItem); final DamageSource dmgSourceFinal = damageSource; // Paper - damage events
+             float attackStrengthScale = this.getAttackStrengthScale(0.5F);
+             float f1 = attackStrengthScale * (this.getEnchantedDamage(target, f, damageSource) - f);
+             f *= this.baseDamageScaleFactor();
+             this.onAttack();
+-            if (!this.deflectProjectile(target)) {
++            final float dmgFinal = f1; // Paper - damage events
++            if (!this.deflectProjectile(target, () -> !org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(target, dmgSourceFinal, dmgFinal, false))) {
+                 if (f > 0.0F || f1 > 0.0F) {
+                     boolean flag = attackStrengthScale > 0.9F;
+                     boolean flag1;
+@@ -967,7 +_,9 @@
  
-@@ -1011,17 +_,23 @@
-                                 if (target instanceof LivingEntity livingEntity1) {
-                                     livingEntity1.knockback(
-                                         f4 * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
-+                                        , this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // Paper - knockback events
-                                     );
-                                 } else {
-                                     target.push(
-                                         -Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)) * f4 * 0.5F,
-                                         0.1,
-                                         Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * f4 * 0.5F
-+                                        , this // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
-                                     );
-                                 }
+                     f += weaponItem.getItem().getAttackDamageBonus(target, f, damageSource);
+                     boolean flag2 = flag && this.canCriticalAttack(target);
++                    flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
+                     if (flag2) {
++                        damageSource = damageSource.critical(); // Paper - critical damage API
+                         f *= 1.5F;
+                     }
  
-                                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
-+                                // Paper start - Configurable sprint interruption on attack
-+                                if (!this.level().paperConfig().misc.disableSprintInterruptionOnAttack) {
-                                 this.setSprinting(false);
-+                                }
-+                                // Paper end - Configurable sprint interruption on attack
-                             }
+@@ -990,7 +_,7 @@
+                         this.setLastHurtMob(target);
+                         this.itemAttackInteraction(target, weaponItem, damageSource, true);
+                         this.damageStatsAndHearts(target, f3);
+-                        this.causeFoodExhaustion(0.1F);
++                        this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+                     } else {
+                         this.playServerSideSound(SoundEvents.PLAYER_ATTACK_NODAMAGE);
+                     }
+@@ -1002,7 +_,7 @@
+     }
  
-                             if (flag3) {
-@@ -1035,42 +_,59 @@
-                                         && !(livingEntity2 instanceof ArmorStand armorStand && armorStand.isMarker())
-                                         && this.distanceToSqr(livingEntity2) < 9.0) {
-                                         float f6 = this.getEnchantedDamage(livingEntity2, f5, damageSource) * attackStrengthScale;
--                                        if (this.level() instanceof ServerLevel serverLevel && livingEntity2.hurtServer(serverLevel, damageSource, f6)) {
-+                                        // Paper start - Only apply knockback if the event is not cancelled
-+                                        livingEntity2.lastDamageCancelled = false;
-+                                        if (this.level() instanceof ServerLevel serverLevel && livingEntity2.hurtServer(serverLevel, damageSource.knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK), f6) && !livingEntity2.lastDamageCancelled) {
-+                                        // Paper end - Only apply knockback if the event is not cancelled
-                                             livingEntity2.knockback(
-                                                 0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
-+                                                    , this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK // Paper - knockback events
-                                             );
-                                             EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity2, damageSource);
-                                         }
-                                     }
-                                 }
+     private void playServerSideSound(SoundEvent sound) {
+-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, this.getSoundSource(), 1.0F, 1.0F);
++        sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), sound, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+     }
  
--                                this.level()
--                                    .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F);
-+                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
-                                 this.sweepAttack();
-                             }
+     private DamageSource createAttackSource(ItemStack stack) {
+@@ -1013,11 +_,12 @@
+         return !target.isAttackable() || target.skipAttackInteraction(this);
+     }
  
-                             if (target instanceof ServerPlayer && target.hurtMarked) {
-+                                // CraftBukkit start - Add Velocity Event
-+                                boolean cancelled = false;
-+                                org.bukkit.entity.Player player = (org.bukkit.entity.Player) target.getBukkitEntity();
-+                                org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(deltaMovement);
+-    private boolean deflectProjectile(Entity target) {
++    private boolean deflectProjectile(Entity target, java.util.function.BooleanSupplier callEvent) { // Paper - damage events
+         if (target.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE)
+             && target instanceof Projectile projectile
++            && callEvent.getAsBoolean() // Paper - damage events
+             && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
++            this.makeSound(SoundEvents.PLAYER_ATTACK_NODAMAGE); // Paper - Use makeSound to avoid duplicating client-side sound for source player
+             return true;
+         } else {
+             return false;
+@@ -1110,21 +_,43 @@
+     public void causeExtraKnockback(Entity target, float strength, Vec3 currentMovement) {
+         if (strength > 0.0F) {
+             if (target instanceof LivingEntity livingEntity) {
+-                livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
++                livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
+             } else {
+                 target.push(
+                     -Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)) * strength, 0.1, Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * strength
++                    , this // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                 );
+             }
+ 
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
++            // Paper start - Configurable sprint interruption on attack
++            if (!this.level().paperConfig().misc.disableSprintInterruptionOnAttack) {
+             this.setSprinting(false);
++            }
++            // Paper end - Configurable sprint interruption on attack
+         }
+ 
+         if (target instanceof ServerPlayer && target.hurtMarked) {
++            // CraftBukkit start - Add Velocity Event
++            boolean cancelled = false;
++            org.bukkit.entity.Player player = (org.bukkit.entity.Player) target.getBukkitEntity();
++            org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(currentMovement);
 +
-+                                org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
-+                                this.level().getCraftServer().getPluginManager().callEvent(event);
++            org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+                                if (event.isCancelled()) {
-+                                    cancelled = true;
-+                                } else if (!velocity.equals(event.getVelocity())) {
-+                                    player.setVelocity(event.getVelocity());
-+                                }
++            if (event.isCancelled()) {
++                cancelled = true;
++            } else if (!velocity.equals(event.getVelocity())) {
++                player.setVelocity(event.getVelocity());
++            }
 +
-+                                if (!cancelled) {
-                                 ((ServerPlayer)target).connection.send(new ClientboundSetEntityMotionPacket(target));
-                                 target.hurtMarked = false;
-                                 target.setDeltaMovement(deltaMovement);
-+                                }
-+                                // CraftBukkit end
-                             }
++            if (!cancelled) {
+             ((ServerPlayer)target).connection.send(new ClientboundSetEntityMotionPacket(target));
+             target.hurtMarked = false;
+             target.setDeltaMovement(currentMovement);
++            }
++            // CraftBukkit end
+         }
+     }
  
-                             if (flag2) {
--                                this.level()
--                                    .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F);
-+                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
-                                 this.crit(target);
-                             }
- 
-                             if (!flag2 && !flag3) {
-                                 if (flag) {
--                                    this.level()
--                                        .playSound(
--                                            null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F
-+                                    sendSoundEffect(
-+                                            this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F // Paper - send while respecting visibility
-                                         );
-                                 } else {
--                                    this.level()
--                                        .playSound(
--                                            null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F
-+                                    sendSoundEffect(
-+                                            this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F // Paper - send while respecting visibility
-                                         );
-                                 }
-                             }
-@@ -1118,10 +_,10 @@
-                                 }
-                             }
- 
--                            this.causeFoodExhaustion(0.1F);
-+                            this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
-                         } else {
--                            this.level()
--                                .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
-+                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
-+                            // CraftBukkit end
-                         }
+@@ -1145,8 +_,11 @@
+                     && !(livingEntity instanceof ArmorStand armorStand && armorStand.isMarker())
+                     && this.distanceToSqr(livingEntity) < 9.0) {
+                     float f1 = this.getEnchantedDamage(livingEntity, var12, damageSource) * strengthScale;
+-                    if (livingEntity.hurtServer(serverLevel, damageSource, f1)) {
+-                        livingEntity.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
++                    // Paper start - Only apply knockback if the event is not canceled
++                    livingEntity.lastDamageCancelled = false;
++                    if (livingEntity.hurtServer(serverLevel, damageSource.knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK), f1) && !livingEntity.lastDamageCancelled) {
++                        // Paper end - Only apply knockback if the event is not canceled
++                        livingEntity.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // Paper - knockback events
+                         EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity, damageSource);
                      }
                  }
-@@ -1156,8 +_,8 @@
+@@ -1177,7 +_,16 @@
+ 
+     @Override
+     public boolean stabAttack(EquipmentSlot slot, Entity target, float damageAmount, boolean damage, boolean knockback, boolean dismount) {
+-        if (this.cannotAttack(target)) {
++        // Paper start - PlayerAttackEntityEvent
++        boolean cannotAttack = this.cannotAttack(target); // Vanilla logic
++        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
++            (org.bukkit.entity.Player) this.getBukkitEntity(),
++            target.getBukkitEntity(),
++            !cannotAttack
++        );
++
++        if (!playerAttackEntityEvent.callEvent() || cannotAttack) { // Logic moved to cannotAttack local variable.
++        // Paper end - PlayerAttackEntityEvent
+             return false;
+         } else {
+             ItemStack itemBySlot = this.getItemBySlot(slot);
+@@ -1188,7 +_,8 @@
+                 damageAmount *= this.baseDamageScaleFactor();
+             }
+ 
+-            if (knockback && this.deflectProjectile(target)) {
++            final float dmgFinal = f; // Paper - damage events
++            if (knockback && this.deflectProjectile(target, () -> !org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(target, damageSource, dmgFinal, false))) { // Paper - damage events
+                 return true;
+             } else {
+                 float f1 = damage ? damageAmount + f : 0.0F;
+@@ -1216,7 +_,7 @@
+                     this.setLastHurtMob(target);
+                     this.itemAttackInteraction(target, itemBySlot, damageSource, flag);
+                     this.damageStatsAndHearts(target, f2);
+-                    this.causeFoodExhaustion(0.1F);
++                    this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+                     return true;
+                 }
+             }
+@@ -1227,8 +_,8 @@
      }
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
 -        super.remove(reason);
-+    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
++    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
 +        super.remove(reason, eventCause); // CraftBukkit - add Bukkit remove cause
          this.inventoryMenu.removed(this);
          if (this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1225,6 +_,12 @@
+@@ -1296,6 +_,12 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos bedPos) {
@@ -405,7 +401,7 @@
          this.startSleeping(bedPos);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1336,7 +_,7 @@
+@@ -1407,7 +_,7 @@
  
      @Override
      public boolean causeFallDamage(double fallDistance, float damageMultiplier, DamageSource damageSource) {
@@ -414,7 +410,7 @@
              return false;
          } else {
              if (fallDistance >= 2.0) {
-@@ -1377,7 +_,15 @@
+@@ -1448,7 +_,15 @@
      }
  
      public void startFallFlying() {
@@ -431,7 +427,16 @@
      }
  
      @Override
-@@ -1483,15 +_,35 @@
+@@ -1546,7 +_,7 @@
+ 
+         if (levels > 0 && this.experienceLevel % 5 == 0 && this.lastLevelUpTime < this.tickCount - 100.0F) {
+             float f = this.experienceLevel > 30 ? 1.0F : this.experienceLevel / 30.0F;
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_LEVELUP, this.getSoundSource(), f * 0.75F, 1.0F);
++            Player.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_LEVELUP, this.getSoundSource(), f * 0.75F, 1.0F); // Paper - send while respecting visibility
+             this.lastLevelUpTime = this.tickCount;
+         }
+     }
+@@ -1554,15 +_,35 @@
      public int getXpNeededForNextLevel() {
          if (this.experienceLevel >= 30) {
              return 112 + (this.experienceLevel - 30) * 9;
@@ -469,7 +474,16 @@
              }
          }
      }
-@@ -1760,17 +_,32 @@
+@@ -1821,7 +_,7 @@
+ 
+     @Override
+     public void onAttack() {
+-        this.resetOnlyAttackStrengthTicker();
++        // this.resetOnlyAttackStrengthTicker(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
+         super.onAttack();
+     }
+ 
+@@ -1856,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -504,7 +518,7 @@
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack item = this.inventory.getItem(i);
-@@ -1779,6 +_,7 @@
+@@ -1875,6 +_,7 @@
                      }
                  }
  
@@ -512,25 +526,10 @@
                  return this.hasInfiniteMaterials() ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
              }
          }
-@@ -1865,12 +_,20 @@
+@@ -2055,5 +_,6 @@
+         public static final Player.BedSleepingProblem OBSTRUCTED = new Player.BedSleepingProblem(Component.translatable("block.minecraft.bed.obstructed"));
+         public static final Player.BedSleepingProblem OTHER_PROBLEM = new Player.BedSleepingProblem(null);
+         public static final Player.BedSleepingProblem NOT_SAFE = new Player.BedSleepingProblem(Component.translatable("block.minecraft.bed.not_safe"));
++        public static final Player.BedSleepingProblem EXPLOSION = new Player.BedSleepingProblem(null); // Paper - Added to properly handle explosions in bed events
      }
- 
-     public boolean hasClientLoaded() {
--        return this.clientLoaded || this.clientLoadedTimeoutTimer <= 0;
-+        return this.clientLoaded; // Paper - Add PlayerLoadedWorldEvent
-     }
- 
-     public void tickClientLoadTimeout() {
-         if (!this.clientLoaded) {
-             this.clientLoadedTimeoutTimer--;
-+            // Paper start - Add PlayerLoadedWorldEvent
-+            if (this.clientLoadedTimeoutTimer <= 0) {
-+                this.clientLoaded = true;
-+
-+                final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent((org.bukkit.craftbukkit.entity.CraftPlayer) getBukkitEntity(), true);
-+                event.callEvent();
-+            }
-+            // Paper end - Add PlayerLoadedWorldEvent
-         }
-     }
- 
+ }

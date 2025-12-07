@@ -38,7 +38,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
@@ -177,7 +177,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 continue;
             }
 
-            ResourceLocation key = CraftNamespacedKey.toMinecraft(material.getKey());
+            Identifier key = CraftNamespacedKey.toMinecraft(material.getKey());
             BuiltInRegistries.ITEM.getOptional(key).ifPresent((item) -> {
                 CraftMagicNumbers.MATERIAL_ITEM.put(material, item);
             });
@@ -301,13 +301,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
-        ResourceLocation resourceKey = CraftNamespacedKey.toMinecraft(key);
+        Identifier resourceKey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
         final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
         final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
         if (nms != null) {
-            final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
+            final com.google.common.collect.ImmutableMap.Builder<Identifier, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
             mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
 
             final AdvancementHolder holder = new AdvancementHolder(resourceKey, nms);

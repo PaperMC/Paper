@@ -256,4 +256,37 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     public Weapon.Builder weapon() {
         return new PaperWeapon.BuilderImpl();
     }
+
+    @Override
+    public KineticWeapon.Builder kineticWeapon() {
+        return new PaperKineticWeapon.BuilderImpl();
+    }
+
+    @Override
+    public UseEffects.Builder useEffects() {
+        return new PaperUseEffects.BuilderImpl();
+    }
+
+    @Override
+    public PiercingWeapon.Builder piercingWeapon() {
+        return new PaperPiercingWeapon.BuilderImpl();
+    }
+
+    @Override
+    public AttackRange.Builder attackRange() {
+        return new PaperAttackRange.BuilderImpl();
+    }
+
+    @Override
+    public SwingAnimation.Builder swingAnimation() {
+        return new PaperSwingAnimation.BuilderImpl();
+    }
+
+    @Override
+    public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
+        Preconditions.checkArgument(maxDurationTicks >= 0, "maxDurationTicks must be non-negative");
+        return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
+                maxDurationTicks, minSpeed, minRelativeSpeed
+        ));
+    }
 }

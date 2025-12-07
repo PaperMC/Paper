@@ -118,11 +118,11 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
     }
 
     protected String rewriteFieldName(Holder.Reference<T> reference) {
-        return Formatting.formatKeyAsField(reference.key().location().getPath());
+        return Formatting.formatKeyAsField(reference.key().identifier().getPath());
     }
 
     protected String rewriteFieldValue(Holder.Reference<T> reference) {
-        return "%s(%s)".formatted(this.fetchMethod, quoted(reference.key().location().getPath()));
+        return "%s(%s)".formatted(this.fetchMethod, quoted(reference.key().identifier().getPath()));
     }
 
     protected @Nullable SingleFlagHolder getRequiredFeature(Holder.Reference<T> reference) {

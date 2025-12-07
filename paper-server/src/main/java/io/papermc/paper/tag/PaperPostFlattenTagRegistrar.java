@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -27,13 +27,13 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 @DefaultQualifier(NonNull.class)
 public class PaperPostFlattenTagRegistrar<M, T> implements PaperRegistrar<BootstrapContext>, PostFlattenTagRegistrar<T> {
 
-    public final Map<ResourceLocation, List<M>> tags;
-    private final Function<ResourceLocation, Optional<? extends M>> fromIdConverter;
-    private final Function<M, ResourceLocation> toIdConverter;
+    public final Map<Identifier, List<M>> tags;
+    private final Function<Identifier, Optional<? extends M>> fromIdConverter;
+    private final Function<M, Identifier> toIdConverter;
     private final RegistryKey<T> registryKey;
 
     public PaperPostFlattenTagRegistrar(
-        final Map<ResourceLocation, List<M>> tags,
+        final Map<Identifier, List<M>> tags,
         final TagEventConfig<M, T> config
     ) {
         this.tags = tags;
@@ -54,7 +54,7 @@ public class PaperPostFlattenTagRegistrar<M, T> implements PaperRegistrar<Bootst
     @Override
     public Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags() {
         final ImmutableMap.Builder<TagKey<T>, Collection<TypedKey<T>>> tags = ImmutableMap.builderWithExpectedSize(this.tags.size());
-        for (final Map.Entry<ResourceLocation, List<M>> entry : this.tags.entrySet()) {
+        for (final Map.Entry<Identifier, List<M>> entry : this.tags.entrySet()) {
             final TagKey<T> key = TagKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(entry.getKey()));
             tags.put(key, this.convert(entry.getValue()));
         }
@@ -67,7 +67,7 @@ public class PaperPostFlattenTagRegistrar<M, T> implements PaperRegistrar<Bootst
         );
     }
 
-    private TypedKey<T> convert(final ResourceLocation location) {
+    private TypedKey<T> convert(final Identifier location) {
         return TypedKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(location));
     }
 
@@ -85,7 +85,7 @@ public class PaperPostFlattenTagRegistrar<M, T> implements PaperRegistrar<Bootst
     }
 
     private List<M> getNmsTag(final TagKey<T> tagKey, final boolean create) {
-        final ResourceLocation vanillaKey = PaperAdventure.asVanilla(tagKey.key());
+        final Identifier vanillaKey = PaperAdventure.asVanilla(tagKey.key());
         List<M> tag = this.tags.get(vanillaKey);
         if (tag == null) {
             if (create) {
