@@ -248,7 +248,7 @@ public class SpigotWorldConfig {
     public int monsterTrackingRange = 96;
     public int miscTrackingRange = 96;
     public int displayTrackingRange = 128;
-    public int flyingMonsterTrackingRange = 128; // Paper - Flying monster tracking range
+    public int flyingMonsterTrackingRange = 128;
     public int otherTrackingRange = 64;
     private void trackingRange() {
         this.playerTrackingRange = this.getInt("entity-tracking-range.players", this.playerTrackingRange);
@@ -256,7 +256,7 @@ public class SpigotWorldConfig {
         this.monsterTrackingRange = this.getInt("entity-tracking-range.monsters", this.monsterTrackingRange);
         this.miscTrackingRange = this.getInt("entity-tracking-range.misc", this.miscTrackingRange);
         this.displayTrackingRange = this.getInt("entity-tracking-range.display", this.displayTrackingRange);
-        this.flyingMonsterTrackingRange = this.getInt("entity-tracking-range.flying-monsters", this.monsterTrackingRange); // Paper - Flying monster tracking range, defaults to old monsterTrackingRange
+        this.flyingMonsterTrackingRange = this.getInt("entity-tracking-range.flying-monsters", this.monsterTrackingRange); // Default to old monsterTrackingRange
         this.otherTrackingRange = this.getInt("entity-tracking-range.other", this.otherTrackingRange);
         this.log("Entity Tracking Range: Pl " + this.playerTrackingRange + " / An " + this.animalTrackingRange + " / Mo " + this.monsterTrackingRange + " / Mi " + this.miscTrackingRange + " / Di " + this.displayTrackingRange + " / Fl " + this.flyingMonsterTrackingRange + " / Other " + this.otherTrackingRange); // Paper
     }
