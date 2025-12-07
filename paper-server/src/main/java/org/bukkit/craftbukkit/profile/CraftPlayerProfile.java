@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import com.mojang.datafixers.util.Either;
 import io.papermc.paper.profile.MutablePropertyMap;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.player.PlayerSkin;

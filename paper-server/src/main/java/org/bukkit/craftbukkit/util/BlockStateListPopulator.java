@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -51,7 +52,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         pos = pos.immutable();
         // remove first to keep last updated order
         this.blocks.remove(pos);
@@ -81,7 +82,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
             return false;
         }
 
-        this.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3, recursionLeft); // capture block without the event
+        this.setBlock(pos, blockState.getFluidState().createLegacyBlock(), Block.UPDATE_ALL, recursionLeft); // capture block without the event
         return true;
     }
 

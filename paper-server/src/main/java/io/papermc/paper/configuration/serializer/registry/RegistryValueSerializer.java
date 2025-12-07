@@ -33,7 +33,7 @@ public final class RegistryValueSerializer<T> extends RegistryEntrySerializer<T,
     protected T convertFromResourceKey(final ResourceKey<T> key) throws SerializationException {
         final T value = this.registry().getValue(key);
         if (value == null) {
-            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
+            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.identifier());
         }
         return value;
     }

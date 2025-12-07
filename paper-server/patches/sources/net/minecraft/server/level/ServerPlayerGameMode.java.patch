@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -47,16 +_,38 @@
+@@ -46,16 +_,37 @@
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -19,8 +19,7 @@
 +        return event != null && !event.isCancelled();
 +    }
 +
-+    @Nullable
-+    public org.bukkit.event.player.PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameModeForPlayer, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause playerGameModeChangeCause, @Nullable net.kyori.adventure.text.Component cancelMessage) {
++    public org.bukkit.event.player.@Nullable PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameModeForPlayer, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause playerGameModeChangeCause, net.kyori.adventure.text.@Nullable Component cancelMessage) {
 +        // Paper end - Expand PlayerGameModeChangeEvent
          if (gameModeForPlayer == this.gameModeForPlayer) {
 -            return false;
@@ -40,7 +39,7 @@
              Abilities abilities = this.player.getAbilities();
              this.setGameModeForPlayer(gameModeForPlayer, this.gameModeForPlayer);
              if (abilities.flying && gameModeForPlayer != GameType.SPECTATOR && this.isInRangeOfGround()) {
-@@ -67,13 +_,13 @@
+@@ -66,13 +_,13 @@
              this.level
                  .getServer()
                  .getPlayerList()
@@ -56,7 +55,7 @@
          }
      }
  
-@@ -107,10 +_,11 @@
+@@ -105,10 +_,11 @@
      }
  
      public void tick() {
@@ -71,7 +70,7 @@
                  this.hasDelayedDestroy = false;
              } else {
                  float f = this.incrementDestroyProgress(blockState, this.delayedDestroyPos, this.delayedTickStart);
-@@ -120,7 +_,13 @@
+@@ -118,7 +_,13 @@
                  }
              }
          } else if (this.isDestroyingBlock) {
@@ -86,15 +85,15 @@
              if (blockState.isAir()) {
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
-@@ -151,6 +_,7 @@
+@@ -149,6 +_,7 @@
  
      public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction face, int maxBuildHeight, int sequence) {
-         if (!this.player.canInteractWithBlock(pos, 1.0)) {
+         if (!this.player.isWithinBlockInteractionRange(pos, 1.0)) {
 +            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() > maxBuildHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -158,16 +_,35 @@
+@@ -156,16 +_,35 @@
          } else {
              if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, pos)) {
@@ -132,7 +131,7 @@
                  if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
                      this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
                      this.debugLogging(pos, false, sequence, "block action restricted");
-@@ -177,7 +_,7 @@
+@@ -175,7 +_,7 @@
                  this.destroyProgressStart = this.gameTicks;
                  float f = 1.0F;
                  BlockState blockState = this.level.getBlockState(pos);
@@ -141,7 +140,7 @@
                      EnchantmentHelper.onHitBlock(
                          this.level,
                          this.player.getMainHandItem(),
-@@ -192,6 +_,23 @@
+@@ -190,6 +_,23 @@
                      f = blockState.getDestroyProgress(this.player, this.player.level(), pos);
                  }
  
@@ -165,7 +164,7 @@
                  if (!blockState.isAir() && f >= 1.0F) {
                      this.destroyAndAck(pos, sequence, "insta mine");
                  } else {
-@@ -232,14 +_,22 @@
+@@ -230,14 +_,22 @@
                  this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
@@ -190,7 +189,7 @@
              }
          }
      }
-@@ -255,17 +_,64 @@
+@@ -253,17 +_,64 @@
  
      public boolean destroyBlock(BlockPos pos) {
          BlockState blockState = this.level.getBlockState(pos);
@@ -257,7 +256,7 @@
                  BlockState blockState1 = block.playerWillDestroy(this.level, pos, blockState, this.player);
                  boolean flag = this.level.removeBlock(pos, false);
                  if (SharedConstants.DEBUG_BLOCK_BREAK) {
-@@ -276,19 +_,44 @@
+@@ -274,19 +_,44 @@
                      block.destroy(this.level, pos, blockState1);
                  }
  
@@ -309,7 +308,7 @@
              }
          }
      }
-@@ -323,7 +_,7 @@
+@@ -321,7 +_,7 @@
                  }
  
                  if (!player.isUsingItem()) {
@@ -318,7 +317,7 @@
                  }
  
                  return interactionResult;
-@@ -331,15 +_,47 @@
+@@ -329,15 +_,47 @@
          }
      }
  
@@ -368,7 +367,7 @@
                  return InteractionResult.CONSUME;
              } else {
                  return InteractionResult.PASS;
-@@ -364,7 +_,7 @@
+@@ -362,7 +_,7 @@
                  }
              }
  
@@ -377,7 +376,7 @@
                  UseOnContext useOnContext = new UseOnContext(player, hand, hitResult);
                  InteractionResult interactionResult1;
                  if (player.hasInfiniteMaterials()) {
-@@ -381,6 +_,11 @@
+@@ -379,6 +_,11 @@
  
                  return interactionResult1;
              } else {

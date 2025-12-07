@@ -61,15 +61,11 @@ public class CraftMenuType<V extends @NonNull InventoryView, B extends Inventory
         return this.typeData.get().viewClass();
     }
 
-    public static net.minecraft.world.inventory.MenuType<?> bukkitToMinecraft(MenuType bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
-    }
-
     public static MenuType minecraftToBukkit(net.minecraft.world.inventory.MenuType<?> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.MENU);
     }
 
     public static MenuType minecraftHolderToBukkit(Holder<net.minecraft.world.inventory.MenuType<?>> minecraft) {
-        return CraftMenuType.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.MENU);
     }
 }
