@@ -13,11 +13,12 @@ public enum ItemUseAnimation {
     DRINK,
     BLOCK,
     BOW,
-    SPEAR,
+    TRIDENT,
     CROSSBOW,
     SPYGLASS,
     TOOT_HORN,
     BRUSH,
-    BUNDLE;
+    BUNDLE,
+    SPEAR;
     // End generate - ItemUseAnimation
 }

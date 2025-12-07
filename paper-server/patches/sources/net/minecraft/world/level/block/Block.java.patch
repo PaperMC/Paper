@@ -1,6 +1,35 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -103,6 +_,21 @@
+@@ -88,16 +_,18 @@
+                 return !Shapes.joinIsNotEmpty(Shapes.block(), shape, BooleanOp.NOT_SAME);
+             }
+         });
+-    public static final int UPDATE_NEIGHBORS = 1;
+-    public static final int UPDATE_CLIENTS = 2;
+-    public static final int UPDATE_INVISIBLE = 4;
+-    public static final int UPDATE_IMMEDIATE = 8;
+-    public static final int UPDATE_KNOWN_SHAPE = 16;
+-    public static final int UPDATE_SUPPRESS_DROPS = 32;
+-    public static final int UPDATE_MOVE_BY_PISTON = 64;
+-    public static final int UPDATE_SKIP_SHAPE_UPDATE_ON_WIRE = 128;
+-    public static final int UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS = 256;
+-    public static final int UPDATE_SKIP_ON_PLACE = 512;
++    // Paper start - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_NEIGHBORS = 1; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_CLIENTS = 2; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_INVISIBLE = 4; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_IMMEDIATE = 8; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_KNOWN_SHAPE = 16; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_SUPPRESS_DROPS = 32; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_MOVE_BY_PISTON = 64; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_SKIP_SHAPE_UPDATE_ON_WIRE = 128; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS = 256; // Paper - diff on change - all listed in UpdateFlags annotation
++    public static final int UPDATE_SKIP_ON_PLACE = 512; // Paper - diff on change - all listed in UpdateFlags annotation
++    // Paper end - diff on change - all listed in UpdateFlags annotation
+     @Block.UpdateFlags
+     public static final int UPDATE_NONE = 260;
+     @Block.UpdateFlags
+@@ -111,6 +_,21 @@
      public static final int UPDATE_LIMIT = 512;
      protected final StateDefinition<Block, BlockState> stateDefinition;
      private BlockState defaultBlockState;
@@ -19,10 +48,10 @@
 +            this != Blocks.JIGSAW;
 +    }
 +    // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
-     @Nullable
-     private Item item;
+     private @Nullable Item item;
      private static final int CACHE_SIZE = 256;
-@@ -357,6 +_,27 @@
+     private static final ThreadLocal<Object2ByteLinkedOpenHashMap<Block.ShapePairKey>> OCCLUSION_CACHE = ThreadLocal.withInitial(() -> {
+@@ -366,6 +_,27 @@
          return state.getDrops(builder);
      }
  
@@ -50,7 +79,7 @@
      public static void dropResources(BlockState state, Level level, BlockPos pos) {
          if (level instanceof ServerLevel) {
              getDrops(state, (ServerLevel)level, pos, null).forEach(stack -> popResource(level, pos, stack));
-@@ -372,9 +_,14 @@
+@@ -381,9 +_,14 @@
      }
  
      public static void dropResources(BlockState state, Level level, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
@@ -66,8 +95,8 @@
          }
      }
  
-@@ -405,13 +_,25 @@
-         if (level instanceof ServerLevel serverLevel && !stack.isEmpty() && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
+@@ -414,13 +_,25 @@
+         if (level instanceof ServerLevel serverLevel && !stack.isEmpty() && serverLevel.getGameRules().get(GameRules.BLOCK_DROPS)) {
              ItemEntity itemEntity = itemEntitySupplier.get();
              itemEntity.setDefaultPickUpDelay();
 -            level.addFreshEntity(itemEntity);
@@ -86,15 +115,15 @@
 +        popExperience(level, pos, amount, null);
 +    }
 +
-+    public void popExperience(ServerLevel level, BlockPos pos, int amount, @Nullable net.minecraft.world.entity.Entity entity) {
++    public void popExperience(ServerLevel level, BlockPos pos, int amount, net.minecraft.world.entity.@Nullable Entity entity) {
 +        // Paper end - add entity parameter
-         if (level.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
+         if (level.getGameRules().get(GameRules.BLOCK_DROPS)) {
 -            ExperienceOrb.award(level, Vec3.atCenterOf(pos), amount);
 +            ExperienceOrb.awardWithDirection(level, Vec3.atCenterOf(pos), net.minecraft.world.phys.Vec3.ZERO, amount, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, entity, null); // Paper
          }
      }
  
-@@ -430,10 +_,19 @@
+@@ -438,10 +_,19 @@
          return this.defaultBlockState();
      }
  
@@ -116,7 +145,7 @@
      }
  
      public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-@@ -572,12 +_,20 @@
+@@ -580,12 +_,20 @@
          return this.builtInRegistryHolder;
      }
  
@@ -140,3 +169,11 @@
  
      record ShapePairKey(VoxelShape first, VoxelShape second) {
          @Override
+@@ -601,6 +_,7 @@
+ 
+     @Retention(RetentionPolicy.CLASS)
+     @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE, ElementType.METHOD, ElementType.TYPE_USE})
++    @org.intellij.lang.annotations.MagicConstant(flags = {UPDATE_NEIGHBORS, UPDATE_CLIENTS, UPDATE_INVISIBLE, UPDATE_IMMEDIATE, UPDATE_KNOWN_SHAPE, UPDATE_SUPPRESS_DROPS, UPDATE_MOVE_BY_PISTON, UPDATE_SKIP_SHAPE_UPDATE_ON_WIRE, UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS, UPDATE_SKIP_ON_PLACE}) // Paper - add back source-retention annotation for IDE
+     public @interface UpdateFlags {
+     }
+ }

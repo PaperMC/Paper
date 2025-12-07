@@ -13,7 +13,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataFixers;
@@ -338,7 +338,7 @@ public final class CraftLegacy {
                     }
 
                     String name = blockTag.get("Name").asString("");
-                    Block block = BuiltInRegistries.BLOCK.getValue(ResourceLocation.parse(name));
+                    Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(name));
                     if (block == null) {
                         continue;
                     }
@@ -412,7 +412,7 @@ public final class CraftLegacy {
                 }
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
-                Item newMaterial = BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(newId));
+                Item newMaterial = BuiltInRegistries.ITEM.getValue(Identifier.parse(newId));
 
                 if (newMaterial == Items.AIR) {
                     continue;

@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/Leashable.java
 +++ b/net/minecraft/world/entity/Leashable.java
-@@ -80,6 +_,11 @@
+@@ -79,6 +_,11 @@
      }
  
-     default void writeLeashData(ValueOutput output, @Nullable Leashable.LeashData leashData) {
+     default void writeLeashData(ValueOutput output, Leashable.@Nullable LeashData leashData) {
 +        // CraftBukkit start - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
 +        if (leashData != null && leashData.leashHolder != null && leashData.leashHolder.pluginRemoved) {
 +            return;
@@ -12,7 +12,7 @@
          output.storeNullable("leash", Leashable.LeashData.CODEC, leashData);
      }
  
-@@ -99,7 +_,9 @@
+@@ -98,7 +_,9 @@
              }
  
              if (entity.tickCount > 100) {
@@ -22,7 +22,7 @@
                  entity.setLeashData(null);
              }
          }
-@@ -123,7 +_,9 @@
+@@ -122,7 +_,9 @@
              entity.onLeashRemoved();
              if (entity.level() instanceof ServerLevel serverLevel) {
                  if (dropItem) {
@@ -32,16 +32,16 @@
                  }
  
                  if (broadcastPacket) {
-@@ -143,7 +_,15 @@
+@@ -142,7 +_,15 @@
  
          if (leashData != null && leashData.leashHolder != null) {
              if (!entity.canInteractWithLevel() || !leashData.leashHolder.canInteractWithLevel()) {
--                if (level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+-                if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
 +                // Paper start - Expand EntityUnleashEvent
 +                final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(
 +                    entity.getBukkitEntity(),
 +                    !entity.isAlive() ? org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH : org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.HOLDER_GONE,
-+                    level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && !entity.pluginRemoved
++                    level.getGameRules().get(GameRules.ENTITY_DROPS) && !entity.pluginRemoved
 +                );
 +                event.callEvent();
 +                if (event.isDropLeash()) { // CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
@@ -49,7 +49,7 @@
                      entity.dropLeash();
                  } else {
                      entity.removeLeash();
-@@ -154,8 +_,7 @@
+@@ -153,8 +_,7 @@
              if (leashHolder != null && leashHolder.level() == entity.level()) {
                  double d = entity.leashDistanceTo(leashHolder);
                  entity.whenLeashedTo(leashHolder);
@@ -59,7 +59,7 @@
                      entity.leashTooFarBehaviour();
                  } else if (d > entity.leashElasticDistance() - leashHolder.getBbWidth() - entity.getBbWidth()
                      && entity.checkElasticInteractions(leashHolder, leashData)) {
-@@ -175,6 +_,12 @@
+@@ -174,6 +_,12 @@
          entity.checkFallDistanceAccumulation();
      }
  
@@ -72,7 +72,7 @@
      default double leashSnapDistance() {
          return 12.0;
      }
-@@ -196,7 +_,25 @@
+@@ -195,7 +_,25 @@
      }
  
      default void leashTooFarBehaviour() {

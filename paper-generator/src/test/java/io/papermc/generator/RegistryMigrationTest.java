@@ -27,7 +27,7 @@ public class RegistryMigrationTest {
         Set<String> migratedRegistries = new HashSet<>();
         for (RegistryEntry<?> entry : RegistryEntries.BUILT_IN) {
             ResourceKey<? extends Registry<?>> key = entry.registryKey();
-            if (!BuiltInRegistries.REGISTRY.containsKey(key.location())) {
+            if (!BuiltInRegistries.REGISTRY.containsKey(key.identifier())) {
                 migratedRegistries.add(key.toString());
             }
         }
@@ -40,7 +40,7 @@ public class RegistryMigrationTest {
         Set<String> migratedRegistries = new HashSet<>();
         for (RegistryEntry<?> entry : RegistryEntries.DATA_DRIVEN) {
             ResourceKey<? extends Registry<?>> key = entry.registryKey();
-            if (BuiltInRegistries.REGISTRY.containsKey(key.location())) {
+            if (BuiltInRegistries.REGISTRY.containsKey(key.identifier())) {
                 migratedRegistries.add(key.toString());
             }
         }

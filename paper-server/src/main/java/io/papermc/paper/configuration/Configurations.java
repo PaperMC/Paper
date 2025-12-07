@@ -16,9 +16,9 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public abstract class Configurations<G, W> {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
     public static final String WORLD_DEFAULTS = "__world_defaults__";
-    public static final ResourceLocation WORLD_DEFAULTS_KEY = ResourceLocation.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
+    public static final Identifier WORLD_DEFAULTS_KEY = Identifier.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
     protected final Path globalFolder;
     protected final Class<G> globalConfigClass;
     protected final Class<W> worldConfigClass;
@@ -341,7 +341,7 @@ public abstract class Configurations<G, W> {
 
     public static final ContextKey<Path> WORLD_DIRECTORY = new ContextKey<>(Path.class, "world directory");
     public static final ContextKey<String> WORLD_NAME = new ContextKey<>(String.class, "world name"); // TODO remove when we deprecate level names
-    public static final ContextKey<ResourceLocation> WORLD_KEY = new ContextKey<>(ResourceLocation.class, "world key");
+    public static final ContextKey<Identifier> WORLD_KEY = new ContextKey<>(Identifier.class, "world key");
     public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
     public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
     public static final ContextKey<GameRules> GAME_RULES = new ContextKey<>(GameRules.class, "game rules");

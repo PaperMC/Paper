@@ -34,11 +34,11 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.arguments.NbtPathArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -48,8 +48,8 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Vindicator;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.illager.Vindicator;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -73,9 +73,9 @@ public class WorldConfiguration extends ConfigurationPart {
     static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 
     private final transient SpigotWorldConfig spigotConfig;
-    private final transient ResourceLocation worldKey;
+    private final transient Identifier worldKey;
 
-    WorldConfiguration(final SpigotWorldConfig spigotConfig, final ResourceLocation worldKey) {
+    WorldConfiguration(final SpigotWorldConfig spigotConfig, final Identifier worldKey) {
         this.spigotConfig = spigotConfig;
         this.worldKey = worldKey;
     }
@@ -238,7 +238,7 @@ public class WorldConfiguration extends ConfigurationPart {
 
             public class WanderingTrader extends ConfigurationPart {
                 public int spawnMinuteLength = 1200;
-                public int spawnDayLength = net.minecraft.world.entity.npc.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
+                public int spawnDayLength = net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
                 public int spawnChanceFailureIncrement = 25;
                 public int spawnChanceMin = 25;
                 public int spawnChanceMax = 75;

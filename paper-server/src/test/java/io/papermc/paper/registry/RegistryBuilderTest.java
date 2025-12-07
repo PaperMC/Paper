@@ -28,8 +28,8 @@ class RegistryBuilderTest {
 
     @ParameterizedTest
     @MethodSource("registries")
-    <M, T extends Keyed> void testEquality(final RegistryEntryMeta.Buildable<M, T, ?> registryEntry) { // TODO remove Keyed
-        final Registry<M> registry = RegistryHelper.getRegistry().lookupOrThrow(registryEntry.mcKey());
+    <M, B extends Keyed> void testEquality(final RegistryEntryMeta.Buildable<M, B, ?> registryEntry) { // TODO remove Keyed
+        final Registry<M> registry = RegistryHelper.registryAccess().lookupOrThrow(registryEntry.mcKey());
         for (final Map.Entry<ResourceKey<M>, M> entry : registry.entrySet()) {
             final M built = registryEntry.builderFiller().fill(Conversions.global(), entry.getValue()).build();
             assertEquals(entry.getValue(), built);

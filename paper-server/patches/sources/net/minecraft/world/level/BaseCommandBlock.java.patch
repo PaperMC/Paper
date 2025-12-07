@@ -1,75 +1,67 @@
 --- a/net/minecraft/world/level/BaseCommandBlock.java
 +++ b/net/minecraft/world/level/BaseCommandBlock.java
-@@ -35,6 +_,9 @@
+@@ -30,6 +_,10 @@
+     @Nullable Component lastOutput;
      private String command = "";
-     @Nullable
-     private Component customName;
+     private @Nullable Component customName;
 +    // CraftBukkit start
 +    protected abstract org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper);
++    public abstract ServerLevel getLevel();
 +    // CraftBukkit end
  
      public int getSuccessCount() {
          return this.successCount;
-@@ -112,7 +_,13 @@
+@@ -106,7 +_,13 @@
                                  this.successCount++;
                              }
                          });
--                        server.getCommands().performPrefixedCommand(commandSourceStack, this.command);
+-                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, this.command);
 +                        // Paper start - ServerCommandEvent
 +                        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
 +                        if (!event.callEvent()) {
 +                            return true;
 +                        }
-+                        server.getCommands().performPrefixedCommand(commandSourceStack, event.getCommand());
++                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, event.getCommand());
 +                        // Paper end - ServerCommandEvent
                      }
-                 } catch (Throwable var8) {
-                     CrashReport crashReport = CrashReport.forThrowable(var8, "Executing command block");
-@@ -133,9 +_,8 @@
+                 } catch (Throwable var7) {
+                     CrashReport crashReport = CrashReport.forThrowable(var7, "Executing command block");
+@@ -127,8 +_,8 @@
          }
      }
  
--    @Nullable
--    private BaseCommandBlock.CloseableCommandBlockSource createSource() {
--        return this.trackOutput ? new BaseCommandBlock.CloseableCommandBlockSource() : null;
-+    public BaseCommandBlock.CloseableCommandBlockSource createSource() { // Paper - public, remove nullable
-+        return new BaseCommandBlock.CloseableCommandBlockSource(this.trackOutput); // Paper - add back source when output disabled
+-    private BaseCommandBlock.@Nullable CloseableCommandBlockSource createSource(ServerLevel level) {
+-        return this.trackOutput ? new BaseCommandBlock.CloseableCommandBlockSource(level) : null;
++    public BaseCommandBlock.CloseableCommandBlockSource createSource(ServerLevel level) { // Paper - public, remove nullable
++        return new BaseCommandBlock.CloseableCommandBlockSource(level, this.trackOutput); // Paper - add back source when output disabled
      }
  
      public Component getName() {
-@@ -168,7 +_,7 @@
-     }
- 
-     public InteractionResult usedBy(Player player) {
--        if (!player.canUseGameMasterBlocks()) {
-+        if (!player.canUseGameMasterBlocks() && (!player.isCreative() || !player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
-             return InteractionResult.PASS;
-         } else {
-             if (player.level().isClientSide()) {
-@@ -185,10 +_,21 @@
+@@ -161,13 +_,21 @@
  
      public abstract boolean isValid();
  
 -    protected class CloseableCommandBlockSource implements CommandSource, AutoCloseable {
 +    public class CloseableCommandBlockSource implements CommandSource, AutoCloseable { // Paper - public
+         private final ServerLevel level;
          private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT);
          private boolean closed;
  
+-        protected CloseableCommandBlockSource(final ServerLevel level) {
 +        // Paper start - add back source when output disabled
 +        private final boolean trackOutput;
-+        public CloseableCommandBlockSource(final boolean trackOutput) {
++        public CloseableCommandBlockSource(final ServerLevel level, final boolean trackOutput) {
+             this.level = level;
 +            this.trackOutput = trackOutput;
 +        }
 +        @io.papermc.paper.annotation.DoNotUse @Deprecated
-+        public CloseableCommandBlockSource() {
-+            this(true);
-+        }
-+        // Paper end - add back source when output disabled
-+
++        public CloseableCommandBlockSource(final ServerLevel level) { // Paper - public
++            this(level, true);
++            // Paper end - add back source when output disabled
+         }
+ 
          @Override
-         public boolean acceptsSuccess() {
-             return !this.closed && BaseCommandBlock.this.getLevel().getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK);
-@@ -196,7 +_,7 @@
+@@ -177,7 +_,7 @@
  
          @Override
          public boolean acceptsFailure() {
@@ -78,7 +70,7 @@
          }
  
          @Override
-@@ -206,7 +_,8 @@
+@@ -187,7 +_,8 @@
  
          @Override
          public void sendSystemMessage(Component message) {
@@ -86,9 +78,9 @@
 +            if (this.trackOutput && !this.closed) { // Paper - add back source when output disabled
 +                org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper - Don't broadcast messages to command blocks
                  BaseCommandBlock.this.lastOutput = Component.literal("[" + TIME_FORMAT.format(ZonedDateTime.now()) + "] ").append(message);
-                 BaseCommandBlock.this.onUpdated();
+                 BaseCommandBlock.this.onUpdated(this.level);
              }
-@@ -216,5 +_,12 @@
+@@ -197,5 +_,12 @@
          public void close() throws Exception {
              this.closed = true;
          }
