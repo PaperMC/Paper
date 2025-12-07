@@ -258,7 +258,7 @@ public class SpigotWorldConfig {
         this.displayTrackingRange = this.getInt("entity-tracking-range.display", this.displayTrackingRange);
         this.flyingMonsterTrackingRange = this.getInt("entity-tracking-range.flying-monsters", this.monsterTrackingRange); // Default to old monsterTrackingRange
         this.otherTrackingRange = this.getInt("entity-tracking-range.other", this.otherTrackingRange);
-        this.log("Entity Tracking Range: Pl " + this.playerTrackingRange + " / An " + this.animalTrackingRange + " / Mo " + this.monsterTrackingRange + " / Mi " + this.miscTrackingRange + " / Di " + this.displayTrackingRange + " / Fl " + this.flyingMonsterTrackingRange + " / Other " + this.otherTrackingRange); // Paper
+        this.log("Entity Tracking Range: Pl " + this.playerTrackingRange + " / An " + this.animalTrackingRange + " / Mo " + this.monsterTrackingRange + " / Mi " + this.miscTrackingRange + " / Di " + this.displayTrackingRange + " / Fl " + this.flyingMonsterTrackingRange + " / Other " + this.otherTrackingRange);
     }
 
     public int hopperTransfer;
