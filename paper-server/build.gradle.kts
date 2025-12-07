@@ -128,7 +128,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.5")
+    implementation("ca.spottedleaf:concurrentutil:0.0.7")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -361,7 +361,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.BETA
+        channel = BuildChannel.STABLE
 
         downloads {
             register("server:default") {

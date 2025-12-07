@@ -452,6 +452,17 @@ If you use Maven to build your plugin:
   If you use Windows and don't usually build using WSL, you might not need to
   do this.
 
+## Tips and Tricks
+
+### IntelliJ IDEA
+
+- Under `Settings > Appearance & Behavior > System Settings`, disable
+  `Sync external changes: Periodically when the IDE is inactive (experimental)`.
+  When disabled, the IDE will not attempt to reindex files while patches are applying
+  unless you interact with the IDE during the process. This avoids severe slowdowns and freezes.
+- Under `Settings > Appearance & Behavior > System Settings`, you may also want to
+  disable `Reopen projects on startup` to avoid freeze loops.
+
 ## Frequently Asked Questions
 
 ### My commit doesn't need a build, what do I do?
