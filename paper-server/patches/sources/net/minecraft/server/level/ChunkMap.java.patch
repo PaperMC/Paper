@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -147,6 +_,33 @@
+@@ -152,6 +_,33 @@
      public int serverViewDistance;
      private final WorldGenContext worldGenContext;
  
@@ -34,7 +34,7 @@
      public ChunkMap(
          ServerLevel level,
          LevelStorageSource.LevelStorageAccess levelStorageAccess,
-@@ -173,13 +_,19 @@
+@@ -180,13 +_,19 @@
          this.level = level;
          RegistryAccess registryAccess = level.registryAccess();
          long seed = level.getSeed();
@@ -56,7 +56,7 @@
          this.mainThreadExecutor = mainThreadExecutor;
          ConsecutiveExecutor consecutiveExecutor = new ConsecutiveExecutor(dispatcher, "worldgen");
          this.chunkStatusListener = chunkStatusListener;
-@@ -209,6 +_,12 @@
+@@ -215,6 +_,12 @@
          this.chunksToEagerlySave.add(chunkPos.toLong());
      }
  
@@ -69,7 +69,7 @@
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
      }
-@@ -354,9 +_,9 @@
+@@ -357,9 +_,9 @@
                  }
              );
          stringBuilder.append("Updating:").append(System.lineSeparator());
@@ -81,7 +81,7 @@
          CrashReport crashReport = CrashReport.forThrowable(exception, "Chunk loading");
          CrashReportCategory crashReportCategory = crashReport.addCategory("Chunk loading");
          crashReportCategory.setDetail("Details", details);
-@@ -392,6 +_,7 @@
+@@ -394,6 +_,7 @@
                      holder.setTicketLevel(newLevel);
                  } else {
                      holder = new ChunkHolder(new ChunkPos(chunkPos), newLevel, this.level, this.lightEngine, this::onLevelChange, this);
@@ -89,7 +89,7 @@
                  }
  
                  this.updatingChunkMap.put(chunkPos, holder);
-@@ -420,8 +_,8 @@
+@@ -422,8 +_,8 @@
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
@@ -100,7 +100,7 @@
                  .stream()
                  .filter(ChunkHolder::wasAccessibleSinceLastSave)
                  .peek(ChunkHolder::refreshAccessibility)
-@@ -447,7 +_,7 @@
+@@ -449,7 +_,7 @@
              this.nextChunkSaveTime.clear();
              long millis = Util.getMillis();
  
@@ -109,7 +109,7 @@
                  this.saveChunkIfNeeded(chunkHolder, millis);
              }
          }
-@@ -468,6 +_,7 @@
+@@ -470,6 +_,7 @@
      public boolean hasWork() {
          return this.lightEngine.hasLightWork()
              || !this.pendingUnloads.isEmpty()
@@ -117,7 +117,7 @@
              || !this.updatingChunkMap.isEmpty()
              || this.poiManager.hasWork()
              || !this.toDrop.isEmpty()
-@@ -526,7 +_,11 @@
+@@ -528,7 +_,11 @@
                  this.scheduleUnload(chunkPos, chunkHolder);
              } else {
                  ChunkAccess latestChunk = chunkHolder.getLatestChunk();
@@ -130,7 +130,7 @@
                      if (latestChunk instanceof LevelChunk levelChunk) {
                          levelChunk.setLoaded(false);
                      }
-@@ -539,7 +_,9 @@
+@@ -541,7 +_,9 @@
                      this.lightEngine.updateChunkStatus(latestChunk.getPos());
                      this.lightEngine.tryScheduleUpdate();
                      this.nextChunkSaveTime.remove(latestChunk.getPos().toLong());
@@ -141,7 +141,7 @@
              }
          }, this.unloadQueue::add).whenComplete((_void, error) -> {
              if (error != null) {
-@@ -850,7 +_,7 @@
+@@ -851,7 +_,7 @@
      }
  
      public int size() {
@@ -150,7 +150,7 @@
      }
  
      public net.minecraft.server.level.DistanceManager getDistanceManager() {
-@@ -877,10 +_,10 @@
+@@ -878,10 +_,10 @@
              .addColumn("fluid_ticks")
              .build(writer);
  
@@ -164,24 +164,23 @@
              Optional<ChunkAccess> optional = Optional.ofNullable(chunkHolder.getLatestChunk());
              Optional<LevelChunk> optional1 = optional.flatMap(chunk -> chunk instanceof LevelChunk ? Optional.of((LevelChunk)chunk) : Optional.empty());
              csvOutput.writeRow(
-@@ -920,11 +_,13 @@
+@@ -925,12 +_,12 @@
      }
  
-     private CompletableFuture<Optional<CompoundTag>> readChunk(ChunkPos pos) {
--        return this.read(pos).thenApplyAsync(optional -> optional.map(this::upgradeChunkTag), Util.backgroundExecutor().forName("upgradeChunk"));
-+        return this.read(pos).thenApplyAsync(optional -> optional.map(tag -> upgradeChunkTag(tag, pos)), Util.backgroundExecutor().forName("upgradeChunk")); // CraftBukkit
+     private CompoundTag upgradeChunkTag(CompoundTag tag) {
+-        return this.upgradeChunkTag(tag, -1, getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()));
++        return this.upgradeChunkTag(tag, -1, getChunkDataFixContextTag(this.level.getTypeKey(), this.generator().getTypeNameForDataFixer()), this.level); // CraftBukkit
      }
  
--    private CompoundTag upgradeChunkTag(CompoundTag tag) {
--        return this.upgradeChunkTag(this.level.dimension(), this.overworldDataStorage, tag, this.generator().getTypeNameForDataFixer());
-+    // CraftBukkit start
-+    private CompoundTag upgradeChunkTag(CompoundTag tag, ChunkPos pos) {
-+        return this.upgradeChunkTag(this.level.getTypeKey(), this.overworldDataStorage, tag, this.generator().getTypeNameForDataFixer(), pos, this.level);
-+    // CraftBukkit end
+-    public static CompoundTag getChunkDataFixContextTag(ResourceKey<Level> dimension, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generator) {
++    public static CompoundTag getChunkDataFixContextTag(ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> generator) { // CraftBukkit
+         CompoundTag compoundTag = new CompoundTag();
+-        compoundTag.putString("dimension", dimension.identifier().toString());
++        compoundTag.putString("dimension", stemKey.identifier().toString()); // CraftBukkit
+         generator.ifPresent(resourceKey -> compoundTag.putString("generator", resourceKey.identifier().toString()));
+         return compoundTag;
      }
- 
-     void collectSpawningChunks(List<LevelChunk> output) {
-@@ -934,7 +_,7 @@
+@@ -942,7 +_,7 @@
              ChunkHolder chunkHolder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
              if (chunkHolder != null) {
                  LevelChunk tickingChunk = chunkHolder.getTickingChunk();
@@ -190,7 +189,7 @@
                      output.add(tickingChunk);
                  }
              }
-@@ -954,13 +_,35 @@
+@@ -962,8 +_,14 @@
      }
  
      public boolean anyPlayerCloseEnoughForSpawning(ChunkPos chunkPos) {
@@ -203,6 +202,10 @@
 -        return triState == TriState.DEFAULT ? this.anyPlayerCloseEnoughForSpawningInternal(chunkPos) : triState.toBoolean(true);
 +        return triState == TriState.DEFAULT ? this.anyPlayerCloseEnoughForSpawningInternal(chunkPos, reducedRange) : triState.toBoolean(true);
 +        // Spigot end
+     }
+ 
+     boolean anyPlayerCloseEnoughTo(BlockPos pos, int radius) {
+@@ -979,8 +_,24 @@
      }
  
      private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos chunkPos) {
@@ -228,7 +231,7 @@
                  return true;
              }
          }
-@@ -976,7 +_,7 @@
+@@ -996,7 +_,7 @@
              Builder<ServerPlayer> builder = ImmutableList.builder();
  
              for (ServerPlayer serverPlayer : this.playerMap.getAllPlayers()) {
@@ -237,7 +240,7 @@
                      builder.add(serverPlayer);
                  }
              }
-@@ -985,12 +_,12 @@
+@@ -1005,12 +_,12 @@
          }
      }
  
@@ -252,7 +255,7 @@
          }
      }
  
-@@ -1112,9 +_,19 @@
+@@ -1141,9 +_,19 @@
      }
  
      public void addEntity(Entity entity) {
@@ -272,7 +275,7 @@
              if (i != 0) {
                  int updateInterval = type.updateInterval();
                  if (this.entityMap.containsKey(entity.getId())) {
-@@ -1138,6 +_,7 @@
+@@ -1167,6 +_,7 @@
      }
  
      protected void removeEntity(Entity entity) {
@@ -280,7 +283,7 @@
          if (entity instanceof ServerPlayer serverPlayer) {
              this.updatePlayerStatus(serverPlayer, false);
  
-@@ -1299,10 +_,10 @@
+@@ -1326,10 +_,10 @@
          final Entity entity;
          private final int range;
          SectionPos lastSectionPos;
@@ -293,7 +296,7 @@
              this.entity = entity;
              this.range = range;
              this.lastSectionPos = SectionPos.of(entity);
-@@ -1349,6 +_,7 @@
+@@ -1376,6 +_,7 @@
          }
  
          public void removePlayer(ServerPlayer player) {
@@ -301,7 +304,7 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
                  if (this.seenBy.isEmpty()) {
-@@ -1358,23 +_,45 @@
+@@ -1385,23 +_,45 @@
          }
  
          public void updatePlayer(ServerPlayer player) {
@@ -352,7 +355,7 @@
                      }
                  } else {
                      this.removePlayer(player);
-@@ -1391,6 +_,7 @@
+@@ -1418,6 +_,7 @@
  
              for (Entity entity : this.entity.getIndirectPassengers()) {
                  int i1 = entity.getType().clientTrackingRange() * 16;

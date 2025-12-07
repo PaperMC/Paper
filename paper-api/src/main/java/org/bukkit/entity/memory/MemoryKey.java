@@ -57,7 +57,11 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Boolean> ATTACK_COOLING_DOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_cooling_down"), Boolean.class);
 
+    public static final MemoryKey<Integer> ATTACK_TARGET_COOLDOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_target_cooldown"), Integer.class);
+
     public static final MemoryKey<Long> CANT_REACH_WALK_TARGET_SINCE = new MemoryKey<>(NamespacedKey.minecraft("cant_reach_walk_target_since"), Long.class);
+
+    public static final MemoryKey<Integer> CHARGE_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("charge_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Boolean> DANCING = new MemoryKey<>(NamespacedKey.minecraft("dancing"), Boolean.class);
 
@@ -116,6 +120,10 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Boolean> SNIFFER_DIGGING = new MemoryKey<>(NamespacedKey.minecraft("sniffer_digging"), Boolean.class);
 
     public static final MemoryKey<Boolean> SNIFFER_HAPPY = new MemoryKey<>(NamespacedKey.minecraft("sniffer_happy"), Boolean.class);
+
+    public static final MemoryKey<Integer> SPEAR_ENGAGE_TIME = new MemoryKey<>(NamespacedKey.minecraft("spear_engage_time"), Integer.class);
+
+    public static final MemoryKey<Integer> SPEAR_FLEEING_TIME = new MemoryKey<>(NamespacedKey.minecraft("spear_fleeing_time"), Integer.class);
 
     public static final MemoryKey<Integer> TEMPTATION_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("temptation_cooldown_ticks"), Integer.class);
 

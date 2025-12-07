@@ -243,6 +243,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CAMPFIRES = create(key("campfires"));
 
     /**
+     * {@code #minecraft:can_glide_through}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAN_GLIDE_THROUGH = create(key("can_glide_through"));
+
+    /**
      * {@code #minecraft:candle_cakes}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

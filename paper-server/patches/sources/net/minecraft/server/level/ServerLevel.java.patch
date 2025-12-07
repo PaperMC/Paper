@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -187,7 +_,7 @@
+@@ -193,7 +_,7 @@
      final List<ServerPlayer> players = Lists.newArrayList();
      public final ServerChunkCache chunkSource;
      private final MinecraftServer server;
@@ -8,8 +8,8 @@
 +    public final net.minecraft.world.level.storage.PrimaryLevelData serverLevelData; // CraftBukkit - type
      final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
-     public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -215,25 +_,170 @@
+     private final EnvironmentAttributeSystem environmentAttributes;
+@@ -221,25 +_,170 @@
      private final RandomSequences randomSequences;
      final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -154,7 +154,7 @@
      ) {
 -        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
 +        // CraftBukkit start
-+        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
++        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
 +        this.levelStorageAccess = levelStorageAccess;
 +        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
@@ -183,7 +183,7 @@
          boolean flag = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityPersistentStorage = new EntityStorage(
-@@ -255,8 +_,8 @@
+@@ -261,8 +_,8 @@
              server.getStructureManager(),
              dispatcher,
              chunkGenerator,
@@ -194,7 +194,7 @@
              flag,
              this.entityManager::updateChunkStatus,
              () -> server.overworld().getDataStorage()
-@@ -275,7 +_,7 @@
+@@ -283,7 +_,7 @@
              this.chunkSource.chunkScanner(),
              this.registryAccess(),
              server.getStructureManager(),
@@ -203,7 +203,7 @@
              chunkGenerator,
              this.chunkSource.randomState(),
              this,
-@@ -283,9 +_,9 @@
+@@ -291,9 +_,9 @@
              seed,
              fixerUpper
          );
@@ -216,10 +216,10 @@
          } else {
              this.dragonFight = null;
          }
-@@ -294,7 +_,15 @@
-         this.gameEventDispatcher = new GameEventDispatcher(this);
-         this.randomSequences = Objects.requireNonNullElseGet(randomSequences, () -> this.getDataStorage().computeIfAbsent(RandomSequences.TYPE));
+@@ -304,7 +_,15 @@
          this.waypointManager = new ServerWaypointManager();
+         this.environmentAttributes = EnvironmentAttributeSystem.builder().addDefaultLayers(this).build();
+         this.updateSkyBrightness();
 -    }
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
 +    }
@@ -233,7 +233,7 @@
  
      @Deprecated
      @VisibleForTesting
-@@ -306,8 +_,8 @@
+@@ -316,8 +_,8 @@
          this.serverLevelData.setClearWeatherTime(clearTime);
          this.serverLevelData.setRainTime(weatherTime);
          this.serverLevelData.setThunderTime(weatherTime);
@@ -244,10 +244,10 @@
      }
  
      @Override
-@@ -334,12 +_,25 @@
+@@ -349,12 +_,25 @@
  
-         int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
-         if (this.sleepStatus.areEnoughSleeping(_int) && this.sleepStatus.areEnoughDeepSleeping(_int, this.players)) {
+         int i = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
+         if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
 +            // Paper start - create time skip event - move up calculations
 +            final long newDayTime = this.levelData.getDayTime() + 24000L;
 +            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(
@@ -256,7 +256,7 @@
 +                (newDayTime - newDayTime % 24000L) - this.getDayTime()
 +            );
 +            // Paper end - create time skip event - move up calculations
-             if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+             if (this.getGameRules().get(GameRules.ADVANCE_TIME)) {
 -                long l = this.levelData.getDayTime() + 24000L;
 -                this.setDayTime(l - l % 24000L);
 +                // Paper start - call time skip event if gamerule is enabled
@@ -270,10 +270,10 @@
  
 -            this.wakeUpAllPlayers();
 +            if (!event.isCancelled()) this.wakeUpAllPlayers(); // Paper - only wake up players if time skip event is not cancelled
-             if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
+             if (this.getGameRules().get(GameRules.ADVANCE_WEATHER) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
-@@ -354,9 +_,9 @@
+@@ -369,9 +_,9 @@
          if (!this.isDebug() && runsNormally) {
              long l = this.getGameTime();
              profilerFiller.push("blockTicks");
@@ -285,7 +285,7 @@
              profilerFiller.pop();
          }
  
-@@ -374,7 +_,7 @@
+@@ -389,7 +_,7 @@
  
          this.handlingTick = false;
          profilerFiller.pop();
@@ -294,7 +294,7 @@
          if (hasActiveTickets) {
              this.resetEmptyTime();
          }
-@@ -478,11 +_,13 @@
+@@ -498,11 +_,13 @@
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("iceandsnow");
  
@@ -308,7 +308,7 @@
  
          profilerFiller.popPush("tickBlocks");
          if (randomTickSpeed > 0) {
-@@ -525,12 +_,12 @@
+@@ -545,12 +_,12 @@
          int minBlockZ = pos.getMinBlockZ();
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("thunder");
@@ -317,13 +317,13 @@
              BlockPos blockPos = this.findLightningTargetAround(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
              if (this.isRainingAt(blockPos)) {
                  DifficultyInstance currentDifficultyAt = this.getCurrentDifficultyAt(blockPos);
-                 boolean flag = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
+                 boolean flag = this.getGameRules().get(GameRules.SPAWN_MOBS)
 -                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * 0.01
 +                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01) // Paper - Configurable spawn chances for skeleton horses
                      && !this.getBlockState(blockPos.below()).is(BlockTags.LIGHTNING_RODS);
                  if (flag) {
                      SkeletonHorse skeletonHorse = EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
-@@ -538,7 +_,7 @@
+@@ -558,7 +_,7 @@
                          skeletonHorse.setTrap(true);
                          skeletonHorse.setAge(0);
                          skeletonHorse.setPos(blockPos.getX(), blockPos.getY(), blockPos.getZ());
@@ -332,7 +332,7 @@
                      }
                  }
  
-@@ -546,7 +_,7 @@
+@@ -566,7 +_,7 @@
                  if (lightningBolt != null) {
                      lightningBolt.snapTo(Vec3.atBottomCenterOf(blockPos));
                      lightningBolt.setVisualOnly(flag);
@@ -341,7 +341,7 @@
                  }
              }
          }
-@@ -560,7 +_,7 @@
+@@ -580,7 +_,7 @@
          BlockPos blockPos = heightmapPos.below();
          Biome biome = this.getBiome(heightmapPos).value();
          if (biome.shouldFreeze(this, blockPos)) {
@@ -350,8 +350,8 @@
          }
  
          if (this.isRaining()) {
-@@ -572,10 +_,10 @@
-                     if (layersValue < Math.min(_int, 8)) {
+@@ -592,10 +_,10 @@
+                     if (layersValue < Math.min(i, 8)) {
                          BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, layersValue + 1);
                          Block.pushEntitiesUp(blockState, blockState1, this, heightmapPos);
 -                        this.setBlockAndUpdate(heightmapPos, blockState1);
@@ -363,7 +363,7 @@
                  }
              }
  
-@@ -600,6 +_,12 @@
+@@ -620,6 +_,12 @@
      }
  
      protected BlockPos findLightningTargetAround(BlockPos pos) {
@@ -376,12 +376,12 @@
          BlockPos heightmapPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
          Optional<BlockPos> optional = this.findLightningRod(heightmapPos);
          if (optional.isPresent()) {
-@@ -607,11 +_,12 @@
+@@ -627,11 +_,12 @@
          } else {
              AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
              List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
--                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition())
-+                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
+-                LivingEntity.class, aabb, entity -> entity.isAlive() && this.canSeeSky(entity.blockPosition())
++                LivingEntity.class, aabb, entity ->  entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
              );
              if (!entitiesOfClass.isEmpty()) {
                  return entitiesOfClass.get(this.random.nextInt(entitiesOfClass.size())).blockPosition();
@@ -390,7 +390,7 @@
                  if (heightmapPos.getY() == this.getMinY() - 1) {
                      heightmapPos = heightmapPos.above(2);
                  }
-@@ -702,8 +_,8 @@
+@@ -740,8 +_,8 @@
                  this.serverLevelData.setThunderTime(thunderTime);
                  this.serverLevelData.setRainTime(rainTime);
                  this.serverLevelData.setClearWeatherTime(clearWeatherTime);
@@ -401,7 +401,7 @@
              }
  
              this.oThunderLevel = this.thunderLevel;
-@@ -724,6 +_,7 @@
+@@ -762,6 +_,7 @@
              this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
          }
  
@@ -409,7 +409,7 @@
          if (this.oRainLevel != this.rainLevel) {
              this.server
                  .getPlayerList()
-@@ -746,14 +_,47 @@
+@@ -784,14 +_,47 @@
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
          }
@@ -461,7 +461,7 @@
      }
  
      public void resetEmptyTime() {
-@@ -775,18 +_,46 @@
+@@ -813,18 +_,46 @@
          }
      }
  
@@ -508,7 +508,7 @@
      }
  
      private void tickPassenger(Entity ridingEntity, Entity passengerEntity) {
-@@ -795,10 +_,12 @@
+@@ -833,10 +_,12 @@
          } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
              passengerEntity.setOldPosAndRot();
              passengerEntity.tickCount++;
@@ -521,7 +521,7 @@
              profilerFiller.pop();
  
              for (Entity entity : passengerEntity.getPassengers()) {
-@@ -829,6 +_,7 @@
+@@ -867,6 +_,7 @@
      public void save(@Nullable ProgressListener progress, boolean flush, boolean skipSave) {
          ServerChunkCache chunkSource = this.getChunkSource();
          if (!skipSave) {
@@ -529,7 +529,7 @@
              if (progress != null) {
                  progress.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -845,11 +_,18 @@
+@@ -883,11 +_,18 @@
                  this.entityManager.autoSave();
              }
          }
@@ -549,7 +549,7 @@
          }
  
          DimensionDataStorage dataStorage = this.getChunkSource().getDataStorage();
-@@ -914,18 +_,40 @@
+@@ -951,18 +_,40 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
@@ -559,7 +559,7 @@
 +    }
 +
 +    @Override
-+    public boolean addFreshEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addFreshEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -570,7 +570,7 @@
 +        return this.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
-+    public boolean addWithUUID(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addWithUUID(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -583,7 +583,7 @@
 +        this.addDuringTeleport(entity, null);
 +    }
 +
-+    public void addDuringTeleport(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason reason) {
 +        // CraftBukkit end
          if (entity instanceof ServerPlayer serverPlayer) {
              this.addPlayer(serverPlayer);
@@ -593,13 +593,13 @@
          }
      }
  
-@@ -948,41 +_,120 @@
+@@ -985,41 +_,120 @@
          this.entityManager.addNewEntity(player);
      }
  
 -    private boolean addEntity(Entity entity) {
 +    // CraftBukkit start
-+    private boolean addEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason spawnReason) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
 +        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
 +        // Paper start - extra debug info
@@ -707,7 +707,7 @@
 +        }
 +        // Paper end - Add BlockBreakProgressUpdateEvent
          for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
-             if (serverPlayer != null && serverPlayer.level() == this && serverPlayer.getId() != breakerId) {
+             if (serverPlayer.level() == this && serverPlayer.getId() != breakerId) {
                  double d = pos.getX() - serverPlayer.getX();
                  double d1 = pos.getY() - serverPlayer.getY();
                  double d2 = pos.getZ() - serverPlayer.getZ();
@@ -719,7 +719,7 @@
                  if (d * d + d1 * d1 + d2 * d2 < 1024.0) {
                      serverPlayer.connection.send(new ClientboundBlockDestructionPacket(breakerId, pos, progress));
                  }
-@@ -1057,7 +_,7 @@
+@@ -1094,7 +_,7 @@
                  pos.getX(),
                  pos.getY(),
                  pos.getZ(),
@@ -728,7 +728,7 @@
                  this.dimension(),
                  new ClientboundLevelEventPacket(type, pos, data, false)
              );
-@@ -1069,6 +_,11 @@
+@@ -1106,6 +_,11 @@
  
      @Override
      public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
@@ -740,7 +740,7 @@
          this.gameEventDispatcher.post(gameEvent, pos, context);
      }
  
-@@ -1081,17 +_,28 @@
+@@ -1118,17 +_,28 @@
  
          this.getChunkSource().blockChanged(pos);
          this.pathTypesByPosCache.invalidate(pos);
@@ -769,7 +769,7 @@
  
              try {
                  this.isUpdatingNavigations = true;
-@@ -1103,15 +_,23 @@
+@@ -1140,15 +_,23 @@
                  this.isUpdatingNavigations = false;
              }
          }
@@ -793,7 +793,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation);
      }
  
-@@ -1161,6 +_,44 @@
+@@ -1198,6 +_,44 @@
          WeightedList<ExplosionParticleInfo> blockParticles,
          Holder<SoundEvent> explosionSound
      ) {
@@ -832,15 +832,15 @@
 +        ParticleOptions largeExplosionParticles,
 +        WeightedList<ExplosionParticleInfo> blockParticles,
 +        Holder<SoundEvent> explosionSound,
-+        @Nullable java.util.function.Consumer<ServerExplosion> configurator
++        java.util.function.@Nullable Consumer<ServerExplosion> configurator
 +    ) {
 +        // CraftBukkit end
          Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
              case NONE -> Explosion.BlockInteraction.KEEP;
-             case BLOCK -> this.getDestroyType(GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
-@@ -1169,10 +_,17 @@
+             case BLOCK -> this.getDestroyType(GameRules.BLOCK_EXPLOSION_DROP_DECAY);
+@@ -1206,10 +_,17 @@
                  : Explosion.BlockInteraction.KEEP;
-             case TNT -> this.getDestroyType(GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
+             case TNT -> this.getDestroyType(GameRules.TNT_EXPLOSION_DROP_DECAY);
              case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
 +            case STANDARD -> Explosion.BlockInteraction.DESTROY; // CraftBukkit - handle custom explosion type
          };
@@ -856,7 +856,7 @@
          ParticleOptions particleOptions = serverExplosion.isSmall() ? smallExplosionParticles : largeExplosionParticles;
  
          for (ServerPlayer serverPlayer : this.players) {
-@@ -1181,6 +_,8 @@
+@@ -1218,6 +_,8 @@
                  serverPlayer.connection.send(new ClientboundExplodePacket(vec3, radius, i, optional, particleOptions, explosionSound, blockParticles));
              }
          }
@@ -864,8 +864,8 @@
 +        return serverExplosion; // CraftBukkit
      }
  
-     private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayGameRule) {
-@@ -1251,19 +_,55 @@
+     private Explosion.BlockInteraction getDestroyType(GameRule<Boolean> decayGameRule) {
+@@ -1287,19 +_,55 @@
      public <T extends ParticleOptions> int sendParticles(
          T options, double x, double y, double z, int count, double xDist, double yDist, double zDist, double speed
      ) {
@@ -924,19 +924,19 @@
              if (this.sendParticles(serverPlayer, overrideLimiter, x, y, z, clientboundLevelParticlesPacket)) {
                  i++;
              }
-@@ -1352,7 +_,7 @@
+@@ -1383,7 +_,7 @@
+     }
  
-     @Nullable
-     public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipKnownStructures) {
+     public @Nullable BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipKnownStructures) {
 -        if (!this.server.getWorldData().worldGenOptions().generateStructures()) {
 +        if (!this.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1404,10 +_,36 @@
-     @Nullable
+@@ -1435,10 +_,36 @@
+ 
      @Override
-     public MapItemSavedData getMapData(MapId mapId) {
+     public @Nullable MapItemSavedData getMapData(MapId mapId) {
 -        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.type(mapId));
 +        // Paper start - Call missing map initialize event and set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
@@ -971,7 +971,7 @@
          this.getServer().overworld().getDataStorage().set(MapItemSavedData.type(mapId), data);
      }
  
-@@ -1417,7 +_,19 @@
+@@ -1448,7 +_,19 @@
  
      @Override
      public void setRespawnData(LevelData.RespawnData respawnData) {
@@ -992,7 +992,7 @@
      }
  
      @Override
-@@ -1454,6 +_,11 @@
+@@ -1485,6 +_,11 @@
                  this.debugSynchronizers.dropPoi(blockPos);
              }));
              optional1.ifPresent(holder -> this.getServer().execute(() -> {
@@ -1004,7 +1004,7 @@
                  PoiRecord poiRecord = this.getPoiManager().add(blockPos, (Holder<PoiType>)holder);
                  if (poiRecord != null) {
                      this.debugSynchronizers.registerPoi(poiRecord);
-@@ -1608,12 +_,12 @@
+@@ -1638,12 +_,12 @@
      }
  
      public boolean isFlat() {
@@ -1018,8 +1018,8 @@
 +        return this.serverLevelData.worldGenOptions().seed(); // CraftBukkit
      }
  
-     @Nullable
-@@ -1664,6 +_,7 @@
+     public @Nullable EndDragonFight getDragonFight() {
+@@ -1693,6 +_,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1027,13 +1027,13 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1772,6 +_,28 @@
+@@ -1808,6 +_,28 @@
          return this.serverLevelData.getGameRules();
      }
  
 +    // Paper start - respect global sound events gamerule
 +    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
-+        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
++        return this.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
 +    }
 +
 +    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
@@ -1056,7 +1056,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
-@@ -1800,6 +_,7 @@
+@@ -1852,6 +_,7 @@
              if (entity instanceof WaypointTransmitter waypointTransmitter && waypointTransmitter.isTransmittingWaypoint()) {
                  ServerLevel.this.getWaypointManager().trackWaypoint(waypointTransmitter);
              }
@@ -1064,7 +1064,7 @@
          }
  
          @Override
-@@ -1813,17 +_,24 @@
+@@ -1865,17 +_,24 @@
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1076,7 +1076,7 @@
          public void onTickingEnd(Entity entity) {
              ServerLevel.this.entityTickList.remove(entity);
 +            // Paper start - Reset pearls when they stop being ticked
-+            if (ServerLevel.this.paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && ServerLevel.this.paperConfig().misc.legacyEnderPearlBehavior && entity instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl pearl) {
++            if (ServerLevel.this.paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && ServerLevel.this.paperConfig().misc.legacyEnderPearlBehavior && entity instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl pearl) {
 +                pearl.setOwner(null);
 +            }
 +            // Paper end - Reset pearls when they stop being ticked
@@ -1090,7 +1090,7 @@
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.add(serverPlayer);
                  if (serverPlayer.isReceivingWaypoints()) {
-@@ -1838,7 +_,7 @@
+@@ -1890,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1099,7 +1099,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1855,10 +_,52 @@
+@@ -1907,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1152,7 +1152,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.remove(serverPlayer);
-@@ -1867,7 +_,7 @@
+@@ -1919,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1161,7 +1161,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1885,6 +_,15 @@
+@@ -1937,6 +_,15 @@
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
              ServerLevel.this.debugSynchronizers.dropEntity(entity);
@@ -1177,7 +1177,7 @@
          }
  
          @Override
-@@ -1892,4 +_,24 @@
+@@ -1944,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }

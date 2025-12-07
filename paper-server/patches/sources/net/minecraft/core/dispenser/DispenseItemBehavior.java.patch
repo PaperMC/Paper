@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -87,10 +_,38 @@
+@@ -88,10 +_,38 @@
                  if (type == null) {
                      return item;
                  } else {
@@ -40,7 +40,7 @@
                              null,
                              blockSource.pos().relative(direction),
                              EntitySpawnReason.DISPENSER,
-@@ -102,7 +_,8 @@
+@@ -103,7 +_,8 @@
                          return ItemStack.EMPTY;
                      }
  
@@ -50,7 +50,7 @@
                      blockSource.level().gameEvent(null, GameEvent.ENTITY_PLACE, blockSource.pos());
                      return item;
                  }
-@@ -121,12 +_,38 @@
+@@ -122,12 +_,38 @@
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
                      ServerLevel serverLevel = blockSource.level();
@@ -91,45 +91,45 @@
                      }
  
                      return item;
-@@ -146,8 +_,35 @@
-                             new AABB(blockPos),
-                             abstractChestedHorse1 -> abstractChestedHorse1.isAlive() && !abstractChestedHorse1.hasChest()
+@@ -149,8 +_,35 @@
                          )) {
--                        if (abstractChestedHorse.isTamed() && abstractChestedHorse.getSlot(499).set(item)) {
--                            item.shrink(1);
-+                        if (abstractChestedHorse.isTamed()/* && abstractChestedHorse.getSlot(499).set(item)*/) {
+                         if (abstractChestedHorse.isTamed()) {
+                             SlotAccess slot = abstractChestedHorse.getSlot(499);
+-                            if (slot != null && slot.set(item)) {
+-                                item.shrink(1);
 +                            // CraftBukkit start
-+                            ItemStack singleCopy = item.copyWithCount(1);
-+                            ServerLevel world = blockSource.level();
-+                            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockSource.pos());
-+                            org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleCopy);
-+                            org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), abstractChestedHorse.getBukkitLivingEntity());
-+                            world.getCraftServer().getPluginManager().callEvent(event);
++                            if (slot != null/* && slot.set(item)*/) {
++                                ItemStack singleCopy = item.copyWithCount(1);
++                                ServerLevel world = blockSource.level();
++                                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockSource.pos());
++                                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleCopy);
++                                org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), abstractChestedHorse.getBukkitLivingEntity());
++                                world.getCraftServer().getPluginManager().callEvent(event);
 +
-+                            if (event.isCancelled()) {
-+                                this.setSuccess(false);
-+                                return item;
-+                            }
-+
-+                            boolean shrink = true;
-+                            if (!event.getItem().equals(craftItem)) {
-+                                shrink = false;
-+                                // Chain to handler for new item
-+                                ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+                                DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
-+                                if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
-+                                    dispenseBehavior.dispense(blockSource, eventStack);
++                                if (event.isCancelled()) {
++                                    this.setSuccess(false);
 +                                    return item;
 +                                }
-+                            }
-+                            abstractChestedHorse.getSlot(499).set(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
-+                            // CraftBukkit end
 +
-+                            if (shrink) item.shrink(1); // Paper - actually handle here
-                             this.setSuccess(true);
-                             return item;
-                         }
-@@ -185,8 +_,45 @@
++                                boolean shrink = true;
++                                if (!event.getItem().equals(craftItem)) {
++                                    shrink = false;
++                                    // Chain to handler for new item
++                                    ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                                    DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
++                                    if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                                        dispenseBehavior.dispense(blockSource, eventStack);
++                                        return item;
++                                    }
++                                }
++                                slot.set(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
++                                // CraftBukkit end
++
++                                if (shrink) item.shrink(1); // Paper - actually handle here
+                                 this.setSuccess(true);
+                                 return item;
+                             }
+@@ -189,8 +_,45 @@
                  DispensibleContainerItem dispensibleContainerItem = (DispensibleContainerItem)item.getItem();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  Level level = blockSource.level();
@@ -176,7 +176,7 @@
                      return this.consumeWithRemainder(blockSource, item, new ItemStack(Items.BUCKET));
                  } else {
                      return this.defaultDispenseItemBehavior.dispense(blockSource, item);
-@@ -209,12 +_,19 @@
+@@ -213,12 +_,19 @@
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  BlockState blockState = levelAccessor.getBlockState(blockPos);
                  if (blockState.getBlock() instanceof BucketPickup bucketPickup) {
@@ -197,7 +197,7 @@
                          return this.consumeWithRemainder(blockSource, item, new ItemStack(item1));
                      }
                  } else {
-@@ -229,15 +_,26 @@
+@@ -233,15 +_,26 @@
                  this.setSuccess(true);
                  Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                  BlockPos blockPos = blockSource.pos().relative(direction);
@@ -227,7 +227,7 @@
                          serverLevel.removeBlock(blockPos, false);
                      } else {
                          this.setSuccess(false);
-@@ -259,11 +_,46 @@
+@@ -263,11 +_,46 @@
                  this.setSuccess(true);
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -274,7 +274,7 @@
  
                  return item;
              }
-@@ -277,11 +_,36 @@
+@@ -281,11 +_,36 @@
                      return item;
                  } else {
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -314,7 +314,7 @@
                      this.setSuccess(true);
                      return item;
                  }
-@@ -295,6 +_,13 @@
+@@ -299,6 +_,13 @@
                      Level level = blockSource.level();
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
@@ -328,7 +328,7 @@
                      if (level.isEmptyBlock(blockPos) && WitherSkullBlock.canSpawnMob(level, blockPos, item)) {
                          level.setBlock(
                              blockPos,
-@@ -310,7 +_,7 @@
+@@ -314,7 +_,7 @@
                          item.shrink(1);
                          this.setSuccess(true);
                      } else {
@@ -337,7 +337,7 @@
                      }
  
                      return item;
-@@ -323,6 +_,13 @@
+@@ -327,6 +_,13 @@
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  CarvedPumpkinBlock carvedPumpkinBlock = (CarvedPumpkinBlock)Blocks.CARVED_PUMPKIN;
@@ -351,7 +351,7 @@
                  if (level.isEmptyBlock(blockPos) && carvedPumpkinBlock.canSpawnGolem(level, blockPos)) {
                      if (!level.isClientSide()) {
                          level.setBlock(blockPos, carvedPumpkinBlock.defaultBlockState(), Block.UPDATE_ALL);
-@@ -332,7 +_,7 @@
+@@ -336,7 +_,7 @@
                      item.shrink(1);
                      this.setSuccess(true);
                  } else {
@@ -360,7 +360,7 @@
                  }
  
                  return item;
-@@ -358,6 +_,12 @@
+@@ -362,6 +_,12 @@
                      ServerLevel serverLevel = blockSource.level();
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                      BlockState blockState = serverLevel.getBlockState(blockPos);
@@ -373,7 +373,7 @@
                      if (blockState.is(
                              BlockTags.BEEHIVES,
                              blockStateBase -> blockStateBase.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockStateBase.getBlock() instanceof BeehiveBlock
-@@ -386,6 +_,13 @@
+@@ -390,6 +_,13 @@
                  this.setSuccess(true);
                  if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
                      if (blockState.getValue(RespawnAnchorBlock.CHARGE) != 4) {
@@ -387,7 +387,7 @@
                          RespawnAnchorBlock.charge(null, level, blockPos, blockState);
                          item.shrink(1);
                      } else {
-@@ -409,6 +_,28 @@
+@@ -413,6 +_,28 @@
                      this.setSuccess(false);
                      return item;
                  } else {
@@ -416,7 +416,7 @@
                      for (Armadillo armadillo : entitiesOfClass) {
                          if (armadillo.brushOffScute(null, item)) {
                              item.hurtAndBreak(16, serverLevel, null, item1 -> {});
-@@ -429,6 +_,13 @@
+@@ -433,6 +_,13 @@
                  BlockState blockState = level.getBlockState(blockPos);
                  Optional<BlockState> waxed = HoneycombItem.getWaxed(blockState);
                  if (waxed.isPresent()) {
@@ -430,7 +430,7 @@
                      level.setBlockAndUpdate(blockPos, waxed.get());
                      level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_WAX_ON, blockPos, 0);
                      item.shrink(1);
-@@ -456,6 +_,12 @@
+@@ -460,6 +_,12 @@
                          if (!serverLevel.getBlockState(blockPos1).is(BlockTags.CONVERTABLE_TO_MUD)) {
                              return this.defaultDispenseItemBehavior.dispense(blockSource, item);
                          } else {
