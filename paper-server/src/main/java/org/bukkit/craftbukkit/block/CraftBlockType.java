@@ -84,7 +84,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
         boolean hasMethod = false;
 
-        while (!hasMethod && clazz != BlockBehaviour.class) {
+        while (!hasMethod && clazz != BlockBehaviour.class && clazz != null) {
             hasMethod = CraftBlockType.hasMethod(clazz, CraftBlockType.USE_WITHOUT_ITEM_ARGS) || CraftBlockType.hasMethod(clazz, CraftBlockType.USE_ITEM_ON_ARGS);
 
             clazz = clazz.getSuperclass();
