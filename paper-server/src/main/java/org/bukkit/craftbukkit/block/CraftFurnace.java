@@ -74,7 +74,7 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     public Map<CookingRecipe<?>, Integer> getRecipesUsed() {
         ImmutableMap.Builder<CookingRecipe<?>, Integer> recipesUsed = ImmutableMap.builder();
         this.getSnapshot().recipesUsed.reference2IntEntrySet().fastForEach(entrySet -> {
-            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey().location()));
+            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey().identifier()));
             if (recipe instanceof CookingRecipe<?> cookingRecipe) {
                 recipesUsed.put(cookingRecipe, entrySet.getValue());
             }
@@ -106,17 +106,17 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
 
     @Override
     public int getRecipeUsedCount(org.bukkit.NamespacedKey furnaceRecipe) {
-        return this.getSnapshot().recipesUsed.getInt(io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
+        return this.getSnapshot().recipesUsed.getInt(CraftNamespacedKey.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
     }
 
     @Override
     public boolean hasRecipeUsedCount(org.bukkit.NamespacedKey furnaceRecipe) {
-        return this.getSnapshot().recipesUsed.containsKey(io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
+        return this.getSnapshot().recipesUsed.containsKey(CraftNamespacedKey.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
     }
 
     @Override
     public void setRecipeUsedCount(org.bukkit.inventory.CookingRecipe<?> furnaceRecipe, int count) {
-        final var location = io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe.getKey());
+        final var location = CraftNamespacedKey.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe.getKey());
         java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<?>> nmsRecipe = (this.isPlaced() ? this.world.getHandle().recipeAccess() : net.minecraft.server.MinecraftServer.getServer().getRecipeManager()).byKey(location);
         com.google.common.base.Preconditions.checkArgument(nmsRecipe.isPresent() && nmsRecipe.get().value() instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe, furnaceRecipe.getKey() + " is not recognized as a valid and registered furnace recipe");
         if (count > 0) {

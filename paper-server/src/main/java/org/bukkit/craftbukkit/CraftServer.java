@@ -54,7 +54,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.server.WorldLoader;
@@ -81,7 +81,7 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.village.VillageSiege;
 import net.minecraft.world.entity.npc.CatSpawner;
-import net.minecraft.world.entity.npc.WanderingTraderSpawner;
+import net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.CraftingMenu;
@@ -95,7 +95,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -994,7 +994,7 @@ public final class CraftServer implements Server {
         this.console.paperConfigurations.reloadConfigs(this.console);
         for (ServerLevel world : this.console.getAllLevels()) {
             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
-            world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && world.getGameRules().getBoolean(GameRules.RULE_SPAWN_MONSTERS)); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
+            world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && world.getGameRules().get(GameRules.SPAWN_MONSTERS)); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
 
             for (SpawnCategory spawnCategory : SpawnCategory.values()) {
                 if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -1282,7 +1282,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             dimensionKey = net.minecraft.world.level.Level.END;
         } else {
-            dimensionKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
+            dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
         ServerLevel serverLevel = new ServerLevel(
@@ -1416,7 +1416,9 @@ public final class CraftServer implements Server {
 
     @Override
     public WorldBorder createWorldBorder() {
-        return new CraftWorldBorder(new net.minecraft.world.level.border.WorldBorder());
+        net.minecraft.world.level.border.WorldBorder border = new net.minecraft.world.level.border.WorldBorder();
+        border.setWarningTime(net.minecraft.world.level.border.WorldBorder.Settings.DEFAULT.warningTime()); // TODO remove once MC-304061 is truly fixed
+        return new CraftWorldBorder(border);
     }
 
     @Override
@@ -2554,7 +2556,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(registry != null, "registry cannot be null");
         Preconditions.checkArgument(tag != null, "NamespacedKey tag cannot be null");
         Preconditions.checkArgument(clazz != null, "Class clazz cannot be null");
-        ResourceLocation key = CraftNamespacedKey.toMinecraft(tag);
+        Identifier key = CraftNamespacedKey.toMinecraft(tag);
 
         switch (registry) {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {

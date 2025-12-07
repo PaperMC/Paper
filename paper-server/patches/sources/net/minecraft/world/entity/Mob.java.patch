@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -90,6 +_,14 @@
- import net.minecraft.world.phys.Vec3;
+@@ -92,6 +_,14 @@
  import net.minecraft.world.ticks.ContainerSingleItem;
+ import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -15,16 +15,16 @@
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
-@@ -125,6 +_,7 @@
+@@ -127,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      public GoalSelector goalSelector;
-+    public @Nullable net.minecraft.world.entity.ai.goal.FloatGoal goalFloat; // Paper - Allow nerfed mobs to jump and float
++    public net.minecraft.world.entity.ai.goal.@Nullable FloatGoal goalFloat; // Paper - Allow nerfed mobs to jump and float
      public GoalSelector targetSelector;
-     @Nullable
-     private LivingEntity target;
+     private @Nullable LivingEntity target;
+     private final Sensing sensing;
 @@ -139,6 +_,8 @@
-     private Leashable.LeashData leashData;
+     private Leashable.@Nullable LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
@@ -45,7 +45,7 @@
      protected void registerGoals() {
      }
  
-@@ -235,7 +_,39 @@
+@@ -232,7 +_,39 @@
      }
  
      public void setTarget(@Nullable LivingEntity target) {
@@ -53,7 +53,7 @@
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN);
 +    }
 +
-+    public boolean setTarget(@Nullable LivingEntity target, @Nullable EntityTargetEvent.TargetReason reason) {
++    public boolean setTarget(@Nullable LivingEntity target, EntityTargetEvent.@Nullable TargetReason reason) {
 +        if (this.getTarget() == target) {
 +            return false;
 +        }
@@ -85,7 +85,7 @@
      }
  
      @Override
-@@ -375,13 +_,27 @@
+@@ -371,13 +_,27 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
@@ -115,7 +115,7 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -393,6 +_,13 @@
+@@ -389,6 +_,13 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
@@ -141,7 +141,7 @@
                      this.pickUpItem(serverLevel, itemEntity);
                  }
              }
-@@ -470,18 +_,24 @@
+@@ -509,18 +_,24 @@
  
      protected void pickUpItem(ServerLevel level, ItemEntity entity) {
          ItemStack item = entity.getItem();
@@ -168,7 +168,7 @@
          EquipmentSlot equipmentSlotForItem = this.getEquipmentSlotForItem(stack);
          if (!this.isEquippableInSlot(stack, equipmentSlotForItem)) {
              return ItemStack.EMPTY;
-@@ -494,10 +_,18 @@
+@@ -533,10 +_,18 @@
                  canReplaceCurrentItem = itemBySlot.isEmpty();
              }
  
@@ -188,7 +188,7 @@
                  }
  
                  ItemStack itemStack = equipmentSlotForItem.limit(stack);
-@@ -611,25 +_,38 @@
+@@ -649,25 +_,38 @@
          return this.isPassenger();
      }
  
@@ -241,7 +241,7 @@
                      this.noActionTime = 0;
                  }
              }
-@@ -641,6 +_,15 @@
+@@ -679,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
          this.noActionTime++;
@@ -257,9 +257,9 @@
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("sensing");
          this.sensing.tick();
-@@ -815,14 +_,69 @@
+@@ -853,14 +_,69 @@
              public boolean stillValid(Player player) {
-                 return player.getVehicle() == Mob.this || player.canInteractWithEntity(Mob.this, 4.0);
+                 return player.getVehicle() == Mob.this || player.isWithinEntityInteractionRange(Mob.this, 4.0);
              }
 +
 +            // Paper start
@@ -292,7 +292,7 @@
 +            }
 +
 +            @Override
-+            public @Nullable org.bukkit.inventory.InventoryHolder getOwner() {
++            public org.bukkit.inventory.@Nullable InventoryHolder getOwner() {
 +                if (Mob.this.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder inventoryHolder) {
 +                    return inventoryHolder;
 +                }
@@ -327,7 +327,7 @@
              ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
              float f = this.dropChances.byEquipment(equipmentSlot);
              if (f != 0.0F) {
-@@ -842,7 +_,13 @@
+@@ -880,7 +_,13 @@
                      }
  
                      this.spawnAtLocation(level, itemBySlot);
@@ -341,7 +341,7 @@
                  }
              }
          }
-@@ -866,7 +_,9 @@
+@@ -904,7 +_,9 @@
                      set.add(equipmentSlot);
                  } else if (this.dropChances.isPreserved(equipmentSlot)) {
                      this.setItemSlot(equipmentSlot, ItemStack.EMPTY);
@@ -351,8 +351,8 @@
                  }
              }
          }
-@@ -1161,6 +_,21 @@
-     public <T extends Mob> T convertTo(
+@@ -1195,6 +_,21 @@
+     public <T extends Mob> @Nullable T convertTo(
          EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
      ) {
 +        // Paper start - entity zap event - allow cancellation of conversion post creation
@@ -361,19 +361,19 @@
 +
 +    @Nullable
 +    public <T extends Mob> T convertTo(
-+        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.@Nullable TransformReason transformReason, CreatureSpawnEvent.@Nullable SpawnReason creatureSpawnReason
 +    ) {
 +        return this.convertTo(entityType, conversionParams, spawnReason, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
 +    @Nullable
 +    public <T extends Mob> T convertTo(
-+        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.@Nullable TransformReason transformReason, CreatureSpawnEvent.@Nullable SpawnReason creatureSpawnReason
 +    ) {
 +        // Paper end - entity zap event - allow cancellation of conversion post creation
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1169,13 +_,23 @@
+@@ -1203,13 +_,23 @@
                  return null;
              } else {
                  conversionParams.type().convert(this, mob, conversionParams);
@@ -400,27 +400,26 @@
                  }
  
                  return mob;
-@@ -1185,7 +_,18 @@
- 
-     @Nullable
-     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion) {
+@@ -1220,7 +_,17 @@
+     public <T extends Mob> @Nullable T convertTo(
+         EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion
+     ) {
 -        return this.convertTo(entityType, conversionParams, EntitySpawnReason.CONVERSION, afterConversion);
 +        // Paper start - entity zap event - allow cancellation of conversion post creation
 +        return this.convertTo(entityType, conversionParams, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
-+    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++    public <T extends Mob> @Nullable T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.@Nullable TransformReason transformReason, CreatureSpawnEvent.@Nullable SpawnReason creatureSpawnReason) {
 +        return this.convertTo(entityType, conversionParams, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
-+    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++
++    public <T extends Mob> @Nullable T convertTo(EntityType<T> entityType, ConversionParams conversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.@Nullable TransformReason transformReason, CreatureSpawnEvent.@Nullable SpawnReason creatureSpawnReason) {
 +        return this.convertTo(entityType, conversionParams, EntitySpawnReason.CONVERSION, afterConversion, transformReason, creatureSpawnReason);
 +        // Paper end - entity zap event - allow cancellation of conversion post creation
      }
  
-     @Nullable
-@@ -1227,7 +_,17 @@
+     @Override
+@@ -1261,7 +_,17 @@
      public boolean startRiding(Entity entity, boolean force, boolean triggerEvents) {
          boolean flag = super.startRiding(entity, force, triggerEvents);
          if (flag && this.isLeashed()) {
@@ -439,12 +438,3 @@
          }
  
          return flag;
-@@ -1310,7 +_,7 @@
-             float knockback = this.getKnockback(target, damageSource);
-             if (knockback > 0.0F && target instanceof LivingEntity livingEntity) {
-                 livingEntity.knockback(
--                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
-+                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // CraftBukkit // Paper - knockback events
-                 );
-                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
-             }

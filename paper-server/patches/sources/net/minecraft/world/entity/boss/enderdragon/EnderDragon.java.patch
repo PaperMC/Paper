@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
-@@ -89,6 +_,10 @@
+@@ -86,6 +_,10 @@
      private final Node[] nodes = new Node[24];
      private final int[] nodeAdjacency = new int[24];
      private final BinaryHeap openSet = new BinaryHeap();
@@ -11,7 +11,7 @@
  
      public EnderDragon(EntityType<? extends EnderDragon> type, Level level) {
          super(EntityType.ENDER_DRAGON, level);
-@@ -104,6 +_,7 @@
+@@ -101,6 +_,7 @@
          this.setHealth(this.getMaxHealth());
          this.noPhysics = true;
          this.phaseManager = new EnderDragonPhaseManager(this);
@@ -19,7 +19,7 @@
      }
  
      public void setDragonFight(EndDragonFight dragonFight) {
-@@ -122,6 +_,19 @@
+@@ -119,6 +_,19 @@
          return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.CAMERA_DISTANCE, 16.0);
      }
  
@@ -39,7 +39,7 @@
      @Override
      public boolean isFlapping() {
          float cos = Mth.cos(this.flapTime * (float) (Math.PI * 2));
-@@ -213,7 +_,7 @@
+@@ -210,7 +_,7 @@
                      }
  
                      Vec3 flyTargetLocation = currentPhase.getFlyTargetLocation();
@@ -48,7 +48,7 @@
                          double d = flyTargetLocation.x - this.getX();
                          double d1 = flyTargetLocation.y - this.getY();
                          double d2 = flyTargetLocation.z - this.getZ();
-@@ -368,7 +_,12 @@
+@@ -365,7 +_,12 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
@@ -62,7 +62,7 @@
              }
          }
  
-@@ -398,7 +_,7 @@
+@@ -395,7 +_,7 @@
                  double d2 = entity.getX() - d;
                  double d3 = entity.getZ() - d1;
                  double max = Math.max(d2 * d2 + d3 * d3, 0.1);
@@ -71,7 +71,7 @@
                  if (!this.phaseManager.getCurrentPhase().isSitting() && livingEntity.getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      DamageSource damageSource = this.damageSources().mobAttack(this);
                      entity.hurtServer(level, damageSource, 5.0F);
-@@ -431,6 +_,7 @@
+@@ -428,6 +_,7 @@
          int floor5 = Mth.floor(box.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -79,10 +79,10 @@
  
          for (int i = floor; i <= floor3; i++) {
              for (int i1 = floor1; i1 <= floor4; i1++) {
-@@ -439,7 +_,11 @@
+@@ -436,7 +_,11 @@
                      BlockState blockState = level.getBlockState(blockPos);
                      if (!blockState.isAir() && !blockState.is(BlockTags.DRAGON_TRANSPARENT)) {
-                         if (level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !blockState.is(BlockTags.DRAGON_IMMUNE)) {
+                         if (level.getGameRules().get(GameRules.MOB_GRIEFING) && !blockState.is(BlockTags.DRAGON_IMMUNE)) {
 -                            flag1 = level.removeBlock(blockPos, false) || flag1;
 +                            // CraftBukkit start - Add blocks to list rather than destroying them
 +                            //flag1 = level.removeBlock(blockPos, false) || flag1;
@@ -92,7 +92,7 @@
                          } else {
                              flag = true;
                          }
-@@ -448,6 +_,58 @@
+@@ -445,6 +_,58 @@
              }
          }
  
@@ -151,7 +151,7 @@
          if (flag1) {
              BlockPos blockPos1 = new BlockPos(
                  floor + this.random.nextInt(floor3 - floor + 1),
-@@ -505,7 +_,15 @@
+@@ -502,7 +_,15 @@
  
      @Override
      public void kill(ServerLevel level) {
@@ -168,7 +168,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -527,18 +_,41 @@
+@@ -524,18 +_,41 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + f, this.getY() + 2.0 + f1, this.getZ() + f2, 0.0, 0.0, 0.0);
          }
  
@@ -183,7 +183,7 @@
 +        // CraftBukkit end
  
          if (this.level() instanceof ServerLevel serverLevel) {
--            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+-            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && serverLevel.getGameRules().get(GameRules.MOB_DROPS)) {
 -                ExperienceOrb.award(serverLevel, this.position(), Mth.floor(i * 0.08F));
 +            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
 +                ExperienceOrb.awardWithDirection(serverLevel, this.position(), net.minecraft.world.phys.Vec3.ZERO, Mth.floor(i * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
@@ -199,7 +199,7 @@
 +                    double deltaZ = this.getZ() - player.getZ();
 +                    double distanceSquared = Mth.square(deltaX) + Mth.square(deltaZ);
 +                    final double soundRadiusSquared = serverLevel.getGlobalSoundRangeSquared(config -> config.dragonDeathSoundRadius); // Paper - respect global sound events gamerule
-+                    if (!serverLevel.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Paper - respect global sound events gamerule
++                    if (!serverLevel.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Paper - respect global sound events gamerule
 +                    if (distanceSquared > Mth.square(viewDistance)) {
 +                        double deltaLength = Math.sqrt(distanceSquared);
 +                        double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
@@ -213,11 +213,11 @@
              }
          }
  
-@@ -551,15 +_,15 @@
+@@ -548,15 +_,15 @@
          }
  
          if (this.dragonDeathTime == 200 && this.level() instanceof ServerLevel serverLevel1) {
--            if (serverLevel1.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+-            if (serverLevel1.getGameRules().get(GameRules.MOB_DROPS)) {
 -                ExperienceOrb.award(serverLevel1, this.position(), Mth.floor(i * 0.2F));
 +            if (true) { // Paper - SPIGOT-2420: Already checked for the game rule when calculating the xp
 +                ExperienceOrb.awardWithDirection(serverLevel1, this.position(), net.minecraft.world.phys.Vec3.ZERO, Mth.floor(i * 0.2F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
@@ -232,7 +232,7 @@
              this.gameEvent(GameEvent.ENTITY_DIE);
          }
      }
-@@ -741,6 +_,7 @@
+@@ -737,6 +_,7 @@
          super.addAdditionalSaveData(output);
          output.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          output.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -240,7 +240,7 @@
      }
  
      @Override
-@@ -748,6 +_,7 @@
+@@ -744,6 +_,7 @@
          super.readAdditionalSaveData(input);
          input.getInt("DragonPhase").ifPresent(integer -> this.phaseManager.setPhase(EnderDragonPhase.getById(integer)));
          this.dragonDeathTime = input.getIntOr("DragonDeathTime", 0);
@@ -248,7 +248,7 @@
      }
  
      @Override
-@@ -788,7 +_,7 @@
+@@ -784,7 +_,7 @@
          EnderDragonPhase<? extends DragonPhaseInstance> phase = currentPhase.getPhase();
          Vec3 viewVector;
          if (phase == EnderDragonPhase.LANDING || phase == EnderDragonPhase.TAKEOFF) {
@@ -257,7 +257,7 @@
              float max = Math.max((float)Math.sqrt(heightmapPos.distToCenterSqr(this.position())) / 4.0F, 1.0F);
              float f = 6.0F / max;
              float xRot = this.getXRot();
-@@ -876,4 +_,19 @@
+@@ -871,4 +_,19 @@
      protected float sanitizeScale(float scale) {
          return 1.0F;
      }
@@ -266,7 +266,7 @@
 +    @Override
 +    public int getExpReward(ServerLevel level, Entity entity) {
 +        // CraftBukkit - Moved from #tickDeath method
-+        boolean flag = level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
++        boolean flag = level.getGameRules().get(GameRules.MOB_DROPS);
 +        int i = 500;
 +
 +        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {

@@ -169,8 +169,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
                         try (final BufferedReader buildReader = new BufferedReader(new InputStreamReader(connection2.getInputStream(), StandardCharsets.UTF_8))) {
                             final JsonObject buildJson = gson.fromJson(buildReader, JsonObject.class);
-                            final String channel = buildJson.get("channel").getAsString();
-                            if ("STABLE".equals(channel)) {
+                            if ("STABLE".equals(buildJson.get("channel").getAsString())) {
                                 final int currentIndex = versionList.indexOf(currentVersion);
                                 final int latestIndex = versionList.indexOf(latestVersion);
                                 final int distance = currentIndex - latestIndex;

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -465,12 +466,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / Level.TICKS_PER_DAY);
+        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
     }
 
     @Override
     public org.bukkit.NamespacedKey getKey() {
-        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().identifier());
     }
 
     public boolean lineOfSightExists(Location from, Location to) {
