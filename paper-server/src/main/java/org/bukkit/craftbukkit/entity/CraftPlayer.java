@@ -2519,7 +2519,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     public CraftScoreboard getScoreboardOverride() {
-        return scoreboardOverride;
+        return this.scoreboardOverride;
     }
 
     public void setScoreboardOverride(CraftScoreboard scoreboardOverride) {
