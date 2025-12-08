@@ -246,6 +246,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     private long lastSaveTime; // Paper - getLastPlayed replacement API
+    private CraftScoreboard scoreboardOverride;
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
         super(server, entity);
@@ -2515,6 +2516,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public CraftScoreboard getScoreboard() {
         return this.server.getScoreboardManager().getPlayerBoard(this);
+    }
+
+    public CraftScoreboard getScoreboardOverride() {
+        return scoreboardOverride;
+    }
+
+    public void setScoreboardOverride(CraftScoreboard scoreboardOverride) {
+        this.scoreboardOverride = scoreboardOverride;
     }
 
     @Override
