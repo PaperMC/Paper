@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item.consumable;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
@@ -15,16 +14,18 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.NullMarked;
 
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentMinInclusive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
+
 @NullMarked
 public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 
     @Override
     public ConsumeEffect.ApplyStatusEffects applyStatusEffects(final List<PotionEffect> effectList, final float probability) {
-        Preconditions.checkArgument(0 <= probability && probability <= 1, "probability must be between 0-1, was %s", probability);
         return new PaperApplyStatusEffects(
             new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(
                 new ArrayList<>(Lists.transform(effectList, CraftPotionUtil::fromBukkit)),
-                probability
+                requireArgumentMinInclusive(probability, "probability", 0.0F, 1.0F)
             )
         );
     }
@@ -52,9 +53,8 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 
     @Override
     public ConsumeEffect.TeleportRandomly teleportRandomlyEffect(final float diameter) {
-        Preconditions.checkArgument(diameter > 0, "diameter must be positive, was %s", diameter);
         return new PaperTeleportRandomly(
-            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(diameter)
+            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(requireArgumentPositive(diameter, "diameter"))
         );
     }
 }

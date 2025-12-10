@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
@@ -15,6 +14,8 @@ import net.minecraft.sounds.SoundEvents;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
+
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperConsumable(
     net.minecraft.world.item.component.Consumable impl
@@ -73,8 +74,7 @@ public record PaperConsumable(
 
         @Override
         public Builder consumeSeconds(final @NonNegative float consumeSeconds) {
-            Preconditions.checkArgument(consumeSeconds >= 0, "consumeSeconds must be non-negative, was %s", consumeSeconds);
-            this.consumeSeconds = consumeSeconds;
+            this.consumeSeconds = requireArgumentNonNegative(consumeSeconds, "consumeSeconds");
             return this;
         }
 

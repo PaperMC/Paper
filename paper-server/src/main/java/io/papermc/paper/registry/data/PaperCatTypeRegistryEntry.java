@@ -9,7 +9,7 @@ import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Cat;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
@@ -46,7 +46,7 @@ public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
 
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = this.conversions.asVanilla(requireArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
