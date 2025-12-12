@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -60,6 +61,7 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftBlock implements Block {
     private final net.minecraft.world.level.LevelAccessor world;
@@ -746,4 +748,9 @@ public class CraftBlock implements Block {
         this.getNMS().randomTick(level, this.position, level.random);
     }
     // Paper end
+
+    @Override
+    public <T> @NotNull T getAttributeValue(@NotNull final EnvironmentalAttributeType<T> type) {
+        return this.getCraftWorld().getEnvironmentalAttribute(type).getPositioned(this.getPosition());
+    }
 }
