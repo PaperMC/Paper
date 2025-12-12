@@ -345,6 +345,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public IntOr.Default monster = IntOr.Default.USE_DEFAULT;
             public IntOr.Default misc = IntOr.Default.USE_DEFAULT;
             public IntOr.Default display = IntOr.Default.USE_DEFAULT;
+            public IntOr.Default flyingMonster = IntOr.Default.USE_DEFAULT;
             public IntOr.Default other = IntOr.Default.USE_DEFAULT;
 
             public int get(Entity entity, int def) {
@@ -361,8 +362,11 @@ public class WorldConfiguration extends ConfigurationPart {
                     case ANIMAL, WATER, VILLAGER -> {
                         return animal.or(def);
                     }
-                    case MONSTER, FLYING_MONSTER, RAIDER -> {
+                    case MONSTER, RAIDER -> {
                         return monster.or(def);
+                    }
+                    case FLYING_MONSTER -> {
+                        return flyingMonster.or(monster.or(def)); // default to the old behaviour
                     }
                     default -> {
                         return other.or(def);
