@@ -20,12 +20,15 @@ import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
 import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
+import io.papermc.generator.rewriter.types.simple.StatisticTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.statistic.CustomStatistics;
+import io.papermc.paper.statistic.StatisticTypes;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -223,6 +226,8 @@ public final class Rewriters {
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("CustomStatistics", CustomStatistics.class, new RegistryFieldRewriter<>(Registries.CUSTOM_STAT, "get"))
+            .register("StatisticTypes", StatisticTypes.class, new StatisticTypeRewriter())
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
@@ -236,10 +241,6 @@ public final class Rewriters {
         sourceSet
             .register("CraftBlockData#MAP", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
             .register("CraftBlockEntityStates", Types.CRAFT_BLOCK_STATES, new CraftBlockEntityStateMapping())
-            .register(Types.CRAFT_STATISTIC, composite(
-                holder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),
-                holder("CraftStatisticType", new StatisticRewriter.CraftType())
-            ))
             .register(Types.CRAFT_POTION_UTIL, composite(
                 holder("CraftPotionUtil#upgradeable", new CraftPotionUtilRewriter("strong")),
                 holder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))

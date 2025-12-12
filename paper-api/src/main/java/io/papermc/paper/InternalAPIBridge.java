@@ -14,6 +14,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scoreboard.Criteria;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
@@ -100,4 +101,12 @@ public interface InternalAPIBridge {
     Component defaultMannequinDescription();
 
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+
+    /**
+     * Gets the criteria for the non-stat built-in scoreboard criteria.
+     *
+     * @param key the key
+     * @return the criteria
+     */
+    Criteria getCriteria(final String key);
 }
