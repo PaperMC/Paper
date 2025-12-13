@@ -320,13 +320,5 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      */
     @org.jetbrains.annotations.ApiStatus.Internal
     boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig);
-
-    /**
-     * Sets the permission manager to be used for this server.
-     *
-     * @param permissionManager permission manager
-     */
-    @org.jetbrains.annotations.ApiStatus.Experimental
-    void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);
     // Paper end
 }
