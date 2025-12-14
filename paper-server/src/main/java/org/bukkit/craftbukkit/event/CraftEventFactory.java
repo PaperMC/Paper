@@ -23,6 +23,9 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.event.player.PlayerPostInteractEvent;
+import io.papermc.paper.interact.InteractionType;
+import io.papermc.paper.interact.PaperInteractionResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -36,6 +39,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
@@ -2378,5 +2382,22 @@ public class CraftEventFactory {
             return true;
         }
         return false;
+    }
+
+    public static InteractionResult callPlayerPostInteractEvent(ServerPlayer player, InteractionResult result, InteractionHand hand, InteractionType interactionType) {
+        if (PlayerPostInteractEvent.getHandlerList().getRegisteredListeners().length == 0) return result;
+
+        io.papermc.paper.interact.InteractionResult paperResult = switch (result) {
+            case InteractionResult.Fail r -> new PaperInteractionResult.Fail(r);
+            case InteractionResult.Pass p -> new PaperInteractionResult.Pass(p);
+            case InteractionResult.Success s -> new PaperInteractionResult.Success(s);
+            case InteractionResult.TryEmptyHandInteraction t -> new PaperInteractionResult.TryEmptyHandInteraction(t);
+        };
+
+        new PlayerPostInteractEvent(
+            player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), interactionType, paperResult
+        ).callEvent();
+
+        return result;
     }
 }
