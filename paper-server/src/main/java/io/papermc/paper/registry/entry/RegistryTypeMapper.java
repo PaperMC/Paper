@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 public final class RegistryTypeMapper<M, A> {
 
@@ -14,7 +15,7 @@ public final class RegistryTypeMapper<M, A> {
             if (!(holder instanceof final Holder.Reference<M> reference)) {
                 throw new IllegalArgumentException("This type does not support direct holders: " + holder);
             }
-            return byValueCreator.apply(MCUtil.fromResourceKey(reference.key()), reference.value());
+            return byValueCreator.apply(CraftNamespacedKey.fromResourceKey(reference.key()), reference.value());
         };
     }
 

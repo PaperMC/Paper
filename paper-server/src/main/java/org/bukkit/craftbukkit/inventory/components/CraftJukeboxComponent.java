@@ -7,7 +7,7 @@ import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.EitherHolder;
 import net.minecraft.world.item.JukeboxPlayable;
 import org.bukkit.JukeboxSong;
@@ -35,7 +35,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
     public CraftJukeboxComponent(Map<String, Object> map) {
         String song = SerializableMeta.getObject(String.class, map, "song", false);
 
-        this.handle = new JukeboxPlayable(new EitherHolder<>(ResourceKey.create(Registries.JUKEBOX_SONG, ResourceLocation.parse(song))));
+        this.handle = new JukeboxPlayable(new EitherHolder<>(ResourceKey.create(Registries.JUKEBOX_SONG, Identifier.parse(song))));
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
 
     @Override
     public NamespacedKey getSongKey() {
-        return CraftNamespacedKey.fromMinecraft(this.handle.song().key().orElseThrow().location());
+        return CraftNamespacedKey.fromMinecraft(this.handle.song().key().orElseThrow().identifier());
     }
 
     @Override

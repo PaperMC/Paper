@@ -9,13 +9,13 @@ import org.bukkit.entity.Bee;
 
 public class CraftBee extends CraftAnimals implements Bee {
 
-    public CraftBee(CraftServer server, net.minecraft.world.entity.animal.Bee entity) {
+    public CraftBee(CraftServer server, net.minecraft.world.entity.animal.bee.Bee entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Bee getHandle() {
-        return (net.minecraft.world.entity.animal.Bee) this.entity;
+    public net.minecraft.world.entity.animal.bee.Bee getHandle() {
+        return (net.minecraft.world.entity.animal.bee.Bee) this.entity;
     }
 
     @Override
@@ -64,12 +64,12 @@ public class CraftBee extends CraftAnimals implements Bee {
 
     @Override
     public int getAnger() {
-        return this.getHandle().getRemainingPersistentAngerTime();
+        return (int) (this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime());
     }
 
     @Override
     public void setAnger(int anger) {
-        this.getHandle().setRemainingPersistentAngerTime(anger);
+        this.getHandle().setTimeToRemainAngry(anger);
     }
 
     @Override

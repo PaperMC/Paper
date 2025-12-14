@@ -28,10 +28,10 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d8a2d2e16 100644
+index 68b081ef1b0bf9a58564d900569bc7a5dfef2a32..8817a2d6500d1bdce96d87dc8f7f364ccfa390e5 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -84,7 +84,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -65,7 +65,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
      private volatile boolean sendLoginDisconnect = true;
@@ -40,10 +40,10 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
      public Channel channel;
      public SocketAddress address;
      // Spigot start
-@@ -147,6 +147,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -123,6 +123,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public boolean handledLegacyLoginEvent; // Paper - playerloginevent
-     public @Nullable net.minecraft.server.level.ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
-     public @Nullable org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper
+     public net.minecraft.server.level.@Nullable ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
+     public org.bukkit.event.player.PlayerResourcePackStatusEvent.@Nullable Status resourcePackStatus; // Paper
 +    // Paper start - Optimize network
 +    public boolean isPending = true;
 +    public boolean queueImmunity;
@@ -51,7 +51,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -419,11 +423,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -395,11 +399,38 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void send(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush) {
@@ -93,7 +93,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
          }
      }
  
-@@ -432,7 +463,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -408,7 +439,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.flushQueue();
              action.accept(this);
          } else {
@@ -102,7 +102,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
          }
      }
  
-@@ -446,21 +477,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -422,21 +453,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush) {
@@ -148,7 +148,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
          }
      }
  
-@@ -472,16 +523,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -448,16 +499,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -211,7 +211,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
  
      private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
      private static int joinAttemptsThisTick; // Paper - Buffer joins to world
-@@ -551,6 +643,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -527,6 +619,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
          this.preparing = false; // Spigot
@@ -219,7 +219,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
          if (this.channel == null) {
              this.delayedDisconnect = disconnectionDetails;
          }
-@@ -739,7 +832,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -703,7 +796,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -228,7 +228,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetListener = this.getPacketListener();
-@@ -750,7 +843,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -714,7 +807,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }
@@ -237,7 +237,7 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
                  // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-@@ -785,4 +878,97 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -749,4 +842,96 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void setBandwidthLogger(LocalSampleLogger bandwidthLogger) {
          this.bandwidthDebugMonitor = new BandwidthDebugMonitor(bandwidthLogger);
      }
@@ -256,10 +256,9 @@ index d849daa8d6517e177ac9b1e075ca9f2c09c922e5..c48d0a951f36e4449e9474994a21596d
 +        this.pendingActions.clear();
 +    }
 +
-+    private static class InnerUtil { // Attempt to hide these methods from ProtocolLib, so it doesn't accidently pick them up.
++    private static final class InnerUtil { // Attempt to hide these methods from ProtocolLib, so it doesn't accidently pick them up.
 +
-+        @Nullable
-+        private static java.util.List<Packet<?>> buildExtraPackets(final Packet<?> packet) {
++        private static java.util.@Nullable List<Packet<?>> buildExtraPackets(final Packet<?> packet) {
 +            final java.util.List<Packet<?>> extra = packet.getExtraPackets();
 +            if (extra == null || extra.isEmpty()) {
 +                return null;
@@ -373,10 +372,10 @@ index 65ff8b9112ec76eeac48c679044fc02ae7d4ffeb..062fd531edf6dfebb42dbaeee7bbda52
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index 16719b3eaec6fc261d227f47e82afc0506a6524d..deefad689070750a3ae033a3e54dd8f5c849e794 100644
+index c080b4eccb94551eefd7016200431e37221232b5..309845b28306dfa5946e79b80e5b1dde82dd68cd 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -67,11 +67,13 @@ public class ServerConnectionListener {
+@@ -50,11 +50,13 @@ public class ServerConnectionListener {
  
      // Paper start - prevent blocking on adding a new connection while the server is ticking
      private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -390,7 +389,7 @@ index 16719b3eaec6fc261d227f47e82afc0506a6524d..deefad689070750a3ae033a3e54dd8f5
          }
      }
      // Paper end - prevent blocking on adding a new connection while the server is ticking
-@@ -121,6 +123,7 @@ public class ServerConnectionListener {
+@@ -86,6 +88,7 @@ public class ServerConnectionListener {
                                      } catch (ChannelException var5) {
                                      }
  
