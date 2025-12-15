@@ -1,21 +1,15 @@
 --- a/net/minecraft/world/level/block/TrapDoorBlock.java
 +++ b/net/minecraft/world/level/block/TrapDoorBlock.java
-@@ -128,7 +_,37 @@
+@@ -128,7 +_,31 @@
          if (!level.isClientSide()) {
              boolean hasNeighborSignal = level.hasNeighborSignal(pos);
              if (hasNeighborSignal != state.getValue(POWERED)) {
 -                if (state.getValue(OPEN) != hasNeighborSignal) {
-+                // CraftBukkit start
-+                org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                int power = bblock.getBlockPower();
-+                int oldPower = state.getValue(TrapDoorBlock.OPEN) ? 15 : 0;
-+
-+                if (oldPower == 0 ^ power == 0 || neighborBlock.defaultBlockState().isSignalSource()) {
-+                    org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bblock, oldPower, power);
-+                    level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                    hasNeighborSignal = eventRedstone.getNewCurrent() > 0;
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, hasNeighborSignal)) {
++                    return;
 +                }
-+                // CraftBukkit end
++                // Paper end - Call BlockRedstoneEvent
 +                // Paper start - break redstone on trapdoors early
 +                boolean open = state.getValue(TrapDoorBlock.OPEN) != hasNeighborSignal;
 +                // note: this must run before any state for this block/its neighbours are written to the world

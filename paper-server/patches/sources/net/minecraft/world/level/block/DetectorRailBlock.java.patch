@@ -16,20 +16,17 @@
              boolean poweredValue = state.getValue(POWERED);
              boolean flag = false;
              List<AbstractMinecart> interactingMinecartOfType = this.getInteractingMinecartOfType(level, pos, AbstractMinecart.class, entity -> true);
-@@ -86,6 +_,16 @@
+@@ -86,6 +_,13 @@
                  flag = true;
              }
  
-+            // CraftBukkit start
++            // Paper start - Call BlockRedstoneEvent
 +            if (poweredValue != flag) {
-+                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+
-+                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 15 : 0);
-+                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+                flag = eventRedstone.getNewCurrent() > 0;
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, flag)) {
++                    return;
++                }
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              if (flag && !poweredValue) {
                  BlockState blockState = state.setValue(POWERED, true);
                  level.setBlock(pos, blockState, Block.UPDATE_ALL);

@@ -19,7 +19,7 @@
              sculkSensorBlockEntity.getListener().forceScheduleVibration(serverLevel, GameEvent.STEP, GameEvent.Context.of(entity), entity.position());
          }
  
-@@ -188,10 +_,19 @@
+@@ -188,10 +_,17 @@
      }
  
      public static boolean canActivate(BlockState state) {
@@ -28,31 +28,26 @@
      }
  
      public static void deactivate(Level level, BlockPos pos, BlockState state) {
-+        // CraftBukkit start
-+        org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), state.getValue(SculkSensorBlock.POWER), 0);
-+        level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+        if (eventRedstone.getNewCurrent() > 0) {
-+            level.setBlock(pos, state.setValue(SculkSensorBlock.POWER, eventRedstone.getNewCurrent()), 3);
++        // Paper start - Call BlockRedstoneEvent
++        int newCurrent = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(POWER), 0).getNewCurrent();
++        if (newCurrent > 0) {
++            level.setBlock(pos, state.setValue(POWER, newCurrent), Block.UPDATE_ALL);
 +            return;
 +        }
-+        // CraftBukkit end
++        // Paper end - Call BlockRedstoneEvent
          level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, 0), Block.UPDATE_ALL);
          level.scheduleTick(pos, state.getBlock(), 10);
          updateNeighbours(level, pos, state);
-@@ -203,6 +_,15 @@
+@@ -203,6 +_,12 @@
      }
  
      public void activate(@Nullable Entity entity, Level level, BlockPos pos, BlockState state, int power, int frequency) {
-+        // CraftBukkit start
-+        org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), state.getValue(SculkSensorBlock.POWER), power);
-+        level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+        if (eventRedstone.getNewCurrent() <= 0) {
++        // Paper start - Call BlockRedstoneEvent
++        power = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(POWER), power).getNewCurrent();
++        if (power == 0) {
 +            return;
 +        }
-+        power = eventRedstone.getNewCurrent();
-+        // CraftBukkit end
++        // Paper end - Call BlockRedstoneEvent
          level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, power), Block.UPDATE_ALL);
          level.scheduleTick(pos, state.getBlock(), this.getActiveTicks());
          updateNeighbours(level, pos, state);
