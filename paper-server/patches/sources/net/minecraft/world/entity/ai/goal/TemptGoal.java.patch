@@ -9,19 +9,26 @@
      private int calmDown;
      private boolean isRunning;
      private final Predicate<ItemStack> items;
-@@ -56,6 +_,15 @@
+@@ -54,8 +_,21 @@
+             this.calmDown--;
+             return false;
          } else {
-             this.player = getServerLevel(this.mob)
+-            this.player = getServerLevel(this.mob)
++            // this.player = getServerLevel(this.mob).getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
++            // Paper start - Fix EntityTargetLivingEntityEvent spam
++            LivingEntity candidate = getServerLevel(this.mob)
                  .getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
-+            // CraftBukkit start
-+            if (this.player != null) {
-+                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
++
++            if (candidate != null && this.player != candidate) {
++                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, candidate, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
 +                if (event.isCancelled()) {
 +                    return false;
 +                }
-+                this.player = (event.getTarget() == null) ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++                candidate = (event.getTarget() == null) ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
 +            }
-+            // CraftBukkit end
++
++            this.player = candidate;
++            // Paper end - Fix EntityTargetLivingEntityEvent spam
              return this.player != null;
          }
      }
