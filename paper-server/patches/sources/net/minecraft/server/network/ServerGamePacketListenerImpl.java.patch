@@ -374,25 +374,12 @@
                  return;
              }
  
-@@ -536,12 +_,20 @@
+@@ -536,6 +_,7 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
              this.awaitingPositionFromClient = null;
 +            this.player.level().getChunkSource().move(this.player); // CraftBukkit
          }
-     }
- 
-     @Override
-     public void handleAcceptPlayerLoad(ServerboundPlayerLoadedPacket packet) {
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
-+        // Paper start - PlayerLoadedWorldEvent
-+        if (this.hasClientLoaded()) {
-+            return;
-+        }
-+        final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), false);
-+        event.callEvent();
-+        // Paper end - PlayerLoadedWorldEvent
-         this.markClientLoaded();
      }
  
 @@ -563,6 +_,7 @@
@@ -2581,29 +2568,27 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2130,13 +_,21 @@
-     }
- 
-     public boolean hasClientLoaded() {
--        return !this.waitingForRespawn && this.clientLoadedTimeoutTimer <= 0;
-+        return !this.waitingForRespawn; // Paper - Add PlayerLoadedWorldEvent
+@@ -2134,12 +_,18 @@
      }
  
      public void tickClientLoadTimeout() {
-         if (this.clientLoadedTimeoutTimer > 0) {
+-        if (this.clientLoadedTimeoutTimer > 0) {
++        if (this.clientLoadedTimeoutTimer > 1) { // Paper - Add PlayerLoadedWorldEvent - only reduce till 1, let the below else-if call #markClientLoaded to trigger event and reduce to 0
              this.clientLoadedTimeoutTimer--;
-         }
+-        }
++        } else if (this.clientLoadedTimeoutTimer == 1) markClientLoaded(); // Paper - Add PlayerLoadedWorldEvent - decrement by calling #markClientLoaded which will set the value to 0 *and* call the event.
+     }
+ 
+     private void markClientLoaded() {
 +        // Paper start - Add PlayerLoadedWorldEvent
-+        if (this.clientLoadedTimeoutTimer <= 0) {
-+            this.waitingForRespawn = false;
-+
++        if (!hasClientLoaded()) {
 +            final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), true);
 +            event.callEvent();
 +        }
 +        // Paper end - Add PlayerLoadedWorldEvent
+         this.clientLoadedTimeoutTimer = 0;
      }
  
-     private void markClientLoaded() {
 @@ -2156,4 +_,80 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
