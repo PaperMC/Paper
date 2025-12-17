@@ -12,16 +12,8 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.village.poi.PoiType> implements PoiType {
 
-    public static PoiType minecraftToBukkit(final net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);
-    }
-
     public static PaperPoiType minecraftHolderToBukkit(final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);
-    }
-
-    public static net.minecraft.world.entity.ai.village.poi.PoiType bukkitToMinecraft(final PoiType bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<net.minecraft.world.entity.ai.village.poi.PoiType> bukkitToMinecraftHolder(final PoiType bukkit) {
