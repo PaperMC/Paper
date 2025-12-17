@@ -40,10 +40,11 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -281,10 +_,109 @@
+@@ -281,10 +_,110 @@
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
  
++    private @Nullable CommandSourceStack noPermissionsCommandSourceStack = null; // Paper - don't violate API contracts for location nullability
 +    // CraftBukkit start
 +    public final WorldLoader.DataLoadContext worldLoaderContext;
 +    public org.bukkit.craftbukkit.CraftServer server;
@@ -1124,7 +1125,7 @@
  
          profilerFiller.popPush("connection");
          this.tickConnection();
-@@ -1176,9 +_,12 @@
+@@ -1176,10 +_,14 @@
          this.serverActivityMonitor.tick();
      }
  
@@ -1137,8 +1138,10 @@
 +        respawnData = respawnData.withLevel(serverLevel.dimension());
 +    // Paper end - per world respawn data - read "server global" respawn data from overworld dimension reference
          this.effectiveRespawnData = serverLevel.getWorldBorderAdjustedRespawnData(respawnData);
++        this.noPermissionsCommandSourceStack = null; // Paper - don't violate API contracts for location nullability
      }
  
+     public void tickConnection() {
 @@ -1228,6 +_,22 @@
          return this.levels.get(dimension);
      }
@@ -1363,6 +1366,42 @@
                  }
              }
          }
+@@ -1718,6 +_,26 @@
+         return this.resources.managers.getCommands();
+     }
+ 
++    // Paper start - don't violate API contracts for location nullability
++    public CommandSourceStack getOrCreateNoPermissionsCommandSourceStack() {
++        if (this.noPermissionsCommandSourceStack != null) {
++            return this.noPermissionsCommandSourceStack;
++        }
++        ServerLevel serverLevel = this.findRespawnDimension();
++        this.noPermissionsCommandSourceStack = new CommandSourceStack(
++            this,
++            Vec3.atLowerCornerOf(this.getRespawnData().pos()),
++            Vec2.ZERO,
++            serverLevel,
++            PermissionSet.NO_PERMISSIONS,
++            "",
++            net.minecraft.network.chat.CommonComponents.EMPTY,
++            this,
++            null
++        );
++        return this.noPermissionsCommandSourceStack;
++    }
++    // Paper end - don't violate API contracts for location nullability
+     public CommandSourceStack createCommandSourceStack() {
+         ServerLevel serverLevel = this.findRespawnDimension();
+         return new CommandSourceStack(
+@@ -1725,7 +_,7 @@
+             Vec3.atLowerCornerOf(this.getRespawnData().pos()),
+             Vec2.ZERO,
+             serverLevel,
+-            LevelBasedPermissionSet.OWNER,
++            PermissionSet.NO_PERMISSIONS,
+             "Server",
+             Component.literal("Server"),
+             this,
 @@ -1734,12 +_,12 @@
      }
  

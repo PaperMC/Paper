@@ -8,15 +8,30 @@
      public static final String COMMAND_PREFIX = "/";
      private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -179,6 +_,7 @@
+@@ -164,7 +_,7 @@
+     public static final PermissionCheck LEVEL_ADMINS = new PermissionCheck.Require(Permissions.COMMANDS_ADMIN);
+     public static final PermissionCheck LEVEL_OWNERS = new PermissionCheck.Require(Permissions.COMMANDS_OWNER);
+     private static final ClientboundCommandsPacket.NodeInspector<CommandSourceStack> COMMAND_NODE_INSPECTOR = new ClientboundCommandsPacket.NodeInspector<CommandSourceStack>() {
+-        private final CommandSourceStack noPermissionSource = Commands.createCompilationContext(PermissionSet.NO_PERMISSIONS);
++        private final CommandSourceStack noPermissionSource = Commands.createCompilationContext(PermissionSet.NO_PERMISSIONS); // Paper - diff on change - don't violate API contracts for location nullability
+ 
+         @Override
+         public @Nullable Identifier suggestionId(ArgumentCommandNode<CommandSourceStack, ?> node) {
+@@ -179,13 +_,25 @@
  
          @Override
          public boolean isRestricted(CommandNode<CommandSourceStack> node) {
 +            if (node.getRequirement() instanceof RestrictedMarker) return true; // Paper - restricted api
              Predicate<CommandSourceStack> requirement = node.getRequirement();
++            // Paper start - don't violate API contracts for location nullability
++            final var server = net.minecraft.server.MinecraftServer.getServer();
++            if (server != null) {
++                return !requirement.test(server.getOrCreateNoPermissionsCommandSourceStack());
++            }
++            // Paper end - don't violate API contracts for location nullability
              return !requirement.test(this.noPermissionSource);
          }
-@@ -186,6 +_,11 @@
+     };
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
