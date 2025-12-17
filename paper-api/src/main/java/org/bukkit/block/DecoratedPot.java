@@ -65,6 +65,14 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
     public DecoratedPotInventory getSnapshotInventory();
 
     /**
+     * Run the specified animation on the decorated pot.
+     *
+     * @param style the animation style
+     * @throws IllegalStateException if this block state is not placed
+     */
+    public void startWobble(@NotNull WobbleStyle style);
+
+    /**
      * A side on a decorated pot. Sides are relative to the facing state of a
      * {@link org.bukkit.block.data.type.DecoratedPot}.
      */
@@ -73,5 +81,13 @@ public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryH
         LEFT,
         RIGHT,
         FRONT
+    }
+
+    /**
+     * Style a DecoratedPot can wobble in.
+     */
+    public static enum WobbleStyle {
+        POSITIVE,
+        NEGATIVE
     }
 }

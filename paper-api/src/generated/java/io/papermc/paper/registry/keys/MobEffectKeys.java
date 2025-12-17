@@ -47,6 +47,13 @@ public final class MobEffectKeys {
     public static final TypedKey<PotionEffectType> BLINDNESS = create(key("blindness"));
 
     /**
+     * {@code minecraft:breath_of_the_nautilus}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<PotionEffectType> BREATH_OF_THE_NAUTILUS = create(key("breath_of_the_nautilus"));
+
+    /**
      * {@code minecraft:conduit_power}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
