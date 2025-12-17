@@ -6,6 +6,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.minecraft.resources.ResourceKey;

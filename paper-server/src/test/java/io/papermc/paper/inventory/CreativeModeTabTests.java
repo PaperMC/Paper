@@ -20,7 +20,7 @@ public class CreativeModeTabTests {
     @Test
     void testOminousBannerTabs() {
         // The api should be able to handle components on items, such as with the ominous banner
-        final ItemStack ominousBanner = Raid.getOminousBannerInstance(RegistryHelper.getRegistry().lookupOrThrow(Registries.BANNER_PATTERN)).asBukkitCopy();
+        final ItemStack ominousBanner = Raid.getOminousBannerInstance(RegistryHelper.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN)).asBukkitCopy();
 
         final Collection<CreativeModeTab> ominousBannerTabs = ominousBanner.getCreativeModeTabs();
         assertEquals(2, ominousBannerTabs.size()); // 1 category + search
