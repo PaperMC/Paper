@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.block.state.properties.StructureMode;
@@ -192,7 +193,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
             // From StructureBlockEntity#setMode(BlockPropertyStructureMode)
             net.minecraft.world.level.block.state.BlockState state = access.getBlockState(this.getPosition());
             if (state.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
-                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), 2);
+                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), Block.UPDATE_CLIENTS);
             }
         }
     }

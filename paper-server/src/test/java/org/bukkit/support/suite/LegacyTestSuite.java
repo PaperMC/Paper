@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite(failIfNoTests = false)
 @SuiteDisplayName("Test suite for legacy tests")
 @IncludeTags("Legacy")
-@SelectPackages({"org.bukkit", "io.papermc"})
+@SelectPackages({"org.bukkit", "io.papermc.paper", "com.destroystokyo.paper"})
 @ConfigurationParameter(key = "TestSuite", value = "Legacy")
 public class LegacyTestSuite {
 }

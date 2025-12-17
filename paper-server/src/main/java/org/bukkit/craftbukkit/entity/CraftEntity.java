@@ -29,10 +29,11 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.boss.EnderDragonPart;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -330,7 +331,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         };
     }
 
-    public static @Nullable TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+    public static TeleportFlag.@Nullable Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
         return switch (nmsFlag) {
             case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
             case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;
@@ -1028,7 +1029,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, level.registryAccess());
             this.getHandle().saveAsPassenger(output, false, true, true);
 
-            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
+            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, EntityProcessor.NOP);
         }
     }
 

@@ -1,12 +1,10 @@
 --- a/net/minecraft/world/entity/NeutralMob.java
 +++ b/net/minecraft/world/entity/NeutralMob.java
-@@ -36,9 +_,11 @@
-         if (level instanceof ServerLevel serverLevel) {
-             UUID uuid = input.read("AngryAt", UUIDUtil.CODEC).orElse(null);
-             this.setPersistentAngerTarget(uuid);
--            if ((uuid != null ? serverLevel.getEntity(uuid) : null) instanceof LivingEntity livingEntity) {
--                this.setTarget(livingEntity);
--            }
+@@ -50,7 +_,11 @@
+ 
+         if (level instanceof ServerLevel) {
+             this.setPersistentAngerTarget(EntityReference.read(input, "angry_at"));
+-            this.setTarget(EntityReference.getLivingEntity(this.getPersistentAngerTarget(), level));
 +            // Paper - Prevent entity loading causing async lookups; Moved diff to separate method
 +            // If this entity already survived its first tick, e.g. is loaded and ticked in sync, actively
 +            // tick the initial persistent anger.
@@ -15,35 +13,30 @@
          }
      }
  
-@@ -91,7 +_,7 @@
+@@ -120,7 +_,7 @@
      default void stopBeingAngry() {
          this.setLastHurtByMob(null);
          this.setPersistentAngerTarget(null);
 -        this.setTarget(null);
 +        this.setTarget(null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // CraftBukkit
-         this.setRemainingPersistentAngerTime(0);
+         this.setPersistentAngerEndTime(-1L);
      }
  
-@@ -102,8 +_,24 @@
+@@ -130,7 +_,19 @@
  
      void setTarget(@Nullable LivingEntity target);
  
-+    boolean setTarget(@Nullable LivingEntity target, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason); // CraftBukkit
++    boolean setTarget(@Nullable LivingEntity target, org.bukkit.event.entity.EntityTargetEvent.@Nullable TargetReason reason); // CraftBukkit
 +
      boolean canAttack(LivingEntity entity);
  
-     @Nullable
-     LivingEntity getTarget();
+     @Nullable LivingEntity getTarget();
 +
 +    // Paper start - Prevent entity loading causing async lookups
 +    // Update last hurt when ticking
 +    default void tickInitialPersistentAnger(Level level) {
-+        UUID uuid = getPersistentAngerTarget();
-+        if (uuid == null) {
-+            return;
-+        }
-+
-+        if (level.getEntity(uuid) instanceof LivingEntity target) {
++        LivingEntity target = EntityReference.getLivingEntity(this.getPersistentAngerTarget(), level);
++        if (target != null) {
 +            this.setTarget(target, null);
 +        }
 +    }

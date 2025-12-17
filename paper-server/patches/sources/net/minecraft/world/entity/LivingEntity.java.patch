@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -140,6 +_,17 @@
- import org.jetbrains.annotations.Contract;
+@@ -143,6 +_,17 @@
+ import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -18,7 +18,7 @@
  public abstract class LivingEntity extends Entity implements Attackable, WaypointTransmitter {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
-@@ -266,11 +_,24 @@
+@@ -268,11 +_,25 @@
      );
      protected final EntityEquipment equipment;
      private Waypoint.Icon locatorBarIcon = new Waypoint.Icon();
@@ -32,6 +32,7 @@
 +    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
++    public int invulnerableDuration = LivingEntity.INVULNERABLE_DURATION; // Paper - configurable invulnerable duration
 +    // CraftBukkit end
  
      protected LivingEntity(EntityType<? extends LivingEntity> type, Level level) {
@@ -44,7 +45,7 @@
          this.equipment = this.createEquipment();
          this.blocksBuilding = true;
          this.reapplyPosition();
-@@ -372,7 +_,13 @@
+@@ -371,7 +_,13 @@
  
                  double d1 = Math.min(0.2F + d / 15.0, 2.5);
                  int i = (int)(150.0 * d1);
@@ -59,7 +60,7 @@
              }
          }
  
-@@ -557,7 +_,7 @@
+@@ -556,7 +_,7 @@
          this.deathTime++;
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
              this.level().broadcastEntityEvent(this, EntityEvent.POOF);
@@ -68,7 +69,7 @@
          }
      }
  
-@@ -662,7 +_,7 @@
+@@ -658,7 +_,7 @@
      }
  
      public boolean shouldDiscardFriction() {
@@ -77,7 +78,7 @@
      }
  
      public void setDiscardFriction(boolean discardFriction) {
-@@ -674,10 +_,15 @@
+@@ -670,10 +_,15 @@
      }
  
      public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
@@ -94,12 +95,12 @@
                      this.level()
                          .playSeededSound(
                              null,
-@@ -704,12 +_,12 @@
+@@ -700,12 +_,12 @@
      }
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
-+    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
++    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          if ((reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED) && this.level() instanceof ServerLevel serverLevel) {
              this.triggerOnDeathMobEffects(serverLevel, reason);
          }
@@ -109,7 +110,7 @@
          this.brain.clearMemories();
      }
  
-@@ -726,11 +_,17 @@
+@@ -722,11 +_,17 @@
              mobEffectInstance.onMobRemoved(level, this, removalReason);
          }
  
@@ -127,25 +128,21 @@
          output.putFloat("Health", this.getHealth());
          output.putShort("HurtTime", (short)this.hurtTime);
          output.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -764,8 +_,15 @@
+@@ -760,7 +_,12 @@
          }
      }
  
--    @Nullable
--    public ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
+-    public @Nullable ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
 +    // Paper start - Extend dropItem API
-+    @Nullable
-+    public final ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
++    public final @Nullable ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
 +        return this.drop(stack, randomizeMotion, includeThrower, true, null);
 +    }
-+
-+    @Nullable
-+    public ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) {
++    public @Nullable ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower, boolean callEvent, java.util.function.@Nullable Consumer<org.bukkit.entity.Item> entityOperation) {
 +        // Paper end - Extend dropItem API
          if (stack.isEmpty()) {
              return null;
          } else if (this.level().isClientSide()) {
-@@ -774,6 +_,31 @@
+@@ -769,6 +_,31 @@
          } else {
              ItemEntity itemEntity = this.createItemStackToDrop(stack, randomizeMotion, includeThrower);
              if (itemEntity != null) {
@@ -177,7 +174,7 @@
                  this.level().addFreshEntity(itemEntity);
              }
  
-@@ -783,7 +_,22 @@
+@@ -778,7 +_,22 @@
  
      @Override
      protected void readAdditionalSaveData(ValueInput input) {
@@ -201,8 +198,8 @@
          if (this.level() != null && !this.level().isClientSide()) {
              input.read("attributes", AttributeInstance.Packed.LIST_CODEC).ifPresent(this.getAttributes()::apply);
          }
-@@ -795,6 +_,11 @@
-             this.activeEffects.put(mobEffectInstance.getEffect(), mobEffectInstance);
+@@ -791,6 +_,11 @@
+             this.effectsDirty = true;
          }
  
 +        // CraftBukkit start
@@ -213,7 +210,7 @@
          this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
          this.hurtTime = input.getShortOr("HurtTime", (short)0);
          this.deathTime = input.getShortOr("DeathTime", (short)0);
-@@ -802,6 +_,7 @@
+@@ -798,6 +_,7 @@
          input.getString("Team").ifPresent(string -> {
              Scoreboard scoreboard = this.level().getScoreboard();
              PlayerTeam playerTeam = scoreboard.getPlayerTeam(string);
@@ -221,7 +218,7 @@
              boolean flag = playerTeam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), playerTeam);
              if (!flag) {
                  LOGGER.warn("Unable to add mob to team \"{}\" (that team probably doesn't exist)", string);
-@@ -809,11 +_,13 @@
+@@ -805,11 +_,13 @@
          });
          this.setSharedFlag(Entity.FLAG_FALL_FLYING, input.getBooleanOr("FallFlying", false));
          input.read("sleeping_pos", BlockPos.CODEC).ifPresentOrElse(blockPos -> {
@@ -235,8 +232,8 @@
          }, this::clearSleepingPos);
          input.read("Brain", Codec.PASSTHROUGH).ifPresent(dynamic -> this.brain = this.makeBrain((Dynamic<?>)dynamic));
          this.lastHurtByPlayer = EntityReference.read(input, "last_hurt_by_player");
-@@ -824,15 +_,44 @@
-         this.locatorBarIcon = input.read("locator_bar_icon", Waypoint.Icon.CODEC).orElseGet(Waypoint.Icon::new);
+@@ -826,15 +_,44 @@
+         this.updateDirtyEffects();
      }
  
 +    // CraftBukkit start
@@ -280,10 +277,11 @@
                          iterator.remove();
                          this.onEffectsRemoved(List.of(mobEffectInstance));
                      } else if (mobEffectInstance.getDuration() % 600 == 0) {
-@@ -842,6 +_,17 @@
+@@ -843,6 +_,18 @@
+                 }
              } catch (ConcurrentModificationException var6) {
              }
- 
++
 +            // CraftBukkit start
 +            this.isTickingEffects = false;
 +            for (ProcessableEffect effect : this.effectsToProcess) {
@@ -295,10 +293,10 @@
 +            }
 +            this.effectsToProcess.clear();
 +            // CraftBukkit end
-             if (this.effectsDirty) {
-                 this.updateInvisibilityStatus();
-                 this.updateGlowingStatus();
-@@ -949,15 +_,33 @@
+         } else {
+             for (MobEffectInstance mobEffectInstance1 : this.activeEffects.values()) {
+                 mobEffectInstance1.tickClient();
+@@ -953,15 +_,33 @@
      }
  
      public boolean removeAllEffects() {
@@ -336,7 +334,7 @@
          }
      }
  
-@@ -984,21 +_,57 @@
+@@ -987,21 +_,57 @@
      }
  
      public final boolean addEffect(MobEffectInstance effectInstance) {
@@ -396,16 +394,14 @@
                  this.onEffectUpdated(mobEffectInstance, true, entity);
                  flag = true;
              }
-@@ -1037,11 +_,37 @@
+@@ -1039,11 +_,35 @@
+     }
  
-     @Nullable
-     public final MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect) {
-+// CraftBukkit start
+     public final @Nullable MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect) {
++        // CraftBukkit start
 +        return this.removeEffectNoUpdate(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
 +    }
-+
-+    @Nullable
-+    public MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect, EntityPotionEffectEvent.Cause cause) {
++    public @Nullable MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect, EntityPotionEffectEvent.Cause cause) {
 +        if (this.isTickingEffects) {
 +            this.effectsToProcess.add(new ProcessableEffect(effect, cause));
 +            return null;
@@ -420,7 +416,7 @@
 +        if (event.isCancelled()) {
 +            return null;
 +        }
-+// CraftBukkit end
++        // CraftBukkit end
          return this.activeEffects.remove(effect);
      }
  
@@ -435,7 +431,7 @@
          if (mobEffectInstance != null) {
              this.onEffectsRemoved(List.of(mobEffectInstance));
              return true;
-@@ -1132,17 +_,62 @@
+@@ -1134,17 +_,62 @@
      }
  
      public void heal(float amount) {
@@ -499,7 +495,7 @@
          this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
      }
  
-@@ -1154,7 +_,7 @@
+@@ -1156,7 +_,7 @@
      public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
          if (this.isInvulnerableTo(level, damageSource)) {
              return false;
@@ -508,7 +504,7 @@
              return false;
          } else if (damageSource.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -1170,35 +_,58 @@
+@@ -1172,35 +_,58 @@
  
              ItemStack useItem = this.getUseItem();
              float originAmount = amount;
@@ -575,7 +571,7 @@
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
-@@ -1213,7 +_,7 @@
+@@ -1215,7 +_,7 @@
                      level.broadcastDamageEvent(this, damageSource);
                  }
  
@@ -584,7 +580,7 @@
                      this.markHurt();
                  }
  
-@@ -1228,8 +_,16 @@
+@@ -1230,8 +_,16 @@
                          d = damageSource.getSourcePosition().x() - this.getX();
                          d1 = damageSource.getSourcePosition().z() - this.getZ();
                      }
@@ -602,7 +598,7 @@
                      if (!flag) {
                          this.indicateDamage(d, d1);
                      }
-@@ -1238,19 +_,19 @@
+@@ -1240,19 +_,19 @@
  
              if (this.isDeadOrDying()) {
                  if (!this.checkTotemDeathProtection(damageSource)) {
@@ -627,7 +623,7 @@
              if (flag2) {
                  this.lastDamageSource = damageSource;
                  this.lastDamageStamp = this.level().getGameTime();
-@@ -1276,6 +_,12 @@
+@@ -1278,6 +_,12 @@
      }
  
      public float applyItemBlocking(ServerLevel level, DamageSource damageSource, float damageAmount) {
@@ -640,7 +636,7 @@
          if (damageAmount <= 0.0F) {
              return 0.0F;
          } else {
-@@ -1300,10 +_,12 @@
+@@ -1302,10 +_,12 @@
                          }
  
                          float f = blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
@@ -654,7 +650,7 @@
  
                          return f;
                      }
-@@ -1314,6 +_,59 @@
+@@ -1316,6 +_,59 @@
          }
      }
  
@@ -714,7 +710,7 @@
      public void playSecondaryHurtSound(DamageSource damageSource) {
          if (damageSource.is(DamageTypes.THORNS)) {
              SoundSource soundSource = this instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
-@@ -1346,12 +_,24 @@
+@@ -1347,12 +_,24 @@
          return EntityReference.getPlayer(this.lastHurtByPlayer, this.level());
      }
  
@@ -740,7 +736,7 @@
      }
  
      private boolean checkTotemDeathProtection(DamageSource damageSource) {
-@@ -1361,18 +_,39 @@
+@@ -1362,18 +_,39 @@
              ItemStack itemStack = null;
              DeathProtection deathProtection = null;
  
@@ -786,7 +782,7 @@
 +            // CraftBukkit end
                      serverPlayer.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
                      CriteriaTriggers.USED_TOTEM.trigger(serverPlayer, itemStack);
-                     this.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
+                     itemStack.causeUseVibration(this, GameEvent.ITEM_INTERACT_FINISH);
 @@ -1431,6 +_,7 @@
          if (!this.isRemoved() && !this.dead) {
              Entity entity = damageSource.getEntity();
@@ -795,9 +791,9 @@
              if (killCredit != null) {
                  killCredit.awardKillScore(this, damageSource);
              }
-@@ -1440,68 +_,147 @@
-             }
+@@ -1441,68 +_,147 @@
  
+             this.stopUsingItem();
              if (!this.level().isClientSide() && this.hasCustomName()) {
 -                LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
 +                if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
@@ -869,7 +865,7 @@
              boolean var6 = false;
 -            if (entitySource instanceof WitherBoss) {
 +            if (this.dead && entitySource instanceof WitherBoss) { // Paper
-                 if (serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                 if (serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
                      BlockPos blockPos = this.blockPosition();
                      BlockState blockState = Blocks.WITHER_ROSE.defaultBlockState();
                      if (this.level().getBlockState(blockPos).isAir() && blockState.canSurvive(this.level(), blockPos)) {
@@ -937,7 +933,7 @@
          if (!this.wasExperienceConsumed()
              && (
                  this.isAlwaysExperienceDropper()
-                     || this.lastHurtByPlayerMemoryTime > 0 && this.shouldDropExperience() && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)
+                     || this.lastHurtByPlayerMemoryTime > 0 && this.shouldDropExperience() && level.getGameRules().get(GameRules.MOB_DROPS)
              )) {
 -            ExperienceOrb.award(level, this.position(), this.getExperienceReward(level, entity));
 -        }
@@ -956,7 +952,7 @@
      }
  
      protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
-@@ -1605,9 +_,14 @@
+@@ -1606,9 +_,14 @@
      }
  
      public void knockback(double strength, double x, double z) {
@@ -967,13 +963,13 @@
 +    public void knockback(double strength, double x, double z, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
          strength *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
 -        if (!(strength <= 0.0)) {
--            this.hasImpulse = true;
+-            this.needsSync = true;
 +        if (true || !(strength <= 0.0)) { // CraftBukkit - Call event even when force is 0
-+            // this.hasImpulse = true; // CraftBukkit - Move down
++            // this.needsSync = true; // CraftBukkit - Move down
              Vec3 deltaMovement = this.getDeltaMovement();
  
              while (x * x + z * z < 1.0E-5F) {
-@@ -1616,11 +_,22 @@
+@@ -1617,11 +_,22 @@
              }
  
              Vec3 vec3 = new Vec3(x, 0.0, z).normalize().scale(strength);
@@ -991,13 +987,13 @@
 +                return;
 +            }
 +
-+            this.hasImpulse = true;
++            this.needsSync = true;
 +            this.setDeltaMovement(deltaMovement.add(event.getKnockback().getX(), event.getKnockback().getY(), event.getKnockback().getZ())); // Paper - knockback events
 +            // CraftBukkit end
          }
      }
  
-@@ -1705,7 +_,7 @@
+@@ -1712,7 +_,7 @@
  
      @Override
      public boolean isAlive() {
@@ -1006,7 +1002,7 @@
      }
  
      public boolean isLookingAtMe(LivingEntity entity, double tolerance, boolean scaleByDistance, boolean visual, double... yValues) {
-@@ -1739,9 +_,14 @@
+@@ -1746,9 +_,14 @@
          boolean flag = super.causeFallDamage(fallDistance, damageMultiplier, damageSource);
          int i = this.calculateFallDamage(fallDistance, damageMultiplier);
          if (i > 0) {
@@ -1022,7 +1018,7 @@
              return true;
          } else {
              return flag;
-@@ -1806,7 +_,7 @@
+@@ -1813,7 +_,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damageSource, float damageAmount) {
          if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
@@ -1031,7 +1027,7 @@
              damageAmount = CombatRules.getDamageAfterAbsorb(
                  this, damageAmount, damageSource, this.getArmorValue(), (float)this.getAttributeValue(Attributes.ARMOR_TOUGHNESS)
              );
-@@ -1819,7 +_,8 @@
+@@ -1826,7 +_,8 @@
          if (damageSource.is(DamageTypeTags.BYPASSES_EFFECTS)) {
              return damageAmount;
          } else {
@@ -1041,7 +1037,7 @@
                  int i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int i1 = 25 - i;
                  float f = damageAmount * i1;
-@@ -1856,24 +_,201 @@
+@@ -1863,24 +_,201 @@
          }
      }
  
@@ -1143,14 +1139,14 @@
 +
 +            if (damageSource.getEntity() instanceof net.minecraft.world.entity.player.Player) {
 +                // Paper start - PlayerAttackEntityCooldownResetEvent
-+                //((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++                //((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetOnlyAttackStrengthTicker(); // Moved from Player in order to make the cooldown reset get called after the damage event is fired
 +                if (damageSource.getEntity() instanceof ServerPlayer) {
 +                    ServerPlayer player = (ServerPlayer) damageSource.getEntity();
 +                    if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent(player.getBukkitEntity(), this.getBukkitEntity(), player.getAttackStrengthScale(0F)).callEvent()) {
-+                        player.resetAttackStrengthTicker();
++                        player.resetOnlyAttackStrengthTicker();
 +                    }
 +                } else {
-+                    ((net.minecraft.world.entity.player.Player) damageSource.getEntity()).resetAttackStrengthTicker();
++                    ((net.minecraft.world.entity.player.Player) damageSource.getEntity()).resetOnlyAttackStrengthTicker();
 +                }
 +                // Paper end - PlayerAttackEntityCooldownResetEvent
 +            }
@@ -1253,7 +1249,7 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1902,7 +_,17 @@
+@@ -1908,7 +_,17 @@
      }
  
      public final void setArrowCount(int count) {
@@ -1272,7 +1268,16 @@
      }
  
      public final int getStingerCount() {
-@@ -2059,7 +_,7 @@
+@@ -1955,7 +_,7 @@
+     @Override
+     public void handleDamageEvent(DamageSource damageSource) {
+         this.walkAnimation.setSpeed(1.5F);
+-        this.invulnerableTime = 20;
++        this.invulnerableTime = this.invulnerableDuration; // Paper - configurable invulnerable duration
+         this.hurtDuration = 10;
+         this.hurtTime = this.hurtDuration;
+         SoundEvent hurtSound = this.getHurtSound(damageSource);
+@@ -2084,7 +_,7 @@
  
      @Override
      protected void onBelowWorld() {
@@ -1281,7 +1286,7 @@
      }
  
      protected void updateSwingTime() {
-@@ -2155,8 +_,15 @@
+@@ -2187,8 +_,15 @@
      }
  
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -1299,7 +1304,7 @@
  
      public float getArmorCoverPercentage() {
          int i = 0;
-@@ -2248,14 +_,27 @@
+@@ -2280,14 +_,27 @@
          return this.hasEffect(MobEffects.JUMP_BOOST) ? 0.1F * (this.getEffect(MobEffects.JUMP_BOOST).getAmplifier() + 1.0F) : 0.0F;
      }
  
@@ -1327,7 +1332,7 @@
                  this.addDeltaMovement(new Vec3(-Mth.sin(f) * 0.2, 0.0, Mth.cos(f) * 0.2));
              }
  
-@@ -2415,8 +_,10 @@
+@@ -2470,8 +_,10 @@
      }
  
      public void stopFallFlying() {
@@ -1338,7 +1343,16 @@
      }
  
      private Vec3 updateFallFlyingMovement(Vec3 deltaMovement) {
-@@ -2626,37 +_,15 @@
+@@ -2615,7 +_,7 @@
+ 
+     public void causeExtraKnockback(Entity target, float strength, Vec3 currentMovement) {
+         if (strength > 0.0F && target instanceof LivingEntity livingEntity) {
+-            livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
++            livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
+         }
+     }
+@@ -2691,37 +_,15 @@
          profilerFiller.pop();
          profilerFiller.push("rangeChecks");
  
@@ -1385,9 +1399,9 @@
  
          profilerFiller.pop();
          if (this.isFallFlying()) {
-@@ -2686,16 +_,39 @@
-     @Nullable
-     private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
+@@ -2806,16 +_,39 @@
+ 
+     private @Nullable Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
          Map<EquipmentSlot, ItemStack> map = null;
 +        // Paper start - EntityEquipmentChangedEvent
 +        record EquipmentChangeImpl(org.bukkit.inventory.ItemStack oldItem, org.bukkit.inventory.ItemStack newItem) implements io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange {
@@ -1425,7 +1439,7 @@
                  AttributeMap attributes = this.getAttributes();
                  if (!itemStack.isEmpty()) {
                      this.stopLocationBasedEffects(itemStack, equipmentSlot, attributes);
-@@ -2720,6 +_,8 @@
+@@ -2840,6 +_,8 @@
                      }
                  }
              }
@@ -1434,7 +1448,7 @@
          }
  
          return map;
-@@ -2751,7 +_,7 @@
+@@ -2871,7 +_,7 @@
              list.add(Pair.of(equipmentSlot, itemStack1));
              this.lastEquipmentItems.put(equipmentSlot, itemStack1);
          });
@@ -1443,7 +1457,7 @@
      }
  
      protected void tickHeadTurn(float yBodyRot) {
-@@ -2837,8 +_,10 @@
+@@ -2957,8 +_,10 @@
              if (!flag || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                  if (!this.isInLava() || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                      if ((this.onGround() || flag && fluidHeight <= fluidJumpThreshold) && this.noJumpDelay == 0) {
@@ -1454,7 +1468,7 @@
                      }
                  } else {
                      this.jumpInLiquid(FluidTags.LAVA);
-@@ -2879,7 +_,7 @@
+@@ -2999,7 +_,7 @@
          profilerFiller.pop();
          if (this.level() instanceof ServerLevel serverLevel) {
              profilerFiller.push("freezing");
@@ -1463,7 +1477,7 @@
                  this.setTicksFrozen(Math.max(0, this.getTicksFrozen() - 2));
              }
  
-@@ -2900,6 +_,20 @@
+@@ -3020,6 +_,20 @@
  
          this.pushEntities();
          profilerFiller.pop();
@@ -1484,7 +1498,7 @@
          if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
              this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
          }
-@@ -2922,6 +_,7 @@
+@@ -3042,6 +_,7 @@
          this.checkFallDistanceAccumulation();
          if (!this.level().isClientSide()) {
              if (!this.canGlide()) {
@@ -1492,7 +1506,7 @@
                  this.setSharedFlag(Entity.FLAG_FALL_FLYING, false);
                  return;
              }
-@@ -2961,10 +_,25 @@
+@@ -3081,10 +_,25 @@
      }
  
      protected void pushEntities() {
@@ -1506,20 +1520,20 @@
 +            return;
 +        }
 +
-+        int _int = ((ServerLevel) this.level()).getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
-+        if (_int <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
++        int i = ((ServerLevel) this.level()).getGameRules().get(GameRules.MAX_ENTITY_CRAMMING);
++        if (i <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
 +            return;
 +        }
 +        // Paper end - don't run getEntities if we're not going to use its result
          List<Entity> pushableEntities = this.level().getPushableEntities(this, this.getBoundingBox());
          if (!pushableEntities.isEmpty()) {
              if (this.level() instanceof ServerLevel serverLevel) {
--                int _int = serverLevel.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
+-                int i = serverLevel.getGameRules().get(GameRules.MAX_ENTITY_CRAMMING);
 +                // Paper - don't run getEntities if we're not going to use its result; moved up
-                 if (_int > 0 && pushableEntities.size() > _int - 1 && this.random.nextInt(4) == 0) {
-                     int i = 0;
+                 if (i > 0 && pushableEntities.size() > i - 1 && this.random.nextInt(4) == 0) {
+                     int i1 = 0;
  
-@@ -2980,7 +_,16 @@
+@@ -3100,7 +_,16 @@
                  }
              }
  
@@ -1536,7 +1550,7 @@
                  this.doPush(entity1);
              }
          }
-@@ -2989,16 +_,32 @@
+@@ -3109,16 +_,32 @@
      protected void checkAutoSpinAttack(AABB boundingBoxBeforeSpin, AABB boundingBoxAfterSpin) {
          AABB aabb = boundingBoxBeforeSpin.minmax(boundingBoxAfterSpin);
          List<Entity> entities = this.level().getEntities(this, aabb);
@@ -1570,7 +1584,7 @@
              this.autoSpinAttackTicks = 0;
          }
  
-@@ -3021,10 +_,10 @@
+@@ -3141,10 +_,10 @@
      }
  
      @Override
@@ -1584,7 +1598,7 @@
              this.dismountVehicle(vehicle);
          }
      }
-@@ -3051,7 +_,7 @@
+@@ -3171,7 +_,7 @@
      }
  
      public void onItemPickup(ItemEntity itemEntity) {
@@ -1593,7 +1607,7 @@
          if (owner instanceof ServerPlayer) {
              CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer)owner, itemEntity.getItem(), this);
          }
-@@ -3063,7 +_,7 @@
+@@ -3183,7 +_,7 @@
              && (entity instanceof ItemEntity || entity instanceof AbstractArrow || entity instanceof ExperienceOrb)) {
              ((ServerLevel)this.level())
                  .getChunkSource()
@@ -1602,7 +1616,7 @@
          }
      }
  
-@@ -3077,7 +_,8 @@
+@@ -3197,7 +_,8 @@
          } else {
              Vec3 vec3 = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec31 = new Vec3(entity.getX(), y, entity.getZ());
@@ -1612,7 +1626,7 @@
          }
      }
  
-@@ -3097,13 +_,27 @@
+@@ -3217,13 +_,27 @@
  
      @Override
      public boolean isPickable() {
@@ -1643,7 +1657,7 @@
  
      @Override
      public float getYHeadRot() {
-@@ -3134,7 +_,7 @@
+@@ -3254,7 +_,7 @@
      }
  
      public final void setAbsorptionAmount(float absorptionAmount) {
@@ -1652,7 +1666,7 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3161,6 +_,15 @@
+@@ -3281,6 +_,15 @@
          return (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
      }
  
@@ -1668,19 +1682,7 @@
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -3178,6 +_,11 @@
-             return null;
-         } else {
-             double d = this.getEyeY() - 0.3F;
-+            // Paper start
-+            final ItemStack tmp = stack.copy();
-+            stack.setCount(0);
-+            stack = tmp;
-+            // Paper end
-             ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), d, this.getZ(), stack);
-             itemEntity.setPickUpDelay(40);
-             if (includeThrower) {
-@@ -3209,7 +_,12 @@
+@@ -3328,7 +_,12 @@
  
      protected void updateUsingItem(ItemStack usingItem) {
          usingItem.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
@@ -1694,7 +1696,7 @@
              this.completeUsingItem();
          }
      }
-@@ -3235,10 +_,19 @@
+@@ -3354,10 +_,19 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
@@ -1716,7 +1718,7 @@
              if (!this.level().isClientSide()) {
                  this.setLivingEntityFlag(LIVING_ENTITY_FLAG_IS_USING, true);
                  this.setLivingEntityFlag(LIVING_ENTITY_FLAG_OFF_HAND, hand == InteractionHand.OFF_HAND);
-@@ -3262,7 +_,10 @@
+@@ -3384,7 +_,10 @@
                  }
              } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
                  this.useItem = ItemStack.EMPTY;
@@ -1728,7 +1730,7 @@
              }
          }
      }
-@@ -3301,7 +_,38 @@
+@@ -3423,7 +_,38 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1768,7 +1770,7 @@
                      if (itemStack != this.useItem) {
                          this.setItemInHand(usedItemHand, itemStack);
                      }
-@@ -3331,6 +_,7 @@
+@@ -3457,6 +_,7 @@
          ItemStack itemInHand = this.getItemInHand(this.getUsedItemHand());
          if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInHand, this.useItem)) {
              this.useItem = itemInHand;
@@ -1776,7 +1778,7 @@
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
-@@ -3350,7 +_,10 @@
+@@ -3477,7 +_,10 @@
          }
  
          this.useItem = ItemStack.EMPTY;
@@ -1788,7 +1790,7 @@
      }
  
      public boolean isBlocking() {
-@@ -3374,6 +_,60 @@
+@@ -3500,6 +_,60 @@
          }
      }
  
@@ -1813,7 +1815,7 @@
 +        return this.level().clip(raytrace);
 +    }
 +
-+    public @Nullable net.minecraft.world.phys.EntityHitResult getTargetEntity(int maxDistance) {
++    public net.minecraft.world.phys.@Nullable EntityHitResult getTargetEntity(int maxDistance) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
 +        }
@@ -1849,7 +1851,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3392,6 +_,12 @@
+@@ -3518,6 +_,12 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean broadcastTeleport) {
@@ -1862,7 +1864,7 @@
          double x1 = this.getX();
          double y1 = this.getY();
          double z1 = this.getZ();
-@@ -3414,16 +_,39 @@
+@@ -3540,16 +_,39 @@
              }
  
              if (flag1) {
@@ -1905,7 +1907,7 @@
          } else {
              if (broadcastTeleport) {
                  level.broadcastEntityEvent(this, EntityEvent.TELEPORT);
-@@ -3433,7 +_,7 @@
+@@ -3559,7 +_,7 @@
                  pathfinderMob.getNavigation().stop();
              }
  

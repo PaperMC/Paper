@@ -11,7 +11,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.item.equipment.Equippable;
@@ -69,8 +69,8 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
         this.handle = new Equippable(slot,
                 (equipSound != null) ? CraftSound.bukkitToMinecraftHolder(equipSound) : SoundEvents.ARMOR_EQUIP_GENERIC,
-                Optional.ofNullable(model).map(ResourceLocation::parse).map((k) -> ResourceKey.create(EquipmentAssets.ROOT_ID, k)),
-                Optional.ofNullable(cameraOverlay).map(ResourceLocation::parse),
+                Optional.ofNullable(model).map(Identifier::parse).map((k) -> ResourceKey.create(EquipmentAssets.ROOT_ID, k)),
+                Optional.ofNullable(cameraOverlay).map(Identifier::parse),
                 Optional.ofNullable(allowedEntities),
                 (dispensable != null) ? dispensable : true,
                 (swappable != null) ? swappable : true,
@@ -132,7 +132,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public NamespacedKey getModel() {
-        return this.handle.assetId().map((a) -> CraftNamespacedKey.fromMinecraft(a.location())).orElse(null);
+        return this.handle.assetId().map((a) -> CraftNamespacedKey.fromMinecraft(a.identifier())).orElse(null);
     }
 
     @Override

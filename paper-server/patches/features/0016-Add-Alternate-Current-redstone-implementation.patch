@@ -2326,10 +2326,10 @@ index 0000000000000000000000000000000000000000..298076a0db4e6ee6e4775ac43bf749d9
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index ce6f83c83b0235d59b4cadd248ff218985978ab5..71de8d8920eb33d15a18653dcef370c8e1a43712 100644
+index d7238270a6df8d1182874b46b588b971ca6f7a0e..db2054e84f5717a37683d57890dcd585769effbc 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -221,6 +221,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -227,6 +227,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
      public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
      public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
@@ -2337,7 +2337,7 @@ index ce6f83c83b0235d59b4cadd248ff218985978ab5..71de8d8920eb33d15a18653dcef370c8
  
      @Override
      public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
-@@ -2660,6 +2661,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2696,6 +2697,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          return this.debugSynchronizers;
      }
  
@@ -2348,14 +2348,14 @@ index ce6f83c83b0235d59b4cadd248ff218985978ab5..71de8d8920eb33d15a18653dcef370c8
 +    }
 +    // Paper end - optimize redstone (Alternate Current)
 +
-     final class EntityCallbacks implements LevelCallback<Entity> {
-         @Override
-         public void onCreated(Entity entity) {
+     public boolean isAllowedToEnterPortal(Level level) {
+         return level.dimension() != Level.NETHER || this.getGameRules().get(GameRules.ALLOW_ENTERING_NETHER_USING_PORTALS);
+     }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 439abba4f371343dfd8e5ede7c20050ca049fcd2..96fa7390a4bcfa7bdf2cf5346f2de895ac085203 100644
+index 3d5a869d1d7da490ec843ab2137ceeddc0a5fa0d..66f15154fa59435650f3881f50b45b5756088a2f 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -2078,6 +2078,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2050,6 +2050,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          return this.palettedContainerFactory;
      }
  
@@ -2374,10 +2374,10 @@ index 439abba4f371343dfd8e5ede7c20050ca049fcd2..96fa7390a4bcfa7bdf2cf5346f2de895
          NONE("none"),
          BLOCK("block"),
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 07d2b9b7ebea9827ef7a535c090b311a3c27d5c6..a07d9237d227fe6d419d8a9bc44fc623b244ad3e 100644
+index d7ff98f4ecadd37f22d0a38d94a5975db60d6285..6d98bc37d88459d1e0a171b52bbff5810d775c38 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -265,7 +265,7 @@ public class RedStoneWireBlock extends Block {
+@@ -264,7 +264,7 @@ public class RedStoneWireBlock extends Block {
          return state.isFaceSturdy(level, pos, Direction.UP) || state.is(Blocks.HOPPER);
      }
  
@@ -2386,7 +2386,7 @@ index 07d2b9b7ebea9827ef7a535c090b311a3c27d5c6..a07d9237d227fe6d419d8a9bc44fc623
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
  
-@@ -347,7 +347,13 @@ public class RedStoneWireBlock extends Block {
+@@ -346,7 +346,13 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
@@ -2401,7 +2401,7 @@ index 07d2b9b7ebea9827ef7a535c090b311a3c27d5c6..a07d9237d227fe6d419d8a9bc44fc623
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -364,7 +370,13 @@ public class RedStoneWireBlock extends Block {
+@@ -363,7 +369,13 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -2416,7 +2416,7 @@ index 07d2b9b7ebea9827ef7a535c090b311a3c27d5c6..a07d9237d227fe6d419d8a9bc44fc623
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -387,9 +399,15 @@ public class RedStoneWireBlock extends Block {
+@@ -386,9 +398,15 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
          if (!level.isClientSide()) {
@@ -2434,10 +2434,10 @@ index 07d2b9b7ebea9827ef7a535c090b311a3c27d5c6..a07d9237d227fe6d419d8a9bc44fc623
                      dropResources(state, level, pos);
                      level.removeBlock(pos, false);
 diff --git a/net/minecraft/world/level/redstone/ExperimentalRedstoneUtils.java b/net/minecraft/world/level/redstone/ExperimentalRedstoneUtils.java
-index 83f5da3e24834882193b9d7e3a788517e4b12b55..0c50a0bbbef1229230712b7c04364fea06859674 100644
+index 413d6b66a7e368ebb590064b0d0dd47b64c68659..05e99653bb1f3b392be86f9fa9814b87ca301bca 100644
 --- a/net/minecraft/world/level/redstone/ExperimentalRedstoneUtils.java
 +++ b/net/minecraft/world/level/redstone/ExperimentalRedstoneUtils.java
-@@ -17,6 +17,11 @@ public class ExperimentalRedstoneUtils {
+@@ -16,6 +16,11 @@ public class ExperimentalRedstoneUtils {
              if (front != null) {
                  orientation = orientation.withFront(front);
              }
