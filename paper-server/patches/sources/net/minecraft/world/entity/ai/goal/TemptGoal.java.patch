@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/goal/TemptGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/TemptGoal.java
-@@ -23,7 +_,7 @@
+@@ -23,12 +_,13 @@
      private double pz;
      private double pRotX;
      private double pRotY;
@@ -9,17 +9,25 @@
      private int calmDown;
      private boolean isRunning;
      private final Predicate<ItemStack> items;
-@@ -54,8 +_,21 @@
+     private final boolean canScare;
+     private final double stopDistance;
++    private int temptEventCooldown; // Paper
+ 
+     public TemptGoal(PathfinderMob mob, double speedModifier, Predicate<ItemStack> items, boolean canScare) {
+         this((Mob)mob, speedModifier, items, canScare, 2.5);
+@@ -54,8 +_,23 @@
              this.calmDown--;
              return false;
          } else {
 -            this.player = getServerLevel(this.mob)
 +            // this.player = getServerLevel(this.mob).getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
-+            // Paper start - Fix EntityTargetLivingEntityEvent spam
++            // Paper start - Throttle EntityTargetLivingEntityEvent
 +            LivingEntity candidate = getServerLevel(this.mob)
                  .getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
 +
-+            if (candidate != null && this.player != candidate) {
++            if (candidate != null && (candidate != this.player || --this.temptEventCooldown <= 0)) {
++                this.temptEventCooldown = 10;
++
 +                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, candidate, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
 +                if (event.isCancelled()) {
 +                    return false;
@@ -28,7 +36,7 @@
 +            }
 +
 +            this.player = candidate;
-+            // Paper end - Fix EntityTargetLivingEntityEvent spam
++            // Paper end - Throttle EntityTargetLivingEntityEvent
              return this.player != null;
          }
      }
