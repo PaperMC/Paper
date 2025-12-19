@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerProfession> {

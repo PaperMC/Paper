@@ -143,7 +143,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isEdible() {
-        return this.getHandle().components().has(DataComponents.FOOD);
+        return this.getHandle().components().has(DataComponents.FOOD) && this.getHandle().components().has(DataComponents.CONSUMABLE);
     }
 
     @Override
@@ -160,11 +160,11 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     public int getBurnDuration() {
         FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
         net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
-        
+
         if (!fuelValues.isFuel(stack)) {
             return 0;
         }
-        
+
         return fuelValues.burnDuration(stack);
     }
 

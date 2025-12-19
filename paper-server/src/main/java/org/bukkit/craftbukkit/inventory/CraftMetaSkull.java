@@ -4,13 +4,15 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.Util;
+import com.mojang.datafixers.util.Either;
+import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -33,11 +35,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
-    static final ItemMetaKeyType<ResourceLocation> NOTE_BLOCK_SOUND = new ItemMetaKeyType<>(DataComponents.NOTE_BLOCK_SOUND, "note_block_sound");
+    static final ItemMetaKeyType<Identifier> NOTE_BLOCK_SOUND = new ItemMetaKeyType<>(DataComponents.NOTE_BLOCK_SOUND, "note_block_sound");
     static final int MAX_OWNER_LENGTH = 16;
 
     private ResolvableProfile profile;
-    private ResourceLocation noteBlockSound;
+    private Identifier noteBlockSound;
 
     CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
@@ -91,7 +93,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         tag.getCompound(CraftMetaSkull.BLOCK_ENTITY_TAG.NBT)
             .flatMap(blockEntityTag -> blockEntityTag.copy().getString(CraftMetaSkull.NOTE_BLOCK_SOUND.NBT))
             .ifPresent(noteBlockSound -> {
-                this.noteBlockSound = ResourceLocation.tryParse(noteBlockSound);
+                this.noteBlockSound = Identifier.tryParse(noteBlockSound);
             });
     }
 
@@ -146,7 +148,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
-    public void setPlayerProfile(@Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
+    public void setPlayerProfile(com.destroystokyo.paper.profile.@Nullable PlayerProfile profile) {
         setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asResolvableProfileCopy(profile));
     }
 
@@ -159,12 +161,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (this.hasOwner()) {
-            if (this.profile.id().filter(u -> !u.equals(Util.NIL_UUID)).isPresent()) {
-                return Bukkit.getOfflinePlayer(this.profile.id().get());
+            final GameProfile gameProfile = this.profile.partialProfile(); // The partial profile is always guaranteed to have a non-null uuid and name.
+            if (Objects.equals(gameProfile.id(), Util.NIL_UUID)) {
+                return Bukkit.getOfflinePlayer(gameProfile.id());
             }
 
-            if (this.profile.name().filter(s -> !s.isEmpty()).isPresent()) {
-                return Bukkit.getOfflinePlayer(this.profile.name().get());
+            if (!gameProfile.name().isEmpty()) {
+                return Bukkit.getOfflinePlayer(gameProfile.name());
             }
         }
 
@@ -180,13 +183,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (name == null) {
             this.setProfile(null);
         } else {
-            // Paper start - Use Online Players Skull
-            GameProfile newProfile = null;
+            // Attempt to fetch an already resolved player profile in case the player is currently online.
             net.minecraft.server.level.ServerPlayer player = net.minecraft.server.MinecraftServer.getServer().getPlayerList().getPlayerByName(name);
-            if (player != null) newProfile = player.getGameProfile();
-            if (newProfile == null) newProfile = new GameProfile(Util.NIL_UUID, name);
-            this.setProfile(new ResolvableProfile(newProfile));
-            // Paper end
+            this.setProfile(
+                player != null
+                    ? ResolvableProfile.createResolved(player.getGameProfile())
+                    : new ResolvableProfile.Dynamic(Either.left(name), PlayerSkin.Patch.EMPTY)
+            );
         }
 
         return true;
@@ -197,9 +200,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (owner == null) {
             this.setProfile(null);
         } else if (owner instanceof CraftPlayer craftPlayer) {
-            this.setProfile(new ResolvableProfile(craftPlayer.getProfile()));
+            this.setProfile(ResolvableProfile.createResolved(craftPlayer.getProfile()));
         } else {
-            this.setProfile(new ResolvableProfile(new GameProfile(owner.getUniqueId(), (owner.getName() == null) ? "" : owner.getName())));
+            this.setProfile(new ResolvableProfile.Dynamic(Either.right(owner.getUniqueId()), PlayerSkin.Patch.EMPTY));
         }
 
         return true;
@@ -219,7 +222,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Deprecated
     public void setOwnerProfile(PlayerProfile profile) {
         if (profile instanceof final com.destroystokyo.paper.profile.SharedPlayerProfile sharedProfile) {
-            this.setProfile(CraftPlayerProfile.validateSkullProfile(sharedProfile.buildResolvableProfile()));
+            this.setProfile(sharedProfile.buildResolvableProfile());
         } else {
             this.setProfile(null);
         }

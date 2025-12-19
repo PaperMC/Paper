@@ -19,8 +19,7 @@ public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGameP
 
     @Override
     public void reenterConfiguration() {
-        if (this.handle.connection.savedPlayerForLoginEventLegacy != null) {
-            HorriblePlayerLoginEventHack.warnReenterConfiguration();
+        if (HorriblePlayerLoginEventHack.warnReenterConfiguration(this.handle.connection)) {
             return;
         }
         this.handle.switchToConfig();
@@ -39,5 +38,10 @@ public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGameP
     @Override
     public Set<String> getListeningPluginChannels() {
         return getPlayer().getListeningPluginChannels();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return getPlayer().isConnected();
     }
 }

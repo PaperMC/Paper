@@ -10,11 +10,16 @@ public interface PlayerConnection {
     /**
      * Disconnects the player connection.
      * <p>
-     * Note that calling this during connection related events may caused undefined behavior.
+     * Note that calling this during connection related events may cause undefined behavior.
      *
      * @param component disconnect reason
      */
     void disconnect(Component component);
+
+    /**
+     * {@return whether this connection is currently open and active}
+     */
+    boolean isConnected();
 
     /**
      * Gets if this connection originated from a transferred connection.

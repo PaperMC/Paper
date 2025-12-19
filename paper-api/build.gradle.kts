@@ -1,3 +1,5 @@
+import paper.libs.com.google.gson.Gson
+
 plugins {
     `java-library`
     `maven-publish`
@@ -10,8 +12,7 @@ java {
 }
 
 val annotationsVersion = "26.0.2"
-// Keep in sync with paper-server adventure-text-serializer-ansi dep
-val adventureVersion = "4.24.0"
+val adventureVersion = "4.25.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.16"
 val log4jVersion = "2.24.1"
@@ -137,20 +138,36 @@ configure<PublishingExtension> {
     }
 }
 
-val generateApiVersioningFile by tasks.registering {
-    inputs.property("version", project.version)
-    val pomProps = layout.buildDirectory.file("pom.properties")
-    outputs.file(pomProps)
-    val projectVersion = project.version
-    doLast {
-        pomProps.get().asFile.writeText("version=$projectVersion")
+abstract class GenerateApiVersioningFile : DefaultTask() {
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @get:Input
+    abstract val projectVersion: Property<String>
+
+    @get:Input
+    abstract val apiVersion: Property<String>
+
+    @TaskAction
+    fun generate() {
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        val map = mapOf(
+            "version" to projectVersion.get(),
+            "currentApiVersion" to apiVersion.get()
+        )
+        file.writeText(Gson().toJson(map))
     }
 }
 
+val generateApiVersioningFile = tasks.register<GenerateApiVersioningFile>("generateApiVersioningFile") {
+    outputFile.set(layout.buildDirectory.file("apiVersioning.json"))
+    projectVersion.set(project.version.toString())
+    apiVersion.set(rootProject.providers.gradleProperty("apiVersion"))
+}
+
 tasks.jar {
-    from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
-        into("META-INF/maven/${project.group}/${project.name}")
-    }
+    from(generateApiVersioningFile.flatMap { it.outputFile })
     manifest {
         attributes(
             "Automatic-Module-Name" to "org.bukkit"
@@ -171,10 +188,10 @@ tasks.withType<Javadoc>().configureEach {
     options.isDocFilesSubDirs = true
     options.links(
         "https://guava.dev/releases/33.3.1-jre/api/docs/",
-        "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
-        "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/",
-        "https://javadoc.io/doc/org.joml/joml/1.10.8/",
-        "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
+        "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
+        "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
+        "https://www.javadocs.dev/org.joml/joml/1.10.8/",
+        "https://www.javadocs.dev/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
         "https://jd.advntr.dev/api/$adventureVersion/",
         "https://jd.advntr.dev/key/$adventureVersion/",
@@ -183,9 +200,9 @@ tasks.withType<Javadoc>().configureEach {
         "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
-        "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
+        "https://www.javadocs.dev/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
-        "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
+        "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")
 
@@ -232,16 +249,4 @@ val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJar
 }
 tasks.check {
     dependsOn(scanJarForBadCalls)
-}
-
-if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
-    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-        mcVersion.set(providers.gradleProperty("mcVersion"))
-        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-        classpath.from(configurations.compileClasspath)
-    }
-    tasks.check {
-        dependsOn(scanJarForOldGeneratedCode)
-    }
 }

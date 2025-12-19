@@ -17,13 +17,13 @@ import org.bukkit.potion.PotionEffectType;
 
 public class CraftMushroomCow extends CraftAbstractCow implements MushroomCow, PaperShearable {
 
-    public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.MushroomCow entity) {
+    public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.cow.MushroomCow entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.MushroomCow getHandle() {
-        return (net.minecraft.world.entity.animal.MushroomCow) this.entity;
+    public net.minecraft.world.entity.animal.cow.MushroomCow getHandle() {
+        return (net.minecraft.world.entity.animal.cow.MushroomCow) this.entity;
     }
 
     @Override
@@ -146,17 +146,17 @@ public class CraftMushroomCow extends CraftAbstractCow implements MushroomCow, P
         this.getHandle().stewEffects = new SuspiciousStewEffects(nmsPairs);
     }
 
-    public static Variant variantMinecraftToBukkit(net.minecraft.world.entity.animal.MushroomCow.Variant variant) {
+    public static Variant variantMinecraftToBukkit(net.minecraft.world.entity.animal.cow.MushroomCow.Variant variant) {
         return switch (variant) {
           case RED -> Variant.RED;
           case BROWN -> Variant.BROWN;
         };
     }
 
-    public static net.minecraft.world.entity.animal.MushroomCow.Variant variantBukkitToMinecraft(Variant variant) {
+    public static net.minecraft.world.entity.animal.cow.MushroomCow.Variant variantBukkitToMinecraft(Variant variant) {
         return switch (variant) {
-          case RED -> net.minecraft.world.entity.animal.MushroomCow.Variant.RED;
-          case BROWN -> net.minecraft.world.entity.animal.MushroomCow.Variant.BROWN;
+          case RED -> net.minecraft.world.entity.animal.cow.MushroomCow.Variant.RED;
+          case BROWN -> net.minecraft.world.entity.animal.cow.MushroomCow.Variant.BROWN;
         };
     }
 }

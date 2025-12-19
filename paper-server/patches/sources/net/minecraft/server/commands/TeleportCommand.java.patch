@@ -1,35 +1,11 @@
 --- a/net/minecraft/server/commands/TeleportCommand.java
 +++ b/net/minecraft/server/commands/TeleportCommand.java
-@@ -290,7 +_,31 @@
+@@ -263,7 +_,7 @@
              float f1 = relatives.contains(Relative.X_ROT) ? xRot - target.getXRot() : xRot;
              float f2 = Mth.wrapDegrees(f);
              float f3 = Mth.wrapDegrees(f1);
 -            if (target.teleportTo(level, d, d1, d2, relatives, f2, f3, true)) {
-+            // CraftBukkit start - Teleport event
-+            boolean result;
-+            if (target instanceof final net.minecraft.server.level.ServerPlayer player) {
-+                result = player.teleportTo(level, d, d1, d2, relatives, f2, f3, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND);
-+            } else {
-+                org.bukkit.Location to = new org.bukkit.Location(level.getWorld(), d, d1, d2, f2, f3);
-+                org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
-+                level.getCraftServer().getPluginManager().callEvent(event);
-+                if (event.isCancelled() || event.getTo() == null) { // Paper
-+                    return;
-+                }
-+                to = event.getTo(); // Paper - actually track new location
-+
-+                d = to.getX();
-+                d1 = to.getY();
-+                d2 = to.getZ();
-+                f2 = to.getYaw();
-+                f3 = to.getPitch();
-+                level = ((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle();
-+
-+                result = target.teleportTo(level, d, d1, d2, relatives, f2, f3, true);
-+            }
-+
-+            if (result) {
-+                // CraftBukkit end
++            if (target.teleportTo(level, d, d1, d2, relatives, f2, f3, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND)) { // Paper - teleport cause
                  if (lookAt != null) {
                      lookAt.perform(source, target);
                  }

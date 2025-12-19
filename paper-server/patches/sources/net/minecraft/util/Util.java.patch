@@ -1,0 +1,115 @@
+--- a/net/minecraft/util/Util.java
++++ b/net/minecraft/util/Util.java
+@@ -95,9 +_,25 @@
+     private static final int DEFAULT_MAX_THREADS = 255;
+     private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
+-    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
++    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
+     private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
+-    private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
++    public static final TracingExecutor DIMENSION_DATA_IO_POOL = makeExtraIoExecutor("Dimension-Data-IO-Worker-"); // Paper - Separate dimension data IO pool
++    // Paper start - Limit download pool size
++    private static final TracingExecutor DOWNLOAD_POOL = new TracingExecutor(Executors.newFixedThreadPool(4, new java.util.concurrent.ThreadFactory() {
++        private final AtomicInteger count = new AtomicInteger();
++
++        @Override
++        public Thread newThread(Runnable run) {
++            Thread ret = new Thread(run);
++            ret.setDaemon(true);
++            ret.setName("Download-" + this.count.getAndIncrement());
++            ret.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
++                LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
++            });
++            return ret;
++        }
++    }));
++    // Paper end - Limit download pool size
+     private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
+     public static final int LINEAR_LOOKUP_THRESHOLD = 8;
+     private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
+@@ -116,6 +_,7 @@
+         .findFirst()
+         .orElseThrow(() -> new IllegalStateException("No jar file system provider found"));
+     private static Consumer<String> thePauser = string -> {};
++    public static final double COLLISION_EPSILON = 1.0E-7; // Paper - Check distance in entity interactions
+ 
+     public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
+         return Collectors.toMap(Entry::getKey, Entry::getValue);
+@@ -138,7 +_,7 @@
+     }
+ 
+     public static long getNanos() {
+-        return timeSource.getAsLong();
++        return System.nanoTime(); // Paper
+     }
+ 
+     public static long getEpochMillis() {
+@@ -149,9 +_,10 @@
+         return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
+     }
+ 
+-    private static TracingExecutor makeExecutor(String name) {
++    private static TracingExecutor makeExecutor(String name, final int priorityModifier) { // Paper - Perf: add priority
+         int i = maxAllowedExecutorThreads();
+-        ExecutorService directExecutorService;
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        final ExecutorService directExecutorService;
+         if (i <= 0) {
+             directExecutorService = MoreExecutors.newDirectExecutorService();
+         } else {
+@@ -176,16 +_,30 @@
+                         super.onTermination(throwOnTermination);
+                     }
+                 };
++                forkJoinWorkerThread.setPriority(Thread.NORM_PRIORITY + priorityModifier); // Paper - Deprioritize over main
+                 forkJoinWorkerThread.setName(string);
+                 return forkJoinWorkerThread;
+-            }, Util::onThreadException, true);
++            }, Util::onThreadException, true, 0, Integer.MAX_VALUE, 1, null, 365, TimeUnit.DAYS); // Paper - do not expire threads
+         }
+ 
+         return new TracingExecutor(directExecutorService);
+     }
+ 
+     public static int maxAllowedExecutorThreads() {
+-        return Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        final int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int maxExecutorThreads;
++        if (cpus <= 4) {
++            maxExecutorThreads = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            maxExecutorThreads = Math.max(3, cpus - 2);
++        } else {
++            maxExecutorThreads = cpus * 2 / 3;
++        }
++        maxExecutorThreads = Math.min(8, maxExecutorThreads);
++        return Integer.getInteger("Paper.WorkerThreadCount", maxExecutorThreads);
++        // Paper end - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
+     }
+ 
+     private static int getMaxThreads() {
+@@ -235,6 +_,21 @@
+             return thread;
+         }));
+     }
++
++    // Paper start - Separate dimension data IO pool
++    private static TracingExecutor makeExtraIoExecutor(String namePrefix) {
++        AtomicInteger atomicInteger = new AtomicInteger(1);
++        return new TracingExecutor(Executors.newFixedThreadPool(4, runnable -> {
++            Thread thread = new Thread(runnable);
++            String string2 = namePrefix + atomicInteger.getAndIncrement();
++            TracyClient.setThreadName(string2, namePrefix.hashCode());
++            thread.setName(string2);
++            thread.setDaemon(false);
++            thread.setUncaughtExceptionHandler(Util::onThreadException);
++            return thread;
++        }));
++    }
++    // Paper end - Separate dimension data IO pool
+ 
+     public static void throwAsRuntime(Throwable throwable) {
+         throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);

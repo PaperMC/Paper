@@ -17,23 +17,27 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerSignOpenEvent;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<T> implements Sign {
 
-    private final CraftSignSide front;
-    private final CraftSignSide back;
+    private @MonotonicNonNull CraftSignSide front;
+    private @MonotonicNonNull CraftSignSide back;
 
     public CraftSign(World world, T blockEntity) {
         super(world, blockEntity);
-        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
-        this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
     protected CraftSign(CraftSign<T> state, Location location) {
         super(state, location);
-        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
-        this.back = new CraftSignSide(this.getSnapshot().getBackText());
+    }
+
+    @Override
+    protected void load(T blockEntity) {
+        super.load(blockEntity);
+        this.front = new CraftSignSide(blockEntity.getFrontText());
+        this.back = new CraftSignSide(blockEntity.getBackText());
     }
 
     // Paper start

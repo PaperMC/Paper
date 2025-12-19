@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import java.util.Locale;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.EnchantmentTags;
@@ -20,16 +20,8 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftEnchantment extends Enchantment implements Holderable<net.minecraft.world.item.enchantment.Enchantment> {
 
-    public static Enchantment minecraftToBukkit(net.minecraft.world.item.enchantment.Enchantment minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT);
-    }
-
     public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
-        return CraftEnchantment.minecraftToBukkit(minecraft.value());
-    }
-
-    public static net.minecraft.world.item.enchantment.Enchantment bukkitToMinecraft(Enchantment bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ENCHANTMENT);
     }
 
     public static Holder<net.minecraft.world.item.enchantment.Enchantment> bukkitToMinecraftHolder(Enchantment bukkit) {
@@ -236,7 +228,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
 
     @Override
     public String getTranslationKey() {
-        return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().location());
+        return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().identifier());
     }
 
     @Override
