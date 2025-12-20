@@ -232,7 +232,7 @@ public class WorldCreator {
 
     /**
      * Sets if this world should compute its spawn location using vanilla spawn
-     * location mechanics. This causes chunk loads on world creation and is enabled by default.
+     * location mechanics. This causes chunk loads on world creation on the main thread and is enabled by default.
      *
      * @param computeSpawnLocation Should compute spawn location
      * @return This object, for chaining
