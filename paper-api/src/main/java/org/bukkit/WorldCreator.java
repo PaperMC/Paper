@@ -247,6 +247,8 @@ public class WorldCreator {
     /**
      * Gets if this world should compute its spawn location using vanilla spawn
      * location mechanics. This causes chunk loads on world creation.
+     * <p>
+     * This also causes bonus chests to no longer be generated.
      *
      * @return if it computes spawn location
      */
