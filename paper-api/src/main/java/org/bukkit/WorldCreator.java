@@ -242,7 +242,7 @@ public class WorldCreator {
      * @return This object, for chaining
      */
     @NotNull
-    public WorldCreator forcedSpawnLocation(Location computedSpawnLocation) {
+    public WorldCreator forcedSpawnLocation(@Nullable Location computedSpawnLocation) {
         this.spawnLocationOverride = computedSpawnLocation == null ? null : computedSpawnLocation.clone();
         return this;
     }
