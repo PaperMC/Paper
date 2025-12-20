@@ -1,6 +1,11 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -186,11 +_,13 @@
+@@ -182,15 +_,18 @@
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.ScoreboardSaveData;
++import org.bukkit.craftbukkit.util.CraftLocation;
+ import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, ChunkIOErrorReporter {
@@ -245,7 +250,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -391,31 +_,133 @@
+@@ -391,31 +_,134 @@
          }
      }
  
@@ -368,7 +373,7 @@
 +        this.addLevel(serverLevel);
 +        this.initWorld(serverLevel, serverLevelData, worldOptions, true);
 +    }
-+    public void initWorld(ServerLevel serverLevel, net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, WorldOptions worldOptions, boolean computeSpawnLocation) {
++    public void initWorld(ServerLevel serverLevel, net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, WorldOptions worldOptions, org.bukkit.Location forcedSpawnLocation) {
 +        final boolean isDebugWorld = this.worldData.isDebugWorld();
 +        if (serverLevel.generator != null) {
 +            serverLevel.getWorld().getPopulators().addAll(serverLevel.generator.getDefaultPopulators(serverLevel.getWorld()));
@@ -380,10 +385,11 @@
              try {
 -                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, this.levelLoadListener);
 +                // Paper start - Allow zeroing spawn location
-+                if (computeSpawnLocation) {
++                if (forcedSpawnLocation == null) {
 +                    setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, serverLevel.levelLoadListener); // Paper - per world level load listener & rework world loading process
 +                } else {
-+                    serverLevelData.setSpawn(LevelData.RespawnData.of(serverLevel.dimension(), BlockPos.ZERO, 0.0F, 0.0F));
++                    ResourceKey<Level> dimension = forcedSpawnLocation.isWorldLoaded() ? ((org.bukkit.craftbukkit.CraftWorld) forcedSpawnLocation.getWorld()).getHandle().dimension() : serverLevel.dimension(); // Default to target world if possibl, else the current world
++                    serverLevelData.setSpawn(LevelData.RespawnData.of(dimension, org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(forcedSpawnLocation), forcedSpawnLocation.getYaw(), forcedSpawnLocation.getPitch()));
 +                }
 +                // Paper end - Allow zeroing spawn location
                  serverLevelData.setInitialized(true);
