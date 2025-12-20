@@ -9,19 +9,48 @@
                      ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.Data::getTravelTimeInTicks)
                  )
                  .apply(
-@@ -212,7 +_,14 @@
+@@ -212,7 +_,13 @@
                      return false;
                  } else {
                      Vec3 vec3 = position.get();
 -                    if (!vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context)) {
-+                    // CraftBukkit start
++                    // Paper start - game event events
 +                    boolean defaultCancel = !vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context);
-+                    Entity entity = context.sourceEntity();
-+                    org.bukkit.event.block.BlockReceiveGameEvent event1 = new org.bukkit.event.block.BlockReceiveGameEvent(org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(gameEvent), org.bukkit.craftbukkit.block.CraftBlock.at(level, BlockPos.containing(vec3)), (entity == null) ? null : entity.getBukkitEntity());
-+                    event1.setCancelled(defaultCancel);
-+                    level.getCraftServer().getPluginManager().callEvent(event1);
-+                    if (event1.isCancelled()) {
-+                        // CraftBukkit end
++                    // TODO add special sub vibration events to control LOS check (GameEvent != Vibration)
++                    io.papermc.paper.event.ReceiveGameEvent event = vibrationUser.createReceiveGameEvent(level, gameEvent, context, vec3);
++                    event.setCancelled(defaultCancel);
++                    if (!event.callEvent()) {
++                        // Paper end - game event events
                          return false;
                      } else if (isOccluded(level, pos, vec3)) {
                          return false;
+@@ -410,5 +_,29 @@
+ 
+         default void onDataChanged() {
+         }
++
++        // Paper start - add game event events
++        default io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(final ServerLevel world, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
++            return createBlockEvent(world, event, context, position);
++        }
++
++        static io.papermc.paper.event.ReceiveGameEvent createBlockEvent(final ServerLevel world, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
++            return new org.bukkit.event.block.BlockReceiveGameEvent(
++                org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(event),
++                org.bukkit.craftbukkit.block.CraftBlock.at(world, BlockPos.containing(position)),
++                net.minecraft.Optionull.map(context.sourceEntity(), Entity::getBukkitEntity),
++                net.minecraft.Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData)
++            );
++        }
++
++        static io.papermc.paper.event.ReceiveGameEvent createEntityEvent(final Holder<GameEvent> event, final GameEvent.Context context, final Entity receiver) {
++            return new io.papermc.paper.event.entity.EntityReceiveGameEvent(
++                receiver.getBukkitEntity(),
++                org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(event),
++                net.minecraft.Optionull.map(context.sourceEntity(), Entity::getBukkitEntity),
++                net.minecraft.Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData)
++            );
++        }
++        // Paper end - add game event events
+     }
+ }
