@@ -1104,7 +1104,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Key getWaypointStyle() {
-        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.location());
+        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.identifier());
     }
 
     @Override
