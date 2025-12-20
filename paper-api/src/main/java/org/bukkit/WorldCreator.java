@@ -24,6 +24,7 @@ public class WorldCreator {
     private String generatorSettings = "";
     private boolean hardcore = false;
     private boolean bonusChest = false;
+    private boolean computeSpawnLocation = true;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -227,6 +228,30 @@ public class WorldCreator {
         this.type = type;
 
         return this;
+    }
+
+    /**
+     * Sets if this world should compute its spawn location using vanilla spawn
+     * location mechanics. This causes chunk loads on world creation and is enabled by default.
+     *
+     * @param computeSpawnLocation Should compute spawn location
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator computeSpawnLocation(boolean computeSpawnLocation) {
+        this.computeSpawnLocation = computeSpawnLocation;
+
+        return this;
+    }
+
+    /**
+     * Gets if this world should compute its spawn location using vanilla spawn
+     * location mechanics. This causes chunk loads on world creation.
+     *
+     * @return if it computes spawn location
+     */
+    public boolean computeSpawnLocation() {
+        return computeSpawnLocation;
     }
 
     /**
