@@ -1306,7 +1306,7 @@ public final class CraftServer implements Server {
         }
 
         this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
-        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions(), creator.computeSpawnLocation());
+        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions(), creator.forcedSpawnLocation());
 
         serverLevel.setSpawnSettings(true);
         // Paper - Put world into worldlist before initing the world; move up

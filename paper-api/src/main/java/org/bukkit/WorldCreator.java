@@ -24,7 +24,8 @@ public class WorldCreator {
     private String generatorSettings = "";
     private boolean hardcore = false;
     private boolean bonusChest = false;
-    private boolean computeSpawnLocation = true;
+    @Nullable
+    private Location spawnLocationOverride = null;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -231,29 +232,33 @@ public class WorldCreator {
     }
 
     /**
-     * Sets if this world should compute its spawn location using vanilla spawn
-     * location mechanics. This causes chunk loads on world creation on the main thread and is enabled by default.
+     * Sets the spawn location that this world will have on creation.
+     * This overrides vanilla / custom generator behavior and will not cause any chunk loads.
+     * As a result, the bonus chest will not be spawned if this is set.
      *
-     * @param computeSpawnLocation Should compute spawn location
+     *
+     * @param computedSpawnLocation Spawn location, which can have a null world to indicate the world being created.
+     *                              or null, to use vanilla behavior.
      * @return This object, for chaining
      */
     @NotNull
-    public WorldCreator computeSpawnLocation(boolean computeSpawnLocation) {
-        this.computeSpawnLocation = computeSpawnLocation;
-
+    public WorldCreator forcedSpawnLocation(Location computedSpawnLocation) {
+        this.spawnLocationOverride = computedSpawnLocation == null ? null : computedSpawnLocation.clone();
         return this;
     }
 
     /**
-     * Gets if this world should compute its spawn location using vanilla spawn
-     * location mechanics. This causes chunk loads on world creation.
-     * <p>
-     * This also causes bonus chests to no longer be generated.
+     * Gets the spawn location that will be set for this world on creation.
      *
-     * @return if it computes spawn location
+     * @return the force computed spawn location
      */
-    public boolean computeSpawnLocation() {
-        return computeSpawnLocation;
+    @Nullable
+    public Location forcedSpawnLocation() {
+        if (this.spawnLocationOverride == null) {
+            return null;
+        }
+
+        return this.spawnLocationOverride.clone();
     }
 
     /**
