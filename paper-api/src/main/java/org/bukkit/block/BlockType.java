@@ -47,6 +47,7 @@ import org.bukkit.block.data.type.Cocoa;
 import org.bukkit.block.data.type.CommandBlock;
 import org.bukkit.block.data.type.Comparator;
 import org.bukkit.block.data.type.CopperBulb;
+import org.bukkit.block.data.type.CopperGolemStatue;
 import org.bukkit.block.data.type.CoralWallFan;
 import org.bukkit.block.data.type.Crafter;
 import org.bukkit.block.data.type.CreakingHeart;
@@ -100,6 +101,7 @@ import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.block.data.type.SculkShrieker;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
+import org.bukkit.block.data.type.Shelf;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
@@ -190,7 +192,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     //<editor-fold desc="BlockTypes" defaultstate="collapsed">
     // Start generate - BlockType
-    // @GeneratedFrom 1.21.8
     BlockType.Typed<Switch> ACACIA_BUTTON = getBlockType("acacia_button");
 
     BlockType.Typed<Door> ACACIA_DOOR = getBlockType("acacia_door");
@@ -210,6 +211,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> ACACIA_PRESSURE_PLATE = getBlockType("acacia_pressure_plate");
 
     BlockType.Typed<Sapling> ACACIA_SAPLING = getBlockType("acacia_sapling");
+
+    BlockType.Typed<Shelf> ACACIA_SHELF = getBlockType("acacia_shelf");
 
     BlockType.Typed<Sign> ACACIA_SIGN = getBlockType("acacia_sign");
 
@@ -283,6 +286,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> BAMBOO_SAPLING = getBlockType("bamboo_sapling");
 
+    BlockType.Typed<Shelf> BAMBOO_SHELF = getBlockType("bamboo_shelf");
+
     BlockType.Typed<Sign> BAMBOO_SIGN = getBlockType("bamboo_sign");
 
     BlockType.Typed<Slab> BAMBOO_SLAB = getBlockType("bamboo_slab");
@@ -336,6 +341,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> BIRCH_PRESSURE_PLATE = getBlockType("birch_pressure_plate");
 
     BlockType.Typed<Sapling> BIRCH_SAPLING = getBlockType("birch_sapling");
+
+    BlockType.Typed<Shelf> BIRCH_SHELF = getBlockType("birch_shelf");
 
     BlockType.Typed<Sign> BIRCH_SIGN = getBlockType("birch_sign");
 
@@ -519,8 +526,6 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<CaveVinesPlant> CAVE_VINES_PLANT = getBlockType("cave_vines_plant");
 
-    BlockType.Typed<Chain> CHAIN = getBlockType("chain");
-
     BlockType.Typed<CommandBlock> CHAIN_COMMAND_BLOCK = getBlockType("chain_command_block");
 
     BlockType.Typed<Switch> CHERRY_BUTTON = getBlockType("cherry_button");
@@ -542,6 +547,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> CHERRY_PRESSURE_PLATE = getBlockType("cherry_pressure_plate");
 
     BlockType.Typed<Sapling> CHERRY_SAPLING = getBlockType("cherry_sapling");
+
+    BlockType.Typed<Shelf> CHERRY_SHELF = getBlockType("cherry_shelf");
 
     BlockType.Typed<Sign> CHERRY_SIGN = getBlockType("cherry_sign");
 
@@ -627,17 +634,31 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Waterlogged> CONDUIT = getBlockType("conduit");
 
+    BlockType.Typed<Fence> COPPER_BARS = getBlockType("copper_bars");
+
     BlockType.Typed<BlockData> COPPER_BLOCK = getBlockType("copper_block");
 
     BlockType.Typed<CopperBulb> COPPER_BULB = getBlockType("copper_bulb");
 
+    BlockType.Typed<Chain> COPPER_CHAIN = getBlockType("copper_chain");
+
+    BlockType.Typed<Chest> COPPER_CHEST = getBlockType("copper_chest");
+
     BlockType.Typed<Door> COPPER_DOOR = getBlockType("copper_door");
+
+    BlockType.Typed<CopperGolemStatue> COPPER_GOLEM_STATUE = getBlockType("copper_golem_statue");
 
     BlockType.Typed<Waterlogged> COPPER_GRATE = getBlockType("copper_grate");
 
+    BlockType.Typed<Lantern> COPPER_LANTERN = getBlockType("copper_lantern");
+
     BlockType.Typed<BlockData> COPPER_ORE = getBlockType("copper_ore");
 
+    BlockType.Typed<BlockData> COPPER_TORCH = getBlockType("copper_torch");
+
     BlockType.Typed<TrapDoor> COPPER_TRAPDOOR = getBlockType("copper_trapdoor");
+
+    BlockType.Typed<Directional> COPPER_WALL_TORCH = getBlockType("copper_wall_torch");
 
     BlockType.Typed<BlockData> CORNFLOWER = getBlockType("cornflower");
 
@@ -682,6 +703,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> CRIMSON_PRESSURE_PLATE = getBlockType("crimson_pressure_plate");
 
     BlockType.Typed<BlockData> CRIMSON_ROOTS = getBlockType("crimson_roots");
+
+    BlockType.Typed<Shelf> CRIMSON_SHELF = getBlockType("crimson_shelf");
 
     BlockType.Typed<Sign> CRIMSON_SIGN = getBlockType("crimson_sign");
 
@@ -764,6 +787,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> DARK_OAK_PRESSURE_PLATE = getBlockType("dark_oak_pressure_plate");
 
     BlockType.Typed<Sapling> DARK_OAK_SAPLING = getBlockType("dark_oak_sapling");
+
+    BlockType.Typed<Shelf> DARK_OAK_SHELF = getBlockType("dark_oak_shelf");
 
     BlockType.Typed<Sign> DARK_OAK_SIGN = getBlockType("dark_oak_sign");
 
@@ -929,11 +954,21 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> EXPOSED_COPPER = getBlockType("exposed_copper");
 
+    BlockType.Typed<Fence> EXPOSED_COPPER_BARS = getBlockType("exposed_copper_bars");
+
     BlockType.Typed<CopperBulb> EXPOSED_COPPER_BULB = getBlockType("exposed_copper_bulb");
+
+    BlockType.Typed<Chain> EXPOSED_COPPER_CHAIN = getBlockType("exposed_copper_chain");
+
+    BlockType.Typed<Chest> EXPOSED_COPPER_CHEST = getBlockType("exposed_copper_chest");
 
     BlockType.Typed<Door> EXPOSED_COPPER_DOOR = getBlockType("exposed_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> EXPOSED_COPPER_GOLEM_STATUE = getBlockType("exposed_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> EXPOSED_COPPER_GRATE = getBlockType("exposed_copper_grate");
+
+    BlockType.Typed<Lantern> EXPOSED_COPPER_LANTERN = getBlockType("exposed_copper_lantern");
 
     BlockType.Typed<TrapDoor> EXPOSED_COPPER_TRAPDOOR = getBlockType("exposed_copper_trapdoor");
 
@@ -942,6 +977,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Slab> EXPOSED_CUT_COPPER_SLAB = getBlockType("exposed_cut_copper_slab");
 
     BlockType.Typed<Stairs> EXPOSED_CUT_COPPER_STAIRS = getBlockType("exposed_cut_copper_stairs");
+
+    BlockType.Typed<LightningRod> EXPOSED_LIGHTNING_ROD = getBlockType("exposed_lightning_rod");
 
     BlockType.Typed<Farmland> FARMLAND = getBlockType("farmland");
 
@@ -1099,6 +1136,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> IRON_BLOCK = getBlockType("iron_block");
 
+    BlockType.Typed<Chain> IRON_CHAIN = getBlockType("iron_chain");
+
     BlockType.Typed<Door> IRON_DOOR = getBlockType("iron_door");
 
     BlockType.Typed<BlockData> IRON_ORE = getBlockType("iron_ore");
@@ -1130,6 +1169,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> JUNGLE_PRESSURE_PLATE = getBlockType("jungle_pressure_plate");
 
     BlockType.Typed<Sapling> JUNGLE_SAPLING = getBlockType("jungle_sapling");
+
+    BlockType.Typed<Shelf> JUNGLE_SHELF = getBlockType("jungle_shelf");
 
     BlockType.Typed<Sign> JUNGLE_SIGN = getBlockType("jungle_sign");
 
@@ -1323,6 +1364,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Waterlogged> MANGROVE_ROOTS = getBlockType("mangrove_roots");
 
+    BlockType.Typed<Shelf> MANGROVE_SHELF = getBlockType("mangrove_shelf");
+
     BlockType.Typed<Sign> MANGROVE_SIGN = getBlockType("mangrove_sign");
 
     BlockType.Typed<Slab> MANGROVE_SLAB = getBlockType("mangrove_slab");
@@ -1429,6 +1472,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Sapling> OAK_SAPLING = getBlockType("oak_sapling");
 
+    BlockType.Typed<Shelf> OAK_SHELF = getBlockType("oak_shelf");
+
     BlockType.Typed<Sign> OAK_SIGN = getBlockType("oak_sign");
 
     BlockType.Typed<Slab> OAK_SLAB = getBlockType("oak_slab");
@@ -1487,11 +1532,21 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> OXIDIZED_COPPER = getBlockType("oxidized_copper");
 
+    BlockType.Typed<Fence> OXIDIZED_COPPER_BARS = getBlockType("oxidized_copper_bars");
+
     BlockType.Typed<CopperBulb> OXIDIZED_COPPER_BULB = getBlockType("oxidized_copper_bulb");
+
+    BlockType.Typed<Chain> OXIDIZED_COPPER_CHAIN = getBlockType("oxidized_copper_chain");
+
+    BlockType.Typed<Chest> OXIDIZED_COPPER_CHEST = getBlockType("oxidized_copper_chest");
 
     BlockType.Typed<Door> OXIDIZED_COPPER_DOOR = getBlockType("oxidized_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> OXIDIZED_COPPER_GOLEM_STATUE = getBlockType("oxidized_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> OXIDIZED_COPPER_GRATE = getBlockType("oxidized_copper_grate");
+
+    BlockType.Typed<Lantern> OXIDIZED_COPPER_LANTERN = getBlockType("oxidized_copper_lantern");
 
     BlockType.Typed<TrapDoor> OXIDIZED_COPPER_TRAPDOOR = getBlockType("oxidized_copper_trapdoor");
 
@@ -1500,6 +1555,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Slab> OXIDIZED_CUT_COPPER_SLAB = getBlockType("oxidized_cut_copper_slab");
 
     BlockType.Typed<Stairs> OXIDIZED_CUT_COPPER_STAIRS = getBlockType("oxidized_cut_copper_stairs");
+
+    BlockType.Typed<LightningRod> OXIDIZED_LIGHTNING_ROD = getBlockType("oxidized_lightning_rod");
 
     BlockType.Typed<BlockData> PACKED_ICE = getBlockType("packed_ice");
 
@@ -1530,6 +1587,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Powerable> PALE_OAK_PRESSURE_PLATE = getBlockType("pale_oak_pressure_plate");
 
     BlockType.Typed<Sapling> PALE_OAK_SAPLING = getBlockType("pale_oak_sapling");
+
+    BlockType.Typed<Shelf> PALE_OAK_SHELF = getBlockType("pale_oak_shelf");
 
     BlockType.Typed<Sign> PALE_OAK_SIGN = getBlockType("pale_oak_sign");
 
@@ -2023,6 +2082,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Sapling> SPRUCE_SAPLING = getBlockType("spruce_sapling");
 
+    BlockType.Typed<Shelf> SPRUCE_SHELF = getBlockType("spruce_shelf");
+
     BlockType.Typed<Sign> SPRUCE_SIGN = getBlockType("spruce_sign");
 
     BlockType.Typed<Slab> SPRUCE_SLAB = getBlockType("spruce_slab");
@@ -2213,6 +2274,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> WARPED_ROOTS = getBlockType("warped_roots");
 
+    BlockType.Typed<Shelf> WARPED_SHELF = getBlockType("warped_shelf");
+
     BlockType.Typed<Sign> WARPED_SIGN = getBlockType("warped_sign");
 
     BlockType.Typed<Slab> WARPED_SLAB = getBlockType("warped_slab");
@@ -2235,13 +2298,23 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> WAXED_CHISELED_COPPER = getBlockType("waxed_chiseled_copper");
 
+    BlockType.Typed<Fence> WAXED_COPPER_BARS = getBlockType("waxed_copper_bars");
+
     BlockType.Typed<BlockData> WAXED_COPPER_BLOCK = getBlockType("waxed_copper_block");
 
     BlockType.Typed<CopperBulb> WAXED_COPPER_BULB = getBlockType("waxed_copper_bulb");
 
+    BlockType.Typed<Chain> WAXED_COPPER_CHAIN = getBlockType("waxed_copper_chain");
+
+    BlockType.Typed<Chest> WAXED_COPPER_CHEST = getBlockType("waxed_copper_chest");
+
     BlockType.Typed<Door> WAXED_COPPER_DOOR = getBlockType("waxed_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> WAXED_COPPER_GOLEM_STATUE = getBlockType("waxed_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> WAXED_COPPER_GRATE = getBlockType("waxed_copper_grate");
+
+    BlockType.Typed<Lantern> WAXED_COPPER_LANTERN = getBlockType("waxed_copper_lantern");
 
     BlockType.Typed<TrapDoor> WAXED_COPPER_TRAPDOOR = getBlockType("waxed_copper_trapdoor");
 
@@ -2255,11 +2328,21 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> WAXED_EXPOSED_COPPER = getBlockType("waxed_exposed_copper");
 
+    BlockType.Typed<Fence> WAXED_EXPOSED_COPPER_BARS = getBlockType("waxed_exposed_copper_bars");
+
     BlockType.Typed<CopperBulb> WAXED_EXPOSED_COPPER_BULB = getBlockType("waxed_exposed_copper_bulb");
+
+    BlockType.Typed<Chain> WAXED_EXPOSED_COPPER_CHAIN = getBlockType("waxed_exposed_copper_chain");
+
+    BlockType.Typed<Chest> WAXED_EXPOSED_COPPER_CHEST = getBlockType("waxed_exposed_copper_chest");
 
     BlockType.Typed<Door> WAXED_EXPOSED_COPPER_DOOR = getBlockType("waxed_exposed_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> WAXED_EXPOSED_COPPER_GOLEM_STATUE = getBlockType("waxed_exposed_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> WAXED_EXPOSED_COPPER_GRATE = getBlockType("waxed_exposed_copper_grate");
+
+    BlockType.Typed<Lantern> WAXED_EXPOSED_COPPER_LANTERN = getBlockType("waxed_exposed_copper_lantern");
 
     BlockType.Typed<TrapDoor> WAXED_EXPOSED_COPPER_TRAPDOOR = getBlockType("waxed_exposed_copper_trapdoor");
 
@@ -2269,15 +2352,29 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Stairs> WAXED_EXPOSED_CUT_COPPER_STAIRS = getBlockType("waxed_exposed_cut_copper_stairs");
 
+    BlockType.Typed<LightningRod> WAXED_EXPOSED_LIGHTNING_ROD = getBlockType("waxed_exposed_lightning_rod");
+
+    BlockType.Typed<LightningRod> WAXED_LIGHTNING_ROD = getBlockType("waxed_lightning_rod");
+
     BlockType.Typed<BlockData> WAXED_OXIDIZED_CHISELED_COPPER = getBlockType("waxed_oxidized_chiseled_copper");
 
     BlockType.Typed<BlockData> WAXED_OXIDIZED_COPPER = getBlockType("waxed_oxidized_copper");
 
+    BlockType.Typed<Fence> WAXED_OXIDIZED_COPPER_BARS = getBlockType("waxed_oxidized_copper_bars");
+
     BlockType.Typed<CopperBulb> WAXED_OXIDIZED_COPPER_BULB = getBlockType("waxed_oxidized_copper_bulb");
+
+    BlockType.Typed<Chain> WAXED_OXIDIZED_COPPER_CHAIN = getBlockType("waxed_oxidized_copper_chain");
+
+    BlockType.Typed<Chest> WAXED_OXIDIZED_COPPER_CHEST = getBlockType("waxed_oxidized_copper_chest");
 
     BlockType.Typed<Door> WAXED_OXIDIZED_COPPER_DOOR = getBlockType("waxed_oxidized_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> WAXED_OXIDIZED_COPPER_GOLEM_STATUE = getBlockType("waxed_oxidized_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> WAXED_OXIDIZED_COPPER_GRATE = getBlockType("waxed_oxidized_copper_grate");
+
+    BlockType.Typed<Lantern> WAXED_OXIDIZED_COPPER_LANTERN = getBlockType("waxed_oxidized_copper_lantern");
 
     BlockType.Typed<TrapDoor> WAXED_OXIDIZED_COPPER_TRAPDOOR = getBlockType("waxed_oxidized_copper_trapdoor");
 
@@ -2287,15 +2384,27 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Stairs> WAXED_OXIDIZED_CUT_COPPER_STAIRS = getBlockType("waxed_oxidized_cut_copper_stairs");
 
+    BlockType.Typed<LightningRod> WAXED_OXIDIZED_LIGHTNING_ROD = getBlockType("waxed_oxidized_lightning_rod");
+
     BlockType.Typed<BlockData> WAXED_WEATHERED_CHISELED_COPPER = getBlockType("waxed_weathered_chiseled_copper");
 
     BlockType.Typed<BlockData> WAXED_WEATHERED_COPPER = getBlockType("waxed_weathered_copper");
 
+    BlockType.Typed<Fence> WAXED_WEATHERED_COPPER_BARS = getBlockType("waxed_weathered_copper_bars");
+
     BlockType.Typed<CopperBulb> WAXED_WEATHERED_COPPER_BULB = getBlockType("waxed_weathered_copper_bulb");
+
+    BlockType.Typed<Chain> WAXED_WEATHERED_COPPER_CHAIN = getBlockType("waxed_weathered_copper_chain");
+
+    BlockType.Typed<Chest> WAXED_WEATHERED_COPPER_CHEST = getBlockType("waxed_weathered_copper_chest");
 
     BlockType.Typed<Door> WAXED_WEATHERED_COPPER_DOOR = getBlockType("waxed_weathered_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> WAXED_WEATHERED_COPPER_GOLEM_STATUE = getBlockType("waxed_weathered_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> WAXED_WEATHERED_COPPER_GRATE = getBlockType("waxed_weathered_copper_grate");
+
+    BlockType.Typed<Lantern> WAXED_WEATHERED_COPPER_LANTERN = getBlockType("waxed_weathered_copper_lantern");
 
     BlockType.Typed<TrapDoor> WAXED_WEATHERED_COPPER_TRAPDOOR = getBlockType("waxed_weathered_copper_trapdoor");
 
@@ -2305,15 +2414,27 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Stairs> WAXED_WEATHERED_CUT_COPPER_STAIRS = getBlockType("waxed_weathered_cut_copper_stairs");
 
+    BlockType.Typed<LightningRod> WAXED_WEATHERED_LIGHTNING_ROD = getBlockType("waxed_weathered_lightning_rod");
+
     BlockType.Typed<BlockData> WEATHERED_CHISELED_COPPER = getBlockType("weathered_chiseled_copper");
 
     BlockType.Typed<BlockData> WEATHERED_COPPER = getBlockType("weathered_copper");
 
+    BlockType.Typed<Fence> WEATHERED_COPPER_BARS = getBlockType("weathered_copper_bars");
+
     BlockType.Typed<CopperBulb> WEATHERED_COPPER_BULB = getBlockType("weathered_copper_bulb");
+
+    BlockType.Typed<Chain> WEATHERED_COPPER_CHAIN = getBlockType("weathered_copper_chain");
+
+    BlockType.Typed<Chest> WEATHERED_COPPER_CHEST = getBlockType("weathered_copper_chest");
 
     BlockType.Typed<Door> WEATHERED_COPPER_DOOR = getBlockType("weathered_copper_door");
 
+    BlockType.Typed<CopperGolemStatue> WEATHERED_COPPER_GOLEM_STATUE = getBlockType("weathered_copper_golem_statue");
+
     BlockType.Typed<Waterlogged> WEATHERED_COPPER_GRATE = getBlockType("weathered_copper_grate");
+
+    BlockType.Typed<Lantern> WEATHERED_COPPER_LANTERN = getBlockType("weathered_copper_lantern");
 
     BlockType.Typed<TrapDoor> WEATHERED_COPPER_TRAPDOOR = getBlockType("weathered_copper_trapdoor");
 
@@ -2322,6 +2443,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Slab> WEATHERED_CUT_COPPER_SLAB = getBlockType("weathered_cut_copper_slab");
 
     BlockType.Typed<Stairs> WEATHERED_CUT_COPPER_STAIRS = getBlockType("weathered_cut_copper_stairs");
+
+    BlockType.Typed<LightningRod> WEATHERED_LIGHTNING_ROD = getBlockType("weathered_lightning_rod");
 
     BlockType.Typed<Ageable> WEEPING_VINES = getBlockType("weeping_vines");
 
@@ -2503,7 +2626,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     boolean isBurnable();
 
     /**
-     * Check if the block type is occludes light in the lighting engine.
+     * Check if the block type occludes light in the lighting engine.
      * <p>
      * Generally speaking, most full blocks will occlude light. Non-full blocks are
      * not occluding (e.g. anvils, chests, tall grass, stairs, etc.), nor are specific

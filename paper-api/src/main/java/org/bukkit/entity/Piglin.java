@@ -68,7 +68,7 @@ public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystok
     public boolean removeMaterialOfInterest(@NotNull Material material);
 
     /**
-     * Returns a immutable set of materials the piglins will pickup.
+     * Returns an immutable set of materials the piglins will pickup.
      * <br>
      * <strong>Note:</strong> This set will not include the items that are set
      * by default. To interact with those items see
@@ -80,7 +80,7 @@ public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystok
     public Set<Material> getInterestList();
 
     /**
-     * Returns a immutable set of materials the piglins will barter with.
+     * Returns an immutable set of materials the piglins will barter with.
      *
      * <strong>Note:</strong> This set will not include the items that are set
      * by default. To interact with those items see

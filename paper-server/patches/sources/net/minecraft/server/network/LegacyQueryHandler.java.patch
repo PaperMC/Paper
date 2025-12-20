@@ -10,12 +10,12 @@
          this.server = server;
 @@ -22,6 +_,17 @@
      @Override
-     public void channelRead(ChannelHandlerContext context, Object message) {
+     public void channelRead(ChannelHandlerContext ctx, Object message) {
          ByteBuf byteBuf = (ByteBuf)message;
 +        // Paper start - Make legacy ping handler more reliable
 +        if (this.buf != null) {
 +            try {
-+                readLegacy1_6(context, byteBuf);
++                readLegacy1_6(ctx, byteBuf);
 +            } finally {
 +                byteBuf.release();
 +            }
@@ -28,7 +28,7 @@
  
 @@ -33,9 +_,19 @@
  
-                 SocketAddress socketAddress = context.channel().remoteAddress();
+                 SocketAddress socketAddress = ctx.channel().remoteAddress();
                  int i = byteBuf.readableBytes();
 +                String string = null; // Paper
                  if (i == 0) {
@@ -38,14 +38,14 @@
 +                    // Paper start - Call PaperServerListPingEvent and use results
 +                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 39, null);
 +                    if (event == null) {
-+                        context.close();
++                        ctx.close();
 +                        byteBuf.release();
 +                        flag = false;
 +                        return;
 +                    }
 +                    string = String.format(Locale.ROOT, "%s§%d§%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
 +                    // Paper end - Call PaperServerListPingEvent and use results
-                     sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
+                     sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), string));
                  } else {
                      if (byteBuf.readUnsignedByte() != 1) {
 @@ -43,16 +_,39 @@
@@ -55,7 +55,7 @@
 -                        if (!readCustomPayloadPacket(byteBuf)) {
 +                        // Paper start - Replace below
 +                        if (byteBuf.readUnsignedByte() != LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_ID) {
-+                            string = this.readLegacy1_6(context, byteBuf);
++                            string = this.readLegacy1_6(ctx, byteBuf);
 +                            if (string == null) {
 +                                return;
 +                            }
@@ -69,7 +69,7 @@
 +                    if (string == null) {
 +                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 127, null); // Paper
 +                        if (event == null) {
-+                            context.close();
++                            ctx.close();
 +                            byteBuf.release();
 +                            flag = false;
                              return;
@@ -91,7 +91,7 @@
                      }
 -
 -                    String string = createVersion1Response(this.server);
-                     sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
+                     sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), string));
                  }
  
 @@ -110,6 +_,98 @@
@@ -191,5 +191,5 @@
 +    }
 +    // Paper end
  
-     private static void sendFlushAndClose(ChannelHandlerContext context, ByteBuf buffer) {
-         context.pipeline().firstContext().writeAndFlush(buffer).addListener(ChannelFutureListener.CLOSE);
+     private static void sendFlushAndClose(ChannelHandlerContext ctx, ByteBuf buffer) {
+         ctx.pipeline().firstContext().writeAndFlush(buffer).addListener(ChannelFutureListener.CLOSE);

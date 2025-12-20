@@ -10,7 +10,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
@@ -21,7 +21,7 @@ import org.bukkit.inventory.meta.SpawnEggMeta;
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
-    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+    static final ItemMetaKeyType<TypedEntityData<net.minecraft.world.entity.EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKey ENTITY_ID = new ItemMetaKey("id");
 
@@ -41,7 +41,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         super(tag, extraHandledDcts);
 
         getOrEmpty(tag, CraftMetaSpawnEgg.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTag();
+            this.entityTag = nbt.copyTagWithEntityId();
         });
     }
 
@@ -68,7 +68,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         super.applyToItem(tag);
 
         if (this.entityTag != null) {
-            tag.put(CraftMetaSpawnEgg.ENTITY_TAG, CustomData.of(this.entityTag));
+            tag.put(CraftMetaSpawnEgg.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
         }
     }
 

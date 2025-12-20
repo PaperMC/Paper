@@ -3,7 +3,8 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
-import net.minecraft.world.entity.animal.CatVariant;
+import net.minecraft.core.ClientAsset;
+import net.minecraft.world.entity.animal.feline.CatVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Cat;
 import org.jspecify.annotations.Nullable;
@@ -13,7 +14,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperCatTypeRegistryEntry implements CatTypeRegistryEntry {
 
-    protected net.minecraft.core.@Nullable ClientAsset clientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;

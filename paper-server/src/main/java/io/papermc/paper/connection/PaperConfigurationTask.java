@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 public class PaperConfigurationTask implements ConfigurationTask {
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
-    private static final ExecutorService CONFIGURATION_POOL = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Configuration Thread #%d")
+    public static final ExecutorService CONFIGURATION_POOL = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Configuration Thread #%d")
         .setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build());
 
     public static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type("paper_event_handling");

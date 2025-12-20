@@ -55,7 +55,10 @@ interface RemovedConfigurations {
         path("entities", "mob-effects", "undead-immune-to-certain-effects"),
         path("entities", "entities-target-with-follow-range"),
         path("environment", "disable-teleportation-suffocation-check"),
-        path("misc", "light-queue-size")
+        path("misc", "light-queue-size"),
+        path("spawn", "keep-spawn-loaded"),
+        path("spawn", "keep-spawn-loaded-range"),
+        path("misc", "shield-blocking-delay")
     };
     // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
     // in the world default config for compatibility with old worlds being migrated to use the gamerule
@@ -82,7 +85,8 @@ interface RemovedConfigurations {
         path("unsupported-settings", "allow-grindstone-overstacking"),
         path("unsupported-settings", "allow-tripwire-disarming-exploits"),
         path("commands", "fix-target-selector-tag-completion"),
-        path("misc", "fix-entity-position-desync")
+        path("misc", "fix-entity-position-desync"),
+        path("chunk-system", "gen-parallelism")
     };
 
 }

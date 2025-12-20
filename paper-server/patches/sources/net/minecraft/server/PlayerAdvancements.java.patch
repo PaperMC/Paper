@@ -9,15 +9,15 @@
      private final PlayerList playerList;
      private final Path playerSavePath;
      private AdvancementTree tree;
-@@ -60,6 +_,7 @@
-     private AdvancementHolder lastSelectedTab;
+@@ -59,6 +_,7 @@
+     private @Nullable AdvancementHolder lastSelectedTab;
      private boolean isFirstPacket = true;
      private final Codec<PlayerAdvancements.Data> codec;
-+    public final Map<net.minecraft.advancements.critereon.SimpleCriterionTrigger<?>, Set<CriterionTrigger.Listener<?>>> criterionData = new java.util.IdentityHashMap<>(); // Paper - fix advancement data player leakage
++    public final Map<net.minecraft.advancements.criterion.SimpleCriterionTrigger<?>, Set<CriterionTrigger.Listener<?>>> criterionData = new java.util.IdentityHashMap<>(); // Paper - fix advancement data player leakage
  
      public PlayerAdvancements(DataFixer dataFixer, PlayerList playerList, ServerAdvancementManager manager, Path playerSavePath, ServerPlayer player) {
          this.playerList = playerList;
-@@ -127,6 +_,7 @@
+@@ -126,6 +_,7 @@
      }
  
      public void save() {
@@ -25,15 +25,15 @@
          JsonElement jsonElement = this.codec.encodeStart(JsonOps.INSTANCE, this.asData()).getOrThrow();
  
          try {
-@@ -144,6 +_,7 @@
+@@ -143,6 +_,7 @@
          data.forEach((path, progress) -> {
              AdvancementHolder advancementHolder = advancementManager.get(path);
              if (advancementHolder == null) {
-+                if (!path.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) return; // CraftBukkit
++                if (!path.getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) return; // CraftBukkit
                  LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", path, this.playerSavePath);
              } else {
                  this.startProgress(advancementHolder, progress);
-@@ -168,14 +_,31 @@
+@@ -167,14 +_,31 @@
          AdvancementProgress orStartProgress = this.getOrStartProgress(advancement);
          boolean isDone = orStartProgress.isDone();
          if (orStartProgress.grantProgress(criterionKey)) {
@@ -58,21 +58,21 @@
 +                // Paper end
                  advancement.value().rewards().grant(this.player);
                  advancement.value().display().ifPresent(displayInfo -> {
--                    if (displayInfo.shouldAnnounceChat() && this.player.level().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
+-                    if (displayInfo.shouldAnnounceChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
 -                        this.playerList.broadcastSystemMessage(displayInfo.getType().createAnnouncement(advancement, this.player), false);
 +                    // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
-+                    if (event.message() != null && this.player.level().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
++                    if (event.message() != null && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
 +                        this.playerList.broadcastSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
 +                        // Paper end
                      }
                  });
              }
-@@ -246,7 +_,7 @@
+@@ -245,7 +_,7 @@
      public void flushDirty(ServerPlayer player, boolean showAdvancements) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
-             Map<ResourceLocation, AdvancementProgress> map = new HashMap<>();
+             Map<Identifier, AdvancementProgress> map = new HashMap<>();
 -            Set<AdvancementHolder> set = new HashSet<>();
 +            Set<AdvancementHolder> set = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
-             Set<ResourceLocation> set1 = new HashSet<>();
+             Set<Identifier> set1 = new HashSet<>();
  
              for (AdvancementNode advancementNode : this.rootsToUpdate) {

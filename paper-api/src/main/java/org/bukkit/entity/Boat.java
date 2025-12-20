@@ -177,7 +177,6 @@ public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Pa
 
         NOT_IN_WORLD,
         // Start generate - BoatStatus
-        // @GeneratedFrom 1.21.8
         IN_WATER,
         UNDER_WATER,
         UNDER_FLOWING_WATER,
