@@ -19,13 +19,12 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry {
 
+    protected final Conversions conversions;
     protected OptionalInt width = OptionalInt.empty();
     protected OptionalInt height = OptionalInt.empty();
     protected @Nullable Component title;
     protected @Nullable Component author;
     protected @Nullable Identifier assetId;
-
-    protected final Conversions conversions;
 
     public PaperPaintingVariantRegistryEntry(
         final Conversions conversions,

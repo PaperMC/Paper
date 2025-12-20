@@ -61,12 +61,12 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -337,16 +337,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     }
 
     private static <C extends Number & Comparable<C>, T extends RangeProvider<C>> T convertToRange(final MinMaxBounds<C> bounds, final Function<Range<C>, T> converter) {
-        if (bounds.isAny()) {
-            return converter.apply(Range.all());
-        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
-            return converter.apply(Range.closed(bounds.min().get(), bounds.max().get()));
-        } else if (bounds.max().isPresent()) {
-            return converter.apply(Range.atMost(bounds.max().get()));
-        } else if (bounds.min().isPresent()) {
-            return converter.apply(Range.atLeast(bounds.min().get()));
-        }
-        throw new IllegalStateException("This is a bug: " + bounds);
+        return converter.apply(MCUtil.toRange(bounds));
     }
 
     @Override

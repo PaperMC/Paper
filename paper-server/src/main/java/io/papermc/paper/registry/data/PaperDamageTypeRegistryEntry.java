@@ -16,13 +16,12 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
+    protected final Conversions conversions;
     protected @Nullable String messageId;
     protected @Nullable DamageScaling scaling;
     protected @Nullable Float exhaustion;
     protected DamageEffects effects = DamageEffects.HURT;
     protected DeathMessageType deathMessageType = DeathMessageType.DEFAULT;
-
-    protected final Conversions conversions;
 
     public PaperDamageTypeRegistryEntry(
         final Conversions conversions,
