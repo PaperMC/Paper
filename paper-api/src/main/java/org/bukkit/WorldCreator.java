@@ -1,7 +1,10 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import java.io.File;
 import java.util.Random;
+import io.papermc.paper.math.Position;
+import net.kyori.adventure.key.Key;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -24,6 +27,14 @@ public class WorldCreator {
     private String generatorSettings = "";
     private boolean hardcore = false;
     private boolean bonusChest = false;
+
+    @Nullable
+    private Position spawnPositionOverride;
+    private Float spawnYawOverride;
+    private Float spawnPitchOverride;
+
+    private Key dimensionKey = null;
+    private File worldFileOverride = Bukkit.getWorldContainer();
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -207,6 +218,59 @@ public class WorldCreator {
     }
 
     /**
+     * Sets the dimension key override for this world.
+     *
+     * <p>The dimension key determines the dimension type this world will use
+     * (for example: overworld, nether, end, or a custom dimension).</p>
+     *
+     * <p>If set, this overrides the dimension type provided by vanilla or any
+     * custom world generator.</p>
+     *
+     * @param key the dimension key to use for this world
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator dimensionKeyOverride(@NotNull Key key) {
+        this.dimensionKey = key;
+        return this;
+    }
+
+    /**
+     * Gets the dimension key override that will be applied when this world is created.
+     *
+     * @return the dimension key override, or {@code null} if vanilla behavior is used
+     */
+    @Nullable
+    public Key getDimensionKeyOverride() {
+        return dimensionKey;
+    }
+
+    /**
+     * Sets the directory that this world's data will be stored in.
+     *
+     * <p>The provided file represents the <strong>parent folder</strong> used for
+     * storing all world data (region files, player data, level data, etc.).</p>
+     *
+     * @param override the parent directory to store this world's data in
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator worldFileStorage(@NotNull File override) {
+        this.worldFileOverride = override;
+        return this;
+    }
+
+    /**
+     * Gets the directory used for storing this world's data.
+     *
+     * @return the parent directory used for world storage
+     */
+    @NotNull
+    public File getWorldFileStorage() {
+        return worldFileOverride;
+    }
+
+    /**
      * Gets the type of the world that will be created or loaded
      *
      * @return World type
@@ -227,6 +291,78 @@ public class WorldCreator {
         this.type = type;
 
         return this;
+    }
+
+    /**
+     * Sets the spawn position that this world will have on creation.
+     * This overrides vanilla / custom generator behavior and will not cause any chunk loads.
+     * As a result, the bonus chest will not be spawned if this is set.
+     *
+     * @param position Spawn position (world may be null to indicate the world being created),
+     *                 or null to use vanilla behavior.
+     * @param yaw      Yaw rotation
+     * @param pitch    Pitch rotation
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator forcedSpawnPosition(@Nullable Position position, float yaw, float pitch
+    ) {
+        if (position == null) {
+            this.spawnPositionOverride = null;
+            this.spawnYawOverride = yaw;
+            this.spawnPitchOverride = pitch;
+            return this;
+        }
+
+        this.spawnPositionOverride = position;
+        this.spawnYawOverride = yaw;
+        this.spawnPitchOverride = pitch;
+        return this;
+    }
+
+    /**
+     * Gets the forced spawn position that will be applied when this world is created.
+     *
+     * <p>If this returns {@code null}, vanilla or custom generator behavior will be used
+     * to determine the spawn position.</p>
+     *
+     * <p>The returned {@link Position} is a clone and may be modified safely.</p>
+     *
+     * @return the forced spawn position, or {@code null} to use vanilla behavior
+     */
+    @Nullable
+    public Position forcedSpawnPosition() {
+        return this.spawnPositionOverride == null ? null : this.spawnPositionOverride;
+    }
+
+    /**
+     * Gets the forced spawn yaw that will be applied when this world is created.
+     *
+     * <p>If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
+     * or the world generator.</p>
+     *
+     * <p>This value is only meaningful if a forced spawn position is present.</p>
+     *
+     * @return the forced spawn yaw, or {@code null} to use vanilla behavior
+     */
+    @Nullable
+    public Float forcedSpawnYaw() {
+        return this.spawnYawOverride;
+    }
+
+    /**
+     * Gets the forced spawn pitch that will be applied when this world is created.
+     *
+     * <p>If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
+     * or the world generator.</p>
+     *
+     * <p>This value is only meaningful if a forced spawn position is present.</p>
+     *
+     * @return the forced spawn pitch, or {@code null} to use vanilla behavior
+     */
+    @Nullable
+    public Float forcedSpawnPitch() {
+        return this.spawnPitchOverride;
     }
 
     /**
