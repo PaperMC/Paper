@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.damage;
 
 import java.util.Objects;
+import net.kyori.adventure.pointer.Pointers;
 import net.minecraft.Optionull;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
@@ -70,6 +71,11 @@ public class CraftDamageSource implements DamageSource {
     }
 
     @Override
+    public Pointers getDamageContext() {
+        return this.getHandle().getDamageContext();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
@@ -98,7 +104,7 @@ public class CraftDamageSource implements DamageSource {
         return "DamageSource{damageType=" + this.getDamageType() + ", causingEntity=" + this.getCausingEntity() + ", directEntity=" + this.getDirectEntity() + ", damageLocation=" + this.getDamageLocation() + "}";
     }
 
-    public static DamageSource buildFromBukkit(DamageType damageType, Entity causingEntity, Entity directEntity, Location damageLocation) {
+    public static DamageSource buildFromBukkit(DamageType damageType, Entity causingEntity, Entity directEntity, Location damageLocation, Pointers damageContext) {
         net.minecraft.core.Holder<net.minecraft.world.damagesource.DamageType> holderDamageType = CraftDamageType.bukkitToMinecraftHolder(damageType);
 
         net.minecraft.world.entity.Entity nmsCausingEntity = null;
@@ -113,6 +119,6 @@ public class CraftDamageSource implements DamageSource {
 
         Vec3 sourcePos = (damageLocation == null) ? null : CraftLocation.toVec3(damageLocation);
 
-        return new CraftDamageSource(new net.minecraft.world.damagesource.DamageSource(holderDamageType, nmsDirectEntity, nmsCausingEntity, sourcePos));
+        return new CraftDamageSource(new net.minecraft.world.damagesource.DamageSource(holderDamageType, nmsDirectEntity, nmsCausingEntity, sourcePos, damageContext));
     }
 }
