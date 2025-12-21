@@ -251,8 +251,6 @@ public class WorldCreator {
      * <p>The provided file represents the <strong>parent folder</strong> used for
      * storing all world data (region files, player data, level data, etc.).</p>
      *
-     * <p>If not set, the default world container directory will be used.</p>
-     *
      * @param override the parent directory to store this world's data in
      * @return this object, for chaining
      */
@@ -265,10 +263,9 @@ public class WorldCreator {
     /**
      * Gets the directory used for storing this world's data.
      *
-     * @return the parent directory used for world storage, or {@code null}
-     *         if the default world container is used
+     * @return the parent directory used for world storage
      */
-    @Nullable
+    @NotNull
     public File getWorldFileStorage() {
         return worldFileOverride;
     }
