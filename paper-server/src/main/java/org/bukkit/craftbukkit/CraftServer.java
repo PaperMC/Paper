@@ -12,6 +12,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
@@ -1214,7 +1215,7 @@ public final class CraftServer implements Server {
 
         LevelStorageSource.LevelStorageAccess levelStorageAccess;
         try {
-            levelStorageAccess = LevelStorageSource.createDefault(this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
+            levelStorageAccess = LevelStorageSource.createDefault(creator.getWorldFileStorage().toPath()).validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
         }
@@ -1269,6 +1270,12 @@ public final class CraftServer implements Server {
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(primaryLevelData)
         );
         LevelStem customStem = contextLevelStemRegistry.getValue(actualDimension);
+        if (creator.getDimensionKeyOverride() != null) {
+            customStem = new LevelStem(
+                this.console.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE).getOrThrow(PaperAdventure.asVanilla(Registries.DIMENSION_TYPE, creator.getDimensionKeyOverride())),
+                customStem.generator()
+            );
+        }
 
         WorldInfo worldInfo = new CraftWorldInfo(primaryLevelData, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
         if (biomeProvider == null && chunkGenerator != null) {
@@ -1306,7 +1313,7 @@ public final class CraftServer implements Server {
         }
 
         this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
-        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions(), creator.forcedSpawnLocation());
+        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions(), creator.forcedSpawnPosition(), java.util.Objects.requireNonNullElse(creator.forcedSpawnPitch(), 0.0F), java.util.Objects.requireNonNullElse(creator.forcedSpawnYaw(), 0.0F));
 
         serverLevel.setSpawnSettings(true);
         // Paper - Put world into worldlist before initing the world; move up
