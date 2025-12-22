@@ -207,6 +207,8 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Logging logging;
 
     public class Logging extends ConfigurationPart {
+        public boolean removeWarningPostProcessing = true;
+
         public boolean deobfuscateStacktraces = true;
     }
 
