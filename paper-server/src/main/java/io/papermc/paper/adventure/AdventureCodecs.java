@@ -194,7 +194,7 @@ public final class AdventureCodecs {
         COMPONENT_CODEC.lenientOptionalFieldOf("name").forGetter(a -> Optional.ofNullable(a.value().name()))
     ).apply(instance, (key, uuid, component) -> HoverEvent.showEntity(key, uuid, component.orElse(null))));
 
-    static final MapCodec<HoverEvent<HoverEvent.ShowItem>> SHOW_ITEM_CODEC = net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.xmap(internal -> {
+    public static final MapCodec<HoverEvent<HoverEvent.ShowItem>> SHOW_ITEM_CODEC = net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.xmap(internal -> {
         @Subst("key") final String typeKey = internal.item().getItemHolder().unwrapKey().orElseThrow().identifier().toString();
         return HoverEvent.showItem(Key.key(typeKey), internal.item().getCount(), PaperAdventure.asAdventure(internal.item().getComponentsPatch()));
     }, adventure -> {
