@@ -32,6 +32,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
+import org.bukkit.entity.Pose;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -120,4 +121,8 @@ interface VanillaArgumentProvider {
     <T> ArgumentType<TypedKey<T>> resourceKey(RegistryKey<T> registryKey);
 
     <T> ArgumentType<T> resource(RegistryKey<T> registryKey);
+
+    ArgumentType<Pose> pose();
+
+    ArgumentType<Pose> mannequin();
 }

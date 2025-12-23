@@ -13,6 +13,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
+import io.papermc.paper.command.brigadier.argument.pose.PoseArgument;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
@@ -114,6 +115,7 @@ import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.entity.Pose;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -414,6 +416,16 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
         return this.resourceRaw(registryKey);
+    }
+
+    @Override
+    public ArgumentType<Pose> pose() {
+        return PoseArgument.pose();
+    }
+
+    @Override
+    public ArgumentType<Pose> mannequin() {
+        return PoseArgument.mannequin();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
