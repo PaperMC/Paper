@@ -21,12 +21,22 @@
  
                      try {
                          Thread.sleep(DELAY_BETWEEN_PAGES);
-@@ -109,7 +_,7 @@
+@@ -109,7 +_,17 @@
          try {
              return Optional.ofNullable(client.get(HttpAuthenticationService.constantURL(nameLookupUrl + normalizeName(name)), NameAndId.class));
          } catch (final MinecraftClientException e) {
 -            LOGGER.warn("Couldn't find profile with name: {}", name, e);
-+            LOGGER.warn("Couldn't find profile with name: {}", name); // Paper - don't log stacktrace
++            // Paper start - only log details when debug is enabled
++            if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++                LOGGER.warn("Couldn't find profile with name: {}", name, e);
++
++            } else {
++                LOGGER.warn("Couldn't find profile with name: {}", name);
++            }
++            if (e instanceof com.mojang.authlib.exceptions.MinecraftClientHttpException httpException) {
++                LOGGER.warn("Received status {} while attempting to lookup the profile. Reason: {}", httpException.getStatus(), httpException.getMessage());
++            }
++            // Paper end - only log details when debug is enabled
              return Optional.empty();
          }
      }
