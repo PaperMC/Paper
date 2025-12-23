@@ -1,6 +1,6 @@
 package ca.spottedleaf.moonrise.common.time;
 
-import ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool;
+import ca.spottedleaf.concurrentutil.util.TimeUtil;
 
 // All time units are in nanoseconds.
 public final record TickTime(
@@ -57,7 +57,7 @@ public final record TickTime(
      * Returns whether there was a tick that occurred before this one.
      */
     public boolean hasLastTick() {
-        return this.previousTickStart != SchedulerThreadPool.DEADLINE_NOT_SET;
+        return this.previousTickStart != TimeUtil.DEADLINE_NOT_SET;
     }
 
     /*

@@ -8302,7 +8302,7 @@ index 0000000000000000000000000000000000000000..467065e3b40df17f38716499259b4666
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c47e77ceb15948cbd4a2a370738843c02542f6c1
+index 0000000000000000000000000000000000000000..640548d78b87653871dd1f7b0f84574c5e205fe8
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 @@ -0,0 +1,1055 @@
@@ -8795,9 +8795,9 @@ index 0000000000000000000000000000000000000000..c47e77ceb15948cbd4a2a370738843c0
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +        final int minLevel = ChunkTaskScheduler.getTicketLevel(toStatus);
 +        final List<ChunkProgressionTask> tasks = new ArrayList<>();
-+        final ReentrantAreaLock.Node ticketLock = this.chunkHolderManager.ticketLockArea.lock(chunkX, chunkZ, accessRadius); // Folia - use area based lock to reduce contention
++        final ReentrantAreaLock.Node ticketLock = this.chunkHolderManager.ticketLockArea.lock(chunkX, chunkZ, accessRadius);
 +        try {
-+            final ReentrantAreaLock.Node schedulingLock = this.schedulingLockArea.lock(chunkX, chunkZ, accessRadius); // Folia - use area based lock to reduce contention
++            final ReentrantAreaLock.Node schedulingLock = this.schedulingLockArea.lock(chunkX, chunkZ, accessRadius);
 +            try {
 +                final NewChunkHolder chunkHolder = this.chunkHolderManager.getChunkHolder(chunkKey);
 +                if (chunkHolder == null || chunkHolder.getTicketLevel() > minLevel) {
@@ -23059,7 +23059,7 @@ index cda915fcb4822689f42b25280eb99aee082ddb74..094d2d528cb74b8f1d277cd780bba7f4
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index be6e4b5e485e10d37b5194c214f69b677622cc8a..bdaca3647425711ee8b10eb0593a9c3cb4037ede 100644
+index cab1ab613dd081e9472de515a19e1b4738e4fba3..96f7f37c42cecea1d714f7b16276f430fe35d6bc 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -185,7 +185,7 @@ import net.minecraft.world.scores.ScoreboardSaveData;
@@ -27731,9 +27731,20 @@ index 4016d26304a0bf3894eed2bef72113b2ca2d7a6f..5014840bf5d7ef53a4fea8aa6f3b25eb
                      PrepareSpawnTask.this.loadListener.updateFocus(this.spawnLevel.dimension(), chunkPos);
                  }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 3f3fc8617d37e8653e6e64e6d405372496284258..12ab84ddce4868ddb9e480a2bb8f322bc3346cce 100644
+index e1a3af77d1566db9ad7a7976d6d69e08b2b32c99..38c30d98a200dd2a5c888cc080e9c77795f0e0c4 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
+@@ -973,8 +973,8 @@ public abstract class PlayerList {
+         player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().get(GameRules.ADVANCE_TIME)));
+         player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
+         // Paper start - view distances
+-        player.connection.send(new ClientboundSetChunkCacheRadiusPacket(io.papermc.paper.FeatureHooks.getViewDistance(level)));
+-        player.connection.send(new ClientboundSetSimulationDistancePacket(io.papermc.paper.FeatureHooks.getSimulationDistance(level)));
++        //player.connection.send(new ClientboundSetChunkCacheRadiusPacket(io.papermc.paper.FeatureHooks.getViewDistance(level))); // Paper - rewrite chunk system
++        //player.connection.send(new ClientboundSetSimulationDistancePacket(io.papermc.paper.FeatureHooks.getSimulationDistance(level))); // Paper - rewrite chunk system
+         // Paper end - view distances
+         if (level.isRaining()) {
+             // CraftBukkit start - handle player weather
 @@ -1195,7 +1195,7 @@ public abstract class PlayerList {
  
      public void setViewDistance(int viewDistance) {
@@ -27748,7 +27759,7 @@ index 3f3fc8617d37e8653e6e64e6d405372496284258..12ab84ddce4868ddb9e480a2bb8f322b
      public void setSimulationDistance(int simulationDistance) {
          this.simulationDistance = simulationDistance;
 -        this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance));
-+        //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance));  // Paper - rewrite chunk system
++        //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance)); // Paper - rewrite chunk system
  
          for (ServerLevel serverLevel : this.server.getAllLevels()) {
              serverLevel.getChunkSource().setSimulationDistance(simulationDistance);
