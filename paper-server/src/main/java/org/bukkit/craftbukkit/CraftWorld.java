@@ -856,6 +856,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.NONE; // Don't break blocks
         } else if (source == null) {
             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.STANDARD; // Break blocks, don't decay drops
+        } else if (source instanceof org.bukkit.entity.minecart.ExplosiveMinecart || source instanceof org.bukkit.entity.TNTPrimed) {
+            explosionType = net.minecraft.world.level.Level.ExplosionInteraction.TNT;
         } else {
             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.MOB; // Respect mobGriefing gamerule
         }
