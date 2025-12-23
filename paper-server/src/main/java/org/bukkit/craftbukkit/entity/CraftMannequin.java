@@ -31,15 +31,14 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     @Override
     public void setPose(Pose pose, boolean fixed) {
         Preconditions.checkArgument(pose != null, "pose cannot be null");
-        net.minecraft.world.entity.Pose internalPose = net.minecraft.world.entity.Pose.values()[pose.ordinal()];
-        if (!net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.contains(internalPose)) {
+        if (!Mannequin.validPoses().contains(pose)) {
             throw new IllegalArgumentException("Invalid pose '%s', expected one of: %s".formatted(
                 pose.name(),
-                net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.stream().map(p -> Pose.values()[p.ordinal()]).toList() // name doesn't match
+                Mannequin.validPoses().stream().toList() // name doesn't match
             ));
         }
 
-        this.setPose0(internalPose, fixed);
+        this.setPose0(net.minecraft.world.entity.Pose.values()[pose.ordinal()], fixed);
     }
 
     @Override

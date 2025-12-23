@@ -10,8 +10,10 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
@@ -27,12 +29,16 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     public static final PaperServerInternalAPIBridge INSTANCE = new PaperServerInternalAPIBridge();
+
+    private static final Set<Pose> validMannequinPoses = Mannequin.VALID_POSES.stream()
+        .map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toSet());
 
     @Override
     public DamageEffect getDamageEffect(final String key) {
@@ -115,5 +121,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
         return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
+    }
+
+    @Override
+    public Set<Pose> validMannequinPoses() {
+        return validMannequinPoses;
     }
 }
