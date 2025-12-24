@@ -18,4 +18,8 @@ public enum Axis {
      * The z axis.
      */
     Z;
+
+    public boolean isHorizontal() {
+        return this == X || this == Z;
+    }
 }
