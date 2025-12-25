@@ -1852,7 +1852,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         List<Holder<net.minecraft.world.level.levelgen.structure.Structure>> holders = new ArrayList<>();
 
         for (Structure structure : structures) {
-            holders.add(Holder.direct(CraftStructure.bukkitToMinecraft(structure)));
+            holders.add(CraftStructure.bukkitToMinecraftHolder(structure));
         }
 
         Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.structure.Structure>> found = this.getHandle().getChunkSource().getGenerator().findNearestMapStructure(this.getHandle(), HolderSet.direct(holders), originPos, radius, findUnexplored);
