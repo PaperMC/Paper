@@ -8,6 +8,7 @@ import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
@@ -73,6 +74,10 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         if (inventory instanceof final BlockEntity blockEntity) {
             blockEntity.setLevel(this.world);
             super.defaultTitle = inventory.getDisplayName();
+        }
+
+        if (inventory instanceof final LecternBlockEntity lbeException) {
+            lbeException.dirtyFix = true;
         }
 
         if (!this.useFakeBlockEntity) { // gets around open noise for chest
