@@ -32,6 +32,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
+import org.bukkit.entity.Pose;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -450,6 +451,26 @@ public final class ArgumentTypes {
      */
     public static <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
         return provider().resourceKey(registryKey);
+    }
+
+    /**
+     * An argument for getting a pose
+     * Keep in mind that a mannequin has only a subset of poses.
+     * Use {@link #mannequin()} for mannequin-specific poses.
+     *
+     * @return argument
+     */
+    public static ArgumentType<Pose> pose() {
+        return provider().pose();
+    }
+
+    /**
+     * An argument for getting a mannequin-specific pose
+     *
+     * @return argument
+     */
+    public static ArgumentType<Pose> mannequin() {
+        return provider().mannequin();
     }
 
     private ArgumentTypes() {
