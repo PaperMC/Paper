@@ -15,6 +15,10 @@ import org.bukkit.Tag;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @deprecated in favour of regular registry tags
+ */
+@Deprecated(since = "1.21.11")
 public abstract class BaseTag<T extends Keyed, C extends BaseTag<T, C>> implements Tag<T> {
 
     protected final NamespacedKey key;

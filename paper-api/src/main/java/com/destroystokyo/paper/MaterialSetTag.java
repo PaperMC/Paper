@@ -5,6 +5,8 @@
 package com.destroystokyo.paper;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.keys.tags.PaperBlockTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.PaperItemTypeTagKeys;
 import io.papermc.paper.tag.BaseTag;
 import java.util.Collection;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -21,6 +24,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated in favour of regular registry tags
+ */
+@Deprecated(since = "1.21.11")
 public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
 
     /**
