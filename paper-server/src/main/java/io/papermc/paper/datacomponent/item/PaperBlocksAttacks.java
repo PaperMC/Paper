@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
@@ -15,6 +14,8 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -73,15 +74,13 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder blockDelaySeconds(final float delay) {
-            Preconditions.checkArgument(delay >= 0, "delay must be non-negative, was %s", delay);
-            this.blockDelaySeconds = delay;
+            this.blockDelaySeconds = requireArgumentNonNegative(delay, "delay");
             return this;
         }
 
         @Override
         public Builder disableCooldownScale(final float scale) {
-            Preconditions.checkArgument(scale >= 0, "scale must be non-negative, was %s", scale);
-            this.disableCooldownScale = scale;
+            this.disableCooldownScale = requireArgumentNonNegative(scale, "scale");
             return this;
         }
 
