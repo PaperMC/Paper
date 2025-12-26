@@ -156,4 +156,8 @@ public interface Permissible extends ServerOperator {
         }
     }
     // Paper end
+
+    default void clearPermissions() {
+
+    }
 }

@@ -1,6 +1,7 @@
 package io.papermc.paper.plugin.manager;
 
 import com.google.common.graph.MutableGraph;
+import com.mojang.logging.LogUtils;
 import io.papermc.paper.plugin.PermissionManager;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -13,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
@@ -23,25 +25,32 @@ import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.UnknownDependencyException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class PaperPluginManagerImpl implements PluginManager, DependencyContext {
+
+    private static final Logger LOGGER = LogUtils.getClassLogger();
 
     final PaperPluginInstanceManager instanceManager;
     final PaperEventManager paperEventManager;
     PermissionManager permissionManager;
 
-    public PaperPluginManagerImpl(Server server, CommandMap commandMap, @Nullable SimplePluginManager permissionManager) {
+    public PaperPluginManagerImpl(Server server, CommandMap commandMap) {
         this.instanceManager = new PaperPluginInstanceManager(this, commandMap, server);
         this.paperEventManager = new PaperEventManager(server);
-
-        if (permissionManager == null) {
-            this.permissionManager = new NormalPaperPermissionManager();
+        PermissionManager possibleCustomImpl = PermissionRegistrar.INSTANCE.getRegistered();
+        if (possibleCustomImpl != null) {
+            this.permissionManager = possibleCustomImpl;
+            LOGGER.info("Custom Permission Manager Implementation from plugin {}", PermissionRegistrar.INSTANCE.getRegisteredOwner());
         } else {
-            this.permissionManager = new StupidSPMPermissionManagerWrapper(permissionManager); // TODO: See comment when SimplePermissionManager is removed
+            this.permissionManager = new NormalPaperPermissionManager();
         }
     }
 
@@ -224,10 +233,19 @@ public class PaperPluginManagerImpl implements PluginManager, DependencyContext 
     }
 
     @Override
-    public void overridePermissionManager(@NotNull Plugin plugin, @Nullable PermissionManager permissionManager) {
-        this.permissionManager = permissionManager;
+    public Permissible createPermissible(@NotNull ServerOperator operator) {
+        return this.permissionManager.createPermissible(operator);
     }
 
+    @Override
+    public Permissible createCommandBlockPermissible() {
+        return this.permissionManager.createCommandBlockPermissible();
+    }
+
+    @Override
+    public CompletableFuture<Optional<Permissible>> loadPlayerPermissible(@NotNull UUID playerUuid) {
+        return this.permissionManager.loadPlayerPermissible(playerUuid);
+    }
     // Etc
 
     @Override
