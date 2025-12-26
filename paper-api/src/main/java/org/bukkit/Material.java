@@ -7,10 +7,13 @@ import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
 import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import io.papermc.paper.inventory.CreativeModeTab;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
@@ -139,6 +142,7 @@ import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * An enum of all material IDs accepted by the official server and client
@@ -3559,12 +3563,28 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     /**
      * Get the {@link CreativeCategory} to which this material belongs.
      *
-     * @return the creative category. null if does not belong to a category
+     * @return the creative category. null if it does not belong to a category
+     *
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead
+     * and check the type.
      */
     @Nullable
+    @Deprecated(since = "1.21.11", forRemoval = true)
     public CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
         return type == null ? null : type.getCreativeCategory();
+    }
+
+    /**
+     * Gets the {@link CreativeModeTab}s to which this material belongs.
+     *
+     * @return A collection of creative mode tabs to which this material belongs, which
+     * can be empty.
+     */
+    @NotNull
+    public @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs() {
+        ItemType type = asItemType();
+        return type == null ? List.of() : type.getCreativeModeTabs();
     }
 
     /**
