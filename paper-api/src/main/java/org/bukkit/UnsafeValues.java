@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
+import io.papermc.paper.persistence.DataResult;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
@@ -163,7 +164,11 @@ public interface UnsafeValues {
 
     byte[] serializeItem(ItemStack item);
 
-    ItemStack deserializeItem(byte[] data);
+    default ItemStack deserializeItem(byte[] data) {
+        return deserializeItemSafely(data).resultOrThrow();
+    }
+
+    DataResult<ItemStack> deserializeItemSafely(byte[] data);
 
     /**
      * Serializes this itemstack to json format.
