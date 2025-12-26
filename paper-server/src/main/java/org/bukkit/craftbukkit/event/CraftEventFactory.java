@@ -1944,6 +1944,10 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining) {
+        return callEntityPickupItemEvent(entity, item, remaining, false);
+    }
+
     public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining, boolean cancelled) {
         EntityPickupItemEvent event = new EntityPickupItemEvent((LivingEntity) entity.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
         event.setCancelled(cancelled);

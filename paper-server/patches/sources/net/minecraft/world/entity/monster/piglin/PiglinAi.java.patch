@@ -1,28 +1,22 @@
 --- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
 +++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
-@@ -336,23 +_,32 @@
+@@ -335,24 +_,26 @@
+ 
      protected static void pickUpItem(ServerLevel level, Piglin piglin, ItemEntity itemEntity) {
          stopWalking(piglin);
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().is(Items.GOLD_NUGGET) ? 0 : itemEntity.getItem().getCount() - 1).isCancelled()) return; // Paper
++        piglin.onItemPickup(itemEntity); // Paper - moved from Piglin#pickUpItem - call prior to item entity modification
          ItemStack item;
--        if (itemEntity.getItem().is(Items.GOLD_NUGGET)) {
-+        // CraftBukkit start
-+        // Paper start - EntityPickupItemEvent fixes; fix event firing twice
-+        if (itemEntity.getItem().is(Items.GOLD_NUGGET)) { // Paper
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, 0, false).isCancelled()) return;
-+            piglin.onItemPickup(itemEntity); // Paper - moved from Piglin#pickUpItem - call prior to item entity modification
-+            // Paper end
-             piglin.take(itemEntity, itemEntity.getItem().getCount());
+         if (itemEntity.getItem().is(Items.GOLD_NUGGET)) {
+-            piglin.take(itemEntity, itemEntity.getItem().getCount());
++            piglin.take(itemEntity, itemEntity.getItem().getCount()); // Paper - diff on change for above event
              item = itemEntity.getItem();
 -            itemEntity.discard();
--        } else {
 +            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
-+        } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().getCount() - 1, false).isCancelled()) {
-+            piglin.onItemPickup(itemEntity); // Paper - EntityPickupItemEvent fixes; moved from Piglin#pickUpItem - call prior to item entity modification
-             piglin.take(itemEntity, 1);
+         } else {
+-            piglin.take(itemEntity, 1);
++            piglin.take(itemEntity, 1); // Paper - diff on change for above event
              item = removeOneItemFromItemEntity(itemEntity);
-+        } else {
-+            return;
-+            // CraftBukkit end
          }
  
 -        if (isLovedItem(item)) {
