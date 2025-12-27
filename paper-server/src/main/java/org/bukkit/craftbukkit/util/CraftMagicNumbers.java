@@ -12,6 +12,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.persistence.DataResult;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -497,8 +498,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
         );
     }
 
+    private static <R> DataResult<R> convertMojangDataResult(com.mojang.serialization.DataResult<R> result) {
+        return switch (result) {
+            case com.mojang.serialization.DataResult.Error<R>(var message, var partialValue, var ignored) when partialValue.isPresent() ->
+                new DataResult.ErrorWithPartialResult<>(message.get(), partialValue.get());
+            case com.mojang.serialization.DataResult.Error<R>(var message, var ignored, var ignored2) ->
+                new DataResult.Error<>(message.get());
+            case com.mojang.serialization.DataResult.Success<R>(var value, var ignored) ->
+                new DataResult.Success<>(value);
+        };
+    }
+
     @Override
-    public ItemStack deserializeItem(byte[] data) {
+    public DataResult<ItemStack> deserializeItemSafely(byte[] data) {
         Preconditions.checkNotNull(data, "null cannot be deserialized");
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
@@ -506,15 +518,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return deserializeItem(compound);
     }
 
-    private ItemStack deserializeItem(CompoundTag compound) {
+    private DataResult<ItemStack> deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+
         if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
-            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
+            return new DataResult.Success<>(CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY));
         }
-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
+        return convertMojangDataResult(net.minecraft.world.item.ItemStack.CODEC.parse(
             CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
-        ).getOrThrow());
+        ).map(CraftItemStack::asCraftMirror));
     }
 
     @Override
@@ -610,7 +623,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         });
 
-        return deserializeItem(tag);
+        return deserializeItem(tag).resultOrThrow();
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.DataComponentHolder;
+import io.papermc.paper.persistence.DataResult;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -756,16 +757,36 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
-     *
+     * Deserializes this ItemStack from raw NBT bytes. NBT is safer for data migrations as it will
+     * use the builtin data converter instead of Bukkits dangerous serialization system.
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
-     * the {@link #serializeAsBytes()} API returned.
+     * the {@link #serializeAsBytes()} API returned. Throws an {@link IllegalStateException} if an
+     * error occurred during deserialization.
+     *
      * @param bytes bytes representing an item in NBT
      * @return ItemStack migrated to this version of Minecraft if needed.
+     * @see #deserializeBytesSafely(byte[])
      */
     public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
         return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
+    }
+
+    /**
+     * Deserializes this ItemStack from raw NBT bytes. NBT is safer for data
+     * migrations as it will use the built-in data converter instead of
+     * Bukkits dangerous serialization system. This expects that the
+     * DataVersion was stored on the root of the Compound, as saved from the
+     * {@link #serializeAsBytes()} API returned. If an error occurs during
+     * serialization, the {@link DataResult} that is returned will contain
+     * both the error message and potentially a "partial result", representing
+     * an item with all the invalid properties removed.
+     *
+     * @param bytes bytes representing an item in NBT
+     * @return DataResult with the ItemStack migrated to this
+     *  version of Minecraft if needed
+     */
+    public static @NotNull DataResult<ItemStack> deserializeBytesSafely(final byte @NotNull [] bytes) {
+        return org.bukkit.Bukkit.getUnsafe().deserializeItemSafely(bytes);
     }
 
     /**
