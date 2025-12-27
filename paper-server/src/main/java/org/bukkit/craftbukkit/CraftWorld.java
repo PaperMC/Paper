@@ -1065,7 +1065,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
-        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks ? BlockCollisionMode.COLLIDER : BlockCollisionMode.OUTLINE, raySize, filter, null);
+        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks ? BlockCollisionMode.COLLIDER : BlockCollisionMode.OUTLINE, raySize, filter, canCollide);
     }
 
     public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, BlockCollisionMode blockCollisionMode, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
