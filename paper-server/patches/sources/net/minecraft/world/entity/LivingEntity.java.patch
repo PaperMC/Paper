@@ -571,19 +571,34 @@
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
-@@ -1215,7 +_,7 @@
+@@ -1209,17 +_,17 @@
+             this.resolvePlayerResponsibleForDamage(damageSource);
+             if (flag1) {
+                 BlocksAttacks blocksAttacks = useItem.get(DataComponents.BLOCKS_ATTACKS);
+-                if (flag && blocksAttacks != null) {
++                if (flag && blocksAttacks != null && amount <= 0.0F) {
+                     blocksAttacks.onBlocked(level, this);
+                 } else {
                      level.broadcastDamageEvent(this, damageSource);
                  }
  
 -                if (!damageSource.is(DamageTypeTags.NO_IMPACT) && (!flag || amount > 0.0F)) {
-+                if (!damageSource.is(DamageTypeTags.NO_IMPACT) && !flag) { // CraftBukkit - Prevent marking hurt if the damage is blocked
++                if (!damageSource.is(DamageTypeTags.NO_IMPACT) && (!flag || amount > 0.0F)) { // CraftBukkit - Prevent marking hurt if the damage is blocked // Paper - fix vanilla parity: play hurt animation if damage > 0 even if blocked
                      this.markHurt();
                  }
  
-@@ -1230,8 +_,16 @@
+-                if (!damageSource.is(DamageTypeTags.NO_KNOCKBACK)) {
++                if (amount > 0.0F && !damageSource.is(DamageTypeTags.NO_KNOCKBACK)) { // Paper - fix vanilla parity: only apply knockback if damage > 0
+                     double d = 0.0;
+                     double d1 = 0.0;
+                     if (damageSource.getDirectEntity() instanceof Projectile projectile) {
+@@ -1230,9 +_,19 @@
                          d = damageSource.getSourcePosition().x() - this.getX();
                          d1 = damageSource.getSourcePosition().z() - this.getZ();
                      }
+-
+-                    this.knockback(0.4F, d, d1);
+-                    if (!flag) {
 +                    // Paper start - Check distance in entity interactions; see for loop in knockback method
 +                    if (Math.abs(d) > 200) {
 +                        d = Math.random() - Math.random();
@@ -592,12 +607,14 @@
 +                        d1 = Math.random() - Math.random();
 +                    }
 +                    // Paper end - Check distance in entity interactions
- 
--                    this.knockback(0.4F, d, d1);
++
 +                    this.knockback(0.4F, d, d1, damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
-                     if (!flag) {
++
++                    // MODIFICATION 3 : On envoie le packet de mouvement même si "flag" est vrai (bloqué), tant qu'on a pris des dégâts
++                    if (!flag || amount > 0.0F) { // Paper - fix vanilla parity: indicate damage if damage > 0 even if blocked
                          this.indicateDamage(d, d1);
                      }
+                 }
 @@ -1240,19 +_,19 @@
  
              if (this.isDeadOrDying()) {
