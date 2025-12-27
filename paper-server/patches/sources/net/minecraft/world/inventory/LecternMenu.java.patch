@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/LecternMenu.java
 +++ b/net/minecraft/world/inventory/LecternMenu.java
-@@ -14,12 +_,29 @@
+@@ -14,12 +_,30 @@
      public static final int BUTTON_PAGE_JUMP_RANGE_START = 100;
      private final Container lectern;
      private final ContainerData lecternData;
@@ -13,6 +13,7 @@
 +    // CraftBukkit start
 +    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftLecternView view = null;
 +    private final org.bukkit.entity.Player player;
++    public boolean allowEvents = true;
 +
 +    @Override
 +    public org.bukkit.craftbukkit.inventory.view.CraftLecternView getBukkitView() {
@@ -57,7 +58,7 @@
 +                    // Paper start - Add PlayerLecternPageChangeEvent
 +                    bukkitView = (org.bukkit.craftbukkit.inventory.CraftInventoryLectern) getBukkitView().getTopInventory();
 +                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.LEFT, i, i - 1);
-+                    if (!playerLecternPageChangeEvent.callEvent()) {
++                    if (allowEvents && !playerLecternPageChangeEvent.callEvent()) {
 +                        return false;
 +                    }
 +                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
@@ -70,7 +71,7 @@
 +                    // Paper start - Add PlayerLecternPageChangeEvent
 +                    bukkitView = (org.bukkit.craftbukkit.inventory.CraftInventoryLectern) getBukkitView().getTopInventory();
 +                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.RIGHT, i, i + 1);
-+                    if (!playerLecternPageChangeEvent.callEvent()) {
++                    if (allowEvents && !playerLecternPageChangeEvent.callEvent()) {
 +                        return false;
 +                    }
 +                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
@@ -78,13 +79,15 @@
                      return true;
                  }
                  case 3:
-@@ -58,6 +_,13 @@
+@@ -58,6 +_,15 @@
                          return false;
                      }
  
 +                    // CraftBukkit start - Event for taking the book
 +                    org.bukkit.event.player.PlayerTakeLecternBookEvent event = new org.bukkit.event.player.PlayerTakeLecternBookEvent(this.player, this.getBukkitView().getTopInventory().getHolder());
-+                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++                    if (allowEvents) {
++                        org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++                    }
 +                    if (event.isCancelled()) {
 +                        return false;
 +                    }
