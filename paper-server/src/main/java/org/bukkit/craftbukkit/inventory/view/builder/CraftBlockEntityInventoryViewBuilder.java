@@ -4,10 +4,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.LecternMenu;
 import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
@@ -71,6 +73,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
         if (inventory instanceof final BlockEntity blockEntity) {
+            blockEntity.virtual = true;
             blockEntity.setLevel(this.world);
             super.defaultTitle = inventory.getDisplayName();
         }
@@ -79,7 +82,12 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
             return handle.create(player.nextContainerCounter(), player.getInventory());
         }
 
-        return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
+        final AbstractContainerMenu menu = inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
+        if (menu instanceof LecternMenu lmenu) { // don't trigger events
+            lmenu.allowEvents = false;
+        }
+
+        return menu;
     }
 
     @Override
