@@ -1182,7 +1182,7 @@ public final class CraftServer implements Server {
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
-        File folder = new File(creator.getParentDirectory().toFile(), name);
+        File folder = new File(creator.parentDirectory().toFile(), name);
         World world = this.getWorld(name);
 
         // Paper start
@@ -1219,7 +1219,7 @@ public final class CraftServer implements Server {
             Path serverRoot = this.getWorldContainer().toPath();
             // Make sure parsing off server root for symlinks
             DirectoryValidator directoryValidator = LevelStorageSource.parseValidator(serverRoot.resolve("allowed_symlinks.txt"));
-            LevelStorageSource levelStorageSource = new LevelStorageSource(creator.getParentDirectory(), serverRoot.resolve("../backups"), directoryValidator, DataFixers.getDataFixer());
+            LevelStorageSource levelStorageSource = new LevelStorageSource(creator.parentDirectory(), serverRoot.resolve("../backups"), directoryValidator, DataFixers.getDataFixer());
 
             levelStorageAccess = levelStorageSource.validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {

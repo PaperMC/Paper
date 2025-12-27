@@ -238,7 +238,7 @@ public class WorldCreator {
      * @return the parent directory used for world storage
      */
     @NotNull
-    public Path getParentDirectory() {
+    public Path parentDirectory() {
         return this.parentDirectory;
     }
 
