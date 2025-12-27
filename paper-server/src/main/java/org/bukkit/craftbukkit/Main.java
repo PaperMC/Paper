@@ -87,7 +87,7 @@ public class Main {
                         .ofType(SimpleDateFormat.class)
                         .describedAs("Log date format");
 
-                this.accepts("log-pattern", "Specfies the log filename pattern")
+                this.accepts("log-pattern", "Specifies the log filename pattern")
                         .withRequiredArg()
                         .ofType(String.class)
                         .defaultsTo("server.log")

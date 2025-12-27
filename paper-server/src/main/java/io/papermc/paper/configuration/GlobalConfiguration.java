@@ -3,6 +3,7 @@ package io.papermc.paper.configuration;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
@@ -11,7 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -28,7 +29,7 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): <insert changes here>
+    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
@@ -223,27 +224,10 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         public int ioThreads = -1;
         public int workerThreads = -1;
-        public String genParallelism = "default";
 
         @PostProcess
         private void postProcess() {
             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
-            String newChunkSystemGenParallelism = this.genParallelism;
-            if (newChunkSystemGenParallelism.equalsIgnoreCase("default")) {
-                newChunkSystemGenParallelism = "true";
-            }
-
-            final boolean useParallelGen;
-            if (newChunkSystemGenParallelism.equalsIgnoreCase("on") || newChunkSystemGenParallelism.equalsIgnoreCase("enabled")
-                || newChunkSystemGenParallelism.equalsIgnoreCase("true")) {
-                useParallelGen = true;
-            } else if (newChunkSystemGenParallelism.equalsIgnoreCase("off") || newChunkSystemGenParallelism.equalsIgnoreCase("disabled")
-                || newChunkSystemGenParallelism.equalsIgnoreCase("false")) {
-                useParallelGen = false;
-            } else {
-                throw new IllegalStateException("Invalid option for gen-parallelism: must be one of [on, off, enabled, disabled, true, false, default]");
-            }
-            FeatureHooks.initChunkTaskScheduler(useParallelGen);
         }
     }
 
@@ -274,7 +258,7 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class PacketLimiter extends ConfigurationPart {
         public Component kickMessage = Component.translatable("disconnect.exceeded_packet_rate", NamedTextColor.RED);
         public PacketLimit allPackets = new PacketLimit(7.0, 500.0, PacketLimit.ViolateAction.KICK);
-        public Map<Class<? extends Packet<?>>, PacketLimit> overrides = Map.of(ServerboundPlaceRecipePacket.class, new PacketLimit(4.0, 5.0, PacketLimit.ViolateAction.DROP));
+        public Map<@WriteKeyBack Class<? extends Packet<?>>, PacketLimit> overrides = Map.of(ServerboundPlaceRecipePacket.class, new PacketLimit(4.0, 5.0, PacketLimit.ViolateAction.DROP));
 
         @ConfigSerializable
         public record PacketLimit(@Required double interval, @Required double maxPacketRate, ViolateAction action) {
@@ -357,6 +341,12 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("Defines how many orbs groups can exist in an area.")
         @Constraints.Min(1)
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
+        @Comment("See Fix MC-163962; prevent villager demand from going negative.")
+        public boolean preventNegativeVillagerDemand = false;
+        @Comment("Whether the nether dimension is enabled and will be loaded.")
+        public boolean enableNether = true;
+        @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
+        public boolean fixFarEndTerrainGeneration = true;
     }
 
     public BlockUpdates blockUpdates;
@@ -386,7 +376,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                     Set.of()
                 );
 
-                public Map<ResourceLocation, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
+                public Map<Identifier, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
                     Objects.requireNonNull(net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL)),
                     new ItemObfuscationBinding.AssetObfuscationConfiguration(
                         true,

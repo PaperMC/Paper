@@ -221,12 +221,10 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Determines if this event is cancelled.
+     * {@inheritDoc}
      * <p>
      * When this event is cancelled, custom handshake logic will not
      * be processed.
-     *
-     * @return {@code true} if this event is cancelled, {@code false} otherwise
      */
     @Override
     public boolean isCancelled() {
@@ -234,12 +232,10 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Sets if this event is cancelled.
+     * {@inheritDoc}
      * <p>
      * When this event is cancelled, custom handshake logic will not
      * be processed.
-     *
-     * @param cancel {@code true} if this event is cancelled, {@code false} otherwise
      */
     @Override
     public void setCancelled(final boolean cancel) {

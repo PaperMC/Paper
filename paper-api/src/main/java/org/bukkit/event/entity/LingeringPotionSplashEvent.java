@@ -66,17 +66,17 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
      * @return if an empty AreaEffectCloud may be created
      */
     public boolean allowsEmptyCreation() {
-        return allowEmptyAreaEffectCreation;
+        return this.allowEmptyAreaEffectCreation;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        cancelled = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull

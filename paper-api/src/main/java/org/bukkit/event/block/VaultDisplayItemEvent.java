@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a vault in a trial chamber is about to display an item.
  */
-@ApiStatus.Experimental
 public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -50,8 +49,8 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull

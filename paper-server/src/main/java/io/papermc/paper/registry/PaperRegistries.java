@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
@@ -12,11 +14,14 @@ import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperFrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
+import io.papermc.paper.registry.data.PaperInstrumentRegistryEntry;
 import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
+import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
@@ -31,6 +36,7 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Keyed;
 import org.bukkit.MusicInstrument;
@@ -42,6 +48,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftGameEvent;
+import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.craftbukkit.CraftSound;
@@ -58,6 +65,7 @@ import org.bukkit.craftbukkit.entity.CraftFrog;
 import org.bukkit.craftbukkit.entity.CraftPig;
 import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.craftbukkit.entity.CraftWolf;
+import org.bukkit.craftbukkit.entity.CraftZombieNautilus;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -77,6 +85,7 @@ import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
@@ -97,7 +106,6 @@ public final class PaperRegistries {
     static {
         REGISTRY_ENTRIES = List.of(
             // Start generate - RegistryDefinitions
-            // @GeneratedFrom 1.21.6
             // built-in
             start(Registries.GAME_EVENT, RegistryKey.GAME_EVENT).craft(GameEvent.class, CraftGameEvent::new).writable(PaperGameEventRegistryEntry.PaperBuilder::new),
             start(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE).craft(StructureType.class, CraftStructureType::new).build(),
@@ -112,6 +120,7 @@ public final class PaperRegistries {
             start(Registries.FLUID, RegistryKey.FLUID).craft(Fluid.class, CraftFluid::new).build(),
             start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new, true).create(PaperSoundEventRegistryEntry.PaperBuilder::new, RegistryEntryMeta.RegistryModificationApiSupport.NONE),
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
+            start(Registries.GAME_RULE, RegistryKey.GAME_RULE).craft(GameRule.class, CraftGameRule::new).build(),
 
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
@@ -125,12 +134,14 @@ public final class PaperRegistries {
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).writable(PaperJukeboxSongRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).build().delayed(),
+            start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).writable(PaperInstrumentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT).craft(Cat.Type.class, CraftCat.CraftType::new).writable(PaperCatTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT).craft(Frog.Variant.class, CraftFrog.CraftVariant::new).writable(PaperFrogVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT).craft(Chicken.Variant.class, CraftChicken.CraftVariant::new).writable(PaperChickenVariantRegistryEntry.PaperBuilder::new),
             start(Registries.COW_VARIANT, RegistryKey.COW_VARIANT).craft(Cow.Variant.class, CraftCow.CraftVariant::new).writable(PaperCowVariantRegistryEntry.PaperBuilder::new),
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
@@ -160,13 +171,13 @@ public final class PaperRegistries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> RegistryEntryMeta.Buildable<M, T, B> getBuildableMeta(final ResourceKey<? extends Registry<M>> resourceKey) {
-        final RegistryEntry<M, T> entry = getEntry(resourceKey);
+    public static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> RegistryEntryMeta.Buildable<M, T, B> getBuildableMeta(final RegistryKey<T> registryKey) {
+        final RegistryEntry<M, T> entry = getEntry(registryKey);
         if (entry == null) {
-            throw new IllegalArgumentException("No registry entry for " + resourceKey);
+            throw new IllegalArgumentException("No registry entry for " + registryKey);
         }
         if (!(entry.meta() instanceof final RegistryEntryMeta.Buildable<M, T, ?> buildableMeta)) {
-            throw new IllegalArgumentException("Registry entry for " + resourceKey + " is not buildable");
+            throw new IllegalArgumentException("Registry entry for " + registryKey + " is not buildable");
         }
         return (RegistryEntryMeta.Buildable<M, T, B>) buildableMeta;
     }
@@ -182,7 +193,7 @@ public final class PaperRegistries {
     }
 
     public static <M, T> TypedKey<T> fromNms(final ResourceKey<M> resourceKey) {
-        return TypedKey.create(registryFromNms(resourceKey.registryKey()), CraftNamespacedKey.fromMinecraft(resourceKey.location()));
+        return TypedKey.create(registryFromNms(resourceKey.registryKey()), CraftNamespacedKey.fromMinecraft(resourceKey.identifier()));
     }
 
     @SuppressWarnings({"unchecked", "RedundantCast"})

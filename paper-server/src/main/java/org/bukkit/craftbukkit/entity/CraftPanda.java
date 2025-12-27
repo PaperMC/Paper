@@ -6,13 +6,13 @@ import org.bukkit.entity.Panda;
 
 public class CraftPanda extends CraftAnimals implements Panda {
 
-    public CraftPanda(CraftServer server, net.minecraft.world.entity.animal.Panda entity) {
+    public CraftPanda(CraftServer server, net.minecraft.world.entity.animal.panda.Panda entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Panda getHandle() {
-        return (net.minecraft.world.entity.animal.Panda) this.entity;
+    public net.minecraft.world.entity.animal.panda.Panda getHandle() {
+        return (net.minecraft.world.entity.animal.panda.Panda) this.entity;
     }
 
     @Override
@@ -127,15 +127,15 @@ public class CraftPanda extends CraftAnimals implements Panda {
         return this.getHandle().getUnhappyCounter();
     }
 
-    public static Gene fromNms(net.minecraft.world.entity.animal.Panda.Gene gene) {
+    public static Gene fromNms(net.minecraft.world.entity.animal.panda.Panda.Gene gene) {
         Preconditions.checkArgument(gene != null, "Gene may not be null");
 
         return Gene.values()[gene.ordinal()];
     }
 
-    public static net.minecraft.world.entity.animal.Panda.Gene toNms(Gene gene) {
+    public static net.minecraft.world.entity.animal.panda.Panda.Gene toNms(Gene gene) {
         Preconditions.checkArgument(gene != null, "Gene may not be null");
 
-        return net.minecraft.world.entity.animal.Panda.Gene.values()[gene.ordinal()];
+        return net.minecraft.world.entity.animal.panda.Panda.Gene.values()[gene.ordinal()];
     }
 }

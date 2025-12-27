@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
-import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The sounds listed in this interface are present in the default server
  * or can be enabled via a {@link FeatureFlag}.
- * There may be additional sounds present in the server, for example from a {@link DataPack}
+ * There may be additional sounds present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
  * which can be accessed via {@link Registry#SOUNDS}.
  * <p>
  * <b>WARNING:</b> At any time, sounds may be added/removed from this interface or even
@@ -24,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
-    // @GeneratedFrom 1.21.6
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
 
     Sound AMBIENT_BASALT_DELTAS_LOOP = getSound("ambient.basalt_deltas.loop");
@@ -465,9 +463,31 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_COPPER_BULB_TURN_ON = getSound("block.copper_bulb.turn_on");
 
+    Sound BLOCK_COPPER_CHEST_CLOSE = getSound("block.copper_chest.close");
+
+    Sound BLOCK_COPPER_CHEST_OPEN = getSound("block.copper_chest.open");
+
+    Sound BLOCK_COPPER_CHEST_OXIDIZED_CLOSE = getSound("block.copper_chest_oxidized.close");
+
+    Sound BLOCK_COPPER_CHEST_OXIDIZED_OPEN = getSound("block.copper_chest_oxidized.open");
+
+    Sound BLOCK_COPPER_CHEST_WEATHERED_CLOSE = getSound("block.copper_chest_weathered.close");
+
+    Sound BLOCK_COPPER_CHEST_WEATHERED_OPEN = getSound("block.copper_chest_weathered.open");
+
     Sound BLOCK_COPPER_DOOR_CLOSE = getSound("block.copper_door.close");
 
     Sound BLOCK_COPPER_DOOR_OPEN = getSound("block.copper_door.open");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_BREAK = getSound("block.copper_golem_statue.break");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_FALL = getSound("block.copper_golem_statue.fall");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_HIT = getSound("block.copper_golem_statue.hit");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_PLACE = getSound("block.copper_golem_statue.place");
+
+    Sound BLOCK_COPPER_GOLEM_STATUE_STEP = getSound("block.copper_golem_statue.step");
 
     Sound BLOCK_COPPER_GRATE_BREAK = getSound("block.copper_grate.break");
 
@@ -1283,6 +1303,28 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_SCULK_VEIN_STEP = getSound("block.sculk_vein.step");
 
+    Sound BLOCK_SHELF_ACTIVATE = getSound("block.shelf.activate");
+
+    Sound BLOCK_SHELF_BREAK = getSound("block.shelf.break");
+
+    Sound BLOCK_SHELF_DEACTIVATE = getSound("block.shelf.deactivate");
+
+    Sound BLOCK_SHELF_FALL = getSound("block.shelf.fall");
+
+    Sound BLOCK_SHELF_HIT = getSound("block.shelf.hit");
+
+    Sound BLOCK_SHELF_MULTI_SWAP = getSound("block.shelf.multi_swap");
+
+    Sound BLOCK_SHELF_PLACE = getSound("block.shelf.place");
+
+    Sound BLOCK_SHELF_PLACE_ITEM = getSound("block.shelf.place_item");
+
+    Sound BLOCK_SHELF_SINGLE_SWAP = getSound("block.shelf.single_swap");
+
+    Sound BLOCK_SHELF_STEP = getSound("block.shelf.step");
+
+    Sound BLOCK_SHELF_TAKE_ITEM = getSound("block.shelf.take_item");
+
     Sound BLOCK_SHROOMLIGHT_BREAK = getSound("block.shroomlight.break");
 
     Sound BLOCK_SHROOMLIGHT_FALL = getSound("block.shroomlight.fall");
@@ -1697,6 +1739,22 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_AXOLOTL_SWIM = getSound("entity.axolotl.swim");
 
+    Sound ENTITY_BABY_NAUTILUS_AMBIENT = getSound("entity.baby_nautilus.ambient");
+
+    Sound ENTITY_BABY_NAUTILUS_AMBIENT_LAND = getSound("entity.baby_nautilus.ambient_land");
+
+    Sound ENTITY_BABY_NAUTILUS_DEATH = getSound("entity.baby_nautilus.death");
+
+    Sound ENTITY_BABY_NAUTILUS_DEATH_LAND = getSound("entity.baby_nautilus.death_land");
+
+    Sound ENTITY_BABY_NAUTILUS_EAT = getSound("entity.baby_nautilus.eat");
+
+    Sound ENTITY_BABY_NAUTILUS_HURT = getSound("entity.baby_nautilus.hurt");
+
+    Sound ENTITY_BABY_NAUTILUS_HURT_LAND = getSound("entity.baby_nautilus.hurt_land");
+
+    Sound ENTITY_BABY_NAUTILUS_SWIM = getSound("entity.baby_nautilus.swim");
+
     Sound ENTITY_BAT_AMBIENT = getSound("entity.bat.ambient");
 
     Sound ENTITY_BAT_DEATH = getSound("entity.bat.death");
@@ -1791,6 +1849,28 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_CAMEL_STEP_SAND = getSound("entity.camel.step_sand");
 
+    Sound ENTITY_CAMEL_HUSK_AMBIENT = getSound("entity.camel_husk.ambient");
+
+    Sound ENTITY_CAMEL_HUSK_DASH = getSound("entity.camel_husk.dash");
+
+    Sound ENTITY_CAMEL_HUSK_DASH_READY = getSound("entity.camel_husk.dash_ready");
+
+    Sound ENTITY_CAMEL_HUSK_DEATH = getSound("entity.camel_husk.death");
+
+    Sound ENTITY_CAMEL_HUSK_EAT = getSound("entity.camel_husk.eat");
+
+    Sound ENTITY_CAMEL_HUSK_HURT = getSound("entity.camel_husk.hurt");
+
+    Sound ENTITY_CAMEL_HUSK_SADDLE = getSound("entity.camel_husk.saddle");
+
+    Sound ENTITY_CAMEL_HUSK_SIT = getSound("entity.camel_husk.sit");
+
+    Sound ENTITY_CAMEL_HUSK_STAND = getSound("entity.camel_husk.stand");
+
+    Sound ENTITY_CAMEL_HUSK_STEP = getSound("entity.camel_husk.step");
+
+    Sound ENTITY_CAMEL_HUSK_STEP_SAND = getSound("entity.camel_husk.step_sand");
+
     Sound ENTITY_CAT_AMBIENT = getSound("entity.cat.ambient");
 
     Sound ENTITY_CAT_BEG_FOR_FOOD = getSound("entity.cat.beg_for_food");
@@ -1826,6 +1906,44 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_COD_FLOP = getSound("entity.cod.flop");
 
     Sound ENTITY_COD_HURT = getSound("entity.cod.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_DEATH = getSound("entity.copper_golem.death");
+
+    Sound ENTITY_COPPER_GOLEM_HURT = getSound("entity.copper_golem.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_ITEM_DROP = getSound("entity.copper_golem.item_drop");
+
+    Sound ENTITY_COPPER_GOLEM_ITEM_NO_DROP = getSound("entity.copper_golem.item_no_drop");
+
+    Sound ENTITY_COPPER_GOLEM_NO_ITEM_GET = getSound("entity.copper_golem.no_item_get");
+
+    Sound ENTITY_COPPER_GOLEM_NO_ITEM_NO_GET = getSound("entity.copper_golem.no_item_no_get");
+
+    Sound ENTITY_COPPER_GOLEM_SHEAR = getSound("entity.copper_golem.shear");
+
+    Sound ENTITY_COPPER_GOLEM_SPAWN = getSound("entity.copper_golem.spawn");
+
+    Sound ENTITY_COPPER_GOLEM_SPIN = getSound("entity.copper_golem.spin");
+
+    Sound ENTITY_COPPER_GOLEM_STEP = getSound("entity.copper_golem.step");
+
+    Sound ENTITY_COPPER_GOLEM_BECOME_STATUE = getSound("entity.copper_golem_become_statue");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_DEATH = getSound("entity.copper_golem_oxidized.death");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_HURT = getSound("entity.copper_golem_oxidized.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_SPIN = getSound("entity.copper_golem_oxidized.spin");
+
+    Sound ENTITY_COPPER_GOLEM_OXIDIZED_STEP = getSound("entity.copper_golem_oxidized.step");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_DEATH = getSound("entity.copper_golem_weathered.death");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_HURT = getSound("entity.copper_golem_weathered.hurt");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_SPIN = getSound("entity.copper_golem_weathered.spin");
+
+    Sound ENTITY_COPPER_GOLEM_WEATHERED_STEP = getSound("entity.copper_golem_weathered.step");
 
     Sound ENTITY_COW_AMBIENT = getSound("entity.cow.ambient");
 
@@ -2359,6 +2477,32 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_MULE_JUMP = getSound("entity.mule.jump");
 
+    Sound ENTITY_NAUTILUS_AMBIENT = getSound("entity.nautilus.ambient");
+
+    Sound ENTITY_NAUTILUS_AMBIENT_LAND = getSound("entity.nautilus.ambient_land");
+
+    Sound ENTITY_NAUTILUS_DASH = getSound("entity.nautilus.dash");
+
+    Sound ENTITY_NAUTILUS_DASH_LAND = getSound("entity.nautilus.dash_land");
+
+    Sound ENTITY_NAUTILUS_DASH_READY = getSound("entity.nautilus.dash_ready");
+
+    Sound ENTITY_NAUTILUS_DASH_READY_LAND = getSound("entity.nautilus.dash_ready_land");
+
+    Sound ENTITY_NAUTILUS_DEATH = getSound("entity.nautilus.death");
+
+    Sound ENTITY_NAUTILUS_DEATH_LAND = getSound("entity.nautilus.death_land");
+
+    Sound ENTITY_NAUTILUS_EAT = getSound("entity.nautilus.eat");
+
+    Sound ENTITY_NAUTILUS_HURT = getSound("entity.nautilus.hurt");
+
+    Sound ENTITY_NAUTILUS_HURT_LAND = getSound("entity.nautilus.hurt_land");
+
+    Sound ENTITY_NAUTILUS_RIDING = getSound("entity.nautilus.riding");
+
+    Sound ENTITY_NAUTILUS_SWIM = getSound("entity.nautilus.swim");
+
     Sound ENTITY_OCELOT_AMBIENT = getSound("entity.ocelot.ambient");
 
     Sound ENTITY_OCELOT_DEATH = getSound("entity.ocelot.death");
@@ -2391,6 +2535,14 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_PANDA_WORRIED_AMBIENT = getSound("entity.panda.worried_ambient");
 
+    Sound ENTITY_PARCHED_AMBIENT = getSound("entity.parched.ambient");
+
+    Sound ENTITY_PARCHED_DEATH = getSound("entity.parched.death");
+
+    Sound ENTITY_PARCHED_HURT = getSound("entity.parched.hurt");
+
+    Sound ENTITY_PARCHED_STEP = getSound("entity.parched.step");
+
     Sound ENTITY_PARROT_AMBIENT = getSound("entity.parrot.ambient");
 
     Sound ENTITY_PARROT_DEATH = getSound("entity.parrot.death");
@@ -2406,6 +2558,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_BOGGED = getSound("entity.parrot.imitate.bogged");
 
     Sound ENTITY_PARROT_IMITATE_BREEZE = getSound("entity.parrot.imitate.breeze");
+
+    Sound ENTITY_PARROT_IMITATE_CAMEL_HUSK = getSound("entity.parrot.imitate.camel_husk");
 
     Sound ENTITY_PARROT_IMITATE_CREAKING = getSound("entity.parrot.imitate.creaking");
 
@@ -2432,6 +2586,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_ILLUSIONER = getSound("entity.parrot.imitate.illusioner");
 
     Sound ENTITY_PARROT_IMITATE_MAGMA_CUBE = getSound("entity.parrot.imitate.magma_cube");
+
+    Sound ENTITY_PARROT_IMITATE_PARCHED = getSound("entity.parrot.imitate.parched");
 
     Sound ENTITY_PARROT_IMITATE_PHANTOM = getSound("entity.parrot.imitate.phantom");
 
@@ -2470,6 +2626,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_PARROT_IMITATE_ZOGLIN = getSound("entity.parrot.imitate.zoglin");
 
     Sound ENTITY_PARROT_IMITATE_ZOMBIE = getSound("entity.parrot.imitate.zombie");
+
+    Sound ENTITY_PARROT_IMITATE_ZOMBIE_HORSE = getSound("entity.parrot.imitate.zombie_horse");
+
+    Sound ENTITY_PARROT_IMITATE_ZOMBIE_NAUTILUS = getSound("entity.parrot.imitate.zombie_nautilus");
 
     Sound ENTITY_PARROT_IMITATE_ZOMBIE_VILLAGER = getSound("entity.parrot.imitate.zombie_villager");
 
@@ -3119,9 +3279,37 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_ZOMBIE_HORSE_AMBIENT = getSound("entity.zombie_horse.ambient");
 
+    Sound ENTITY_ZOMBIE_HORSE_ANGRY = getSound("entity.zombie_horse.angry");
+
     Sound ENTITY_ZOMBIE_HORSE_DEATH = getSound("entity.zombie_horse.death");
 
+    Sound ENTITY_ZOMBIE_HORSE_EAT = getSound("entity.zombie_horse.eat");
+
     Sound ENTITY_ZOMBIE_HORSE_HURT = getSound("entity.zombie_horse.hurt");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT = getSound("entity.zombie_nautilus.ambient");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_AMBIENT_LAND = getSound("entity.zombie_nautilus.ambient_land");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH = getSound("entity.zombie_nautilus.dash");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_LAND = getSound("entity.zombie_nautilus.dash_land");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_READY = getSound("entity.zombie_nautilus.dash_ready");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DASH_READY_LAND = getSound("entity.zombie_nautilus.dash_ready_land");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DEATH = getSound("entity.zombie_nautilus.death");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_DEATH_LAND = getSound("entity.zombie_nautilus.death_land");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_EAT = getSound("entity.zombie_nautilus.eat");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_HURT = getSound("entity.zombie_nautilus.hurt");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_HURT_LAND = getSound("entity.zombie_nautilus.hurt_land");
+
+    Sound ENTITY_ZOMBIE_NAUTILUS_SWIM = getSound("entity.zombie_nautilus.swim");
 
     Sound ENTITY_ZOMBIE_VILLAGER_AMBIENT = getSound("entity.zombie_villager.ambient");
 
@@ -3155,6 +3343,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_ARMOR_EQUIP_CHAIN = getSound("item.armor.equip_chain");
 
+    Sound ITEM_ARMOR_EQUIP_COPPER = getSound("item.armor.equip_copper");
+
     Sound ITEM_ARMOR_EQUIP_DIAMOND = getSound("item.armor.equip_diamond");
 
     Sound ITEM_ARMOR_EQUIP_ELYTRA = getSound("item.armor.equip_elytra");
@@ -3167,11 +3357,15 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_ARMOR_EQUIP_LEATHER = getSound("item.armor.equip_leather");
 
+    Sound ITEM_ARMOR_EQUIP_NAUTILUS = getSound("item.armor.equip_nautilus");
+
     Sound ITEM_ARMOR_EQUIP_NETHERITE = getSound("item.armor.equip_netherite");
 
     Sound ITEM_ARMOR_EQUIP_TURTLE = getSound("item.armor.equip_turtle");
 
     Sound ITEM_ARMOR_EQUIP_WOLF = getSound("item.armor.equip_wolf");
+
+    Sound ITEM_ARMOR_UNEQUIP_NAUTILUS = getSound("item.armor.unequip_nautilus");
 
     Sound ITEM_ARMOR_UNEQUIP_WOLF = getSound("item.armor.unequip_wolf");
 
@@ -3307,6 +3501,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ITEM_MACE_SMASH_GROUND_HEAVY = getSound("item.mace.smash_ground_heavy");
 
+    Sound ITEM_NAUTILUS_SADDLE_EQUIP = getSound("item.nautilus_saddle_equip");
+
+    Sound ITEM_NAUTILUS_SADDLE_UNDERWATER_EQUIP = getSound("item.nautilus_saddle_underwater_equip");
+
     Sound ITEM_NETHER_WART_PLANT = getSound("item.nether_wart.plant");
 
     Sound ITEM_OMINOUS_BOTTLE_DISPOSE = getSound("item.ominous_bottle.dispose");
@@ -3320,6 +3518,24 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ITEM_SHIELD_BREAK = getSound("item.shield.break");
 
     Sound ITEM_SHOVEL_FLATTEN = getSound("item.shovel.flatten");
+
+    Sound ITEM_SPEAR_ATTACK = getSound("item.spear.attack");
+
+    Sound ITEM_SPEAR_HIT = getSound("item.spear.hit");
+
+    Sound ITEM_SPEAR_LUNGE_1 = getSound("item.spear.lunge_1");
+
+    Sound ITEM_SPEAR_LUNGE_2 = getSound("item.spear.lunge_2");
+
+    Sound ITEM_SPEAR_LUNGE_3 = getSound("item.spear.lunge_3");
+
+    Sound ITEM_SPEAR_USE = getSound("item.spear.use");
+
+    Sound ITEM_SPEAR_WOOD_ATTACK = getSound("item.spear_wood.attack");
+
+    Sound ITEM_SPEAR_WOOD_HIT = getSound("item.spear_wood.hit");
+
+    Sound ITEM_SPEAR_WOOD_USE = getSound("item.spear_wood.use");
 
     Sound ITEM_SPYGLASS_STOP_USING = getSound("item.spyglass.stop_using");
 
@@ -3431,6 +3647,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound MUSIC_DISC_FAR = getSound("music_disc.far");
 
+    Sound MUSIC_DISC_LAVA_CHICKEN = getSound("music_disc.lava_chicken");
+
     Sound MUSIC_DISC_MALL = getSound("music_disc.mall");
 
     Sound MUSIC_DISC_MELLOHI = getSound("music_disc.mellohi");
@@ -3474,6 +3692,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound UI_TOAST_IN = getSound("ui.toast.in");
 
     Sound UI_TOAST_OUT = getSound("ui.toast.out");
+
+    Sound WEATHER_END_FLASH = getSound("weather.end_flash");
 
     Sound WEATHER_RAIN = getSound("weather.rain");
 

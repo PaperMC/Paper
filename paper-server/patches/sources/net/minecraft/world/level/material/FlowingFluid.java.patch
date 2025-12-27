@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/net/minecraft/world/level/material/FlowingFluid.java
-@@ -118,6 +_,15 @@
-                 FluidState newLiquid = this.getNewLiquid(level, blockPos, blockState1);
+@@ -119,6 +_,15 @@
+                 FluidState newLiquid = this.getNewLiquid(level, blockPos, blockState);
                  Fluid type = newLiquid.getType();
-                 if (fluidState1.canBeReplacedWith(level, blockPos, type, Direction.DOWN) && canHoldSpecificFluid(level, blockPos, blockState1, type)) {
+                 if (fluidState1.canBeReplacedWith(level, blockPos, type, Direction.DOWN) && canHoldSpecificFluid(level, blockPos, blockState, type)) {
 +                    // CraftBukkit start
 +                    org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +                    org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.block.BlockFace.DOWN);
@@ -13,10 +13,10 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     this.spreadTo(level, blockPos, blockState1, Direction.DOWN, newLiquid);
+                     this.spreadTo(level, blockPos, blockState, Direction.DOWN, newLiquid);
                      if (this.sourceNeighborCount(level, pos) >= 3) {
-                         this.spreadToSides(level, pos, fluidState, blockState);
-@@ -146,7 +_,18 @@
+                         this.spreadToSides(level, pos, fluidState, state);
+@@ -147,7 +_,18 @@
                  Direction direction = entry.getKey();
                  FluidState fluidState1 = entry.getValue();
                  BlockPos blockPos = pos.relative(direction);
@@ -36,7 +36,7 @@
              }
          }
      }
-@@ -158,7 +_,8 @@
+@@ -159,7 +_,8 @@
  
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos blockPos = mutableBlockPos.setWithOffset(pos, direction);
@@ -46,15 +46,15 @@
              FluidState fluidState = blockState.getFluidState();
              if (fluidState.getType().isSame(this) && canPassThroughWall(direction, level, pos, state, blockPos, blockState)) {
                  if (fluidState.isSource()) {
-@@ -252,13 +_,15 @@
-             liquidBlockContainer.placeLiquid(level, pos, blockState, fluidState);
+@@ -257,13 +_,15 @@
+             liquidBlockContainer.placeLiquid(level, pos, state, fluidState);
          } else {
-             if (!blockState.isAir()) {
--                this.beforeDestroyingBlock(level, pos, blockState);
-+                this.beforeDestroyingBlock(level, pos, blockState, pos.relative(direction.getOpposite())); // Paper - Add BlockBreakBlockEvent
+             if (!state.isAir()) {
+-                this.beforeDestroyingBlock(level, pos, state);
++                this.beforeDestroyingBlock(level, pos, state, pos.relative(direction.getOpposite())); // Paper - Add BlockBreakBlockEvent
              }
  
-             level.setBlock(pos, fluidState.createLegacyBlock(), 3);
+             level.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL);
          }
      }
  
@@ -63,7 +63,7 @@
      protected abstract void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state);
  
      protected int getSlopeDistance(LevelReader level, BlockPos pos, int depth, Direction direction, BlockState state, FlowingFluid.SpreadContext spreadContext) {
-@@ -267,7 +_,8 @@
+@@ -272,7 +_,8 @@
          for (Direction direction1 : Direction.Plane.HORIZONTAL) {
              if (direction1 != direction) {
                  BlockPos blockPos = pos.relative(direction1);
@@ -73,7 +73,7 @@
                  FluidState fluidState = blockState.getFluidState();
                  if (this.canPassThrough(level, this.getFlowing(), pos, state, direction1, blockPos, blockState, fluidState)) {
                      if (spreadContext.isHole(blockPos)) {
-@@ -334,7 +_,8 @@
+@@ -339,7 +_,8 @@
  
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos blockPos = pos.relative(direction);
@@ -83,32 +83,32 @@
              FluidState fluidState = blockState.getFluidState();
              if (this.canMaybePassThrough(level, pos, state, direction, blockPos, blockState, fluidState)) {
                  FluidState newLiquid = this.getNewLiquid(level, blockPos, blockState);
-@@ -405,10 +_,24 @@
+@@ -410,10 +_,24 @@
              if (newLiquid.isEmpty()) {
                  fluidState = newLiquid;
-                 blockState = Blocks.AIR.defaultBlockState();
+                 state = Blocks.AIR.defaultBlockState();
 +                // CraftBukkit start
-+                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, blockState);
++                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, state);
 +                if (event.isCancelled()) {
 +                    return;
 +                }
-+                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
++                state = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
 +                // CraftBukkit end
-                 level.setBlock(pos, blockState, 3);
+                 level.setBlock(pos, state, Block.UPDATE_ALL);
              } else if (newLiquid != fluidState) {
                  fluidState = newLiquid;
-                 blockState = newLiquid.createLegacyBlock();
+                 state = newLiquid.createLegacyBlock();
 +                // CraftBukkit start
-+                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, blockState);
++                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, state);
 +                if (event.isCancelled()) {
 +                    return;
 +                }
-+                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
++                state = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
 +                // CraftBukkit end
-                 level.setBlock(pos, blockState, 3);
+                 level.setBlock(pos, state, Block.UPDATE_ALL);
                  level.scheduleTick(pos, newLiquid.getType(), spreadDelay);
              }
-@@ -476,9 +_,27 @@
+@@ -481,9 +_,27 @@
          public BlockState getBlockState(BlockPos pos) {
              return this.getBlockState(pos, this.getCacheKey(pos));
          }

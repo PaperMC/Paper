@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/item/LeadItem.java
 +++ b/net/minecraft/world/item/LeadItem.java
-@@ -26,24 +_,46 @@
+@@ -26,25 +_,38 @@
          if (blockState.is(BlockTags.FENCES)) {
              Player player = context.getPlayer();
-             if (!level.isClientSide && player != null) {
+             if (!level.isClientSide() && player != null) {
 -                return bindPlayerMobs(player, level, clickedPos);
 +                return bindPlayerMobs(player, level, clickedPos, context.getHand()); // CraftBukkit - Pass hand
              }
@@ -18,9 +18,7 @@
          List<Leashable> list = Leashable.leashableInArea(level, Vec3.atCenterOf(pos), leashable1 -> leashable1.getLeashHolder() == player);
          boolean flag = false;
  
--        for (Leashable leashable : list) {
-+        for (java.util.Iterator<Leashable> iterator = list.iterator(); iterator.hasNext();) { // Paper - use iterator to remove
-+            Leashable leashable = iterator.next(); // Paper - use iterator to remove
+         for (Leashable leashable : list) {
              if (leashFenceKnotEntity == null) {
 -                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos);
 +                // CraftBukkit start - fire HangingPlaceEvent
@@ -32,7 +30,7 @@
 +                    level.getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
-+                        leashFenceKnotEntity.discard(null); // CraftBukkit - add Bukkit remove cause
++                        leashFenceKnotEntity.discard(null);
 +                        return InteractionResult.PASS;
 +                    }
 +                }
@@ -40,17 +38,11 @@
                  leashFenceKnotEntity.playPlacementSound();
              }
  
-+            // CraftBukkit start
-+            if (leashable instanceof net.minecraft.world.entity.Entity leashed) {
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, leashFenceKnotEntity, player, interactionHand).isCancelled()) {
-+                    iterator.remove();
-+                    continue;
-+                }
-+            }
-+            // CraftBukkit end
-             if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity)) {
+-            if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity)) {
++            if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, leashFenceKnotEntity, player, interactionHand)) { // Paper - leash event
                  leashable.setLeashedTo(leashFenceKnotEntity, true);
                  flag = true;
+             }
 @@ -54,7 +_,18 @@
              level.gameEvent(GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of(player));
              return InteractionResult.SUCCESS_SERVER;

@@ -157,7 +157,7 @@ public interface EnchantmentRegistryEntry {
          * a tag obtained via {@link RegistryComposeEvent#getOrCreateTag(TagKey)} with
          * tag keys found in {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys} such as
          * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_ARMOR} and
-         * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_SWORD}.
+         * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_MELEE_WEAPON}.
          *
          * @param supportedItems the registry key set representing the supported items.
          * @return this builder instance.
@@ -174,7 +174,7 @@ public interface EnchantmentRegistryEntry {
          * {@link RegistryComposeEvent#getOrCreateTag(TagKey)} with
          * tag keys found in {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys} such as
          * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_ARMOR} and
-         * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_SWORD}.
+         * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_MELEE_WEAPON}.
          * <p>
          * Defaults to {@code null} which means all {@link #supportedItems()} are considered primary items.
          * Additionally, the tag {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE} defines

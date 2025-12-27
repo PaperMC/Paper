@@ -78,7 +78,7 @@ public final class DumpItemCommand {
         final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
         final TextComponent.Builder visualOutput = Component.text();
         final StringBuilder itemCommandBuilder = new StringBuilder();
-        final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().location().toString();
+        final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().identifier().toString();
         itemCommandBuilder.append(itemName);
         visualOutput.append(text(itemName, YELLOW)); // item type
         final Set<DataComponentType<?>> referencedComponentTypes = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -95,7 +95,7 @@ public final class DumpItemCommand {
         final List<ComponentLike> componentComponents = new ArrayList<>();
         final List<String> commandComponents = new ArrayList<>();
         for (final DataComponentType<?> type : referencedComponentTypes) {
-            final String path = registry.getResourceKey(type).orElseThrow().location().getPath();
+            final String path = registry.getResourceKey(type).orElseThrow().identifier().getPath();
             final Optional<?> patchedValue = patch.get(type);
             final TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
             if (patchedValue != null) {

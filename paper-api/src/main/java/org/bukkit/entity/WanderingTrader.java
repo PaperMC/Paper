@@ -28,7 +28,7 @@ public interface WanderingTrader extends AbstractVillager {
      * {@link WanderingTrader} is forcibly despawned
      */
     public void setDespawnDelay(int despawnDelay);
-    
+
     /**
      * Set if the Wandering Trader can and will drink an invisibility potion.
      * @param bool whether the mob will drink

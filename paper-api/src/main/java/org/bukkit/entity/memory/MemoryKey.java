@@ -47,7 +47,6 @@ public final class MemoryKey<T> implements Keyed {
     private static final Map<NamespacedKey, MemoryKey<?>> MEMORY_KEYS = new HashMap<>();
 
     // Start generate - MemoryKey
-    // @GeneratedFrom 1.21.6
     public static final MemoryKey<Boolean> ADMIRING_DISABLED = new MemoryKey<>(NamespacedKey.minecraft("admiring_disabled"), Boolean.class);
 
     public static final MemoryKey<Boolean> ADMIRING_ITEM = new MemoryKey<>(NamespacedKey.minecraft("admiring_item"), Boolean.class);
@@ -58,7 +57,11 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Boolean> ATTACK_COOLING_DOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_cooling_down"), Boolean.class);
 
+    public static final MemoryKey<Integer> ATTACK_TARGET_COOLDOWN = new MemoryKey<>(NamespacedKey.minecraft("attack_target_cooldown"), Integer.class);
+
     public static final MemoryKey<Long> CANT_REACH_WALK_TARGET_SINCE = new MemoryKey<>(NamespacedKey.minecraft("cant_reach_walk_target_since"), Long.class);
+
+    public static final MemoryKey<Integer> CHARGE_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("charge_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Boolean> DANCING = new MemoryKey<>(NamespacedKey.minecraft("dancing"), Boolean.class);
 
@@ -118,9 +121,15 @@ public final class MemoryKey<T> implements Keyed {
 
     public static final MemoryKey<Boolean> SNIFFER_HAPPY = new MemoryKey<>(NamespacedKey.minecraft("sniffer_happy"), Boolean.class);
 
+    public static final MemoryKey<Integer> SPEAR_ENGAGE_TIME = new MemoryKey<>(NamespacedKey.minecraft("spear_engage_time"), Integer.class);
+
+    public static final MemoryKey<Integer> SPEAR_FLEEING_TIME = new MemoryKey<>(NamespacedKey.minecraft("spear_fleeing_time"), Integer.class);
+
     public static final MemoryKey<Integer> TEMPTATION_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("temptation_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Integer> TIME_TRYING_TO_REACH_ADMIRE_ITEM = new MemoryKey<>(NamespacedKey.minecraft("time_trying_to_reach_admire_item"), Integer.class);
+
+    public static final MemoryKey<Integer> TRANSPORT_ITEMS_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("transport_items_cooldown_ticks"), Integer.class);
 
     public static final MemoryKey<Boolean> UNIVERSAL_ANGER = new MemoryKey<>(NamespacedKey.minecraft("universal_anger"), Boolean.class);
 

@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see Player#getCurrentInput()
  */
-@ApiStatus.Experimental
 public class PlayerInputEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

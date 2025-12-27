@@ -66,7 +66,7 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override

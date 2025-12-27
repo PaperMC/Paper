@@ -8,17 +8,17 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Experimental
 public enum ItemUseAnimation {
     // Start generate - ItemUseAnimation
-    // @GeneratedFrom 1.21.6
     NONE,
     EAT,
     DRINK,
     BLOCK,
     BOW,
-    SPEAR,
+    TRIDENT,
     CROSSBOW,
     SPYGLASS,
     TOOT_HORN,
     BRUSH,
-    BUNDLE;
+    BUNDLE,
+    SPEAR;
     // End generate - ItemUseAnimation
 }

@@ -1,10 +1,10 @@
 --- a/net/minecraft/world/item/component/CustomData.java
 +++ b/net/minecraft/world/item/component/CustomData.java
-@@ -36,7 +_,17 @@
-     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -14,7 +_,18 @@
+ public final class CustomData {
      public static final CustomData EMPTY = new CustomData(new CompoundTag());
-     private static final String TYPE_TAG = "id";
--    public static final Codec<CustomData> CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.FLATTENED_CODEC)
+     public static final Codec<CompoundTag> COMPOUND_TAG_CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.FLATTENED_CODEC);
+-    public static final Codec<CustomData> CODEC = COMPOUND_TAG_CODEC.xmap(CustomData::new, data -> data.tag);
 +    // Paper start - Item serialization as json
 +    public static ThreadLocal<Boolean> SERIALIZE_CUSTOM_AS_SNBT = ThreadLocal.withInitial(() -> false);
 +    public static final Codec<CustomData> CODEC = Codec.either(CompoundTag.CODEC, TagParser.FLATTENED_CODEC)
@@ -15,7 +15,26 @@
 +                return com.mojang.datafixers.util.Either.right(data); // Second codec
 +            }
 +        })
++        .xmap(CustomData::new, customData -> customData.tag);
 +    // Paper end - Item serialization as json
-         .xmap(CustomData::new, customData -> customData.tag);
-     public static final Codec<CustomData> CODEC_WITH_ID = CODEC.validate(
-         data -> data.getUnsafe().getString("id").isPresent() ? DataResult.success(data) : DataResult.error(() -> "Missing id for entity in: " + data)
+     @Deprecated
+     public static final StreamCodec<ByteBuf, CustomData> STREAM_CODEC = ByteBufCodecs.COMPOUND_TAG.map(CustomData::new, data -> data.tag);
+     private final CompoundTag tag;
+@@ -61,6 +_,17 @@
+     public CompoundTag copyTag() {
+         return this.tag.copy();
+     }
++
++    // Paper start - expose unsafe internal compound tag for read only access
++    @Deprecated
++    public CompoundTag getUnsafe() {
++        return this.tag;
++    }
++
++    public boolean contains(String key) {
++        return this.tag.contains(key);
++    }
++    // Paper end - expose unsafe internal compound tag for read only access
+ 
+     @Override
+     public boolean equals(Object other) {

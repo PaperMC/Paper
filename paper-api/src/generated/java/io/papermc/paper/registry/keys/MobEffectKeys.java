@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.6")
+@GeneratedClass
 public final class MobEffectKeys {
     /**
      * {@code minecraft:absorption}
@@ -45,6 +45,13 @@ public final class MobEffectKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<PotionEffectType> BLINDNESS = create(key("blindness"));
+
+    /**
+     * {@code minecraft:breath_of_the_nautilus}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<PotionEffectType> BREATH_OF_THE_NAUTILUS = create(key("breath_of_the_nautilus"));
 
     /**
      * {@code minecraft:conduit_power}

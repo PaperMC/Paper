@@ -4,9 +4,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Translatable;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,11 +16,9 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
  */
-@ApiStatus.Experimental
 public interface DamageType extends Keyed, Translatable {
 
     // Start generate - DamageType
-    // @GeneratedFrom 1.21.6
     DamageType ARROW = getDamageType("arrow");
 
     DamageType BAD_RESPAWN_POINT = getDamageType("bad_respawn_point");
@@ -96,6 +92,8 @@ public interface DamageType extends Keyed, Translatable {
     DamageType PLAYER_EXPLOSION = getDamageType("player_explosion");
 
     DamageType SONIC_BOOM = getDamageType("sonic_boom");
+
+    DamageType SPEAR = getDamageType("spear");
 
     DamageType SPIT = getDamageType("spit");
 

@@ -146,7 +146,7 @@ public interface LightningStrike extends Entity {
      * lightning through {@link #setCausingPlayer(Player)}.
      * </p>
      *
-     * @return the entity that caused this lightning or null if the lightning was not caused by a entity (e.g. normal
+     * @return the entity that caused this lightning or null if the lightning was not caused by an entity (e.g. normal
      * weather)
      */
     @org.jetbrains.annotations.Nullable

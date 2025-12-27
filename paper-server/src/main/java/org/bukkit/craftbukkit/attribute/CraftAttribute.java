@@ -16,10 +16,6 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
 
     private static int count = 0;
 
-    public static Attribute minecraftToBukkit(net.minecraft.world.entity.ai.attributes.Attribute minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ATTRIBUTE);
-    }
-
     public static Attribute minecraftHolderToBukkit(Holder<net.minecraft.world.entity.ai.attributes.Attribute> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ATTRIBUTE);
     }
@@ -38,12 +34,8 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
         return CraftRegistry.get(RegistryKey.ATTRIBUTE, key, ApiVersion.CURRENT);
     }
 
-    public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
-    }
-
     public static Holder<net.minecraft.world.entity.ai.attributes.Attribute> bukkitToMinecraftHolder(Attribute bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.ATTRIBUTE);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static String bukkitToString(Attribute bukkit) {
@@ -54,6 +46,11 @@ public class CraftAttribute extends OldEnumHolderable<Attribute, net.minecraft.w
 
     public CraftAttribute(final Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder) {
         super(holder, count++);
+    }
+
+    @Override
+    public Sentiment getSentiment() {
+        return Sentiment.valueOf(this.getHandle().sentiment.name());
     }
 
     @Override

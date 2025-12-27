@@ -1,12 +1,10 @@
 package org.bukkit;
 
-// Paper start - overhaul FeatureFlag API
 import com.google.common.base.Preconditions;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.Index;
 import org.intellij.lang.annotations.Subst;
-// Paper end - overhaul FeatureFlag API
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -15,7 +13,6 @@ import org.jetbrains.annotations.ApiStatus;
 public interface FeatureFlag extends Keyed {
 
     // Start generate - FeatureFlag
-    // @GeneratedFrom 1.21.6
     @ApiStatus.Experimental
     FeatureFlag MINECART_IMPROVEMENTS = create("minecart_improvements");
 
@@ -75,6 +72,5 @@ public interface FeatureFlag extends Keyed {
     private static FeatureFlag deprecated(@Subst("vanilla") final String name) {
         return new FeatureFlagImpl.Deprecated(NamespacedKey.minecraft(name));
     }
-    // Paper end - overhaul FeatureFlag API
 
 }

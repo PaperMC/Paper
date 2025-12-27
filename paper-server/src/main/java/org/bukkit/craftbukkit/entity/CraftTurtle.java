@@ -6,13 +6,13 @@ import org.bukkit.entity.Turtle;
 
 public class CraftTurtle extends CraftAnimals implements Turtle {
 
-    public CraftTurtle(CraftServer server, net.minecraft.world.entity.animal.Turtle entity) {
+    public CraftTurtle(CraftServer server, net.minecraft.world.entity.animal.turtle.Turtle entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Turtle getHandle() {
-        return (net.minecraft.world.entity.animal.Turtle) this.entity;
+    public net.minecraft.world.entity.animal.turtle.Turtle getHandle() {
+        return (net.minecraft.world.entity.animal.turtle.Turtle) this.entity;
     }
 
     @Override
