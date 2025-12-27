@@ -9,7 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.papermc.paper.profile.MutablePropertyMap;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;

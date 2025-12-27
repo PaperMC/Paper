@@ -61,6 +61,10 @@ public enum EntityEffect {
      */
     RESET_SPAWNER_MINECART_DELAY(1, SpawnerMinecart.class),
     /**
+     * When a kinetic weapon hits an entity.
+     */
+    HIT(2, LivingEntity.class),
+    /**
      * When mobs get hurt.
      *
      * @deprecated use {@link LivingEntity#playHurtAnimation(float)}

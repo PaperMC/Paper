@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Slime.java
 +++ b/net/minecraft/world/entity/monster/Slime.java
-@@ -58,6 +_,7 @@
+@@ -59,6 +_,7 @@
      public float squish;
      public float oSquish;
      private boolean wasOnGround = false;
@@ -8,7 +8,7 @@
  
      public Slime(EntityType<? extends Slime> type, Level level) {
          super(type, level);
-@@ -112,6 +_,7 @@
+@@ -113,6 +_,7 @@
          super.addAdditionalSaveData(output);
          output.putInt("Size", this.getSize() - 1);
          output.putBoolean("wasOnGround", this.wasOnGround);
@@ -16,7 +16,7 @@
      }
  
      @Override
-@@ -119,6 +_,7 @@
+@@ -120,6 +_,7 @@
          this.setSize(input.getIntOr("Size", 0) + 1, false);
          super.readAdditionalSaveData(input);
          this.wasOnGround = input.getBooleanOr("wasOnGround", false);
@@ -24,16 +24,16 @@
      }
  
      public boolean isTiny() {
-@@ -193,7 +_,7 @@
+@@ -194,7 +_,7 @@
      }
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
-+    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
++    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          int size = this.getSize();
          if (!this.level().isClientSide() && size > 1 && this.isDeadOrDying()) {
              float width = this.getDimensions(this.getPose()).width();
-@@ -201,18 +_,43 @@
+@@ -202,18 +_,43 @@
              int i = size / 2;
              int i1 = 2 + this.random.nextInt(3);
              PlayerTeam team = this.getTeam();
@@ -81,23 +81,20 @@
      }
  
      @Override
-@@ -278,9 +_,13 @@
+@@ -279,7 +_,11 @@
                  return checkMobSpawnRules(entityType, level, spawnReason, pos, random);
              }
  
+-            if (level.getBiome(pos).is(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS) && pos.getY() > 50 && pos.getY() < 70) {
 +            // Paper start - Replace rules for Height in Swamp Biomes
 +            final double maxHeightSwamp = level.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.surfaceBiome.maximum;
 +            final double minHeightSwamp = level.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.surfaceBiome.minimum;
 +            // Paper end - Replace rules for Height in Swamp Biomes
-             if (level.getBiome(pos).is(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS)
--                && pos.getY() > 50
--                && pos.getY() < 70
-+                && pos.getY() > minHeightSwamp // Paper - Replace rules for Height in Swamp Biomes
-+                && pos.getY() < maxHeightSwamp // Paper - Replace rules for Height in Swamp Biomes
-                 && random.nextFloat() < 0.5F
-                 && random.nextFloat() < level.getMoonBrightness()
-                 && level.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
-@@ -292,8 +_,11 @@
++            if (level.getBiome(pos).is(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS) && pos.getY() > minHeightSwamp && pos.getY() < maxHeightSwamp) { // Paper - Replace rules for Height in Swamp Biomes
+                 float value = level.environmentAttributes().getValue(EnvironmentAttributes.SURFACE_SLIME_SPAWN_CHANCE, pos);
+                 if (random.nextFloat() < value && level.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
+                     return checkMobSpawnRules(entityType, level, spawnReason, pos, random);
+@@ -291,8 +_,11 @@
              }
  
              ChunkPos chunkPos = new ChunkPos(pos);
@@ -111,7 +108,7 @@
                  return checkMobSpawnRules(entityType, level, spawnReason, pos, random);
              }
          }
-@@ -352,6 +_,16 @@
+@@ -350,6 +_,16 @@
          return super.getDefaultDimensions(pose).scale(this.getSize());
      }
  
@@ -128,7 +125,7 @@
      static class SlimeAttackGoal extends Goal {
          private final Slime slime;
          private int growTiredTimer;
-@@ -364,7 +_,16 @@
+@@ -362,7 +_,16 @@
          @Override
          public boolean canUse() {
              LivingEntity target = this.slime.getTarget();
@@ -146,7 +143,7 @@
          }
  
          @Override
-@@ -376,7 +_,16 @@
+@@ -374,7 +_,16 @@
          @Override
          public boolean canContinueToUse() {
              LivingEntity target = this.slime.getTarget();
@@ -164,7 +161,7 @@
          }
  
          @Override
-@@ -395,6 +_,13 @@
+@@ -393,6 +_,13 @@
                  slimeMoveControl.setDirection(this.slime.getYRot(), this.slime.isDealsDamage());
              }
          }
@@ -178,7 +175,7 @@
      }
  
      static class SlimeFloatGoal extends Goal {
-@@ -408,7 +_,7 @@
+@@ -406,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -187,7 +184,7 @@
          }
  
          @Override
-@@ -438,7 +_,7 @@
+@@ -436,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -196,7 +193,7 @@
          }
  
          @Override
-@@ -516,7 +_,7 @@
+@@ -514,7 +_,7 @@
  
          @Override
          public boolean canUse() {
@@ -205,7 +202,7 @@
                  && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION))
                  && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl;
          }
-@@ -526,6 +_,11 @@
+@@ -524,6 +_,11 @@
              if (--this.nextRandomizeTime <= 0) {
                  this.nextRandomizeTime = this.adjustedTickDelay(40 + this.slime.getRandom().nextInt(60));
                  this.chosenDegrees = this.slime.getRandom().nextInt(360);

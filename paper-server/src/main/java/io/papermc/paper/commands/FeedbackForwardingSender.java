@@ -1,7 +1,6 @@
 package io.papermc.paper.commands;
 
 import io.papermc.paper.adventure.PaperAdventure;
-import java.util.UUID;
 import java.util.function.Consumer;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
@@ -10,6 +9,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.command.CommandSender;
@@ -74,7 +74,7 @@ public final class FeedbackForwardingSender extends ServerCommandSender {
             respawnDimension == null ? Vec3.ZERO : Vec3.atLowerCornerOf(respawnDimension.getRespawnData().pos()),
             Vec2.ZERO,
             respawnDimension,
-            4,
+            LevelBasedPermissionSet.OWNER,
             this.getName(),
             net.minecraft.network.chat.Component.literal(this.getName()),
             this.server.getServer(),

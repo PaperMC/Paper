@@ -608,7 +608,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     }
 
     @Override
-    public void onBlockChange(Level level, BlockPos blockPos, BlockState newBlockState, BlockState oldBlockState, int flags, int maxUpdateDepth) {
+    public void onBlockChange(Level level, BlockPos blockPos, BlockState newBlockState, BlockState oldBlockState, @Block.UpdateFlags int flags, int maxUpdateDepth) {
         if (oldBlockState != null && solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(oldBlockState, PaletteResize.noResizeExpected())] && !solidGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(newBlockState, PaletteResize.noResizeExpected())] && blockPos.getY() <= maxBlockHeightUpdatePosition) {
             updateNearbyBlocks(level, blockPos);
         }
