@@ -10,7 +10,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
@@ -302,7 +302,7 @@ public final class CraftItemFactory implements ItemFactory {
             return null;
         }
         String typeId = type.getKey().toString();
-        net.minecraft.resources.ResourceLocation typeKey = ResourceLocation.parse(typeId);
+        net.minecraft.resources.Identifier typeKey = Identifier.parse(typeId);
         net.minecraft.world.entity.EntityType<?> nmsType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(typeKey);
         net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
         return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();

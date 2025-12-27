@@ -39,7 +39,7 @@ public class PaperNetworkClient implements NetworkClient {
         }
 
         // When clients connect with a SRV record, their host contains a trailing '.'
-        if (len > 0 && host.charAt(len -  1) == '.') {
+        if (len > 0 && host.charAt(len - 1) == '.') {
             len--;
         }
 

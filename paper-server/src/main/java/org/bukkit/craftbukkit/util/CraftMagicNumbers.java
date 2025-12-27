@@ -44,8 +44,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.resources.RegistryOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
@@ -184,7 +183,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 continue;
             }
 
-            ResourceLocation key = CraftNamespacedKey.toMinecraft(material.getKey());
+            Identifier key = CraftNamespacedKey.toMinecraft(material.getKey());
             BuiltInRegistries.ITEM.getOptional(key).ifPresent((item) -> {
                 CraftMagicNumbers.MATERIAL_ITEM.put(material, item);
             });
@@ -307,7 +306,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist) {
-        record LoadAdvancementEntry(Key key, String rawAdvancement, ResourceLocation nmsResourceLocation, JsonElement nmsAdvancement) {}
+        record LoadAdvancementEntry(Key key, String rawAdvancement, Identifier nmsResourceLocation, JsonElement nmsAdvancement) {}
 
         for (Map.Entry<Key, String> entry : advancements.entrySet()) {
             Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(PaperAdventure.asVanilla(entry.getKey())) == null, "Advancement %s already exists", entry.getKey());
@@ -319,17 +318,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         final List<Advancement> outAdvancements = new ArrayList<>(mappedAdvancements.size());
-        final ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<Identifier, AdvancementHolder> mapBuilder = ImmutableMap.builder();
         mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
 
-        final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
+        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
         final List<AdvancementHolder> advancementHolders = new ArrayList<>(mappedAdvancements.size());
         for (final LoadAdvancementEntry entry : mappedAdvancements) {
             final net.minecraft.advancements.Advancement advancement = net.minecraft.advancements.Advancement.CODEC.parse(ops, entry.nmsAdvancement()).getOrThrow(JsonParseException::new);
-            if (advancement == null) {
-                continue;
-            }
-
             final AdvancementHolder holder = new AdvancementHolder(entry.nmsResourceLocation(), advancement);
             mapBuilder.put(entry.nmsResourceLocation(), holder);
             advancementHolders.add(holder);
@@ -676,14 +671,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
 
         Set<EntitySerializationFlag> flags = Set.of(serializationFlags);
-        final boolean serializePassangers = flags.contains(EntitySerializationFlag.PASSENGERS);
+        final boolean serializePassengers = flags.contains(EntitySerializationFlag.PASSENGERS);
         final boolean forceSerialization = flags.contains(EntitySerializationFlag.FORCE);
         final boolean allowPlayerSerialization = flags.contains(EntitySerializationFlag.PLAYER);
         final boolean allowMiscSerialization = flags.contains(EntitySerializationFlag.MISC);
         final boolean includeNonSaveable = allowPlayerSerialization || allowMiscSerialization;
 
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        (serializePassangers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
+        (serializePassengers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
             // Ensure force flag is not needed
             Preconditions.checkArgument(
                 (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
@@ -714,7 +709,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
         )) {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, nmsEntity.registryAccess());
-            if (serializePassangers) {
+            if (serializePassengers) {
                 if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
                     throw new IllegalArgumentException("Couldn't serialize entity");
                 }
@@ -769,7 +764,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     continue;
                 }
                 final net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
-                passengerEntity.startRiding(nmsEntity, true);
+                passengerEntity.startRiding(nmsEntity, true, true);
             }
         });
         return nmsEntity;

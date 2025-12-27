@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Range;
  *
  * A chunk is generated in multiple steps, those steps are always in the same
  * order. Between those steps however an unlimited time may pass. This means, a
- * chunk may generated until the surface step and continue with the bedrock step
+ * chunk may generate until the surface step and continue with the bedrock step
  * after one or multiple server restarts or even after multiple Minecraft
  * versions.
  *

@@ -8,9 +8,9 @@ import io.papermc.paper.datacomponent.item.blocksattacks.PaperDamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.PaperItemDamageFunction;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.tag.TagKey;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.Optional;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
@@ -126,8 +126,8 @@ public record PaperBlocksAttacks(
             return new PaperBlocksAttacks(new net.minecraft.world.item.component.BlocksAttacks(
                 this.blockDelaySeconds,
                 this.disableCooldownScale,
-                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).getHandle()).toList(),
-                ((PaperItemDamageFunction) this.itemDamage).getHandle(),
+                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).internal()).toList(),
+                ((PaperItemDamageFunction) this.itemDamage).internal(),
                 Optional.ofNullable(this.bypassedBy).map(PaperRegistries::toNms),
                 Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
                 Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)

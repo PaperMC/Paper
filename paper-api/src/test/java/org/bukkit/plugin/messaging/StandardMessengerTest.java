@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Collection;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.TestPlugin;
+import org.bukkit.plugin.BukkitTestPlugin;
 import org.junit.jupiter.api.Test;
 
 public class StandardMessengerTest {
@@ -15,8 +15,8 @@ public class StandardMessengerTest {
     }
 
     private int count = 0;
-    public TestPlugin getPlugin() {
-        return new TestPlugin("" + count++);
+    public BukkitTestPlugin getPlugin() {
+        return new BukkitTestPlugin("" + count++);
     }
 
     @Test
@@ -34,7 +34,7 @@ public class StandardMessengerTest {
     @Test
     public void testRegisterAndUnregisterOutgoingPluginChannel() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
 
         assertFalse(messenger.isOutgoingChannelRegistered(plugin, "test:foo"));
         messenger.registerOutgoingPluginChannel(plugin, "test:foo");
@@ -48,7 +48,7 @@ public class StandardMessengerTest {
     @Test
     public void testReservedOutgoingRegistration() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
 
         assertThrows(ReservedChannelException.class, () -> messenger.registerOutgoingPluginChannel(plugin, "minecraft:register"));
     }
@@ -56,7 +56,7 @@ public class StandardMessengerTest {
     @Test
     public void testUnregisterOutgoingPluginChannel_Plugin() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
 
         assertFalse(messenger.isOutgoingChannelRegistered(plugin, "test:foo"));
         messenger.registerOutgoingPluginChannel(plugin, "test:foo");
@@ -72,7 +72,7 @@ public class StandardMessengerTest {
     @Test
     public void testRegisterIncomingPluginChannel() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
         TestMessageListener listener = new TestMessageListener("test:foo", "test:bar".getBytes());
         Player player = mock();
         PluginMessageListenerRegistration registration = messenger.registerIncomingPluginChannel(plugin, "test:foo", listener);
@@ -94,7 +94,7 @@ public class StandardMessengerTest {
     @Test
     public void testReservedIncomingRegistration() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
 
         assertThrows(ReservedChannelException.class, () -> messenger.registerIncomingPluginChannel(plugin, "minecraft:register", new TestMessageListener("test:foo", "test:bar".getBytes())));
     }
@@ -102,7 +102,7 @@ public class StandardMessengerTest {
     @Test
     public void testDuplicateIncomingRegistration() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
         TestMessageListener listener = new TestMessageListener("test:foo", "test:bar".getBytes());
 
         messenger.registerIncomingPluginChannel(plugin, "test:baz", listener);
@@ -112,7 +112,7 @@ public class StandardMessengerTest {
     @Test
     public void testUnregisterIncomingPluginChannel_Plugin_String() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("test:foo", "test:bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("test:baz", "test:qux".getBytes());
         Player player = mock();
@@ -141,7 +141,7 @@ public class StandardMessengerTest {
     @Test
     public void testUnregisterIncomingPluginChannel_Plugin() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("test:foo", "test:bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("test:baz", "test:qux".getBytes());
         Player player = mock();
@@ -170,8 +170,8 @@ public class StandardMessengerTest {
     @Test
     public void testGetOutgoingChannels() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
 
         assertCollectionEquals(messenger.getOutgoingChannels());
 
@@ -186,9 +186,9 @@ public class StandardMessengerTest {
     @Test
     public void testGetOutgoingChannels_Plugin() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
-        TestPlugin plugin3 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin3 = getPlugin();
 
         messenger.registerOutgoingPluginChannel(plugin1, "test:foo");
         messenger.registerOutgoingPluginChannel(plugin1, "test:bar");
@@ -203,8 +203,8 @@ public class StandardMessengerTest {
     @Test
     public void testGetIncomingChannels() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
 
         assertCollectionEquals(messenger.getIncomingChannels());
 
@@ -219,9 +219,9 @@ public class StandardMessengerTest {
     @Test
     public void testGetIncomingChannels_Plugin() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
-        TestPlugin plugin3 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin3 = getPlugin();
 
         messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         messenger.registerIncomingPluginChannel(plugin1, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
@@ -236,9 +236,9 @@ public class StandardMessengerTest {
     @Test
     public void testGetIncomingChannelRegistrations_Plugin() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
-        TestPlugin plugin3 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin3 = getPlugin();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin1, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration3 = messenger.registerIncomingPluginChannel(plugin2, "test:baz", new TestMessageListener("test:foo", "test:bar".getBytes()));
@@ -252,8 +252,8 @@ public class StandardMessengerTest {
     @Test
     public void testGetIncomingChannelRegistrations_String() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin1, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration3 = messenger.registerIncomingPluginChannel(plugin2, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
@@ -267,9 +267,9 @@ public class StandardMessengerTest {
     @Test
     public void testGetIncomingChannelRegistrations_Plugin_String() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin1 = getPlugin();
-        TestPlugin plugin2 = getPlugin();
-        TestPlugin plugin3 = getPlugin();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
+        BukkitTestPlugin plugin3 = getPlugin();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin1, "test:foo", new TestMessageListener("test:foo", "test:bar".getBytes()));
         PluginMessageListenerRegistration registration3 = messenger.registerIncomingPluginChannel(plugin1, "test:bar", new TestMessageListener("test:foo", "test:bar".getBytes()));
@@ -288,7 +288,7 @@ public class StandardMessengerTest {
     @Test
     public void testInvalidChannel() {
         Messenger messenger = getMessenger();
-        TestPlugin plugin = getPlugin();
+        BukkitTestPlugin plugin = getPlugin();
 
         assertThrows(IllegalArgumentException.class, () -> messenger.registerOutgoingPluginChannel(plugin, "foo"));
     }

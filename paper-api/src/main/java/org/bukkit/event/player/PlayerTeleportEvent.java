@@ -88,7 +88,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     public enum TeleportCause {
         /**
-         * Indicates the teleporation was caused by a player throwing an Ender
+         * Indicates the teleportation was caused by a player throwing an Ender
          * Pearl
          */
         ENDER_PEARL,
@@ -112,7 +112,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         END_PORTAL,
         /**
-         * Indicates the teleportation was caused by a player teleporting to a
+         * Indicates the teleportation was caused by a player teleporting to an
          * Entity/Player via the spectator menu
          */
         SPECTATE,

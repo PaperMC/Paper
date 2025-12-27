@@ -16,12 +16,13 @@ import org.jetbrains.annotations.NotNull;
  * Note that this event is called <i>early</i> in the player initialization
  * process. It is recommended that most options involving the Player
  * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
+ *
  * @deprecated Use {@link PlayerConnectionValidateLoginEvent} to handle pre-login logic
  * (e.g. authentication or ban checks), or {@link io.papermc.paper.event.player.PlayerServerFullCheckEvent} to allow
  * players to bypass the server's maximum player limit.
  * Minecraft triggers this twice internally, using this event skips one of the validation checks done by the server.
  * Additionally, this event causes the full player entity to be created much earlier than it would be in Vanilla,
- * leaving it with mostly disfunctional methods and state.
+ * leaving it with mostly dysfunctional methods and state.
  */
 @Warning(reason = "Listening to this event causes the player to be created early.")
 @Deprecated(since = "1.21.6")
