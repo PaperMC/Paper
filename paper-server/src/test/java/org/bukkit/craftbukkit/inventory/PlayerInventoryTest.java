@@ -19,6 +19,7 @@ public class PlayerInventoryTest {
         ItemStack itemStack32Coal = new ItemStack(Items.COAL, 32);
         ItemStack itemStack63Coal = new ItemStack(Items.COAL, 63);
         ItemStack itemStack64Coal = new ItemStack(Items.COAL, 64);
+        ItemStack itemStack80Coal = new ItemStack(Items.COAL, 80); // Overstacked item
 
         // keep one slot empty
         Inventory inventory = new Inventory(null, new PlayerEquipment(null));
@@ -30,6 +31,7 @@ public class PlayerInventoryTest {
         assertEquals(1, inventory.canHold(itemStack1Coal));
         assertEquals(32, inventory.canHold(itemStack32Coal));
         assertEquals(64, inventory.canHold(itemStack64Coal));
+        assertEquals(64, inventory.canHold(itemStack80Coal)); // Should only fit 64 items in 1 slot
 
         // no free space with a stack of the item to check in the inventory
         inventory.setItem(inventory.getNonEquipmentItems().size() - 1, itemStack64Coal);
@@ -37,6 +39,7 @@ public class PlayerInventoryTest {
         assertEquals(0, inventory.canHold(itemStack1Coal));
         assertEquals(0, inventory.canHold(itemStack32Coal));
         assertEquals(0, inventory.canHold(itemStack64Coal));
+        assertEquals(0, inventory.canHold(itemStack80Coal));
 
         // no free space without a stack of the item to check in the inventory
         inventory.setItem(inventory.getNonEquipmentItems().size() - 1, itemStackApple);
@@ -51,6 +54,7 @@ public class PlayerInventoryTest {
         assertEquals(1, inventory.canHold(itemStack1Coal));
         assertEquals(32, inventory.canHold(itemStack32Coal));
         assertEquals(32, inventory.canHold(itemStack64Coal));
+        assertEquals(32, inventory.canHold(itemStack80Coal));
 
         // free space for 1 item in two slots
         inventory.setItem(inventory.getNonEquipmentItems().size() - 1, itemStack63Coal);
@@ -76,5 +80,13 @@ public class PlayerInventoryTest {
         assertEquals(1, inventory.canHold(itemStack1Coal));
         assertEquals(2, inventory.canHold(itemStack32Coal));
         assertEquals(2, inventory.canHold(itemStack64Coal));
+
+        // two empty slots
+        inventory.setItem(inventory.getNonEquipmentItems().size() - 1, ItemStack.EMPTY);
+        inventory.setItem(inventory.getNonEquipmentItems().size() - 2, ItemStack.EMPTY);
+        inventory.setItem(inventory.getNonEquipmentItems().size() + inventory.getArmorContents().size(), ItemStack.EMPTY);
+
+        assertEquals(80, inventory.canHold(itemStack80Coal));
+        assertEquals(128, inventory.canHold(new ItemStack(Items.COAL, 130)));
     }
 }

@@ -81,7 +81,7 @@
  
      public Inventory(Player player, EntityEquipment equipment) {
          this.player = player;
-@@ -93,10 +_,39 @@
+@@ -93,10 +_,51 @@
  
      private boolean hasRemainingSpaceForItem(ItemStack destination, ItemStack origin) {
          return !destination.isEmpty()
@@ -96,15 +96,21 @@
 +    // CraftBukkit start - Watch method above! :D
 +    public int canHold(ItemStack itemStack) {
 +        int remains = itemStack.getCount();
++        int maxStackSize = Math.min(this.getMaxStackSize(), itemStack.getMaxStackSize());
++
 +        for (int slot = 0; slot < this.items.size(); ++slot) {
 +            ItemStack itemInSlot = this.getItem(slot);
 +            if (itemInSlot.isEmpty()) {
-+                return itemStack.getCount();
++                remains -= maxStackSize;
++            } else if (this.hasRemainingSpaceForItem(itemInSlot, itemStack)) {
++                int currentItemMaxStack = Math.min(this.getMaxStackSize(), itemInSlot.getMaxStackSize());
++                int space = currentItemMaxStack - itemInSlot.getCount();
++
++                if (space > 0) {
++                    remains -= space;
++                }
 +            }
 +
-+            if (this.hasRemainingSpaceForItem(itemInSlot, itemStack)) {
-+                remains -= (itemInSlot.getMaxStackSize() < this.getMaxStackSize() ? itemInSlot.getMaxStackSize() : this.getMaxStackSize()) - itemInSlot.getCount();
-+            }
 +            if (remains <= 0) {
 +                return itemStack.getCount();
 +            }
@@ -112,8 +118,14 @@
 +
 +        ItemStack itemInOffhand = this.equipment.get(EquipmentSlot.OFFHAND);
 +        if (this.hasRemainingSpaceForItem(itemInOffhand, itemStack)) {
-+            remains -= (itemInOffhand.getMaxStackSize() < this.getMaxStackSize() ? itemInOffhand.getMaxStackSize() : this.getMaxStackSize()) - itemInOffhand.getCount();
++            int offHandMaxStack = Math.min(this.getMaxStackSize(), itemInOffhand.getMaxStackSize());
++            int space = offHandMaxStack - itemInOffhand.getCount();
++
++            if (space > 0) {
++                remains -= space;
++            }
 +        }
++
 +        if (remains <= 0) {
 +            return itemStack.getCount();
 +        }
