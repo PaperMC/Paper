@@ -29,10 +29,12 @@ public class WorldCreator {
 
     @Nullable
     private Position spawnPositionOverride;
+    @Nullable
     private Float spawnYawOverride;
+    @Nullable
     private Float spawnPitchOverride;
 
-    private Path worldFileOverride = Bukkit.getWorldContainer().toPath();
+    private Path parentDirectory = Bukkit.getWorldContainer().toPath();
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -225,8 +227,8 @@ public class WorldCreator {
      * @return this object, for chaining
      */
     @NotNull
-    public WorldCreator worldFileStorage(@NotNull Path override) {
-        this.worldFileOverride = override;
+    public WorldCreator parentDirectory(@NotNull Path override) {
+        this.parentDirectory = override;
         return this;
     }
 
@@ -237,7 +239,7 @@ public class WorldCreator {
      */
     @NotNull
     public Path getParentDirectory() {
-        return this.worldFileOverride;
+        return this.parentDirectory;
     }
 
     /**
