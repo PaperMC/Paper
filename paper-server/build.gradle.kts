@@ -315,10 +315,6 @@ fun TaskContainer.registerRunTask(
         workingDir.mkdirs()
     }
 
-    if(!providers.gradleProperty("paper.runArgs").getOrElse("").isEmpty()) {
-        args(providers.gradleProperty("paper.runArgs").get().split(" "))
-    }
-
     block(this)
 }
 
