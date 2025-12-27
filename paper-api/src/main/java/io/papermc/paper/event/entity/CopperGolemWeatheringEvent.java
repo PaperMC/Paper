@@ -30,16 +30,31 @@ public class CopperGolemWeatheringEvent extends EntityEvent implements Cancellab
         this.player = player;
     }
 
+    /**
+     * Gets the new copper golem's weathering state
+     * @return new weathering state
+     * @see CopperGolem#getWeatheringState()
+     */
     @NotNull
     public WeatheringCopperState getWeatheringCopperState() {
         return this.weatheringCopperState;
     }
 
+    /**
+     * Gets the previous copper golem's weathering state
+     * @return previous weathering state
+     * @see CopperGolem#getWeatheringState()
+     */
     @NotNull
     public WeatheringCopperState getPreviousWeatheringCopperState() {
         return this.previousWeatheringCopperState;
     }
 
+    /**
+     * Gets the reason for the weathering change.
+     *
+     * @return the reason
+     */
     @NotNull
     public Reason getReason() {
         return this.reason;
