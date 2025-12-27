@@ -1181,7 +1181,7 @@ public final class CraftServer implements Server {
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
-        File folder = new File(this.getWorldContainer(), name);
+        File folder = new File(creator.getWorldFileStorage(), name);
         World world = this.getWorld(name);
 
         // Paper start
@@ -1270,12 +1270,6 @@ public final class CraftServer implements Server {
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(primaryLevelData)
         );
         LevelStem customStem = contextLevelStemRegistry.getValue(actualDimension);
-        if (creator.getDimensionKeyOverride() != null) {
-            customStem = new LevelStem(
-                this.console.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE).getOrThrow(PaperAdventure.asVanilla(Registries.DIMENSION_TYPE, creator.getDimensionKeyOverride())),
-                customStem.generator()
-            );
-        }
 
         WorldInfo worldInfo = new CraftWorldInfo(primaryLevelData, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
         if (biomeProvider == null && chunkGenerator != null) {

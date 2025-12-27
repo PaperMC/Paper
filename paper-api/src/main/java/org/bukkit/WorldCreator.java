@@ -33,7 +33,6 @@ public class WorldCreator {
     private Float spawnYawOverride;
     private Float spawnPitchOverride;
 
-    private Key dimensionKey = null;
     private File worldFileOverride = Bukkit.getWorldContainer();
 
     /**
@@ -215,34 +214,6 @@ public class WorldCreator {
         this.environment = env;
 
         return this;
-    }
-
-    /**
-     * Sets the dimension key override for this world.
-     *
-     * <p>The dimension key determines the dimension type this world will use
-     * (for example: overworld, nether, end, or a custom dimension).</p>
-     *
-     * <p>If set, this overrides the dimension type provided by vanilla or any
-     * custom world generator.</p>
-     *
-     * @param key the dimension key to use for this world
-     * @return this object, for chaining
-     */
-    @NotNull
-    public WorldCreator dimensionKeyOverride(@NotNull Key key) {
-        this.dimensionKey = key;
-        return this;
-    }
-
-    /**
-     * Gets the dimension key override that will be applied when this world is created.
-     *
-     * @return the dimension key override, or {@code null} if vanilla behavior is used
-     */
-    @Nullable
-    public Key getDimensionKeyOverride() {
-        return dimensionKey;
     }
 
     /**
