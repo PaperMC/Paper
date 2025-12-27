@@ -1,61 +1,36 @@
 --- a/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
-@@ -66,17 +_,45 @@
+@@ -66,14 +_,19 @@
      protected abstract Component getDefaultName();
  
      public boolean canOpen(Player player) {
--        return canUnlock(player, this.lockKey, this.getDisplayName());
-+        return canUnlock(player, this.lockKey, this.getDisplayName(), this); // Paper - Add BlockLockCheckEvent
+-        return this.lockKey.canUnlock(player);
++        return org.bukkit.craftbukkit.event.CraftEventFactory.callBlockLockCheckEvent(this, this.lockKey, this.getDisplayName(), player); // Paper - Call BlockLockCheckEvent
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add BlockLockCheckEvent
-     public static boolean canUnlock(Player player, LockCode code, Component displayName) {
-+        // Paper start - Add BlockLockCheckEvent
-+        return canUnlock(player, code, displayName, null);
-+    }
-+
-+    public static boolean canUnlock(Player player, LockCode code, Component displayName, @Nullable BlockEntity blockEntity) {
-+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && blockEntity != null && blockEntity.getLevel() != null && blockEntity.getLevel().getBlockEntity(blockEntity.getBlockPos()) == blockEntity) {
-+            final org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos());
-+            net.kyori.adventure.text.Component lockedMessage = net.kyori.adventure.text.Component.translatable("container.isLocked", io.papermc.paper.adventure.PaperAdventure.asAdventure(displayName));
-+            net.kyori.adventure.sound.Sound lockedSound = net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.BLOCK_CHEST_LOCKED, net.kyori.adventure.sound.Sound.Source.BLOCK, 1.0F, 1.0F);
-+            final io.papermc.paper.event.block.BlockLockCheckEvent event = new io.papermc.paper.event.block.BlockLockCheckEvent(block, serverPlayer.getBukkitEntity(), lockedMessage, lockedSound);
-+            event.callEvent();
-+            if (event.getResult() == org.bukkit.event.Event.Result.ALLOW) {
-+                return true;
-+            } else if (event.getResult() == org.bukkit.event.Event.Result.DENY || (!player.isSpectator() && !code.unlocksWith(event.isUsingCustomKeyItemStack() ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getKeyItem()) : player.getMainHandItem()))) {
-+                if (event.getLockedMessage() != null) {
-+                    event.getPlayer().sendActionBar(event.getLockedMessage());
-+                }
-+                if (event.getLockedSound() != null) {
-+                    event.getPlayer().playSound(event.getLockedSound());
-+                }
-+                return false;
-+            } else {
-+                return true;
-+            }
-+        } else { // logic below is replaced by logic above
-+        // Paper end - Add BlockLockCheckEvent
-         if (!player.isSpectator() && !code.unlocksWith(player.getMainHandItem())) {
--            player.displayClientMessage(Component.translatable("container.isLocked", displayName), true);
-+            player.displayClientMessage(Component.translatable("container.isLocked", displayName), true); // Paper - diff on change
-             player.playNotifySound(SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
-             return false;
-         } else {
-             return true;
+     public static void sendChestLockedNotifications(Vec3 pos, Player player, Component displayName) {
++        // Paper start - BlockLockCheckEvent
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.sendChestLockedNotifications(pos)) {
++            return;
++        }
++        // Paper end - BlockLockCheckEvent
+         Level level = player.level();
+-        player.displayClientMessage(Component.translatable("container.isLocked", displayName), true);
++        player.displayClientMessage(Component.translatable("container.isLocked", displayName), true); // Paper - diff on change
+         if (!level.isClientSide()) {
+-            level.playSound(null, pos.x(), pos.y(), pos.z(), SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
++            level.playSound(null, pos.x(), pos.y(), pos.z(), SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper - diff on change
          }
-+        } // Paper - Add BlockLockCheckEvent
      }
  
-     public boolean isLocked() {
-@@ -168,4 +_,12 @@
+@@ -170,4 +_,12 @@
          output.discard("lock");
          output.discard("Items");
      }
 +
 +    // CraftBukkit start
 +    @Override
-+    public @Nullable org.bukkit.Location getLocation() {
++    public org.bukkit.@Nullable Location getLocation() {
 +        if (this.level == null) return null;
 +        return org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.worldPosition, this.level);
 +    }

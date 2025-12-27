@@ -220,6 +220,11 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      */
     public static final PotionEffectType INFESTED = getPotionEffectType(39, "infested");
 
+    /**
+     * Prevent the oxygen bar from depleting underwater.
+     */
+    public static final PotionEffectType BREATH_OF_THE_NAUTILUS = getPotionEffectType(40, "breath_of_the_nautilus");
+
     @NotNull
     private static PotionEffectType getPotionEffectType(int typeId, @NotNull String key) {
         PotionEffectType potionEffectType = Registry.EFFECT.getOrThrow(NamespacedKey.minecraft(key));

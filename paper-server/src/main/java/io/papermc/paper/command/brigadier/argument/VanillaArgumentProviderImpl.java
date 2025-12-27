@@ -55,7 +55,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.AngleArgument;
 import net.minecraft.commands.arguments.ColorArgument;
@@ -67,6 +67,7 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
@@ -74,7 +75,6 @@ import net.minecraft.commands.arguments.OperationArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.ScoreHolderArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
@@ -383,12 +383,12 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<NamespacedKey> namespacedKey() {
-        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
+        return this.wrap(IdentifierArgument.id(), CraftNamespacedKey::fromMinecraft);
     }
 
     @Override
     public ArgumentType<Key> key() {
-        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
+        return this.wrap(IdentifierArgument.id(), CraftNamespacedKey::fromMinecraft);
     }
 
     @Override
@@ -472,7 +472,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
         return this.wrap(
             ResourceKeyArgument.key(PaperRegistries.registryToNms(registryKey)),
-            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.location()))
+            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.identifier()))
         );
     }
 
@@ -489,7 +489,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             resource -> requireNonNull(
                 RegistryAccess.registryAccess()
                     .getRegistry(registryKey)
-                    .get(CraftNamespacedKey.fromMinecraft(resource.key().location()))
+                    .get(CraftNamespacedKey.fromMinecraft(resource.key().identifier()))
             )
         );
     }

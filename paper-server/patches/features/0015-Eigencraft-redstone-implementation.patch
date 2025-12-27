@@ -978,10 +978,10 @@ index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd
 +    }
 +}
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925b51b4d38 100644
+index 417e12d3dfabdfce40d6a53d217b86a39defc553..d7ff98f4ecadd37f22d0a38d94a5975db60d6285 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -265,6 +265,60 @@ public class RedStoneWireBlock extends Block {
+@@ -264,6 +264,60 @@ public class RedStoneWireBlock extends Block {
          return state.isFaceSturdy(level, pos, Direction.UP) || state.is(Blocks.HOPPER);
      }
  
@@ -1042,16 +1042,16 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
      private void updatePowerStrength(Level level, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean updateShape) {
          if (useExperimentalEvaluator(level)) {
              new ExperimentalRedstoneWireEvaluator(this).updatePowerStrength(level, pos, state, orientation, updateShape);
-@@ -293,7 +347,7 @@ public class RedStoneWireBlock extends Block {
+@@ -292,7 +346,7 @@ public class RedStoneWireBlock extends Block {
      @Override
-     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
 -            this.updatePowerStrength(level, pos, state, null, true);
 +            this.updateSurroundingRedstone(level, pos, state, null, true); // Paper - Optimize redstone
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -310,7 +364,7 @@ public class RedStoneWireBlock extends Block {
+@@ -309,7 +363,7 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -1060,7 +1060,7 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -335,7 +389,7 @@ public class RedStoneWireBlock extends Block {
+@@ -334,7 +388,7 @@ public class RedStoneWireBlock extends Block {
          if (!level.isClientSide()) {
              if (neighborBlock != this || !useExperimentalEvaluator(level)) {
                  if (state.canSurvive(level, pos)) {
@@ -1070,10 +1070,10 @@ index 0162a80600a00bb9a77bd7ec209bd0b5b01f8ceb..697979259c1d10db915b6dba3648e925
                      dropResources(state, level, pos);
                      level.removeBlock(pos, false);
 diff --git a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-index 3f6f3ca5a5e412e57fad635f52cd152520d6dca2..abcc144a086a45bf4cfa4d1a33e2ae10952e0da2 100644
+index 82a45a598cd3d7520b15bac9b47117ef7b1f98ba..53b8df8e6dd379126af3e1feb2220e222430ce94 100644
 --- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
 +++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-@@ -44,7 +44,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
+@@ -45,7 +45,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
          }
      }
  

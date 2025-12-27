@@ -327,6 +327,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
                 public net.minecraft.nbt.Tag getTag(String key) {
                     return net.minecraft.Optionull.map(this.getPersistentTag(), tag -> tag.get(key));
                 }
+
+                @Override
+                public int getSize() {
+                    return this.getPersistentTag().size();
+                }
             };
         }
         return this.persistentDataContainerView;
@@ -387,7 +392,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     private ServerStatsCounter getStatisticManager() {
-        return this.server.getHandle().getPlayerStats(this.getUniqueId(), this.getName());
+        return this.server.getHandle().getPlayerStats(this.nameAndId.toUncompletedGameProfile());
     }
 
     @Override

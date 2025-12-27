@@ -63,7 +63,7 @@ public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements C
     public void setSlotDisabled(int slot, boolean disabled) {
         Preconditions.checkArgument(slot >= 0 && slot < 9, "Invalid slot index %s for Crafter", slot);
 
-        this.getSnapshot().setSlotState(slot, disabled);
+        this.getSnapshot().setSlotState(slot, !disabled);
     }
 
     @Override
