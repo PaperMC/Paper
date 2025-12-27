@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Random;
 import io.papermc.paper.math.Position;
 import net.kyori.adventure.key.Key;
@@ -33,7 +34,7 @@ public class WorldCreator {
     private Float spawnYawOverride;
     private Float spawnPitchOverride;
 
-    private File worldFileOverride = Bukkit.getWorldContainer();
+    private Path worldFileOverride = Bukkit.getWorldContainer().toPath();
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -226,7 +227,7 @@ public class WorldCreator {
      * @return this object, for chaining
      */
     @NotNull
-    public WorldCreator worldFileStorage(@NotNull File override) {
+    public WorldCreator worldFileStorage(@NotNull Path override) {
         this.worldFileOverride = override;
         return this;
     }
@@ -237,8 +238,8 @@ public class WorldCreator {
      * @return the parent directory used for world storage
      */
     @NotNull
-    public File getWorldFileStorage() {
-        return worldFileOverride;
+    public Path getWorldFileStorage() {
+        return this.worldFileOverride;
     }
 
     /**

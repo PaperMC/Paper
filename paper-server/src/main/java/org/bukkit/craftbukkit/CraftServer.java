@@ -1181,7 +1181,7 @@ public final class CraftServer implements Server {
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
-        File folder = new File(creator.getWorldFileStorage(), name);
+        File folder = new File(creator.getWorldFileStorage().toFile(), name);
         World world = this.getWorld(name);
 
         // Paper start
@@ -1215,7 +1215,7 @@ public final class CraftServer implements Server {
 
         LevelStorageSource.LevelStorageAccess levelStorageAccess;
         try {
-            levelStorageAccess = LevelStorageSource.createDefault(creator.getWorldFileStorage().toPath()).validateAndCreateAccess(name, actualDimension);
+            levelStorageAccess = LevelStorageSource.createDefault(creator.getWorldFileStorage()).validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
         }
