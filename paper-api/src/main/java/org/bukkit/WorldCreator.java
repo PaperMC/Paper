@@ -305,8 +305,6 @@ public class WorldCreator {
      * <p>If this returns {@code null}, vanilla or custom generator behavior will be used
      * to determine the spawn position.</p>
      *
-     * <p>The returned {@link Position} is a clone and may be modified safely.</p>
-     *
      * @return the forced spawn position, or {@code null} to use vanilla behavior
      */
     @Nullable
