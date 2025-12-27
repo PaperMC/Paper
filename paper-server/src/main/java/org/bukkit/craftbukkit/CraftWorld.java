@@ -57,8 +57,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.attribute.BedRule;
 import net.minecraft.util.NullOps;
+import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -1848,14 +1848,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     private StructureSearchResult locateNearestStructure(Location origin, List<Structure> structures, int radius, boolean findUnexplored) {
-        BlockPos originPos = BlockPos.containing(origin.getX(), origin.getY(), origin.getZ());
-        List<Holder<net.minecraft.world.level.levelgen.structure.Structure>> holders = new ArrayList<>();
-
-        for (Structure structure : structures) {
-            holders.add(Holder.direct(CraftStructure.bukkitToMinecraft(structure)));
-        }
-
-        Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.structure.Structure>> found = this.getHandle().getChunkSource().getGenerator().findNearestMapStructure(this.getHandle(), HolderSet.direct(holders), originPos, radius, findUnexplored);
+        Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.structure.Structure>> found = this.getHandle().getChunkSource().getGenerator().findNearestMapStructure(
+            this.getHandle(),
+            HolderSet.direct(CraftStructure::bukkitToMinecraftHolder, structures),
+            CraftLocation.toBlockPosition(origin),
+            radius,
+            findUnexplored
+        );
         if (found == null) {
             return null;
         }
@@ -1887,7 +1886,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public BiomeSearchResult locateNearestBiome(Location origin, int radius, int horizontalInterval, int verticalInterval, Biome... biomes) {
-        BlockPos originPos = BlockPos.containing(origin.getX(), origin.getY(), origin.getZ());
+        BlockPos originPos = CraftLocation.toBlockPosition(origin);
         Set<Holder<net.minecraft.world.level.biome.Biome>> holders = new HashSet<>();
 
         for (Biome biome : biomes) {
