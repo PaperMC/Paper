@@ -1,0 +1,34 @@
+--- a/net/minecraft/core/HolderSet.java
++++ b/net/minecraft/core/HolderSet.java
+@@ -164,6 +_,7 @@
+         private final HolderOwner<T> owner;
+         private final TagKey<T> key;
+         private @Nullable List<Holder<T>> contents;
++        private @Nullable Set<io.papermc.paper.registry.TypedKey<?>> typedKeys; // Paper - cache typed key set for constant contains calls
+ 
+         Named(HolderOwner<T> owner, TagKey<T> key) {
+             this.owner = owner;
+@@ -172,6 +_,7 @@
+ 
+         void bind(List<Holder<T>> contents) {
+             this.contents = List.copyOf(contents);
++            this.typedKeys = null; // Paper - reset if tag is re-bound
+         }
+ 
+         public TagKey<T> key() {
+@@ -216,5 +_,15 @@
+         public boolean canSerializeIn(HolderOwner<T> owner) {
+             return this.owner.canSerializeIn(owner);
+         }
++
++        // Paper start - cache typed key set for constant contains calls
++        public boolean contains(io.papermc.paper.registry.TypedKey<?> key) {
++            if (this.typedKeys == null) {
++                this.typedKeys = this.contents().stream().map(h -> io.papermc.paper.registry.PaperRegistries.fromNms(h.unwrapKey().orElseThrow())).collect(java.util.stream.Collectors.toUnmodifiableSet());
++            }
++
++            return this.typedKeys.contains(key);
++        }
++        // Paper end - cache typed key set for constant contains calls
+     }
+ }
