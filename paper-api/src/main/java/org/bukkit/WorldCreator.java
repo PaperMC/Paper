@@ -266,29 +266,36 @@ public class WorldCreator {
     }
 
     /**
-     * Sets the spawn position that this world will have on creation.
-     * This overrides vanilla / custom generator behavior and will not cause any chunk loads.
-     * As a result, the bonus chest will not be spawned if this is set.
+     * Sets the forced spawn position for the world created by this {@link WorldCreator}.
+     * <p>
+     * This overrides vanilla and custom generator behavior without loading any chunks.
+     * When a forced spawn is specified, the bonus chest will not be generated.
      *
-     * @param position Spawn position (world may be null to indicate the world being created),
-     *                 or null to use vanilla behavior.
-     * @param yaw      Yaw rotation
-     * @param pitch    Pitch rotation
-     * @return This object, for chaining
+     * @param position the spawn position
+     * @param yaw      the yaw rotation at spawn
+     * @param pitch    the pitch rotation at spawn
+     * @return this creator for chaining
      */
     @NotNull
-    public WorldCreator forcedSpawnPosition(@Nullable Position position, float yaw, float pitch
-    ) {
-        if (position == null) {
-            this.spawnPositionOverride = null;
-            this.spawnYawOverride = yaw;
-            this.spawnPitchOverride = pitch;
-            return this;
-        }
-
+    public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
         this.spawnPositionOverride = position;
         this.spawnYawOverride = yaw;
         this.spawnPitchOverride = pitch;
+        return this;
+    }
+
+    /**
+     * Clears any previously forced spawn position.
+     * <p>
+     * After calling this, vanilla spawn selection behavior is used.
+     *
+     * @return this creator for chaining
+     */
+    @NotNull
+    public WorldCreator clearForcedSpawnPosition() {
+        this.spawnPositionOverride = null;
+        this.spawnYawOverride = null;
+        this.spawnPitchOverride = null;
         return this;
     }
 
