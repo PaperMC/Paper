@@ -311,7 +311,7 @@ public class WorldCreator {
      */
     @Nullable
     public Position forcedSpawnPosition() {
-        return this.spawnPositionOverride == null ? null : this.spawnPositionOverride;
+        return this.spawnPositionOverride;
     }
 
     /**
