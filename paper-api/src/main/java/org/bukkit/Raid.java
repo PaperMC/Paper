@@ -93,7 +93,7 @@ public interface Raid extends PersistentDataHolder {
      * @param totalWaves number of waves
      * @throws IllegalArgumentException if totalWaves is negative or zero
      * @throws IllegalArgumentException if totalWaves is larger than 7, which is the most waves a vanilla raid can have.
-     * @throws IllegalArgumentException if the totalWaves is less or equals to {@link #getSpawnedGroups()}
+     * @throws IllegalArgumentException if the totalWaves is less than {@link #getSpawnedGroups()}
      */
     void setTotalWaves(int totalWaves);
 
