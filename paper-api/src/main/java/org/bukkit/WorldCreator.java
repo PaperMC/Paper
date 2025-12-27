@@ -1,11 +1,9 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Random;
 import io.papermc.paper.math.Position;
-import net.kyori.adventure.key.Key;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -238,7 +236,7 @@ public class WorldCreator {
      * @return the parent directory used for world storage
      */
     @NotNull
-    public Path getWorldFileStorage() {
+    public Path getParentDirectory() {
         return this.worldFileOverride;
     }
 
