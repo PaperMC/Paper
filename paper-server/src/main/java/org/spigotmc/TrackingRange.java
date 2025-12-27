@@ -38,8 +38,9 @@ public final class TrackingRange {
         switch (entity.activationType) {
             case RAIDER:
             case MONSTER:
-            case FLYING_MONSTER:
                 return config.monsterTrackingRange;
+            case FLYING_MONSTER:
+                return config.flyingMonsterTrackingRange;
             case WATER:
             case VILLAGER:
             case ANIMAL:
