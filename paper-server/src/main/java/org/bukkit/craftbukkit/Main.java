@@ -164,6 +164,12 @@ public class Main {
                         .defaultsTo(new File[] {})
                         .describedAs("Jar file");
 
+                this.acceptsAll(asList("add-plugin-dir", "add-extra-plugin-dir"), "Specify paths to extra plugin directories to be loaded in addition to the plugins folder. This argument can be specified multiple times, once for each extra plugin dir path.")
+                    .withRequiredArg()
+                    .ofType(File.class)
+                    .defaultsTo(new File[] {})
+                    .describedAs("Plugin directory");
+
                 this.accepts("server-name", "Name of the server")
                         .withRequiredArg()
                         .ofType(String.class)
