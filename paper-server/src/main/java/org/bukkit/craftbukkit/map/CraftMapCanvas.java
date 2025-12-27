@@ -126,7 +126,7 @@ public class CraftMapCanvas implements MapCanvas {
         }
 
         byte[] bytes = MapPalette.imageToBytes(temp);
-        
+
         // Since we now control the size of the image, we can safely use System.arraycopy
         // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
         if (x == 0 && effectiveWidth == 128) { // This only works great if the width is 128, otherwise an empty area appears

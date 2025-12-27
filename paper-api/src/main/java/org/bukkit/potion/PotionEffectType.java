@@ -168,7 +168,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
     public static final PotionEffectType CONDUIT_POWER = getPotionEffectType(29, "conduit_power");
 
     /**
-     * Increses underwater movement speed.<br>
+     * Increases underwater movement speed.<br>
      * Squee'ek uh'k kk'kkkk squeek eee'eek.
      */
     public static final PotionEffectType DOLPHINS_GRACE = getPotionEffectType(30, "dolphins_grace");
@@ -219,6 +219,11 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Chance of spawning silverfish when hurt.
      */
     public static final PotionEffectType INFESTED = getPotionEffectType(39, "infested");
+
+    /**
+     * Prevent the oxygen bar from depleting underwater.
+     */
+    public static final PotionEffectType BREATH_OF_THE_NAUTILUS = getPotionEffectType(40, "breath_of_the_nautilus");
 
     @NotNull
     private static PotionEffectType getPotionEffectType(int typeId, @NotNull String key) {

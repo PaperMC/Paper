@@ -5,13 +5,13 @@ import org.bukkit.entity.SpectralArrow;
 
 public class CraftSpectralArrow extends CraftAbstractArrow implements SpectralArrow {
 
-    public CraftSpectralArrow(CraftServer server, net.minecraft.world.entity.projectile.SpectralArrow entity) {
+    public CraftSpectralArrow(CraftServer server, net.minecraft.world.entity.projectile.arrow.SpectralArrow entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.projectile.SpectralArrow getHandle() {
-        return (net.minecraft.world.entity.projectile.SpectralArrow) this.entity;
+    public net.minecraft.world.entity.projectile.arrow.SpectralArrow getHandle() {
+        return (net.minecraft.world.entity.projectile.arrow.SpectralArrow) this.entity;
     }
 
     @Override

@@ -15,6 +15,7 @@ import io.papermc.paper.registry.TypedKey;
 import java.util.Optional;
 import java.util.function.Function;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryOps;
 import org.bukkit.Keyed;
@@ -23,6 +24,14 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class PaperCodecs {
+
+    public static final Codec<TriState> TRI_STATE_CODEC = Codec.STRING.comapFlatMap(name -> {
+        try {
+            return DataResult.success(TriState.valueOf(name));
+        } catch (IllegalArgumentException e) {
+            return DataResult.error(() -> "Unknown TriState value: " + name);
+        }
+    }, TriState::name);
 
     /**
      * This codec is lenient on decoding and encoding compared to native OptionalFieldCodec

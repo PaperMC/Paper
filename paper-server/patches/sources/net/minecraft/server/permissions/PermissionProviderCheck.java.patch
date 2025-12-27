@@ -1,0 +1,25 @@
+--- a/net/minecraft/server/permissions/PermissionProviderCheck.java
++++ b/net/minecraft/server/permissions/PermissionProviderCheck.java
+@@ -2,9 +_,21 @@
+ 
+ import java.util.function.Predicate;
+ 
+-public record PermissionProviderCheck<T extends PermissionSetSupplier>(PermissionCheck test) implements Predicate<T> {
++public record PermissionProviderCheck<T extends PermissionSetSupplier>(PermissionCheck test, java.util.concurrent.atomic.AtomicReference<com.mojang.brigadier.tree.CommandNode<net.minecraft.commands.CommandSourceStack>> vanillaNode) implements Predicate<T> { // Paper - Vanilla Command permission checking
+     @Override
+     public boolean test(T permissionsSupplier) {
++        // Paper start - Vanilla Command permission checking
++        com.mojang.brigadier.tree.CommandNode<net.minecraft.commands.CommandSourceStack> currentCommand = vanillaNode.get();
++        if (currentCommand != null && permissionsSupplier instanceof net.minecraft.commands.CommandSourceStack commandSourceStack && this.test instanceof net.minecraft.server.permissions.PermissionCheck.Require req) {
++            return commandSourceStack.hasPermission(req.permission(), org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
++        }
++        // Paper end - Vanilla Command permission checking
+         return this.test.check(permissionsSupplier.permissions());
+     }
++
++    // Paper start - Vanilla Command permission checking
++    public PermissionProviderCheck(final PermissionCheck test) {
++        this(test, new java.util.concurrent.atomic.AtomicReference<>(null));
++    }
++    // Paper end - Vanilla Command permission checking
+ }

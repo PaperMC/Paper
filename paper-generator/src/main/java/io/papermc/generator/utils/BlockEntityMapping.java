@@ -26,7 +26,7 @@ public final class BlockEntityMapping {
     static {
         Map<ResourceKey<BlockEntityType<?>>, String> mapping = new IdentityHashMap<>();
         BuiltInRegistries.BLOCK_ENTITY_TYPE.registryKeySet().forEach(key -> {
-            String name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, key.location().getPath());
+            String name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, key.identifier().getPath());
             String implName = "Craft".concat(name);
 
             mapping.put(key, RENAMES.getOrDefault(implName, implName));

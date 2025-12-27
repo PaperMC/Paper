@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -35,6 +_,10 @@
+@@ -37,6 +_,10 @@
  import org.slf4j.Logger;
  
- public abstract class BlockEntity {
+ public abstract class BlockEntity implements DebugValueSource {
 +    // CraftBukkit start - data containers
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
 +    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
@@ -11,7 +11,7 @@
      private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
      private static final Logger LOGGER = LogUtils.getLogger();
      private final BlockEntityType<?> type;
-@@ -50,6 +_,7 @@
+@@ -51,6 +_,7 @@
          this.worldPosition = pos.immutable();
          this.validateBlockState(blockState);
          this.blockState = blockState;
@@ -19,7 +19,7 @@
      }
  
      private void validateBlockState(BlockState state) {
-@@ -66,6 +_,7 @@
+@@ -67,6 +_,7 @@
          int intOr = tag.getIntOr("x", 0);
          int intOr1 = tag.getIntOr("y", 0);
          int intOr2 = tag.getIntOr("z", 0);
@@ -27,7 +27,7 @@
          int sectionPosCoord = SectionPos.blockToSectionCoord(intOr);
          int sectionPosCoord1 = SectionPos.blockToSectionCoord(intOr2);
          if (sectionPosCoord != chunkPos.x || sectionPosCoord1 != chunkPos.z) {
-@@ -73,6 +_,7 @@
+@@ -74,6 +_,7 @@
              intOr = chunkPos.getBlockX(SectionPos.sectionRelative(intOr));
              intOr2 = chunkPos.getBlockZ(SectionPos.sectionRelative(intOr2));
          }
@@ -72,7 +72,7 @@
      }
  
      public void saveId(ValueOutput output) {
-@@ -287,6 +_,12 @@
+@@ -285,6 +_,12 @@
      }
  
      public final void applyComponents(DataComponentMap components, DataComponentPatch patch) {
@@ -85,7 +85,7 @@
          final Set<DataComponentType<?>> set = new HashSet<>();
          set.add(DataComponents.BLOCK_ENTITY_DATA);
          set.add(DataComponents.BLOCK_STATE);
-@@ -307,6 +_,10 @@
+@@ -304,6 +_,10 @@
          });
          DataComponentPatch dataComponentPatch = patch.forget(set::contains);
          this.components = dataComponentPatch.split().added();
@@ -97,16 +97,16 @@
  
      protected void collectImplicitComponents(DataComponentMap.Builder components) {
 @@ -339,6 +_,27 @@
-     public ProblemReporter.PathElement problemPath() {
-         return new BlockEntity.BlockEntityPathElement(this);
+     @Override
+     public void registerDebugValues(ServerLevel level, DebugValueSource.Registration registrar) {
      }
 +
 +    // CraftBukkit start - add method
-+    public org.bukkit.inventory.InventoryHolder getOwner() {
++    public org.bukkit.inventory.@Nullable InventoryHolder getOwner() {
 +        return getOwner(true);
 +    }
 +
-+    public org.bukkit.inventory.InventoryHolder getOwner(boolean useSnapshot) {
++    public org.bukkit.inventory.@Nullable InventoryHolder getOwner(boolean useSnapshot) {
 +        if (this.level == null) return null;
 +        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition);
 +        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper

@@ -9,8 +9,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.kyori.adventure.key.Key;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
@@ -34,7 +34,7 @@ class FeatureFlagTest {
 
     @Test
     void testFeatureFlagParity() {
-        final Set<ResourceLocation> locations = new HashSet<>();
+        final Set<Identifier> locations = new HashSet<>();
         for (final FeatureFlag flag : FeatureFlag.ALL_FLAGS.values()) {
             locations.add(PaperAdventure.asVanilla(flag.getKey()));
         }
@@ -42,7 +42,7 @@ class FeatureFlagTest {
             fail("Unknown api feature flag: " + unknown);
         });
 
-        for (final ResourceLocation nmsFlag : allNames()) {
+        for (final Identifier nmsFlag : allNames()) {
             assertNotNull(FeatureFlag.ALL_FLAGS.value(Key.key(nmsFlag.toString())), "can't find api flag for " + nmsFlag);
         }
     }
@@ -52,12 +52,12 @@ class FeatureFlagTest {
         assertEquals(allNames().size(), PaperFeatureFlagProviderImpl.FLAGS.size());
         for (final FeatureFlag featureFlag : PaperFeatureFlagProviderImpl.FLAGS.keySet()) {
             final net.minecraft.world.flag.FeatureFlag nmsFlag = PaperFeatureFlagProviderImpl.FLAGS.get(featureFlag);
-            final ResourceLocation nmsFlagName = FeatureFlags.REGISTRY.toNames(FeatureFlagSet.of(nmsFlag)).iterator().next();
+            final Identifier nmsFlagName = FeatureFlags.REGISTRY.toNames(FeatureFlagSet.of(nmsFlag)).iterator().next();
             assertEquals(nmsFlagName.toString(), featureFlag.key().asString());
         }
     }
 
-    static Set<ResourceLocation> allNames() {
+    static Set<Identifier> allNames() {
         return FeatureFlags.REGISTRY.toNames(FeatureFlags.REGISTRY.allFlags());
     }
 
@@ -81,13 +81,12 @@ class FeatureFlagTest {
     }
 
     static Stream<RegistryKey<?>> nonFeatureFilteredRegistries() {
-        return RegistryHelper.getRegistry().registries().filter(r -> {
+        return RegistryHelper.registryAccess().registries().filter(r -> {
             final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(r.key());
             // has an API registry and isn't a filtered registry
             return entry != null && !FeatureElement.FILTERED_REGISTRIES.contains(r.key());
         }).map(r -> PaperRegistries.getEntry(r.key()).apiKey());
     }
-
 
     @MethodSource("nonFeatureFilteredRegistries")
     @ParameterizedTest

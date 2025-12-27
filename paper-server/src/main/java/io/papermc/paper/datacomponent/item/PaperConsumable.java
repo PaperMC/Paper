@@ -49,7 +49,7 @@ public record PaperConsumable(
 
     @Override
     public @Unmodifiable List<ConsumeEffect> consumeEffects() {
-        return MCUtil.transformUnmodifiable(this.impl.onConsumeEffects(), PaperConsumableEffect::fromNms);
+        return MCUtil.transformUnmodifiable(this.impl.onConsumeEffects(), PaperConsumableEffect::fromVanilla);
     }
 
     @Override
@@ -97,15 +97,21 @@ public record PaperConsumable(
         }
 
         @Override
+        public Builder effects(final List<ConsumeEffect> effects) {
+            this.effects.clear();
+            return this.addEffects(effects);
+        }
+
+        @Override
         public Builder addEffect(final ConsumeEffect effect) {
-            this.effects.add(PaperConsumableEffect.toNms(effect));
+            this.effects.add(PaperConsumableEffect.toVanilla(effect));
             return this;
         }
 
         @Override
         public Builder addEffects(final List<ConsumeEffect> effects) {
             for (final ConsumeEffect effect : effects) {
-                this.effects.add(PaperConsumableEffect.toNms(effect));
+                this.effects.add(PaperConsumableEffect.toVanilla(effect));
             }
             return this;
         }

@@ -94,7 +94,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     //<editor-fold desc="ItemTypes" defaultstate="collapsed">
     // Start generate - ItemType
-    // @GeneratedFrom 1.21.8
     ItemType.Typed<ItemMeta> ACACIA_BOAT = getItemType("acacia_boat");
 
     ItemType.Typed<ItemMeta> ACACIA_BUTTON = getItemType("acacia_button");
@@ -118,6 +117,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> ACACIA_PRESSURE_PLATE = getItemType("acacia_pressure_plate");
 
     ItemType.Typed<ItemMeta> ACACIA_SAPLING = getItemType("acacia_sapling");
+
+    ItemType.Typed<BlockStateMeta> ACACIA_SHELF = getItemType("acacia_shelf");
 
     ItemType.Typed<BlockStateMeta> ACACIA_SIGN = getItemType("acacia_sign");
 
@@ -211,6 +212,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> BAMBOO_RAFT = getItemType("bamboo_raft");
 
+    ItemType.Typed<BlockStateMeta> BAMBOO_SHELF = getItemType("bamboo_shelf");
+
     ItemType.Typed<BlockStateMeta> BAMBOO_SIGN = getItemType("bamboo_sign");
 
     ItemType.Typed<ItemMeta> BAMBOO_SLAB = getItemType("bamboo_slab");
@@ -272,6 +275,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> BIRCH_PRESSURE_PLATE = getItemType("birch_pressure_plate");
 
     ItemType.Typed<ItemMeta> BIRCH_SAPLING = getItemType("birch_sapling");
+
+    ItemType.Typed<BlockStateMeta> BIRCH_SHELF = getItemType("birch_shelf");
 
     ItemType.Typed<BlockStateMeta> BIRCH_SIGN = getItemType("birch_sign");
 
@@ -477,6 +482,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BlockStateMeta> CALIBRATED_SCULK_SENSOR = getItemType("calibrated_sculk_sensor");
 
+    ItemType.Typed<SpawnEggMeta> CAMEL_HUSK_SPAWN_EGG = getItemType("camel_husk_spawn_egg");
+
     ItemType.Typed<SpawnEggMeta> CAMEL_SPAWN_EGG = getItemType("camel_spawn_egg");
 
     ItemType.Typed<BlockStateMeta> CAMPFIRE = getItemType("campfire");
@@ -496,8 +503,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CAULDRON = getItemType("cauldron");
 
     ItemType.Typed<SpawnEggMeta> CAVE_SPIDER_SPAWN_EGG = getItemType("cave_spider_spawn_egg");
-
-    ItemType.Typed<ItemMeta> CHAIN = getItemType("chain");
 
     ItemType.Typed<BlockStateMeta> CHAIN_COMMAND_BLOCK = getItemType("chain_command_block");
 
@@ -534,6 +539,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CHERRY_PRESSURE_PLATE = getItemType("cherry_pressure_plate");
 
     ItemType.Typed<ItemMeta> CHERRY_SAPLING = getItemType("cherry_sapling");
+
+    ItemType.Typed<BlockStateMeta> CHERRY_SHELF = getItemType("cherry_shelf");
 
     ItemType.Typed<BlockStateMeta> CHERRY_SIGN = getItemType("cherry_sign");
 
@@ -657,17 +664,57 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> COOKIE = getItemType("cookie");
 
+    ItemType.Typed<ItemMeta> COPPER_AXE = getItemType("copper_axe");
+
+    ItemType.Typed<ItemMeta> COPPER_BARS = getItemType("copper_bars");
+
     ItemType.Typed<ItemMeta> COPPER_BLOCK = getItemType("copper_block");
+
+    ItemType.Typed<ArmorMeta> COPPER_BOOTS = getItemType("copper_boots");
 
     ItemType.Typed<ItemMeta> COPPER_BULB = getItemType("copper_bulb");
 
+    ItemType.Typed<ItemMeta> COPPER_CHAIN = getItemType("copper_chain");
+
+    ItemType.Typed<BlockStateMeta> COPPER_CHEST = getItemType("copper_chest");
+
+    ItemType.Typed<ArmorMeta> COPPER_CHESTPLATE = getItemType("copper_chestplate");
+
     ItemType.Typed<ItemMeta> COPPER_DOOR = getItemType("copper_door");
+
+    ItemType.Typed<SpawnEggMeta> COPPER_GOLEM_SPAWN_EGG = getItemType("copper_golem_spawn_egg");
+
+    ItemType.Typed<BlockStateMeta> COPPER_GOLEM_STATUE = getItemType("copper_golem_statue");
 
     ItemType.Typed<ItemMeta> COPPER_GRATE = getItemType("copper_grate");
 
+    ItemType.Typed<ArmorMeta> COPPER_HELMET = getItemType("copper_helmet");
+
+    ItemType.Typed<ItemMeta> COPPER_HOE = getItemType("copper_hoe");
+
+    ItemType.Typed<ItemMeta> COPPER_HORSE_ARMOR = getItemType("copper_horse_armor");
+
     ItemType.Typed<ItemMeta> COPPER_INGOT = getItemType("copper_ingot");
 
+    ItemType.Typed<ItemMeta> COPPER_LANTERN = getItemType("copper_lantern");
+
+    ItemType.Typed<ArmorMeta> COPPER_LEGGINGS = getItemType("copper_leggings");
+
+    ItemType.Typed<ItemMeta> COPPER_NAUTILUS_ARMOR = getItemType("copper_nautilus_armor");
+
+    ItemType.Typed<ItemMeta> COPPER_NUGGET = getItemType("copper_nugget");
+
     ItemType.Typed<ItemMeta> COPPER_ORE = getItemType("copper_ore");
+
+    ItemType.Typed<ItemMeta> COPPER_PICKAXE = getItemType("copper_pickaxe");
+
+    ItemType.Typed<ItemMeta> COPPER_SHOVEL = getItemType("copper_shovel");
+
+    ItemType.Typed<ItemMeta> COPPER_SPEAR = getItemType("copper_spear");
+
+    ItemType.Typed<ItemMeta> COPPER_SWORD = getItemType("copper_sword");
+
+    ItemType.Typed<ItemMeta> COPPER_TORCH = getItemType("copper_torch");
 
     ItemType.Typed<ItemMeta> COPPER_TRAPDOOR = getItemType("copper_trapdoor");
 
@@ -720,6 +767,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CRIMSON_PRESSURE_PLATE = getItemType("crimson_pressure_plate");
 
     ItemType.Typed<ItemMeta> CRIMSON_ROOTS = getItemType("crimson_roots");
+
+    ItemType.Typed<BlockStateMeta> CRIMSON_SHELF = getItemType("crimson_shelf");
 
     ItemType.Typed<BlockStateMeta> CRIMSON_SIGN = getItemType("crimson_sign");
 
@@ -808,6 +857,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> DARK_OAK_PRESSURE_PLATE = getItemType("dark_oak_pressure_plate");
 
     ItemType.Typed<ItemMeta> DARK_OAK_SAPLING = getItemType("dark_oak_sapling");
+
+    ItemType.Typed<BlockStateMeta> DARK_OAK_SHELF = getItemType("dark_oak_shelf");
 
     ItemType.Typed<BlockStateMeta> DARK_OAK_SIGN = getItemType("dark_oak_sign");
 
@@ -917,11 +968,15 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ArmorMeta> DIAMOND_LEGGINGS = getItemType("diamond_leggings");
 
+    ItemType.Typed<ItemMeta> DIAMOND_NAUTILUS_ARMOR = getItemType("diamond_nautilus_armor");
+
     ItemType.Typed<ItemMeta> DIAMOND_ORE = getItemType("diamond_ore");
 
     ItemType.Typed<ItemMeta> DIAMOND_PICKAXE = getItemType("diamond_pickaxe");
 
     ItemType.Typed<ItemMeta> DIAMOND_SHOVEL = getItemType("diamond_shovel");
+
+    ItemType.Typed<ItemMeta> DIAMOND_SPEAR = getItemType("diamond_spear");
 
     ItemType.Typed<ItemMeta> DIAMOND_SWORD = getItemType("diamond_sword");
 
@@ -1023,11 +1078,21 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> EXPOSED_COPPER = getItemType("exposed_copper");
 
+    ItemType.Typed<ItemMeta> EXPOSED_COPPER_BARS = getItemType("exposed_copper_bars");
+
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_BULB = getItemType("exposed_copper_bulb");
+
+    ItemType.Typed<ItemMeta> EXPOSED_COPPER_CHAIN = getItemType("exposed_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> EXPOSED_COPPER_CHEST = getItemType("exposed_copper_chest");
 
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_DOOR = getItemType("exposed_copper_door");
 
+    ItemType.Typed<BlockStateMeta> EXPOSED_COPPER_GOLEM_STATUE = getItemType("exposed_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_GRATE = getItemType("exposed_copper_grate");
+
+    ItemType.Typed<ItemMeta> EXPOSED_COPPER_LANTERN = getItemType("exposed_copper_lantern");
 
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_TRAPDOOR = getItemType("exposed_copper_trapdoor");
 
@@ -1036,6 +1101,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> EXPOSED_CUT_COPPER_SLAB = getItemType("exposed_cut_copper_slab");
 
     ItemType.Typed<ItemMeta> EXPOSED_CUT_COPPER_STAIRS = getItemType("exposed_cut_copper_stairs");
+
+    ItemType.Typed<ItemMeta> EXPOSED_LIGHTNING_ROD = getItemType("exposed_lightning_rod");
 
     ItemType.Typed<ItemMeta> EYE_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("eye_armor_trim_smithing_template");
 
@@ -1159,9 +1226,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ArmorMeta> GOLDEN_LEGGINGS = getItemType("golden_leggings");
 
+    ItemType.Typed<ItemMeta> GOLDEN_NAUTILUS_ARMOR = getItemType("golden_nautilus_armor");
+
     ItemType.Typed<ItemMeta> GOLDEN_PICKAXE = getItemType("golden_pickaxe");
 
     ItemType.Typed<ItemMeta> GOLDEN_SHOVEL = getItemType("golden_shovel");
+
+    ItemType.Typed<ItemMeta> GOLDEN_SPEAR = getItemType("golden_spear");
 
     ItemType.Typed<ItemMeta> GOLDEN_SWORD = getItemType("golden_sword");
 
@@ -1317,6 +1388,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ArmorMeta> IRON_BOOTS = getItemType("iron_boots");
 
+    ItemType.Typed<ItemMeta> IRON_CHAIN = getItemType("iron_chain");
+
     ItemType.Typed<ArmorMeta> IRON_CHESTPLATE = getItemType("iron_chestplate");
 
     ItemType.Typed<ItemMeta> IRON_DOOR = getItemType("iron_door");
@@ -1333,6 +1406,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ArmorMeta> IRON_LEGGINGS = getItemType("iron_leggings");
 
+    ItemType.Typed<ItemMeta> IRON_NAUTILUS_ARMOR = getItemType("iron_nautilus_armor");
+
     ItemType.Typed<ItemMeta> IRON_NUGGET = getItemType("iron_nugget");
 
     ItemType.Typed<ItemMeta> IRON_ORE = getItemType("iron_ore");
@@ -1340,6 +1415,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> IRON_PICKAXE = getItemType("iron_pickaxe");
 
     ItemType.Typed<ItemMeta> IRON_SHOVEL = getItemType("iron_shovel");
+
+    ItemType.Typed<ItemMeta> IRON_SPEAR = getItemType("iron_spear");
 
     ItemType.Typed<ItemMeta> IRON_SWORD = getItemType("iron_sword");
 
@@ -1376,6 +1453,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> JUNGLE_PRESSURE_PLATE = getItemType("jungle_pressure_plate");
 
     ItemType.Typed<ItemMeta> JUNGLE_SAPLING = getItemType("jungle_sapling");
+
+    ItemType.Typed<BlockStateMeta> JUNGLE_SHELF = getItemType("jungle_shelf");
 
     ItemType.Typed<BlockStateMeta> JUNGLE_SIGN = getItemType("jungle_sign");
 
@@ -1601,6 +1680,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> MANGROVE_ROOTS = getItemType("mangrove_roots");
 
+    ItemType.Typed<BlockStateMeta> MANGROVE_SHELF = getItemType("mangrove_shelf");
+
     ItemType.Typed<BlockStateMeta> MANGROVE_SIGN = getItemType("mangrove_sign");
 
     ItemType.Typed<ItemMeta> MANGROVE_SLAB = getItemType("mangrove_slab");
@@ -1721,6 +1802,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> NAUTILUS_SHELL = getItemType("nautilus_shell");
 
+    ItemType.Typed<SpawnEggMeta> NAUTILUS_SPAWN_EGG = getItemType("nautilus_spawn_egg");
+
     ItemType.Typed<ItemMeta> NETHER_BRICK = getItemType("nether_brick");
 
     ItemType.Typed<ItemMeta> NETHER_BRICK_FENCE = getItemType("nether_brick_fence");
@@ -1757,15 +1840,21 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> NETHERITE_HOE = getItemType("netherite_hoe");
 
+    ItemType.Typed<ItemMeta> NETHERITE_HORSE_ARMOR = getItemType("netherite_horse_armor");
+
     ItemType.Typed<ItemMeta> NETHERITE_INGOT = getItemType("netherite_ingot");
 
     ItemType.Typed<ArmorMeta> NETHERITE_LEGGINGS = getItemType("netherite_leggings");
+
+    ItemType.Typed<ItemMeta> NETHERITE_NAUTILUS_ARMOR = getItemType("netherite_nautilus_armor");
 
     ItemType.Typed<ItemMeta> NETHERITE_PICKAXE = getItemType("netherite_pickaxe");
 
     ItemType.Typed<ItemMeta> NETHERITE_SCRAP = getItemType("netherite_scrap");
 
     ItemType.Typed<ItemMeta> NETHERITE_SHOVEL = getItemType("netherite_shovel");
+
+    ItemType.Typed<ItemMeta> NETHERITE_SPEAR = getItemType("netherite_spear");
 
     ItemType.Typed<ItemMeta> NETHERITE_SWORD = getItemType("netherite_sword");
 
@@ -1798,6 +1887,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> OAK_PRESSURE_PLATE = getItemType("oak_pressure_plate");
 
     ItemType.Typed<ItemMeta> OAK_SAPLING = getItemType("oak_sapling");
+
+    ItemType.Typed<BlockStateMeta> OAK_SHELF = getItemType("oak_shelf");
 
     ItemType.Typed<BlockStateMeta> OAK_SIGN = getItemType("oak_sign");
 
@@ -1861,11 +1952,21 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER = getItemType("oxidized_copper");
 
+    ItemType.Typed<ItemMeta> OXIDIZED_COPPER_BARS = getItemType("oxidized_copper_bars");
+
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_BULB = getItemType("oxidized_copper_bulb");
+
+    ItemType.Typed<ItemMeta> OXIDIZED_COPPER_CHAIN = getItemType("oxidized_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> OXIDIZED_COPPER_CHEST = getItemType("oxidized_copper_chest");
 
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_DOOR = getItemType("oxidized_copper_door");
 
+    ItemType.Typed<BlockStateMeta> OXIDIZED_COPPER_GOLEM_STATUE = getItemType("oxidized_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_GRATE = getItemType("oxidized_copper_grate");
+
+    ItemType.Typed<ItemMeta> OXIDIZED_COPPER_LANTERN = getItemType("oxidized_copper_lantern");
 
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_TRAPDOOR = getItemType("oxidized_copper_trapdoor");
 
@@ -1874,6 +1975,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> OXIDIZED_CUT_COPPER_SLAB = getItemType("oxidized_cut_copper_slab");
 
     ItemType.Typed<ItemMeta> OXIDIZED_CUT_COPPER_STAIRS = getItemType("oxidized_cut_copper_stairs");
+
+    ItemType.Typed<ItemMeta> OXIDIZED_LIGHTNING_ROD = getItemType("oxidized_lightning_rod");
 
     ItemType.Typed<ItemMeta> PACKED_ICE = getItemType("packed_ice");
 
@@ -1911,6 +2014,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> PALE_OAK_SAPLING = getItemType("pale_oak_sapling");
 
+    ItemType.Typed<BlockStateMeta> PALE_OAK_SHELF = getItemType("pale_oak_shelf");
+
     ItemType.Typed<BlockStateMeta> PALE_OAK_SIGN = getItemType("pale_oak_sign");
 
     ItemType.Typed<ItemMeta> PALE_OAK_SLAB = getItemType("pale_oak_slab");
@@ -1924,6 +2029,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<SpawnEggMeta> PANDA_SPAWN_EGG = getItemType("panda_spawn_egg");
 
     ItemType.Typed<ItemMeta> PAPER = getItemType("paper");
+
+    ItemType.Typed<SpawnEggMeta> PARCHED_SPAWN_EGG = getItemType("parched_spawn_egg");
 
     ItemType.Typed<SpawnEggMeta> PARROT_SPAWN_EGG = getItemType("parrot_spawn_egg");
 
@@ -2459,6 +2566,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> SPRUCE_SAPLING = getItemType("spruce_sapling");
 
+    ItemType.Typed<BlockStateMeta> SPRUCE_SHELF = getItemType("spruce_shelf");
+
     ItemType.Typed<BlockStateMeta> SPRUCE_SIGN = getItemType("spruce_sign");
 
     ItemType.Typed<ItemMeta> SPRUCE_SLAB = getItemType("spruce_slab");
@@ -2500,6 +2609,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> STONE_SHOVEL = getItemType("stone_shovel");
 
     ItemType.Typed<ItemMeta> STONE_SLAB = getItemType("stone_slab");
+
+    ItemType.Typed<ItemMeta> STONE_SPEAR = getItemType("stone_spear");
 
     ItemType.Typed<ItemMeta> STONE_STAIRS = getItemType("stone_stairs");
 
@@ -2705,6 +2816,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WARPED_ROOTS = getItemType("warped_roots");
 
+    ItemType.Typed<BlockStateMeta> WARPED_SHELF = getItemType("warped_shelf");
+
     ItemType.Typed<BlockStateMeta> WARPED_SIGN = getItemType("warped_sign");
 
     ItemType.Typed<ItemMeta> WARPED_SLAB = getItemType("warped_slab");
@@ -2721,13 +2834,23 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WAXED_CHISELED_COPPER = getItemType("waxed_chiseled_copper");
 
+    ItemType.Typed<ItemMeta> WAXED_COPPER_BARS = getItemType("waxed_copper_bars");
+
     ItemType.Typed<ItemMeta> WAXED_COPPER_BLOCK = getItemType("waxed_copper_block");
 
     ItemType.Typed<ItemMeta> WAXED_COPPER_BULB = getItemType("waxed_copper_bulb");
 
+    ItemType.Typed<ItemMeta> WAXED_COPPER_CHAIN = getItemType("waxed_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> WAXED_COPPER_CHEST = getItemType("waxed_copper_chest");
+
     ItemType.Typed<ItemMeta> WAXED_COPPER_DOOR = getItemType("waxed_copper_door");
 
+    ItemType.Typed<BlockStateMeta> WAXED_COPPER_GOLEM_STATUE = getItemType("waxed_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> WAXED_COPPER_GRATE = getItemType("waxed_copper_grate");
+
+    ItemType.Typed<ItemMeta> WAXED_COPPER_LANTERN = getItemType("waxed_copper_lantern");
 
     ItemType.Typed<ItemMeta> WAXED_COPPER_TRAPDOOR = getItemType("waxed_copper_trapdoor");
 
@@ -2741,11 +2864,21 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER = getItemType("waxed_exposed_copper");
 
+    ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_BARS = getItemType("waxed_exposed_copper_bars");
+
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_BULB = getItemType("waxed_exposed_copper_bulb");
+
+    ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_CHAIN = getItemType("waxed_exposed_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> WAXED_EXPOSED_COPPER_CHEST = getItemType("waxed_exposed_copper_chest");
 
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_DOOR = getItemType("waxed_exposed_copper_door");
 
+    ItemType.Typed<BlockStateMeta> WAXED_EXPOSED_COPPER_GOLEM_STATUE = getItemType("waxed_exposed_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_GRATE = getItemType("waxed_exposed_copper_grate");
+
+    ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_LANTERN = getItemType("waxed_exposed_copper_lantern");
 
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_TRAPDOOR = getItemType("waxed_exposed_copper_trapdoor");
 
@@ -2755,15 +2888,29 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_CUT_COPPER_STAIRS = getItemType("waxed_exposed_cut_copper_stairs");
 
+    ItemType.Typed<ItemMeta> WAXED_EXPOSED_LIGHTNING_ROD = getItemType("waxed_exposed_lightning_rod");
+
+    ItemType.Typed<ItemMeta> WAXED_LIGHTNING_ROD = getItemType("waxed_lightning_rod");
+
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_CHISELED_COPPER = getItemType("waxed_oxidized_chiseled_copper");
 
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER = getItemType("waxed_oxidized_copper");
 
+    ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_BARS = getItemType("waxed_oxidized_copper_bars");
+
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_BULB = getItemType("waxed_oxidized_copper_bulb");
+
+    ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_CHAIN = getItemType("waxed_oxidized_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> WAXED_OXIDIZED_COPPER_CHEST = getItemType("waxed_oxidized_copper_chest");
 
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_DOOR = getItemType("waxed_oxidized_copper_door");
 
+    ItemType.Typed<BlockStateMeta> WAXED_OXIDIZED_COPPER_GOLEM_STATUE = getItemType("waxed_oxidized_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_GRATE = getItemType("waxed_oxidized_copper_grate");
+
+    ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_LANTERN = getItemType("waxed_oxidized_copper_lantern");
 
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_TRAPDOOR = getItemType("waxed_oxidized_copper_trapdoor");
 
@@ -2773,15 +2920,27 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_CUT_COPPER_STAIRS = getItemType("waxed_oxidized_cut_copper_stairs");
 
+    ItemType.Typed<ItemMeta> WAXED_OXIDIZED_LIGHTNING_ROD = getItemType("waxed_oxidized_lightning_rod");
+
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_CHISELED_COPPER = getItemType("waxed_weathered_chiseled_copper");
 
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER = getItemType("waxed_weathered_copper");
 
+    ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_BARS = getItemType("waxed_weathered_copper_bars");
+
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_BULB = getItemType("waxed_weathered_copper_bulb");
+
+    ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_CHAIN = getItemType("waxed_weathered_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> WAXED_WEATHERED_COPPER_CHEST = getItemType("waxed_weathered_copper_chest");
 
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_DOOR = getItemType("waxed_weathered_copper_door");
 
+    ItemType.Typed<BlockStateMeta> WAXED_WEATHERED_COPPER_GOLEM_STATUE = getItemType("waxed_weathered_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_GRATE = getItemType("waxed_weathered_copper_grate");
+
+    ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_LANTERN = getItemType("waxed_weathered_copper_lantern");
 
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_TRAPDOOR = getItemType("waxed_weathered_copper_trapdoor");
 
@@ -2791,17 +2950,29 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_CUT_COPPER_STAIRS = getItemType("waxed_weathered_cut_copper_stairs");
 
+    ItemType.Typed<ItemMeta> WAXED_WEATHERED_LIGHTNING_ROD = getItemType("waxed_weathered_lightning_rod");
+
     ItemType.Typed<ItemMeta> WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("wayfinder_armor_trim_smithing_template");
 
     ItemType.Typed<ItemMeta> WEATHERED_CHISELED_COPPER = getItemType("weathered_chiseled_copper");
 
     ItemType.Typed<ItemMeta> WEATHERED_COPPER = getItemType("weathered_copper");
 
+    ItemType.Typed<ItemMeta> WEATHERED_COPPER_BARS = getItemType("weathered_copper_bars");
+
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_BULB = getItemType("weathered_copper_bulb");
+
+    ItemType.Typed<ItemMeta> WEATHERED_COPPER_CHAIN = getItemType("weathered_copper_chain");
+
+    ItemType.Typed<BlockStateMeta> WEATHERED_COPPER_CHEST = getItemType("weathered_copper_chest");
 
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_DOOR = getItemType("weathered_copper_door");
 
+    ItemType.Typed<BlockStateMeta> WEATHERED_COPPER_GOLEM_STATUE = getItemType("weathered_copper_golem_statue");
+
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_GRATE = getItemType("weathered_copper_grate");
+
+    ItemType.Typed<ItemMeta> WEATHERED_COPPER_LANTERN = getItemType("weathered_copper_lantern");
 
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_TRAPDOOR = getItemType("weathered_copper_trapdoor");
 
@@ -2810,6 +2981,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> WEATHERED_CUT_COPPER_SLAB = getItemType("weathered_cut_copper_slab");
 
     ItemType.Typed<ItemMeta> WEATHERED_CUT_COPPER_STAIRS = getItemType("weathered_cut_copper_stairs");
+
+    ItemType.Typed<ItemMeta> WEATHERED_LIGHTNING_ROD = getItemType("weathered_lightning_rod");
 
     ItemType.Typed<ItemMeta> WEEPING_VINES = getItemType("weeping_vines");
 
@@ -2879,6 +3052,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> WOODEN_SHOVEL = getItemType("wooden_shovel");
 
+    ItemType.Typed<ItemMeta> WOODEN_SPEAR = getItemType("wooden_spear");
+
     ItemType.Typed<ItemMeta> WOODEN_SWORD = getItemType("wooden_sword");
 
     ItemType.Typed<BookMeta> WRITABLE_BOOK = getItemType("writable_book");
@@ -2920,6 +3095,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<SkullMeta> ZOMBIE_HEAD = getItemType("zombie_head");
 
     ItemType.Typed<SpawnEggMeta> ZOMBIE_HORSE_SPAWN_EGG = getItemType("zombie_horse_spawn_egg");
+
+    ItemType.Typed<SpawnEggMeta> ZOMBIE_NAUTILUS_SPAWN_EGG = getItemType("zombie_nautilus_spawn_egg");
 
     ItemType.Typed<SpawnEggMeta> ZOMBIE_SPAWN_EGG = getItemType("zombie_spawn_egg");
 
@@ -3012,7 +3189,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     short getMaxDurability();
 
     /**
-     * Checks if this item type is edible.
+     * Checks if this item type provides the {@link io.papermc.paper.datacomponent.DataComponentTypes#FOOD} and
+     * {@link io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE} and, thereby, is edible by a player.
      *
      * @return true if this item type is edible.
      */
@@ -3027,13 +3205,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Checks if this item type can be used as fuel in a Furnace
      *
      * @return true if this item type can be used as fuel.
-     * @see #getBurnDuration() 
+     * @see #getBurnDuration()
      */
     boolean isFuel();
 
     /**
      * Retrieve the item's burn duration in a Furnace
-     * 
+     *
      * @return the burn duration, in ticks or 0 if the item is not fuel
      * @see #isFuel()
      */

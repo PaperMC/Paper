@@ -69,7 +69,9 @@ public class PreLookupProfileEvent extends Event {
     /**
      * @return The currently pending pre-populated properties.
      * Any property in this Set will be automatically prefilled on this Profile
+     * @deprecated This event is only called for UUID lookups, properties set here will be ignored. Use {@link PreFillProfileEvent} for setting properties.
      */
+    @Deprecated(forRemoval = true, since = "1.21.9")
     public Set<ProfileProperty> getProfileProperties() {
         return this.properties;
     }
@@ -79,18 +81,22 @@ public class PreLookupProfileEvent extends Event {
      * Any property in this Set will be automatically prefilled on this Profile
      *
      * @param properties The properties to add
+     * @deprecated This event is only called for UUID lookups, properties set here will be ignored. Use {@link PreFillProfileEvent} for setting properties.
      */
+    @Deprecated(forRemoval = true, since = "1.21.9")
     public void setProfileProperties(final Set<ProfileProperty> properties) {
         this.properties = new HashSet<>();
         this.properties.addAll(properties);
     }
 
     /**
-     * Adds any properties currently missing to the pre-populated properties set, replacing any that already were set.
+     * Adds any properties currently missing to the pre-populated properties set, replacing any that already were set. Use {@link PreFillProfileEvent} for setting properties.
      * Any property in this Set will be automatically prefilled on this Profile
      *
      * @param properties The properties to add
+     * @deprecated This event is only called for UUID lookups, properties set here will be ignored.
      */
+    @Deprecated(forRemoval = true, since = "1.21.9")
     public void addProfileProperties(final Set<ProfileProperty> properties) {
         this.properties.addAll(properties);
     }

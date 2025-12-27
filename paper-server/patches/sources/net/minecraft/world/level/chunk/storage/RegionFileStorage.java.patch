@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -28,18 +_,19 @@
+@@ -29,18 +_,19 @@
          this.info = info;
      }
  
@@ -23,9 +23,9 @@
              this.regionCache.putAndMoveToFirst(packedChunkPos, regionFile1);
              return regionFile1;
 @@ -48,7 +_,12 @@
+     }
  
-     @Nullable
-     public CompoundTag read(ChunkPos chunkPos) throws IOException {
+     public @Nullable CompoundTag read(ChunkPos chunkPos) throws IOException {
 -        RegionFile regionFile = this.getRegionFile(chunkPos);
 +        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
 +        RegionFile regionFile = this.getRegionFile(chunkPos, true);
@@ -50,12 +50,12 @@
  
          try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
              if (chunkDataInputStream != null) {
-@@ -73,7 +_,7 @@
-     }
+@@ -74,7 +_,7 @@
  
      protected void write(ChunkPos chunkPos, @Nullable CompoundTag chunkData) throws IOException {
--        RegionFile regionFile = this.getRegionFile(chunkPos);
-+        RegionFile regionFile = this.getRegionFile(chunkPos, false); // CraftBukkit
-         if (chunkData == null) {
-             regionFile.clear(chunkPos);
-         } else {
+         if (!SharedConstants.DEBUG_DONT_SAVE_WORLD) {
+-            RegionFile regionFile = this.getRegionFile(chunkPos);
++            RegionFile regionFile = this.getRegionFile(chunkPos, false); // CraftBukkit
+             if (chunkData == null) {
+                 regionFile.clear(chunkPos);
+             } else {

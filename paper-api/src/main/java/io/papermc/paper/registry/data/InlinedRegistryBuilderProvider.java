@@ -9,6 +9,9 @@ import java.util.function.Consumer;
 import org.bukkit.MusicInstrument;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * @hidden
+ */
 @ApiStatus.Internal
 @ApiStatus.NonExtendable
 public interface InlinedRegistryBuilderProvider {

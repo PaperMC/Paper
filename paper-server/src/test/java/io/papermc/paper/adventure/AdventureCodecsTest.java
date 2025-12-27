@@ -37,7 +37,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.support.RegistryHelper;
@@ -59,6 +59,7 @@ import static net.kyori.adventure.key.Key.key;
 import static net.kyori.adventure.text.Component.blockNBT;
 import static net.kyori.adventure.text.Component.entityNBT;
 import static net.kyori.adventure.text.Component.keybind;
+import static net.kyori.adventure.text.Component.object;
 import static net.kyori.adventure.text.Component.score;
 import static net.kyori.adventure.text.Component.selector;
 import static net.kyori.adventure.text.Component.storageNBT;
@@ -71,6 +72,9 @@ import static net.kyori.adventure.text.event.HoverEvent.showEntity;
 import static net.kyori.adventure.text.format.Style.style;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.minimessage.MiniMessage.miniMessage;
+import static net.kyori.adventure.text.object.ObjectContents.playerHead;
+import static net.kyori.adventure.text.object.ObjectContents.sprite;
+import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,7 +108,7 @@ class AdventureCodecsTest {
         final Key key = key("hello", "there");
         final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
         assertEquals("\"" + key.asString() + "\"", result.toString());
-        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
+        final Identifier location = Identifier.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
         assertEquals(key.asString(), location.toString());
     }
 
@@ -134,7 +138,7 @@ class AdventureCodecsTest {
                 assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), value);
             case net.minecraft.network.chat.ClickEvent.ChangePage(int page) ->
                 assertEquals(((ClickEvent.Payload.Int) event.payload()).integer(), page);
-            case net.minecraft.network.chat.ClickEvent.Custom(ResourceLocation id, Optional<Tag> payload) -> {
+            case net.minecraft.network.chat.ClickEvent.Custom(Identifier id, Optional<Tag> payload) -> {
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).key().toString(), id.toString());
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).nbt(), payload.orElseThrow().asString());
             }
@@ -233,7 +237,7 @@ class AdventureCodecsTest {
             JavaOps.INSTANCE,
             JsonOps.INSTANCE
         )
-            .map(ops -> RegistryHelper.getRegistry().createSerializationContext(ops))
+            .map(ops -> RegistryHelper.registryAccess().createSerializationContext(ops))
             .toList();
     }
 
@@ -322,7 +326,8 @@ class AdventureCodecsTest {
     @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
     @MethodParameterSource({
         "testTexts", "testTranslatables", "testKeybinds", "testScores",
-        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"
+        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts",
+        "testObjects"
     })
     @interface TestComponents {
     }
@@ -426,6 +431,20 @@ class AdventureCodecsTest {
             storageNBT().nbtPath("abc").storage(key("doom:apple")).build(),
             storageNBT().nbtPath("abc").storage(key("doom:apple")).separator(text(", ")).build(),
             storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build()
+        );
+    }
+
+    static List<Component> testObjects() {
+        return List.of(
+            object(sprite(key("block/fire_0"))),
+            object(sprite(key("ae2", "blocks"), key("block/controller"))),
+            object(sprite(key("blocks"), key("block/fire_0"))),
+            object(playerHead("pig")),
+            object(playerHead().build()),
+            object(playerHead().name("sheep").id(UUID.randomUUID()).build()),
+            object(playerHead(UUID.randomUUID())),
+            object(playerHead().profileProperties(List.of(property("textures", "abc"))).build()),
+            object(playerHead().texture(key("apples")).build())
         );
     }
 }

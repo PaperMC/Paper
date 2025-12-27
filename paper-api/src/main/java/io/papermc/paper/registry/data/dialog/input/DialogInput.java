@@ -80,7 +80,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @param end   the end of the range
      * @return a new builder instance
      */
-    @Contract(value = "_, _, _, _ -> new", pure = true)
+    @Contract(pure = true, value = "_, _, _, _ -> new")
     static NumberRangeDialogInput.Builder numberRange(final String key, final Component label, final float start, final float end) {
         return DialogInstancesProvider.instance().numberRangeBuilder(key, label, start, end);
     }
@@ -114,7 +114,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @param entries the list of options for the input
      * @return a new builder instance
      */
-    @Contract(value = "_, _, _ -> new", pure = true)
+    @Contract(pure = true, value = "_, _, _ -> new")
     static SingleOptionDialogInput.Builder singleOption(final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
         return DialogInstancesProvider.instance().singleOptionBuilder(key, label, entries);
     }
@@ -128,7 +128,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      * @param labelVisible whether the label should be visible
      * @param initial the initial value of the input
      * @param maxLength the maximum length of the input
-     * @param multilineOptions the multiline options
+     * @param multilineOptions the multiline options, or null if not set
      * @return a new text dialog input instance
      */
     @Contract(pure = true, value = "_, _, _, _, _, _, _ -> new")
@@ -138,7 +138,7 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
         final Component label,
         final boolean labelVisible,
         final String initial,
-        final @Range(from = 1, to = Integer.MAX_VALUE) int maxLength,
+        final @Positive int maxLength,
         final TextDialogInput.@Nullable MultilineOptions multilineOptions
     ) {
         return text(key, label).width(width).labelVisible(labelVisible).initial(initial).maxLength(maxLength).multiline(multilineOptions).build();
@@ -162,6 +162,6 @@ public sealed interface DialogInput permits BooleanDialogInput, NumberRangeDialo
      *
      * @return the key
      */
-    @Contract(pure = true, value = " -> new")
+    @Contract(pure = true)
     String key();
 }
