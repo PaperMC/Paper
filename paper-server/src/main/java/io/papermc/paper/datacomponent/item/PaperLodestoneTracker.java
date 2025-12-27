@@ -25,6 +25,13 @@ public record PaperLodestoneTracker(
         return this.impl.tracked();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .location(this.location())
+            .tracked(this.tracked());
+    }
+
     static final class BuilderImpl implements LodestoneTracker.Builder {
 
         private @Nullable Location location;
