@@ -22,30 +22,25 @@ Alternate Current's wire handler.
 
 diff --git a/alternate/current/wire/LevelHelper.java b/alternate/current/wire/LevelHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff663d3089627e75221aa128aff4bf5cc459addb
+index 0000000000000000000000000000000000000000..dd533953f33aacfc91a8acad6c9a9d601df0bd86
 --- /dev/null
 +++ b/alternate/current/wire/LevelHelper.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,61 @@
 +package alternate.current.wire;
-+
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockRedstoneEvent;
 +
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +
 +class LevelHelper {
 +
 +    static int doRedstoneEvent(ServerLevel level, BlockPos pos, int prevPower, int newPower) {
-+        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), prevPower, newPower);
-+        level.getCraftServer().getPluginManager().callEvent(event);
-+
-+        return event.getNewCurrent();
++        return CraftEventFactory.callRedstoneChange(level, pos, prevPower, newPower).getNewCurrent();
 +    }
 +
 +    /**
@@ -2374,7 +2369,7 @@ index 3d5a869d1d7da490ec843ab2137ceeddc0a5fa0d..66f15154fa59435650f3881f50b45b57
          NONE("none"),
          BLOCK("block"),
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index d7ff98f4ecadd37f22d0a38d94a5975db60d6285..6d98bc37d88459d1e0a171b52bbff5810d775c38 100644
+index 1d935f489255e398f326209174e90cab180aa3ea..466e6ab425020b948f154f383dce9b72dce37a76 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -264,7 +264,7 @@ public class RedStoneWireBlock extends Block {
@@ -2386,7 +2381,7 @@ index d7ff98f4ecadd37f22d0a38d94a5975db60d6285..6d98bc37d88459d1e0a171b52bbff581
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
  
-@@ -346,7 +346,13 @@ public class RedStoneWireBlock extends Block {
+@@ -342,7 +342,13 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
@@ -2401,7 +2396,7 @@ index d7ff98f4ecadd37f22d0a38d94a5975db60d6285..6d98bc37d88459d1e0a171b52bbff581
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -363,7 +369,13 @@ public class RedStoneWireBlock extends Block {
+@@ -359,7 +365,13 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -2416,7 +2411,7 @@ index d7ff98f4ecadd37f22d0a38d94a5975db60d6285..6d98bc37d88459d1e0a171b52bbff581
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -386,9 +398,15 @@ public class RedStoneWireBlock extends Block {
+@@ -382,9 +394,15 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
          if (!level.isClientSide()) {

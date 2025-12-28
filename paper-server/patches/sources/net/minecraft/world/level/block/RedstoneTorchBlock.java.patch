@@ -9,7 +9,7 @@
      public static final int RECENT_TOGGLE_TIMER = 60;
      public static final int MAX_RECENT_TOGGLES = 8;
      public static final int RESTART_DELAY = 160;
-@@ -72,14 +_,34 @@
+@@ -72,14 +_,23 @@
      @Override
      protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
          boolean hasNeighborSignal = this.hasNeighborSignal(level, pos, state);
@@ -25,43 +25,27 @@
 +                redstoneUpdateInfos.poll();
 +            }
          }
--
 +        // Paper end - Faster redstone torch rapid clock removal
-+
-+        // CraftBukkit start
-+        org.bukkit.plugin.PluginManager manager = level.getCraftServer().getPluginManager();
-+        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+        int oldCurrent = state.getValue(LIT) ? 15 : 0;
-+
-+        org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(block, oldCurrent, oldCurrent);
-+        // CraftBukkit end
+ 
          if (state.getValue(LIT)) {
              if (hasNeighborSignal) {
-+                // CraftBukkit start
-+                if (oldCurrent != 0) {
-+                    event.setNewCurrent(0);
-+                    manager.callEvent(event);
-+                    if (event.getNewCurrent() != 0) {
-+                        return;
-+                    }
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, false)) {
++                    return;
 +                }
-+                // CraftBukkit end
++                // Paper end - Call BlockRedstoneEvent
                  level.setBlock(pos, state.setValue(LIT, false), Block.UPDATE_ALL);
                  if (isToggledTooFrequently(level, pos, true)) {
                      level.levelEvent(LevelEvent.REDSTONE_TORCH_BURNOUT, pos, 0);
-@@ -87,6 +_,15 @@
+@@ -87,6 +_,11 @@
                  }
              }
          } else if (!hasNeighborSignal && !isToggledTooFrequently(level, pos, false)) {
-+            // CraftBukkit start
-+            if (oldCurrent != 15) {
-+                event.setNewCurrent(15);
-+                manager.callEvent(event);
-+                if (event.getNewCurrent() != 15) {
-+                    return;
-+                }
++            // Paper start - Call BlockRedstoneEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, true)) {
++                return;
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              level.setBlock(pos, state.setValue(LIT, true), Block.UPDATE_ALL);
          }
      }

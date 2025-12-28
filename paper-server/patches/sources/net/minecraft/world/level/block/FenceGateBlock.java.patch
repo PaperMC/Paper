@@ -1,20 +1,14 @@
 --- a/net/minecraft/world/level/block/FenceGateBlock.java
 +++ b/net/minecraft/world/level/block/FenceGateBlock.java
-@@ -199,6 +_,17 @@
-     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+@@ -200,6 +_,11 @@
          if (!level.isClientSide()) {
              boolean hasNeighborSignal = level.hasNeighborSignal(pos);
-+            // CraftBukkit start
-+            boolean oldPowered = state.getValue(FenceGateBlock.POWERED);
-+            if (oldPowered != hasNeighborSignal) {
-+                int newPower = hasNeighborSignal ? 15 : 0;
-+                int oldPower = oldPowered ? 15 : 0;
-+                org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, oldPower, newPower);
-+                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                hasNeighborSignal = eventRedstone.getNewCurrent() > 0;
-+            }
-+            // CraftBukkit end
              if (state.getValue(POWERED) != hasNeighborSignal) {
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, hasNeighborSignal)) {
++                    return;
++                }
++                // Paper end - Call BlockRedstoneEvent
                  level.setBlock(pos, state.setValue(POWERED, hasNeighborSignal).setValue(OPEN, hasNeighborSignal), Block.UPDATE_CLIENTS);
                  if (state.getValue(OPEN) != hasNeighborSignal) {
+                     level.playSound(
