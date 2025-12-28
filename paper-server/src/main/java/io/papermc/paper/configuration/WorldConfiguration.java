@@ -578,6 +578,8 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
         public boolean allowRemoteEnderDragonRespawning = false;
+        public boolean skipTrackingOutOfRenderRangeEntities = false;
+        public float skipTrackingOutOfRenderRangeEntitiesClientDistanceScaling = 1.0f;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
