@@ -771,7 +771,7 @@ public class CraftEventFactory {
                         if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
                             // Paper start
                             if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
-                                long newTotal = (long)xp.getValue() + (long)loopItem.getValue();
+                                long newTotal = (long) xp.getValue() + (long) loopItem.getValue();
                                 if ((int) newTotal < 0) continue; // Overflow
                                 if (!mergeUnconditionally && newTotal > maxValue) {
                                     loopItem.setValue((int) (newTotal - maxValue));
@@ -1204,6 +1204,7 @@ public class CraftEventFactory {
         // Paper start - fix invulnerability reduction in EntityDamageEvent
         return handleLivingEntityDamageEvent(damagee, source, rawDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption, null);
     }
+
     public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double freezingModifier, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> freezing, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption, java.util.function.BiConsumer<Map<DamageModifier, Double>, Map<DamageModifier, Function<? super Double, Double>>> callback) {
         // Paper end - fix invulnerability reduction in EntityDamageEvent
         Map<DamageModifier, Double> modifiers = new EnumMap<>(DamageModifier.class);
@@ -1230,7 +1231,8 @@ public class CraftEventFactory {
         modifierFunctions.put(DamageModifier.MAGIC, magic);
         modifiers.put(DamageModifier.ABSORPTION, absorptionModifier);
         modifierFunctions.put(DamageModifier.ABSORPTION, absorption);
-        if (callback != null) callback.accept(modifiers, modifierFunctions); // Paper - fix invulnerability reduction in EntityDamageEvent
+        if (callback != null)
+            callback.accept(modifiers, modifierFunctions); // Paper - fix invulnerability reduction in EntityDamageEvent
         return CraftEventFactory.handleEntityDamageEvent(damagee, source, modifiers, modifierFunctions);
     }
 
@@ -1795,7 +1797,8 @@ public class CraftEventFactory {
         }
         event.callEvent();
         event.getInventory().setItem(resultSlot, event.getResult());
-        container.broadcastChanges();;
+        container.broadcastChanges();
+        ;
     }
 
     public static SpawnerSpawnEvent callSpawnerSpawnEvent(Entity spawnee, BlockPos pos) {
@@ -2081,7 +2084,8 @@ public class CraftEventFactory {
             final PlayerTeleportEvent.TeleportCause cause = switch (type) {
                 case PortalType.ENDER -> PlayerTeleportEvent.TeleportCause.END_PORTAL;
                 case PortalType.NETHER -> PlayerTeleportEvent.TeleportCause.NETHER_PORTAL;
-                case PortalType.END_GATEWAY -> PlayerTeleportEvent.TeleportCause.END_GATEWAY; // not actually used yet, the Player/EntityTeleportEndGatewayEvent is called instead
+                case PortalType.END_GATEWAY ->
+                    PlayerTeleportEvent.TeleportCause.END_GATEWAY; // not actually used yet, the Player/EntityTeleportEndGatewayEvent is called instead
                 case PortalType.CUSTOM -> PlayerTeleportEvent.TeleportCause.PLUGIN;
             };
             result = callPlayerPortalEvent(player, to, cause, searchRadius, createRadius);

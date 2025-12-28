@@ -29,7 +29,8 @@ public class BlockDispenseEntityEvent extends BlockDispenseEvent {
 
     /**
      * @return The entity that's dispensed
-     * */
+     *
+     */
     @NotNull
     public Entity getEntity() {
         return this.entity;
