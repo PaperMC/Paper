@@ -2,10 +2,13 @@ package io.papermc.paper.util;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -17,18 +20,18 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Vec3i;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
+import org.jspecify.annotations.Nullable;
 
 public final class MCUtil {
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
@@ -210,6 +213,46 @@ public final class MCUtil {
     public static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
         for (final A value : toAdd) {
             target.add(converter.apply(value));
+        }
+    }
+
+    public static @Nullable ClientTextureAsset toTextureAsset(final ClientAsset.@Nullable Texture clientTextureAsset) {
+        return clientTextureAsset == null ? null : ClientTextureAsset.clientTextureAsset(
+            PaperAdventure.asAdventure(clientTextureAsset.id()),
+            PaperAdventure.asAdventure(clientTextureAsset.texturePath())
+        );
+    }
+
+    public static ClientAsset.@Nullable ResourceTexture toResourceTexture(final @Nullable ClientTextureAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : new ClientAsset.ResourceTexture(
+            PaperAdventure.asVanilla(clientTextureAsset.identifier()),
+            PaperAdventure.asVanilla(clientTextureAsset.texturePath())
+        );
+    }
+
+    public static MinMaxBounds.Doubles toBounds(final Range<Double> range) {
+        if (range.hasLowerBound() && range.hasUpperBound()) {
+            return MinMaxBounds.Doubles.between(range.lowerEndpoint(), range.upperEndpoint());
+        } else if (range.hasLowerBound()) {
+            return MinMaxBounds.Doubles.atLeast(range.lowerEndpoint());
+        } else if (range.hasUpperBound()) {
+            return MinMaxBounds.Doubles.atMost(range.upperEndpoint());
+        } else {
+            return MinMaxBounds.Doubles.ANY;
+        }
+    }
+
+    public static <C extends Number & Comparable<C>> Range<C> toRange(final MinMaxBounds<? extends C> bounds) {
+        if (bounds.isAny()) {
+            return Range.all();
+        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
+            return Range.closed(bounds.min().get(), bounds.max().get());
+        } else if (bounds.min().isPresent()) {
+            return Range.atLeast(bounds.min().get());
+        } else if (bounds.max().isPresent()) {
+            return Range.atMost(bounds.max().get());
+        } else {
+            throw new IllegalArgumentException("Invalid range: " + bounds);
         }
     }
 }

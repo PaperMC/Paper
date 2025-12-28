@@ -30,6 +30,8 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
+    protected final Conversions conversions;
+
     // Top level
     protected @Nullable Component description;
 
@@ -48,8 +50,6 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
     // Effects
     protected DataComponentMap effects;
-
-    protected final Conversions conversions;
 
     public PaperEnchantmentRegistryEntry(
         final Conversions conversions,
