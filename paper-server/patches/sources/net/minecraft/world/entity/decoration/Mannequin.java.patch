@@ -9,3 +9,33 @@
      public static final Codec<Pose> POSE_CODEC = Pose.CODEC
          .validate(pose -> VALID_POSES.contains(pose) ? DataResult.success(pose) : DataResult.error(() -> "Invalid pose: " + pose.getSerializedName()));
      private static final Codec<Byte> LAYERS_CODEC = PlayerModelPart.CODEC
+@@ -170,4 +_,29 @@
+             return super.applyImplicitComponent(component, value);
+         }
+     }
++
++    // Paper start - Fix mannequin damage scaling with difficulty
++    @Override
++    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource damageSource, float amount) {
++        if (this.isDeadOrDying()) {
++            return false;
++        } else {
++            if (damageSource.scalesWithDifficulty()) {
++                if (level.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) {
++                    return false;
++                }
++
++                if (level.getDifficulty() == net.minecraft.world.Difficulty.EASY) {
++                    amount = Math.min(amount / 2.0F + 1.0F, amount);
++                }
++
++                if (level.getDifficulty() == net.minecraft.world.Difficulty.HARD) {
++                    amount = amount * 3.0F / 2.0F;
++                }
++            }
++
++            return super.hurtServer(level, damageSource, amount);
++        }
++    }
++    // Paper end - Fix mannequin damage scaling with difficulty
+ }
