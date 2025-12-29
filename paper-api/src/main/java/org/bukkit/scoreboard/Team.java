@@ -301,7 +301,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @see #addEntry(String)
      * @apiNote use {@link #addEntry(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void addPlayer(@NotNull OfflinePlayer player) {
         this.addEntry(player);
     }
@@ -351,7 +351,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void addEntities(@NotNull Entity @NotNull ...entities) {
         this.addScoreHolders(List.of(entities));
     }
@@ -367,7 +367,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      * @apiNote use {@link #addScoreHolders(Collection)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void addEntities(@NotNull Collection<Entity> entities) {
         this.addScoreHolders(entities);
     }
@@ -407,7 +407,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @see #removeEntry(String)
      * @apiNote use {@link #removeEntry(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean removePlayer(@NotNull OfflinePlayer player) {
         return this.removeEntry(player);
     }
@@ -453,7 +453,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean removeEntities(@NotNull Entity @NotNull ... entities) {
         return this.removeScoreHolders(List.of(entities));
     }
@@ -468,7 +468,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      * @apiNote use {@link #removeScoreHolders(Collection)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean removeEntities(@NotNull Collection<Entity> entities) {
         return this.removeScoreHolders(entities);
     }
@@ -513,7 +513,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @see #hasEntry(String)
      * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean hasPlayer(@NotNull OfflinePlayer player) {
         return this.hasEntry(player);
     }
@@ -568,7 +568,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @apiNote use {@link #addEntry(ScoreHolder)}
      * @see #addEntry(String)
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void addEntity(@NotNull Entity entity) {
         this.addEntry(entity);
     }
@@ -583,7 +583,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @apiNote use {@link #removeEntry(ScoreHolder)}
      * @see #removeEntry(String)
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean removeEntity(@NotNull Entity entity) {
         return this.removeEntry(entity);
     }
@@ -598,7 +598,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @see #hasEntry(String)
      * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default boolean hasEntity(@NotNull Entity entity) {
         return this.hasEntry(entity);
     }

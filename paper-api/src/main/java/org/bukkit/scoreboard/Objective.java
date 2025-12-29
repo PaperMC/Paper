@@ -153,7 +153,7 @@ public interface Objective {
      * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
     @NotNull
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default Score getScore(@NotNull OfflinePlayer player) {
         return this.getScore((ScoreHolder) player);
     }
@@ -191,7 +191,7 @@ public interface Objective {
      * @throws IllegalStateException if this objective has been unregistered
      * @apiNote use {@link #getScore(ScoreHolder)} instead
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) {
         return this.getScore(entity);
     }

@@ -241,7 +241,7 @@ public interface Scoreboard {
      * @return immutable set of all scores tracked for the player
      * @apiNote use {@link #getScores(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     @NotNull
     default Set<Score> getScores(@NotNull OfflinePlayer player) {
         return this.getScores((ScoreHolder) player);
@@ -272,7 +272,7 @@ public interface Scoreboard {
      * @apiNote use {@link #resetScores(ScoreHolder)}
      * @see #resetScores(String)
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void resetScores(@NotNull OfflinePlayer player) {
         this.resetScores((ScoreHolder) player);
     }
@@ -294,7 +294,7 @@ public interface Scoreboard {
      * @see #getEntryTeam(String)
      */
     @Nullable
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default Team getPlayerTeam(@NotNull OfflinePlayer player) {
         return this.getEntryTeam(player);
     }
@@ -379,7 +379,7 @@ public interface Scoreboard {
      * @throws IllegalArgumentException if entity is null
      * @apiNote use {@link #getScores(ScoreHolder)}
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default @NotNull Set<Score> getScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         return this.getScores(entity);
     }
@@ -392,7 +392,7 @@ public interface Scoreboard {
      * @apiNote use {@link #resetScores(ScoreHolder)}
      * @see #resetScores(String)
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default void resetScoresFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         this.resetScores(entity);
     }
@@ -406,7 +406,7 @@ public interface Scoreboard {
      * @apiNote use {@link #getEntryTeam(ScoreHolder)}
      * @see #getEntryTeam(String)
      */
-    @ApiStatus.Obsolete(since = "1.21.8")
+    @ApiStatus.Obsolete(since = "1.21.11")
     default @Nullable Team getEntityTeam(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException {
         return this.getEntryTeam(entity);
     }
