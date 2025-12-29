@@ -317,7 +317,7 @@
                  }
  
                  return interactionResult;
-@@ -329,15 +_,47 @@
+@@ -329,18 +_,56 @@
          }
      }
  
@@ -333,11 +333,17 @@
 +        boolean cancelledBlock = false;
 +        boolean cancelledItem = false; // Paper - correctly handle items on cooldown
          if (!blockState.getBlock().isEnabled(level.enabledFeatures())) {
-             return InteractionResult.FAIL;
-         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
-             MenuProvider menuProvider = blockState.getMenuProvider(level, blockPos);
+-            return InteractionResult.FAIL;
+-        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+-            MenuProvider menuProvider = blockState.getMenuProvider(level, blockPos);
 -            if (menuProvider != null) {
 -                player.openMenu(menuProvider);
+-                return InteractionResult.CONSUME;
+-            } else {
+-                return InteractionResult.PASS;
++            return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.FAIL, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, stack)); // Paper - PlayerPostInteractEvent
++        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
++            MenuProvider menuProvider = blockState.getMenuProvider(level, blockPos);
 +            cancelledBlock = !(menuProvider instanceof MenuProvider);
 +        }
 +
@@ -360,14 +366,37 @@
 +            }
 +            player.containerMenu.forceHeldSlot(hand); // SPIGOT-2867
 +            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
-+            return (event.useItemInHand() != org.bukkit.event.Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
++            // Paper start - PlayerPostInteractEvent
++            if (event.useItemInHand() != org.bukkit.event.Event.Result.ALLOW) {
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.SUCCESS, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, stack));
++            } else {
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.PASS, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, stack));
++            }
++            // Paper end - PlayerPostInteractEvent
 +        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
 +            MenuProvider menuProvider = blockState.getMenuProvider(level, blockPos);
 +            if (menuProvider != null && player.openMenu(menuProvider).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
-                 return InteractionResult.CONSUME;
-             } else {
-                 return InteractionResult.PASS;
-@@ -362,7 +_,7 @@
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.CONSUME, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, stack)); // Paper - PlayerPostInteractEvent
++            } else {
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.PASS, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, stack)); // Paper - PlayerPostInteractEvent
+             }
+         } else {
+             boolean flag = !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
+@@ -350,19 +_,19 @@
+                 InteractionResult interactionResult = blockState.useItemOn(player.getItemInHand(hand), level, player, hand, hitResult);
+                 if (interactionResult.consumesAction()) {
+                     CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(player, blockPos, itemStack);
+-                    return interactionResult;
++                    return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, interactionResult, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, itemStack)); // Paper - PlayerPostInteractEvent
+                 }
+ 
+                 if (interactionResult instanceof InteractionResult.TryEmptyHandInteraction && hand == InteractionHand.MAIN_HAND) {
+                     InteractionResult interactionResult1 = blockState.useWithoutItem(level, player, hitResult);
+                     if (interactionResult1.consumesAction()) {
+                         CriteriaTriggers.DEFAULT_BLOCK_USE.trigger(player, blockPos);
+-                        return interactionResult1;
++                        return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, interactionResult1, hand, new io.papermc.paper.interact.PaperInteractionType.UseBlockWithoutItem(level, blockPos, blockState)); // Paper - PlayerPostInteractEvent
+                     }
                  }
              }
  
@@ -376,15 +405,20 @@
                  UseOnContext useOnContext = new UseOnContext(player, hand, hitResult);
                  InteractionResult interactionResult1;
                  if (player.hasInfiniteMaterials()) {
-@@ -379,6 +_,11 @@
+@@ -377,9 +_,14 @@
+                     CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(player, blockPos, itemStack);
+                 }
  
-                 return interactionResult1;
+-                return interactionResult1;
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, interactionResult1, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, itemStack)); // Paper - PlayerPostInteractEvent
              } else {
+-                return InteractionResult.PASS;
 +                // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
 +                if (this.interactResult && this.interactResult != cancelledItem) {
 +                    this.player.resyncUsingItem(this.player);
 +                }
 +                // Paper end - Properly cancel usable items
-                 return InteractionResult.PASS;
++                return org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerPostInteractEvent(player, InteractionResult.PASS, hand, new io.papermc.paper.interact.PaperInteractionType.UseItemOnBlock(level, blockPos, blockState, itemStack)); // Paper - PlayerPostInteractEvent
              }
          }
+     }
