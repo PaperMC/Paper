@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @param <T> registry value type
  */
 @ApiStatus.NonExtendable
-public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO remove Keyed
+public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO: Remove Keyed once the registry-based API is finalized
 
     @Override
     default int size() {

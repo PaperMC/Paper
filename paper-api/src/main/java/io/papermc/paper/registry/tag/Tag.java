@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @ApiStatus.Experimental
 @NullMarked
-public interface Tag<T extends Keyed> extends RegistryKeySet<T> { // TODO remove Keyed
+public interface Tag<T extends Keyed> extends RegistryKeySet<T> { // TODO: Remove Keyed once the registry-based API is finalized
 
     /**
      * Get the identifier for this named set.

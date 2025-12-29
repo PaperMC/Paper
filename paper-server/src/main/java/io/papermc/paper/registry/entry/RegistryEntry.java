@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 
-public interface RegistryEntry<M, A extends Keyed> { // TODO remove Keyed
+public interface RegistryEntry<M, A extends Keyed> { // TODO: Remove Keyed once the registry-based API is finalized
 
     RegistryHolder<A> createRegistryHolder(Registry<M> nmsRegistry);
 

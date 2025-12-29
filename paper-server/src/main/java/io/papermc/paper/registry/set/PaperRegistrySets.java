@@ -16,7 +16,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class PaperRegistrySets {
 
-    public static <A extends Keyed, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistryKeySet<A> registryKeySet) { // TODO remove Keyed
+    public static <A extends Keyed, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistryKeySet<A> registryKeySet) { // TODO: Remove Keyed once the registry-based API is finalized
         if (registryKeySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registryKeySet).namedSet();
         } else {
@@ -27,7 +27,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO remove Keyed
+    public static <A extends Keyed, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO: Remove Keyed once the registry-based API is finalized
         if (registrySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registrySet).namedSet();
         } else if (registrySet.isEmpty()) {
@@ -51,7 +51,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed, M> RegistryKeySet<A> convertToApi(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO remove Keyed
+    public static <A extends Keyed, M> RegistryKeySet<A> convertToApi(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO: Remove Keyed once the registry-based API is finalized
         if (holders instanceof final HolderSet.Named<M> named) {
             return new NamedRegistryKeySetImpl<>(PaperRegistries.fromNms(named.key()), named);
         } else {
@@ -66,7 +66,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO remove Keyed
+    public static <A extends Keyed, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO: Remove Keyed once the registry-based API is finalized
         if (holders instanceof final HolderSet.Named<M> named) {
             return new NamedRegistryKeySetImpl<>(PaperRegistries.fromNms(named.key()), named);
         } else {
