@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -8,7 +9,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryChiseledBookshelf;
 import org.bukkit.inventory.ChiseledBookshelfInventory;
 import org.bukkit.util.Vector;
 
-public class CraftChiseledBookshelf extends CraftSelectableBlockEntityState<ChiseledBookShelfBlockEntity> implements ChiseledBookshelf {
+public class CraftChiseledBookshelf extends CraftBlockEntityState<ChiseledBookShelfBlockEntity> implements ChiseledBookshelf, CraftSelectable<ChiseledBookShelfBlock> {
 
     public CraftChiseledBookshelf(World world, ChiseledBookShelfBlockEntity blockEntity) {
         super(world, blockEntity);
@@ -44,7 +45,7 @@ public class CraftChiseledBookshelf extends CraftSelectableBlockEntityState<Chis
 
     @Override
     public int getSlot(Vector clickVector) {
-        return super.getSlot(2, 3, clickVector);
+        return CraftSelectable.super.getSlot(clickVector);
     }
 
     @Override

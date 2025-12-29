@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.world.level.block.ShelfBlock;
 import net.minecraft.world.level.block.entity.ShelfBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -8,7 +9,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryShelf;
 import org.bukkit.inventory.ShelfInventory;
 import org.bukkit.util.Vector;
 
-public class CraftShelf extends CraftSelectableBlockEntityState<ShelfBlockEntity> implements Shelf {
+public class CraftShelf extends CraftBlockEntityState<ShelfBlockEntity> implements Shelf, CraftSelectable<ShelfBlock> {
 
     public CraftShelf(World world, ShelfBlockEntity blockEntity) {
         super(world, blockEntity);
@@ -34,7 +35,7 @@ public class CraftShelf extends CraftSelectableBlockEntityState<ShelfBlockEntity
 
     @Override
     public int getSlot(Vector clickVector) {
-        return super.getSlot(1, 3, clickVector);
+        return CraftSelectable.super.getSlot(clickVector);
     }
 
     @Override
