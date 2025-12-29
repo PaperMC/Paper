@@ -16,6 +16,7 @@ public interface CraftSelectable<T extends BaseEntityBlock & SelectableSlotConta
 
     BlockState getHandle();
 
+    @SuppressWarnings("unchecked")
     default int getSlot(final Vector clickVector) {
         Preconditions.checkArgument(clickVector != null, "clickVector cannot be null");
         clickVector.checkFinite();
@@ -30,7 +31,7 @@ public interface CraftSelectable<T extends BaseEntityBlock & SelectableSlotConta
             default -> throw new UnsupportedOperationException(); // should never happen
         };
 
-        return getHitSlot((T) this.getHandle().getBlock(), hitCoords);
+        return this.getHitSlot((T) this.getHandle().getBlock(), hitCoords);
     }
 
     private int getHitSlot(final T block, final Vec2 hitCoords) {
