@@ -4,6 +4,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 import io.papermc.paper.configuration.mapping.MergeMap;
@@ -503,6 +504,7 @@ public class WorldConfiguration extends ConfigurationPart {
     public class Chunks extends ConfigurationPart {
         public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
         public int maxAutoSaveChunksPerTick = 24;
+        @Constraints.Min(1)
         public int minUnloadChunksPerTick = 50;
         public double maxUnloadChunksPerTickFactor = 0.05;
         public int fixedChunkInhabitedTime = -1;
