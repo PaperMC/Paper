@@ -2766,7 +2766,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Retrieves the stopwatch associated with this key.
      *
      * @param key The key
-     * @return The stopwatch
+     * @return The stopwatch if found, null otherwise
      */
     @Nullable Stopwatch getStopwatch(@NotNull NamespacedKey key);
 
@@ -2775,7 +2775,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return all stopwatches
      */
-    Set<Stopwatch> getStopwatches();
+    @NotNull Set<Stopwatch> getStopwatches();
 
     /**
      * Creates a new stopwatch with the specified key.
