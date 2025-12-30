@@ -1,9 +1,11 @@
 package io.papermc.paper.util.sanitizer;
 
+import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.util.SafeAutoClosable;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
@@ -20,7 +22,7 @@ public final class OversizedItemComponentSanitizer {
     These represent codecs that are meant to help get rid of possibly big items by ALWAYS hiding this data.
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> CHARGED_PROJECTILES = codec(ChargedProjectiles.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeChargedProjectiles);
-    public static final StreamCodec<RegistryFriendlyByteBuf, ItemContainerContents> CONTAINER = codec(ItemContainerContents.STREAM_CODEC, contents -> ItemContainerContents.EMPTY);
+    public static final StreamCodec<RegistryFriendlyByteBuf, ItemContainerContents> CONTAINER = codec(ItemContainerContents.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
     public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS = new StreamCodec<>() {
         @Override
         public BundleContents decode(final RegistryFriendlyByteBuf buffer) {
@@ -50,6 +52,10 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
+        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.CHARGED_PROJECTILES)) {
+            return projectiles;
+        }
+
         return ChargedProjectiles.of(List.of(
             new ItemStack(
                 projectiles.contains(Items.FIREWORK_ROCKET)
@@ -58,9 +64,20 @@ public final class OversizedItemComponentSanitizer {
             )));
     }
 
+    private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
+        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.CONTAINER)) {
+            return contents;
+        }
+        return ItemContainerContents.EMPTY;
+    }
+
     // Although bundles no longer change their size based on fullness, fullness is exposed in item models.
     private static BundleContents sanitizeBundleContents(final BundleContents contents) {
         if (contents.isEmpty()) {
+            return contents;
+        }
+
+        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.BUNDLE_CONTENTS)) {
             return contents;
         }
 
