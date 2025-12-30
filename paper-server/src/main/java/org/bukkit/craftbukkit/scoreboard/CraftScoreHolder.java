@@ -6,7 +6,6 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.world.entity.Entity;
 import org.bukkit.scoreboard.ScoreHolder;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public interface CraftScoreHolder extends ScoreHolder {
@@ -24,10 +23,10 @@ public interface CraftScoreHolder extends ScoreHolder {
     net.minecraft.world.scores.ScoreHolder asNmsScoreHolder();
 
     static CraftScoreHolder fromNms(net.minecraft.world.scores.ScoreHolder nmsHolder) {
-        return switch (nmsHolder) {
-            case Entity nmsEntity -> nmsEntity.getBukkitEntity();
-            default -> new CraftStringScoreHolder(nmsHolder.getScoreboardName());
-        };
+        if (nmsHolder instanceof Entity nmsEntity) {
+            return nmsEntity.getBukkitEntity();
+        }
+        return new CraftStringScoreHolder(nmsHolder.getScoreboardName());
     }
 
     class CraftStringScoreHolder implements CraftScoreHolder, net.minecraft.world.scores.ScoreHolder {

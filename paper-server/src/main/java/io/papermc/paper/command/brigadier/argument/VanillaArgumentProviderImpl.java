@@ -142,19 +142,6 @@ import static java.util.Objects.requireNonNull;
 @DefaultQualifier(NonNull.class)
 public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
-    private static ScoreHolderResolver convertScoreHolders(ScoreHolderArgument.Result result) {
-        return sourceStack -> {
-            Collection<net.minecraft.world.scores.ScoreHolder> results = result.getNames((CommandSourceStack) sourceStack, Collections::emptyList);
-            List<ScoreHolder> list = new ArrayList<>(results.size());
-
-            for (net.minecraft.world.scores.ScoreHolder scoreHolder : results) {
-                list.add(CraftScoreHolder.fromNms(scoreHolder));
-            }
-
-            return list;
-        };
-    }
-
     @Override
     public ArgumentType<EntitySelectorArgumentResolver> entity() {
         return this.wrap(EntityArgument.entity(), (result) -> sourceStack -> {
@@ -355,6 +342,19 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(ScoreHolderArgument.scoreHolders(), VanillaArgumentProviderImpl::convertScoreHolders);
     }
 
+    private static ScoreHolderResolver convertScoreHolders(ScoreHolderArgument.Result result) {
+        return sourceStack -> {
+            Collection<net.minecraft.world.scores.ScoreHolder> results = result.getNames((CommandSourceStack) sourceStack, Collections::emptyList);
+            List<ScoreHolder> list = new ArrayList<>(results.size());
+
+            for (net.minecraft.world.scores.ScoreHolder scoreHolder : results) {
+                list.add(CraftScoreHolder.fromNms(scoreHolder));
+            }
+
+            return list;
+        };
+    }
+
     @Override
     public ArgumentType<ScoreboardOperation> operation() {
         return this.wrap(OperationArgument.operation(), ScoreboardOperationImpl::new);
@@ -375,7 +375,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<TeamResolver> team() {
-        return this.wrap(TeamArgument.team(), name -> (scoreboard, source) -> {
+        return this.wrap(TeamArgument.team(), name -> (scoreboard, sourceStack) -> {
             CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
             return new CraftTeam(craftScoreboard, TeamArgument.getTeam(craftScoreboard.getHandle(), name));
         });

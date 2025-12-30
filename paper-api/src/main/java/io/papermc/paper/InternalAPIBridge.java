@@ -84,14 +84,6 @@ public interface InternalAPIBridge {
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 
     /**
-     * Creates a wrapping score holder
-     *
-     * @param entry The entry to wrap
-     * @return a wrapping ScoreHolder
-     */
-    ScoreHolder scoreHolderOf(String entry);
-
-    /**
      * Causes this predicate to be considered restricted.
      * Applying this to a command node prevents this command from being executed from an
      * unattended context, such as click events.
@@ -109,4 +101,12 @@ public interface InternalAPIBridge {
     Component defaultMannequinDescription();
 
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+
+    /**
+     * Creates a wrapping score holder
+     *
+     * @param entry the entry to wrap
+     * @return a wrapping ScoreHolder
+     */
+    ScoreHolder scoreHolderOf(String entry);
 }

@@ -115,12 +115,12 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public ScoreHolder scoreHolderOf(final String entry) {
-        return new CraftScoreHolder.CraftStringScoreHolder(entry);
+    public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
+        return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
     }
 
     @Override
-    public <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass) {
-        return CraftGameRule.wrap(rule, fromLegacyToModern, toLegacyFromModern, legacyClass);
+    public ScoreHolder scoreHolderOf(final String entry) {
+        return new CraftScoreHolder.CraftStringScoreHolder(entry);
     }
 }
