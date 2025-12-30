@@ -187,7 +187,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
-        @Comment("This setting controls what components dont need to be sanitized in oversized item obfuscation. (Expected: minecraft:container, minecraft:charged_projectiles and minecraft:bundle_contents)")
+        @Comment("This setting controls what item data components don't need to be sanitized in oversized item obfuscation. Adding them re-enables exploits, but may be needed for certain resource packs. (Expected: minecraft:container, minecraft:charged_projectiles and minecraft:bundle_contents)")
         public OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration oversizedItemComponentSanitizer = new OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration(Set.of());
 
         public enum CompressionFormat {

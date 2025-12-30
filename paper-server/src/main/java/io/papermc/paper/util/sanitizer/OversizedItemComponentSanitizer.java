@@ -55,7 +55,7 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
-        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.CHARGED_PROJECTILES)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitize().contains(DataComponents.CHARGED_PROJECTILES)) {
             return projectiles;
         }
 
@@ -68,7 +68,7 @@ public final class OversizedItemComponentSanitizer {
     }
 
     private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
-        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.CONTAINER)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitize().contains(DataComponents.CONTAINER)) {
             return contents;
         }
         return ItemContainerContents.EMPTY;
@@ -80,7 +80,7 @@ public final class OversizedItemComponentSanitizer {
             return contents;
         }
 
-        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.BUNDLE_CONTENTS)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitize().contains(DataComponents.BUNDLE_CONTENTS)) {
             return contents;
         }
 
@@ -124,7 +124,7 @@ public final class OversizedItemComponentSanitizer {
     }
 
     @ConfigSerializable
-    public record AssetOversizedItemComponentSanitizerConfiguration(Set<DataComponentType<?>> dontSanitizer) {
+    public record AssetOversizedItemComponentSanitizerConfiguration(Set<DataComponentType<?>> dontSanitize) {
     }
 
 }
