@@ -13,6 +13,13 @@ public interface Stopwatch extends Keyed {
     long creationTime();
 
     /**
+     * Retrieves the accumulated time in milliseconds.
+     *
+     * @return Accumulated time
+     */
+    long accumulatedElapsedTime();
+
+    /**
      * Calculates the elapsed time in milliseconds between the start of the stopwatch
      * and the specified timestamp.
      *

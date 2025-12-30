@@ -26,6 +26,11 @@ public class CraftStopwatch implements Stopwatch {
     }
 
     @Override
+    public long accumulatedElapsedTime() {
+        return handle.accumulatedElapsedTime();
+    }
+
+    @Override
     public long elapsedMilliseconds(final long time) {
         return handle.elapsedMilliseconds(time);
     }
