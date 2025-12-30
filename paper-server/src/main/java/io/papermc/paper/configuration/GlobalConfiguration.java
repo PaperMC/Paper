@@ -347,6 +347,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
         public boolean fixFarEndTerrainGeneration = true;
+        @Comment("Fix for MC-301114. Removing any combat entry which hits max recorded ticks, to fix the memory leak on constant entity damaged.")
+        public IntOr.Disabled maxTrackingCombatEntryTicks = new IntOr.Disabled(OptionalInt.of(60 * 60 * 20));
     }
 
     public BlockUpdates blockUpdates;

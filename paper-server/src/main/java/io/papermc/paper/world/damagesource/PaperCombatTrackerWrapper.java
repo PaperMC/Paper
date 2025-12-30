@@ -33,7 +33,16 @@ public record PaperCombatTrackerWrapper(
     @Override
     public void setCombatEntries(final List<CombatEntry> combatEntries) {
         this.handle.entries.clear();
-        combatEntries.forEach(combatEntry -> this.handle.entries.add(((PaperCombatEntryWrapper) combatEntry).handle()));
+        combatEntries.forEach(combatEntry -> {
+            final net.minecraft.world.damagesource.CombatEntry wrapped = ((PaperCombatEntryWrapper) combatEntry).handle();
+            this.handle.entries.add(new net.minecraft.world.damagesource.CombatEntry(
+                wrapped.source(),
+                wrapped.damage(),
+                wrapped.fallLocation(),
+                wrapped.fallDistance(),
+                this.handle.mob.tickCount
+            ));
+        });
     }
 
     @Override
