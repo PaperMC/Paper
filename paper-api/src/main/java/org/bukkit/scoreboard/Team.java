@@ -294,9 +294,9 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #addEntry(String)
      */
-    // @Deprecated(since = "1.8.6") // Paper
     void addPlayer(@NotNull OfflinePlayer player);
 
     /**
