@@ -1236,7 +1236,7 @@
                                  InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, serverLevel, itemInHand, hand, hitResult);
                                  if (interactionResult.consumesAction()) {
                                      CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, hitResult.getBlockPos(), itemInHand.copy());
-@@ -1323,10 +_,10 @@
+@@ -1323,10 +_,19 @@
                                      Component component = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                                      this.player.sendSystemMessage(component, true);
                                  } else if (interactionResult instanceof InteractionResult.Success success
@@ -1244,8 +1244,16 @@
 +                                    && success.swingSource() == InteractionResult.SwingSource.SERVER && !this.player.gameMode.interactResult) { // Paper - Call interact event
                                      this.player.swing(hand, true);
                                  }
--                            }
-+                            } else { this.player.containerMenu.forceHeldSlot(hand); } // Paper - Fix inventory desync; MC-99075
++                            // Paper start - Fix inventory desync; MC-99075
++                            // From serverLevel.mayInteract(this.player, blockPos)
++                            } else if (this.server.isUnderSpawnProtection(serverLevel, blockPos, player)) {
++                                if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, serverLevel.getBlockState(blockPos), itemInHand)) {
++                                    this.player.containerMenu.sendAllDataToRemote();
++                                } else {
++                                    this.player.containerMenu.forceHeldSlot(hand);
++                                }
+                             }
++                            // Paper end - Fix inventory desync
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
@@ -1274,7 +1282,7 @@
          if (this.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel serverLevel = this.player.level();
-@@ -1363,6 +_,48 @@
+@@ -1363,6 +_,54 @@
                      this.player.absSnapRotationTo(f, f1);
                  }
  
@@ -1311,7 +1319,13 @@
 +
 +                if (cancelled) {
 +                    this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
-+                    this.player.containerMenu.forceHeldSlotAndArmor(hand); // SPIGOT-2524
++                    // Paper start - Fix inventory desync; SPIGOT-2524
++                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), itemInHand)) {
++                        this.player.containerMenu.sendAllDataToRemote();
++                    } else {
++                        this.player.containerMenu.forceHeldSlotAndArmor(hand);
++                    }
++                    // Paper end - Fix inventory desync
 +                    return;
 +                }
 +                itemInHand = this.player.getItemInHand(hand); // Update in case it was changed in the event
@@ -1795,7 +1809,7 @@
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
              if (target != null) {
-@@ -1751,16 +_,54 @@
+@@ -1751,16 +_,63 @@
                  }
  
                  AABB boundingBox = target.getBoundingBox();
@@ -1821,8 +1835,17 @@
 +                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
 +                                    if (itemType == Items.WATER_BUCKET && target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && resendData) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                    }
++
++                                    // Paper start - Fix inventory desync
++                                    if (resendData) {
++                                        if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(ServerGamePacketListenerImpl.this.player, target, itemInHand)) {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
++                                        } else {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand);
++                                        }
++                                    }
++                                    // Paper end - Fix inventory desync
 +
 +                                    if (triggerLeashUpdate && resendData) {
 +                                        // Refresh the current leash state

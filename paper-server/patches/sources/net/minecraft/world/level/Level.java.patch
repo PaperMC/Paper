@@ -338,7 +338,7 @@
      }
  
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, int flags, int recursionLeft) {
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, @Block.UpdateFlags int flags, int recursionLeft) {
 +        BlockState state = newState;
 +        BlockState blockState = oldState;
 +        BlockState blockState1 = currentState;
@@ -347,19 +347,19 @@
 +                this.setBlocksDirty(pos, blockState, blockState1);
 +            }
 +
-+            if ((flags & 2) != 0 && (!this.isClientSide() || (flags & 4) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++            if ((flags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (flags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(pos, blockState, state, flags);
 +            }
 +
-+            if ((flags & 1) != 0) {
++            if ((flags & Block.UPDATE_NEIGHBORS) != 0) {
 +                this.updateNeighborsAt(pos, blockState.getBlock());
 +                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
 +                }
 +            }
 +
-+            if ((flags & 16) == 0 && recursionLeft > 0) {
-+                int i = flags & -34;
++            if ((flags & Block.UPDATE_KNOWN_SHAPE) == 0 && recursionLeft > 0) {
++                int i = flags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
 +
 +                // CraftBukkit start
 +                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
@@ -406,7 +406,7 @@
 +            }
 +            // Paper end - BlockDestroyEvent
 +            if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
-+                this.levelEvent(2001, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
++                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
              }
  
              if (dropBlock) {
