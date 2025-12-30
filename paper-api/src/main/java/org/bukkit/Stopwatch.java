@@ -1,14 +1,17 @@
 package org.bukkit;
 
 /**
- * Represents a stopwatch that measures real-world elapsed time, independent of Minecraft server ticks.
+ * Represents a stopwatch that measures real-world elapsed time, independent of Minecraft server ticks.<br>
+ * Stopwatches use Java Virtual Machine's high-resolution time source to measure time. It can be accessed with the
+ * {@link System#nanoTime()} method.
  */
 public interface Stopwatch extends Keyed {
 
     /**
-     * Retrieves the creation time of the stopwatch.
+     * Returns the value, in milliseconds, of the Java Virtual Machine's high-resolution time source as it was at the
+     * moment this object was created.
      *
-     * @return The timestamp in milliseconds since the UNIX epoch when the stopwatch was created.
+     * @return Timestamp at creation
      */
     long creationTime();
 
@@ -23,7 +26,7 @@ public interface Stopwatch extends Keyed {
      * Calculates the elapsed time in milliseconds between the start of the stopwatch
      * and the specified timestamp.
      *
-     * @param time The timestamp in milliseconds since the UNIX epoch.
+     * @param time A value, in milliseconds, of the Java Virtual Machine's high-resolution time source
      * @return The elapsed time in milliseconds since the stopwatch was started and the given timestamp.
      */
     long elapsedMilliseconds(long time);
@@ -32,7 +35,7 @@ public interface Stopwatch extends Keyed {
      * Calculates the elapsed time in seconds between the start of the stopwatch
      * and the specified timestamp.
      *
-     * @param time The timestamp in milliseconds since the UNIX epoch.
+     * @param time A value, in milliseconds, of the Java Virtual Machine's high-resolution time source
      * @return The elapsed time in seconds since the stopwatch was started and the given timestamp.
      */
     double elapsedSeconds(long time);
