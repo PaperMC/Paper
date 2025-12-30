@@ -10,6 +10,7 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -37,8 +38,9 @@ import org.jspecify.annotations.Nullable;
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     public static final PaperServerInternalAPIBridge INSTANCE = new PaperServerInternalAPIBridge();
 
-    private static final Set<Pose> validMannequinPoses = Mannequin.VALID_POSES.stream()
-        .map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toSet());
+    private static final Set<Pose> VALID_MANNEQUIN_POSES = Collections.unmodifiableSet(
+        Mannequin.VALID_POSES.stream().map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toSet())
+    );
 
     @Override
     public DamageEffect getDamageEffect(final String key) {
@@ -125,6 +127,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Set<Pose> validMannequinPoses() {
-        return validMannequinPoses;
+        return VALID_MANNEQUIN_POSES;
     }
 }
