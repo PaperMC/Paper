@@ -1226,18 +1226,17 @@
                  BlockPos blockPos = hitResult.getBlockPos();
                  if (this.player.isWithinBlockInteractionRange(blockPos, 1.0)) {
                      Vec3 vec3 = location.subtract(Vec3.atCenterOf(blockPos));
-@@ -1310,7 +_,9 @@
+@@ -1310,7 +_,8 @@
                          this.player.resetLastActionTime();
                          int maxY = this.player.level().getMaxY();
                          if (blockPos.getY() <= maxY) {
 -                            if (this.awaitingPositionFromClient == null && serverLevel.mayInteract(this.player, blockPos)) {
-+                            final boolean mayInteract = serverLevel.mayInteract(this.player, blockPos); // Paper - Reuse in inventory desync fix
-+                            if (this.awaitingPositionFromClient == null && (mayInteract || (serverLevel.paperConfig().spawn.allowUsingSignsInsideSpawnProtection && serverLevel.getBlockState(blockPos).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - Allow using signs inside spawn protection
++                            if (this.awaitingPositionFromClient == null && (serverLevel.mayInteract(this.player, blockPos) || (serverLevel.paperConfig().spawn.allowUsingSignsInsideSpawnProtection && serverLevel.getBlockState(blockPos).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - Allow using signs inside spawn protection
 +                                this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
                                  InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, serverLevel, itemInHand, hand, hitResult);
                                  if (interactionResult.consumesAction()) {
                                      CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, hitResult.getBlockPos(), itemInHand.copy());
-@@ -1323,10 +_,18 @@
+@@ -1323,10 +_,19 @@
                                      Component component = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                                      this.player.sendSystemMessage(component, true);
                                  } else if (interactionResult instanceof InteractionResult.Success success
@@ -1246,7 +1245,8 @@
                                      this.player.swing(hand, true);
                                  }
 +                            // Paper start - Fix inventory desync; MC-99075
-+                            } else if (!mayInteract) {
++                            // From serverLevel.mayInteract(this.player, blockPos)
++                            } else if (this.server.isUnderSpawnProtection(serverLevel, blockPos, player)) {
 +                                if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, serverLevel.getBlockState(blockPos), itemInHand)) {
 +                                    this.player.containerMenu.sendAllDataToRemote();
 +                                } else {

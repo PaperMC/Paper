@@ -316,13 +316,19 @@
              InteractionResult interactionResult = stack.use(level, player, hand);
              ItemStack itemStack;
              if (interactionResult instanceof InteractionResult.Success success) {
-@@ -321,7 +_,9 @@
+@@ -321,7 +_,14 @@
                  }
  
                  if (!player.isUsingItem()) {
-+                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), stackBeforeUse)) // Paper - Optimize sendAllDataToRemote calls
-                     player.inventoryMenu.sendAllDataToRemote();
-+                    else player.inventoryMenu.forceHeldSlot(hand); // Paper - Optimize sendAllDataToRemote calls
+-                    player.inventoryMenu.sendAllDataToRemote();
++                    // Paper start - Optimize sendAllDataToRemote calls
++                    // This is a weird one where the Vanilla behavior is from an ancient version, but also isn't calling startUsingItem on certain instant-use items
++                    // TODO Check up on this proper, possibly remove all and move into more specific places
++                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), stackBeforeUse)) {
++                        player.inventoryMenu.forceHeldSlot(hand);
++                    }
++                    player.inventoryMenu.broadcastChanges();
++                    // Paper end - Optimize sendAllDataToRemote calls
                  }
  
                  return interactionResult;
