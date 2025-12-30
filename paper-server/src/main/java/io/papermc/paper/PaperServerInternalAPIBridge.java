@@ -10,11 +10,9 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
-import java.util.Collections;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
@@ -27,6 +25,7 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftMannequin;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
@@ -37,10 +36,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     public static final PaperServerInternalAPIBridge INSTANCE = new PaperServerInternalAPIBridge();
-
-    private static final Set<Pose> VALID_MANNEQUIN_POSES = Collections.unmodifiableSet(
-        Mannequin.VALID_POSES.stream().map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toSet())
-    );
 
     @Override
     public DamageEffect getDamageEffect(final String key) {
@@ -127,6 +122,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Set<Pose> validMannequinPoses() {
-        return VALID_MANNEQUIN_POSES;
+        return CraftMannequin.VALID_POSES;
     }
 }
