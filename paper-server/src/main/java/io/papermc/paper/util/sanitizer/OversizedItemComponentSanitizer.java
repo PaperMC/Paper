@@ -4,7 +4,9 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.util.SafeAutoClosable;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.UnaryOperator;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.item.component.ItemContainerContents;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 public final class OversizedItemComponentSanitizer {
 
@@ -52,7 +55,7 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
-        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.CHARGED_PROJECTILES)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.CHARGED_PROJECTILES)) {
             return projectiles;
         }
 
@@ -65,7 +68,7 @@ public final class OversizedItemComponentSanitizer {
     }
 
     private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
-        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.CONTAINER)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.CONTAINER)) {
             return contents;
         }
         return ItemContainerContents.EMPTY;
@@ -77,7 +80,7 @@ public final class OversizedItemComponentSanitizer {
             return contents;
         }
 
-        if (GlobalConfiguration.get().anticheat.obfuscation.items.allModels.dontObfuscate().contains(DataComponents.BUNDLE_CONTENTS)) {
+        if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitizer().contains(DataComponents.BUNDLE_CONTENTS)) {
             return contents;
         }
 
@@ -118,6 +121,10 @@ public final class OversizedItemComponentSanitizer {
                 this.delegate.encode(buf, this.sanitizer.apply(value));
             }
         }
+    }
+
+    @ConfigSerializable
+    public record AssetOversizedItemComponentSanitizerConfiguration(Set<DataComponentType<?>> dontSanitizer) {
     }
 
 }
