@@ -19,10 +19,26 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Bucketable;
+import net.minecraft.world.entity.animal.cow.AbstractCow;
+import net.minecraft.world.entity.animal.cow.MushroomCow;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -211,5 +227,38 @@ public final class MCUtil {
         for (final A value : toAdd) {
             target.add(converter.apply(value));
         }
+    }
+
+    // The client predicts that certain interactions will result in an item being added to its inventory.
+    // If one of these interactions is cancelled, we need to send a full inventory update to prevent desyncs.
+    public static boolean clientPredictsInteraction(final Player player, final BlockState state, final ItemStack stack) {
+        if (state.getBlock() instanceof FlowerPotBlock flowerPot && !flowerPot.getPotted().defaultBlockState().isAir()) {
+            return true;
+        }
+
+        // the remaining cases need either count > 1 or infinite materials
+        if (stack.getCount() <= 1 && !player.hasInfiniteMaterials()) {
+            return false;
+        }
+
+        if (state.is(BlockTags.CONVERTABLE_TO_MUD) && stack.getItem() instanceof PotionItem
+            && stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(Potions.WATER)) {
+            return true;
+        }
+
+        return (state.is(Blocks.LODESTONE) && stack.is(Items.COMPASS))
+            || (stack.getItem() instanceof BucketItem) // picking up fluids, powdered snow
+            || (stack.is(Items.GLASS_BOTTLE)); // taking honey from bee nests/hives
+    }
+
+    public static boolean clientPredictsInteraction(final Player player, final Entity entity, final ItemStack stack) {
+        // the remaining cases need either count > 1 or infinite materials
+        if (stack.getCount() <= 1 && !player.hasInfiniteMaterials()) {
+            return false;
+        }
+
+        return (entity instanceof AbstractCow && stack.is(Items.BUCKET))
+            || (entity instanceof MushroomCow && stack.is(Items.BOWL))
+            || (entity instanceof Bucketable && stack.is(Items.WATER_BUCKET));
     }
 }
