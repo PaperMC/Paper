@@ -503,6 +503,8 @@ public class WorldConfiguration extends ConfigurationPart {
     public class Chunks extends ConfigurationPart {
         public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
         public int maxAutoSaveChunksPerTick = 24;
+        public int minUnloadChunksPerTick = 50;
+        public double maxUnloadChunksPerTickFactor = 0.05;
         public int fixedChunkInhabitedTime = -1;
         public boolean preventMovingIntoUnloadedChunks = false;
         public Duration delayChunkUnloadsBy = Duration.of("10s");
