@@ -229,6 +229,7 @@ public final class MCUtil {
         }
     }
 
+    // TODO Check on update to make sure these includes newly added predicted client logic
     // The client predicts that certain interactions will result in an item being added to its inventory.
     // If one of these interactions is cancelled, we need to send a full inventory update to prevent desyncs.
     public static boolean clientPredictsInteraction(final Player player, final BlockState state, final ItemStack stack) {
