@@ -32,10 +32,7 @@ public class CraftMannequin extends CraftLivingEntity implements Mannequin {
     public void setPose(Pose pose, boolean fixed) {
         Preconditions.checkArgument(pose != null, "pose cannot be null");
         if (!Mannequin.validPoses().contains(pose)) {
-            throw new IllegalArgumentException("Invalid pose '%s', expected one of: %s".formatted(
-                pose.name(),
-                Mannequin.validPoses().stream().toList() // name doesn't match
-            ));
+            throw new IllegalArgumentException("Invalid pose '%s', expected one of: %s".formatted(pose.name(), Mannequin.validPoses()));
         }
 
         this.setPose0(net.minecraft.world.entity.Pose.values()[pose.ordinal()], fixed);
