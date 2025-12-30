@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/damagesource/CombatTracker.java
 +++ b/net/minecraft/world/damagesource/CombatTracker.java
-@@ -22,22 +_,42 @@
+@@ -22,22 +_,40 @@
      private static final Style INTENTIONAL_GAME_DESIGN_STYLE = Style.EMPTY
          .withClickEvent(new ClickEvent.OpenUrl(CommonLinks.INTENTIONAL_GAME_DESIGN_BUG))
          .withHoverEvent(new HoverEvent.ShowText(Component.literal("MCPE-28723")));
@@ -22,8 +22,7 @@
      public void recordDamage(DamageSource source, float damage) {
          this.recheckStatus();
          FallLocation currentFallLocation = FallLocation.getCurrentFallLocation(this.mob);
--        CombatEntry combatEntry = new CombatEntry(source, damage, currentFallLocation, (float)this.mob.fallDistance);
-+        CombatEntry combatEntry = new CombatEntry(source, damage, currentFallLocation, (float)this.mob.fallDistance, this.mob.tickCount); // Paper - Add damagedTickCount
+         CombatEntry combatEntry = new CombatEntry(source, damage, currentFallLocation, (float)this.mob.fallDistance);
 +    // Paper start - Combat tracker API
 +        recordDamageAndCheckCombatState(combatEntry);
 +    }
@@ -32,13 +31,11 @@
 +        final DamageSource source = combatEntry.source();
 +    // Paper end - Combat tracker API
 +        // Paper start - Fix mem leak (MC-301114)
-+        final io.papermc.paper.configuration.type.number.IntOr.Disabled trackingTicks;
-+        if (!this.entries.isEmpty() && (trackingTicks = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxTrackingCombatEntryTicks).enabled()) {
-+            final int currentTick = mob.tickCount;
-+            final int maxTicks = trackingTicks.intValue();
-+            final java.util.Iterator<CombatEntry> iterator = this.entries.iterator();
-+            while (iterator.hasNext() && currentTick - iterator.next().damagedTickCount() > maxTicks) {
-+                iterator.remove();
++        final io.papermc.paper.configuration.type.number.IntOr.Disabled maxTrackingCombatEntries;
++        if (!this.entries.isEmpty() && (maxTrackingCombatEntries = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxTrackingCombatEntries).enabled()) {
++            final int maxEntries = maxTrackingCombatEntries.intValue();
++            while (this.entries.size() >= maxEntries) {
++                this.entries.removeFirst();
 +            }
 +        }
 +        // Paper end - Fix mem leak (MC-301114)

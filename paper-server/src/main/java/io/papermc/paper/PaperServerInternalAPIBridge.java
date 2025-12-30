@@ -81,7 +81,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         final float fallDistance
     ) {
         return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(
-            damageSource, damage, fallLocation, fallDistance, -1
+            damageSource, damage, fallLocation, fallDistance
         ));
     }
 
