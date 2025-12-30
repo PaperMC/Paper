@@ -608,7 +608,7 @@
 +                    // Paper end - Check distance in entity interactions
  
 -                    this.knockback(0.4F, d, d1);
-+                    this.knockback(0.4F, d, d1, damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
++                    this.knockback(0.4F, d, d1, damageSource.getEntity(), damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
                      if (!flag) {
                          this.indicateDamage(d, d1);
                      }
@@ -746,7 +746,7 @@
  
      protected void blockedByItem(LivingEntity entity) {
 -        entity.knockback(0.5, entity.getX() - this.getX(), entity.getZ() - this.getZ());
-+        entity.knockback(0.5, entity.getX() - this.getX(), entity.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
++        entity.knockback(0.5, entity.getX() - this.getX(), entity.getZ() - this.getZ(), this, this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
      }
  
      private boolean checkTotemDeathProtection(DamageSource damageSource) {
@@ -971,10 +971,10 @@
  
      public void knockback(double strength, double x, double z) {
 +        // CraftBukkit start - EntityKnockbackEvent
-+        this.knockback(strength, x, z, null, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN); // Paper - knockback events
++        this.knockback(strength, x, z, null, null, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN); // Paper - knockback events
 +    }
 +
-+    public void knockback(double strength, double x, double z, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
++    public void knockback(double strength, double x, double z, @Nullable Entity source, @Nullable Entity directCause, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
          strength *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
 -        if (!(strength <= 0.0)) {
 -            this.needsSync = true;
@@ -995,7 +995,7 @@
                  deltaMovement.z / 2.0 - vec3.z
              );
 +            Vec3 diff = finalVelocity.subtract(deltaMovement);
-+            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, eventCause, strength, diff);
++            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), directCause, source, eventCause, strength, diff);
 +            // Paper end - knockback events
 +            if (event.isCancelled()) {
 +                return;
@@ -1362,7 +1362,7 @@
      public void causeExtraKnockback(Entity target, float strength, Vec3 currentMovement) {
          if (strength > 0.0F && target instanceof LivingEntity livingEntity) {
 -            livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
-+            livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
++            livingEntity.knockback(strength, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
          }
      }
