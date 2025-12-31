@@ -1317,7 +1317,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             return false;
         }
 
-        return super.teleport0(location, cause, flags);
+        // Paper start - stop spectating other entities on teleport
+        // return super.teleport0(location, cause, flags);
+        // Attempt to set the camera first
+        Entity camera = this.getHandle().getCamera();
+        this.getHandle().setCamera(null);
+        if (camera != this.getHandle() && camera == this.getHandle().getCamera()) {
+            // If the camera hasn't changed, it was likely cancelled by an event, so stop the teleport
+            return false;
+        }
+
+        boolean teleported = super.teleport0(location, cause, flags);
+        if (!teleported) {
+            // If the teleport doesn't go through, restore the original camera
+            this.getHandle().setCamera(camera);
+        }
+        return teleported;
+        // Paper end - stop spectating other entities on teleport
     }
 
     @Override
