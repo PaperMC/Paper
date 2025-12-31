@@ -5,7 +5,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface AbstractNautilus extends Animals, InventoryHolder, Tameable {
+public interface AbstractNautilus extends Animals, InventoryHolder, Tameable, Vehicle {
 
     @Override
     ArmoredSaddledMountInventory getInventory();
