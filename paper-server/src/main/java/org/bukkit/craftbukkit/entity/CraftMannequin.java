@@ -6,7 +6,6 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
@@ -23,9 +22,8 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class CraftMannequin extends CraftLivingEntity implements Mannequin {
 
-    public static final Set<Pose> VALID_POSES = Collections.unmodifiableSet(
-        net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.stream().map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toSet())
-    );
+    public static final Set<Pose> VALID_POSES = net.minecraft.world.entity.decoration.Mannequin.VALID_POSES.stream()
+        .map(pose -> Pose.values()[pose.ordinal()]).collect(Collectors.toUnmodifiableSet());
 
     public CraftMannequin(final CraftServer server, final net.minecraft.world.entity.decoration.Mannequin entity) {
         super(server, entity);
