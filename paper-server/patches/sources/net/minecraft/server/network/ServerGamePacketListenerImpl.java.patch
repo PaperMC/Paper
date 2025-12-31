@@ -1182,21 +1182,26 @@
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
-@@ -1290,9 +_,31 @@
+@@ -1290,9 +_,36 @@
          }
      }
  
-+    // Spigot start - limit place/interactions
++    // Paper start - limit place/interactions
 +    private int limitedPackets;
 +    private long lastLimitedPacket = -1;
-+    private static int getSpamThreshold() { return io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold; } // Paper - Configurable threshold
 +
 +    private boolean checkLimit(long timestamp) {
-+        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < getSpamThreshold() && this.limitedPackets++ >= 8) { // Paper - Configurable threshold; raise packet limit to 8
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold.enabled()) {
++            return true;
++        }
++
++        final int threshold = io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold.intValue();
++
++        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < threshold && this.limitedPackets++ >= 8) {
 +            return false;
 +        }
 +
-+        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= getSpamThreshold()) { // Paper - Configurable threshold
++        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= threshold) {
 +            this.lastLimitedPacket = timestamp;
 +            this.limitedPackets = 0;
 +            return true;
@@ -1204,7 +1209,7 @@
 +
 +        return true;
 +    }
-+    // Spigot end - limit place/interactions
++    // Paper end - limit place/interactions
 +
      @Override
      public void handleUseItemOn(ServerboundUseItemOnPacket packet) {

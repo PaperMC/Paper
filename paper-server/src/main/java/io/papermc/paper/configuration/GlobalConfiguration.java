@@ -163,7 +163,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public int tabSpamLimit = 500;
         public int recipeSpamIncrement = 1;
         public int recipeSpamLimit = 20;
-        public int incomingPacketThreshold = 300;
+        public IntOr.Disabled incomingPacketThreshold = new IntOr.Disabled(OptionalInt.of(300));
     }
 
     public UnsupportedSettings unsupportedSettings;
