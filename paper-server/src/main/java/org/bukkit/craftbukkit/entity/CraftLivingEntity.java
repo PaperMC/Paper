@@ -6,14 +6,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.waypoints.ServerWaypointManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -36,6 +41,9 @@ import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.waypoints.WaypointStyleAsset;
+import net.minecraft.world.waypoints.WaypointStyleAssets;
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -1087,5 +1095,41 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public CombatTracker getCombatTracker() {
         return this.getHandle().getCombatTracker().paperCombatTracker;
+    }
+
+    @Override
+    public Color getWaypointColor() {
+        return getHandle().waypointIcon().color.map(Color::fromARGB).orElse(null);
+    }
+
+    @Override
+    public Key getWaypointStyle() {
+        return PaperAdventure.asAdventure(getHandle().waypointIcon().style.identifier());
+    }
+
+    @Override
+    public void setWaypointColor(final Color color) {
+        final Optional<Integer> newColor = Optional.ofNullable(color).map(Color::asARGB);
+        if (Objects.equals(getHandle().waypointIcon().color, newColor)) return;
+
+        getHandle().waypointIcon().color = newColor;
+        updateWaypoint();
+    }
+
+    @Override
+    public void setWaypointStyle(final Key key) {
+        final ResourceKey<WaypointStyleAsset> newKey = key == null
+            ? WaypointStyleAssets.DEFAULT
+            : PaperAdventure.asVanilla(WaypointStyleAssets.ROOT_ID, key);
+        if (Objects.equals(getHandle().waypointIcon().style, newKey)) return;
+
+        getHandle().waypointIcon().style = newKey;
+        updateWaypoint();
+    }
+
+    private void updateWaypoint() {
+        ServerWaypointManager manager = ((ServerLevel) getHandle().level()).getWaypointManager();
+        manager.untrackWaypoint(getHandle());
+        manager.trackWaypoint(getHandle());
     }
 }
