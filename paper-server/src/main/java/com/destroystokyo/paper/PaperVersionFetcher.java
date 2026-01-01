@@ -48,16 +48,19 @@ public class PaperVersionFetcher implements VersionFetcher {
         return 720000;
     }
 
+    private static String userAgent() {
+        final ServerBuildInfo build = ServerBuildInfo.buildInfo();
+        return build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
+    }
+
     @Override
     public Component getVersionMessage() {
         final Component updateMessage;
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
-        final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
-
         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
         } else {
-            updateMessage = getUpdateStatusMessage(REPOSITORY, build, userAgent);
+            updateMessage = getUpdateStatusMessage(build, userAgent());
         }
         final @Nullable Component history = this.getHistory();
 
@@ -66,21 +69,20 @@ public class PaperVersionFetcher implements VersionFetcher {
 
     public static void getUpdateStatusStartupMessage() {
         final ServerBuildInfo build = ServerBuildInfo.buildInfo();
-        final String userAgent = build.brandName() + "/" + build.asString(VERSION_SIMPLE) + " (https://papermc.io)";
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
         if (buildNumber.isEmpty() && build.gitCommit().isEmpty()) {
             COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
         } else {
-            final Optional<MinecraftVersionFetcher> apiResult = fetchMinecraftVersionList(build, userAgent);
+            final Optional<MinecraftVersionFetcher> apiResult = fetchMinecraftVersionList(build, userAgent());
             if (buildNumber.isPresent()) {
-                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent);
+                distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt(), userAgent());
             } else {
                 final Optional<String> gitBranch = build.gitBranch();
                 final Optional<String> gitCommit = build.gitCommit();
                 if (gitBranch.isPresent() && gitCommit.isPresent()) {
-                    distance = fetchDistanceFromGitHub(REPOSITORY, gitBranch.get(), gitCommit.get());
+                    distance = fetchDistanceFromGitHub(gitBranch.get(), gitCommit.get());
                 }
             }
 
@@ -97,18 +99,18 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 default -> {
                     if (apiResult.isPresent()) {
-                        COMPONENT_LOGGER.error(text("*** You are running an outdated version of Minecraft, which is " + apiResult.get().distance() + " release(s) and " + distance + " build(s) behind!"));
-                        COMPONENT_LOGGER.error(text("*** Please update to the latest stable version on " + DOWNLOAD_PAGE + " ***"));
+                        COMPONENT_LOGGER.warn(text("*** You are running an outdated version of Minecraft, which is " + apiResult.get().distance() + " release(s) and " + distance + " build(s) behind!"));
+                        COMPONENT_LOGGER.warn(text("*** Please update to the latest stable version on " + DOWNLOAD_PAGE + " ***"));
                     } else {
-                        COMPONENT_LOGGER.warn(text("*** Currently you are " + distance + " build(s) behind ***"));
-                        COMPONENT_LOGGER.warn(text("*** It is highly recommended to download the latest build from " + DOWNLOAD_PAGE + " ***"));
+                        COMPONENT_LOGGER.info(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.info(text("*** It is highly recommended to download the latest build from " + DOWNLOAD_PAGE + " ***"));
                     }
                 }
             };
         }
     }
 
-    private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build, final String userAgent) {
+    private static Component getUpdateStatusMessage(final ServerBuildInfo build, final String userAgent) {
         int distance = DISTANCE_ERROR;
 
         final OptionalInt buildNumber = build.buildNumber();
@@ -118,7 +120,7 @@ public class PaperVersionFetcher implements VersionFetcher {
             final Optional<String> gitBranch = build.gitBranch();
             final Optional<String> gitCommit = build.gitCommit();
             if (gitBranch.isPresent() && gitCommit.isPresent()) {
-                distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
+                distance = fetchDistanceFromGitHub(gitBranch.get(), gitCommit.get());
             }
         }
 
@@ -216,9 +218,9 @@ public class PaperVersionFetcher implements VersionFetcher {
     }
 
     // Contributed by Techcable <Techcable@outlook.com> in GH-65
-    private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
+    private static int fetchDistanceFromGitHub(final String branch, final String hash) {
         try {
-            final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(repo, branch, hash)).toURL().openConnection();
+            final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(PaperVersionFetcher.REPOSITORY, branch, hash)).toURL().openConnection();
             connection.connect();
             if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) return DISTANCE_UNKNOWN; // Unknown commit
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
