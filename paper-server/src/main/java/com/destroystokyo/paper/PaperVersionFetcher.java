@@ -227,9 +227,10 @@ public class PaperVersionFetcher implements VersionFetcher {
     private static int fetchDistanceFromGitHub(final String branch, final String hash) {
         try {
             final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(PaperVersionFetcher.REPOSITORY, branch, hash)).toURL().openConnection();
-            connection.connect();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
+            connection.setRequestProperty("User-Agent", PaperVersionFetcher.USER_AGENT);
+            connection.connect();
             if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) return DISTANCE_UNKNOWN; // Unknown commit
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 final JsonObject obj = GSON.fromJson(reader, JsonObject.class);
