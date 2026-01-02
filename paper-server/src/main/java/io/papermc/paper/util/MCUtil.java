@@ -173,16 +173,15 @@ public final class MCUtil {
 
     public static List<Block> toBlocks(final LevelAccessor levelAccessor, final List<BlockPos> positions) {
         final List<Block> apiBlocks = new ObjectArrayList<>(positions.size());
-        for (int i = 0; i < positions.size(); i++) {
-            apiBlocks.add(CraftBlock.at(levelAccessor, positions.get(i)));
+        for (final BlockPos position : positions) {
+            apiBlocks.add(CraftBlock.at(levelAccessor, position));
         }
         return apiBlocks;
     }
 
     public static List<Block> toBlocksAndFilter(final LevelAccessor levelAccessor, final List<BlockPos> positions, final Predicate<BlockPos> filter) {
         final List<Block> apiBlocks = new ObjectArrayList<>(); // Not pre-allocating due to the filter possibly removing a lot of them (air in explosion blocks)
-        for (int i = 0; i < positions.size(); i++) {
-            final BlockPos blockPos = positions.get(i);
+        for (final BlockPos blockPos : positions) {
             if (!filter.test(blockPos)) continue;
 
             apiBlocks.add(CraftBlock.at(levelAccessor, blockPos));

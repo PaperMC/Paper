@@ -1908,7 +1908,7 @@ public class CraftEventFactory {
 
     public static List<Block> handleLegacyExplodeEvents(final ServerExplosion explosion, final List<BlockPos> positions) {
         final ServerLevel level = explosion.level();
-        return callLegacyExplodeEvents(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos) || !level.isEmptyBlock(pos.below())));
+        return callLegacyExplodeEvents(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos)));
     }
 
     public static List<Block> callLegacyExplodeEvents(final ServerExplosion explosion, final List<Block> affectedBlocks) {
@@ -1939,7 +1939,7 @@ public class CraftEventFactory {
 
     public static ExplodeEvent handleGenericExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
         final ServerLevel level = explosion.level();
-        return callGenericExplodeEvent(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos) || !level.isEmptyBlock(pos.below())));
+        return callGenericExplodeEvent(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos)));
     }
 
     public static ExplodeEvent callGenericExplodeEvent(ServerExplosion explosion, List<Block> affectedBlocks) {
