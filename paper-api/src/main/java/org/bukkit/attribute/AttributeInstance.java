@@ -117,6 +117,6 @@ public interface AttributeInstance {
      * @see Attribute#getDefaultValue()
      * @see org.bukkit.entity.EntityType#getDefaultAttributes()
      */
-    @Deprecated(since = "1.21.10")
+    @Deprecated(since = "1.21.11")
     double getDefaultValue();
 }
