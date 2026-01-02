@@ -394,4 +394,10 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
     }
+
+    public UpdateChecker updateChecker;
+
+    public class UpdateChecker extends ConfigurationPart {
+        public boolean enabled = true;
+    }
 }
