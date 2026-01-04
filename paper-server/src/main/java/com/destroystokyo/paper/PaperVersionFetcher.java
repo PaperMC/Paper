@@ -194,17 +194,16 @@ public class PaperVersionFetcher implements VersionFetcher {
 
     private static int fetchDistanceFromSiteApi(final int jenkinsBuild) {
         try {
-            final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + PaperVersionFetcher.BUILD_INFO.minecraftVersionId()).toURL();
+            final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + PaperVersionFetcher.BUILD_INFO.minecraftVersionId() + "/builds").toURL();
             final HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
             connection.setRequestProperty("User-Agent", PaperVersionFetcher.USER_AGENT);
             connection.setRequestProperty("Accept", "application/json");
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                final JsonObject json = GSON.fromJson(reader, JsonObject.class);
-                final JsonArray builds = json.getAsJsonArray("builds");
+                final JsonArray builds = GSON.fromJson(reader, JsonArray.class);
                 final int latest = StreamSupport.stream(builds.spliterator(), false)
-                    .mapToInt(JsonElement::getAsInt)
+                    .mapToInt(build -> build.getAsJsonObject().get("id").getAsInt())
                     .max()
                     .orElseThrow();
                 return Math.max(latest - jenkinsBuild, 0);
