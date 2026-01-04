@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.Optional;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.EntityTypeTags;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftServer;
@@ -11,6 +12,7 @@ import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.loot.LootTable;
+import org.jspecify.annotations.NonNull;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
 
@@ -199,5 +201,21 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     @Override
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
+    }
+
+    @Override
+    public boolean burnsInDaylight() {
+        return this.getHandle().burnInDaylightOverride.toBooleanOrElse(this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT));
+    }
+
+    @Override
+    public void setBurnInDaylightOverride(final @NonNull TriState state) {
+        Preconditions.checkArgument(state != null, "TriState cannot be null");
+        this.getHandle().burnInDaylightOverride = state;
+    }
+
+    @Override
+    public @NonNull TriState getBurnInDaylightOverride() {
+        return this.getHandle().burnInDaylightOverride;
     }
 }

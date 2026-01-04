@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.kyori.adventure.util.TriState;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Villager;
@@ -100,7 +102,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
 
     @Override
     public boolean shouldBurnInDay() {
-        return getHandle().isSunSensitive();
+        return super.burnsInDaylight();
     }
 
     @Override
@@ -115,7 +117,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
 
     @Override
     public void setShouldBurnInDay(boolean shouldBurnInDay) {
-        getHandle().setShouldBurnInDay(shouldBurnInDay);
+        super.setBurnInDaylightOverride(shouldBurnInDay == this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT) ? TriState.NOT_SET : TriState.FALSE); // Use NOT_SET if the default value is set with this
     }
 
     @Override

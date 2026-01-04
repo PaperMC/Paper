@@ -11,7 +11,7 @@
      private static final Identifier REINFORCEMENT_CALLER_CHARGE_ID = Identifier.withDefaultNamespace("reinforcement_caller_charge");
      private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(
          Identifier.withDefaultNamespace("reinforcement_callee_charge"), -0.05F, AttributeModifier.Operation.ADD_VALUE
-@@ -90,13 +_,15 @@
+@@ -90,13 +_,14 @@
      private static final boolean DEFAULT_BABY = false;
      private static final boolean DEFAULT_CAN_BREAK_DOORS = false;
      private static final int DEFAULT_IN_WATER_TIME = 0;
@@ -20,7 +20,6 @@
      private boolean canBreakDoors = false;
      private int inWaterTime = 0;
      public int conversionTime;
-+    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
      public Zombie(EntityType<? extends Zombie> type, Level level) {
          super(type, level);
@@ -90,7 +89,7 @@
      public void startUnderWaterConversion(int conversionTime) {
          this.conversionTime = conversionTime;
          this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, true);
-@@ -240,31 +_,55 @@
+@@ -240,26 +_,39 @@
      }
  
      protected void convertToZombieType(ServerLevel level, EntityType<? extends Zombie> entityType) {
@@ -137,24 +136,6 @@
      }
  
      public boolean isSunSensitive() {
--        return true;
--    }
-+        return this.shouldBurnInDay; // Paper - Add more Zombie API
-+    }
-+
-+    // Paper start - Add more Zombie API
-+    public void setShouldBurnInDay(boolean shouldBurnInDay) {
-+        this.shouldBurnInDay = shouldBurnInDay;
-+    }
-+
-+    @Override
-+    public boolean isSunBurnTick() {
-+        return this.shouldBurnInDay && super.isSunBurnTick();
-+    }
-+    // Paper end - Add more Zombie API
- 
-     @Override
-     public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
 @@ -297,13 +_,13 @@
                      if (SpawnPlacements.isSpawnPositionOk(type, level, blockPos)
                          && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, blockPos, level.random)) {
@@ -186,21 +167,7 @@
              }
          }
  
-@@ -390,6 +_,7 @@
-         output.putBoolean("CanBreakDoors", this.canBreakDoors());
-         output.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
-         output.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
-+        output.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API
-     }
- 
-     @Override
-@@ -404,13 +_,15 @@
-         } else {
-             this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, false);
-         }
-+        this.shouldBurnInDay = input.getBooleanOr("Paper.ShouldBurnInDay", true); // Paper - Add more Zombie API
-     }
- 
+@@ -409,8 +_,9 @@
      @Override
      public boolean killedEntity(ServerLevel level, LivingEntity entity, DamageSource damageSource) {
          boolean flag = super.killedEntity(level, entity, damageSource);

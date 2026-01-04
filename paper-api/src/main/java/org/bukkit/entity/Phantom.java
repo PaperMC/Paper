@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Location;
 import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
@@ -31,15 +32,19 @@ public interface Phantom extends Flying, Enemy {
      * Check if this phantom will burn in the sunlight
      *
      * @return True if phantom will burn in sunlight
+     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
      */
-    public boolean shouldBurnInDay();
+    @Deprecated(since = "1.21.11")
+    boolean shouldBurnInDay();
 
     /**
      * Set if this phantom should burn in the sunlight
      *
      * @param shouldBurnInDay True to burn in sunlight
+     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#setBurnInDaylightOverride(TriState)} instead.
      */
-    public void setShouldBurnInDay(boolean shouldBurnInDay);
+    @Deprecated(since = "1.21.11")
+    void setShouldBurnInDay(boolean shouldBurnInDay);
 
     /**
      * Gets the location that this phantom circles around when not attacking a player

@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.kyori.adventure.util.TriState;
+import net.minecraft.tags.EntityTypeTags;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.Skeleton;
@@ -22,11 +24,11 @@ public abstract class CraftAbstractSkeleton extends CraftMonster implements Abst
 
     @Override
     public boolean shouldBurnInDay() {
-        return getHandle().shouldBurnInDay();
+        return super.burnsInDaylight();
     }
 
     @Override
     public void setShouldBurnInDay(boolean shouldBurnInDay) {
-        getHandle().setShouldBurnInDay(shouldBurnInDay);
+        super.setBurnInDaylightOverride(shouldBurnInDay == this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT) ? TriState.NOT_SET : TriState.FALSE); // Use NOT_SET if the default value is set with this
     }
 }

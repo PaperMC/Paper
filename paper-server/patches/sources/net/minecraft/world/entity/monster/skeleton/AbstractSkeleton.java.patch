@@ -1,35 +1,5 @@
 --- a/net/minecraft/world/entity/monster/skeleton/AbstractSkeleton.java
 +++ b/net/minecraft/world/entity/monster/skeleton/AbstractSkeleton.java
-@@ -66,6 +_,7 @@
-             AbstractSkeleton.this.setAggressive(true);
-         }
-     };
-+    private boolean shouldBurnInDay = true; // Paper - shouldBurnInDay API
- 
-     protected AbstractSkeleton(EntityType<? extends AbstractSkeleton> type, Level level) {
-         super(type, level);
-@@ -90,6 +_,21 @@
-         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25);
-     }
- 
-+    // Paper start - shouldBurnInDay API
-+    public boolean shouldBurnInDay() {
-+        return this.shouldBurnInDay;
-+    }
-+
-+    public void setShouldBurnInDay(boolean shouldBurnInDay) {
-+        this.shouldBurnInDay = shouldBurnInDay;
-+    }
-+
-+    @Override
-+    public boolean isSunBurnTick() {
-+        return this.shouldBurnInDay && super.isSunBurnTick();
-+    }
-+    // Paper end - shouldBurnInDay API
-+
-     @Override
-     protected void playStepSound(BlockPos pos, BlockState block) {
-         this.playSound(this.getStepSound(), 0.15F, 1.0F);
 @@ -120,7 +_,7 @@
          this.populateDefaultEquipmentSlots(random, difficulty);
          this.populateDefaultEquipmentEnchantments(level, random, difficulty);
@@ -72,28 +42,14 @@
          }
  
          this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
-@@ -192,11 +_,22 @@
-     protected void readAdditionalSaveData(ValueInput input) {
-         super.readAdditionalSaveData(input);
+@@ -194,9 +_,11 @@
          this.reassessWeaponGoal();
--    }
--
--    @Override
+     }
+ 
++    // Paper start - silent equipping
+     @Override
 -    public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
 -        super.onEquipItem(slot, oldItem, newItem);
-+        this.shouldBurnInDay = input.getBooleanOr("Paper.ShouldBurnInDay", true); // Paper - shouldBurnInDay API
-+    }
-+
-+    // Paper start - shouldBurnInDay API
-+    @Override
-+    protected void addAdditionalSaveData(final net.minecraft.world.level.storage.ValueOutput output) {
-+        super.addAdditionalSaveData(output);
-+        output.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
-+    }
-+    // Paper end - shouldBurnInDay API
-+
-+    // Paper start - silent equipping
-+    @Override
 +    public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem, boolean silent) {
 +        super.onEquipItem(slot, oldItem, newItem, silent);
 +        // Paper end - silent equipping

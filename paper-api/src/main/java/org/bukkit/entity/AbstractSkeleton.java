@@ -33,7 +33,6 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
     @Contract("_ -> fail")
     public void setSkeletonType(Skeleton.SkeletonType type);
 
-    // Paper start
     /**
      * Check if this skeleton will burn in the sunlight. This
      * does not take into account an entity's natural fire
@@ -41,6 +40,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      *
      * @return True if skeleton will burn in sunlight
      */
+    @Deprecated(since = "1.21.11")
     boolean shouldBurnInDay();
 
     /**
@@ -50,6 +50,6 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      *
      * @param shouldBurnInDay True to burn in sunlight
      */
+    @Deprecated(since = "1.21.11")
     void setShouldBurnInDay(boolean shouldBurnInDay);
-    // Paper end
 }
