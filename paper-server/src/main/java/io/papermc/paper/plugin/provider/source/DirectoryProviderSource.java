@@ -31,8 +31,11 @@ public class DirectoryProviderSource implements ProviderSource<Path, List<Path>>
     public List<Path> prepareContext(Path context) throws IOException {
         // Symlink happy, create file if missing.
         if (!Files.isDirectory(context)) {
-            if(this.createDirectory) Files.createDirectories(context);
-            else return List.of();
+            if (!this.createDirectory) {
+                return List.of();
+            }
+
+            Files.createDirectories(context);
         }
 
         final List<Path> files = new ArrayList<>();
