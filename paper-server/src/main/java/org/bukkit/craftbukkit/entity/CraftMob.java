@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
 import net.kyori.adventure.util.TriState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -108,9 +109,24 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
         return this.getHandle().lootTableSeed;
     }
 
+    /**
+     * @see net.minecraft.world.entity.Mob#isSunBurnTick()
+     */
     @Override
     public boolean isInDaylight() {
-        return getHandle().isSunBurnTick();
+        final net.minecraft.world.entity.Mob handle = getHandle();
+
+        if (handle.isInPowderSnow || handle.wasInPowderSnow || handle.isInWaterOrRain()) {
+            return false;
+        }
+
+        final float lightLevelDependentMagicValue = handle.getLightLevelDependentMagicValue();
+        if (lightLevelDependentMagicValue < 0.5F) {
+            return false;
+        }
+
+        final BlockPos blockPos = BlockPos.containing(this.getX(), handle.getEyeY(), this.getZ());
+        return handle.level().canSeeSky(blockPos);
     }
 
     @Override
