@@ -28,6 +28,7 @@ public class PlayerTradeEvent extends PlayerPurchaseEvent {
      * @return the villager or wandering trader
      * @see #getMerchant()
      */
+    @ApiStatus.Obsolete
     public AbstractVillager getVillager() {
         return getMerchant();
     }
