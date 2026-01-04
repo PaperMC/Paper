@@ -565,7 +565,7 @@ public final class CraftEntityTypes {
                 if (nmsBlock.isSolid() || DiodeBlock.isDiode(nmsBlock)) {
                     boolean taken = false;
                     AABB bb = (ItemFrame.class.isAssignableFrom(clazz))
-                            ? net.minecraft.world.entity.decoration.ItemFrame.calculateBoundingBoxStatic(pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), false)
+                            ? net.minecraft.world.entity.decoration.ItemFrame.createBoundingBoxStatic(pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), false)
                             : net.minecraft.world.entity.decoration.painting.Painting.calculateBoundingBoxStatic(pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height);
                     if (!spawnData.world.noCollision(bb)) continue; // Paper - add collision check
                     List<net.minecraft.world.entity.Entity> list = spawnData.world().getEntities(null, bb);
