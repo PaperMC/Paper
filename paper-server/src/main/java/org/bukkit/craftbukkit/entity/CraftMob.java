@@ -109,24 +109,9 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
         return this.getHandle().lootTableSeed;
     }
 
-    /**
-     * @see net.minecraft.world.entity.Mob#isSunBurnTick()
-     */
     @Override
     public boolean isInDaylight() {
-        final net.minecraft.world.entity.Mob handle = getHandle();
-
-        if (handle.isInPowderSnow || handle.wasInPowderSnow || handle.isInWaterOrRain()) {
-            return false;
-        }
-
-        final float lightLevelDependentMagicValue = handle.getLightLevelDependentMagicValue();
-        if (lightLevelDependentMagicValue < 0.5F) {
-            return false;
-        }
-
-        final BlockPos blockPos = BlockPos.containing(this.getX(), handle.getEyeY(), this.getZ());
-        return handle.level().canSeeSky(blockPos);
+        return this.getHandle().isSunBurnTick(true);
     }
 
     @Override
