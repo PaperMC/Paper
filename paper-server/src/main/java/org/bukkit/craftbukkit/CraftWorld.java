@@ -1255,15 +1255,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean getPVP() {
-        return this.world.pvpMode.toBooleanOrElseGet(() -> this.world.getGameRules().get(GameRules.PVP));
+        return this.world.isPvpAllowed();
     }
 
     @Override
     public void setPVP(boolean pvp) {
-        if (this.world.getGameRules().get(GameRules.PVP) == pvp) {
-            return;
-        }
-        this.world.pvpMode = TriState.byBoolean(pvp);
+        this.world.getGameRules().set(GameRules.PVP, pvp, this.world);
     }
 
     @Override
