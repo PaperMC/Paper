@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.9"
+    id("io.papermc.fill.gradle") version "1.0.10"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
@@ -23,9 +23,9 @@ paperweight {
     gitFilePatches = false
 
     spigot {
-        enabled = false
-        buildDataRef = "42d18d4c4653ffc549778dbe223f6994a031d69e"
-        packageVersion = "v1_21_R6" // also needs to be updated in MappingEnvironment
+        enabled = true
+        buildDataRef = "17f77cee7117ab9d6175f088ae8962bfd04e61a9"
+        packageVersion = "v1_21_R7" // also needs to be updated in MappingEnvironment
     }
 
     reobfPackagesToFix.addAll(
@@ -128,7 +128,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.7")
+    implementation("ca.spottedleaf:concurrentutil:0.0.8")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -148,7 +148,7 @@ dependencies {
     implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.1.118.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.2.7.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.8")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
@@ -362,7 +362,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.ALPHA
+        channel = BuildChannel.STABLE
 
         downloads {
             register("server:default") {
