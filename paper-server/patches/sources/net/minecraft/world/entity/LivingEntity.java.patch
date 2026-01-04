@@ -198,19 +198,20 @@
          if (this.level() != null && !this.level().isClientSide()) {
              input.read("attributes", AttributeInstance.Packed.LIST_CODEC).ifPresent(this.getAttributes()::apply);
          }
-@@ -791,6 +_,11 @@
+@@ -791,13 +_,19 @@
              this.effectsDirty = true;
          }
  
+-        this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
 +        // CraftBukkit start
 +        input.read("Bukkit.MaxHealth", com.mojang.serialization.Codec.DOUBLE).ifPresent(maxHealth -> {
 +            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
 +        });
 +        // CraftBukkit end
-         this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
++        this.setHealth(input.getFloatOr("Health", this.getMaxHealth()), true); // Paper - Fix MC-17876
          this.hurtTime = input.getShortOr("HurtTime", (short)0);
          this.deathTime = input.getShortOr("DeathTime", (short)0);
-@@ -798,6 +_,7 @@
+         this.lastHurtByMobTimestamp = input.getIntOr("HurtByTimestamp", 0);
          input.getString("Team").ifPresent(string -> {
              Scoreboard scoreboard = this.level().getScoreboard();
              PlayerTeam playerTeam = scoreboard.getPlayerTeam(string);
@@ -445,7 +446,7 @@
          if (mobEffectInstance != null) {
              this.onEffectsRemoved(List.of(mobEffectInstance));
              return true;
-@@ -1134,17 +_,62 @@
+@@ -1134,19 +_,72 @@
      }
  
      public void heal(float amount) {
@@ -485,7 +486,7 @@
          return this.entityData.get(DATA_HEALTH_ID);
      }
  
-     public void setHealth(float health) {
++    private void setHealth(float health, boolean noClamp) { // Paper - Fix MC-17876
 +        // Paper start - Check for NaN
 +        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
 +            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
@@ -496,7 +497,7 @@
 +            // Squeeze
 +            if (health < 0.0F) {
 +                player.setRealHealth(0.0D);
-+            } else if (health > player.getMaxHealth()) {
++            } else if (!noClamp && health > player.getMaxHealth()) { // Paper - Fix MC-17876
 +                player.setRealHealth(player.getMaxHealth());
 +            } else {
 +                player.setRealHealth(health);
@@ -506,9 +507,20 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
++        // Paper start - Fix MC-17876
++        if (!noClamp) health = Mth.clamp(health, 0.0F, this.getMaxHealth());
++        else health = Math.max(health, 0.0F);
++        this.entityData.set(DATA_HEALTH_ID, health);
++    }
++
+     public void setHealth(float health) {
+-        this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
++        this.setHealth(health, false);
      }
++    // Paper end - Fix MC-17876
  
+     public boolean isDeadOrDying() {
+         return this.getHealth() <= 0.0F;
 @@ -1156,7 +_,7 @@
      public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
          if (this.isInvulnerableTo(level, damageSource)) {
