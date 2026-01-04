@@ -15,8 +15,7 @@ public interface Shelf extends TileStateInventoryHolder {
     ShelfInventory getSnapshotInventory();
 
     /**
-     * Gets the appropriate slot based on a vector relative to this block.<br>
-     * Will return -1 if the given vector is not within the bounds of any slot.
+     * Gets the appropriate slot based on a vector relative to this block.
      * <p>
      * The supplied vector should only contain components with values between 0.0
      * and 1.0, inclusive.
