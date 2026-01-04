@@ -9,6 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public record PaperPoiSearchResult(PoiType poiType, Location location) implements PoiSearchResult {
 
+    @Override
+    public Location location() {
+        return location.clone();
+    }
+
     public static PoiSearchResult from(PoiRecord record, World world) {
         return new PaperPoiSearchResult(PaperPoiType.minecraftHolderToBukkit(record.getPoiType()), CraftLocation.toBukkit(record.getPos(), world));
     }

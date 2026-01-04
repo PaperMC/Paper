@@ -1918,7 +1918,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public Location locateNearestPoi(@NotNull final Location origin, @NotNull final PoiType poiType, final int radius, final PoiType.@NotNull Occupancy occupancy) {
         Preconditions.checkArgument(origin != null, "Location cannot be null");
-        Preconditions.checkArgument(origin.getWorld().equals(this), "The provided location must be in the same world");
+        Preconditions.checkArgument(this.equals(origin.getWorld()), "The provided location must be in the same world");
         Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
         Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
         Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
