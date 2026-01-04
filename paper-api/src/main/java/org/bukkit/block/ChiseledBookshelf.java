@@ -38,7 +38,7 @@ public interface ChiseledBookshelf extends TileStateInventoryHolder {
      * and 1.0, inclusive.
      *
      * @param position a vector relative to this block
-     * @return the slot under the given vector or -1
+     * @return the slot under the given vector
      * @throws IllegalArgumentException if the vector is not finite
      * @throws IllegalStateException if this block state is not valid
      */
