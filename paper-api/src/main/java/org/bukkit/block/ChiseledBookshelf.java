@@ -34,8 +34,6 @@ public interface ChiseledBookshelf extends TileStateInventoryHolder {
     /**
      * Gets the appropriate slot based on a vector relative to this block.
      * <br>
-     * Will return -1 if the given vector is not within the bounds of any slot.
-     * <br>
      * The supplied vector should only contain components with values between 0.0
      * and 1.0, inclusive.
      *
