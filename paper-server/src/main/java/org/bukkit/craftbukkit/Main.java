@@ -146,10 +146,11 @@ public class Main {
                         .describedAs("Yml file");
 
                 this.acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
-                    .withRequiredArg()
-                    .ofType(File.class)
-                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
-                    .describedAs("Config directory");
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
+                        .describedAs("Config directory");
+
                 this.acceptsAll(asList("paper", "paper-settings"), "File for Paper settings")
                         .withRequiredArg()
                         .ofType(File.class)
@@ -161,6 +162,12 @@ public class Main {
                         .ofType(File.class)
                         .defaultsTo(new File[] {})
                         .describedAs("Jar file");
+
+                this.acceptsAll(asList("add-plugin-dir", "add-extra-plugin-dir"), "Specify paths to extra plugin directories to be loaded in addition to the plugins folder. This argument can be specified multiple times, once for each extra plugin dir path.")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File[] {})
+                        .describedAs("Plugin directory");
 
                 this.accepts("server-name", "Name of the server")
                         .withRequiredArg()
