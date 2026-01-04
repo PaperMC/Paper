@@ -1904,13 +1904,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
      * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within
-     * them. Apart from that collisions with portal blocks will be considered
-     * even if collisions with passable blocks are otherwise ignored.
-     * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
      *
@@ -1927,17 +1920,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
     }
 
-    // Paper start
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within
-     * them. Apart from that collisions with portal blocks will be considered
-     * even if collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -1953,7 +1938,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for both block and entity collisions.
@@ -1961,13 +1945,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Block collisions use the blocks' precise collision shapes. The
      * <code>raySize</code> parameter is only taken into account for entity
      * collision checks.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within them.
-     * Apart from that collisions with portal blocks will be considered even if
-     * collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -1990,20 +1967,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
     }
 
-    // Paper start
     /**
      * Performs a ray trace that checks for both block and entity collisions.
      * <p>
      * Block collisions use the blocks' precise collision shapes. The
      * <code>raySize</code> parameter is only taken into account for entity
      * collision checks.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within them.
-     * Apart from that collisions with portal blocks will be considered even if
-     * collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -2024,7 +1993,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     entity, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for collisions with the specified

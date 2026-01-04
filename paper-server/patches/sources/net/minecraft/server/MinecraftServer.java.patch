@@ -526,6 +526,15 @@
      }
  
      protected GlobalPos selectLevelLoadFocusPos() {
+@@ -610,7 +_,7 @@
+     public abstract boolean shouldRconBroadcast();
+ 
+     public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
+-        this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE));
++        if (this.overworld() != null) this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE)); // Paper - don't try to save if the overworld was not loaded, generally during early startup failures
+         boolean flag = false;
+ 
+         for (ServerLevel serverLevel : this.getAllLevels()) {
 @@ -622,8 +_,10 @@
              flag = true;
          }
@@ -644,7 +653,7 @@
 +            interval = 0L;
 +        }
 +        this.tickSchedule.setNextPeriod(this.nextTickTimeNanos, interval);
-+        this.lastTickStart = ca.spottedleaf.concurrentutil.scheduler.SchedulerThreadPool.DEADLINE_NOT_SET;
++        this.lastTickStart = ca.spottedleaf.concurrentutil.util.TimeUtil.DEADLINE_NOT_SET;
 +        this.scheduledTickStart = this.tickSchedule.getDeadline(interval);
 +    }
 +
@@ -750,7 +759,7 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -739,26 +_,68 @@
+@@ -739,26 +_,73 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -782,6 +791,11 @@
 +                LOGGER.info("*************************************************************************************");
 +            }
 +            // Paper end - Add onboarding message for initial server start
++            // Paper start - Improve outdated version checking
++            if (System.getProperty("paper.disableStartupVersionCheck") == null && io.papermc.paper.configuration.GlobalConfiguration.get().updateChecker.enabled) {
++                CompletableFuture.runAsync(com.destroystokyo.paper.PaperVersionFetcher::getUpdateStatusStartupMessage, io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR);
++            }
++            // Paper end - Improve outdated version checking
 +
              while (this.running) {
 -                long l;
