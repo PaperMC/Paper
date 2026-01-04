@@ -120,18 +120,6 @@ public final class MCUtil {
         run.run();
     }
 
-    public static double sanitizeNanInf(final double value, final double defaultValue) {
-        return Double.isNaN(value) || Double.isInfinite(value) ? defaultValue : value;
-    }
-
-    public static Vec3 sanitizeNanInf(final Vec3 vec3, final double defaultValue) {
-        return new Vec3(
-            sanitizeNanInf(vec3.x, defaultValue),
-            sanitizeNanInf(vec3.y, defaultValue),
-            sanitizeNanInf(vec3.z, defaultValue)
-        );
-    }
-
     public static <T> T ensureMain(Supplier<T> run) {
         return ensureMain(null, run);
     }
