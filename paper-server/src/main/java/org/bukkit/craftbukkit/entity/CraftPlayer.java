@@ -723,11 +723,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         // Do not directly assign here, from the packethandler we'll assign it.
         this.getHandle().connection.send(new ClientboundSetDefaultSpawnPositionPacket(
-            new LevelData.RespawnData(
-                GlobalPos.of(
-                    ((CraftWorld) loc.getWorld()).getHandle().dimension(),
-                    CraftLocation.toBlockPosition(loc)
-                ),
+            LevelData.RespawnData.of(
+                ((CraftWorld) loc.getWorld()).getHandle().dimension(),
+                CraftLocation.toBlockPosition(loc),
                 loc.getYaw(),
                 loc.getPitch()
             )
