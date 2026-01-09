@@ -39,20 +39,9 @@ public class MaterialRewriter {
             if (BlockStateMapping.MAPPING.containsKey(block.getClass())) {
                 // some block can also be represented as item in that enum
                 // doing a double job
-                Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().identifier());
-
-                if (equivalentItem.isEmpty() && block instanceof WallSignBlock) {
-                    // wall sign block stack size is 16 for some reason like the sign item?
-                    // but that rule doesn't work for the wall hanging sign block??
-                    equivalentItem = Optional.of(block.asItem());
-                }
-
                 Class<?> blockData = BlockStateMapping.getBestSuitedApiClass(block.getClass());
                 if (blockData == null) {
                     blockData = BlockData.class;
-                }
-                if (equivalentItem.isPresent() && equivalentItem.get().getDefaultMaxStackSize() != Item.DEFAULT_MAX_STACK_SIZE) {
-                    return value.arguments(Integer.toString(-1), Integer.toString(equivalentItem.get().getDefaultMaxStackSize()), this.importCollector.getShortName(blockData).concat(".class"));
                 }
                 return value.arguments(Integer.toString(-1), this.importCollector.getShortName(blockData).concat(".class"));
             }
@@ -91,12 +80,6 @@ public class MaterialRewriter {
         @Override
         protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Item> reference) {
             EnumValue.Builder value = super.rewriteEnumValue(reference);
-            Item item = reference.value();
-            int maxStackSize = item.getDefaultMaxStackSize();
-            if (maxStackSize != Item.DEFAULT_MAX_STACK_SIZE) {
-                return value.arguments(asCode(-1, maxStackSize));
-            }
-
             return value.argument(Integer.toString(-1)); // id not needed for non legacy material
         }
     }
