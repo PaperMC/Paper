@@ -2761,4 +2761,36 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     void allowPausing(@NotNull org.bukkit.plugin.Plugin plugin, boolean value);
     // Paper end - API to check if the server is sleeping
+
+    /**
+     * Retrieves the stopwatch associated with this key.
+     *
+     * @param key The key
+     * @return The stopwatch if found, null otherwise
+     */
+    @Nullable Stopwatch getStopwatch(@NotNull NamespacedKey key);
+
+    /**
+     * Get all stopwatches.
+     *
+     * @return all stopwatches
+     */
+    @NotNull Set<Stopwatch> getStopwatches();
+
+    /**
+     * Creates a new stopwatch with the specified key.
+     *
+     * @param key The namespaced key to associate the stopwatch with
+     * @return A new stopwatch
+     */
+    @NotNull Stopwatch addStopwatch(@NotNull NamespacedKey key);
+
+    /**
+     * Remove a stopwatch.
+     *
+     * @param key The key associated with the stopwatch.
+     * @return true if the stopwatch was removed, false otherwise
+     */
+    boolean removeStopwatch(@NotNull NamespacedKey key);
+
 }

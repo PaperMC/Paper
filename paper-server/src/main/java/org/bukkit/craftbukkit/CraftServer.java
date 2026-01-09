@@ -77,6 +77,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.Stopwatches;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.village.VillageSiege;
@@ -125,6 +126,7 @@ import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.ServerLinks;
 import org.bukkit.ServerTickManager;
+import org.bukkit.Stopwatch;
 import org.bukkit.StructureType;
 import org.bukkit.UnsafeValues;
 import org.bukkit.Warning.WarningState;
@@ -2963,5 +2965,44 @@ public final class CraftServer implements Server {
     @Override
     public void allowPausing(final Plugin plugin, final boolean value) {
         this.console.addPluginAllowingSleep(plugin.getName(), value);
+    }
+
+    @Override
+    public @Nullable Stopwatch getStopwatch(final @NotNull NamespacedKey key) {
+        final net.minecraft.world.Stopwatch stopwatch = this.getServer().getStopwatches()
+            .get(CraftNamespacedKey.toMinecraft(key));
+        if (stopwatch == null)
+            return null;
+        return new CraftStopwatch(
+            stopwatch,
+            this.getServer(),
+            key
+        );
+    }
+
+    @Override
+    public @NotNull Set<Stopwatch> getStopwatches() {
+        final Stopwatches stopwatches = this.getServer().getStopwatches();
+        return stopwatches.ids().stream().map(id -> new CraftStopwatch(
+            stopwatches.get(id),
+            this.getServer(),
+            CraftNamespacedKey.fromMinecraft(id)
+        )).collect(Collectors.toSet());
+    }
+
+    @Override
+    public @NotNull Stopwatch addStopwatch(final @NotNull NamespacedKey key) {
+        final Identifier id = CraftNamespacedKey.toMinecraft(key);
+        final Stopwatches stopwatches = this.getServer().getStopwatches();
+        stopwatches.add(
+            id,
+            new net.minecraft.world.Stopwatch(Stopwatches.currentTime())
+        );
+        return new CraftStopwatch(stopwatches.get(id), this.getServer(), key);
+    }
+
+    @Override
+    public boolean removeStopwatch(final @NotNull NamespacedKey key) {
+        return this.getServer().getStopwatches().remove(CraftNamespacedKey.toMinecraft(key));
     }
 }
