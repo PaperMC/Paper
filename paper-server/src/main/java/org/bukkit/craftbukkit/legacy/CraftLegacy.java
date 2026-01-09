@@ -325,6 +325,10 @@ public final class CraftLegacy {
             if (!material.isLegacy()) {
                 continue;
             }
+            // Do old spawn eggs separately
+            if (material == Material.LEGACY_MONSTER_EGG) {
+                continue;
+            }
 
             // Handle blocks
             if (isBlock(material)) { // Use custom method instead of Material#isBlock since it relies on this being already run
@@ -382,16 +386,8 @@ public final class CraftLegacy {
 
             // Handle items (and second fallback for blocks)
             int maxData = material.getMaxDurability() == 0 ? 16 : 1;
-            // Manually do oldold spawn eggs
-            if (material == Material.LEGACY_MONSTER_EGG) {
-                maxData = 121; // Vilager + 1
-            }
 
             for (byte data = 0; data < maxData; data++) {
-                // Manually skip invalid oldold spawn
-                if (material == Material.LEGACY_MONSTER_EGG /*&& data != 0 && EntityType.fromId(data) == null*/) { // Mojang broke 18w19b
-                    continue;
-                }
                 // Skip non item stacks for now (18w19b)
                 if (ItemIdFix.getItem(material.getId()) == null) {
                     continue;
@@ -423,14 +419,15 @@ public final class CraftLegacy {
                     itemToMaterial.put(newMaterial, matData);
                 }
             }
+        }
 
-            for (Map.Entry<Byte, Material> entry : SPAWN_EGGS.entrySet()) {
-                MaterialData matData = new MaterialData(Material.LEGACY_MONSTER_EGG, entry.getKey());
-                Item newMaterial = CraftMagicNumbers.getItem(entry.getValue());
+        // Do old spawn eggs
+        for (Map.Entry<Byte, Material> entry : SPAWN_EGGS.entrySet()) {
+            MaterialData matData = new MaterialData(Material.LEGACY_MONSTER_EGG, entry.getKey());
+            Item newMaterial = CraftMagicNumbers.getItem(entry.getValue());
 
-                materialToItem.put(matData, newMaterial);
-                itemToMaterial.put(newMaterial, matData);
-            }
+            materialToItem.put(matData, newMaterial);
+            itemToMaterial.put(newMaterial, matData);
         }
     }
 
