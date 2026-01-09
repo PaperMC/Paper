@@ -259,7 +259,7 @@ public interface Mob extends LivingEntity, Lootable, Leashable {
     int getPossibleExperienceReward();
 
     /**
-     * {@return whether this mob will burn when exposed to daylight, not accounting for fire immunity or sun protection items}
+     * {@return whether this mob will burn when exposed to daylight, accounting for environment attributes, but not for fire immunity or sun protection items}
      * @see #isInDaylight()
      */
     boolean burnsInDaylight();
