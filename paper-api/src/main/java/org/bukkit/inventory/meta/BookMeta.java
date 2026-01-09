@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
  * <p>
- * <b>Warning: </b> in an upcoming version of Paper, this interface will no
+ * <b>Warning:</b> in an upcoming version of Paper, this interface will no
  * longer extend Adventure's {@link net.kyori.adventure.inventory.Book}.
  */
 public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
