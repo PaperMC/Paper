@@ -14,6 +14,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.Identifier;
+import org.dreeam.leaf.async.path.PathfindTaskRejectPolicy;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -359,6 +360,16 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean disableTripwireUpdates = false;
         public boolean disableChorusPlantUpdates = false;
         public boolean disableMushroomBlockUpdates = false;
+    }
+
+    public AsyncPathFinding asyncPathFinding;
+
+    public class AsyncPathFinding extends ConfigurationPart {
+        public boolean enabled = false;
+        public int asyncPathfindingMaxThreads = 0;
+        public long asyncPathfindingKeepalive = 60;
+        public int asyncPathfindingQueueSize = 0;
+        public PathfindTaskRejectPolicy asyncPathfindingRejectPolicy = PathfindTaskRejectPolicy.FLUSH_ALL;
     }
 
     public Anticheat anticheat;
