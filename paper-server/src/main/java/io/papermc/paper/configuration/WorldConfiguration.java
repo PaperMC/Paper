@@ -578,6 +578,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
         public boolean allowRemoteEnderDragonRespawning = false;
+        public DoubleOr.Default maxEntityWaypointRange = DoubleOr.Default.USE_DEFAULT;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
