@@ -117,7 +117,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
 
     @Override
     public void setShouldBurnInDay(boolean shouldBurnInDay) {
-        super.setBurnInDaylightOverride(shouldBurnInDay == this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT) ? TriState.NOT_SET : TriState.FALSE); // Use NOT_SET if the default value is set with this
+        super.setBurnInDaylightOverride(shouldBurnInDay == this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT) ? TriState.NOT_SET : TriState.byBoolean(shouldBurnInDay)); // Use NOT_SET if the default value is set with this
     }
 
     @Override

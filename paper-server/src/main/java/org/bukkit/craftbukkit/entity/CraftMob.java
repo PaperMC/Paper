@@ -5,15 +5,20 @@ import java.util.Optional;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.attribute.EnvironmentAttributes;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.loot.LootTable;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
 
     private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
@@ -56,7 +61,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public void setTarget(LivingEntity target) {
+    public void setTarget(@Nullable LivingEntity target) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
 
         net.minecraft.world.entity.Mob entity = this.getHandle();
@@ -68,7 +73,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public CraftLivingEntity getTarget() {
+    public @Nullable CraftLivingEntity getTarget() {
         if (this.getHandle().getTarget() == null) return null;
 
         return (CraftLivingEntity) this.getHandle().getTarget().getBukkitEntity();
@@ -85,18 +90,18 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public Sound getAmbientSound() {
+    public @Nullable Sound getAmbientSound() {
         SoundEvent sound = this.getHandle().getAmbientSound();
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override
-    public void setLootTable(LootTable table) {
+    public void setLootTable(@Nullable LootTable table) {
         this.getHandle().lootTable = Optional.ofNullable(CraftLootTable.bukkitToMinecraft(table));
     }
 
     @Override
-    public LootTable getLootTable() {
+    public @Nullable LootTable getLootTable() {
         return CraftLootTable.minecraftToBukkit(this.getHandle().getLootTable().orElse(null));
     }
 
@@ -116,30 +121,30 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location) {
-        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
-        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
+    public void lookAt(Location location) {
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
         getHandle().getLookControl().setLookAt(location.getX(), location.getY(), location.getZ());
     }
 
     @Override
-    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location, float headRotationSpeed, float maxHeadPitch) {
-        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
-        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
+    public void lookAt(Location location, float headRotationSpeed, float maxHeadPitch) {
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
         getHandle().getLookControl().setLookAt(location.getX(), location.getY(), location.getZ(), headRotationSpeed, maxHeadPitch);
     }
 
     @Override
-    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity) {
-        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
-        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
+    public void lookAt(Entity entity) {
+        Preconditions.checkArgument(entity != null, "entity cannot be null");
+        Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
         getHandle().getLookControl().setLookAt(((CraftEntity) entity).getHandle());
     }
 
     @Override
-    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity, float headRotationSpeed, float maxHeadPitch) {
-        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
-        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
+    public void lookAt(Entity entity, float headRotationSpeed, float maxHeadPitch) {
+        Preconditions.checkArgument(entity != null, "entity cannot be null");
+        Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
         getHandle().getLookControl().setLookAt(((CraftEntity) entity).getHandle(), headRotationSpeed, maxHeadPitch);
     }
 
@@ -199,23 +204,26 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
+    public boolean setLeashHolder(final @Nullable Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
 
     @Override
     public boolean burnsInDaylight() {
-        return this.getHandle().burnInDaylightOverride.toBooleanOrElse(this.getHandle().getType().is(EntityTypeTags.BURN_IN_DAYLIGHT));
+        final net.minecraft.world.entity.Mob handle = this.getHandle();
+
+        return handle.burnInDaylightOverride.toBooleanOrElse(handle.getType().is(EntityTypeTags.BURN_IN_DAYLIGHT))
+            && handle.level().environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, handle.position());
     }
 
     @Override
-    public void setBurnInDaylightOverride(final @NonNull TriState state) {
+    public void setBurnInDaylightOverride(final TriState state) {
         Preconditions.checkArgument(state != null, "TriState cannot be null");
         this.getHandle().burnInDaylightOverride = state;
     }
 
     @Override
-    public @NonNull TriState getBurnInDaylightOverride() {
+    public TriState getBurnInDaylightOverride() {
         return this.getHandle().burnInDaylightOverride;
     }
 }
