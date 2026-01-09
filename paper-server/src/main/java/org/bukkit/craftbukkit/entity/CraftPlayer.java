@@ -55,9 +55,7 @@ import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
@@ -723,11 +721,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         // Do not directly assign here, from the packethandler we'll assign it.
         this.getHandle().connection.send(new ClientboundSetDefaultSpawnPositionPacket(
-            new LevelData.RespawnData(
-                GlobalPos.of(
-                    ((CraftWorld) loc.getWorld()).getHandle().dimension(),
-                    CraftLocation.toBlockPosition(loc)
-                ),
+            LevelData.RespawnData.of(
+                ((CraftWorld) loc.getWorld()).getHandle().dimension(),
+                CraftLocation.toBlockPosition(loc),
                 loc.getYaw(),
                 loc.getPitch()
             )
@@ -1394,11 +1390,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         } else {
             this.getHandle().setRespawnPosition(
                 new ServerPlayer.RespawnConfig(
-                    new LevelData.RespawnData(
-                        GlobalPos.of(
-                            ((CraftWorld) location.getWorld()).getHandle().dimension(),
-                            CraftLocation.toBlockPosition(location)
-                        ),
+                    LevelData.RespawnData.of(
+                        ((CraftWorld) location.getWorld()).getHandle().dimension(),
+                        CraftLocation.toBlockPosition(location),
                         location.getYaw(),
                         location.getPitch()
                     ),

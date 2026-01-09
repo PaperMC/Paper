@@ -31,10 +31,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.pointer.PointersSupplier;
-import net.kyori.adventure.util.TriState;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.particles.ParticleTypes;
@@ -46,7 +44,6 @@ import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
@@ -340,17 +337,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private boolean setSpawnLocation(int x, int y, int z, float yaw, float pitch) {
         try {
             Location previousLocation = this.getSpawnLocation();
-
-            this.world.serverLevelData.setSpawn(
-                new LevelData.RespawnData(
-                    GlobalPos.of(
-                        ResourceKey.create(Registries.DIMENSION, this.world.dimension().identifier()),
-                        new BlockPos(x, y, z)
-                    ),
-                    Mth.wrapDegrees(yaw),
-                    Mth.wrapDegrees(pitch)
-                )
-            );
+            this.world.serverLevelData.setSpawn(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
 
             this.server.getServer().updateEffectiveRespawnData();
             new SpawnChangeEvent(this, previousLocation).callEvent();
