@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import net.kyori.adventure.util.TriState;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,14 +34,15 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
     @Contract("_ -> fail")
     public void setSkeletonType(Skeleton.SkeletonType type);
 
-    // Paper start
     /**
      * Check if this skeleton will burn in the sunlight. This
      * does not take into account an entity's natural fire
      * immunity.
      *
      * @return True if skeleton will burn in sunlight
+     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
      */
+    @Deprecated(since = "1.21.11")
     boolean shouldBurnInDay();
 
     /**
@@ -49,7 +51,8 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * immunity.
      *
      * @param shouldBurnInDay True to burn in sunlight
+     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#setBurnInDaylightOverride(TriState)} instead.
      */
+    @Deprecated(since = "1.21.11")
     void setShouldBurnInDay(boolean shouldBurnInDay);
-    // Paper end
 }
