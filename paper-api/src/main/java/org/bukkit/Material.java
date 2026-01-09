@@ -3325,6 +3325,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
             case LEGACY_REDSTONE_COMPARATOR_OFF:
             case LEGACY_REDSTONE_COMPARATOR_ON:
             case LEGACY_ACTIVATOR_RAIL:
+            case LEGACY_BARRIER:
             case LEGACY_CARPET:
             case LEGACY_DOUBLE_PLANT:
             case LEGACY_END_ROD:
