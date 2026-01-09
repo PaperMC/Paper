@@ -42,14 +42,9 @@ public class PaperVersionFetcher implements VersionFetcher {
     private static final int DISTANCE_UNKNOWN = -2;
     private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
     private static final String REPOSITORY = "PaperMC/Paper";
-    private static final ServerBuildInfo BUILD_INFO;
-    private static final String USER_AGENT;
+    private static final ServerBuildInfo BUILD_INFO = ServerBuildInfo.buildInfo();
+    private static final String USER_AGENT = BUILD_INFO.brandName() + "/" + BUILD_INFO.asString(VERSION_SIMPLE) + " (https://papermc.io)";
     private static final Gson GSON = new Gson();
-
-    static {
-        BUILD_INFO = ServerBuildInfo.buildInfo();
-        USER_AGENT = BUILD_INFO.brandName() + "/" + BUILD_INFO.asString(VERSION_SIMPLE) + " (https://papermc.io)";
-    }
 
     @Override
     public long getCacheTime() {
@@ -199,20 +194,19 @@ public class PaperVersionFetcher implements VersionFetcher {
 
     private static int fetchDistanceFromSiteApi(final int jenkinsBuild) {
         try {
-            final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + PaperVersionFetcher.BUILD_INFO.minecraftVersionId()).toURL();
+            final URL buildsUrl = URI.create("https://fill.papermc.io/v3/projects/paper/versions/" + PaperVersionFetcher.BUILD_INFO.minecraftVersionId() + "/builds").toURL();
             final HttpURLConnection connection = (HttpURLConnection) buildsUrl.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
             connection.setRequestProperty("User-Agent", PaperVersionFetcher.USER_AGENT);
             connection.setRequestProperty("Accept", "application/json");
             try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                final JsonObject json = GSON.fromJson(reader, JsonObject.class);
-                final JsonArray builds = json.getAsJsonArray("builds");
+                final JsonArray builds = GSON.fromJson(reader, JsonArray.class);
                 final int latest = StreamSupport.stream(builds.spliterator(), false)
-                    .mapToInt(JsonElement::getAsInt)
+                    .mapToInt(build -> build.getAsJsonObject().get("id").getAsInt())
                     .max()
                     .orElseThrow();
-                return latest - jenkinsBuild;
+                return Math.max(latest - jenkinsBuild, 0);
             } catch (final JsonSyntaxException ex) {
                 LOGGER.error("Error parsing json from Paper's downloads API", ex);
                 return DISTANCE_ERROR;
