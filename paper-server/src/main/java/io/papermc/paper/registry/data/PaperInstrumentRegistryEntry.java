@@ -18,8 +18,8 @@ import org.bukkit.Sound;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMinExclusive;
+import static io.papermc.paper.registry.data.util.Checks.requireArgument;
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
@@ -71,13 +71,13 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
         @Override
         public Builder soundEvent(final TypedKey<Sound> soundEvent) {
-            this.soundEvent = this.conversions.getReferenceHolder(PaperRegistries.toNms(asArgument(soundEvent, "soundEvent")));
+            this.soundEvent = this.conversions.getReferenceHolder(PaperRegistries.toNms(requireArgument(soundEvent, "soundEvent")));
             return this;
         }
 
         @Override
         public Builder soundEvent(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent) {
-            this.soundEvent = this.conversions.createHolderFromBuilder(RegistryKey.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
+            this.soundEvent = this.conversions.createHolderFromBuilder(RegistryKey.SOUND_EVENT, requireArgument(soundEvent, "soundEvent"));
             return this;
         }
 
@@ -89,19 +89,19 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
         @Override
         public Builder duration(final @Positive float duration) {
-            this.useDuration = asArgumentMinExclusive(duration, "useDuration", 0);
+            this.useDuration = requireArgumentPositive(duration, "useDuration");
             return this;
         }
 
         @Override
         public Builder range(final @Positive float range) {
-            this.range = asArgumentMinExclusive(range, "range", 0);
+            this.range = requireArgumentPositive(range, "range");
             return this;
         }
 
         @Override
         public Builder description(final net.kyori.adventure.text.Component description) {
-            this.description = this.conversions.asVanilla(asArgument(description, "description"));
+            this.description = this.conversions.asVanilla(requireArgument(description, "description"));
             return this;
         }
 
