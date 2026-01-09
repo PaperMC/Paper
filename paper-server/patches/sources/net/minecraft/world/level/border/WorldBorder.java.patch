@@ -1,10 +1,11 @@
 --- a/net/minecraft/world/level/border/WorldBorder.java
 +++ b/net/minecraft/world/level/border/WorldBorder.java
-@@ -33,6 +_,7 @@
+@@ -33,6 +_,8 @@
      double centerZ;
      int absoluteMaxSize = 29999984;
      WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
 +    public net.minecraft.server.level.@org.jspecify.annotations.Nullable ServerLevel world; // CraftBukkit
++    private int lastTick = -1; // Paper - Prevent ticking virtual world borders multiple times per server tick
  
      public WorldBorder() {
          this(WorldBorder.Settings.DEFAULT);
@@ -89,6 +90,19 @@
      public void addListener(BorderChangeListener listener) {
 +        if (this.listeners.contains(listener)) return; // CraftBukkit
          this.listeners.add(listener);
+     }
+ 
+@@ -278,6 +_,12 @@
+     }
+ 
+     public void tick() {
++        // Paper start - Prevent ticking virtual world borders multiple times per server tick
++        if (this.lastTick == net.minecraft.server.MinecraftServer.currentTick) {
++            return;
++        }
++        this.lastTick = net.minecraft.server.MinecraftServer.currentTick;
++        // Paper end - Prevent ticking virtual world borders multiple times per server tick
+         this.extent = this.extent.update();
      }
  
 @@ -298,6 +_,22 @@
