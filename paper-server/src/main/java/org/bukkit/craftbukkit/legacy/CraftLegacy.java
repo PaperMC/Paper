@@ -325,6 +325,10 @@ public final class CraftLegacy {
             if (!material.isLegacy()) {
                 continue;
             }
+            // Do old long grass separately
+            if (material == Material.LEGACY_LONG_GRASS) {
+                continue;
+            }
 
             // Handle blocks
             if (isBlock(material)) { // Use custom method instead of Material#isBlock since it relies on this being already run
@@ -431,6 +435,29 @@ public final class CraftLegacy {
                 materialToItem.put(matData, newMaterial);
                 itemToMaterial.put(newMaterial, matData);
             }
+        }
+
+        // Do old long grass
+        for (byte data = 0; data < 16; data++) {
+            var materialData = new MaterialData(Material.LEGACY_LONG_GRASS, data);
+            Item nonLegacyItem;
+            Block nonLegacyBlock;
+            switch (data) {
+                case 1 -> {
+                    nonLegacyItem = Items.SHORT_GRASS;
+                    nonLegacyBlock = Blocks.SHORT_GRASS;
+                }
+                case 2 -> {
+                    nonLegacyItem = Items.FERN;
+                    nonLegacyBlock = Blocks.FERN;
+                }
+                default -> {
+                    nonLegacyItem = Items.DEAD_BUSH;
+                    nonLegacyBlock = Blocks.DEAD_BUSH;
+                }
+            }
+            materialToItem.put(materialData, nonLegacyItem);
+            materialToBlock.put(materialData, nonLegacyBlock);
         }
     }
 
