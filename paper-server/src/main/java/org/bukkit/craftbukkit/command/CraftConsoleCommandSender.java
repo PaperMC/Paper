@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.command;
 
 import java.util.UUID;
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.chat.SignedMessage;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.conversations.Conversation;
@@ -84,11 +87,6 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     @Override
     public boolean isConversing() {
         return this.conversationTracker.isConversing();
-    }
-
-    @Override
-    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
-        this.sendRawMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
     }
 
     @Override
