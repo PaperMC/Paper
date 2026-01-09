@@ -2695,7 +2695,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public int getClientViewDistance() {
-        return (this.getHandle().requestedViewDistance() == 0) ? Bukkit.getViewDistance() : this.getHandle().requestedViewDistance();
+        return this.getHandle().requestedViewDistance();
     }
 
     // Paper start
