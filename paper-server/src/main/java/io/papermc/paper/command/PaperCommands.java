@@ -5,6 +5,7 @@ import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.Command;
+import io.papermc.papergsk.GSKCommands;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,9 @@ public final class PaperCommands {
     public static void registerCommands(final MinecraftServer server) {
         COMMANDS.put("paper", new PaperCommand("paper"));
         COMMANDS.put("mspt", new MSPTCommand("mspt"));
+
+        // Register papergsk commands
+        GSKCommands.registerAll(server.server.getCommandMap());
 
         COMMANDS.forEach((s, command) -> {
             server.server.getCommandMap().register(s, "Paper", command);
