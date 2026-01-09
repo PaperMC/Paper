@@ -8,6 +8,7 @@ import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.minecart.CommandMinecart;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
@@ -16,7 +17,7 @@ import org.bukkit.plugin.Plugin;
 
 public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart, io.papermc.paper.commands.PaperCommandBlockHolder {
 
-    private final PermissibleBase perm = new PermissibleBase(this);
+    private final Permissible perm = Bukkit.getPluginManager().createPermissible(this);
 
     public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
         super(server, entity);

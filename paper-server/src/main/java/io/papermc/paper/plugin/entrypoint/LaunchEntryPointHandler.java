@@ -1,5 +1,10 @@
 package io.papermc.paper.plugin.entrypoint;
 
+import io.papermc.paper.plugin.PermissionManagerRegistrar;
+import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import io.papermc.paper.plugin.manager.PermissionRegistrar;
 import io.papermc.paper.plugin.provider.PluginProvider;
 import io.papermc.paper.plugin.storage.BootstrapProviderStorage;
 import io.papermc.paper.plugin.storage.ProviderStorage;
@@ -27,6 +32,11 @@ public class LaunchEntryPointHandler implements EntrypointHandler {
     // Utility
     public static void enterBootstrappers() {
         LaunchEntryPointHandler.INSTANCE.enter(Entrypoint.BOOTSTRAPPER);
+        // Register permission manager
+        LifecycleEventRunner.INSTANCE.callStaticRegistrarEvent(LifecycleEvents.PERMISSION_MANAGER_REGISTER,
+                PermissionRegistrar.INSTANCE,
+                BootstrapContext.class
+        );
     }
 
     @Override
