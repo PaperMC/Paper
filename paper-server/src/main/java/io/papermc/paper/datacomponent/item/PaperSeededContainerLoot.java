@@ -27,6 +27,11 @@ public record PaperSeededContainerLoot(
         return this.impl.seed();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.lootTable()).seed(this.seed());
+    }
+
     static final class BuilderImpl implements SeededContainerLoot.Builder {
 
         private long seed = LootTable.RANDOMIZE_SEED;
