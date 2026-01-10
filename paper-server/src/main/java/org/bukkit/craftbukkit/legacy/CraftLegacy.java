@@ -439,7 +439,7 @@ public final class CraftLegacy {
 
         // Do old head blocks
         for (byte data = 0; data < 16; data++) {
-            var materialData = new MaterialData(Material.LEGACY_SKULL, data);
+            MaterialData matData = new MaterialData(Material.LEGACY_SKULL, data);
             Item nonLegacyItem;
             Block nonLegacyBlock;
             switch (data) {
@@ -468,8 +468,12 @@ public final class CraftLegacy {
                     nonLegacyBlock = Blocks.SKELETON_SKULL;
                 }
             }
-            materialToItem.put(materialData, nonLegacyItem);
-            materialToBlock.put(materialData, nonLegacyBlock);
+            materialToItem.put(matData, nonLegacyItem);
+            materialToBlock.put(matData, nonLegacyBlock);
+            if (data <= 5) {
+                itemToMaterial.put(nonLegacyItem, matData);
+                blockToMaterial.put(nonLegacyBlock, matData);
+            }
         }
     }
 
