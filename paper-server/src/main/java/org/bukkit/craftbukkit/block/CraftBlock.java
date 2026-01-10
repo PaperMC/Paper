@@ -65,7 +65,7 @@ public class CraftBlock implements Block {
     private final net.minecraft.world.level.LevelAccessor world;
     private final BlockPos position;
 
-    public CraftBlock(LevelAccessor world, BlockPos position) {
+    private CraftBlock(LevelAccessor world, BlockPos position) {
         this.world = world;
         this.position = position.immutable();
     }
@@ -154,7 +154,7 @@ public class CraftBlock implements Block {
         }
     }
 
-    private void setData(final byte data, int flags) {
+    private void setData(final byte data, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
     }
 
@@ -210,7 +210,7 @@ public class CraftBlock implements Block {
             return world.setBlock(pos, newState, net.minecraft.world.level.block.Block.UPDATE_ALL);
         } else {
             boolean success = world.setBlock(pos, newState,
-                net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+                    net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
                     net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
                     net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
             if (success && world instanceof net.minecraft.world.level.Level) {
@@ -499,6 +499,11 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean breakNaturally(ItemStack item, boolean triggerEffect, boolean dropExperience) {
+        return this.breakNaturally(item, triggerEffect, dropExperience, false);
+    }
+
+    @Override
+    public boolean breakNaturally(ItemStack item, boolean triggerEffect, boolean dropExperience, boolean forceEffect) {
         // Paper end
         // Order matters here, need to drop before setting to air so skulls can get their data
         net.minecraft.world.level.block.state.BlockState state = this.getNMS();
@@ -510,16 +515,17 @@ public class CraftBlock implements Block {
         if (block != Blocks.AIR && (item == null || !state.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(state))) {
             net.minecraft.world.level.block.Block.dropResources(state, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem, false); // Paper - Properly handle xp dropping
             // Paper start - improve Block#breakNaturally
-            if (triggerEffect) {
-                if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
-                    this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
-                } else {
-                    this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
-                }
-            }
             if (dropExperience) block.popExperience(this.world.getMinecraftWorld(), this.position, block.getExpDrop(state, this.world.getMinecraftWorld(), this.position, nmsItem, true));
             // Paper end
             result = true;
+        }
+
+        if ((result && triggerEffect) || (forceEffect && block != Blocks.AIR)) {
+            if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
+                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
+            } else {
+                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
+            }
         }
 
         // SPIGOT-6778: Directly call setBlock instead of setBlockState, so that the block entity is not removed and custom remove logic is run.

@@ -122,7 +122,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see BlockType
      */
-    @ApiStatus.Experimental
     Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
     /**
      * Custom boss bars.
@@ -179,7 +178,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see ItemType
      */
-    @ApiStatus.Experimental
     Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
     /**
      * Default server loot tables.
@@ -350,7 +348,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see DataComponentType
      */
-    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
+    /**
+     * Game rules.
+     *
+     * @see GameRule
+     */
+    Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
@@ -480,7 +484,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #getTag(TagKey)
      */
-    @ApiStatus.Experimental
     boolean hasTag(TagKey<T> key);
 
     /**
@@ -491,9 +494,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
+     * @see #getTagValues(TagKey)
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
+
+    /**
+     * Gets the named registry set (tag) for the given key and resolves it with this registry.
+     *
+     * @param key the key to get the tag for
+     * @return the resolved values
+     * @throws NoSuchElementException        if no tag with the given key is found
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #getTag(TagKey)
+     * @see Tag#resolve(Registry)
+     */
+    @ApiStatus.Experimental
+    default Collection<T> getTagValues(final TagKey<T> key) {
+        Tag<T> tag = this.getTag(key);
+        return tag.resolve(this);
+    }
 
     /**
      * Gets all the tags in this registry.
@@ -543,7 +563,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
-    // Paper
     @Deprecated(forRemoval = true)
     default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
@@ -560,6 +579,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     int size();
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -610,6 +632,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 

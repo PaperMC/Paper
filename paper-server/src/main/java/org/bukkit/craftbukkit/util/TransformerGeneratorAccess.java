@@ -1,19 +1,25 @@
 package org.bukkit.craftbukkit.util;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private CraftStructureTransformer structureTransformer;
 
@@ -45,7 +51,7 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return super.addFreshEntity(entity, reason);
     }
 
-    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int flags, int recursionLeft) {
+    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, @Block.UpdateFlags int flags, int recursionLeft) {
         craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
         // This code is based on the method 'net.minecraft.world.level.levelgen.structure.StructurePiece#placeBlock'
         // It ensures that any kind of block is updated correctly upon placing it
@@ -60,17 +66,23 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         }
         BlockEntity blockEntity = this.getBlockEntity(position);
         if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
-            blockEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
+            try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+                () -> "TransformerGeneratorAccess@" + position.toShortString(), LOGGER
+            )) {
+                blockEntity.loadWithComponents(TagValueInput.create(
+                    problemReporter, this.registryAccess(), craftEntityState.getSnapshotNBT()
+                ));
+            }
         }
         return result;
     }
 
-    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, int flags) {
+    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, @Block.UpdateFlags int flags) {
         return this.setCraftBlock(pos, craftBlockState, flags, Block.UPDATE_LIMIT);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         if (this.canTransformBlocks()) {
             return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, recursionLeft);
         }
@@ -78,7 +90,7 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         return this.setBlock(pos, state, flags, Block.UPDATE_LIMIT);
     }
 }

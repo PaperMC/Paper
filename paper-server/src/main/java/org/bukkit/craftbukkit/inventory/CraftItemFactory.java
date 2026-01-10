@@ -4,12 +4,13 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Optional;
+import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
@@ -301,7 +302,7 @@ public final class CraftItemFactory implements ItemFactory {
             return null;
         }
         String typeId = type.getKey().toString();
-        net.minecraft.resources.ResourceLocation typeKey = ResourceLocation.parse(typeId);
+        net.minecraft.resources.Identifier typeKey = Identifier.parse(typeId);
         net.minecraft.world.entity.EntityType<?> nmsType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(typeKey);
         net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
         return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
@@ -332,7 +333,7 @@ public final class CraftItemFactory implements ItemFactory {
             Optional.of(
                 io.papermc.paper.registry.set.PaperRegistrySets.convertToNms(
                     Registries.ENCHANTMENT,
-                    net.minecraft.server.MinecraftServer.getServer().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE).lookupProvider,
+                    Conversions.global().lookup(),
                     keySet
                 )
             ),

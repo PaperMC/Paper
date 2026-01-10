@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.util.context.ContextKeySet;
@@ -34,16 +34,16 @@ import org.bukkit.loot.LootContext;
 
 public class CraftLootTable implements org.bukkit.loot.LootTable {
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceLocation minecraft) {
+    public static org.bukkit.loot.LootTable minecraftToBukkit(Identifier minecraft) {
         return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
     }
 
     public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null || minecraft.location().getPath().isEmpty()) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft)); // Paper - fix some NamespacedKey parsing
+        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
     }
 
     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.location());
+        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.identifier());
     }
 
     public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {
@@ -153,7 +153,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         if (position == null) {
             position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
         }
-        Location location = CraftLocation.toBukkit(position, info.getLevel().getWorld());
+        Location location = CraftLocation.toBukkit(position, info.getLevel());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
         if (info.hasParameter(LootContextParams.ATTACKING_ENTITY)) {

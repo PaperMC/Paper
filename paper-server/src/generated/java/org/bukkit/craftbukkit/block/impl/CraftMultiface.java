@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -14,18 +14,20 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.ResinClump;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
-@GeneratedFrom("1.21.5")
+@NullMarked
+@GeneratedClass
 public class CraftMultiface extends CraftBlockData implements ResinClump {
     private static final BooleanProperty WATERLOGGED = MultifaceBlock.WATERLOGGED;
 
     private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
         BlockFace.DOWN, BlockStateProperties.DOWN,
-        BlockFace.UP, BlockStateProperties.UP,
+        BlockFace.EAST, BlockStateProperties.EAST,
         BlockFace.NORTH, BlockStateProperties.NORTH,
         BlockFace.SOUTH, BlockStateProperties.SOUTH,
-        BlockFace.WEST, BlockStateProperties.WEST,
-        BlockFace.EAST, BlockStateProperties.EAST
+        BlockFace.UP, BlockStateProperties.UP,
+        BlockFace.WEST, BlockStateProperties.WEST
     );
 
     public CraftMultiface(BlockState state) {

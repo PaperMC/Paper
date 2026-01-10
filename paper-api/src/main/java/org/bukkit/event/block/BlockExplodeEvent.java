@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * an air block. {@link #getExplodedBlockState()} should be used to get
  * information about the block state that exploded.
  * <p>
- * The event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
+ * The event isn't called if the {@link org.bukkit.GameRules#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
  * @see ExplodeEvent
  */

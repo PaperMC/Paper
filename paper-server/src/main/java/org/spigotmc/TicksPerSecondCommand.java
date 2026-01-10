@@ -7,12 +7,16 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import java.text.DecimalFormat;
 
 import static net.kyori.adventure.text.Component.text;
 
 public class TicksPerSecondCommand extends Command {
 
     private boolean hasShownMemoryWarning; // Paper
+    private static final ThreadLocal<DecimalFormat> ONE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
+        return new DecimalFormat("########0.0");
+    });
 
     public TicksPerSecondCommand(String name) {
         super(name);
@@ -64,7 +68,7 @@ public class TicksPerSecondCommand extends Command {
     private static Component format(double tps) { // Paper - Made static
         // Paper start
         TextColor color = ((tps > 18.0) ? NamedTextColor.GREEN : (tps > 16.0) ? NamedTextColor.YELLOW : NamedTextColor.RED);
-        String amount = Math.min(Math.round(tps * 100.0) / 100.0, 20.0) + (tps > 21.0 ? "*" : ""); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
+        String amount = ONE_DECIMAL_PLACES.get().format(tps); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
         return text(amount, color);
         // Paper end
     }

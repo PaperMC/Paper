@@ -19,7 +19,7 @@ public class StringUtil {
      * @throws UnsupportedOperationException if the collection is immutable
      *     and originals contains a string which starts with the specified
      *     search string.
-     * @throws IllegalArgumentException if any parameter is is null
+     * @throws IllegalArgumentException if any parameter is null
      * @throws IllegalArgumentException if originals contains a null element.
      *     <b>Note: the collection may be modified before this is thrown</b>
      */

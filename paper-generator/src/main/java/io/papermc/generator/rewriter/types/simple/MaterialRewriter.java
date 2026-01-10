@@ -6,7 +6,6 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.typewriter.preset.model.EnumValue;
 import java.util.Optional;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
@@ -30,7 +29,7 @@ public class MaterialRewriter {
         @Override
         protected Iterable<Holder.Reference<Block>> getValues() {
             return BuiltInRegistries.BLOCK.listElements().filter(reference -> !reference.value().equals(net.minecraft.world.level.block.Blocks.AIR))
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override
@@ -40,7 +39,7 @@ public class MaterialRewriter {
             if (BlockStateMapping.MAPPING.containsKey(block.getClass())) {
                 // some block can also be represented as item in that enum
                 // doing a double job
-                Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().location());
+                Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().identifier());
 
                 if (equivalentItem.isEmpty() && block instanceof WallSignBlock) {
                     // wall sign block stack size is 16 for some reason like the sign item?
@@ -85,8 +84,8 @@ public class MaterialRewriter {
 
         @Override
         protected Iterable<Holder.Reference<Item>> getValues() {
-            return BuiltInRegistries.ITEM.listElements().filter(reference -> BuiltInRegistries.BLOCK.getOptional(reference.key().location()).isEmpty() || reference.value().equals(net.minecraft.world.item.Items.AIR))
-                .sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath()))::iterator;
+            return BuiltInRegistries.ITEM.listElements().filter(reference -> BuiltInRegistries.BLOCK.getOptional(reference.key().identifier()).isEmpty() || reference.value().equals(net.minecraft.world.item.Items.AIR))
+                .sorted(Formatting.HOLDER_ORDER)::iterator;
         }
 
         @Override

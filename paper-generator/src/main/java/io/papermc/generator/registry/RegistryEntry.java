@@ -33,6 +33,7 @@ public final class RegistryEntry<T> {
     private Class<?> preloadClass;
     private final String implClass;
 
+    private @Nullable RegistryModificationApiSupport modificationApiSupport;
     private @Nullable Class<?> apiRegistryBuilder;
     private @Nullable String apiRegistryBuilderImpl;
 
@@ -40,6 +41,7 @@ public final class RegistryEntry<T> {
     private boolean delayed;
     private String apiAccessName = ConstantDescs.INIT_NAME;
     private Optional<String> apiRegistryField = Optional.empty();
+    private int genericArgCount = 0;
 
     private @Nullable Map<ResourceKey<T>, String> fieldNames;
 
@@ -65,6 +67,10 @@ public final class RegistryEntry<T> {
         return this.registryKeyField.name();
     }
 
+    public Class<T> elementClass() {
+        return this.elementClass;
+    }
+
     public Class<? extends Keyed> apiClass() {
         return this.apiClass;
     }
@@ -85,6 +91,12 @@ public final class RegistryEntry<T> {
 
     public RegistryEntry<T> preload(Class<?> klass) {
         this.preloadClass = klass;
+        return this;
+    }
+
+    public RegistryEntry<T> genericArgCount(int count) {
+        Preconditions.checkArgument(count >= 0, "Generic argument count must be non-negative");
+        this.genericArgCount = count;
         return this;
     }
 
@@ -127,9 +139,22 @@ public final class RegistryEntry<T> {
         return this.apiRegistryBuilderImpl;
     }
 
-    public RegistryEntry<T> apiRegistryBuilder(Class<?> builderClass, String builderImplClass) {
+    public int genericArgCount() {
+        return this.genericArgCount;
+    }
+
+    public @Nullable RegistryModificationApiSupport modificationApiSupport() {
+        return this.modificationApiSupport;
+    }
+
+    public RegistryEntry<T> writableApiRegistryBuilder(Class<?> builderClass, String builderImplClass) {
+       return this.apiRegistryBuilder(builderClass, builderImplClass, RegistryModificationApiSupport.WRITABLE);
+    }
+
+    public RegistryEntry<T> apiRegistryBuilder(Class<?> builderClass, String builderImplClass, RegistryModificationApiSupport modificationApiSupport) {
         this.apiRegistryBuilder = builderClass;
         this.apiRegistryBuilderImpl = builderImplClass;
+        this.modificationApiSupport = modificationApiSupport;
         return this;
     }
 
@@ -151,7 +176,7 @@ public final class RegistryEntry<T> {
     }
 
     public boolean allowCustomKeys() {
-        return this.apiRegistryBuilder != null || RegistryEntries.DATA_DRIVEN.contains(this);
+        return (this.apiRegistryBuilder != null && this.modificationApiSupport.canAdd()) || RegistryEntries.DATA_DRIVEN.contains(this);
     }
 
     private <TO> Map<ResourceKey<T>, TO> getFields(Map<ResourceKey<T>, TO> map, Function<Field, @Nullable TO> transform) {
@@ -210,5 +235,16 @@ public final class RegistryEntry<T> {
             "apiClass=" + this.apiClass + ", " +
             "implClass=" + this.implClass + ", " +
             ']';
+    }
+
+    public enum RegistryModificationApiSupport {
+        NONE,
+        ADDABLE,
+        MODIFIABLE,
+        WRITABLE;
+
+        public boolean canAdd() {
+            return this != MODIFIABLE && this != NONE;
+        }
     }
 }

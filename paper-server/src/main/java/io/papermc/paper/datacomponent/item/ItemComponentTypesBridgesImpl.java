@@ -3,13 +3,13 @@ package io.papermc.paper.datacomponent.item;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.JukeboxSong;
@@ -151,6 +151,16 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public ResolvableProfile.SkinPatchBuilder skinPatch() {
+        return new PaperResolvableProfile.SkinPatchBuilderImpl();
+    }
+
+    @Override
+    public ResolvableProfile.SkinPatch emptySkinPatch() {
+        return new PaperResolvableProfile.PaperSkinPatch(null, null, null, null);
+    }
+
+    @Override
     public ResolvableProfile resolvableProfile(final PlayerProfile profile) {
         return PaperResolvableProfile.toApi(profile);
     }
@@ -171,11 +181,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public UseRemainder useRemainder(final ItemStack itemStack) {
-        Preconditions.checkArgument(itemStack != null, "Item cannot be null");
-        Preconditions.checkArgument(!itemStack.isEmpty(), "Remaining item cannot be empty!");
+    public UseRemainder useRemainder(final ItemStack stack) {
+        Preconditions.checkArgument(stack != null, "Item cannot be null");
+        Preconditions.checkArgument(!stack.isEmpty(), "Remaining item cannot be empty!");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(itemStack))
+            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(stack))
         );
     }
 
@@ -203,7 +213,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public Repairable repairable(final RegistryKeySet<ItemType> types) {
         return new PaperRepairable(new net.minecraft.world.item.enchantment.Repairable(
-            PaperRegistrySets.convertToNms(Registries.ITEM, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), types)
+            PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), types)
         ));
     }
 
@@ -245,5 +255,38 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public Weapon.Builder weapon() {
         return new PaperWeapon.BuilderImpl();
+    }
+
+    @Override
+    public KineticWeapon.Builder kineticWeapon() {
+        return new PaperKineticWeapon.BuilderImpl();
+    }
+
+    @Override
+    public UseEffects.Builder useEffects() {
+        return new PaperUseEffects.BuilderImpl();
+    }
+
+    @Override
+    public PiercingWeapon.Builder piercingWeapon() {
+        return new PaperPiercingWeapon.BuilderImpl();
+    }
+
+    @Override
+    public AttackRange.Builder attackRange() {
+        return new PaperAttackRange.BuilderImpl();
+    }
+
+    @Override
+    public SwingAnimation.Builder swingAnimation() {
+        return new PaperSwingAnimation.BuilderImpl();
+    }
+
+    @Override
+    public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
+        Preconditions.checkArgument(maxDurationTicks >= 0, "maxDurationTicks must be non-negative");
+        return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
+                maxDurationTicks, minSpeed, minRelativeSpeed
+        ));
     }
 }

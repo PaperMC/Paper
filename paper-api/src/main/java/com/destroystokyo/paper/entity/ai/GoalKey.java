@@ -15,45 +15,46 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public final class GoalKey<T extends Mob> {
 
-    private final Class<T> entityClass;
-    private final NamespacedKey namespacedKey;
+    private final Class<T> type;
+    private final NamespacedKey key;
 
-    private GoalKey(Class<T> entityClass, NamespacedKey namespacedKey) {
-        this.entityClass = entityClass;
-        this.namespacedKey = namespacedKey;
+    private GoalKey(Class<T> type, NamespacedKey key) {
+        this.type = type;
+        this.key = key;
     }
 
     public Class<T> getEntityClass() {
-        return this.entityClass;
+        return this.type;
     }
 
     public NamespacedKey getNamespacedKey() {
-        return this.namespacedKey;
+        return this.key;
     }
 
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || this.getClass() != o.getClass()) return false;
+
         GoalKey<?> goalKey = (GoalKey<?>) o;
-        return Objects.equals(this.entityClass, goalKey.entityClass) &&
-            Objects.equals(this.namespacedKey, goalKey.namespacedKey);
+        return Objects.equals(this.type, goalKey.type) &&
+            Objects.equals(this.key, goalKey.key);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.entityClass, this.namespacedKey);
+        return Objects.hash(this.type, this.key);
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", GoalKey.class.getSimpleName() + "[", "]")
-            .add("entityClass=" + this.entityClass)
-            .add("namespacedKey=" + this.namespacedKey)
+            .add("type=" + this.type)
+            .add("key=" + this.key)
             .toString();
     }
 
-    public static <A extends Mob> GoalKey<A> of(Class<A> entityClass, NamespacedKey namespacedKey) {
-        return new GoalKey<>(entityClass, namespacedKey);
+    public static <A extends Mob> GoalKey<A> of(Class<A> type, NamespacedKey key) {
+        return new GoalKey<>(type, key);
     }
 }

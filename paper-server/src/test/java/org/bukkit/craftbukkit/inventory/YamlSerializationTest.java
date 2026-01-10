@@ -18,7 +18,11 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.support.environment.AllFeatures;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -94,8 +98,8 @@ public class YamlSerializationTest {
               count: 1
               components:
                 minecraft:unbreakable: '{}'
-                minecraft:enchantments: '{"minecraft:sharpness":2}'
                 minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:unbreakable"]}'
+                minecraft:enchantments: '{"minecraft:sharpness":2}'
               schema_version: 1
             """.formatted(Bukkit.getUnsafe().getDataVersion()));
     }
@@ -125,6 +129,13 @@ public class YamlSerializationTest {
             throw new RuntimeException(e);
         }
 
-        assertEquals(expectedYamlString, config.saveToString());
+        try {
+            final ConfigurationNode expectedNode = YamlConfigurationLoader.builder().buildAndLoadString(expectedYamlString);
+            final ConfigurationNode upgradedNode = YamlConfigurationLoader.builder().buildAndLoadString(config.saveToString());
+
+            Assertions.assertEquals(expectedNode, upgradedNode);
+        } catch (ConfigurateException e) {
+            Assertions.fail("Failed to read yaml", e);
+        }
     }
 }

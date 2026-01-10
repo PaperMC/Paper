@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import com.mojang.authlib.GameProfile;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -12,6 +11,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -35,13 +35,13 @@ import org.bukkit.entity.Player;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
-    private final GameProfile profile;
+    private final NameAndId nameAndId;
     private final CraftServer server;
     private final PlayerDataStorage storage;
 
-    protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
+    protected CraftOfflinePlayer(CraftServer server, NameAndId nameAndId) {
         this.server = server;
-        this.profile = profile;
+        this.nameAndId = nameAndId;
         this.storage = server.console.playerDataStorage;
     }
 
@@ -63,8 +63,8 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         }
 
         // This might not match lastKnownName but if not it should be more correct
-        if (!this.profile.getName().isEmpty()) {
-            return this.profile.getName();
+        if (!this.nameAndId.name().isEmpty()) {
+            return this.nameAndId.name();
         }
 
         CompoundTag data = this.getBukkitData();
@@ -78,12 +78,12 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public UUID getUniqueId() {
-        return this.profile.getId();
+        return this.nameAndId.id();
     }
 
     @Override
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() { // Paper
-        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.profile); // Paper
+        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.nameAndId.toUncompletedGameProfile()); // Paper
     }
 
     public Server getServer() {
@@ -92,7 +92,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public boolean isOp() {
-        return this.server.getHandle().isOp(this.profile);
+        return this.server.getHandle().isOp(this.nameAndId);
     }
 
     @Override
@@ -102,9 +102,9 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         }
 
         if (value) {
-            this.server.getHandle().op(this.profile);
+            this.server.getHandle().op(this.nameAndId);
         } else {
-            this.server.getHandle().deop(this.profile);
+            this.server.getHandle().deop(this.nameAndId);
         }
     }
 
@@ -138,15 +138,15 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public boolean isWhitelisted() {
-        return this.server.getHandle().getWhiteList().isWhiteListed(this.profile);
+        return this.server.getHandle().getWhiteList().isWhiteListed(this.nameAndId);
     }
 
     @Override
     public void setWhitelisted(boolean value) {
         if (value) {
-            this.server.getHandle().getWhiteList().add(new UserWhiteListEntry(this.profile));
+            this.server.getHandle().getWhiteList().add(new UserWhiteListEntry(this.nameAndId));
         } else {
-            this.server.getHandle().getWhiteList().remove(this.profile);
+            this.server.getHandle().getWhiteList().remove(this.nameAndId);
         }
     }
 
@@ -154,7 +154,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        result.put("UUID", this.profile.getId().toString());
+        result.put("UUID", this.nameAndId.id().toString());
 
         return result;
     }
@@ -170,7 +170,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "[UUID=" + this.profile.getId() + "]";
+        return this.getClass().getSimpleName() + "[UUID=" + this.nameAndId.id() + "]";
     }
 
     @Override
@@ -196,7 +196,8 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     private CompoundTag getData() {
-        return this.storage.load(this.profile.getName(), this.profile.getId().toString()).orElse(null);
+        // This method does not use the problem reporter
+        return this.storage.load(this.nameAndId).orElse(null);
     }
 
     private CompoundTag getBukkitData() {
@@ -319,6 +320,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
                 public net.minecraft.nbt.Tag getTag(String key) {
                     return net.minecraft.Optionull.map(this.getPersistentTag(), tag -> tag.get(key));
                 }
+
+                @Override
+                public int getSize() {
+                    return this.getPersistentTag().size();
+                }
             };
         }
         return this.persistentDataContainerView;
@@ -366,20 +372,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         final ServerPlayer.RespawnConfig respawnConfig = data.read("respawn", ServerPlayer.RespawnConfig.CODEC).orElse(null);
         if (respawnConfig == null) return null;
 
-        final ServerLevel level = this.server.console.getLevel(respawnConfig.dimension());
+        final ServerLevel level = this.server.console.getLevel(respawnConfig.respawnData().dimension());
         if (level == null) return null;
 
         if (!loadLocationAndValidate) {
-            return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
+            return CraftLocation.toBukkit(respawnConfig.respawnData().pos(), level, respawnConfig.respawnData().yaw(), respawnConfig.respawnData().pitch());
         }
 
         return ServerPlayer.findRespawnAndUseSpawnBlock(level, respawnConfig, false)
-            .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level.getWorld(), resolvedPos.yaw(), 0))
+            .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level, resolvedPos.yaw(), resolvedPos.pitch()))
             .orElse(null);
     }
 
     private ServerStatsCounter getStatisticManager() {
-        return this.server.getHandle().getPlayerStats(this.getUniqueId(), this.getName());
+        return this.server.getHandle().getPlayerStats(this.nameAndId.toUncompletedGameProfile());
     }
 
     @Override

@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.block.BlockPredicate;
-import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;

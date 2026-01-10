@@ -1,14 +1,13 @@
 package io.papermc.paper.threadedregions.scheduler;
 
 import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
-import ca.spottedleaf.concurrentutil.util.Validate;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
-
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -40,8 +39,8 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
 
     @Override
     public void execute(final Plugin plugin, final Runnable run) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(run, "Runnable may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(run, "Runnable may not be null");
 
         this.run(plugin, (final ScheduledTask task) -> {
             run.run();
@@ -55,8 +54,8 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
 
     @Override
     public ScheduledTask runDelayed(final Plugin plugin, final Consumer<ScheduledTask> task, final long delayTicks) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(task, "Task may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(task, "Task may not be null");
         if (delayTicks <= 0) {
             throw new IllegalArgumentException("Delay ticks may not be <= 0");
         }
@@ -79,8 +78,8 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
 
     @Override
     public ScheduledTask runAtFixedRate(final Plugin plugin, final Consumer<ScheduledTask> task, final long initialDelayTicks, final long periodTicks) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(task, "Task may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(task, "Task may not be null");
         if (initialDelayTicks <= 0) {
             throw new IllegalArgumentException("Initial delay ticks may not be <= 0");
         }
@@ -106,7 +105,7 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
 
     @Override
     public void cancelTasks(final Plugin plugin) {
-        Validate.notNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
 
         final List<GlobalScheduledTask> toCancel = new ArrayList<>();
         synchronized (this.stateLock) {

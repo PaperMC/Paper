@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface DyedItemColor {
 
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     static DyedItemColor dyedItemColor(final Color color) {
         return dyedItemColor().color(color).build();
     }

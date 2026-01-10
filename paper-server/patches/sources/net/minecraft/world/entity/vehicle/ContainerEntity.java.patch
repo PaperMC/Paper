@@ -1,35 +1,35 @@
 --- a/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/net/minecraft/world/entity/vehicle/ContainerEntity.java
-@@ -60,12 +_,12 @@
-     default void addChestVehicleSaveData(CompoundTag tag, HolderLookup.Provider levelRegistry) {
+@@ -59,12 +_,12 @@
+     default void addChestVehicleSaveData(ValueOutput output) {
          if (this.getContainerLootTable() != null) {
-             tag.putString("LootTable", this.getContainerLootTable().location().toString());
-+            this.lootableData().saveNbt(tag); // Paper
+             output.putString("LootTable", this.getContainerLootTable().identifier().toString());
++            this.lootableData().saveNbt(output); // Paper
              if (this.getContainerLootTableSeed() != 0L) {
-                 tag.putLong("LootTableSeed", this.getContainerLootTableSeed());
+                 output.putLong("LootTableSeed", this.getContainerLootTableSeed());
              }
 -        } else {
--            ContainerHelper.saveAllItems(tag, this.getItemStacks(), levelRegistry);
+-            ContainerHelper.saveAllItems(output, this.getItemStacks());
          }
-+        ContainerHelper.saveAllItems(tag, this.getItemStacks(), levelRegistry); // Paper - always save the items, table may still remain
++        ContainerHelper.saveAllItems(output, this.getItemStacks()); // Paper - always save the items, table may still remain
      }
  
-     default void readChestVehicleSaveData(CompoundTag tag, HolderLookup.Provider levelRegistry) {
-@@ -73,7 +_,12 @@
-         ResourceKey<LootTable> resourceKey = tag.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+     default void readChestVehicleSaveData(ValueInput input) {
+@@ -72,7 +_,12 @@
+         ResourceKey<LootTable> resourceKey = input.read("LootTable", LootTable.KEY_CODEC).orElse(null);
          this.setContainerLootTable(resourceKey);
-         this.setContainerLootTableSeed(tag.getLongOr("LootTableSeed", 0L));
+         this.setContainerLootTableSeed(input.getLongOr("LootTableSeed", 0L));
 -        if (resourceKey == null) {
 +        // Paper start - LootTable API
 +        if (this.getContainerLootTable() != null) {
-+            this.lootableData().loadNbt(tag);
++            this.lootableData().loadNbt(input);
 +        }
 +        // Paper end - LootTable API
 +        if (true || resourceKey == null) { // Paper - always read the items, table may still remain
-             ContainerHelper.loadAllItems(tag, this.getItemStacks(), levelRegistry);
+             ContainerHelper.loadAllItems(input, this.getItemStacks());
          }
      }
-@@ -89,19 +_,27 @@
+@@ -88,19 +_,27 @@
      }
  
      default InteractionResult interactWithContainerVehicle(Player player) {
@@ -60,9 +60,9 @@
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -171,4 +_,14 @@
+@@ -170,4 +_,14 @@
      default boolean isChestVehicleStillValid(Player player) {
-         return !this.isRemoved() && player.canInteractWithEntity(this.getBoundingBox(), 4.0);
+         return !this.isRemoved() && player.isWithinEntityInteractionRange(this.getBoundingBox(), 4.0);
      }
 +
 +    // Paper start - LootTable API

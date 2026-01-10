@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Bucketable.java
 +++ b/net/minecraft/world/entity/animal/Bucketable.java
-@@ -71,9 +_,19 @@
+@@ -71,9 +_,25 @@
      static <T extends LivingEntity & Bucketable> Optional<InteractionResult> bucketMobPickup(Player player, InteractionHand hand, T entity) {
          ItemStack itemInHand = player.getItemInHand(hand);
          if (itemInHand.getItem() == Items.WATER_BUCKET && entity.isAlive()) {
@@ -12,7 +12,13 @@
 +            org.bukkit.event.player.PlayerBucketEntityEvent playerBucketFishEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerFishBucketEvent(entity, player, itemInHand, bucketItemStack, hand);
 +            bucketItemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
 +            if (playerBucketFishEvent.isCancelled()) {
-+                player.containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
++                // Paper start - Fix inventory desync
++                if (player.hasInfiniteMaterials() || itemInHand.getCount() > 1) {
++                    player.containerMenu.sendAllDataToRemote();
++                } else {
++                    player.containerMenu.forceHeldSlot(hand);
++                }
++                // Paper end - Fix inventory desync
 +                entity.resendPossiblyDesyncedEntityData((ServerPlayer) player); // Paper
 +                return Optional.of(InteractionResult.FAIL);
 +            }

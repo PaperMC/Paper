@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
-    // @GeneratedFrom 1.21.5
     ANIMALS_BRED,
     AVIATE_ONE_CM,
     BELL_RING,
@@ -33,6 +32,7 @@ public enum Statistic implements Keyed {
     CAULDRON_FILLED,
     FISH_CAUGHT,
     FLY_ONE_CM,
+    HAPPY_GHAST_ONE_CM,
     HORSE_ONE_CM,
     DISPENSER_INSPECTED,
     DROPPER_INSPECTED,
@@ -55,6 +55,7 @@ public enum Statistic implements Keyed {
     LEAVE_GAME,
     MINECART_ONE_CM,
     MOB_KILLS,
+    NAUTILUS_ONE_CM,
     OPEN_BARREL,
     CHEST_OPENED,
     ENDERCHEST_OPENED,
@@ -86,7 +87,6 @@ public enum Statistic implements Keyed {
     WALK_UNDER_WATER_ONE_CM,
     // End generate - StatisticCustom
     // Start generate - StatisticType
-    // @GeneratedFrom 1.21.5
     BREAK_ITEM(Type.ITEM),
     CRAFT_ITEM(Type.ITEM),
     DROP(Type.ITEM),

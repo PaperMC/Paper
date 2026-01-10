@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -198,12 +_,20 @@
+@@ -202,12 +_,20 @@
  
              @Override
              public void encode(RegistryFriendlyByteBuf buffer, ItemStack value) {
@@ -23,7 +23,7 @@
                  }
              }
          };
-@@ -373,10 +_,166 @@
+@@ -371,10 +_,166 @@
              return InteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -52,7 +52,7 @@
 +            this.restorePatch(previousPatch);
 +            if (interactionResult.consumesAction() && serverLevel.captureTreeGeneration && !serverLevel.capturedBlockStates.isEmpty()) {
 +                serverLevel.captureTreeGeneration = false;
-+                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(clickedPos, serverLevel.getWorld());
++                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(clickedPos, serverLevel);
 +                org.bukkit.TreeType treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
 +                net.minecraft.world.level.block.SaplingBlock.treeType = null;
 +                List<org.bukkit.craftbukkit.block.CraftBlockState> blocks = new java.util.ArrayList<>(serverLevel.capturedBlockStates.values());
@@ -101,7 +101,7 @@
 +                if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
 +                    interactionResult = InteractionResult.FAIL; // cancel placement
 +                    // PAIL: Remove this when MC-99075 fixed
-+                    player.containerMenu.sendAllDataToRemote();
++                    player.containerMenu.forceHeldSlot(hand);
 +                    serverLevel.capturedTileEntities.clear(); // Paper - Allow chests to be placed with NBT data; clear out block entities as chests and such will pop loot
 +                    // revert back all captured blocks
 +                    for (org.bukkit.block.BlockState blockstate : blocks) {
@@ -170,7 +170,7 @@
 +
 +                        if (state.getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
 +                            serverLevel.updateNeighborsAt(pos, net.minecraft.world.level.block.Blocks.AIR);
-+                            state.updateNeighbourShapes(serverLevel, pos, 3);
++                            state.updateNeighbourShapes(serverLevel, pos, net.minecraft.world.level.block.Block.UPDATE_ALL);
 +                        }
 +                    }
 +
@@ -192,7 +192,7 @@
  
              return interactionResult;
          }
-@@ -473,31 +_,71 @@
+@@ -455,31 +_,67 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -212,10 +212,6 @@
 +        if (i > 0 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent - limit to positive damage and run for player
 +            org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i, originalDamage); // Paper - Add EntityDamageItemEvent
 +            event.getPlayer().getServer().getPluginManager().callEvent(event);
-+
-+            if (i != event.getDamage() || event.isCancelled()) {
-+                serverPlayer.containerMenu.sendAllDataToRemote();
-+            }
 +            if (event.isCancelled()) {
 +                return;
 +            }
@@ -272,7 +268,7 @@
              this.shrink(1);
              onBreak.accept(item);
          }
-@@ -510,15 +_,39 @@
+@@ -492,7 +_,26 @@
                  return;
              }
  
@@ -300,6 +296,8 @@
              this.applyDamage(min, serverPlayer, item -> {});
          }
      }
+@@ -502,9 +_,14 @@
+     }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
 +        // Paper start - add param to skip infinite mats check
@@ -314,7 +312,7 @@
              );
          }
      }
-@@ -732,6 +_,12 @@
+@@ -753,6 +_,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -324,11 +322,11 @@
 +    }
 +    // CraftBukkit end
 +
-     @Nullable
-     public <T> T set(DataComponentType<T> component, @Nullable T value) {
+     public <T> @Nullable T set(DataComponentType<T> component, @Nullable T value) {
          return this.components.set(component, value);
-@@ -779,6 +_,28 @@
-         this.getItem().verifyComponentsAfterLoad(this);
+     }
+@@ -796,6 +_,28 @@
+         this.components.setAll(components);
      }
  
 +    // Paper start - (this is just a good no conflict location)
@@ -344,7 +342,7 @@
 +        return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemstack);
 +    }
 +
-+    private @Nullable org.bukkit.craftbukkit.inventory.CraftItemStack bukkitStack;
++    private org.bukkit.craftbukkit.inventory.@Nullable CraftItemStack bukkitStack;
 +    public org.bukkit.inventory.ItemStack getBukkitStack() {
 +        if (this.bukkitStack == null || this.bukkitStack.handle != this) {
 +            this.bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
@@ -356,8 +354,8 @@
      public Component getHoverName() {
          Component customName = this.getCustomName();
          return customName != null ? customName : this.getItemName();
-@@ -1054,6 +_,19 @@
-         EnchantmentHelper.forEachModifier(this, equipmentSLot, action);
+@@ -1026,6 +_,19 @@
+         EnchantmentHelper.forEachModifier(this, slot, action);
      }
  
 +    // CraftBukkit start
@@ -376,7 +374,7 @@
      public Component getDisplayName() {
          MutableComponent mutableComponent = Component.empty().append(this.getHoverName());
          if (this.has(DataComponents.CUSTOM_NAME)) {
-@@ -1109,7 +_,7 @@
+@@ -1085,7 +_,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {

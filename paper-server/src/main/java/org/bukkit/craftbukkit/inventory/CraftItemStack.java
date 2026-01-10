@@ -9,9 +9,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
-import net.minecraft.advancements.critereon.DataComponentMatchers;
-import net.minecraft.advancements.critereon.ItemPredicate;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.DataComponentMatchers;
+import net.minecraft.advancements.criterion.ItemPredicate;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentExactPredicate;
@@ -268,15 +268,13 @@ public final class CraftItemStack extends ItemStack {
     public void addUnsafeEnchantment(Enchantment enchant, int level) {
         Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        // Paper start
         if (this.handle == null) {
             return;
         }
 
         EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
             mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
-        });
-        // Paper end
+        }, true);
     }
 
     @Override
@@ -499,6 +497,11 @@ public final class CraftItemStack extends ItemStack {
     private final io.papermc.paper.persistence.PaperPersistentDataContainerView pdcView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(REGISTRY) {
 
         @Override
+        public int getSize() {
+            return CraftItemStack.this.getPdcTag().size();
+        }
+
+        @Override
         public net.minecraft.nbt.CompoundTag toTagCompound() {
             return CraftItemStack.this.getPdcTag();
         }
@@ -579,7 +582,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value));
+        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
     }
 
     @Override

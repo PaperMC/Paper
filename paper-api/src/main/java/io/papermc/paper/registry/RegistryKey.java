@@ -1,6 +1,7 @@
 package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -8,6 +9,7 @@ import net.kyori.adventure.key.Keyed;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Particle;
@@ -26,6 +28,7 @@ import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -36,7 +39,6 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -76,16 +78,14 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
     /**
-     * @apiNote DO NOT USE
+     * Built-in registry for block types.
+     * @see io.papermc.paper.registry.keys.BlockTypeKeys
      */
-    @ApiStatus.Internal
     RegistryKey<BlockType> BLOCK = create("block");
     /**
-     * @apiNote use preferably only in the context of registry entries.
-     * @see io.papermc.paper.registry.data
+     * Built-in registry for item types.
      * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
-    @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
     /**
      * Built-in registry for villager professions.
@@ -127,8 +127,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-
-
+    /**
+     * Built-in registry for game rules.
+     * @see io.papermc.paper.registry.keys.GameRuleKeys
+     */
+    RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
     /* ********************** *
      * Data-driven Registries *
@@ -218,7 +221,16 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.PigVariantKeys
      */
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
-
+    /**
+     * Data-driven registry for zombie nautilus variants.
+     * @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
+     */
+    RegistryKey<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = create("zombie_nautilus_variant");
+    /**
+     * Data-driven registry for dialogs.
+     * @see io.papermc.paper.registry.keys.DialogKeys
+     */
+    RegistryKey<Dialog> DIALOG = create("dialog");
 
 
     /* ******************* *
@@ -255,7 +267,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the key of the typed key.
      * @return the constructed tag key.
      */
-    @ApiStatus.Experimental
     default TagKey<T> tagKey(final Key key) {
         return TagKey.create(this, key);
     }
@@ -266,7 +277,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
      * @return the constructed tag key.
      */
-    @ApiStatus.Experimental
     default TagKey<T> tagKey(@KeyPattern final String key) {
         return TagKey.create(this, key);
     }

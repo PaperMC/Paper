@@ -13,7 +13,7 @@ public interface Spellcaster extends Illager {
     public enum Spell {
 
         /**
-         * No spell is being used..
+         * No spell is being used.
          */
         NONE,
         /**

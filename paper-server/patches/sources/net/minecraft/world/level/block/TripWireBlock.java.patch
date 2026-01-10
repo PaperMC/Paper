@@ -19,7 +19,7 @@
 @@ -100,6 +_,7 @@
  
      @Override
-     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
          if (!oldState.is(state.getBlock())) {
              this.updateSource(level, pos, state);
@@ -37,8 +37,8 @@
      @Override
      public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return state; // Paper - prevent disarming tripwires
-         if (!level.isClientSide && !player.getMainHandItem().isEmpty() && player.getMainHandItem().is(Items.SHEARS)) {
-             level.setBlock(pos, state.setValue(DISARMED, true), 260);
+         if (!level.isClientSide() && !player.getMainHandItem().isEmpty() && player.getMainHandItem().is(Items.SHEARS)) {
+             level.setBlock(pos, state.setValue(DISARMED, true), Block.UPDATE_NONE);
              level.gameEvent(player, GameEvent.SHEAR, pos);
 @@ -123,6 +_,7 @@
      }
@@ -51,10 +51,10 @@
 @@ -148,6 +_,8 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent tripwires from detecting collision
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (!level.isClientSide) {
+         if (!level.isClientSide()) {
              if (!state.getValue(POWERED)) {
                  this.checkPressed(level, pos, List.of(entity));
 @@ -157,6 +_,7 @@

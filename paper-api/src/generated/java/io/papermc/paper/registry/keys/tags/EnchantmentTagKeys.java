@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
@@ -25,8 +25,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
-@ApiStatus.Experimental
+@GeneratedClass
 public final class EnchantmentTagKeys {
     /**
      * {@code #minecraft:curse}
@@ -317,7 +316,6 @@ public final class EnchantmentTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<Enchantment> create(final Key key) {
         return TagKey.create(RegistryKey.ENCHANTMENT, key);
     }

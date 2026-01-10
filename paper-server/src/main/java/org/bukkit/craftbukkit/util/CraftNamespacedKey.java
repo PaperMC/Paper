@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
 import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class CraftNamespacedKey {
@@ -11,23 +11,27 @@ public final class CraftNamespacedKey {
     public CraftNamespacedKey() {
     }
 
-    public static @Nullable NamespacedKey fromStringOrNull(@Nullable String string) {
-        if (string == null || string.isEmpty()) {
-            return null;
-        }
-        ResourceLocation minecraft = ResourceLocation.tryParse(string);
-        return (minecraft == null || minecraft.getPath().isEmpty()) ? null : CraftNamespacedKey.fromMinecraft(minecraft); // Paper - Bukkit's parser does not match Vanilla for empty paths
-    }
-
     public static NamespacedKey fromString(String string) {
-        return CraftNamespacedKey.fromMinecraft(ResourceLocation.parse(string));
+        return CraftNamespacedKey.fromMinecraft(Identifier.parse(string));
     }
 
-    public static NamespacedKey fromMinecraft(ResourceLocation minecraft) {
+    public static NamespacedKey fromMinecraft(Identifier minecraft) {
         return new NamespacedKey(minecraft.getNamespace(), minecraft.getPath());
     }
 
-    public static ResourceLocation toMinecraft(NamespacedKey key) {
-        return ResourceLocation.fromNamespaceAndPath(key.getNamespace(), key.getKey());
+    public static Identifier toMinecraft(NamespacedKey key) {
+        return Identifier.fromNamespaceAndPath(key.getNamespace(), key.getKey());
     }
+
+    public static NamespacedKey fromResourceKey(final ResourceKey<?> key) {
+        return CraftNamespacedKey.fromMinecraft(key.identifier());
+    }
+
+    public static <T> ResourceKey<T> toResourceKey(
+            final ResourceKey<? extends net.minecraft.core.Registry<T>> registry,
+            final NamespacedKey namespacedKey
+    ) {
+        return ResourceKey.create(registry, CraftNamespacedKey.toMinecraft(namespacedKey));
+    }
+
 }

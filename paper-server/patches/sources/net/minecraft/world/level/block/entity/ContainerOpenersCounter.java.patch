@@ -1,18 +1,11 @@
 --- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
 +++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
-@@ -13,6 +_,7 @@
+@@ -16,6 +_,20 @@
      private static final int CHECK_TICK_DELAY = 5;
      private int openCount;
      private double maxInteractionRange;
-+    public boolean opened; // CraftBukkit
- 
-     protected abstract void onOpen(Level level, BlockPos pos, BlockState state);
- 
-@@ -20,10 +_,36 @@
- 
-     protected abstract void openerCountChanged(Level level, BlockPos pos, BlockState state, int count, int openCount);
- 
 +    // CraftBukkit start
++    public boolean opened;
 +    public void onAPIOpen(Level level, BlockPos blockPos, BlockState blockState) {
 +        this.onOpen(level, blockPos, blockState);
 +    }
@@ -25,10 +18,13 @@
 +        this.openerCountChanged(level, blockPos, blockState, count, openCount);
 +    }
 +    // CraftBukkit end
-+
-     protected abstract boolean isOwnContainer(Player player);
  
-     public void incrementOpeners(Player player, Level level, BlockPos pos, BlockState state) {
+     protected abstract void onOpen(Level level, BlockPos pos, BlockState state);
+ 
+@@ -26,7 +_,19 @@
+     public abstract boolean isOwnContainer(Player player);
+ 
+     public void incrementOpeners(LivingEntity entity, Level level, BlockPos pos, BlockState state, double interactionRange) {
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
          int i = this.openCount++;
 +
@@ -44,11 +40,11 @@
 +
          if (i == 0) {
              this.onOpen(level, pos, state);
-             level.gameEvent(player, GameEvent.CONTAINER_OPEN, pos);
-@@ -35,7 +_,20 @@
+             level.gameEvent(entity, GameEvent.CONTAINER_OPEN, pos);
+@@ -38,7 +_,20 @@
      }
  
-     public void decrementOpeners(Player player, Level level, BlockPos pos, BlockState state) {
+     public void decrementOpeners(LivingEntity entity, Level level, BlockPos pos, BlockState state) {
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
 +        if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
          int i = this.openCount--;
@@ -65,11 +61,11 @@
 +
          if (this.openCount == 0) {
              this.onClose(level, pos, state);
-             level.gameEvent(player, GameEvent.CONTAINER_CLOSE, pos);
-@@ -60,6 +_,7 @@
+             level.gameEvent(entity, GameEvent.CONTAINER_CLOSE, pos);
+@@ -70,6 +_,7 @@
          }
  
-         int size = playersWithContainerOpen.size();
+         int size = entitiesWithContainerOpen.size();
 +        if (this.opened) size++; // CraftBukkit - add dummy count from API
          int i = this.openCount;
          if (i != size) {

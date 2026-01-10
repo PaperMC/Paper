@@ -5,7 +5,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.stats.Stats;
@@ -14,14 +14,15 @@ import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.Statistic.Type;
+import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemType;
 
 public enum CraftStatistic {
     // Start generate - CraftStatisticCustom
-    // @GeneratedFrom 1.21.5
     ANIMALS_BRED(Stats.ANIMALS_BRED),
     AVIATE_ONE_CM(Stats.AVIATE_ONE_CM),
     BELL_RING(Stats.BELL_RING),
@@ -46,6 +47,7 @@ public enum CraftStatistic {
     CAULDRON_FILLED(Stats.FILL_CAULDRON),
     FISH_CAUGHT(Stats.FISH_CAUGHT),
     FLY_ONE_CM(Stats.FLY_ONE_CM),
+    HAPPY_GHAST_ONE_CM(Stats.HAPPY_GHAST_ONE_CM),
     HORSE_ONE_CM(Stats.HORSE_ONE_CM),
     DISPENSER_INSPECTED(Stats.INSPECT_DISPENSER),
     DROPPER_INSPECTED(Stats.INSPECT_DROPPER),
@@ -68,6 +70,7 @@ public enum CraftStatistic {
     LEAVE_GAME(Stats.LEAVE_GAME),
     MINECART_ONE_CM(Stats.MINECART_ONE_CM),
     MOB_KILLS(Stats.MOB_KILLS),
+    NAUTILUS_ONE_CM(Stats.NAUTILUS_ONE_CM),
     OPEN_BARREL(Stats.OPEN_BARREL),
     CHEST_OPENED(Stats.OPEN_CHEST),
     ENDERCHEST_OPENED(Stats.OPEN_ENDERCHEST),
@@ -99,22 +102,21 @@ public enum CraftStatistic {
     WALK_UNDER_WATER_ONE_CM(Stats.WALK_UNDER_WATER_ONE_CM),
     // End generate - CraftStatisticCustom
     // Start generate - CraftStatisticType
-    // @GeneratedFrom 1.21.5
-    BREAK_ITEM(ResourceLocation.withDefaultNamespace("broken")),
-    CRAFT_ITEM(ResourceLocation.withDefaultNamespace("crafted")),
-    DROP(ResourceLocation.withDefaultNamespace("dropped")),
-    KILL_ENTITY(ResourceLocation.withDefaultNamespace("killed")),
-    ENTITY_KILLED_BY(ResourceLocation.withDefaultNamespace("killed_by")),
-    MINE_BLOCK(ResourceLocation.withDefaultNamespace("mined")),
-    PICKUP(ResourceLocation.withDefaultNamespace("picked_up")),
-    USE_ITEM(ResourceLocation.withDefaultNamespace("used"));
+    BREAK_ITEM(Identifier.withDefaultNamespace("broken")),
+    CRAFT_ITEM(Identifier.withDefaultNamespace("crafted")),
+    DROP(Identifier.withDefaultNamespace("dropped")),
+    KILL_ENTITY(Identifier.withDefaultNamespace("killed")),
+    ENTITY_KILLED_BY(Identifier.withDefaultNamespace("killed_by")),
+    MINE_BLOCK(Identifier.withDefaultNamespace("mined")),
+    PICKUP(Identifier.withDefaultNamespace("picked_up")),
+    USE_ITEM(Identifier.withDefaultNamespace("used"));
     // End generate - CraftStatisticType
-    private final ResourceLocation minecraftKey;
+    private final Identifier minecraftKey;
     private final org.bukkit.Statistic bukkit;
-    private static final BiMap<ResourceLocation, org.bukkit.Statistic> statistics;
+    private static final BiMap<Identifier, org.bukkit.Statistic> statistics;
 
     static {
-        ImmutableBiMap.Builder<ResourceLocation, org.bukkit.Statistic> statisticBuilder = ImmutableBiMap.builder();
+        ImmutableBiMap.Builder<Identifier, org.bukkit.Statistic> statisticBuilder = ImmutableBiMap.builder();
         for (CraftStatistic statistic : CraftStatistic.values()) {
             statisticBuilder.put(statistic.minecraftKey, statistic.bukkit);
         }
@@ -122,7 +124,7 @@ public enum CraftStatistic {
         statistics = statisticBuilder.build();
     }
 
-    private CraftStatistic(ResourceLocation minecraftKey) {
+    private CraftStatistic(Identifier minecraftKey) {
         this.minecraftKey = minecraftKey;
 
         this.bukkit = org.bukkit.Statistic.valueOf(this.name());
@@ -132,10 +134,10 @@ public enum CraftStatistic {
     public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.stats.Stat<?> statistic) {
         Preconditions.checkArgument(statistic != null, "NMS Statistic cannot be null");
         Registry statRegistry = statistic.getType().getRegistry();
-        ResourceLocation nmsKey = BuiltInRegistries.STAT_TYPE.getKey(statistic.getType());
+        Identifier nmsKey = BuiltInRegistries.STAT_TYPE.getKey(statistic.getType());
 
         if (statRegistry == BuiltInRegistries.CUSTOM_STAT) {
-            nmsKey = (ResourceLocation) statistic.getValue();
+            nmsKey = (Identifier) statistic.getValue();
         }
 
         return statistics.get(nmsKey);
@@ -144,31 +146,41 @@ public enum CraftStatistic {
     public static net.minecraft.stats.Stat getNMSStatistic(org.bukkit.Statistic bukkit) {
         Preconditions.checkArgument(bukkit.getType() == Statistic.Type.UNTYPED, "This method only accepts untyped statistics");
 
-        net.minecraft.stats.Stat<ResourceLocation> nms = Stats.CUSTOM.get(statistics.inverse().get(bukkit));
+        net.minecraft.stats.Stat<Identifier> nms = Stats.CUSTOM.get(statistics.inverse().get(bukkit));
         Preconditions.checkArgument(nms != null, "NMS Statistic %s does not exist", bukkit);
 
         return nms;
     }
 
-    public static net.minecraft.stats.Stat getMaterialStatistic(org.bukkit.Statistic stat, Material material) {
+    private static net.minecraft.stats.Stat getBlockTypeStatistic(org.bukkit.Statistic stat, BlockType blockType) {
+        Preconditions.checkArgument(blockType != null, "BlockType cannot be null");
         try {
             if (stat == Statistic.MINE_BLOCK) {
-                return Stats.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraft(material));
+                return Stats.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraftNew(blockType));
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
+        return null;
+    }
+
+    private static net.minecraft.stats.Stat getItemTypeStatistic(org.bukkit.Statistic stat, ItemType itemType) {
+        Preconditions.checkArgument(itemType != null, "ItemType cannot be null");
+        try {
             if (stat == Statistic.CRAFT_ITEM) {
-                return Stats.ITEM_CRAFTED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_CRAFTED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.USE_ITEM) {
-                return Stats.ITEM_USED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_USED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.BREAK_ITEM) {
-                return Stats.ITEM_BROKEN.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_BROKEN.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.PICKUP) {
-                return Stats.ITEM_PICKED_UP.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_PICKED_UP.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
             if (stat == Statistic.DROP) {
-                return Stats.ITEM_DROPPED.get(CraftItemType.bukkitToMinecraft(material));
+                return Stats.ITEM_DROPPED.get(CraftItemType.bukkitToMinecraftNew(itemType));
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
@@ -256,8 +268,18 @@ public enum CraftStatistic {
     public static int getStatistic(ServerStatsCounter manager, Statistic statistic, Material material) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
-        Preconditions.checkArgument(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
-        net.minecraft.stats.Stat nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        net.minecraft.stats.Stat nmsStatistic;
+        if (statistic.getType() == Type.BLOCK) {
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
+            BlockType blockType = material.asBlockType();
+            nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
+        } else if (statistic.getType() == Type.ITEM) {
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
+            ItemType itemType = material.asItemType();
+            nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
+        } else {
+            throw new IllegalArgumentException("This statistic does not take a Material parameter");
+        }
         Preconditions.checkArgument(nmsStatistic != null, "The supplied Material %s does not have a corresponding statistic", material);
         return manager.getValue(nmsStatistic);
     }
@@ -276,8 +298,18 @@ public enum CraftStatistic {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(material != null, "Material cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
-        Preconditions.checkArgument(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
-        net.minecraft.stats.Stat nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        net.minecraft.stats.Stat nmsStatistic;
+        if (statistic.getType() == Type.BLOCK) {
+            Preconditions.checkArgument(material.isBlock(), "Material %s must be a block", material);
+            BlockType blockType = material.asBlockType();
+            nmsStatistic = CraftStatistic.getBlockTypeStatistic(statistic, blockType);
+        } else if (statistic.getType() == Type.ITEM) {
+            Preconditions.checkArgument(material.isItem(), "Material %s must be an item", material);
+            ItemType itemType = material.asItemType();
+            nmsStatistic = CraftStatistic.getItemTypeStatistic(statistic, itemType);
+        } else {
+            throw new IllegalArgumentException("This statistic does not take a Material parameter");
+        }
         Preconditions.checkArgument(nmsStatistic != null, "The supplied Material %s does not have a corresponding statistic", material);
         manager.setValue(null, nmsStatistic, newValue);
 

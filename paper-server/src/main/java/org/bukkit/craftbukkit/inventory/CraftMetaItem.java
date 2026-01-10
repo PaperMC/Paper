@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DynamicOps;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,8 +38,6 @@ import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,7 +55,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -131,6 +130,7 @@ import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.tag.DamageTypeTags;
+import org.slf4j.Logger;
 
 /**
  * Children must include the following:
@@ -157,6 +157,8 @@ import org.bukkit.tag.DamageTypeTags;
 @DelegateDeserialization(SerializableMeta.class)
 // Important: ItemMeta needs to be the first interface see #applicableTo(Material)
 class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+
+    static final Logger LOGGER = LogUtils.getLogger();
 
     static class ItemMetaKey {
 
@@ -234,9 +236,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<TooltipDisplay> TOOLTIP_DISPLAY = new ItemMetaKeyType<>(DataComponents.TOOLTIP_DISPLAY, "tool-tip-display");
     @Specific(Specific.To.NBT)
-    static final ItemMetaKeyType<ResourceLocation> TOOLTIP_STYLE = new ItemMetaKeyType<>(DataComponents.TOOLTIP_STYLE, "tool-tip-style");
+    static final ItemMetaKeyType<Identifier> TOOLTIP_STYLE = new ItemMetaKeyType<>(DataComponents.TOOLTIP_STYLE, "tool-tip-style");
     @Specific(Specific.To.NBT)
-    static final ItemMetaKeyType<ResourceLocation> ITEM_MODEL = new ItemMetaKeyType<>(DataComponents.ITEM_MODEL, "item-model");
+    static final ItemMetaKeyType<Identifier> ITEM_MODEL = new ItemMetaKeyType<>(DataComponents.ITEM_MODEL, "item-model");
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<Unit> UNBREAKABLE = new ItemMetaKeyType<>(DataComponents.UNBREAKABLE, "Unbreakable");
     @Specific(Specific.To.NBT)
@@ -300,8 +302,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private CraftJukeboxComponent jukebox;
     private Integer damage;
     private Integer maxDamage;
-    private List<net.minecraft.advancements.critereon.BlockPredicate> canPlaceOnPredicates;
-    private List<net.minecraft.advancements.critereon.BlockPredicate> canBreakPredicates;
+    private List<net.minecraft.advancements.criterion.BlockPredicate> canPlaceOnPredicates;
+    private List<net.minecraft.advancements.criterion.BlockPredicate> canBreakPredicates;
 
     // hide_additional_tooltip backward compatibility based on TooltipDisplayComponentFix#CONVERTED_ADDITIONAL_TOOLTIP_TYPES
     private static final Set<DataComponentType<?>> HIDDEN_COMPONENTS_PREVIOUSLY = Set.of(
@@ -316,6 +318,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         DataComponents.FIREWORK_EXPLOSION,
         DataComponents.FIREWORKS,
         DataComponents.INSTRUMENT,
+        DataComponents.JUKEBOX_PLAYABLE,
         DataComponents.MAP_ID,
         DataComponents.PAINTING_VARIANT,
         DataComponents.POT_DECORATIONS,
@@ -750,7 +753,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 CompoundTag internalTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
                 this.deserializeInternal(internalTag, map);
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read internal tag from object", ex);
             }
         }
 
@@ -779,7 +782,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read unhandled tag for item", ex);
             }
         }
 
@@ -791,7 +794,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             for (Object removedObject : removed) {
                 String removedString = (String) removedObject;
 
-                DataComponentType<?> component = componentTypeRegistry.getValue(ResourceLocation.parse(removedString));
+                DataComponentType<?> component = componentTypeRegistry.getValue(Identifier.parse(removedString));
                 if (component != null) {
                     this.removedTags.add(component);
                 }
@@ -809,7 +812,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             try {
                 this.customTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to read custom tag for item", ex);
             }
         }
     }
@@ -1838,7 +1841,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         for (Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
             DataComponentType<?> componentType = entry.getKey();
             Optional<?> componentValue = entry.getValue();
-            String componentKey = componentTypeRegistry.getResourceKey(componentType).orElseThrow().location().toString();
+            String componentKey = componentTypeRegistry.getResourceKey(componentType).orElseThrow().identifier().toString();
 
             if (componentValue.isPresent()) {
                 net.minecraft.nbt.Tag componentValueAsNBT = (net.minecraft.nbt.Tag) ((DataComponentType) componentType).codecOrThrow().encodeStart(ops, componentValue.get()).getOrThrow();
@@ -2238,7 +2241,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed(internal, buf);
                 builder.put("internal", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write internal tag for item", ex);
             }
         }
 
@@ -2258,7 +2261,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed((CompoundTag) unhandled, buf);
                 builder.put("unhandled", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write unhandled tag for item", ex);
             }
         }
 
@@ -2275,7 +2278,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             List<String> removedTags = new ArrayList<>();
             for (DataComponentType<?> removed : this.removedTags) {
-                String componentKey = componentTypeRegistry.getResourceKey(removed).orElseThrow().location().toString();
+                String componentKey = componentTypeRegistry.getResourceKey(removed).orElseThrow().identifier().toString();
 
                 removedTags.add(componentKey);
             }
@@ -2293,7 +2296,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 NbtIo.writeCompressed(this.customTag, buf);
                 builder.put("custom", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
-                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Failed to write custom tag for item", ex);
             }
         }
 
@@ -2516,14 +2519,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyMaterial(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
+    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         return materials.stream().map(m -> {
-            return net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
+            return net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
         }).toList();
     }
 
-    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
+    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
         return predicates.stream()
             .flatMap(p -> p.blocks().map(net.minecraft.core.HolderSet::stream).orElse(java.util.stream.Stream.empty()))
             .map(holder -> CraftBlockType.minecraftToBukkit(holder.value()))
@@ -2554,22 +2557,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyNamespaced(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
-        final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
+    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
+        final List<net.minecraft.advancements.criterion.BlockPredicate> predicates = new ArrayList<>();
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
             if (namespaced instanceof final org.bukkit.NamespacedKey key) {
-                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
+                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
             } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
-                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
+                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
             }
         }
         return predicates;
     }
 
-    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
+    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
         final Set<com.destroystokyo.paper.Namespaced> namespaceds = Sets.newHashSet();
-        for (final net.minecraft.advancements.critereon.BlockPredicate predicate : predicates) {
+        for (final net.minecraft.advancements.criterion.BlockPredicate predicate : predicates) {
             if (predicate.blocks().isEmpty()) {
                 continue;
             }
@@ -2579,7 +2582,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             } else {
                 holders.forEach(h -> {
                     h.unwrapKey().ifPresent(key -> {
-                        namespaceds.add(new org.bukkit.NamespacedKey(key.location().getNamespace(), key.location().getPath()));
+                        namespaceds.add(new org.bukkit.NamespacedKey(key.identifier().getNamespace(), key.identifier().getPath()));
                     });
                 });
             }

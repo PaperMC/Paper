@@ -1,44 +1,77 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -48,8 +_,10 @@
-     @Nullable
-     private SynchronizeRegistriesTask synchronizeRegistriesTask;
+@@ -52,12 +_,26 @@
+     public ClientInformation clientInformation;
+     private @Nullable SynchronizeRegistriesTask synchronizeRegistriesTask;
+     private @Nullable PrepareSpawnTask prepareSpawnTask;
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
--    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
--        super(server, connection, cookie);
-+    // CraftBukkit start
-+    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, ServerPlayer player) {
-+        super(server, connection, cookie, player);
-+        // CraftBukkit end
+     public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+         super(server, connection, cookie);
          this.gameProfile = cookie.gameProfile();
          this.clientInformation = cookie.clientInformation();
-     }
-@@ -61,6 +_,11 @@
+-    }
++        this.paperConnection = new io.papermc.paper.connection.PaperPlayerConfigurationConnection(this); // Paper
++    }
++
++    // Paper start - configuration phase API
++    @Override
++    public io.papermc.paper.connection.PlayerCommonConnection getApiConnection() {
++        return this.paperConnection;
++    }
++
++    @Override
++    public net.kyori.adventure.audience.Audience getAudience() {
++        return this.paperConnection.getAudience();
++    }
++    // Paper end - configuration phase API
+ 
+     @Override
+     protected GameProfile playerProfile() {
+@@ -66,6 +_,11 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails details) {
 +        // Paper start - Debugging
 +        if (this.server.isDebugging()) {
-+            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile, details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} ({}) lost connection: {}, while in configuration phase {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
 +        } else
 +        // Paper end
-         LOGGER.info("{} lost connection: {}", this.gameProfile, details.reason().getString());
-         super.onDisconnect(details);
+         LOGGER.info("{} ({}) lost connection: {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString());
+         if (this.prepareSpawnTask != null) {
+             this.prepareSpawnTask.close();
+@@ -81,10 +_,15 @@
      }
-@@ -73,6 +_,12 @@
+ 
      public void startConfiguration() {
++        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
-+        // CraftBukkit start
-+        org.bukkit.craftbukkit.CraftServerLinks wrapper = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
-+        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.player.getBukkitEntity(), wrapper);
-+        this.cserver.getPluginManager().callEvent(event);
-+        serverLinks = wrapper.getServerLinks();
-+        // CraftBukkit end
          if (!serverLinks.isEmpty()) {
-             this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
+-            this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
++            // Paper start
++            org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
++            new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++            this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
++            // Paper end
          }
-@@ -105,6 +_,7 @@
+ 
+         LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = this.server.registries();
+@@ -97,11 +_,12 @@
+         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
+         this.configurationTasks.add(this.synchronizeRegistriesTask);
+         this.addOptionalTasks();
++        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
+         this.returnToWorld();
+     }
+ 
+     public void returnToWorld() {
+-        this.prepareSpawnTask = new PrepareSpawnTask(this.server, new NameAndId(this.gameProfile));
++        this.prepareSpawnTask = new PrepareSpawnTask(this.server, this.gameProfile, this); // Paper - pass full GameProfile & listener for events
+         this.configurationTasks.add(this.prepareSpawnTask);
+         this.configurationTasks.add(new JoinWorldTask());
+         this.startNextTask();
+@@ -132,12 +_,14 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
@@ -46,27 +79,50 @@
      }
  
      @Override
-@@ -139,16 +_,21 @@
+     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+         super.handleResourcePackResponse(packet);
+-        if (packet.action().isTerminal()) {
++        this.connection.resourcePackStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()]; // Paper
++        if (packet.action().isTerminal() && packet.id().equals(this.server.getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::id).orElse(null))) { // Paper - Ignore resource pack requests that are not vanilla
+             this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
+         }
+     }
+@@ -171,7 +_,7 @@
                  return;
              }
  
--            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
-+            Component component = null; // CraftBukkit - login checks already completed
+-            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
++            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
              if (component != null) {
                  this.disconnect(component);
                  return;
-             }
- 
--            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation);
-+            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
-             playerList.placeNewPlayer(this.connection, playerForLogin, this.createCookie(this.clientInformation));
-         } catch (Exception var5) {
-             LOGGER.error("Couldn't place player in world", (Throwable)var5);
-+            // Paper start - Debugging
-+            if (this.server.isDebugging()) {
-+                var5.printStackTrace();
-+            }
-+            // Paper end - Debugging
-             this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
-             this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
+@@ -231,4 +_,29 @@
+             this.startNextTask();
          }
+     }
++
++    // Paper start
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo); // Currently you cannot cancel disconnect during the config stage
++        });
++    }
++
++    @Override
++    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
++        super.handleCustomPayload(packet);
++    }
++
++    @Override
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection() {
++        return paperConnection;
++    }
++    // Paper end
+ }

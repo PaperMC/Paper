@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.help.HelpMap;
 import org.bukkit.help.HelpTopic;
 import org.bukkit.help.IndexHelpTopic;
+import org.jetbrains.annotations.NotNull;
 
 public class CustomIndexHelpTopic extends IndexHelpTopic {
     private List<String> futureTopics;
@@ -19,7 +20,20 @@ public class CustomIndexHelpTopic extends IndexHelpTopic {
     }
 
     @Override
+    public boolean canSee(@NotNull final CommandSender sender) {
+        this.computeTopics();
+
+        return super.canSee(sender);
+    }
+
+    @Override
     public String getFullText(CommandSender sender) {
+        this.computeTopics();
+
+        return super.getFullText(sender);
+    }
+
+    private void computeTopics() {
         if (this.futureTopics != null) {
             List<HelpTopic> topics = new LinkedList<>();
             for (String futureTopic : this.futureTopics) {
@@ -31,7 +45,5 @@ public class CustomIndexHelpTopic extends IndexHelpTopic {
             this.setTopicsCollection(topics);
             this.futureTopics = null;
         }
-
-        return super.getFullText(sender);
     }
 }
