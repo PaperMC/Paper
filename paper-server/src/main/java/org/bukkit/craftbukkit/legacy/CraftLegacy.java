@@ -325,8 +325,8 @@ public final class CraftLegacy {
             if (!material.isLegacy()) {
                 continue;
             }
-            // Do old head blocks separately
-            if (material == Material.LEGACY_SKULL) {
+            // Do old heads separately
+            if (material == Material.LEGACY_SKULL || material == Material.LEGACY_SKULL_ITEM) {
                 continue;
             }
 
@@ -437,9 +437,10 @@ public final class CraftLegacy {
             }
         }
 
-        // Do old head blocks
+        // Do old heads
         for (byte data = 0; data < 16; data++) {
-            MaterialData matData = new MaterialData(Material.LEGACY_SKULL, data);
+            MaterialData itemMatData = new MaterialData(Material.LEGACY_SKULL_ITEM, data);
+            MaterialData blockMatData = new MaterialData(Material.LEGACY_SKULL, data);
             Item nonLegacyItem;
             Block nonLegacyBlock;
             switch (data) {
@@ -468,11 +469,11 @@ public final class CraftLegacy {
                     nonLegacyBlock = Blocks.SKELETON_SKULL;
                 }
             }
-            materialToItem.put(matData, nonLegacyItem);
-            materialToBlock.put(matData, nonLegacyBlock);
+            materialToItem.put(itemMatData, nonLegacyItem);
+            materialToBlock.put(blockMatData, nonLegacyBlock);
             if (data <= 5) {
-                itemToMaterial.put(nonLegacyItem, matData);
-                blockToMaterial.put(nonLegacyBlock, matData);
+                itemToMaterial.put(nonLegacyItem, itemMatData);
+                blockToMaterial.put(nonLegacyBlock, blockMatData);
             }
         }
     }
