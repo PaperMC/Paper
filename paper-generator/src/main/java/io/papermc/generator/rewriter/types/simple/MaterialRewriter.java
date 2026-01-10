@@ -4,16 +4,12 @@ import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
 import io.papermc.generator.utils.BlockStateMapping;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.typewriter.preset.model.EnumValue;
-import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.WallSignBlock;
 import org.bukkit.block.data.BlockData;
-
-import static io.papermc.generator.utils.Formatting.asCode;
 
 @Deprecated(forRemoval = true)
 public class MaterialRewriter {
@@ -58,8 +54,8 @@ public class MaterialRewriter {
 
         @Override
         protected Iterable<String> getCases() {
-            return BuiltInRegistries.BLOCK.holders().filter(reference -> reference.value().defaultBlockState().useShapeForLightOcclusion())
-            .map(reference -> reference.key().location().getPath().toUpperCase(Locale.ENGLISH)).sorted(Formatting.ALPHABETIC_KEY_ORDER)::iterator;
+            return BuiltInRegistries.BLOCK.listElements().filter(reference -> reference.value().defaultBlockState().useShapeForLightOcclusion())
+                .map(reference -> reference.key().identifier().getPath().toUpperCase(Locale.ENGLISH)).sorted(Formatting.alphabeticKeyOrder(Function.identity()))::iterator;
         }
     }*/
 
@@ -79,8 +75,7 @@ public class MaterialRewriter {
 
         @Override
         protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Item> reference) {
-            EnumValue.Builder value = super.rewriteEnumValue(reference);
-            return value.argument(Integer.toString(-1)); // id not needed for non legacy material
+            return super.rewriteEnumValue(reference).argument(Integer.toString(-1)); // id not needed for non legacy material
         }
     }
 }
