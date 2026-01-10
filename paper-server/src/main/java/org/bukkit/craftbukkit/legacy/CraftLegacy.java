@@ -439,26 +439,26 @@ public final class CraftLegacy {
 
         // Do old long grass
         for (byte data = 0; data < 16; data++) {
-            var materialData = new MaterialData(Material.LEGACY_LONG_GRASS, data);
-            Item nonLegacyItem;
-            Block nonLegacyBlock;
-            switch (data) {
-                case 1 -> {
-                    nonLegacyItem = Items.SHORT_GRASS;
-                    nonLegacyBlock = Blocks.SHORT_GRASS;
-                }
-                case 2 -> {
-                    nonLegacyItem = Items.FERN;
-                    nonLegacyBlock = Blocks.FERN;
-                }
-                default -> {
-                    nonLegacyItem = Items.DEAD_BUSH;
-                    nonLegacyBlock = Blocks.DEAD_BUSH;
-                }
+            if (data == 1 || data == 2) {
+                continue;
             }
-            materialToItem.put(materialData, nonLegacyItem);
-            materialToBlock.put(materialData, nonLegacyBlock);
+            MaterialData matData = new MaterialData(Material.LEGACY_LONG_GRASS, data);
+            materialToItem.put(matData, Items.DEAD_BUSH);
+            materialToBlock.put(matData, Blocks.DEAD_BUSH);
         }
+        MaterialData deadBushMatData = new MaterialData(Material.LEGACY_LONG_GRASS, (byte) 0);
+        itemToMaterial.put(Items.DEAD_BUSH, deadBushMatData);
+        blockToMaterial.put(Blocks.DEAD_BUSH, deadBushMatData);
+        MaterialData shortGrassMatData = new MaterialData(Material.LEGACY_LONG_GRASS, (byte) 1);
+        materialToItem.put(shortGrassMatData, Items.SHORT_GRASS);
+        materialToBlock.put(shortGrassMatData, Blocks.SHORT_GRASS);
+        itemToMaterial.put(Items.SHORT_GRASS, shortGrassMatData);
+        blockToMaterial.put(Blocks.SHORT_GRASS, shortGrassMatData);
+        MaterialData fernMatData = new MaterialData(Material.LEGACY_LONG_GRASS, (byte) 2);
+        materialToItem.put(fernMatData, Items.FERN);
+        materialToBlock.put(fernMatData, Blocks.FERN);
+        itemToMaterial.put(Items.FERN, fernMatData);
+        blockToMaterial.put(Blocks.FERN, fernMatData);
     }
 
     private static boolean isBlock(Material material) {
