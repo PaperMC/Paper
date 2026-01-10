@@ -164,7 +164,11 @@ public interface UnsafeValues {
 
     byte[] serializeItem(ItemStack item);
 
+    byte[] serializeItem(ItemStack item, boolean compressed);
+
     ItemStack deserializeItem(byte[] data);
+
+    ItemStack deserializeItem(byte[] data, boolean compressed);
 
     /**
      * Serializes this itemstack to json format.

@@ -761,20 +761,48 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
      * the {@link #serializeAsBytes()} API returned.
+     *
+     * This goes through mojang's compression stream.
      * @param bytes bytes representing an item in NBT
      * @return ItemStack migrated to this version of Minecraft if needed.
      */
     public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
-        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
+        return deserializeBytes(bytes, true);
+    }
+
+    /**
+     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
+     * use the built in data converter instead of bukkits dangerous serialization system.
+     *
+     * This expects that the DataVersion was stored on the root of the Compound, as saved from
+     * the {@link #serializeAsBytes()} API returned.
+     * @param bytes bytes representing an item in NBT
+     * @param compressed whether the data goes through mojang's compression stream. You must use the same value when serializing.
+     * @return ItemStack migrated to this version of Minecraft if needed.
+     */
+    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes, final boolean compressed) {
+        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes, compressed);
     }
 
     /**
      * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
      * use the built in data converter instead of bukkits dangerous serialization system.
+     *
+     * This goes through mojang's compression stream.
      * @return bytes representing this item in NBT.
      */
     public byte @NotNull [] serializeAsBytes() {
-        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
+        return serializeAsBytes(true);
+    }
+
+    /**
+     * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
+     * use the built in data converter instead of bukkits dangerous serialization system.
+     * @param compressed whether the data goes through mojang's compression stream. You must use the same value when deserializing.
+     * @return bytes representing this item in NBT.
+     */
+    public byte @NotNull [] serializeAsBytes(final boolean compressed) {
+        return org.bukkit.Bukkit.getUnsafe().serializeItem(this, compressed);
     }
 
     /**

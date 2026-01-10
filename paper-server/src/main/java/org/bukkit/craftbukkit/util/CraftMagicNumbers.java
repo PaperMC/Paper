@@ -16,6 +16,9 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.RegistryKey;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -492,6 +495,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public byte[] serializeItem(ItemStack item) {
+        return this.serializeItem(item, true);
+    }
+
+    @Override
+    public byte[] serializeItem(ItemStack item, boolean compressed) {
         Preconditions.checkNotNull(item, "null cannot be serialized");
         Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialized");
 
@@ -499,16 +507,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
             (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
                 MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE),
                 CraftItemStack.unwrap(item)
-            ).getOrThrow()
+            ).getOrThrow(), compressed
         );
     }
 
     @Override
     public ItemStack deserializeItem(byte[] data) {
+        return this.deserializeItem(data, true);
+    }
+
+    @Override
+    public ItemStack deserializeItem(byte[] data, boolean compressed) {
         Preconditions.checkNotNull(data, "null cannot be deserialized");
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
-        CompoundTag compound = deserializeNbtFromBytes(data);
+        CompoundTag compound = deserializeNbtFromBytes(data, compressed);
         return deserializeItem(compound);
     }
 
@@ -706,7 +719,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     throw new IllegalArgumentException("Couldn't serialize entity");
                 }
             }
-            return serializeNbtToBytes(output.buildResult());
+            return serializeNbtToBytes(output.buildResult(), true);
         }
     }
 
@@ -715,7 +728,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkNotNull(data, "null cannot be deserialized");
         Preconditions.checkArgument(data.length > 0, "Cannot deserialize empty data");
 
-        CompoundTag compound = deserializeNbtFromBytes(data);
+        CompoundTag compound = deserializeNbtFromBytes(data, true);
         int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
@@ -754,26 +767,39 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return nmsEntity;
     }
 
-    private byte[] serializeNbtToBytes(CompoundTag compound) {
+    private byte[] serializeNbtToBytes(CompoundTag compound, boolean compressed) {
         compound.putInt("DataVersion", getDataVersion());
         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
         try {
-            net.minecraft.nbt.NbtIo.writeCompressed(
-                compound,
-                outputStream
-            );
+            if (compressed) {
+                net.minecraft.nbt.NbtIo.writeCompressed(
+                        compound,
+                        outputStream
+                );
+            } else {
+                net.minecraft.nbt.NbtIo.write(
+                        compound,
+                        new DataOutputStream(outputStream)
+                );
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         return outputStream.toByteArray();
     }
 
-    private CompoundTag deserializeNbtFromBytes(byte[] data) {
+    private CompoundTag deserializeNbtFromBytes(byte[] data, boolean compressed) {
         CompoundTag compound;
         try {
-            compound = net.minecraft.nbt.NbtIo.readCompressed(
-                new java.io.ByteArrayInputStream(data), net.minecraft.nbt.NbtAccounter.unlimitedHeap()
-            );
+            if (compressed) {
+                compound = net.minecraft.nbt.NbtIo.readCompressed(
+                        new java.io.ByteArrayInputStream(data), net.minecraft.nbt.NbtAccounter.unlimitedHeap()
+                );
+            } else {
+                compound = net.minecraft.nbt.NbtIo.read(
+                        new DataInputStream(new java.io.ByteArrayInputStream(data)), net.minecraft.nbt.NbtAccounter.unlimitedHeap()
+                );
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
