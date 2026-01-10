@@ -85,14 +85,8 @@ public abstract class Configurations<G, W> {
         return this.createLoaderBuilder();
     }
 
-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type, final boolean refreshNode) {
-        return node -> {
-            final T instance = node.require(type);
-            if (refreshNode) {
-                node.set(type, instance);
-            }
-            return instance;
-        };
+    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type) {
+        return node -> node.require(type);
     }
 
     static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
@@ -105,7 +99,7 @@ public abstract class Configurations<G, W> {
     }
 
     public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
-        return this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass, true));
+        return this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass), true);
     }
 
     private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
@@ -118,7 +112,11 @@ public abstract class Configurations<G, W> {
         }
     }
 
-    protected G initializeGlobalConfiguration(final RegistryAccess registryAccess, final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
+    protected G initializeGlobalConfiguration(
+        final RegistryAccess registryAccess,
+        final CheckedFunction<ConfigurationNode, G, SerializationException> creator,
+        final boolean persistDefaults
+    ) throws ConfigurateException {
         final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
         final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder(registryAccess)
             .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
@@ -134,9 +132,13 @@ public abstract class Configurations<G, W> {
             this.verifyGlobalConfigVersion(node);
         }
         this.applyGlobalConfigTransformations(node);
-        final G instance = creator.apply(node);
+        if (persistDefaults) node.set(this.globalConfigClass, node.require(this.globalConfigClass));
         trySaveFileNode(loader, node, configFile.toString());
-        return instance;
+        return creator.apply(ConfigurationOverrides.applyOverrides(
+            node,
+            ConfigurationOverrides.OverrideIdentifier.GLOBAL,
+            GlobalConfiguration.class
+        ));
     }
 
     protected void verifyGlobalConfigVersion(final ConfigurationNode globalNode) {
@@ -207,10 +209,13 @@ public abstract class Configurations<G, W> {
 
     // Make sure to run version transforms on the default world config first via #setupWorldDefaultsConfig
     public W createWorldConfig(final ContextMap contextMap) throws IOException {
-        return this.createWorldConfig(contextMap, creator(this.worldConfigClass, false));
+        return this.createWorldConfig(contextMap, creator(this.worldConfigClass));
     }
 
-    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
+    protected W createWorldConfig(
+        final ContextMap contextMap,
+        final CheckedFunction<ConfigurationNode, W, SerializationException> creator
+    ) throws IOException {
         Preconditions.checkArgument(!contextMap.isDefaultWorldContext(), "cannot create world map with default world context");
         final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
         final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap(contextMap.require(REGISTRY_ACCESS)).build(), defaultsConfigFile).loader();
@@ -238,8 +243,16 @@ public abstract class Configurations<G, W> {
         this.applyWorldConfigTransformations(contextMap, worldNode, defaultsNode);
         this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
         this.trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
-        worldNode.mergeFrom(defaultsNode);
-        return creator.apply(worldNode);
+        worldNode.mergeFrom(ConfigurationOverrides.applyOverrides(
+            defaultsNode,
+            ConfigurationOverrides.OverrideIdentifier.WORLD_DEFAULT,
+            WorldConfiguration.class
+        ));
+        return creator.apply(ConfigurationOverrides.applyOverrides(
+            worldNode,
+            new ConfigurationOverrides.OverrideIdentifier.WorldSpecific(dir.getFileName().toString()),
+            WorldConfiguration.class
+        ));
     }
 
     protected void verifyWorldConfigVersion(final ContextMap contextMap, final ConfigurationNode worldNode) {
