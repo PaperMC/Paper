@@ -23,7 +23,7 @@
                  }
              }
          };
-@@ -371,10 +_,166 @@
+@@ -371,10 +_,186 @@
              return InteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -40,11 +40,23 @@
 +                    serverLevel.captureTreeGeneration = true;
 +                }
 +            }
++            // Paper start - Fix cancelled rooted dirt drops being duped
++            List<ItemEntity> capturedDrops = null;
++            if (item instanceof HoeItem) {
++                capturedDrops = new java.util.ArrayList<>();
++                serverLevel.captureDrops = capturedDrops;
++            }
++            // Paper end - Fix cancelled rooted dirt drops being duped
 +            InteractionResult interactionResult;
 +            try {
 +                interactionResult = item.useOn(context);
 +            } finally {
 +                serverLevel.captureBlockStates = false;
++                // Paper start - Fix cancelled rooted dirt drops being duped
++                if (capturedDrops != null) {
++                    serverLevel.captureDrops = null;
++                }
++                // Paper end - Fix cancelled rooted dirt drops being duped
 +            }
 +            DataComponentPatch newPatch = this.components.asPatch();
 +            int newCount = this.getCount();
@@ -182,6 +194,14 @@
 +                        // Paper end - Fix spigot sound playing for BlockItem ItemStacks
 +                        serverLevel.playSound(player, clickedPos, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
 +                    }
++
++                    // Paper start - Fix cancelled rooted dirt drops being duped
++                    if (capturedDrops != null) {
++                        for (ItemEntity drop : capturedDrops) {
++                            serverLevel.addFreshEntity(drop);
++                        }
++                    }
++                    // Paper end - Fix cancelled rooted dirt drops being duped
 +
 +                    player.awardStat(Stats.ITEM_USED.get(item));
 +                }
