@@ -214,7 +214,7 @@ public interface UnsafeValues {
      * @param data the data to check
      * @return true if the data has a GZip header, false otherwise, including
      * if the {@code data.length} is below 2
-     * @since 1.21.8
+     * @since 1.21.11
      */
     static boolean isGZipCompressedNbt(@NotNull byte[] data) {
         // if data length is below 2, it's always invalid data
@@ -294,7 +294,7 @@ public interface UnsafeValues {
      * @return serialized entity data
      * @throws IllegalArgumentException if couldn't serialize the entity
      * @see #deserializeEntity(byte[], World, boolean, boolean)
-     * @since 1.21.8
+     * @since 1.21.11
      */
     byte @NotNull [] serializeEntity(@NotNull Entity entity, boolean compress, @NotNull EntitySerializationFlag... serializationFlags);
 
@@ -307,7 +307,7 @@ public interface UnsafeValues {
      * @throws IllegalArgumentException if it couldn't serialize the entity
      * @throws java.io.IOException if there was an IO problem
      * @see #deserializeEntityFromNbt(java.io.InputStream, World, boolean, boolean)
-     * @since 1.21.8
+     * @since 1.21.11
      */
     void serializeEntityToNbt(@NotNull Entity entity, @NotNull java.io.OutputStream output, @NotNull EntitySerializationFlag... serializationFlags) throws java.io.IOException;
 
@@ -382,7 +382,7 @@ public interface UnsafeValues {
      * @throws java.io.IOException if there was an IO problem
      * @see #serializeEntityToNbt(Entity, java.io.OutputStream, EntitySerializationFlag...)
      * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
-     * @since 1.21.8
+     * @since 1.21.11
      */
     @NotNull Entity deserializeEntityFromNbt(@NotNull java.io.InputStream input, @NotNull World world, boolean preserveUUID, boolean preservePassengers) throws java.io.IOException;
 
