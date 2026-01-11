@@ -16,10 +16,10 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7b2032b33 100644
+index d1cd00f0842f6fba1fa188de59bf111a4235bf8a..168b475b38b2872b27c1ab15f6846323ac16dd2c 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -48,8 +48,12 @@ public class PathFinder {
+@@ -47,28 +47,32 @@ public class PathFinder {
          if (start == null) {
              return null;
          } else {
@@ -34,12 +34,11 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7
              Path path = this.findPath(start, map, maxRange, reachRange, maxVisitedNodesMultiplier);
              this.nodeEvaluator.done();
              return path;
-@@ -57,20 +61,20 @@ public class PathFinder {
+         }
      }
  
-     @Nullable
--    private Path findPath(Node node, Map<Target, BlockPos> targets, float maxRange, int reachRange, float maxVisitedNodesMultiplier) {
-+    private Path findPath(Node node, List<Map.Entry<Target, BlockPos>> positions, float maxRange, int reachRange, float maxVisitedNodesMultiplier) { // Paper - optimize collection
+-    private @Nullable Path findPath(Node node, Map<Target, BlockPos> targets, float maxRange, int reachRange, float maxVisitedNodesMultiplier) {
++    private @Nullable Path findPath(Node node, List<Map.Entry<Target, BlockPos>> positions, float maxRange, int reachRange, float maxVisitedNodesMultiplier) { // Paper - optimize collection
          ProfilerFiller profilerFiller = Profiler.get();
          profilerFiller.push("find_path");
          profilerFiller.markForCharting(MetricCategory.PATH_FINDING);
@@ -59,7 +58,7 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7
          int i1 = (int)(this.maxVisitedNodes * maxVisitedNodesMultiplier);
  
          while (!this.openSet.isEmpty()) {
-@@ -81,14 +85,18 @@ public class PathFinder {
+@@ -79,14 +83,18 @@ public class PathFinder {
              Node node1 = this.openSet.pop();
              node1.closed = true;
  
@@ -81,7 +80,7 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7
                  break;
              }
  
-@@ -107,7 +115,7 @@ public class PathFinder {
+@@ -105,7 +113,7 @@ public class PathFinder {
                      if (node2.walkedDistance < maxRange && (!node2.inOpenSet() || f1 < node2.g)) {
                          node2.cameFrom = node1;
                          node2.g = f1;
@@ -90,7 +89,7 @@ index 1a9d8e6dd55ce30aca1c65b32417d61fd0a10f84..5894260481ea395c26a5b506e38530f7
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -119,34 +127,41 @@ public class PathFinder {
+@@ -117,34 +125,41 @@ public class PathFinder {
              }
          }
  

@@ -15,13 +15,13 @@ import org.bukkit.potion.PotionEffectType;
 
 public class CraftMushroomCow extends CraftAbstractCow implements MushroomCow, io.papermc.paper.entity.PaperShearable { // Paper
 
-    public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.MushroomCow entity) {
+    public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.cow.MushroomCow entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.MushroomCow getHandle() {
-        return (net.minecraft.world.entity.animal.MushroomCow) this.entity;
+    public net.minecraft.world.entity.animal.cow.MushroomCow getHandle() {
+        return (net.minecraft.world.entity.animal.cow.MushroomCow) this.entity;
     }
 
     @Override
@@ -106,7 +106,7 @@ public class CraftMushroomCow extends CraftAbstractCow implements MushroomCow, i
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "Variant cannot be null");
 
-        this.getHandle().setVariant(net.minecraft.world.entity.animal.MushroomCow.Variant.values()[variant.ordinal()]);
+        this.getHandle().setVariant(net.minecraft.world.entity.animal.cow.MushroomCow.Variant.values()[variant.ordinal()]);
     }
 
     // Paper start

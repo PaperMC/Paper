@@ -7,8 +7,8 @@ import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import net.kyori.adventure.text.Component;
-import net.minecraft.Util;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Util;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -104,7 +104,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     public OfflinePlayer getOwningPlayer() {
         if (this.hasOwner()) {
             final GameProfile gameProfile = this.profile.partialProfile(); // The partial profile is always guaranteed to have a non-null uuid and name.
-            if (Objects.equals(gameProfile.id(), Util.NIL_UUID)) {
+            if (!gameProfile.id().equals(Util.NIL_UUID)) {
                 return Bukkit.getOfflinePlayer(gameProfile.id());
             }
 
@@ -163,7 +163,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
 
     @Override
     public NamespacedKey getNoteBlockSound() {
-        ResourceLocation key = this.getSnapshot().getNoteBlockSound();
+        Identifier key = this.getSnapshot().getNoteBlockSound();
         return (key != null) ? CraftNamespacedKey.fromMinecraft(key) : null;
     }
 

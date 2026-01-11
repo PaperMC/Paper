@@ -7,7 +7,7 @@ import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.jspecify.annotations.Nullable;
@@ -33,9 +33,9 @@ public final class FeatureSeedsGeneration implements TransformAction {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
-    private final ResourceLocation worldKey;
+    private final Identifier worldKey;
 
-    private FeatureSeedsGeneration(ResourceLocation worldKey) {
+    private FeatureSeedsGeneration(Identifier worldKey) {
         this.worldKey = worldKey;
     }
 
