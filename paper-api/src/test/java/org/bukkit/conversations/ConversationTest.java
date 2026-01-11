@@ -1,7 +1,7 @@
 package org.bukkit.conversations;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.bukkit.plugin.TestPlugin;
+import org.bukkit.plugin.BukkitTestPlugin;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,14 +26,14 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("FirstInput");
         assertEquals("SecondPrompt", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
     public void testConversationFactory() {
         FakeConversable forWhom = new FakeConversable();
         NullConversationPrefix prefix = new NullConversationPrefix();
-        ConversationFactory factory = new ConversationFactory(new TestPlugin("Test"))
+        ConversationFactory factory = new ConversationFactory(new BukkitTestPlugin("Test"))
                 .withFirstPrompt(new FirstPrompt())
                 .withModality(false)
                 .withPrefix(prefix);
@@ -53,7 +53,7 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("FirstInput");
         assertEquals("SecondPrompt", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
@@ -70,13 +70,13 @@ public class ConversationTest {
         // Send the first input
         conversation.acceptInput("bananas");
         assertEquals("bananas", forWhom.lastSentMessage);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     @Test
     public void testNotPlayer() {
         FakeConversable forWhom = new FakeConversable();
-        ConversationFactory factory = new ConversationFactory(new TestPlugin("Test"))
+        ConversationFactory factory = new ConversationFactory(new BukkitTestPlugin("Test"))
                 .thatExcludesNonPlayersWithMessage("bye");
         Conversation conversation = factory.buildConversation(forWhom);
 
@@ -84,7 +84,7 @@ public class ConversationTest {
         conversation.begin();
         assertEquals("bye", forWhom.lastSentMessage);
         assertEquals(conversation, forWhom.begunConversation);
-        assertEquals(conversation, forWhom.abandonedConverstion);
+        assertEquals(conversation, forWhom.abandonedConversation);
     }
 
     private class FirstPrompt extends StringPrompt {

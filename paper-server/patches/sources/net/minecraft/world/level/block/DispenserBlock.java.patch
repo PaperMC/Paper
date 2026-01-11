@@ -4,9 +4,9 @@
  
      @Override
      protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
--        if (!level.isClientSide && level.getBlockEntity(pos) instanceof DispenserBlockEntity dispenserBlockEntity) {
+-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof DispenserBlockEntity dispenserBlockEntity) {
 -            player.openMenu(dispenserBlockEntity);
-+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof DispenserBlockEntity dispenserBlockEntity && player.openMenu(dispenserBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
++        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof DispenserBlockEntity dispenserBlockEntity && player.openMenu(dispenserBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
              player.awardStat(dispenserBlockEntity instanceof DropperBlockEntity ? Stats.INSPECT_DROPPER : Stats.INSPECT_DISPENSER);
          }
  
@@ -15,7 +15,7 @@
              int randomSlot = dispenserBlockEntity.getRandomSlot(level.random);
              if (randomSlot < 0) {
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(level, pos)) { // Paper - Add BlockFailedDispenseEvent
-                 level.levelEvent(1001, pos, 0);
+                 level.levelEvent(LevelEvent.SOUND_DISPENSER_FAIL, pos, 0);
                  level.gameEvent(GameEvent.BLOCK_ACTIVATE, pos, GameEvent.Context.of(dispenserBlockEntity.getBlockState()));
 +                } // Paper - Add BlockFailedDispenseEvent
              } else {

@@ -8,7 +8,7 @@ import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
-import io.papermc.paper.configuration.serializer.collections.MapSerializer;
+import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
@@ -31,13 +31,14 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.arguments.NbtPathArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -47,8 +48,8 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Vindicator;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.illager.Vindicator;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -72,9 +73,9 @@ public class WorldConfiguration extends ConfigurationPart {
     static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 
     private final transient SpigotWorldConfig spigotConfig;
-    private final transient ResourceLocation worldKey;
+    private final transient Identifier worldKey;
 
-    WorldConfiguration(final SpigotWorldConfig spigotConfig, final ResourceLocation worldKey) {
+    WorldConfiguration(final SpigotWorldConfig spigotConfig, final Identifier worldKey) {
         this.spigotConfig = spigotConfig;
         this.worldKey = worldKey;
     }
@@ -170,6 +171,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public class Spawning extends ConfigurationPart {
             public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
             public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
+            public IntOr.Disabled maxArrowDespawnInvulnerability = new IntOr.Disabled(OptionalInt.of(200));
             public boolean filterBadTileEntityNbtFromFallingBlocks = true;
             public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "sleeping_pos"));
             public boolean disableMobSpawnerSpawnEggTransformation = false;
@@ -193,15 +195,14 @@ public class WorldConfiguration extends ConfigurationPart {
                 }
             }
 
-            @MapSerializer.ThrowExceptions
-            public Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
+            public @ThrowExceptions Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
                 map.put(EntityType.SNOWBALL, IntOr.Disabled.DISABLED);
                 map.put(EntityType.LLAMA_SPIT, IntOr.Disabled.DISABLED);
             });
 
             @PostProcess
             public void precomputeDespawnDistances() throws SerializationException {
-                for (Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
+                for (final Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
                     final MobCategory category = entry.getKey();
                     final DespawnRangePair range = entry.getValue();
                     range.hard().preComputed(category.getDespawnDistance(), category.getSerializedName());
@@ -238,7 +239,7 @@ public class WorldConfiguration extends ConfigurationPart {
 
             public class WanderingTrader extends ConfigurationPart {
                 public int spawnMinuteLength = 1200;
-                public int spawnDayLength = net.minecraft.world.entity.npc.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
+                public int spawnDayLength = net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner.DEFAULT_SPAWN_DELAY;
                 public int spawnChanceFailureIncrement = 25;
                 public int spawnChanceMin = 25;
                 public int spawnChanceMax = 75;
@@ -332,6 +333,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
             @Comment("Adds a cooldown to bees being released after a failed release, which can occur if the hive is blocked or it being night.")
             public boolean cooldownFailedBeehiveReleases = true;
+            @Comment("The delay before retrying POI acquisition when entity navigation is stuck. This will reduce pathfinding performance impact. Measured in ticks.")
+            public IntOr.Disabled stuckEntityPoiRetryDelay = new IntOr.Disabled(OptionalInt.of(200));
         }
 
         public TrackingRangeY trackingRangeY;
@@ -572,9 +575,9 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean disableEndCredits = false;
         public DoubleOr.Default maxLeashDistance = DoubleOr.Default.USE_DEFAULT;
         public boolean disableSprintInterruptionOnAttack = false;
-        public int shieldBlockingDelay = 5;
         public boolean disableRelativeProjectileVelocity = false;
         public boolean legacyEnderPearlBehavior = false;
+        public boolean allowRemoteEnderDragonRespawning = false;
 
         public enum RedstoneImplementation {
             VANILLA, EIGENCRAFT, ALTERNATE_CURRENT

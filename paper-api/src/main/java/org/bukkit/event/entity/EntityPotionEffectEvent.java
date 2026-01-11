@@ -164,7 +164,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         AREA_EFFECT_CLOUD,
         /**
-         * When the entity is hit by an spectral or tipped arrow.
+         * When the entity is hit by a spectral or tipped arrow.
          */
         ARROW,
         /**
@@ -218,6 +218,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          * When all effects are removed due to a bucket of milk.
          */
         MILK,
+        /**
+         * When the entity gets the effect from a nautilus.
+         */
+        NAUTILUS,
         /**
          * When a player gets bad omen after killing a patrol captain.
          *

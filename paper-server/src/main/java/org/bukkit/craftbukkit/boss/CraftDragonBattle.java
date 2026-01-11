@@ -45,7 +45,7 @@ public class CraftDragonBattle implements DragonBattle {
             return null;
         }
 
-        return CraftLocation.toBukkit(this.handle.portalLocation, this.handle.level.getWorld());
+        return CraftLocation.toBukkit(this.handle.portalLocation, this.handle.level);
     }
 
     @Override
