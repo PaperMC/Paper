@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import io.papermc.paper.world.MoonPhase;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -15,6 +16,7 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -465,8 +467,14 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
+    public MoonPhase getMoonPhase(int x, int y, int z) {
+        net.minecraft.world.level.MoonPhase minecraftMoonPhase = this.getHandle().getLevel().environmentAttributes().getValue(EnvironmentAttributes.MOON_PHASE, new BlockPos(x, y, z));
+        return MoonPhase.values()[minecraftMoonPhase.index()];
+    }
+
+    @Override
+    public MoonPhase getMoonPhase() {
+        return MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
     }
 
     @Override

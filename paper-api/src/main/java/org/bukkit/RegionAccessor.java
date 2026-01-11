@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import io.papermc.paper.world.MoonPhase;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -526,12 +527,33 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     @NotNull
     public <T extends Entity> T addEntity(@NotNull T entity);
 
-    // Paper start
     /**
+     * @param x X-coordinate of the block
+     * @param y Y-coordinate of the block
+     * @param z Z-coordinate of the block
      * @return the current moon phase at the current time in the world
      */
     @NotNull
-    io.papermc.paper.world.MoonPhase getMoonPhase();
+    MoonPhase getMoonPhase(int x, int y, int z);
+
+    /**
+     * @param location the location for getting the moon phase
+     * @return the current moon phase at the current time in the world
+     */
+    @NotNull
+    default MoonPhase getMoonPhase(final @NotNull Location location) {
+        return this.getMoonPhase(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    };
+
+    /**
+     * @return the current moon phase at the current time in the world
+     * @deprecated Moon phase is managed by Environment Attributes
+     * @see #getMoonPhase(Location)
+     * @see #getMoonPhase(int, int, int)
+     */
+    @Deprecated(forRemoval = true, since = "1.21.11")
+    @NotNull
+    MoonPhase getMoonPhase();
 
     /**
      * Get the world's key
@@ -559,5 +581,4 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return collides or not
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
-    // Paper end
 }
