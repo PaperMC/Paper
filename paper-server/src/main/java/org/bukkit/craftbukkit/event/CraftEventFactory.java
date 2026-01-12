@@ -1001,7 +1001,6 @@ public class CraftEventFactory {
             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 
             drop.runConsumer(s -> world.dropItem(entity.getLocation(), s)); // Paper - Restore vanilla drops behavior
-            if (stack instanceof CraftItemStack) stack.setAmount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe, but don't nuke bukkit stacks of manually added items
         }
 
         return event;
@@ -1943,6 +1942,10 @@ public class CraftEventFactory {
         PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().identifier()), recipeHolder.value().showNotification());
         event.callEvent();
         return event;
+    }
+
+    public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining) {
+        return callEntityPickupItemEvent(entity, item, remaining, false);
     }
 
     public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining, boolean cancelled) {

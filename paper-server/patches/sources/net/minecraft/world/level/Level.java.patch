@@ -17,13 +17,12 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
-@@ -127,6 +_,57 @@
+@@ -127,6 +_,56 @@
      private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
 +    // CraftBukkit start
 +    private final CraftWorld world;
-+    public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
 +    public org.bukkit.generator.@Nullable ChunkGenerator generator;
 +
 +    public boolean captureBlockStates = false;
@@ -164,16 +163,17 @@
 +        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - Perf: Optimize isInWorldBounds
      }
  
-     public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -169,21 +_,86 @@
+     public boolean isInValidBounds(BlockPos blockPos) {
+@@ -173,7 +_,7 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
 -        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
-+        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000; // Diff on change warnUnsafeChunk() and isInsideBuildHeightAndWorldBoundsHorizontal
++        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000; // Paper - Diff on change warnUnsafeChunk() and isInsideBuildHeightAndWorldBoundsHorizontal
      }
  
-     private static boolean isOutsideSpawnableHeight(int y) {
+     private static boolean isInValidBoundsHorizontal(BlockPos blockPos) {
+@@ -186,14 +_,79 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -257,7 +257,7 @@
  
      @Override
      public @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
-@@ -202,6 +_,22 @@
+@@ -212,6 +_,22 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
@@ -277,10 +277,10 @@
 +            return true;
 +        }
 +        // CraftBukkit end
-         if (this.isOutsideBuildHeight(pos)) {
+         if (!this.isInValidBounds(pos)) {
              return false;
          } else if (!this.isClientSide() && this.isDebug()) {
-@@ -209,11 +_,31 @@
+@@ -219,11 +_,31 @@
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -312,7 +312,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -241,12 +_,68 @@
+@@ -251,12 +_,68 @@
  
                      this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
                  }
@@ -337,7 +337,7 @@
      }
  
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, int flags, int recursionLeft) {
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, @Block.UpdateFlags int flags, int recursionLeft) {
 +        BlockState state = newState;
 +        BlockState blockState = oldState;
 +        BlockState blockState1 = currentState;
@@ -346,19 +346,19 @@
 +                this.setBlocksDirty(pos, blockState, blockState1);
 +            }
 +
-+            if ((flags & 2) != 0 && (!this.isClientSide() || (flags & 4) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++            if ((flags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (flags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(pos, blockState, state, flags);
 +            }
 +
-+            if ((flags & 1) != 0) {
++            if ((flags & Block.UPDATE_NEIGHBORS) != 0) {
 +                this.updateNeighborsAt(pos, blockState.getBlock());
 +                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
 +                }
 +            }
 +
-+            if ((flags & 16) == 0 && recursionLeft > 0) {
-+                int i = flags & -34;
++            if ((flags & Block.UPDATE_KNOWN_SHAPE) == 0 && recursionLeft > 0) {
++                int i = flags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
 +
 +                // CraftBukkit start
 +                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
@@ -381,7 +381,7 @@
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
      }
  
-@@ -263,13 +_,31 @@
+@@ -273,13 +_,31 @@
              return false;
          } else {
              FluidState fluidState = this.getFluidState(pos);
@@ -405,7 +405,7 @@
 +            }
 +            // Paper end - BlockDestroyEvent
 +            if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
-+                this.levelEvent(2001, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
++                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
              }
  
              if (dropBlock) {
@@ -416,7 +416,7 @@
              }
  
              boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
-@@ -335,10 +_,18 @@
+@@ -345,10 +_,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -428,7 +428,7 @@
 +            }
 +        }
 +        // CraftBukkit end
-         if (this.isOutsideBuildHeight(pos)) {
+         if (!this.isInValidBounds(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
 -            LevelChunk chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
@@ -436,7 +436,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -437,31 +_,47 @@
+@@ -447,31 +_,47 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -492,7 +492,7 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -585,6 +_,12 @@
+@@ -595,6 +_,12 @@
  
      @Override
      public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
@@ -502,13 +502,13 @@
 +            return blockEntity;
 +        }
 +        // Paper end - Perf: Optimize capturedTileEntities lookup
-         if (this.isOutsideBuildHeight(pos)) {
+         if (!this.isInValidBounds(pos)) {
              return null;
          } else {
-@@ -597,6 +_,12 @@
+@@ -607,6 +_,12 @@
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockPos = blockEntity.getBlockPos();
-         if (!this.isOutsideBuildHeight(blockPos)) {
+         if (this.isInValidBounds(blockPos)) {
 +            // CraftBukkit start
 +            if (this.captureBlockStates) {
 +                this.capturedTileEntities.put(blockPos.immutable(), blockEntity);
@@ -518,7 +518,7 @@
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1001,7 +_,8 @@
+@@ -1011,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),
@@ -528,3 +528,20 @@
  
          public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
          private final String id;
+@@ -1025,4 +_,16 @@
+             return this.id;
+         }
+     }
++
++    // Paper start - allow patching this logic
++    public final int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : this.getEntities().getAll()) {
++            if (entity.getBukkitEntity().isValid()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++    // Paper end - allow patching this logic
+ }

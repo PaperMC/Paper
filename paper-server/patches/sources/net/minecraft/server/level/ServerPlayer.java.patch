@@ -609,17 +609,11 @@
          }
      }
  
-@@ -989,25 +_,95 @@
+@@ -992,22 +_,92 @@
+         return this.level().isPvpAllowed();
      }
  
-     private boolean isPvpAllowed() {
--        return this.level().isPvpAllowed();
--    }
--
 -    public TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition) {
-+        return this.level().getWorld().getPVP(); // CraftBukkit - this.level().isPvpAllowed() -> this.level().getWorld().getPVP()
-+    }
-+
 +    // Paper start
 +    public record RespawnResult(TeleportTransition transition, boolean isBedSpawn, boolean isAnchorSpawn) {
 +    }
@@ -720,7 +714,7 @@
 +            Runnable consumeAnchorCharge = null; // Paper - Fix SPIGOT-5989 (don't use charge until after respawn event)
              if (!flag && useCharge && optional.isPresent()) {
 -                level.setBlock(blockPos, blockState.setValue(RespawnAnchorBlock.CHARGE, blockState.getValue(RespawnAnchorBlock.CHARGE) - 1), Block.UPDATE_ALL);
-+                consumeAnchorCharge = () -> level.setBlock(blockPos, blockState.setValue(RespawnAnchorBlock.CHARGE, blockState.getValue(RespawnAnchorBlock.CHARGE) - 1), 3); // Paper - Fix SPIGOT-5989 (don't use charge until after respawn event)
++                consumeAnchorCharge = () -> level.setBlock(blockPos, blockState.setValue(RespawnAnchorBlock.CHARGE, blockState.getValue(RespawnAnchorBlock.CHARGE) - 1), Block.UPDATE_ALL); // Paper - Fix SPIGOT-5989 (don't use charge until after respawn event)
              }
 +            final Runnable finalConsumeAnchorCharge = consumeAnchorCharge; // Paper - Fix SPIGOT-5989
  
@@ -1225,10 +1219,10 @@
      }
  
      @Override
-@@ -1578,12 +_,12 @@
+@@ -1578,18 +_,18 @@
          this.onUpdateAbilities();
+         this.getAttributes().assignBaseValues(that.getAttributes());
          if (keepEverything) {
-             this.getAttributes().assignBaseValues(that.getAttributes());
 -            this.getAttributes().assignPermanentModifiers(that.getAttributes());
 +            // this.getAttributes().assignPermanentModifiers(that.getAttributes()); // CraftBukkit
              this.setHealth(that.getHealth());
@@ -1239,17 +1233,15 @@
 +                // this.addEffect(new MobEffectInstance(mobEffectInstance)); // CraftBukkit
              }
  
-             this.getInventory().replaceWith(that.getInventory());
-@@ -1594,7 +_,7 @@
+             this.transferInventoryXpAndScore(that);
              this.portalProcess = that.portalProcess;
          } else {
-             this.getAttributes().assignBaseValues(that.getAttributes());
 -            this.setHealth(this.getMaxHealth());
 +            // this.setHealth(this.getMaxHealth()); // CraftBukkit
              if (this.level().getGameRules().get(GameRules.KEEP_INVENTORY) || that.isSpectator()) {
-                 this.getInventory().replaceWith(that.getInventory());
-                 this.experienceLevel = that.experienceLevel;
-@@ -1610,7 +_,7 @@
+                 this.transferInventoryXpAndScore(that);
+             }
+@@ -1601,7 +_,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1427,7 +1419,7 @@
      }
  
      @Override
-@@ -1951,11 +_,62 @@
+@@ -1951,11 +_,60 @@
      }
  
      public void setRespawnPosition(ServerPlayer.@Nullable RespawnConfig respawnConfig, boolean displayInChat) {
@@ -1471,11 +1463,9 @@
 +
 +        if (event.getLocation() != null) {
 +            respawnConfig = new ServerPlayer.RespawnConfig(
-+                new net.minecraft.world.level.storage.LevelData.RespawnData(
-+                    GlobalPos.of(
-+                        ((org.bukkit.craftbukkit.CraftWorld) event.getLocation().getWorld()).getHandle().dimension(),
-+                        org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(event.getLocation())
-+                    ),
++                net.minecraft.world.level.storage.LevelData.RespawnData.of(
++                    ((org.bukkit.craftbukkit.CraftWorld) event.getLocation().getWorld()).getHandle().dimension(),
++                    org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(event.getLocation()),
 +                    event.getLocation().getYaw(),
 +                    event.getLocation().getPitch()
 +                ),

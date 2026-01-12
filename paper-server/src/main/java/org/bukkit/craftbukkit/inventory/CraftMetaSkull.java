@@ -162,7 +162,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     public OfflinePlayer getOwningPlayer() {
         if (this.hasOwner()) {
             final GameProfile gameProfile = this.profile.partialProfile(); // The partial profile is always guaranteed to have a non-null uuid and name.
-            if (Objects.equals(gameProfile.id(), Util.NIL_UUID)) {
+            if (!gameProfile.id().equals(Util.NIL_UUID)) {
                 return Bukkit.getOfflinePlayer(gameProfile.id());
             }
 

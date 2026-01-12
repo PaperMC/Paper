@@ -55,9 +55,7 @@ import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
@@ -246,6 +244,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     private long lastSaveTime; // Paper - getLastPlayed replacement API
+    private @Nullable CraftScoreboard scoreboardOverride;
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
         super(server, entity);
@@ -722,11 +721,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         // Do not directly assign here, from the packethandler we'll assign it.
         this.getHandle().connection.send(new ClientboundSetDefaultSpawnPositionPacket(
-            new LevelData.RespawnData(
-                GlobalPos.of(
-                    ((CraftWorld) loc.getWorld()).getHandle().dimension(),
-                    CraftLocation.toBlockPosition(loc)
-                ),
+            LevelData.RespawnData.of(
+                ((CraftWorld) loc.getWorld()).getHandle().dimension(),
+                CraftLocation.toBlockPosition(loc),
                 loc.getYaw(),
                 loc.getPitch()
             )
@@ -1393,11 +1390,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         } else {
             this.getHandle().setRespawnPosition(
                 new ServerPlayer.RespawnConfig(
-                    new LevelData.RespawnData(
-                        GlobalPos.of(
-                            ((CraftWorld) location.getWorld()).getHandle().dimension(),
-                            CraftLocation.toBlockPosition(location)
-                        ),
+                    LevelData.RespawnData.of(
+                        ((CraftWorld) location.getWorld()).getHandle().dimension(),
+                        CraftLocation.toBlockPosition(location),
                         location.getYaw(),
                         location.getPitch()
                     ),
@@ -1891,7 +1886,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Remove the hidden entity from this player user list, if they're on it
         if (other instanceof ServerPlayer) {
             ServerPlayer otherPlayer = (ServerPlayer) other;
-            if (otherPlayer.sentListPacket) {
+            if (this.getHandle().sentListPacket && otherPlayer.sentListPacket) {
                 this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
             }
         }
@@ -2517,6 +2512,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         return this.server.getScoreboardManager().getPlayerBoard(this);
     }
 
+    public @Nullable CraftScoreboard getScoreboardOverride() {
+        return this.scoreboardOverride;
+    }
+
+    public void setScoreboardOverride(@Nullable CraftScoreboard scoreboardOverride) {
+        this.scoreboardOverride = scoreboardOverride;
+    }
+
     @Override
     public void setScoreboard(Scoreboard scoreboard) {
         Preconditions.checkArgument(scoreboard != null, "Scoreboard cannot be null");
@@ -2970,22 +2973,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
 
-        final ItemStack previousItem = this.getInventory().getItemInMainHand();
-        this.getInventory().setItemInMainHand(book);
-        this.getHandle().openItemGui(CraftItemStack.asNMSCopy(book), InteractionHand.MAIN_HAND);
-        this.getInventory().setItemInMainHand(previousItem);
+        net.minecraft.world.item.ItemStack bookItem = CraftItemStack.asNMSCopy(book);
+        ServerPlayer serverPlayer = this.getHandle();
+        net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, serverPlayer.createCommandSourceStack(), serverPlayer);
+        sendBookOpen(bookItem);
     }
 
     @Override
     public void openBook(final Book book) {
         final ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item
         mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()));
+        sendBookOpen(CraftItemStack.unwrap(mutatedItem));
+    }
 
+    private void sendBookOpen(net.minecraft.world.item.ItemStack bookItem) {
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
         final int slot = this.getHandle().getInventory().getSelectedSlot();
         this.getHandle().connection.send(new ClientboundBundlePacket(
             List.of(
-                new ClientboundSetPlayerInventoryPacket(slot, CraftItemStack.unwrap(mutatedItem)),
+                new ClientboundSetPlayerInventoryPacket(slot, bookItem),
                 new ClientboundOpenBookPacket(InteractionHand.MAIN_HAND),
                 new ClientboundSetPlayerInventoryPacket(slot, selectedItem)
             )
@@ -3024,6 +3030,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         public void respawn() {
             if (CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline()) {
                 CraftPlayer.this.server.getServer().getPlayerList().respawn(CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN);
+                CraftPlayer.this.getHandle().connection.restartClientLoadTimerAfterRespawn();
             }
         }
 
