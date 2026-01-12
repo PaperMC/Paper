@@ -2,9 +2,8 @@ package io.papermc.paper.world.attribute;
 
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.math.Position;
-import org.bukkit.WeatherType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

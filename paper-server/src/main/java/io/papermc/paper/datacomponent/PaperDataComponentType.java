@@ -47,8 +47,8 @@ import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
 import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.registry.PaperRegistries;
-import io.papermc.paper.registry.data.typed.PaperTypedDataAdapter;
-import io.papermc.paper.registry.data.typed.PaperTypedDataAdapters;
+import io.papermc.paper.registry.typed.PaperTypedDataAdapter;
+import io.papermc.paper.registry.typed.PaperTypedDataAdapters;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -92,18 +92,18 @@ import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
 public abstract class PaperDataComponentType<API, NMS> extends HolderableBase<net.minecraft.core.component.DataComponentType<NMS>> implements DataComponentType {
 
-    private static final PaperTypedDataAdapters ADAPTERS = PaperTypedDataAdapters.create(
+    private static final PaperTypedDataAdapters<net.minecraft.core.component.DataComponentType<?>> ADAPTERS = PaperTypedDataAdapters.create(
         BuiltInRegistries.DATA_COMPONENT_TYPE,
         PaperDataComponentTypeCollector::new,
         collector -> {
-            collector.registerIdentity(DataComponents.MAX_STACK_SIZE, net.minecraft.core.component.DataComponentType::codec);
-            collector.registerIdentity(DataComponents.MAX_DAMAGE, net.minecraft.core.component.DataComponentType::codec);
-            collector.registerIdentity(DataComponents.DAMAGE, net.minecraft.core.component.DataComponentType::codec);
+            collector.registerIdentity(DataComponents.MAX_STACK_SIZE);
+            collector.registerIdentity(DataComponents.MAX_DAMAGE);
+            collector.registerIdentity(DataComponents.DAMAGE);
             collector.registerUntyped(DataComponents.UNBREAKABLE);
             collector.register(DataComponents.USE_EFFECTS, PaperUseEffects::new);
-            collector.registerIdentity(DataComponents.POTION_DURATION_SCALE, net.minecraft.core.component.DataComponentType::codec);
+            collector.registerIdentity(DataComponents.POTION_DURATION_SCALE);
             collector.register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
-            collector.registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE, net.minecraft.core.component.DataComponentType::codec);
+            collector.registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE);
             collector.register(DataComponents.DAMAGE_TYPE, nms -> CraftDamageType.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftDamageType.bukkitToMinecraftHolder(api)));
             collector.register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
             collector.register(DataComponents.ITEM_MODEL, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
@@ -114,9 +114,9 @@ public abstract class PaperDataComponentType<API, NMS> extends HolderableBase<ne
             collector.register(DataComponents.CAN_BREAK, PaperItemAdventurePredicate::new);
             collector.register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
             collector.register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
-            collector.registerIdentity(DataComponents.REPAIR_COST, net.minecraft.core.component.DataComponentType::codec);
+            collector.registerIdentity(DataComponents.REPAIR_COST);
             // registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
-            collector.registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, net.minecraft.core.component.DataComponentType::codec);
+            collector.registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
             collector.registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
             collector.register(DataComponents.FOOD, PaperFoodProperties::new);
             collector.register(DataComponents.CONSUMABLE, PaperConsumable::new);
@@ -249,16 +249,14 @@ public abstract class PaperDataComponentType<API, NMS> extends HolderableBase<ne
 
     @SuppressWarnings("unchecked")
     public static <NMS> DataComponentType of(final Holder<?> holder) {
-        final PaperTypedDataAdapter<?, NMS> adapter = PaperDataComponentType.ADAPTERS.getAdapter(holder.unwrapKey().orElseThrow());
-        if (adapter == null) {
-            throw new IllegalArgumentException("No adapter found for " + holder);
-        }
+        final Holder.Reference<net.minecraft.core.component.DataComponentType<NMS>> reference = (Holder.Reference<net.minecraft.core.component.DataComponentType<NMS>>) holder;
+        final PaperTypedDataAdapter<?, NMS> adapter = PaperDataComponentType.ADAPTERS.get(reference.key());
         if (adapter.isUnimplemented()) {
             return new Unimplemented<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
-        } else if (adapter.isValued()) {
-            return new ValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
-        } else {
+        } else if (adapter.isUntyped()) {
             return new NonValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
+        } else {
+            return new ValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
         }
     }
 

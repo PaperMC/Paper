@@ -1,4 +1,4 @@
 @NullMarked
-package io.papermc.paper.registry.data.typed;
+package io.papermc.paper.registry.typed;
 
 import org.jspecify.annotations.NullMarked;

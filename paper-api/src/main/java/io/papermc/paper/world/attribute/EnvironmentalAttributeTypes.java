@@ -1,13 +1,12 @@
 package io.papermc.paper.world.attribute;
 
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.MoonPhase;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.util.TriState;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.Color;
+import org.bukkit.Registry;
 
-@NullMarked
 public final class EnvironmentalAttributeTypes {
 
     // ================
@@ -72,7 +71,7 @@ public final class EnvironmentalAttributeTypes {
 
     // public static final EnvironmentalAttributeType<List<AmbientParticle>> AMBIENT_PARTICLES = get("visual/ambient_particles");
 
-    public static final EnvironmentalAttributeType<Integer> CLOUD_COLOR = get("visual/cloud_color");
+    public static final EnvironmentalAttributeType<Color> CLOUD_COLOR = get("visual/cloud_color");
 
     public static final EnvironmentalAttributeType<Float> CLOUD_FOG_END_DISTANCE = get("visual/cloud_fog_end_distance");
 
@@ -80,7 +79,7 @@ public final class EnvironmentalAttributeTypes {
 
     // public static final EnvironmentalAttributeType<ParticleOptions> DEFAULT_DRIPSTONE_PARTICLE = get("visual/default_dripstone_particle");
 
-    public static final EnvironmentalAttributeType<Integer> FOG_COLOR = get("visual/fog_color");
+    public static final EnvironmentalAttributeType<Color> FOG_COLOR = get("visual/fog_color");
 
     public static final EnvironmentalAttributeType<Float> FOG_END_DISTANCE = get("visual/fog_end_distance");
 
@@ -90,11 +89,11 @@ public final class EnvironmentalAttributeTypes {
 
     public static final EnvironmentalAttributeType<MoonPhase> MOON_PHASE = get("visual/moon_phase");
 
-    public static final EnvironmentalAttributeType<Integer> SKY_COLOR = get("visual/sky_color");
+    public static final EnvironmentalAttributeType<Color> SKY_COLOR = get("visual/sky_color");
 
     public static final EnvironmentalAttributeType<Float> SKY_FOG_END_DISTANCE = get("visual/sky_fog_end_distance");
 
-    public static final EnvironmentalAttributeType<Integer> SKY_LIGHT_COLOR = get("visual/sky_light_color");
+    public static final EnvironmentalAttributeType<Color> SKY_LIGHT_COLOR = get("visual/sky_light_color");
 
     public static final EnvironmentalAttributeType<Float> SKY_LIGHT_FACTOR = get("visual/sky_light_factor");
 
@@ -104,9 +103,9 @@ public final class EnvironmentalAttributeTypes {
 
     public static final EnvironmentalAttributeType<Float> SUN_ANGLE = get("visual/sun_angle");
 
-    public static final EnvironmentalAttributeType<Integer> SUNRISE_SUNSET_COLOR = get("visual/sunrise_sunset_color");
+    public static final EnvironmentalAttributeType<Color> SUNRISE_SUNSET_COLOR = get("visual/sunrise_sunset_color");
 
-    public static final EnvironmentalAttributeType<Integer> WATER_FOG_COLOR = get("visual/water_fog_color");
+    public static final EnvironmentalAttributeType<Color> WATER_FOG_COLOR = get("visual/water_fog_color");
 
     public static final EnvironmentalAttributeType<Float> WATER_FOG_END_DISTANCE = get("visual/water_fog_end_distance");
 
@@ -116,7 +115,7 @@ public final class EnvironmentalAttributeTypes {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> EnvironmentalAttributeType<T> get(final String key) {
-        return (EnvironmentalAttributeType<T>) RegistryAccess.registryAccess().getRegistry(RegistryKey.ENVIRONMENT_ATTRIBUTE).getOrThrow(Key.key(key));
+    private static <T> EnvironmentalAttributeType<T> get(final @KeyPattern.Value String key) {
+        return (EnvironmentalAttributeType<T>) Registry.ENVIRONMENT_ATTRIBUTE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }

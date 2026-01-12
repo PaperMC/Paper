@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
 })
 @NullMarked
 @GeneratedClass
-public final class EnvironmentAttributeKeys {
+public final class EnvironmentalAttributeTypeKeys {
     /**
      * {@code minecraft:audio/ambient_sounds}
      *
@@ -340,7 +340,7 @@ public final class EnvironmentAttributeKeys {
      */
     public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_WATER_FOG_START_DISTANCE = create(key("visual/water_fog_start_distance"));
 
-    private EnvironmentAttributeKeys() {
+    private EnvironmentalAttributeTypeKeys() {
     }
 
     private static TypedKey<EnvironmentalAttributeType<?>> create(final Key key) {

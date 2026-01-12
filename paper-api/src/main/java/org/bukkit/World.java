@@ -4594,7 +4594,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public Collection<GeneratedStructure> getStructures(int x, int z, @NotNull Structure structure);
 
-    @NotNull <T> EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
+    <T> @NotNull EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
 
     /**
      * Represents various map environment types that a world may be

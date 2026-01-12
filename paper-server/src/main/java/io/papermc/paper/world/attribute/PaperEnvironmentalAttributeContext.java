@@ -3,8 +3,7 @@ package io.papermc.paper.world.attribute;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.FloatSupplier;
 import java.util.function.LongSupplier;
-import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public record PaperEnvironmentalAttributeContext(
     @Nullable Long time,
@@ -14,7 +13,7 @@ public record PaperEnvironmentalAttributeContext(
 ) implements EnvironmentalAttributeContext {
 
     public static final PaperEnvironmentalAttributeContext EMPTY = new PaperEnvironmentalAttributeContext(null, null, null, null);
-    public static final ThreadLocal<@NonNull PaperEnvironmentalAttributeContext> CURRENT_CONTEXT = ThreadLocal.withInitial(() -> PaperEnvironmentalAttributeContext.EMPTY);
+    public static final ThreadLocal<PaperEnvironmentalAttributeContext> CURRENT_CONTEXT = ThreadLocal.withInitial(() -> PaperEnvironmentalAttributeContext.EMPTY);
 
     public long time(LongSupplier fallbackSupplier) {
         return this.time != null ? this.time : fallbackSupplier.getAsLong();
@@ -36,19 +35,19 @@ public record PaperEnvironmentalAttributeContext(
         private @Nullable Float thunderLevel;
 
         @Override
-        public Builder time(@Nullable final Long time) {
+        public Builder time(final @Nullable Long time) {
             this.time = time;
             return this;
         }
 
         @Override
-        public Builder position(@Nullable final Position position) {
+        public Builder position(final @Nullable Position position) {
             this.position = position;
             return this;
         }
 
         @Override
-        public Builder rainLevel(@Nullable final Float rainLevel) {
+        public Builder rainLevel(final @Nullable Float rainLevel) {
             this.rainLevel = rainLevel;
             return this;
         }
@@ -59,7 +58,7 @@ public record PaperEnvironmentalAttributeContext(
         }
 
         @Override
-        public Builder thunderLevel(@Nullable final Float thunderLevel) {
+        public Builder thunderLevel(final @Nullable Float thunderLevel) {
             this.thunderLevel = thunderLevel;
             return this;
         }

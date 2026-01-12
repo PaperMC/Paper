@@ -40,6 +40,7 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -135,8 +136,9 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
     /**
      * Built-in registry for environmental attribute types.
-     * @see io.papermc.paper.registry.keys.EnvironmentAttributeKeys
+     * @see io.papermc.paper.registry.keys.EnvironmentalAttributeTypeKeys
      */
+    @ApiStatus.Experimental
     RegistryKey<EnvironmentalAttributeType<?>> ENVIRONMENT_ATTRIBUTE = create("environment_attribute");
 
     /* ********************** *

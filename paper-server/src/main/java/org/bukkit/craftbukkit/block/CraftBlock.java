@@ -61,7 +61,6 @@ import org.bukkit.util.BlockVector;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftBlock implements Block {
     private final net.minecraft.world.level.LevelAccessor world;
@@ -750,7 +749,7 @@ public class CraftBlock implements Block {
     // Paper end
 
     @Override
-    public <T> @NotNull T getAttributeValue(@NotNull final EnvironmentalAttributeType<T> type) {
-        return this.getCraftWorld().getEnvironmentalAttribute(type).getPositioned(this.getPosition());
+    public <T> T getAttributeValue(final EnvironmentalAttributeType<T> type) {
+        return this.getCraftWorld().getEnvironmentalAttribute(type).getPositioned(this.position);
     }
 }
