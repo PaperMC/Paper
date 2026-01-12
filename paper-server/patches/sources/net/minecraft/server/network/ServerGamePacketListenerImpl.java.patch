@@ -1404,7 +1404,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(sequence, this.ackBlockChangesUpTo);
-@@ -1422,20 +_,38 @@
+@@ -1422,20 +_,43 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -1425,7 +1425,12 @@
  
              this.player.getInventory().setSelectedSlot(packet.getSlot());
              this.player.resetLastActionTime();
-+            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++            // Paper start - Force update attributes.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) {
++                this.player.detectEquipmentUpdates();
++                this.player.resetAttackStrengthTicker(); // Paper - Fix MC-28289, players should reset attack strength immediately after changing item in main hand
++            }
++            // Paper end - Force update attributes.
          } else {
              LOGGER.warn("{} tried to set an invalid carried item", this.player.getPlainTextName());
 +            this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // CraftBukkit // Paper - kick event cause
