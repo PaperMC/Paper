@@ -330,7 +330,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
     public void reloadConfigs(MinecraftServer server) {
         try {
-            this.initializeGlobalConfiguration(server.registryAccess(), reloader(this.globalConfigClass, GlobalConfiguration.get()));
+            this.initializeGlobalConfiguration(server.registryAccess(), reloader(this.globalConfigClass, GlobalConfiguration.get()), false);
             this.initializeWorldDefaultsConfiguration(server.registryAccess());
             for (ServerLevel level : server.getAllLevels()) {
                 this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.paperConfig()));
