@@ -20,7 +20,6 @@ import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -32,6 +31,7 @@ import org.bukkit.loot.LootTable;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
 import org.slf4j.Logger;
 
+@Deprecated
 public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -48,18 +48,32 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     private WeightedList<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTablesToEject;
     private ResourceKey<net.minecraft.world.level.storage.loot.LootTable> itemsToDropWhenOminous;
 
-    public CraftTrialSpawnerConfiguration(TrialSpawnerConfig minecraft, TrialSpawnerBlockEntity snapshot) {
+    public CraftTrialSpawnerConfiguration(TrialSpawnerConfig config, TrialSpawnerBlockEntity snapshot) {
         this.snapshot = snapshot;
 
-        this.spawnRange = minecraft.spawnRange();
-        this.totalMobs = minecraft.totalMobs();
-        this.simultaneousMobs = minecraft.simultaneousMobs();
-        this.totalMobsAddedPerPlayer = minecraft.totalMobsAddedPerPlayer();
-        this.simultaneousMobsAddedPerPlayer = minecraft.simultaneousMobsAddedPerPlayer();
-        this.ticksBetweenSpawn = minecraft.ticksBetweenSpawn();
-        this.spawnPotentialsDefinition = minecraft.spawnPotentialsDefinition();
-        this.lootTablesToEject = minecraft.lootTablesToEject();
-        this.itemsToDropWhenOminous = minecraft.itemsToDropWhenOminous();
+        this.spawnRange = config.spawnRange();
+        this.totalMobs = config.totalMobs();
+        this.simultaneousMobs = config.simultaneousMobs();
+        this.totalMobsAddedPerPlayer = config.totalMobsAddedPerPlayer();
+        this.simultaneousMobsAddedPerPlayer = config.simultaneousMobsAddedPerPlayer();
+        this.ticksBetweenSpawn = config.ticksBetweenSpawn();
+        this.spawnPotentialsDefinition = config.spawnPotentialsDefinition();
+        this.lootTablesToEject = config.lootTablesToEject();
+        this.itemsToDropWhenOminous = config.itemsToDropWhenOminous();
+    }
+
+    public CraftTrialSpawnerConfiguration(CraftTrialSpawnerConfiguration from, TrialSpawnerBlockEntity snapshot) {
+        this.snapshot = snapshot;
+
+        this.spawnRange = from.spawnRange;
+        this.totalMobs = from.totalMobs;
+        this.simultaneousMobs = from.simultaneousMobs;
+        this.totalMobsAddedPerPlayer = from.totalMobsAddedPerPlayer;
+        this.simultaneousMobsAddedPerPlayer = from.simultaneousMobsAddedPerPlayer;
+        this.ticksBetweenSpawn = from.ticksBetweenSpawn;
+        this.spawnPotentialsDefinition = WeightedList.of(from.spawnPotentialsDefinition.unwrap());
+        this.lootTablesToEject = WeightedList.of(from.lootTablesToEject.unwrap());
+        this.itemsToDropWhenOminous = from.itemsToDropWhenOminous;
     }
 
     @Override
@@ -309,7 +323,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.overrideRequiredPlayerRange(requiredPlayerRange);
+        this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.withRequiredPlayerRange(requiredPlayerRange);
     }
 
     private TrialSpawnerStateData getTrialData() {

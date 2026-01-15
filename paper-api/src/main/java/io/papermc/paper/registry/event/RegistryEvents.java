@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
@@ -14,6 +15,7 @@ import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
+import io.papermc.paper.registry.data.TrialSpawnerConfigRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
@@ -56,6 +58,7 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
     public static final RegistryEventProvider<ZombieNautilus.Variant, ZombieNautilusVariantRegistryEntry.Builder> ZOMBIE_NAUTILUS_VARIANT = create(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
     public static final RegistryEventProvider<Dialog, DialogRegistryEntry.Builder> DIALOG = create(RegistryKey.DIALOG);
+    public static final RegistryEventProvider<TrialSpawnerConfig, TrialSpawnerConfigRegistryEntry.Builder> TRIAL_SPAWNER_CONFIG = create(RegistryKey.TRIAL_SPAWNER_CONFIG);
     // End generate - RegistryEvents
 
     private RegistryEvents() {
