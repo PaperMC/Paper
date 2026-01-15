@@ -12,16 +12,18 @@ import org.jetbrains.annotations.Nullable;
 public class HangingBreakByEntityEvent extends HangingBreakEvent {
 
     private final Entity remover;
+    private final Entity directRemover; // Paper
 
     @ApiStatus.Internal
     public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover) {
-        this(hanging, remover, HangingBreakEvent.RemoveCause.ENTITY);
+        this(hanging, remover, null, HangingBreakEvent.RemoveCause.ENTITY); // Paper
     }
 
     @ApiStatus.Internal
-    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover, @NotNull final HangingBreakEvent.RemoveCause cause) {
+    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover, @Nullable Entity directRemover, @NotNull final HangingBreakEvent.RemoveCause cause) { // Slice
         super(hanging, cause);
         this.remover = remover;
+        this.directRemover = directRemover; // Paper
     }
 
     /**
@@ -33,4 +35,19 @@ public class HangingBreakByEntityEvent extends HangingBreakEvent {
     public Entity getRemover() {
         return this.remover;
     }
+
+    // Paper start
+    /**
+     * Gets the {@link org.bukkit.damage.DamageSource#getDirectEntity()} entity that removed the hanging entity.
+     * <p>
+     * A good example of this is when a Player throws an Ender Pearl at an Item Frame. {@link #getRemover()}
+     * will return the Player that threw the Ender Pearl, whereas {@link #getDirectRemover()} will return the Pearl.
+     *
+     * @return the entity that removed the hanging entity
+     */
+    @Nullable
+    public Entity getDirectRemover() {
+        return this.directRemover;
+    }
+    // Paper end
 }
