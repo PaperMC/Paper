@@ -1322,4 +1322,27 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation
+
+    // Paper start
+    /**
+     * Returns the Block that is currently supporting the player, particularly in the case of
+     * crouching over the edge of a block.
+     */
+    org.bukkit.block.Block getBlockStandingOn();
+    // Paper end
+
+    // Slice start
+    /**
+     * Returns true if the entity can be saved. If false, the entity will never be serialized or saved.
+     */
+    boolean isSaveable();
+
+    /**
+     * Sets whether the entity can be serialized and saved to disk.
+     *
+     * @param saveable the saveable status
+     * @see #isSaveable()
+     */
+    void setSaveable(boolean saveable);
+    // Slice end
 }
