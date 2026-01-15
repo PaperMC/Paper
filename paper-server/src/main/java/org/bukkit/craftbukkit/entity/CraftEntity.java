@@ -1331,4 +1331,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
+    // Paper start
+    @Override
+    public org.bukkit.block.Block getBlockStandingOn() {
+        net.minecraft.core.BlockPos pos = this.entity.getBlockPosBelowThatAffectsMyMovement();
+        return this.entity.level().getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+    }
+    // Paper end
 }

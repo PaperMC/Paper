@@ -1322,4 +1322,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation
+
+    // Paper start
+    /**
+     * Returns the Block that is currently supporting the player, particularly in the case of
+     * crouching over the edge of a block.
+     */
+    org.bukkit.block.Block getBlockStandingOn();
+    // Paper end
 }
