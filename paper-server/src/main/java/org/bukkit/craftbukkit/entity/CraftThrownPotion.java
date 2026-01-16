@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.projectile.AbstractThrownPotion;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -17,6 +17,11 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
 
     protected CraftThrownPotion(CraftServer server, AbstractThrownPotion entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractThrownPotion getHandle() {
+        return (AbstractThrownPotion) this.entity;
     }
 
     @Override
@@ -43,10 +48,5 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
     @Override
     public void splash() {
         this.getHandle().splash(null);
-    }
-
-    @Override
-    public AbstractThrownPotion getHandle() {
-        return (AbstractThrownPotion) this.entity;
     }
 }

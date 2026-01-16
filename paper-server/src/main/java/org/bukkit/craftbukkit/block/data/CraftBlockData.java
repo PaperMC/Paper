@@ -165,7 +165,7 @@ public class CraftBlockData implements BlockData {
      * @throws IllegalStateException if the Enum could not be converted
      */
     @SuppressWarnings("unchecked")
-    private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
+    public static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
         if (nms instanceof Direction) {
             return (B) CraftBlock.notchToBlockFace((Direction) nms);
         }
@@ -330,7 +330,7 @@ public class CraftBlockData implements BlockData {
                 } else {
                     Property<?> newState = instance.getStateDefinition().getProperty(name);
 
-                    Preconditions.checkState(state == newState, "State mistmatch %s,%s", state, newState);
+                    Preconditions.checkState(state == newState, "State mismatch %s,%s", state, newState);
                 }
             }
         }
@@ -362,7 +362,6 @@ public class CraftBlockData implements BlockData {
     static {
         //<editor-fold desc="CraftBlockData Registration" defaultstate="collapsed">
         // Start generate - CraftBlockData#MAP
-        // @GeneratedFrom 1.21.5
         register(net.minecraft.world.level.block.AmethystClusterBlock.class, org.bukkit.craftbukkit.block.impl.CraftAmethystCluster::new);
         register(net.minecraft.world.level.block.AnvilBlock.class, org.bukkit.craftbukkit.block.impl.CraftAnvil::new);
         register(net.minecraft.world.level.block.AttachedStemBlock.class, org.bukkit.craftbukkit.block.impl.CraftAttachedStem::new);
@@ -406,6 +405,8 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.ComposterBlock.class, org.bukkit.craftbukkit.block.impl.CraftComposter::new);
         register(net.minecraft.world.level.block.ConduitBlock.class, org.bukkit.craftbukkit.block.impl.CraftConduit::new);
         register(net.minecraft.world.level.block.CopperBulbBlock.class, org.bukkit.craftbukkit.block.impl.CraftCopperBulb::new);
+        register(net.minecraft.world.level.block.CopperChestBlock.class, org.bukkit.craftbukkit.block.impl.CraftCopperChest::new);
+        register(net.minecraft.world.level.block.CopperGolemStatueBlock.class, org.bukkit.craftbukkit.block.impl.CraftCopperGolemStatue::new);
         register(net.minecraft.world.level.block.CoralFanBlock.class, org.bukkit.craftbukkit.block.impl.CraftCoralFan::new);
         register(net.minecraft.world.level.block.CoralPlantBlock.class, org.bukkit.craftbukkit.block.impl.CraftCoralPlant::new);
         register(net.minecraft.world.level.block.CoralWallFanBlock.class, org.bukkit.craftbukkit.block.impl.CraftCoralWallFan::new);
@@ -418,6 +419,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.DispenserBlock.class, org.bukkit.craftbukkit.block.impl.CraftDispenser::new);
         register(net.minecraft.world.level.block.DoorBlock.class, org.bukkit.craftbukkit.block.impl.CraftDoor::new);
         register(net.minecraft.world.level.block.DoublePlantBlock.class, org.bukkit.craftbukkit.block.impl.CraftDoublePlant::new);
+        register(net.minecraft.world.level.block.DriedGhastBlock.class, org.bukkit.craftbukkit.block.impl.CraftDriedGhast::new);
         register(net.minecraft.world.level.block.DropperBlock.class, org.bukkit.craftbukkit.block.impl.CraftDropper::new);
         register(net.minecraft.world.level.block.EndPortalFrameBlock.class, org.bukkit.craftbukkit.block.impl.CraftEndPortalFrame::new);
         register(net.minecraft.world.level.block.EndRodBlock.class, org.bukkit.craftbukkit.block.impl.CraftEndRod::new);
@@ -488,6 +490,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.SculkShriekerBlock.class, org.bukkit.craftbukkit.block.impl.CraftSculkShrieker::new);
         register(net.minecraft.world.level.block.SculkVeinBlock.class, org.bukkit.craftbukkit.block.impl.CraftSculkVein::new);
         register(net.minecraft.world.level.block.SeaPickleBlock.class, org.bukkit.craftbukkit.block.impl.CraftSeaPickle::new);
+        register(net.minecraft.world.level.block.ShelfBlock.class, org.bukkit.craftbukkit.block.impl.CraftShelf::new);
         register(net.minecraft.world.level.block.ShulkerBoxBlock.class, org.bukkit.craftbukkit.block.impl.CraftShulkerBox::new);
         register(net.minecraft.world.level.block.SkullBlock.class, org.bukkit.craftbukkit.block.impl.CraftSkull::new);
         register(net.minecraft.world.level.block.SlabBlock.class, org.bukkit.craftbukkit.block.impl.CraftSlab::new);
@@ -528,12 +531,18 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.WallSkullBlock.class, org.bukkit.craftbukkit.block.impl.CraftWallSkull::new);
         register(net.minecraft.world.level.block.WallTorchBlock.class, org.bukkit.craftbukkit.block.impl.CraftWallTorch::new);
         register(net.minecraft.world.level.block.WaterloggedTransparentBlock.class, org.bukkit.craftbukkit.block.impl.CraftWaterloggedTransparent::new);
+        register(net.minecraft.world.level.block.WeatheringCopperBarsBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperBars::new);
         register(net.minecraft.world.level.block.WeatheringCopperBulbBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperBulb::new);
+        register(net.minecraft.world.level.block.WeatheringCopperChainBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperChain::new);
+        register(net.minecraft.world.level.block.WeatheringCopperChestBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperChest::new);
         register(net.minecraft.world.level.block.WeatheringCopperDoorBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperDoor::new);
+        register(net.minecraft.world.level.block.WeatheringCopperGolemStatueBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperGolemStatue::new);
         register(net.minecraft.world.level.block.WeatheringCopperGrateBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperGrate::new);
         register(net.minecraft.world.level.block.WeatheringCopperSlabBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperSlab::new);
         register(net.minecraft.world.level.block.WeatheringCopperStairBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperStair::new);
         register(net.minecraft.world.level.block.WeatheringCopperTrapDoorBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperTrapDoor::new);
+        register(net.minecraft.world.level.block.WeatheringLanternBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringLantern::new);
+        register(net.minecraft.world.level.block.WeatheringLightningRodBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringLightningRod::new);
         register(net.minecraft.world.level.block.WeepingVinesBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeepingVines::new);
         register(net.minecraft.world.level.block.WeightedPressurePlateBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeightedPressurePlate::new);
         register(net.minecraft.world.level.block.WitherSkullBlock.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull::new);
@@ -570,7 +579,7 @@ public class CraftBlockData implements BlockData {
         if (blockType != null) {
             Block block = CraftBlockType.bukkitToMinecraftNew(blockType);
             if (block != null) {
-                net.minecraft.resources.ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
+                net.minecraft.resources.Identifier key = BuiltInRegistries.BLOCK.getKey(block);
                 data = data == null ? key.toString() : key + data;
             }
         }
@@ -783,4 +792,9 @@ public class CraftBlockData implements BlockData {
         return this.state.isRandomlyTicking();
     }
     // Paper end - Block tick API
+
+    @Override
+    public boolean isReplaceable() {
+        return this.state.canBeReplaced();
+    }
 }

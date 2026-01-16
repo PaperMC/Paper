@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.projectile.ThrownLingeringPotion;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -17,6 +17,11 @@ public class CraftThrownLingeringPotion extends CraftThrownPotion implements Lin
     }
 
     @Override
+    public ThrownLingeringPotion getHandle() {
+        return (ThrownLingeringPotion) this.entity;
+    }
+
+    @Override
     public void setItem(final ItemStack item) {
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
         final PotionMeta meta = item.getType() == Material.LINGERING_POTION ? null : this.getPotionMeta();
@@ -29,10 +34,5 @@ public class CraftThrownLingeringPotion extends CraftThrownPotion implements Lin
     @Override
     public PotionMeta getPotionMeta() {
         return (PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItem(), ItemType.LINGERING_POTION);
-    }
-
-    @Override
-    public ThrownLingeringPotion getHandle() {
-        return (ThrownLingeringPotion) this.entity;
     }
 }

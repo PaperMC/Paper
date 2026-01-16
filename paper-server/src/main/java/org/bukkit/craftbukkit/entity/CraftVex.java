@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityReference;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -15,18 +16,18 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public net.minecraft.world.entity.monster.Vex getHandle() {
-        return (net.minecraft.world.entity.monster.Vex) super.getHandle();
+        return (net.minecraft.world.entity.monster.Vex) this.entity;
     }
 
     @Override
     public org.bukkit.entity.Mob getSummoner() {
-        net.minecraft.world.entity.Mob owner = getHandle().getOwner();
+        net.minecraft.world.entity.Mob owner = this.getHandle().getOwner();
         return owner != null ? (org.bukkit.entity.Mob) owner.getBukkitEntity() : null;
     }
 
     @Override
     public void setSummoner(org.bukkit.entity.Mob summoner) {
-        getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
+        this.getHandle().owner = summoner == null ? null : EntityReference.of(((CraftMob) summoner).getHandle());
     }
 
     @Override
@@ -47,11 +48,6 @@ public class CraftVex extends CraftMonster implements Vex {
     @Override
     public void setLimitedLifetimeTicks(int ticks) {
         this.getHandle().limitedLifeTicks = ticks;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftVex";
     }
 
     @Override

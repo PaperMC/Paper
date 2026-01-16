@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.AnimalTamer;
@@ -11,6 +12,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.profile.PlayerProfile;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -20,7 +22,7 @@ import org.jspecify.annotations.Nullable;
  * player needing to be online.
  */
 @NullMarked
-public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper - Add Offline PDC API
+public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder, PlayerHeadObjectContents.SkinSource { // Paper - Add Offline PDC API
 
     /**
      * Checks if this player is currently online
@@ -287,13 +289,28 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     // Paper end
 
     /**
-     * Gets the Location where the player will spawn at, null if they
+     * Gets the Location where the player will spawn at, {@code null} if they
+     * don't have a valid respawn point.
+     * <br>
+     * Unlike online players, the location if found will not be loaded by default.
+     *
+     * @return respawn location if exists, otherwise {@code null}.
+     * @see #getRespawnLocation(boolean) for more fine-grained control over chunk loading and validation behaviour.
+     */
+    default @Nullable Location getRespawnLocation() {
+        return this.getRespawnLocation(false); // keep old behavior for offline players
+    }
+
+    /**
+     * Gets the Location where the player will spawn at, {@code null} if they
      * don't have a valid respawn point.
      *
-     * @return respawn location if exists, otherwise null.
+     * @param loadLocationAndValidate load the expected respawn location to retrieve the exact position of the spawn
+     *                                block and check if this position is still valid or not. Loading the location
+     *                                will induce a sync chunk load and must hence be used with caution.
+     * @return respawn location if exists, otherwise {@code null}.
      */
-    @Nullable
-    public Location getRespawnLocation();
+    @Nullable Location getRespawnLocation(boolean loadLocationAndValidate);
 
     /**
      * Increments the given statistic for this player.
@@ -570,4 +587,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     @Override
     io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer();
     // Paper end - add pdc to offline player
+
+    @Override
+    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.@NonNull Builder builder) {
+        builder.id(this.getUniqueId());
+    }
 }

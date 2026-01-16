@@ -1,0 +1,36 @@
+name: Publish PR
+
+on:
+  workflow_run:
+    workflows: [ "Build Paper" ]
+    types:
+      - completed
+
+permissions:
+  packages: write # To upload the PR
+  actions: write # To get information about the uploading workflow run and to delete the run artifacts
+  contents: write # To download the `maven-publish` artifact, and to be able to create commit comments
+  issues: write # To be able to create PR comments
+  pull-requests: write # To be able to create PR comments
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate an Application repository access token
+        id: gen_repo_token
+        uses: kattecon/gh-app-access-token-gen@v1
+        with:
+          app_id: 1408328
+          private_key: ${{ secrets.PR_PUBLISHING_GH_APP_KEY }}
+          repository: ${{ github.repository }}
+      - name: Publish PR
+        uses: PaperMC/action-pr-publishing@paper
+        env:
+          GITHUB_TOKEN: ${{ steps.gen_repo_token.outputs.token }}
+        with:
+          publishing-token: ${{ github.token }}
+          uploader-workflow-name: Build Paper
+          artifacts-base-path: io/papermc/paper
+          base-maven-url: 'https://maven-prs.papermc.io'
+          self-name: 'papermc-pr-publishing[bot]'

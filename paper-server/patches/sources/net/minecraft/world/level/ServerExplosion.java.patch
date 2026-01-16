@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
-@@ -33,6 +_,14 @@
- import net.minecraft.world.phys.HitResult;
+@@ -36,6 +_,14 @@
  import net.minecraft.world.phys.Vec3;
+ import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
-+import net.minecraft.world.entity.boss.EnderDragonPart;
++import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.util.CraftLocation;
@@ -15,7 +15,7 @@
  public class ServerExplosion implements Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
      private static final int MAX_DROPS_PER_COMBINED_STACK = 16;
-@@ -47,6 +_,11 @@
+@@ -49,6 +_,11 @@
      private final DamageSource damageSource;
      private final ExplosionDamageCalculator damageCalculator;
      private final Map<Player, Vec3> hitPlayers = new HashMap<>();
@@ -27,22 +27,18 @@
  
      public ServerExplosion(
          ServerLevel level,
-@@ -60,12 +_,13 @@
-     ) {
-         this.level = level;
-         this.source = source;
--        this.radius = radius;
-+        this.radius = (float) Math.max(radius, 0.0); // CraftBukkit - clamp bad values
-         this.center = center;
-         this.fire = fire;
+@@ -68,6 +_,10 @@
          this.blockInteraction = blockInteraction;
          this.damageSource = damageSource == null ? level.damageSources().explosion(this) : damageSource;
          this.damageCalculator = damageCalculator == null ? this.makeDamageCalculator(source) : damageCalculator;
-+        this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F; // CraftBukkit
++        // Paper start - add yield
++        this.yield = this.blockInteraction == Explosion.BlockInteraction.DESTROY_WITH_DECAY ? 1.0F / this.radius : 1.0F;
++        this.yield = Double.isFinite(this.yield) ? this.yield : 0; // Paper - Don't allow infinite default yields
++        // Paper end - add yield
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
-@@ -139,7 +_,8 @@
+@@ -141,7 +_,8 @@
                          for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
                              BlockPos blockPos = BlockPos.containing(d3, d4, d5);
                              BlockState blockState = this.level.getBlockState(blockPos);
@@ -52,7 +48,7 @@
                              if (!this.level.isInWorldBounds(blockPos)) {
                                  break;
                              }
-@@ -152,6 +_,15 @@
+@@ -154,6 +_,15 @@
  
                              if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockPos, blockState, f)) {
                                  set.add(blockPos);
@@ -68,19 +64,19 @@
                              }
  
                              d3 += d * 0.3F;
-@@ -174,8 +_,8 @@
-         int floor3 = Mth.floor(this.center.y + f + 1.0);
-         int floor4 = Mth.floor(this.center.z - f - 1.0);
-         int floor5 = Mth.floor(this.center.z + f + 1.0);
+@@ -177,8 +_,8 @@
+             int floor3 = Mth.floor(this.center.y + f + 1.0);
+             int floor4 = Mth.floor(this.center.z - f - 1.0);
+             int floor5 = Mth.floor(this.center.z + f + 1.0);
 -
--        for (Entity entity : this.level.getEntities(this.source, new AABB(floor, floor2, floor4, floor1, floor3, floor5))) {
-+        List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
-+        for (Entity entity : list) { // Paper - used in loop
-             if (!entity.ignoreExplosion(this)) {
-                 double d = Math.sqrt(entity.distanceToSqr(this.center)) / f;
-                 if (d <= 1.0) {
-@@ -189,15 +_,43 @@
-                         d3 /= squareRoot;
+-            for (Entity entity : this.level.getEntities(this.source, new AABB(floor, floor2, floor4, floor1, floor3, floor5))) {
++            List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
++            for (Entity entity : list) { // Paper - used in loop
+                 if (!entity.ignoreExplosion(this)) {
+                     double d = Math.sqrt(entity.distanceToSqr(this.center)) / f;
+                     if (!(d > 1.0)) {
+@@ -186,20 +_,56 @@
+                         Vec3 vec31 = vec3.subtract(this.center).normalize();
                          boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
                          float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
 -                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : getSeenPercent(this.center, entity);
@@ -118,38 +114,34 @@
 +                            // CraftBukkit end
                          }
  
-                         double d4 = (1.0 - d) * f1 * knockbackMultiplier;
-                         double d5;
-                         if (entity instanceof LivingEntity livingEntity) {
--                            d5 = d4 * (1.0 - livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE));
-+                            d5 = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : d4 * (1.0 - livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)); // Paper
-                         } else {
-                             d5 = d4;
-                         }
-@@ -206,8 +_,16 @@
-                         d2 *= d5;
-                         d3 *= d5;
-                         Vec3 vec3 = new Vec3(d1, d2, d3);
+                         double d1 = entity instanceof LivingEntity livingEntity
+                             ? livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
+                             : 0.0;
+-                        double d2 = (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1);
++                        double d2 = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1); // Paper
+                         Vec3 vec32 = vec31.scale(d2);
 +                        // CraftBukkit start - Call EntityKnockbackEvent
 +                        if (entity instanceof LivingEntity) {
 +                            // Paper start - knockback events
-+                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d5, vec3);
-+                            vec3 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
++                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d2, vec32);
++                            vec32 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
 +                            // Paper end - knockback events
 +                        }
 +                        // CraftBukkit end
-                         entity.push(vec3);
--                        if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying)) {
-+                        if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Option to disable explosion knockback
-                             this.hitPlayers.put(player, vec3);
+                         entity.push(vec32);
+                         if (entity.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && entity instanceof Projectile projectile) {
+                             projectile.setOwner(this.damageSource.getEntity());
+-                        } else if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying)) {
++                        } else if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Option to disable explosion knockback
+                             this.hitPlayers.put(player, vec32);
                          }
  
-@@ -222,7 +_,56 @@
+@@ -214,7 +_,56 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
 +        // CraftBukkit start
-+        Location location = CraftLocation.toBukkit(this.center, this.level.getWorld());
++        Location location = CraftLocation.toBukkit(this.center, this.level);
 +        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
 +        for (int i1 = blocks.size() - 1; i1 >= 0; i1--) {
 +            org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, blocks.get(i1));
@@ -188,11 +180,11 @@
 +            // CraftBukkit start - TNTPrimeEvent
 +            BlockState state = this.level.getBlockState(blockPos);
 +            Block block = state.getBlock();
-+            if (level.getGameRules().getBoolean(GameRules.RULE_TNT_EXPLODES) && block instanceof net.minecraft.world.level.block.TntBlock) {
++            if (level.getGameRules().get(GameRules.TNT_EXPLODES) && block instanceof net.minecraft.world.level.block.TntBlock) {
 +                Entity sourceEntity = this.source == null ? null : this.source;
 +                BlockPos sourceBlock = sourceEntity == null ? BlockPos.containing(this.center) : null;
 +                if (!CraftEventFactory.callTNTPrimeEvent(this.level, blockPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.EXPLOSION, sourceEntity, sourceBlock)) {
-+                    this.level.sendBlockUpdated(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), state, 3); // Update the block on the client
++                    this.level.sendBlockUpdated(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), state, Block.UPDATE_ALL); // Update the block on the client
 +                    continue;
 +                }
 +            }
@@ -201,7 +193,7 @@
              this.level
                  .getBlockState(blockPos)
                  .onExplosionHit(this.level, blockPos, this, (itemStack, blockPos1) -> addOrAppendStack(list, itemStack, blockPos1));
-@@ -236,12 +_,21 @@
+@@ -228,7 +_,11 @@
      private void createFire(List<BlockPos> blocks) {
          for (BlockPos blockPos : blocks) {
              if (this.level.random.nextInt(3) == 0 && this.level.getBlockState(blockPos).isAir() && this.level.getBlockState(blockPos.below()).isSolidRender()) {
@@ -214,17 +206,7 @@
              }
          }
      }
- 
-     public void explode() {
-+        // CraftBukkit start
-+        if (this.radius < 0.1F) {
-+            return;
-+        }
-+        // CraftBukkit end
-         this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
-         List<BlockPos> list = this.calculateExplodedPositions();
-         this.hurtEntities();
-@@ -339,4 +_,86 @@
+@@ -326,4 +_,86 @@
              }
          }
      }

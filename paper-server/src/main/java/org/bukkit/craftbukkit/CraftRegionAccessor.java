@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -68,11 +69,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public Biome getBiome(Location location) {
-        return this.getBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    @Override
     public Biome getBiome(int x, int y, int z) {
         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
@@ -80,11 +76,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public Biome getComputedBiome(int x, int y, int z) {
         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getBiome(new BlockPos(x, y, z)));
-    }
-
-    @Override
-    public void setBiome(Location location, Biome biome) {
-        this.setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
     }
 
     @Override
@@ -97,11 +88,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public abstract void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase);
 
     @Override
-    public BlockState getBlockState(Location location) {
-        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    @Override
     public BlockState getBlockState(int x, int y, int z) {
         return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
     }
@@ -112,18 +98,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public BlockData getBlockData(Location location) {
-        return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
-
-    @Override
     public BlockData getBlockData(int x, int y, int z) {
         return CraftBlockData.fromData(this.getData(x, y, z));
-    }
-
-    @Override
-    public Material getType(Location location) {
-        return this.getType(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
@@ -136,27 +112,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public void setBlockData(Location location, BlockData blockData) {
-        this.setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
-    }
-
-    @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
         WorldGenLevel world = this.getHandle();
         BlockPos pos = new BlockPos(x, y, z);
         net.minecraft.world.level.block.state.BlockState old = this.getHandle().getBlockState(pos);
 
         CraftBlock.setBlockState(world, pos, old, ((CraftBlockData) blockData).getState(), true);
-    }
-
-    @Override
-    public void setType(Location location, Material material) {
-        this.setType(location.getBlockX(), location.getBlockY(), location.getBlockZ(), material);
-    }
-
-    @Override
-    public void setType(int x, int y, int z, Material material) {
-        this.setBlockData(x, y, z, material.createBlockData());
     }
 
     @Override
@@ -198,7 +159,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         BlockPos pos = CraftLocation.toBlockPosition(location);
         BlockStateListPopulator populator = new BlockStateListPopulator(this.getHandle());
         boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
-        populator.refreshTiles();
         populator.placeSomeBlocks(predicate == null ? ($ -> true) : predicate);
         return result;
     }
@@ -289,11 +249,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         Holder<ConfiguredFeature<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
         return holder != null && holder.value().place(access, chunkGenerator, random, pos);
-    }
-
-    @Override
-    public Entity spawnEntity(Location location, EntityType entityType) {
-        return this.spawn(location, entityType.getEntityClass());
     }
 
     @Override
@@ -396,11 +351,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
-        return this.spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
-    }
-
-    @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function) throws IllegalArgumentException {
         return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
@@ -426,7 +376,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
         if (nmsEntity.level() != this.getHandle().getLevel()) {
-            nmsEntity = nmsEntity.teleport(new TeleportTransition(this.getHandle().getLevel(), nmsEntity, TeleportTransition.DO_NOTHING));
+            throw new IllegalArgumentException(entity + " wasn't created with this world, you must create the entity with the world you want to add it to.");
         }
 
         this.addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
@@ -500,7 +450,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             }
         }
 
-        if (!entityTypeData.entityType().isEnabledByFeature(this.getHandle().getMinecraftWorld().getWorld())) {
+        if (!this.isEnabled(entityTypeData.entityType())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
         }
 
@@ -516,12 +466,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / Level.TICKS_PER_DAY);
+        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
     }
 
     @Override
     public org.bukkit.NamespacedKey getKey() {
-        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().identifier());
     }
 
     public boolean lineOfSightExists(Location from, Location to) {

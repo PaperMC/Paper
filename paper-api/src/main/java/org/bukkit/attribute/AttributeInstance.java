@@ -43,7 +43,7 @@ public interface AttributeInstance {
     /**
      * Gets the modifier with the corresponding key.
      *
-     * @param key the jey of the modifier
+     * @param key the key of the modifier
      * @return the modifier, if it exists
      */
     @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull net.kyori.adventure.key.Key key);

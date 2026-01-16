@@ -229,6 +229,11 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      */
     public static final Enchantment SWIFT_SNEAK = getEnchantment("swift_sneak");
 
+    /**
+     * Causes a jab attack from a spear to propel the user into the air
+     */
+    public static final Enchantment LUNGE = getEnchantment("lunge");
+
     @NotNull
     private static Enchantment getEnchantment(@NotNull String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(NamespacedKey.minecraft(key));

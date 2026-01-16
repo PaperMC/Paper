@@ -5,7 +5,6 @@ import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -143,7 +142,6 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     interface SoundVariant extends Keyed {
 
         // Start generate - WolfSoundVariant
-        // @GeneratedFrom 1.21.5
         SoundVariant ANGRY = getSoundVariant("angry");
 
         SoundVariant BIG = getSoundVariant("big");

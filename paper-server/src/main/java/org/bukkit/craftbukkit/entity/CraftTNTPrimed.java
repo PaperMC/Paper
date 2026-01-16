@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.item.PrimedTnt;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
@@ -10,6 +11,11 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     public CraftTNTPrimed(CraftServer server, PrimedTnt entity) {
         super(server, entity);
+    }
+
+    @Override
+    public PrimedTnt getHandle() {
+        return (PrimedTnt) this.entity;
     }
 
     @Override
@@ -43,16 +49,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     }
 
     @Override
-    public PrimedTnt getHandle() {
-        return (PrimedTnt) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftTNTPrimed";
-    }
-
-    @Override
     public Entity getSource() {
         net.minecraft.world.entity.LivingEntity source = this.getHandle().getOwner();
 
@@ -62,7 +58,7 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     @Override
     public void setSource(Entity source) {
         if (source instanceof LivingEntity) {
-            this.getHandle().owner = ((CraftLivingEntity) source).getHandle();
+            this.getHandle().owner = EntityReference.of(((CraftLivingEntity) source).getHandle());
         } else {
             this.getHandle().owner = null;
         }

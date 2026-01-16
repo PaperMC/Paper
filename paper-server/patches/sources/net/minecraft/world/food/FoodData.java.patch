@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/food/FoodData.java
 +++ b/net/minecraft/world/food/FoodData.java
-@@ -14,6 +_,11 @@
+@@ -15,6 +_,11 @@
      public float saturationLevel = 5.0F;
      public float exhaustionLevel;
      private int tickTimer;
@@ -10,9 +10,9 @@
 +    public int starvationRate = 80;
 +    // CraftBukkit end
  
-     private void add(int foodLevel, float saturationLevel) {
-         this.foodLevel = Mth.clamp(foodLevel + this.foodLevel, 0, 20);
-@@ -28,6 +_,17 @@
+     private void add(int nutrition, float saturationLevel) {
+         this.foodLevel = Mth.clamp(nutrition + this.foodLevel, 0, 20);
+@@ -29,6 +_,17 @@
          this.add(foodProperties.nutrition(), foodProperties.saturation());
      }
  
@@ -28,9 +28,9 @@
 +    // CraftBukkit end
 +
      public void tick(ServerPlayer player) {
-         ServerLevel serverLevel = player.serverLevel();
+         ServerLevel serverLevel = player.level();
          Difficulty difficulty = serverLevel.getDifficulty();
-@@ -36,29 +_,39 @@
+@@ -37,29 +_,39 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
              } else if (difficulty != Difficulty.PEACEFUL) {
@@ -47,8 +47,8 @@
              }
          }
  
-         boolean _boolean = serverLevel.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION);
-         if (_boolean && this.saturationLevel > 0.0F && player.isHurt() && this.foodLevel >= 20) {
+         boolean flag = serverLevel.getGameRules().get(GameRules.NATURAL_HEALTH_REGENERATION);
+         if (flag && this.saturationLevel > 0.0F && player.isHurt() && this.foodLevel >= 20) {
              this.tickTimer++;
 -            if (this.tickTimer >= 10) {
 +            if (this.tickTimer >= this.saturatedRegenRate) { // CraftBukkit
@@ -60,7 +60,7 @@
 +                player.causeFoodExhaustion(min, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
                  this.tickTimer = 0;
              }
-         } else if (_boolean && this.foodLevel >= 18 && player.isHurt()) {
+         } else if (flag && this.foodLevel >= 18 && player.isHurt()) {
              this.tickTimer++;
 -            if (this.tickTimer >= 80) {
 -                player.heal(1.0F);

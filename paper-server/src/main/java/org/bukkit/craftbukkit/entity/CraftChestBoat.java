@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.vehicle.AbstractChestBoat;
+import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
@@ -16,11 +16,6 @@ public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.ent
     @Override
     public AbstractChestBoat getHandle() {
         return (AbstractChestBoat) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftChestBoat";
     }
 
     @Override

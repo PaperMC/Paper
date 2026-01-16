@@ -1,55 +1,61 @@
 --- a/net/minecraft/world/entity/monster/Phantom.java
 +++ b/net/minecraft/world/entity/monster/Phantom.java
-@@ -48,6 +_,11 @@
-     @Nullable
-     public BlockPos anchorPoint;
+@@ -49,6 +_,10 @@
+     Vec3 moveTargetPoint = Vec3.ZERO;
+     @Nullable public BlockPos anchorPoint;
      Phantom.AttackPhase attackPhase = Phantom.AttackPhase.CIRCLE;
 +    // Paper start
-+    @Nullable
-+    public java.util.UUID spawningEntity;
++    public java.util.@Nullable UUID spawningEntity;
 +    public boolean shouldBurnInDay = true;
 +    // Paper end
  
-     public Phantom(EntityType<? extends Phantom> entityType, Level level) {
-         super(entityType, level);
-@@ -142,7 +_,7 @@
- 
-     @Override
-     public void aiStep() {
--        if (this.isAlive() && this.isSunBurnTick()) {
-+        if (this.isAlive() && this.shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
-             this.igniteForSeconds(8.0F);
+     public Phantom(EntityType<? extends Phantom> type, Level level) {
+         super(type, level);
+@@ -136,6 +_,13 @@
          }
+     }
  
-@@ -163,6 +_,10 @@
-         super.readAdditionalSaveData(compound);
-         this.anchorPoint = compound.read("anchor_pos", BlockPos.CODEC).orElse(null);
-         this.setPhantomSize(compound.getIntOr("size", 0));
++    // Paper start
++    @Override
++    public boolean isSunBurnTick() {
++        return this.shouldBurnInDay && super.isSunBurnTick();
++    }
++    // Paper end
++
+     @Override
+     protected void checkFallDamage(double y, boolean onGround, BlockState state, BlockPos pos) {
+     }
+@@ -164,6 +_,10 @@
+         super.readAdditionalSaveData(input);
+         this.anchorPoint = input.read("anchor_pos", BlockPos.CODEC).orElse(null);
+         this.setPhantomSize(input.getIntOr("size", 0));
 +        // Paper start
-+        this.spawningEntity = compound.read("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
-+        this.shouldBurnInDay = compound.getBooleanOr("Paper.ShouldBurnInDay", true);
++        this.spawningEntity = input.read("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++        this.shouldBurnInDay = input.getBooleanOr("Paper.ShouldBurnInDay", true);
 +        // Paper end
      }
  
      @Override
-@@ -170,6 +_,10 @@
-         super.addAdditionalSaveData(compound);
-         compound.storeNullable("anchor_pos", BlockPos.CODEC, this.anchorPoint);
-         compound.putInt("size", this.getPhantomSize());
+@@ -171,6 +_,10 @@
+         super.addAdditionalSaveData(output);
+         output.storeNullable("anchor_pos", BlockPos.CODEC, this.anchorPoint);
+         output.putInt("size", this.getPhantomSize());
 +        // Paper start
-+        compound.storeNullable("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC, this.spawningEntity);
-+        compound.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
++        output.storeNullable("Paper.SpawningEntity", net.minecraft.core.UUIDUtil.CODEC, this.spawningEntity);
++        output.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
 +        // Paper end
      }
  
      @Override
-@@ -243,7 +_,8 @@
+@@ -244,8 +_,10 @@
  
                      for (Player player : nearbyPlayers) {
                          if (Phantom.this.canAttack(serverLevel, player, TargetingConditions.DEFAULT)) {
 -                            Phantom.this.setTarget(player);
-+                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(player)) // Paper - Add phantom creative and insomniac controls
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(player)) { // Paper - Add phantom creative and insomniac controls
 +                            Phantom.this.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER); // CraftBukkit - reason
                              return true;
++                            } // Paper - Add phantom creative and insomniac controls
                          }
                      }
+                 }

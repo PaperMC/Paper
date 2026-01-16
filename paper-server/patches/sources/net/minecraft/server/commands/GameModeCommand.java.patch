@@ -1,18 +1,25 @@
 --- a/net/minecraft/server/commands/GameModeCommand.java
 +++ b/net/minecraft/server/commands/GameModeCommand.java
-@@ -54,9 +_,14 @@
-         int i = 0;
+@@ -69,9 +_,21 @@
+     }
  
-         for (ServerPlayer serverPlayer : players) {
--            if (serverPlayer.setGameMode(gameType)) {
+     private static boolean setGameMode(CommandSourceStack source, ServerPlayer player, GameType gameMode) {
+-        if (player.setGameMode(gameMode)) {
++        // Paper start - Expand PlayerGameModeChangeEvent
++        return setGameMode(source, player, gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND);
++    }
++
++    public static boolean setGameMode(CommandSourceStack source, ServerPlayer player, GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause) {
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(gameMode, cause, null);
++        if (event != null && !event.isCancelled()) {
++            // Paper end - Expand PlayerGameModeChangeEvent
+             logGamemodeChange(source, player, gameMode);
+             return true;
 +            // Paper start - Expand PlayerGameModeChangeEvent
-+            org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND, net.kyori.adventure.text.Component.empty());
-+            if (event != null && !event.isCancelled()) {
-                 logGamemodeChange(source.getSource(), serverPlayer, gameType);
-                 i++;
-+            } else if (event != null && event.cancelMessage() != null) {
-+                source.getSource().sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
-+                // Paper end - Expand PlayerGameModeChangeEvent
-             }
++        } else if (event != null && event.cancelMessage() != null) {
++            source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
++            return false;
++            // Paper end - Expand PlayerGameModeChangeEvent
+         } else {
+             return false;
          }
- 

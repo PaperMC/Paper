@@ -18,6 +18,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PaperRegistriesRewriter extends SearchReplaceRewriter {
 
+
     private void appendEntry(String indent, StringBuilder builder, RegistryEntry<?> entry, boolean canBeDelayed, boolean apiOnly) {
         builder.append(indent);
         builder.append("start");
@@ -29,7 +30,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
         if (apiOnly) {
             builder.append("apiOnly(");
             if (entry.apiClass().isEnum()) {
-                builder.append(this.importCollector.getShortName(Types.PAPER_SIMPLE_REGISTRY)).append("::").append(CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, entry.registryKey().location().getPath()));
+                builder.append(this.importCollector.getShortName(Types.PAPER_SIMPLE_REGISTRY)).append("::").append(CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, entry.registryKey().identifier().getPath()));
             } else {
                 builder.append("() -> ");
                 builder.append(Registry.class.getCanonicalName()).append('.').append(entry.apiRegistryField().orElse(entry.registryKeyField()));
@@ -52,9 +53,18 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
                 builder.append(".serializationUpdater(").append(Types.FIELD_RENAME.simpleName()).append('.').append(entry.fieldRename()).append(")");
             }
 
-            if (entry.apiRegistryBuilderImpl() != null) {
-                builder.append(".writable(");
+            if (entry.apiRegistryBuilderImpl() != null && entry.modificationApiSupport() != null) {
+                switch (entry.modificationApiSupport()) {
+                    case WRITABLE -> builder.append(".writable(");
+                    case ADDABLE -> builder.append(".addable(");
+                    case MODIFIABLE -> builder.append(".modifiable(");
+                    case NONE -> builder.append(".create(");
+                }
                 builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(entry.apiRegistryBuilderImpl()).resolve(this.classResolver))).append("::new");
+                if (entry.modificationApiSupport() == RegistryEntry.RegistryModificationApiSupport.NONE) {
+                    builder.append(", ");
+                    builder.append(Types.REGISTRY_MODIFICATION_API_SUPPORT.dottedNestedName()).append(".NONE");
+                }
                 builder.append(')');
             } else {
                 builder.append(".build()");

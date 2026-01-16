@@ -7,18 +7,13 @@ import org.bukkit.entity.Dolphin;
 
 public class CraftDolphin extends CraftAgeable implements Dolphin {
 
-    public CraftDolphin(CraftServer server, net.minecraft.world.entity.animal.Dolphin entity) {
+    public CraftDolphin(CraftServer server, net.minecraft.world.entity.animal.dolphin.Dolphin entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Dolphin getHandle() {
-        return (net.minecraft.world.entity.animal.Dolphin) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftDolphin";
+    public net.minecraft.world.entity.animal.dolphin.Dolphin getHandle() {
+        return (net.minecraft.world.entity.animal.dolphin.Dolphin) this.entity;
     }
 
     @Override

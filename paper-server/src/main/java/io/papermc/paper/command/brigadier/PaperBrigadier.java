@@ -9,6 +9,7 @@ import java.util.Map;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.command.Command;
@@ -22,7 +23,7 @@ public final class PaperBrigadier {
         Vec3.ZERO,
         Vec2.ZERO,
         null,
-        4,
+        LevelBasedPermissionSet.OWNER,
         "",
         CommonComponents.EMPTY,
         null,
@@ -35,8 +36,8 @@ public final class PaperBrigadier {
             throw new IllegalArgumentException("Unsure how to wrap a " + node);
         }
 
-        final PluginCommandMeta meta;
-        if ((meta = node.pluginCommandMeta) == null) {
+        final APICommandMeta meta;
+        if ((meta = node.apiCommandMeta) == null) {
             return new VanillaCommandWrapper(node);
         }
         CommandNode<CommandSourceStack> argumentCommandNode = node;
@@ -46,6 +47,12 @@ public final class PaperBrigadier {
 
         Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, DUMMY);
         String usage = map.isEmpty() ? node.getUsageText() :  node.getUsageText() + " " + String.join("\n" + node.getUsageText() + " ", map.values());
+
+        // Internal command
+        if (meta.pluginMeta() == null) {
+            return new VanillaCommandWrapper(node.getName(), meta.description(), usage, meta.aliases(), node, meta.helpCommandNamespace());
+        }
+
         return new PluginVanillaCommandWrapper(node.getName(), meta.description(), usage, meta.aliases(), node, meta.plugin());
     }
 

@@ -11,7 +11,7 @@ public interface Vex extends Monster {
     /**
      * Gets the charging state of this entity.
      *
-     * When this entity is charging it will having a glowing red texture.
+     * When this entity is charging it will have a glowing red texture.
      *
      * @return charging state
      */
@@ -20,7 +20,7 @@ public interface Vex extends Monster {
     /**
      * Sets the charging state of this entity.
      *
-     * When this entity is charging it will having a glowing red texture.
+     * When this entity is charging it will have a glowing red texture.
      *
      * @param charging new state
      */
@@ -102,7 +102,7 @@ public interface Vex extends Monster {
     /**
      * Gets if this vex should start to take damage
      * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
-     * 
+     *
      * @return will take damage
      */
     boolean hasLimitedLifetime();
@@ -110,7 +110,7 @@ public interface Vex extends Monster {
     /**
      * Sets if this vex should start to take damage
      * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
-     *      
+     *
      * @param hasLimitedLifetime should take damage
      */
     void setLimitedLifetime(boolean hasLimitedLifetime);
@@ -118,7 +118,7 @@ public interface Vex extends Monster {
     /**
      * Gets the number of ticks remaining until the vex will start
      * to take damage.
-     * 
+     *
      * @return ticks until the vex will start to take damage
      */
     int getLimitedLifetimeTicks();
@@ -126,7 +126,7 @@ public interface Vex extends Monster {
     /**
      * Sets the number of ticks remaining until the vex takes damage.
      * This number is ticked down only if {@link Vex#hasLimitedLifetime()} is true.
-     * 
+     *
      * @param ticks ticks remaining
      */
     void setLimitedLifetimeTicks(int ticks);

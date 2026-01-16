@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
@@ -203,6 +205,19 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     }
 
     @Override
+    @NotNull
+    public List<PotionEffect> getAllEffects() {
+        final ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
+        if (this.hasBasePotionType()) {
+            builder.addAll(this.getBasePotionType().getPotionEffects());
+        }
+        if (this.hasCustomEffects()) {
+            builder.addAll(this.customEffects);
+        }
+        return builder.build();
+    }
+
+    @Override
     public boolean addCustomEffect(PotionEffect effect, boolean overwrite) {
         Preconditions.checkArgument(effect != null, "Potion effect cannot be null");
 
@@ -303,6 +318,17 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     public void setColor(Color color) {
         this.color = color == null ? null : color.asRGB();
+    }
+
+    @Override
+    @NotNull
+    public Color computeEffectiveColor() {
+        if (this.hasColor()) return this.getColor();
+
+        return Color.fromRGB(
+            PotionContents.getColorOptional(Collections2.transform(getAllEffects(), CraftPotionUtil::fromBukkit))
+                .orElse(PotionContents.BASE_POTION_COLOR) & 0x00FFFFFF
+        );
     }
 
     @Override

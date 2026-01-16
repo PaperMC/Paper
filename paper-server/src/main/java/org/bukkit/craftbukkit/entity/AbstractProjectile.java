@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Projectile;
 
@@ -7,6 +10,11 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     public AbstractProjectile(CraftServer server, net.minecraft.world.entity.Entity entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.projectile.Projectile getHandle() {
+        return (net.minecraft.world.entity.projectile.Projectile) this.entity;
     }
 
     @Override
@@ -54,11 +62,6 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
     }
 
     @Override
-    public net.minecraft.world.entity.projectile.Projectile getHandle() {
-        return (net.minecraft.world.entity.projectile.Projectile) entity;
-    }
-
-    @Override
     public final org.bukkit.projectiles.ProjectileSource getShooter() {
         this.getHandle().refreshProjectileSource(true); // Paper - Refresh ProjectileSource for projectiles
         return this.getHandle().projectileSource;
@@ -76,7 +79,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     @Override
     public java.util.UUID getOwnerUniqueId() {
-        return this.getHandle().ownerUUID;
+        return Optionull.map(this.getHandle().owner, EntityReference::getUUID);
     }
     // Paper end - More projectile API
 }

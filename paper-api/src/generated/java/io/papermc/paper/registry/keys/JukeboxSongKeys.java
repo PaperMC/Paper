@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
+@GeneratedClass
 public final class JukeboxSongKeys {
     /**
      * {@code minecraft:11}
@@ -89,6 +89,13 @@ public final class JukeboxSongKeys {
     public static final TypedKey<JukeboxSong> FAR = create(key("far"));
 
     /**
+     * {@code minecraft:lava_chicken}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<JukeboxSong> LAVA_CHICKEN = create(key("lava_chicken"));
+
+    /**
      * {@code minecraft:mall}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -143,6 +150,13 @@ public final class JukeboxSongKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<JukeboxSong> STRAD = create(key("strad"));
+
+    /**
+     * {@code minecraft:tears}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<JukeboxSong> TEARS = create(key("tears"));
 
     /**
      * {@code minecraft:wait}

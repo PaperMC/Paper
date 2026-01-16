@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.projectile.Fireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.Fireball;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -11,6 +11,11 @@ public class CraftSizedFireball extends CraftFireball implements SizedFireball {
 
     public CraftSizedFireball(CraftServer server, Fireball entity) {
         super(server, entity);
+    }
+
+    @Override
+    public Fireball getHandle() {
+        return (Fireball) this.entity;
     }
 
     @Override
@@ -25,10 +30,5 @@ public class CraftSizedFireball extends CraftFireball implements SizedFireball {
     @Override
     public void setDisplayItem(ItemStack item) {
         this.getHandle().setItem(CraftItemStack.asNMSCopy(item));
-    }
-
-    @Override
-    public Fireball getHandle() {
-        return (Fireball) this.entity;
     }
 }

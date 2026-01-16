@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
@@ -14,6 +15,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart, io.papermc.paper.commands.PaperCommandBlockHolder {
+
     private final PermissibleBase perm = new PermissibleBase(this);
 
     public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
@@ -42,11 +44,6 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     }
 
     @Override
-    public String toString() {
-        return "CraftMinecartCommand";
-    }
-
-    @Override
     public void sendMessage(String message) {
     }
 
@@ -72,7 +69,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     @Override
     public void lastOutput(net.kyori.adventure.text.Component lastOutput) {
         io.papermc.paper.commands.PaperCommandBlockHolder.super.lastOutput(lastOutput);
-        this.getCommandBlockHandle().onUpdated();
+        this.getCommandBlockHandle().onUpdated((ServerLevel) this.getHandle().level());
     }
 
     @Override

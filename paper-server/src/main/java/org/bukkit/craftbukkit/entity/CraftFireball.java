@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.Fireball;
@@ -9,8 +9,14 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftFireball extends AbstractProjectile implements Fireball {
+
     public CraftFireball(CraftServer server, AbstractHurtingProjectile entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractHurtingProjectile getHandle() {
+        return (AbstractHurtingProjectile) this.entity;
     }
 
     @Override
@@ -78,14 +84,4 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         return this.getAcceleration();
     }
     // Paper end - Expose power on fireball projectiles
-
-    @Override
-    public AbstractHurtingProjectile getHandle() {
-        return (AbstractHurtingProjectile) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFireball";
-    }
 }

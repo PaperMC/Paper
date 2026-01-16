@@ -2,12 +2,11 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,8 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.5")
-@ApiStatus.Experimental
+@GeneratedClass
 public final class BlockTypeTagKeys {
     /**
      * {@code #minecraft:acacia_logs}
@@ -133,6 +131,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> BANNERS = create(key("banners"));
 
     /**
+     * {@code #minecraft:bars}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BARS = create(key("bars"));
+
+    /**
      * {@code #minecraft:base_stone_nether}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -238,6 +243,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CAMPFIRES = create(key("campfires"));
 
     /**
+     * {@code #minecraft:can_glide_through}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAN_GLIDE_THROUGH = create(key("can_glide_through"));
+
+    /**
      * {@code #minecraft:candle_cakes}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -271,6 +283,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> CEILING_HANGING_SIGNS = create(key("ceiling_hanging_signs"));
+
+    /**
+     * {@code #minecraft:chains}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CHAINS = create(key("chains"));
 
     /**
      * {@code #minecraft:cherry_logs}
@@ -320,6 +339,27 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> CONVERTABLE_TO_MUD = create(key("convertable_to_mud"));
+
+    /**
+     * {@code #minecraft:copper}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> COPPER = create(key("copper"));
+
+    /**
+     * {@code #minecraft:copper_chests}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> COPPER_CHESTS = create(key("copper_chests"));
+
+    /**
+     * {@code #minecraft:copper_golem_statues}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> COPPER_GOLEM_STATUES = create(key("copper_golem_statues"));
 
     /**
      * {@code #minecraft:copper_ores}
@@ -581,6 +621,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> GUARDED_BY_PIGLINS = create(key("guarded_by_piglins"));
 
     /**
+     * {@code #minecraft:happy_ghast_avoids}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> HAPPY_GHAST_AVOIDS = create(key("happy_ghast_avoids"));
+
+    /**
      * {@code #minecraft:hoglin_repellents}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -600,6 +647,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> IMPERMEABLE = create(key("impermeable"));
+
+    /**
+     * {@code #minecraft:incorrect_for_copper_tool}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> INCORRECT_FOR_COPPER_TOOL = create(key("incorrect_for_copper_tool"));
 
     /**
      * {@code #minecraft:incorrect_for_diamond_tool}
@@ -693,6 +747,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> JUNGLE_LOGS = create(key("jungle_logs"));
 
     /**
+     * {@code #minecraft:lanterns}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> LANTERNS = create(key("lanterns"));
+
+    /**
      * {@code #minecraft:lapis_ores}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -712,6 +773,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> LEAVES = create(key("leaves"));
+
+    /**
+     * {@code #minecraft:lightning_rods}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> LIGHTNING_RODS = create(key("lightning_rods"));
 
     /**
      * {@code #minecraft:logs}
@@ -908,13 +976,6 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> PLANKS = create(key("planks"));
-
-    /**
-     * {@code #minecraft:plays_ambient_desert_block_sounds}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = create(key("plays_ambient_desert_block_sounds"));
 
     /**
      * {@code #minecraft:polar_bears_spawnable_on_alternate}
@@ -1204,6 +1265,27 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> TRAPDOORS = create(key("trapdoors"));
 
     /**
+     * {@code #minecraft:triggers_ambient_desert_dry_vegetation_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS = create(key("triggers_ambient_desert_dry_vegetation_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_desert_sand_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DESERT_SAND_BLOCK_SOUNDS = create(key("triggers_ambient_desert_sand_block_sounds"));
+
+    /**
+     * {@code #minecraft:triggers_ambient_dried_ghast_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> TRIGGERS_AMBIENT_DRIED_GHAST_BLOCK_SOUNDS = create(key("triggers_ambient_dried_ghast_block_sounds"));
+
+    /**
      * {@code #minecraft:underwater_bonemeals}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1330,6 +1412,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> WOODEN_PRESSURE_PLATES = create(key("wooden_pressure_plates"));
 
     /**
+     * {@code #minecraft:wooden_shelves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WOODEN_SHELVES = create(key("wooden_shelves"));
+
+    /**
      * {@code #minecraft:wooden_slabs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1373,7 +1462,6 @@ public final class BlockTypeTagKeys {
      * @param key the tag key's key
      * @return a new tag key
      */
-    @ApiStatus.Experimental
     public static TagKey<BlockType> create(final Key key) {
         return TagKey.create(RegistryKey.BLOCK, key);
     }

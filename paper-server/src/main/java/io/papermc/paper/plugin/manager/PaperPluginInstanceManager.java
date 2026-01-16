@@ -153,7 +153,7 @@ class PaperPluginInstanceManager {
         return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(new JavaPlugin[0]);
     }
 
-    // Plugins are disabled in order like this inorder to "rougly" prevent
+    // Plugins are disabled in order like this inorder to "roughly" prevent
     // their dependencies unloading first. But, eh.
     public void disablePlugins() {
         Plugin[] plugins = this.getPlugins();
@@ -311,8 +311,10 @@ class PaperPluginInstanceManager {
         }
 
         try {
-            for (World world : this.server.getWorlds()) {
-                world.removePluginChunkTickets(plugin);
+            if (!this.server.isStopping()) {
+                for (World world : this.server.getWorlds()) {
+                    world.removePluginChunkTickets(plugin);
+                }
             }
         } catch (Throwable ex) {
             this.handlePluginException("Error occurred (in the plugin loader) while removing chunk tickets for " + pluginName + " (Is it up to date?)", ex, plugin); // Paper
@@ -320,7 +322,6 @@ class PaperPluginInstanceManager {
 
     }
 
-    // TODO: Implement event part in future patch (paper patch move up, this patch is lower)
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         Bukkit.getServer().getLogger().log(Level.SEVERE, msg, ex);
         this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));

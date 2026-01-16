@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import java.util.Set;
-import net.minecraft.world.entity.boss.EnderDragonPart;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
@@ -21,6 +21,11 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
     }
 
     @Override
+    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
+        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
+    }
+
+    @Override
     public Set<ComplexEntityPart> getParts() {
         Builder<ComplexEntityPart> builder = ImmutableSet.builder();
 
@@ -29,16 +34,6 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
         }
 
         return builder.build();
-    }
-
-    @Override
-    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
-        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderDragon";
     }
 
     @Override

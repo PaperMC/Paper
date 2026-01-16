@@ -64,7 +64,7 @@ public class CraftMapCanvas implements MapCanvas {
             return;
         if (this.buffer[y * 128 + x] != color) {
             this.buffer[y * 128 + x] = color;
-            this.mapView.worldMap.setColorsDirty(x, y);
+            this.mapView.worldMap.setColorsDirty(x, y, false); // Paper - Fix unnecessary map data saves
         }
     }
 
@@ -126,7 +126,7 @@ public class CraftMapCanvas implements MapCanvas {
         }
 
         byte[] bytes = MapPalette.imageToBytes(temp);
-        
+
         // Since we now control the size of the image, we can safely use System.arraycopy
         // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
         if (x == 0 && effectiveWidth == 128) { // This only works great if the width is 128, otherwise an empty area appears
@@ -141,8 +141,8 @@ public class CraftMapCanvas implements MapCanvas {
         }
 
         // Mark all colors within the image as dirty
-        this.mapView.worldMap.setColorsDirty(destX, destY);
-        this.mapView.worldMap.setColorsDirty(destX + effectiveWidth - 1, destY + effectiveHeight - 1);
+        this.mapView.worldMap.setColorsDirty(destX, destY, false);
+        this.mapView.worldMap.setColorsDirty(destX + effectiveWidth - 1, destY + effectiveHeight - 1, false);
         // Paper end
     }
 

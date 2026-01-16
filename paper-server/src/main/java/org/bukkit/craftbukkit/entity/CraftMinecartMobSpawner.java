@@ -4,10 +4,13 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
-import net.minecraft.world.entity.vehicle.MinecartSpawner;
+import net.minecraft.world.entity.vehicle.minecart.MinecartSpawner;
 import net.minecraft.world.level.SpawnData;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftServer;
@@ -16,9 +19,15 @@ import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 
-final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
-    CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
+public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
+
+    public CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
         super(server, entity);
+    }
+
+    @Override
+    public MinecartSpawner getHandle() {
+        return (MinecartSpawner) this.entity;
     }
 
     @Override
@@ -28,8 +37,14 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
             return null;
         }
 
-        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
-        return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
+            () -> "getSpawnedType@" + this.getUniqueId(), LOGGER
+        )) {
+            Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(
+                TagValueInput.create(problemReporter, getHandle().registryAccess(), spawnData.getEntityToSpawn())
+            );
+            return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
+        }
     }
 
     @Override
@@ -163,16 +178,6 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     }
 
     @Override
-    public MinecartSpawner getHandle() {
-        return (MinecartSpawner) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftMinecartMobSpawner";
-    }
-
-    @Override
     public net.minecraft.world.level.BaseSpawner getSpawner() {
         return this.getHandle().getSpawner();
     }
@@ -180,6 +185,11 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     @Override
     public net.minecraft.world.level.Level getInternalWorld() {
         return this.getHandle().level();
+    }
+
+    @Override
+    public RegistryAccess getRegistryAccess() {
+        return this.getHandle().registryAccess();
     }
 
     @Override

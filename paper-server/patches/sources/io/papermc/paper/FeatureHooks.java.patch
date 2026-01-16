@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -1,0 +_,238 @@
+@@ -1,0 +_,243 @@
 +package io.papermc.paper;
 +
 +import io.papermc.paper.command.PaperSubcommand;
@@ -14,33 +14,38 @@
 +import java.util.List;
 +import java.util.Map;
 +import java.util.Set;
-+import net.minecraft.core.Registry;
 +import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.entity.monster.Spider;
++import net.minecraft.world.entity.monster.spider.Spider;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
-+import net.minecraft.world.level.biome.Biome;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
 +import net.minecraft.world.level.chunk.PalettedContainer;
++import net.minecraft.world.level.chunk.PalettedContainerFactory;
++import net.minecraft.world.level.chunk.Strategy;
 +import org.bukkit.Chunk;
 +import org.bukkit.World;
 +
 +public final class FeatureHooks {
 +
-+    public static void initChunkTaskScheduler(final boolean useParallelGen) {
++    // this includes non-accessible entities
++    public static Iterable<Entity> getAllEntities(final net.minecraft.server.level.ServerLevel world) {
++        return ((net.minecraft.world.level.entity.LevelEntityGetterAdapter<Entity>)world.getEntities()).sectionStorage.getAllEntities();
++    }
++
++    public static void setPlayerChunkUnloadDelay(final long ticks) {
 +    }
 +
 +    public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
 +    }
 +
-+    public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-+        return new LevelChunkSection(biomeRegistry);
++    public static LevelChunkSection createSection(final PalettedContainerFactory palettedContainerFactory, final Level level, final ChunkPos chunkPos, final int chunkSection) {
++        return new LevelChunkSection(palettedContainerFactory);
 +    }
 +
 +    public static void sendChunkRefreshPackets(final List<ServerPlayer> playersInRange, final LevelChunk chunk) {
@@ -53,7 +58,7 @@
 +    }
 +
 +    public static PalettedContainer<BlockState> emptyPalettedBlockContainer() {
-+        return new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
++        return new PalettedContainer<>(Blocks.AIR.defaultBlockState(), Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY));
 +    }
 +
 +    public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -64,7 +69,7 @@
 +
 +    public static Set<Chunk> getSentChunks(final ServerPlayer player) {
 +        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
-+        final World world = player.serverLevel().getWorld();
++        final World world = player.level().getWorld();
 +        player.getChunkTrackingView().forEach(pos -> {
 +            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
 +            chunks.add(chunk);
@@ -223,7 +228,7 @@
 +    }
 +
 +    public static java.util.concurrent.Executor getWorldgenExecutor() {
-+        return net.minecraft.Util.backgroundExecutor();
++        return net.minecraft.util.Util.backgroundExecutor();
 +    }
 +
 +    public static void setViewDistance(ServerPlayer player, int distance) {

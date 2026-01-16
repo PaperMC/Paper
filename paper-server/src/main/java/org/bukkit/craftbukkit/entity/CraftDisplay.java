@@ -5,6 +5,8 @@ import org.bukkit.Color;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Display;
 import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public class CraftDisplay extends CraftEntity implements Display {
 
@@ -14,19 +16,14 @@ public class CraftDisplay extends CraftEntity implements Display {
 
     @Override
     public net.minecraft.world.entity.Display getHandle() {
-        return (net.minecraft.world.entity.Display) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftDisplay";
+        return (net.minecraft.world.entity.Display) this.entity;
     }
 
     @Override
     public Transformation getTransformation() {
         com.mojang.math.Transformation nms = net.minecraft.world.entity.Display.createTransformation(this.getHandle().getEntityData());
 
-        return new Transformation(nms.getTranslation(), nms.getLeftRotation(), nms.getScale(), nms.getRightRotation());
+        return new Transformation(new Vector3f(nms.getTranslation()), new Quaternionf(nms.getLeftRotation()), new Vector3f(nms.getScale()), new Quaternionf(nms.getRightRotation()));
     }
 
     @Override
@@ -140,7 +137,7 @@ public class CraftDisplay extends CraftEntity implements Display {
     public Color getGlowColorOverride() {
         int color = this.getHandle().getGlowColorOverride();
 
-        return (color == -1) ? null : Color.fromARGB(color);
+        return (color == -1) ? null : Color.fromRGB(color & 0x00FFFFFF); // skip alpha channel
     }
 
     @Override
@@ -148,7 +145,7 @@ public class CraftDisplay extends CraftEntity implements Display {
         if (color == null) {
             this.getHandle().setGlowColorOverride(-1);
         } else {
-            this.getHandle().setGlowColorOverride(color.asARGB());
+            this.getHandle().setGlowColorOverride(color.asRGB());
         }
     }
 

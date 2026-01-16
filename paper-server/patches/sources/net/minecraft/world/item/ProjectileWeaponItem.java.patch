@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -62,12 +_,29 @@
+@@ -50,6 +_,7 @@
+         float inaccuracy,
+         boolean isCrit,
+         @Nullable LivingEntity target
++        ,float drawStrength // Paper - Pass draw strength
+     ) {
+         float f = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
+         float f1 = projectileItems.size() == 1 ? 0.0F : 2.0F * f / (projectileItems.size() - 1);
+@@ -62,12 +_,26 @@
                  float f4 = f2 + f3 * ((i + 1) / 2) * f1;
                  f3 = -f3;
                  int i1 = i;
@@ -14,7 +22,7 @@
 +                Projectile projectile = this.createProjectile(level, shooter, weapon, itemStack, isCrit);
 +                this.shootProjectile(shooter, projectile, i1, velocity, inaccuracy, f4, target);
 +
-+                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, true);
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, drawStrength, true);
 +                if (event.isCancelled()) {
 +                    event.getProjectile().remove();
 +                    return;
@@ -26,14 +34,11 @@
 +                        level,
 +                        itemStack
 +                    ).isRemoved()) {
-+                        if (shooter instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-+                            serverPlayer.containerMenu.sendAllDataToRemote();
-+                        }
 +                        return;
 +                    }
 +                }
 +                // CraftBukkit end
-                 weapon.hurtAndBreak(this.getDurabilityUse(itemStack), shooter, LivingEntity.getSlotForHand(hand));
+                 weapon.hurtAndBreak(this.getDurabilityUse(itemStack), shooter, hand.asEquipmentSlot());
                  if (weapon.isEmpty()) {
                      break;
 @@ -95,6 +_,11 @@

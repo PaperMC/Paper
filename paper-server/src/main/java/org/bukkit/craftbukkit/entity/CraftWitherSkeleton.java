@@ -6,13 +6,8 @@ import org.bukkit.entity.WitherSkeleton;
 
 public class CraftWitherSkeleton extends CraftAbstractSkeleton implements WitherSkeleton {
 
-    public CraftWitherSkeleton(CraftServer server, net.minecraft.world.entity.monster.WitherSkeleton entity) {
+    public CraftWitherSkeleton(CraftServer server, net.minecraft.world.entity.monster.skeleton.WitherSkeleton entity) {
         super(server, entity);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftWitherSkeleton";
     }
 
     @Override

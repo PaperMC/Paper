@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -12,13 +13,46 @@ import org.bukkit.entity.Mob;
 import org.bukkit.loot.LootTable;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
-    public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
-        super(server, entity);
-         paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
-    }
 
     private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
-    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper - Mob Pathfinding API
+
+    public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
+        super(server, entity);
+        this.paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
+    }
+
+    @Override
+    public net.minecraft.world.entity.Mob getHandle() {
+        return (net.minecraft.world.entity.Mob) this.entity;
+    }
+
+    @Override
+    public void setHandle(net.minecraft.world.entity.Entity entity) {
+        super.setHandle(entity);
+        this.paperPathfinder.setHandle(this.getHandle());
+    }
+
+    @Override
+    public boolean shouldDespawnInPeaceful() {
+        return this.getHandle().shouldDespawnInPeaceful();
+    }
+
+    @Override
+    public void setDespawnInPeacefulOverride(final TriState state) {
+        Preconditions.checkArgument(state != null, "TriState cannot be null");
+        this.getHandle().despawnInPeacefulOverride = state;
+    }
+
+    @Override
+    public TriState getDespawnInPeacefulOverride() {
+        return this.getHandle().despawnInPeacefulOverride;
+    }
+
+    @Override
+    public com.destroystokyo.paper.entity.Pathfinder getPathfinder() {
+        return this.paperPathfinder;
+    }
+
     @Override
     public void setTarget(LivingEntity target) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
@@ -52,24 +86,6 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public Sound getAmbientSound() {
         SoundEvent sound = this.getHandle().getAmbientSound();
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
-    }
-
-    @Override
-    public net.minecraft.world.entity.Mob getHandle() {
-        return (net.minecraft.world.entity.Mob) this.entity;
-    }
-
-    // Paper start - Mob Pathfinding API
-    @Override
-    public void setHandle(net.minecraft.world.entity.Entity entity) {
-        super.setHandle(entity);
-        paperPathfinder.setHandle(getHandle());
-    }
-    // Paper end - Mob Pathfinding API
-
-    @Override
-    public String toString() {
-        return "CraftMob";
     }
 
     @Override

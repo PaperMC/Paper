@@ -46,7 +46,6 @@ import org.jetbrains.annotations.Nullable;
 public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - translatable
 
     // Start generate - EntityType
-    // @GeneratedFrom 1.21.5
     ACACIA_BOAT("acacia_boat", AcaciaBoat.class, -1),
     ACACIA_CHEST_BOAT("acacia_chest_boat", AcaciaChestBoat.class, -1),
     ALLAY("allay", Allay.class, -1),
@@ -67,6 +66,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     BREEZE("breeze", Breeze.class, -1),
     BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
     CAMEL("camel", Camel.class, -1),
+    CAMEL_HUSK("camel_husk", CamelHusk.class, -1),
     CAT("cat", Cat.class, -1),
     CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
     CHERRY_BOAT("cherry_boat", CherryBoat.class, -1),
@@ -75,6 +75,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     CHICKEN("chicken", Chicken.class, 93),
     COD("cod", Cod.class, -1),
     COMMAND_BLOCK_MINECART("command_block_minecart", CommandMinecart.class, 40),
+    COPPER_GOLEM("copper_golem", CopperGolem.class, -1),
     COW("cow", Cow.class, 92),
     CREAKING("creaking", Creaking.class, -1),
     CREEPER("creeper", Creeper.class, 50),
@@ -109,6 +110,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     GLOW_SQUID("glow_squid", GlowSquid.class, -1),
     GOAT("goat", Goat.class, -1),
     GUARDIAN("guardian", Guardian.class, 68),
+    HAPPY_GHAST("happy_ghast", HappyGhast.class, -1),
     HOGLIN("hoglin", Hoglin.class, -1),
     HOPPER_MINECART("hopper_minecart", HopperMinecart.class, 46),
     HORSE("horse", Horse.class, 100),
@@ -129,10 +131,12 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     MAGMA_CUBE("magma_cube", MagmaCube.class, 62),
     MANGROVE_BOAT("mangrove_boat", MangroveBoat.class, -1),
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
+    MANNEQUIN("mannequin", Mannequin.class, -1),
     MARKER("marker", Marker.class, -1),
-    MINECART("minecart", Minecart.class, 42),
+    MINECART("minecart", RideableMinecart.class, 42),
     MOOSHROOM("mooshroom", MushroomCow.class, 96),
     MULE("mule", Mule.class, 32),
+    NAUTILUS("nautilus", Nautilus.class, -1),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
     OCELOT("ocelot", Ocelot.class, 98),
@@ -141,6 +145,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     PALE_OAK_BOAT("pale_oak_boat", PaleOakBoat.class, -1),
     PALE_OAK_CHEST_BOAT("pale_oak_chest_boat", PaleOakChestBoat.class, -1),
     PANDA("panda", Panda.class, -1),
+    PARCHED("parched", Parched.class, -1),
     PARROT("parrot", Parrot.class, 105),
     PHANTOM("phantom", Phantom.class, -1),
     PIG("pig", Pig.class, 90),
@@ -195,6 +200,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     ZOGLIN("zoglin", Zoglin.class, -1),
     ZOMBIE("zombie", Zombie.class, 54),
     ZOMBIE_HORSE("zombie_horse", ZombieHorse.class, 29),
+    ZOMBIE_NAUTILUS("zombie_nautilus", ZombieNautilus.class, -1),
     ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
     ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     // End generate - EntityType
@@ -357,16 +363,4 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
         return org.bukkit.Bukkit.getUnsafe().getDefaultEntityAttributes(this.key);
     }
     // Paper end
-
-    /**
-     * Gets if this EntityType is enabled by feature in a world.
-     *
-     * @param world the world to check
-     * @return true if this EntityType can be used to spawn an Entity for this World.
-     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
-     */
-    @Deprecated(forRemoval = true, since = "1.20")
-    public boolean isEnabledByFeature(@NotNull World world) {
-        return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
-    }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -151,6 +_,12 @@
+@@ -152,6 +_,12 @@
      @Override
      protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
          Direction direction = state.getValue(FACING);
@@ -11,9 +11,9 @@
 +        }
 +        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
          BlockState blockState = state.setValue(EXTENDED, true);
-         if (!level.isClientSide) {
+         if (!level.isClientSide()) {
              boolean neighborSignal = this.getNeighborSignal(level, pos, direction);
-@@ -182,10 +_,17 @@
+@@ -183,10 +_,17 @@
                  .defaultBlockState()
                  .setValue(MovingPistonBlock.FACING, direction)
                  .setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
@@ -24,7 +24,7 @@
 +                }
 +            }
 +            // Paper end - Fix sticky pistons and BlockPistonRetractEvent
-             level.setBlock(pos, blockState1, 276);
+             level.setBlock(pos, blockState1, Block.UPDATE_NONE | Block.UPDATE_KNOWN_SHAPE);
              level.setBlockEntity(
                  MovingPistonBlock.newMovingBlockEntity(
 -                    pos, blockState1, this.defaultBlockState().setValue(FACING, Direction.from3DDataValue(param & 7)), direction, false, true
@@ -32,7 +32,7 @@
                  )
              );
              level.updateNeighborsAt(pos, blockState1.getBlock());
-@@ -209,13 +_,27 @@
+@@ -210,13 +_,27 @@
                          || blockState2.getPistonPushReaction() != PushReaction.NORMAL
                              && !blockState2.is(Blocks.PISTON)
                              && !blockState2.is(Blocks.STICKY_PISTON)) {
@@ -61,7 +61,7 @@
              }
  
              level.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, level.random.nextFloat() * 0.15F + 0.6F);
-@@ -226,7 +_,7 @@
+@@ -227,7 +_,7 @@
      }
  
      public static boolean isPushable(BlockState state, Level level, BlockPos pos, Direction movementDirection, boolean allowDestroy, Direction pistonFacing) {
@@ -70,7 +70,7 @@
              return false;
          } else if (state.isAir()) {
              return true;
-@@ -282,12 +_,54 @@
+@@ -283,12 +_,54 @@
              BlockState[] blockStates = new BlockState[toPush.size() + toDestroy.size()];
              Direction direction = extending ? facing : facing.getOpposite();
              int i = 0;
@@ -124,9 +124,9 @@
 -                dropResources(blockState1, level, blockPos2, blockEntity);
 +                dropResources(blockState1, level, blockPos2, blockEntity, pos); // Paper - Add BlockBreakBlockEvent
                  if (!blockState1.is(BlockTags.FIRE) && level.isClientSide()) {
-                     level.levelEvent(2001, blockPos2, getId(blockState1));
+                     level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, blockPos2, getId(blockState1));
                  }
-@@ -298,13 +_,26 @@
+@@ -299,13 +_,26 @@
              }
  
              for (int i1 = toPush.size() - 1; i1 >= 0; i1--) {
@@ -141,7 +141,7 @@
                  blockPos2 = blockPos2.relative(direction);
                  map.remove(blockPos2);
                  BlockState blockState2 = Blocks.MOVING_PISTON.defaultBlockState().setValue(FACING, facing);
-                 level.setBlock(blockPos2, blockState2, 324);
+                 level.setBlock(blockPos2, blockState2, Block.UPDATE_NONE | Block.UPDATE_MOVE_BY_PISTON);
 -                level.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockPos2, blockState2, list.get(i1), facing, extending, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {

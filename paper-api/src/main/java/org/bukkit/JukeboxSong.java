@@ -2,17 +2,16 @@ package org.bukkit;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.text.Component;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a song which may play in a Jukebox.
  */
-@ApiStatus.Experimental
+@NullMarked
 public interface JukeboxSong extends Keyed, Translatable {
 
     // Start generate - JukeboxSong
-    // @GeneratedFrom 1.21.5
     JukeboxSong ELEVEN = get("11");
 
     JukeboxSong THIRTEEN = get("13");
@@ -31,6 +30,8 @@ public interface JukeboxSong extends Keyed, Translatable {
 
     JukeboxSong FAR = get("far");
 
+    JukeboxSong LAVA_CHICKEN = get("lava_chicken");
+
     JukeboxSong MALL = get("mall");
 
     JukeboxSong MELLOHI = get("mellohi");
@@ -47,23 +48,50 @@ public interface JukeboxSong extends Keyed, Translatable {
 
     JukeboxSong STRAD = get("strad");
 
+    JukeboxSong TEARS = get("tears");
+
     JukeboxSong WAIT = get("wait");
 
     JukeboxSong WARD = get("ward");
     // End generate - JukeboxSong
 
-    @NotNull
-    private static JukeboxSong get(@NotNull String key) {
+    private static JukeboxSong get(String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(NamespacedKey.minecraft(key));
     }
 
-    // Paper start - adventure
     /**
      * @deprecated this method assumes that jukebox song description will
      * always be a translatable component which is not guaranteed.
      */
     @Override
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.NotNull String getTranslationKey();
-    // Paper end - adventure
+    String getTranslationKey();
+
+    /**
+     * Gets the sound for this song.
+     *
+     * @return the sound
+     */
+    Sound getSound();
+
+    /**
+     * Gets the description for this song.
+     *
+     * @return the description
+     */
+    Component getDescription();
+
+    /**
+     * Gets the length in seconds for this song.
+     *
+     * @return the length in seconds
+     */
+    float getLengthInSeconds();
+
+    /**
+     * Gets the comparator output for this song.
+     *
+     * @return the comparator output
+     */
+    int getComparatorOutput();
 }

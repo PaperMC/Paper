@@ -1,8 +1,6 @@
 package io.papermc.generator.rewriter.registration;
 
-import io.papermc.generator.rewriter.utils.Annotations;
 import io.papermc.generator.types.SimpleGenerator;
-import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.typewriter.ClassNamed;
 import io.papermc.typewriter.SourceFile;
 import io.papermc.typewriter.context.IndentUnit;
@@ -12,13 +10,10 @@ import io.papermc.typewriter.replace.CompositeRewriter;
 import io.papermc.typewriter.replace.ReplaceOptions;
 import io.papermc.typewriter.replace.ReplaceOptionsLike;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
-import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
@@ -48,7 +43,6 @@ public class PaperPatternSourceSetRewriter extends SourceSetRewriterImpl<Pattern
                 COMMENT_MARKER_FORMAT.formatted("Start", pattern),
                 COMMENT_MARKER_FORMAT.formatted("End", pattern)
             )
-            .generatedComment(Annotations.annotationStyle(GeneratedFrom.class) + " " + SharedConstants.getCurrentVersion().getId())
             .targetClass(targetClass);
     }
 

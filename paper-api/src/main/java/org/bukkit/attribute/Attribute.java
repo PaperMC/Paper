@@ -94,6 +94,10 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     Attribute BURNING_TIME = getAttribute("burning_time");
     /**
+     * The camera distance of a player to their own entity.
+     */
+    Attribute CAMERA_DISTANCE = getAttribute("camera_distance");
+    /**
      * Resistance to knockback from explosions.
      */
     Attribute EXPLOSION_KNOCKBACK_RESISTANCE = getAttribute("explosion_knockback_resistance");
@@ -145,11 +149,25 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * Chance of a zombie to spawn reinforcements.
      */
     Attribute SPAWN_REINFORCEMENTS = getAttribute("spawn_reinforcements");
+    /**
+     * Attribute controlling the range an entity transmits itself as a waypoint.
+     */
+    Attribute WAYPOINT_TRANSMIT_RANGE = getAttribute("waypoint_transmit_range");
+    /**
+     * Attribute controlling the range an entity receives other waypoints from.
+     */
+    Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
 
     @NotNull
     private static Attribute getAttribute(@NotNull String key) {
         return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
     }
+
+    /**
+     * {@return the sentiment of this attribute}
+     */
+    @NotNull
+    Sentiment getSentiment();
 
     /**
      * @param name of the attribute.
@@ -172,5 +190,17 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
         return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
+    }
+
+    /**
+     * An attribute sentiment describes the intent behind the attribute, meaning
+     * whether it is supposed to be a positive, neutral, or negative attribute.
+     */
+    enum Sentiment {
+        // Start generate - AttributeSentiment
+        POSITIVE,
+        NEUTRAL,
+        NEGATIVE;
+        // End generate - AttributeSentiment
     }
 }
