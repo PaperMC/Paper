@@ -1183,7 +1183,7 @@ public final class CraftServer implements Server {
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
-        Path worldFolder = creator.parentDirectory().resolve("name");
+        Path worldFolder = creator.parentDirectory().resolve(name);
         World world = this.getWorld(name);
 
         // Paper start
