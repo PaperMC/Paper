@@ -463,7 +463,7 @@
      }
  
      private static void setInitialSpawn(
-@@ -510,6 +_,30 @@
+@@ -510,6 +_,28 @@
              levelData.setSpawn(LevelData.RespawnData.of(level.dimension(), BlockPos.ZERO.above(80), 0.0F, 0.0F));
          } else {
              ServerChunkCache chunkSource = level.getChunkSource();
@@ -477,11 +477,9 @@
 +                        throw new IllegalStateException("Cannot set spawn point for " + levelData.getLevelName() + " to be in another world (" + spawn.getWorld().getName() + ")");
 +                    } else {
 +                        levelData.setSpawn(
-+                            new net.minecraft.world.level.storage.LevelData.RespawnData(
-+                                GlobalPos.of(
-+                                    level.dimension(),
-+                                    new BlockPos(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ())
-+                                ),
++                            net.minecraft.world.level.storage.LevelData.RespawnData.of(
++                                level.dimension(),
++                                org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(spawn),
 +                                spawn.getYaw(),
 +                                spawn.getPitch()
 +                            )
@@ -536,6 +534,15 @@
      }
  
      protected GlobalPos selectLevelLoadFocusPos() {
+@@ -610,7 +_,7 @@
+     public abstract boolean shouldRconBroadcast();
+ 
+     public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
+-        this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE));
++        if (this.overworld() != null) this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE)); // Paper - don't try to save if the overworld was not loaded, generally during early startup failures
+         boolean flag = false;
+ 
+         for (ServerLevel serverLevel : this.getAllLevels()) {
 @@ -622,8 +_,10 @@
              flag = true;
          }
@@ -760,7 +767,7 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -739,26 +_,68 @@
+@@ -739,26 +_,73 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -792,6 +799,11 @@
 +                LOGGER.info("*************************************************************************************");
 +            }
 +            // Paper end - Add onboarding message for initial server start
++            // Paper start - Improve outdated version checking
++            if (System.getProperty("paper.disableStartupVersionCheck") == null && io.papermc.paper.configuration.GlobalConfiguration.get().updateChecker.enabled) {
++                CompletableFuture.runAsync(com.destroystokyo.paper.PaperVersionFetcher::getUpdateStatusStartupMessage, io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR);
++            }
++            // Paper end - Improve outdated version checking
 +
              while (this.running) {
 -                long l;

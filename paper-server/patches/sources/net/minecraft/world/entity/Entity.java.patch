@@ -402,7 +402,7 @@
  
      public void setSharedFlagOnFire(boolean isOnFire) {
 -        this.setSharedFlag(FLAG_ONFIRE, isOnFire || this.hasVisualFire);
-+        this.setSharedFlag(0, this.visualFire.toBooleanOrElse(isOnFire)); // Paper - improve visual fire API
++        this.setSharedFlag(FLAG_ONFIRE, this.visualFire.toBooleanOrElse(isOnFire)); // Paper - improve visual fire API
      }
  
      public void checkBelowWorld() {
@@ -620,18 +620,19 @@
                  double d = entity.getX() - this.getX();
                  double d1 = entity.getZ() - this.getZ();
                  double max = Mth.absMax(d, d1);
-@@ -1805,7 +_,23 @@
+@@ -1804,8 +_,24 @@
+     }
  
      public void push(double x, double y, double z) {
-         if (Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)) {
--            this.setDeltaMovement(this.getDeltaMovement().add(x, y, z));
-+            // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
-+            this.push(x, y, z, null);
-+        }
++        // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
++        this.push(x, y, z, null);
 +    }
 +
 +    public void push(double x, double y, double z, @Nullable Entity pushingEntity) {
-+        {
++        // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+         if (Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)) {
+-            this.setDeltaMovement(this.getDeltaMovement().add(x, y, z));
++            // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
 +            org.bukkit.util.Vector delta = new org.bukkit.util.Vector(x, y, z);
 +            if (pushingEntity != null) {
 +                io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(this.getBukkitEntity(), io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.PUSH, pushingEntity.getBukkitEntity(), delta);
@@ -694,7 +695,7 @@
                  return true;
              }
          }
-@@ -1960,14 +_,35 @@
+@@ -1960,14 +_,34 @@
      }
  
      public void saveWithoutId(ValueOutput output) {
@@ -715,7 +716,6 @@
              }
 +            } // CraftBukkit
  
-+            this.setDeltaMovement(io.papermc.paper.util.MCUtil.sanitizeNanInf(this.deltaMovement, 0D)); // Paper - remove NaN values before usage in saving
              output.store("Motion", Vec3.CODEC, this.getDeltaMovement());
 +            // CraftBukkit start - Checking for NaN pitch/yaw and resetting to zero
 +            // TODO: make sure this is the best way to address this.
@@ -829,15 +829,6 @@
          } catch (Throwable var7) {
              CrashReport crashReport = CrashReport.forThrowable(var7, "Saving entity NBT");
              CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being saved");
-@@ -2036,7 +_,7 @@
-     public void load(ValueInput input) {
-         try {
-             Vec3 vec3 = input.read("Pos", Vec3.CODEC).orElse(Vec3.ZERO);
--            Vec3 vec31 = input.read("Motion", Vec3.CODEC).orElse(Vec3.ZERO);
-+            Vec3 vec31 = input.read("Motion", Vec3.CODEC).orElse(Vec3.ZERO); vec31 = io.papermc.paper.util.MCUtil.sanitizeNanInf(vec31, 0D); // Paper - avoid setting NaN values
-             Vec2 vec2 = input.read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
-             this.setDeltaMovement(Math.abs(vec31.x) > 10.0 ? 0.0 : vec31.x, Math.abs(vec31.y) > 10.0 ? 0.0 : vec31.y, Math.abs(vec31.z) > 10.0 ? 0.0 : vec31.z);
-             this.needsSync = true;
 @@ -2068,7 +_,20 @@
                  this.setNoGravity(input.getBooleanOr("NoGravity", false));
                  this.setGlowingTag(input.getBooleanOr("Glowing", false));
@@ -1315,7 +1306,7 @@
 -        this.setSharedFlag(FLAG_INVISIBLE, invisible);
 +        // CraftBukkit - start
 +        if (!this.persistentInvisibility) { // Prevent Minecraft from removing our invisibility flag
-+            this.setSharedFlag(5, invisible);
++            this.setSharedFlag(FLAG_INVISIBLE, invisible);
 +        }
 +        // CraftBukkit - end
      }
