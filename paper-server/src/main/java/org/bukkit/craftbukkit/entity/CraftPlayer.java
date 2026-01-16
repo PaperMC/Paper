@@ -2706,6 +2706,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public int getLastPing() {
+        if (this.getHandle().connection == null) throw new UnsupportedOperationException("Too early to call this method at this stage");
+        return this.getHandle().connection.lastLatency;
+    }
+
+    @Override
     public String getLocale() {
         // Paper start - Locale change event
         final String locale = this.getHandle().language;
