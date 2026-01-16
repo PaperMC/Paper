@@ -27,7 +27,7 @@ public class ItemCraftedEvent extends Event {
     /**
      * Gets the player who triggered the event by picking up the crafted item.
      *
-     * @return player
+     * @return the player
      */
     public Player getPlayer() {
         return this.player;
