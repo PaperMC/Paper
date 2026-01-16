@@ -1218,10 +1218,7 @@ public final class CraftServer implements Server {
         try {
             Path serverRoot = this.getWorldContainer().toPath();
             // Make sure parsing off server root for symlinks
-            DirectoryValidator directoryValidator = LevelStorageSource.parseValidator(serverRoot.resolve("allowed_symlinks.txt"));
-            LevelStorageSource levelStorageSource = new LevelStorageSource(creator.parentDirectory(), serverRoot.resolve("../backups"), directoryValidator, DataFixers.getDataFixer());
-
-            levelStorageAccess = levelStorageSource.validateAndCreateAccess(name, actualDimension);
+            levelStorageAccess = LevelStorageSource.createDefault(creator.parentDirectory(), this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
         }
