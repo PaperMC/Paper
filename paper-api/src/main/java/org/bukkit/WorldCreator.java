@@ -8,12 +8,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents various types of options that may be used to create a world.
  */
+@NullMarked
 public class WorldCreator {
     private final NamespacedKey key; // Paper
     private final String name;
@@ -27,12 +28,9 @@ public class WorldCreator {
     private boolean hardcore = false;
     private boolean bonusChest = false;
 
-    @Nullable
-    private Position spawnPositionOverride;
-    @Nullable
-    private Float spawnYawOverride;
-    @Nullable
-    private Float spawnPitchOverride;
+    private @Nullable Position spawnPositionOverride;
+    private @Nullable Float spawnYawOverride;
+    private @Nullable Float spawnPitchOverride;
 
     private Path parentDirectory = Bukkit.getWorldContainer().toPath();
 
@@ -41,7 +39,7 @@ public class WorldCreator {
      *
      * @param name Name of the world that will be created
      */
-    public WorldCreator(@NotNull String name) {
+    public WorldCreator(String name) {
         // Paper start
         this(name, getWorldKey(name));
     }
@@ -65,7 +63,7 @@ public class WorldCreator {
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
      */
-    public WorldCreator(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
+    public WorldCreator(String levelName, NamespacedKey worldKey) {
         if (levelName == null || worldKey == null) {
             throw new IllegalArgumentException("World name and key cannot be null");
         }
@@ -80,7 +78,7 @@ public class WorldCreator {
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
-    public WorldCreator(@NotNull NamespacedKey worldKey) {
+    public WorldCreator(NamespacedKey worldKey) {
         this(worldKey.getKey(), worldKey);
     }
 
@@ -89,7 +87,6 @@ public class WorldCreator {
      *
      * @return the key
      */
-    @NotNull
     public NamespacedKey key() {
         return key;
     }
@@ -100,8 +97,7 @@ public class WorldCreator {
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
      */
-    @NotNull
-    public static WorldCreator ofNameAndKey(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
+    public static WorldCreator ofNameAndKey(String levelName, NamespacedKey worldKey) {
         return new WorldCreator(levelName, worldKey);
     }
 
@@ -111,8 +107,7 @@ public class WorldCreator {
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
-    @NotNull
-    public static WorldCreator ofKey(@NotNull NamespacedKey worldKey) {
+    public static WorldCreator ofKey(NamespacedKey worldKey) {
         return new WorldCreator(worldKey);
     }
     // Paper end
@@ -123,8 +118,7 @@ public class WorldCreator {
      * @param world World to copy options from
      * @return This object, for chaining
      */
-    @NotNull
-    public WorldCreator copy(@NotNull World world) {
+    public WorldCreator copy(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
 
         seed = world.getSeed();
@@ -145,8 +139,7 @@ public class WorldCreator {
      * @param creator World creator to copy options from
      * @return This object, for chaining
      */
-    @NotNull
-    public WorldCreator copy(@NotNull WorldCreator creator) {
+    public WorldCreator copy(WorldCreator creator) {
         Preconditions.checkArgument(creator != null, "Creator cannot be null");
 
         seed = creator.seed();
@@ -167,7 +160,6 @@ public class WorldCreator {
      *
      * @return World name
      */
-    @NotNull
     public String name() {
         return name;
     }
@@ -187,7 +179,6 @@ public class WorldCreator {
      * @param seed World seed
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator seed(long seed) {
         this.seed = seed;
 
@@ -199,7 +190,6 @@ public class WorldCreator {
      *
      * @return World environment
      */
-    @NotNull
     public World.Environment environment() {
         return environment;
     }
@@ -210,8 +200,7 @@ public class WorldCreator {
      * @param env World environment
      * @return This object, for chaining
      */
-    @NotNull
-    public WorldCreator environment(@NotNull World.Environment env) {
+    public WorldCreator environment(World.Environment env) {
         this.environment = env;
 
         return this;
@@ -226,8 +215,7 @@ public class WorldCreator {
      * @param override the parent directory to store this world's data in
      * @return this object, for chaining
      */
-    @NotNull
-    public WorldCreator parentDirectory(@NotNull Path override) {
+    public WorldCreator parentDirectory(Path override) {
         this.parentDirectory = override;
         return this;
     }
@@ -237,7 +225,6 @@ public class WorldCreator {
      *
      * @return the parent directory used for world storage
      */
-    @NotNull
     public Path parentDirectory() {
         return this.parentDirectory;
     }
@@ -247,7 +234,6 @@ public class WorldCreator {
      *
      * @return World type
      */
-    @NotNull
     public WorldType type() {
         return type;
     }
@@ -258,8 +244,7 @@ public class WorldCreator {
      * @param type World type
      * @return This object, for chaining
      */
-    @NotNull
-    public WorldCreator type(@NotNull WorldType type) {
+    public WorldCreator type(WorldType type) {
         this.type = type;
 
         return this;
@@ -276,8 +261,7 @@ public class WorldCreator {
      * @param pitch    the pitch rotation at spawn
      * @return this creator for chaining
      */
-    @NotNull
-    public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
+    public WorldCreator forcedSpawnPosition(Position position, float yaw, float pitch) {
         this.spawnPositionOverride = position;
         this.spawnYawOverride = yaw;
         this.spawnPitchOverride = pitch;
@@ -291,7 +275,6 @@ public class WorldCreator {
      *
      * @return this creator for chaining
      */
-    @NotNull
     public WorldCreator clearForcedSpawnPosition() {
         this.spawnPositionOverride = null;
         this.spawnYawOverride = null;
@@ -307,8 +290,7 @@ public class WorldCreator {
      *
      * @return the forced spawn position, or {@code null} to use vanilla behavior
      */
-    @Nullable
-    public Position forcedSpawnPosition() {
+    public @Nullable Position forcedSpawnPosition() {
         return this.spawnPositionOverride;
     }
 
@@ -322,8 +304,7 @@ public class WorldCreator {
      *
      * @return the forced spawn yaw, or {@code null} to use vanilla behavior
      */
-    @Nullable
-    public Float forcedSpawnYaw() {
+    public @Nullable Float forcedSpawnYaw() {
         return this.spawnYawOverride;
     }
 
@@ -337,8 +318,7 @@ public class WorldCreator {
      *
      * @return the forced spawn pitch, or {@code null} to use vanilla behavior
      */
-    @Nullable
-    public Float forcedSpawnPitch() {
+    public @Nullable Float forcedSpawnPitch() {
         return this.spawnPitchOverride;
     }
 
@@ -350,8 +330,7 @@ public class WorldCreator {
      *
      * @return Chunk generator
      */
-    @Nullable
-    public ChunkGenerator generator() {
+    public @Nullable ChunkGenerator generator() {
         return generator;
     }
 
@@ -364,7 +343,6 @@ public class WorldCreator {
      * @param generator Chunk generator
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator generator(@Nullable ChunkGenerator generator) {
         this.generator = generator;
 
@@ -384,7 +362,6 @@ public class WorldCreator {
      * @param generator Name of the generator to use, in "plugin:id" notation
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator generator(@Nullable String generator) {
         this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
 
@@ -406,7 +383,6 @@ public class WorldCreator {
      *     messages
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator generator(@Nullable String generator, @Nullable CommandSender output) {
         this.generator = getGeneratorForName(name, generator, output);
 
@@ -422,8 +398,7 @@ public class WorldCreator {
      *
      * @return Biome provider
      */
-    @Nullable
-    public BiomeProvider biomeProvider() {
+    public @Nullable BiomeProvider biomeProvider() {
         return biomeProvider;
     }
 
@@ -437,7 +412,6 @@ public class WorldCreator {
      * @param biomeProvider Biome provider
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator biomeProvider(@Nullable BiomeProvider biomeProvider) {
         this.biomeProvider = biomeProvider;
 
@@ -460,7 +434,6 @@ public class WorldCreator {
      * notation
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, Bukkit.getConsoleSender());
 
@@ -484,7 +457,6 @@ public class WorldCreator {
      * @param output {@link CommandSender} that will receive any error messages
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider, @Nullable CommandSender output) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, output);
 
@@ -506,8 +478,7 @@ public class WorldCreator {
      * dimension</a> (scroll to "When the generator ID type is
      * <code>minecraft:flat</code>)"
      */
-    @NotNull
-    public WorldCreator generatorSettings(@NotNull String generatorSettings) {
+    public WorldCreator generatorSettings(String generatorSettings) {
         this.generatorSettings = generatorSettings;
 
         return this;
@@ -519,7 +490,6 @@ public class WorldCreator {
      * @return The settings that should be used by the generator
      * @see #generatorSettings(java.lang.String)
      */
-    @NotNull
     public String generatorSettings() {
         return generatorSettings;
     }
@@ -531,7 +501,6 @@ public class WorldCreator {
      * @param generate Whether to generate structures
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator generateStructures(boolean generate) {
         this.generateStructures = generate;
 
@@ -555,7 +524,6 @@ public class WorldCreator {
      * @param hardcore Whether the world will be hardcore
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator hardcore(boolean hardcore) {
         this.hardcore = hardcore;
 
@@ -579,7 +547,6 @@ public class WorldCreator {
      * @param bonusChest indicating whether the bonus chest should be generated
      * @return This object, for chaining
      */
-    @NotNull
     public WorldCreator bonusChest(final boolean bonusChest) {
         this.bonusChest = bonusChest;
         return this;
@@ -602,8 +569,7 @@ public class WorldCreator {
      *
      * @return Newly created or loaded world
      */
-    @Nullable
-    public World createWorld() {
+    public @Nullable World createWorld() {
         return Bukkit.createWorld(this);
     }
 
@@ -613,8 +579,7 @@ public class WorldCreator {
      * @param name Name of the world to load or create
      * @return Resulting WorldCreator
      */
-    @NotNull
-    public static WorldCreator name(@NotNull String name) {
+    public static WorldCreator name(String name) {
         return new WorldCreator(name);
     }
 
@@ -634,8 +599,7 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting generator, or null
      */
-    @Nullable
-    public static ChunkGenerator getGeneratorForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
+    public static @Nullable ChunkGenerator getGeneratorForName(String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
         ChunkGenerator result = null;
 
@@ -676,8 +640,7 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting biome provider, or null
      */
-    @Nullable
-    public static BiomeProvider getBiomeProviderForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
+    public static @Nullable BiomeProvider getBiomeProviderForName(String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
         BiomeProvider result = null;
 
@@ -709,7 +672,6 @@ public class WorldCreator {
      * @return the current tristate value
      * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
      */
-    @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
     public net.kyori.adventure.util.TriState keepSpawnLoaded() {
         return net.kyori.adventure.util.TriState.FALSE;
@@ -723,9 +685,8 @@ public class WorldCreator {
      * @return This object, for chaining
      * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
      */
-    @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
-    public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {
+    public WorldCreator keepSpawnLoaded(net.kyori.adventure.util.TriState keepSpawnLoaded) {
         return this;
     }
     // Paper end - keep spawn loaded tristate
