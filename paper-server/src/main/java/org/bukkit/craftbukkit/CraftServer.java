@@ -1216,8 +1216,6 @@ public final class CraftServer implements Server {
 
         LevelStorageSource.LevelStorageAccess levelStorageAccess;
         try {
-            Path serverRoot = this.getWorldContainer().toPath();
-            // Make sure parsing off server root for symlinks
             levelStorageAccess = LevelStorageSource.createDefault(creator.parentDirectory(), this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
