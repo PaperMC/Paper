@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1182,7 +1183,7 @@ public final class CraftServer implements Server {
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
-        File folder = new File(creator.parentDirectory().toFile(), name);
+        Path worldFolder = creator.parentDirectory().resolve("name");
         World world = this.getWorld(name);
 
         // Paper start
@@ -1195,8 +1196,8 @@ public final class CraftServer implements Server {
         }
         // Paper end
 
-        if (folder.exists()) {
-            Preconditions.checkArgument(folder.isDirectory(), "File (%s) exists and isn't a folder", name);
+        if (Files.exists(worldFolder)) {
+            Preconditions.checkArgument(Files.isDirectory(worldFolder), "File (%s) exists and isn't a folder", name);
         }
 
         if (chunkGenerator == null) {
