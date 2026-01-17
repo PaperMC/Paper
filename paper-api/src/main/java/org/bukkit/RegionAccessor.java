@@ -529,9 +529,8 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
 
     /**
      * @return the current moon phase at the current time in the world
-     * @deprecated Moon phase is managed by Environment Attributes
+     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
      */
-    @Deprecated(forRemoval = true, since = "1.21.11")
     @NotNull
     MoonPhase getMoonPhase();
 
