@@ -8,7 +8,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
      public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
-@@ -1290,6 +_,22 @@
+@@ -1290,14 +_,37 @@
          boolean shouldOffsetY,
          boolean shouldOffsetYMore
      ) {
@@ -30,8 +30,16 @@
 +        // CraftBukkit end
          Consumer<T> consumer;
          if (spawnedFrom != null) {
-             consumer = createDefaultStackConfig(level, spawnedFrom, owner);
-@@ -1297,7 +_,7 @@
+-            consumer = createDefaultStackConfig(level, spawnedFrom, owner);
++            // Paper start - override spawnReason with createSpawnReason if not Paper.SpawnReason it's used to avoid bad fallback reason behavior
++            TypedEntityData<EntityType<?>> typedEntityData = spawnedFrom.get(DataComponents.ENTITY_DATA);
++            if (typedEntityData != null && !typedEntityData.copyTagWithEntityId().contains("Paper.SpawnReason")) {
++                consumer = appendCustomEntityStackConfig(appendComponentsConfig(entity -> entity.spawnReason = createSpawnReason, spawnedFrom), level, spawnedFrom, owner);
++            } else {
++                consumer = createDefaultStackConfig(level, spawnedFrom, owner);
++            }
++            // Paper end
+         } else {
              consumer = entity -> {};
          }
  
