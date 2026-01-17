@@ -1,0 +1,61 @@
+--- a/net/minecraft/world/item/enchantment/effects/ExplodeEffect.java
++++ b/net/minecraft/world/item/enchantment/effects/ExplodeEffect.java
+@@ -27,6 +_,7 @@
+ 
+ public record ExplodeEffect(
+     boolean attributeToUser,
++    boolean attributeIndirectlyToUser, // Paper - Add field to attribute explosions indirectly to user
+     Optional<Holder<DamageType>> damageType,
+     Optional<LevelBasedValue> knockbackMultiplier,
+     Optional<HolderSet<Block>> immuneBlocks,
+@@ -39,9 +_,27 @@
+     WeightedList<ExplosionParticleInfo> blockParticles,
+     Holder<SoundEvent> sound
+ ) implements EnchantmentEntityEffect {
++    // Paper start - Add field to attribute explosions indirectly to user - Add default constructor
++    public ExplodeEffect(boolean attributeToUser,
++                         Optional<Holder<DamageType>> damageType,
++                         Optional<LevelBasedValue> knockbackMultiplier,
++                         Optional<HolderSet<Block>> immuneBlocks,
++                         Vec3 offset,
++                         LevelBasedValue radius,
++                         boolean createFire,
++                         Level.ExplosionInteraction blockInteraction,
++                         ParticleOptions smallParticle,
++                         ParticleOptions largeParticle,
++                         WeightedList<ExplosionParticleInfo> blockParticles,
++                         Holder<SoundEvent> sound) {
++        this(attributeToUser, false, damageType, knockbackMultiplier, immuneBlocks, offset, radius, createFire, blockInteraction, smallParticle, largeParticle, blockParticles, sound);
++    }
++    // Paper end - Add field to attribute explosions indirectly to user - Add default constructor
++
+     public static final MapCodec<ExplodeEffect> CODEC = RecordCodecBuilder.mapCodec(
+         instance -> instance.group(
+                 Codec.BOOL.optionalFieldOf("attribute_to_user", false).forGetter(ExplodeEffect::attributeToUser),
++                Codec.BOOL.optionalFieldOf("paper_attribute_indirectly_to_user", false).forGetter(ExplodeEffect::attributeIndirectlyToUser), // Paper - Add field to attribute explosions indirectly to user
+                 DamageType.CODEC.optionalFieldOf("damage_type").forGetter(ExplodeEffect::damageType),
+                 LevelBasedValue.CODEC.optionalFieldOf("knockback_multiplier").forGetter(ExplodeEffect::knockbackMultiplier),
+                 RegistryCodecs.homogeneousList(Registries.BLOCK).optionalFieldOf("immune_blocks").forGetter(ExplodeEffect::immuneBlocks),
+@@ -60,7 +_,7 @@
+     @Override
+     public void apply(ServerLevel level, int enchantmentLevel, EnchantedItemInUse item, Entity entity, Vec3 origin) {
+         Vec3 vec3 = origin.add(this.offset);
+-        level.explode(
++        level.explode0( // Paper - Add field to attribute explosions indirectly to user
+             this.attributeToUser ? entity : null,
+             this.getDamageSource(entity, vec3),
+             new SimpleExplosionDamageCalculator(
+@@ -79,6 +_,13 @@
+             this.largeParticle,
+             this.blockParticles,
+             this.sound
++            // Paper start - Add field to attribute explosions indirectly to user
++            , explosion -> {
++                if (this.attributeIndirectlyToUser) {
++                    explosion.damageSource = level.damageSources().explosion(explosion.getDirectSourceEntity(), entity);
++                }
++            }
++            // Paper end - Add field to attribute explosions indirectly to user
+         );
+     }
+ 
