@@ -528,28 +528,8 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     public <T extends Entity> T addEntity(@NotNull T entity);
 
     /**
-     * @param x X-coordinate of the block
-     * @param y Y-coordinate of the block
-     * @param z Z-coordinate of the block
-     * @return the current moon phase at the current time in the world
-     */
-    @NotNull
-    MoonPhase getMoonPhase(int x, int y, int z);
-
-    /**
-     * @param location the location for getting the moon phase
-     * @return the current moon phase at the current time in the world
-     */
-    @NotNull
-    default MoonPhase getMoonPhase(final @NotNull Location location) {
-        return this.getMoonPhase(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    };
-
-    /**
      * @return the current moon phase at the current time in the world
      * @deprecated Moon phase is managed by Environment Attributes
-     * @see #getMoonPhase(Location)
-     * @see #getMoonPhase(int, int, int)
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     @NotNull
