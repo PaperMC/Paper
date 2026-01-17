@@ -468,8 +468,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public MoonPhase getMoonPhase() {
-        net.minecraft.world.level.MoonPhase minecraftMoonPhase = this.getHandle().getLevel().environmentAttributes().getDimensionValue(EnvironmentAttributes.MOON_PHASE);
-        return MoonPhase.values()[minecraftMoonPhase.index()];
+        net.minecraft.world.level.MoonPhase moonPhase = this.getHandle().getLevel().environmentAttributes().getDimensionValue(EnvironmentAttributes.MOON_PHASE);
+        return MoonPhase.values()[moonPhase.ordinal()];
     }
 
     @Override
