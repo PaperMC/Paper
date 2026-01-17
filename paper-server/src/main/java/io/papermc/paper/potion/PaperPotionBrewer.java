@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionBrewer;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
@@ -52,5 +54,19 @@ public class PaperPotionBrewer implements PotionBrewer {
     @Override
     public void resetPotionMixes() {
         this.minecraftServer.potionBrewing = this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
+    }
+
+    @Override
+    public ItemStack mixPotion(ItemStack potion, ItemStack ingredient) {
+        return CraftItemStack.asCraftMirror(
+            this.minecraftServer.potionBrewing().mix(CraftItemStack.unwrap(ingredient), CraftItemStack.unwrap(potion))
+        );
+    }
+
+    @Override
+    public boolean canMixPotion(ItemStack potion, ItemStack ingredient) {
+        return this.minecraftServer.potionBrewing().hasMix(
+            CraftItemStack.unwrap(potion), CraftItemStack.unwrap(ingredient)
+        );
     }
 }
