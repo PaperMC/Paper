@@ -22256,20 +22256,20 @@ index 0000000000000000000000000000000000000000..95154636727366adfb4fb67e7db8b09f
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 61c526263cfbd1871f6b8548ed4431a76ee95a31..485413cb6b20c4bd20fbc29a0db43c051993fe79 100644
+index 5d384b9254233669e975e7d37aef101ca00e13cc..aabeb29a7f3d593ad78d47cb6baa932f0dffa5aa 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -1,6 +1,9 @@
- package io.papermc.paper;
+@@ -2,6 +2,9 @@ package io.papermc.paper;
  
- import io.papermc.paper.command.PaperSubcommand;
+ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+ import io.papermc.paper.command.brigadier.CommandSourceStack;
 +import io.papermc.paper.command.subcommands.ChunkDebugCommand;
 +import io.papermc.paper.command.subcommands.FixLightCommand;
 +import it.unimi.dsi.fastutil.longs.LongIterator;
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
-@@ -32,13 +35,16 @@ public final class FeatureHooks {
+@@ -33,13 +36,20 @@ public final class FeatureHooks {
  
      // this includes non-accessible entities
      public static Iterable<Entity> getAllEntities(final net.minecraft.server.level.ServerLevel world) {
@@ -22281,13 +22281,17 @@ index 61c526263cfbd1871f6b8548ed4431a76ee95a31..485413cb6b20c4bd20fbc29a0db43c05
 +        ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.setUnloadDelay(ticks); // Paper - rewrite chunk system
      }
  
-     public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
-+        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
-+        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());  // Paper - rewrite chunk system
+     public static void registerPaperCommands(final Map<String, List<LiteralArgumentBuilder<CommandSourceStack>>> commands) {
++        // Paper start - Chunk system
++        commands.put("fixlight", List.of(FixLightCommand.create()));
++        commands.put("debug", List.of(ChunkDebugCommand.createDebug()));
++        commands.put("chunkinfo", List.of(ChunkDebugCommand.createChunkInfo()));
++        commands.put("holderinfo", List.of(ChunkDebugCommand.createHolderInfo()));
++        // Paper end - Chunk system
      }
  
      public static LevelChunkSection createSection(final PalettedContainerFactory palettedContainerFactory, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -59,111 +65,58 @@ public final class FeatureHooks {
+@@ -60,111 +70,58 @@ public final class FeatureHooks {
      }
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
@@ -22420,7 +22424,7 @@ index 61c526263cfbd1871f6b8548ed4431a76ee95a31..485413cb6b20c4bd20fbc29a0db43c05
  
              org.bukkit.Chunk chunk = null;
              for (net.minecraft.server.level.Ticket ticket : tickets) {
-@@ -183,15 +136,15 @@ public final class FeatureHooks {
+@@ -184,15 +141,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -22439,7 +22443,7 @@ index 61c526263cfbd1871f6b8548ed4431a76ee95a31..485413cb6b20c4bd20fbc29a0db43c05
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -209,35 +162,31 @@ public final class FeatureHooks {
+@@ -210,35 +167,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
@@ -22481,28 +22485,26 @@ index 61c526263cfbd1871f6b8548ed4431a76ee95a31..485413cb6b20c4bd20fbc29a0db43c05
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
--}
-\ No newline at end of file
-+}
+ }
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd01fba0fc
+index 0000000000000000000000000000000000000000..88459f79fb0af8bbc37834dbc56c9c39b58c461e
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,254 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import ca.spottedleaf.moonrise.common.util.JsonUtil;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
-+import io.papermc.paper.command.CommandUtil;
-+import io.papermc.paper.command.PaperSubcommand;
++import com.mojang.brigadier.Command;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import io.papermc.paper.command.PaperCommand;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import io.papermc.paper.command.brigadier.Commands;
 +import java.io.File;
-+import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
-+import java.util.Locale;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.chunk.ChunkAccess;
@@ -22512,9 +22514,7 @@ index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.CraftWorld;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.NullMarked;
 +
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
@@ -22522,66 +22522,71 @@ index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
 +
-+@DefaultQualifier(NonNull.class)
-+public final class ChunkDebugCommand implements PaperSubcommand {
-+    @Override
-+    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-+        switch (subCommand) {
-+            case "debug" -> this.doDebug(sender, args);
-+            case "chunkinfo" -> this.doChunkInfo(sender, args);
-+            case "holderinfo" -> this.doHolderInfo(sender, args);
-+        }
-+        return true;
++@NullMarked
++public final class ChunkDebugCommand {
++
++    private static final net.kyori.adventure.text.Component DEBUG_HELP = text("Use /paper debug [chunks] help for more information on a specific command", RED);
++    private static final net.kyori.adventure.text.Component DEBUG_CHUNKS_HELP = text("Use /paper debug chunks to dump loaded chunk information to a file", RED);
++
++    public static LiteralArgumentBuilder<CommandSourceStack> createDebug() {
++        return Commands.literal("debug")
++            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "debug"))
++
++            .then(Commands.literal("help")
++                .executes(ctx -> {
++                    ctx.getSource().getSender().sendMessage(DEBUG_HELP);
++                    return Command.SINGLE_SUCCESS;
++                })
++            )
++
++            .then(Commands.literal("chunks")
++                .then(Commands.literal("help")
++                    .executes(ctx -> {
++                        ctx.getSource().getSender().sendMessage(DEBUG_CHUNKS_HELP);
++                        return Command.SINGLE_SUCCESS;
++                    })
++                )
++
++                .executes(ctx -> {
++                    debugDumpLoadedChunks(ctx.getSource().getSender());
++                    return Command.SINGLE_SUCCESS;
++                })
++            )
++
++            .executes(ctx -> {
++                ctx.getSource().getSender().sendMessage(DEBUG_HELP);
++                return Command.SINGLE_SUCCESS;
++            });
 +    }
 +
-+    @Override
-+    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-+        switch (subCommand) {
-+            case "debug" -> {
-+                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, "help", "chunks");
-+                }
-+            }
-+            case "holderinfo" -> {
-+                List<String> worldNames = new ArrayList<>();
-+                worldNames.add("*");
-+                for (org.bukkit.World world : Bukkit.getWorlds()) {
-+                    worldNames.add(world.getName());
-+                }
-+                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
-+                }
-+            }
-+            case "chunkinfo" -> {
-+                List<String> worldNames = new ArrayList<>();
-+                worldNames.add("*");
-+                for (org.bukkit.World world : Bukkit.getWorlds()) {
-+                    worldNames.add(world.getName());
-+                }
-+                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
-+                }
-+            }
-+        }
-+        return Collections.emptyList();
++    private static LiteralArgumentBuilder<CommandSourceStack> createWorldInfo(String name, WorldInfoLogic info) {
++        return Commands.literal(name)
++            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + name))
++
++            .then(Commands.argument("world", io.papermc.paper.command.brigadier.argument.ArgumentTypes.world())
++                .executes(ctx -> {
++                    info.doInfo(ctx.getSource().getSender(), List.of(ctx.getArgument("world", org.bukkit.World.class)));
++                    return Command.SINGLE_SUCCESS;
++                })
++            )
++
++            .then(Commands.literal("*")
++                .executes(ctx -> {
++                    info.doInfo(ctx.getSource().getSender(), Bukkit.getWorlds());
++                    return Command.SINGLE_SUCCESS;
++                })
++            );
 +    }
 +
-+    private void doChunkInfo(final CommandSender sender, final String[] args) {
-+        List<org.bukkit.World> worlds;
-+        if (args.length < 1 || args[0].equals("*")) {
-+            worlds = Bukkit.getWorlds();
-+        } else {
-+            worlds = new ArrayList<>(args.length);
-+            for (final String arg : args) {
-+                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
-+                if (world == null) {
-+                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
-+                    return;
-+                }
-+                worlds.add(world);
-+            }
-+        }
++    public static LiteralArgumentBuilder<CommandSourceStack> createChunkInfo() {
++        return createWorldInfo("chunkinfo", ChunkDebugCommand::doChunkInfo);
++    }
 +
++    public static LiteralArgumentBuilder<CommandSourceStack> createHolderInfo() {
++        return createWorldInfo("holderinfo", ChunkDebugCommand::doHolderInfo);
++    }
++
++    private static void doChunkInfo(final CommandSender sender, final List<org.bukkit.World> worlds) {
 +        int accumulatedTotal = 0;
 +        int accumulatedInactive = 0;
 +        int accumulatedBorder = 0;
@@ -22654,22 +22659,7 @@ index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd
 +        }
 +    }
 +
-+    private void doHolderInfo(final CommandSender sender, final String[] args) {
-+        List<org.bukkit.World> worlds;
-+        if (args.length < 1 || args[0].equals("*")) {
-+            worlds = Bukkit.getWorlds();
-+        } else {
-+            worlds = new ArrayList<>(args.length);
-+            for (final String arg : args) {
-+                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
-+                if (world == null) {
-+                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
-+                    return;
-+                }
-+                worlds.add(world);
-+            }
-+        }
-+
++    private static void doHolderInfo(final CommandSender sender, final List<org.bukkit.World> worlds) {
 +        int accumulatedTotal = 0;
 +        int accumulatedCanUnload = 0;
 +        int accumulatedNull = 0;
@@ -22738,45 +22728,39 @@ index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd
 +        }
 +    }
 +
-+    private void doDebug(final CommandSender sender, final String[] args) {
-+        if (args.length < 1) {
-+            sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
-+            return;
-+        }
++    private static void debugDumpLoadedChunks(final CommandSender sender) {
++        final File file = ChunkTaskScheduler.getChunkDebugFile();
++        sender.sendMessage(text("Writing chunk information dump to " + file, GREEN));
 +
-+        final String debugType = args[0].toLowerCase(Locale.ROOT);
-+        switch (debugType) {
-+            case "chunks" -> {
-+                if (args.length >= 2 && args[1].toLowerCase(Locale.ROOT).equals("help")) {
-+                    sender.sendMessage(text("Use /paper debug chunks to dump loaded chunk information to a file", RED));
-+                    break;
-+                }
-+                final File file = ChunkTaskScheduler.getChunkDebugFile();
-+                sender.sendMessage(text("Writing chunk information dump to " + file, GREEN));
-+                try {
-+                    JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(MinecraftServer.getServer()), file);
-+                    sender.sendMessage(text("Successfully written chunk information!", GREEN));
-+                } catch (Throwable thr) {
-+                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
-+                    sender.sendMessage(text("Failed to dump chunk information, see console", RED));
-+                }
-+            }
-+            // "help" & default
-+            default -> sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
++        try {
++            JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(MinecraftServer.getServer()), file);
++            sender.sendMessage(text("Successfully written chunk information!", GREEN));
++        } catch (Throwable thr) {
++            net.minecraft.server.MinecraftServer.LOGGER.warn("Failed to dump chunk information to file {}", file, thr);
++            sender.sendMessage(text("Failed to dump chunk information, see console", RED));
 +        }
 +    }
 +
++    @FunctionalInterface
++    private interface WorldInfoLogic {
++        void doInfo(final CommandSender sender, final List<org.bukkit.World> worlds);
++    }
 +}
 diff --git a/io/papermc/paper/command/subcommands/FixLightCommand.java b/io/papermc/paper/command/subcommands/FixLightCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de140e1a172e
+index 0000000000000000000000000000000000000000..7de21e177a7a781706632118957e3f130f418485
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/FixLightCommand.java
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,115 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import ca.spottedleaf.moonrise.patches.starlight.light.StarLightLightingProvider;
-+import io.papermc.paper.command.PaperSubcommand;
++import com.mojang.brigadier.Command;
++import com.mojang.brigadier.arguments.IntegerArgumentType;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import io.papermc.paper.command.PaperCommand;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import io.papermc.paper.command.brigadier.Commands;
 +import io.papermc.paper.util.MCUtil;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
@@ -22786,9 +22770,8 @@ index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de14
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.entity.Player;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
 +
 +import java.text.DecimalFormat;
 +
@@ -22797,52 +22780,47 @@ index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de14
 +import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
 +
-+@DefaultQualifier(NonNull.class)
-+public final class FixLightCommand implements PaperSubcommand {
++@NullMarked
++public final class FixLightCommand {
 +
++    private static final int MAX_RADIUS = 32;
 +    private static final ThreadLocal<DecimalFormat> ONE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
 +        return new DecimalFormat("#,##0.0");
 +    });
 +
-+    @Override
-+    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-+        this.doFixLight(sender, args);
-+        return true;
++    public static LiteralArgumentBuilder<CommandSourceStack> create() {
++        return Commands.literal("fixlight")
++            .requires(stack -> stack.getSender() instanceof Player player && player.hasPermission(PaperCommand.BASE_PERM + "fixlight"))
++
++            .then(Commands.argument("radius", IntegerArgumentType.integer(0))
++                .executes(ctx -> {
++                    doFixLight(ctx.getSource().getSender(), IntegerArgumentType.getInteger(ctx, "radius"));
++                    return Command.SINGLE_SUCCESS;
++                })
++            )
++
++            .executes(ctx -> {
++                doFixLight(ctx.getSource().getSender(), 2);
++                return Command.SINGLE_SUCCESS;
++            });
 +    }
 +
-+    private void doFixLight(final CommandSender sender, final String[] args) {
-+        if (!(sender instanceof Player)) {
-+            sender.sendMessage(text("Only players can use this command", RED));
-+            return;
-+        }
-+        @Nullable Runnable post = null;
-+        int radius = 2;
-+        if (args.length > 0) {
-+            try {
-+                final int parsed = Integer.parseInt(args[0]);
-+                if (parsed < 0) {
-+                    sender.sendMessage(text("Radius cannot be negative!", RED));
-+                    return;
-+                }
-+                final int maxRadius = 32;
-+                radius = Math.min(maxRadius, parsed);
-+                if (radius != parsed) {
-+                    post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
-+                }
-+            } catch (final Exception e) {
-+                sender.sendMessage(text("'" + args[0] + "' is not a valid number.", RED));
-+                return;
-+            }
++    private static void doFixLight(final CommandSender sender, final int inputRadius) {
++        Runnable post = null;
++
++        int radius = Math.min(MAX_RADIUS, inputRadius);
++        if (radius != inputRadius) {
++            post = () -> sender.sendMessage(text("Radius '" + inputRadius + "' was not in the required range [0, " + MAX_RADIUS + "], it was lowered to the maximum (" + MAX_RADIUS + " chunks).", RED));
 +        }
 +
 +        CraftPlayer player = (CraftPlayer) sender;
 +        ServerPlayer handle = player.getHandle();
 +        ServerLevel world = (ServerLevel) handle.level();
 +        ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
-+        this.starlightFixLight(handle, world, lightengine, radius, post);
++        starlightFixLight(handle, world, lightengine, radius, post);
 +    }
 +
-+    private void starlightFixLight(
++    private static void starlightFixLight(
 +        final ServerPlayer sender,
 +        final ServerLevel world,
 +        final ThreadedLevelLightEngine lightengine,
@@ -22856,7 +22834,7 @@ index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de14
 +        for (java.util.Iterator<ChunkPos> iterator = chunks.iterator(); iterator.hasNext(); ) {
 +            final ChunkPos chunkPos = iterator.next();
 +
-+            final @Nullable ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
++            final ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
 +            if (chunk == null || !chunk.isLightCorrect() || !chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
 +                // cannot relight this chunk
 +                iterator.remove();

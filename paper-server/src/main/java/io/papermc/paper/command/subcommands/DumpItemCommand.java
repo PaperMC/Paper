@@ -1,8 +1,11 @@
 package io.papermc.paper.command.subcommands;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.command.CommandUtil;
-import io.papermc.paper.command.PaperSubcommand;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -32,9 +35,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.text;
@@ -48,16 +49,28 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
 
-@DefaultQualifier(NonNull.class)
-public final class DumpItemCommand implements PaperSubcommand {
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        this.doDumpItem(sender, args.length > 0 && "all".equals(args[0]));
-        return true;
+@NullMarked
+public final class DumpItemCommand {
+
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        return Commands.literal("dumpitem")
+            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpitem"))
+
+            .then(Commands.literal("all")
+                .executes(ctx -> {
+                    doDumpItem(ctx.getSource().getSender(), true);
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+
+            .executes(ctx -> {
+                doDumpItem(ctx.getSource().getSender(), false);
+                return Command.SINGLE_SUCCESS;
+            });
     }
 
     @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
-    private void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
+    private static void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
         if (!(sender instanceof final Player player)) {
             sender.sendMessage("Only players can use this command");
             return;
@@ -83,8 +96,8 @@ public final class DumpItemCommand implements PaperSubcommand {
         final List<String> commandComponents = new ArrayList<>();
         for (final DataComponentType<?> type : referencedComponentTypes) {
             final String path = registry.getResourceKey(type).orElseThrow().identifier().getPath();
-            final @Nullable Optional<?> patchedValue = patch.get(type);
-            final @Nullable TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
+            final Optional<?> patchedValue = patch.get(type);
+            final TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
             if (patchedValue != null) {
                 if (patchedValue.isEmpty()) {
                     componentComponents.add(text().append(text('!', RED), text(path, AQUA)));
@@ -121,13 +134,5 @@ public final class DumpItemCommand implements PaperSubcommand {
             PaperAdventure.asAdventure(NbtUtils.toPrettyComponent(serialized))
         ));
         commandOutput.accept(path + "=" + new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(serialized));
-    }
-
-    @Override
-    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-        if (args.length == 1) {
-            return CommandUtil.getListMatchingLast(sender, args, "all");
-        }
-        return Collections.emptyList();
     }
 }
