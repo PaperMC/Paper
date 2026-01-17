@@ -35,6 +35,7 @@ import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.util.Codec;
+import net.kyori.adventure.util.TriState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.Holder;
@@ -468,4 +469,21 @@ public final class PaperAdventure {
             .parse(ops, encoded).getOrThrow(IllegalStateException::new);
     }
 
+    // TriState
+
+    public static net.minecraft.util.TriState asVanilla(final TriState value) {
+        return switch (value) {
+            case TRUE -> net.minecraft.util.TriState.TRUE;
+            case FALSE -> net.minecraft.util.TriState.FALSE;
+            case NOT_SET -> net.minecraft.util.TriState.DEFAULT;
+        };
+    }
+
+    public static TriState asAdventure(final net.minecraft.util.TriState value) {
+        return switch(value) {
+            case TRUE -> TriState.TRUE;
+            case FALSE -> TriState.FALSE;
+            case DEFAULT -> TriState.NOT_SET;
+        };
+    }
 }
