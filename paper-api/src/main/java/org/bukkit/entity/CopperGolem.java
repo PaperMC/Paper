@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.entity.CopperGolemState;
 import io.papermc.paper.entity.Shearable;
 import io.papermc.paper.world.WeatheringCopperState;
 import org.bukkit.World;
@@ -24,6 +25,20 @@ public interface CopperGolem extends Golem, Shearable {
      * @param state the new weathering state
      */
     void setWeatheringState(WeatheringCopperState state);
+
+    /**
+     * Get the current copper golem state of the copper golem.
+     *
+     * @return the copper golem state
+     */
+    CopperGolemState getState();
+
+    /**
+     * Set the copper golem state of the copper golem.
+     *
+     * @param state the new copper golem state
+     */
+    void setState(CopperGolemState state);
 
     /**
      * Get the current oxidizing state of the copper golem.
