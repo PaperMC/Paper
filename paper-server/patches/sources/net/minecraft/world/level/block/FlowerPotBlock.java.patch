@@ -38,3 +38,23 @@
              if (!player.addItem(itemStack)) {
                  player.drop(itemStack, false);
              }
+@@ -135,6 +_,19 @@
+             boolean flag = this.potted == Blocks.OPEN_EYEBLOSSOM;
+             boolean isNaturalNight = CreakingHeartBlock.isNaturalNight(level);
+             if (flag != isNaturalNight) {
++
++                // Paper Start - Fire EyeblossomTransformEvent before changing block
++                org.bukkit.World bukkitWorld = level.getWorld();
++                org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++                org.bukkit.block.BlockState newState = bukkitBlock.getState();
++                // Set the new state type to the transformed block (OPEN or CLOSED)
++                newState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(EyeblossomBlock.Type.fromBoolean(flag).transform().block()));
++                org.bukkit.event.block.EyeblossomTransformEvent event = new org.bukkit.event.block.EyeblossomTransformEvent(bukkitBlock, newState);
++                if (!event.callEvent() || event.isCancelled()) {
++                    return;
++                }
++                // Paper End - Fire EyeblossomTransformEvent before changing block
++
+                 level.setBlock(pos, this.opposite(state), 3);
+                 EyeblossomBlock.Type type = EyeblossomBlock.Type.fromBoolean(flag).transform();
+                 type.spawnTransformParticle(level, pos, random);
