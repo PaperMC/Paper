@@ -14,11 +14,6 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(21)
         }
     }
-
-    tasks.withType<AbstractArchiveTask>().configureEach {
-        isPreserveFileTimestamps = false
-        isReproducibleFileOrder = true
-    }
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
