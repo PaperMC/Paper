@@ -48,6 +48,15 @@ public class FurnaceExtractEvent extends BlockExpEvent {
     }
 
     /**
+     * Get the ItemStack of the item triggering the event
+     *
+     * @return the item stack
+     */
+    public ItemStack getItemStack(){
+        return this.itemStack;
+    }
+
+    /**
      * Get the item count being retrieved
      *
      * @return the amount of the item
