@@ -1,23 +1,19 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.world.Container;
+import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import org.bukkit.block.Jukebox;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.JukeboxInventory;
 
 public class CraftInventoryJukebox extends CraftInventory implements JukeboxInventory {
 
-    public CraftInventoryJukebox(Container inventory) {
+    public CraftInventoryJukebox(JukeboxBlockEntity inventory) {
         super(inventory);
     }
 
     @Override
     public void setRecord(ItemStack item) {
-        if (item == null) {
-            this.inventory.removeItem(0, 0);
-        } else {
-            this.setItem(0, item);
-        }
+        this.setItem(0, item);
     }
 
     @Override
