@@ -52,6 +52,7 @@ public class FurnaceExtractEvent extends BlockExpEvent {
      *
      * @return the item stack
      */
+    @NotNull
     public ItemStack getItemStack(){
         return this.itemStack;
     }
