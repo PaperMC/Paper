@@ -3,45 +3,22 @@ package io.papermc.paper.event.player;
 import io.papermc.paper.block.bed.BedEnterAction;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final FailReason failReason;
-    private final Block bed;
-    private final BedEnterAction enterAction;
-    private boolean willExplode;
-    private @Nullable Component message;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final @Nullable Component message, BedEnterAction enterAction) {
-        super(player);
-        this.failReason = failReason;
-        this.bed = bed;
-        this.enterAction = enterAction;
-        this.willExplode = willExplode;
-        this.message = message;
-    }
+public interface PlayerBedFailEnterEvent extends PlayerEventNew, Cancellable {
 
     /**
      * @deprecated This enum has been replaced with a system that better
      * represents how beds work. See {@link #enterAction}
      */
     @ApiStatus.Obsolete(since = "1.21.11")
-    public FailReason getFailReason() {
-        return this.failReason;
-    }
+    FailReason getFailReason();
 
     /**
      * This describes the default outcome of this event.
@@ -49,34 +26,17 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      * @return the action representing the default outcome of this event
      */
     @ApiStatus.Experimental
-    public BedEnterAction enterAction() {
-        return this.enterAction;
-    }
+    BedEnterAction enterAction();
 
-    public Block getBed() {
-        return this.bed;
-    }
+    Block getBed();
 
-    public boolean getWillExplode() {
-        return this.willExplode;
-    }
+    boolean getWillExplode();
 
-    public void setWillExplode(final boolean willExplode) {
-        this.willExplode = willExplode;
-    }
+    void setWillExplode(boolean willExplode);
 
-    public @Nullable Component getMessage() {
-        return this.message;
-    }
+    @Nullable Component getMessage();
 
-    public void setMessage(final @Nullable Component message) {
-        this.message = message;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    void setMessage(@Nullable Component message);
 
     /**
      * {@inheritDoc}
@@ -85,17 +45,13 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      * that may occur because of the interaction.
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
@@ -103,7 +59,7 @@ public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable 
      * replaced with {@link BedEnterAction} that better fits the new beds
      */
     @ApiStatus.Obsolete(since = "1.21.11")
-    public enum FailReason {
+    enum FailReason {
         /**
          * The world doesn't allow sleeping (ex. Nether or The End). Entering
          * the bed is prevented but the bed doesn't explode. When the bed
