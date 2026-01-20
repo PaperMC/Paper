@@ -20,7 +20,8 @@ public final class EventToInterfaceMigration {
                 //<editor-fold desc="event classes" defaultstate="collapsed">
                 PlayerClientLoadedWorldEvent.class,
                 PlayerCustomClickEvent.class,
-                PlayerDeepSleepEvent.class
+                PlayerDeepSleepEvent.class,
+                PlayerFailMoveEvent.class
                 //</editor-fold>
             );
 
