@@ -38,6 +38,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -53,7 +54,7 @@ import org.jspecify.annotations.Nullable;
  * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
  */
 @NullMarked
-public class AsyncTabCompleteEvent extends Event implements Cancellable {
+public class AsyncTabCompleteEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

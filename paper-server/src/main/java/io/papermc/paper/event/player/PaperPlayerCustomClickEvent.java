@@ -8,7 +8,6 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import org.bukkit.entity.Player;
 import org.jspecify.annotations.Nullable;
 
 public class PaperPlayerCustomClickEvent extends PlayerCustomClickEvent {

@@ -3,6 +3,7 @@ package com.destroystokyo.paper.event.profile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -17,7 +18,7 @@ import java.util.UUID;
  * {@link Event#isAsynchronous()}
  */
 @NullMarked
-public class LookupProfileEvent extends Event {
+public class LookupProfileEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

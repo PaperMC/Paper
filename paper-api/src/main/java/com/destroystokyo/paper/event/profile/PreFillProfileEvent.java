@@ -27,6 +27,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import java.util.Collection;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -37,7 +38,7 @@ import org.jspecify.annotations.NullMarked;
  * Allows plugins to pre-populate cached properties and avoid a call to the Mojang API
  */
 @NullMarked
-public class PreFillProfileEvent extends Event {
+public class PreFillProfileEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

@@ -5,6 +5,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.connection.PlayerLoginConnection;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -20,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * allowing access to phase-specific API.
  * <br>However, these underlying connection types are not guaranteed to be stable across versions.
  */
-public class PlayerConnectionValidateLoginEvent extends Event {
+public class PlayerConnectionValidateLoginEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

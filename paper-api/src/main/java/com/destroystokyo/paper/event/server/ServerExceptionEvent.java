@@ -3,6 +3,7 @@ package com.destroystokyo.paper.event.server;
 import com.destroystokyo.paper.exception.ServerException;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -11,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * Called whenever an exception is thrown in a recoverable section of the server.
  */
 @NullMarked
-public class ServerExceptionEvent extends Event {
+public class ServerExceptionEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

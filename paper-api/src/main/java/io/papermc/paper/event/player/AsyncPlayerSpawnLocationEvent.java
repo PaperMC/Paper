@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -17,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @ApiStatus.Experimental
 @NullMarked
-public class AsyncPlayerSpawnLocationEvent extends Event {
+public class AsyncPlayerSpawnLocationEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

@@ -1,6 +1,7 @@
 package com.destroystokyo.paper.event.server;
 
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -9,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
  * Called when the server has finished ticking the main loop
  */
 @NullMarked
-public class ServerTickEndEvent extends Event {
+public class ServerTickEndEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.ApiStatus;
@@ -20,7 +21,7 @@ import org.jspecify.annotations.NullMarked;
  * Also, Plugins that replace Entity Registrations with their own custom entities might not fire this event.
  */
 @NullMarked
-public class PreCreatureSpawnEvent extends Event implements Cancellable {
+public class PreCreatureSpawnEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

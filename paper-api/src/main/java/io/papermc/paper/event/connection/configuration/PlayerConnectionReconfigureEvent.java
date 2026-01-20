@@ -3,6 +3,7 @@ package io.papermc.paper.event.connection.configuration;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Indicates that this player is being reconfigured, meaning that this connection will be held in the configuration
  * stage unless kicked out through {@link PlayerConfigurationConnection#completeReconfiguration()}
  */
-public class PlayerConnectionReconfigureEvent extends Event {
+public class PlayerConnectionReconfigureEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

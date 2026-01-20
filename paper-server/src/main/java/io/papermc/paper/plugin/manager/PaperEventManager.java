@@ -156,36 +156,63 @@ class PaperEventManager {
                 plugin.getLogger().severe(plugin.getPluginMeta().getDisplayName() + " attempted to register an invalid EventHandler method signature \"" + method.toGenericString() + "\" in " + listener.getClass());
                 continue;
             }
-            final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
             method.setAccessible(true);
+
+            final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
+            this.warnOnDeprecatedEvent(eventClass, plugin, method);
+
             Set<RegisteredListener> eventSet = ret.computeIfAbsent(eventClass, k -> new HashSet<>());
-
-            for (Class<?> clazz = eventClass; Event.class.isAssignableFrom(clazz); clazz = clazz.getSuperclass()) {
-                // This loop checks for extending deprecated events
-                if (clazz.getAnnotation(Deprecated.class) != null) {
-                    Warning warning = clazz.getAnnotation(Warning.class);
-                    Warning.WarningState warningState = this.server.getWarningState();
-                    if (!warningState.printFor(warning)) {
-                        break;
-                    }
-                    plugin.getLogger().log(
-                        Level.WARNING,
-                        String.format(
-                            "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated. \"%s\"; please notify the authors %s.",
-                            plugin.getPluginMeta().getDisplayName(),
-                            clazz.getName(),
-                            method.toGenericString(),
-                            (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
-                            Arrays.toString(plugin.getPluginMeta().getAuthors().toArray())),
-                        warningState == Warning.WarningState.ON ? new AuthorNagException(null) : null);
-                    break;
-                }
-            }
-
             EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass);
             eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
         }
         return ret;
+    }
+
+    private void warnOnDeprecatedEvent(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
+        if (inClass.isInterface()) { // new path
+            for (Class<?> currentClass : inClass.getInterfaces()) {
+                if (!currentClass.isAssignableFrom(Event.class)) {
+                    continue;
+                }
+
+                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
+                if (eventClass.isAnnotationPresent(Deprecated.class)) {
+                    warnOnDeprecatedUsage(eventClass, plugin, method);
+                    break;
+                }
+
+                warnOnDeprecatedEvent(eventClass, plugin, method);
+            }
+        } else {
+            // todo remove
+            for (Class<?> currentClass = inClass; Event.class.isAssignableFrom(currentClass); currentClass = currentClass.getSuperclass()) {
+                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
+                if (eventClass.isAnnotationPresent(Deprecated.class)) {
+                    warnOnDeprecatedUsage(eventClass, plugin, method);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void warnOnDeprecatedUsage(final Class<? extends Event> eventClass, final Plugin plugin, final Method method) {
+        if (eventClass.getAnnotation(Deprecated.class) != null) {
+            Warning warning = eventClass.getAnnotation(Warning.class);
+            Warning.WarningState warningState = this.server.getWarningState();
+            if (!warningState.printFor(warning)) {
+                return;
+            }
+            plugin.getLogger().log(
+                Level.WARNING,
+                String.format(
+                    "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated. \"%s\"; please notify the authors %s.",
+                    plugin.getPluginMeta().getDisplayName(),
+                    eventClass.getName(),
+                    method.toGenericString(),
+                    (warning != null && !warning.reason().isEmpty()) ? warning.reason() : "Server performance will be affected",
+                    Arrays.toString(plugin.getPluginMeta().getAuthors().toArray())),
+                warningState == Warning.WarningState.ON ? new AuthorNagException(null) : null);
+        }
     }
 
     public void clearEvents() {
