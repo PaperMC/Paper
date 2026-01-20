@@ -8,18 +8,28 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import org.bukkit.craftbukkit.event.CraftEvent;
+import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
-public class PaperPlayerCustomClickEvent extends PlayerCustomClickEvent {
+public class PaperPlayerCustomClickEvent extends CraftEvent implements PlayerCustomClickEvent {
 
+    private final Key identifier;
+    private final PlayerCommonConnection commonConnection;
     private final @Nullable Tag payload;
     private @Nullable BinaryTagHolder apiPayload;
 
     private @Nullable DialogResponseView rawResponse;
 
-    public PaperPlayerCustomClickEvent(final Key key, final PlayerCommonConnection commonConnection, final @Nullable Tag payload) {
-        super(key, commonConnection);
+    public PaperPlayerCustomClickEvent(final Key identifier, final PlayerCommonConnection commonConnection, final @Nullable Tag payload) {
+        this.identifier = identifier;
+        this.commonConnection = commonConnection;
         this.payload = payload;
+    }
+
+    @Override
+    public Key getIdentifier() {
+        return this.identifier;
     }
 
     @Override
@@ -39,5 +49,15 @@ public class PaperPlayerCustomClickEvent extends PlayerCustomClickEvent {
             this.rawResponse = PaperDialogResponseView.createUnvalidatedResponse(compoundPayload);
         }
         return this.rawResponse;
+    }
+
+    @Override
+    public PlayerCommonConnection getCommonConnection() {
+        return this.commonConnection;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return PlayerCustomClickEvent.getHandlerList();
     }
 }
