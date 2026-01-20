@@ -46,7 +46,7 @@ public interface PlayerInsertLecternBookEvent extends PlayerEventNew, Cancellabl
      * @param book the book to insert (non book items will leave the lectern in a locked
      *             state as the menu cannot be opened, preventing item extraction)
      */
-    void setBook(final ItemStack book);
+    void setBook(ItemStack book);
 
     static HandlerList getHandlerList() {
         final class Holder {

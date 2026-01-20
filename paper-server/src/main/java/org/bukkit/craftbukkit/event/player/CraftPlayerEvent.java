@@ -6,7 +6,7 @@ import org.bukkit.event.player.PlayerEventNew;
 
 public abstract class CraftPlayerEvent extends CraftEvent implements PlayerEventNew {
 
-    private final Player player;
+    protected final Player player;
 
     protected CraftPlayerEvent(final Player player) {
         this.player = player;
