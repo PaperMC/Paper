@@ -1,8 +1,7 @@
 package io.papermc.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -11,32 +10,14 @@ import org.jspecify.annotations.NullMarked;
  * Called when a slot contents change in a player's inventory.
  */
 @NullMarked
-public class PlayerInventorySlotChangeEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final int rawSlot;
-    private final int slot;
-    private final ItemStack oldItemStack;
-    private final ItemStack newItemStack;
-    private boolean triggerAdvancements = true;
-
-    public PlayerInventorySlotChangeEvent(final Player player, final int rawSlot, final ItemStack oldItemStack, final ItemStack newItemStack) {
-        super(player);
-        this.rawSlot = rawSlot;
-        this.slot = player.getOpenInventory().convertSlot(rawSlot);
-        this.oldItemStack = oldItemStack;
-        this.newItemStack = newItemStack;
-    }
+public interface PlayerInventorySlotChangeEvent extends PlayerEventNew {
 
     /**
      * The raw slot number that was changed.
      *
      * @return The raw slot number.
      */
-    public int getRawSlot() {
-        return this.rawSlot;
-    }
+    int getRawSlot();
 
     /**
      * The slot number that was changed, ready for passing to
@@ -47,52 +28,40 @@ public class PlayerInventorySlotChangeEvent extends PlayerEvent {
      *
      * @return The slot number.
      */
-    public int getSlot() {
-        return this.slot;
-    }
+    int getSlot();
 
     /**
      * Clone of ItemStack that was in the slot before the change.
      *
      * @return The old ItemStack in the slot.
      */
-    public ItemStack getOldItemStack() {
-        return this.oldItemStack;
-    }
+    ItemStack getOldItemStack();
 
     /**
      * Clone of ItemStack that is in the slot after the change.
      *
      * @return The new ItemStack in the slot.
      */
-    public ItemStack getNewItemStack() {
-        return this.newItemStack;
-    }
+    ItemStack getNewItemStack();
 
     /**
      * Gets whether the slot change advancements will be triggered.
      *
      * @return Whether the slot change advancements will be triggered.
      */
-    public boolean shouldTriggerAdvancements() {
-        return this.triggerAdvancements;
-    }
+    boolean shouldTriggerAdvancements();
 
     /**
      * Sets whether the slot change advancements will be triggered.
      *
      * @param triggerAdvancements Whether the slot change advancements will be triggered.
      */
-    public void setShouldTriggerAdvancements(final boolean triggerAdvancements) {
-        this.triggerAdvancements = triggerAdvancements;
-    }
+    void setShouldTriggerAdvancements(boolean triggerAdvancements);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
