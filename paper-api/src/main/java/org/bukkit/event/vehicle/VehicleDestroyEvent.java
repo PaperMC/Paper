@@ -1,5 +1,6 @@
 package org.bukkit.event.vehicle;
 
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
@@ -17,13 +18,23 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Entity attacker;
+    private final DamageSource damageSource;
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public VehicleDestroyEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker) {
+    public VehicleDestroyEvent(@NotNull final Vehicle vehicle, final DamageSource damageSource) {
         super(vehicle);
-        this.attacker = attacker;
+        this.damageSource = damageSource;
+    }
+
+    /**
+     * Gets the DamageSource that caused the damage.
+     *
+     * @return the DamageSource that caused the damage.
+     */
+    @NotNull
+    public DamageSource getDamageSource() {
+        return damageSource;
     }
 
     /**
@@ -33,7 +44,7 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
      */
     @Nullable
     public Entity getAttacker() {
-        return this.attacker;
+        return this.getDamageSource().getCausingEntity();
     }
 
     @Override
