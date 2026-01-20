@@ -24,7 +24,8 @@ public final class EventToInterfaceMigration {
                 PlayerFailMoveEvent.class,
                 PlayerFlowerPotManipulateEvent.class,
                 PlayerInsertLecternBookEvent.class,
-                PlayerInventorySlotChangeEvent.class
+                PlayerInventorySlotChangeEvent.class,
+                PlayerChangeBeaconEffectEvent.class
                 //</editor-fold>
             );
 
