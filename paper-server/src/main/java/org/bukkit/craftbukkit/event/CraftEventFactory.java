@@ -22,6 +22,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -362,13 +363,13 @@ public class CraftEventFactory {
         net.minecraft.world.entity.player.Player player, BlockPos bed, net.minecraft.world.entity.player.Player.BedSleepingProblem bedSleepingProblem) {
         net.minecraft.world.attribute.BedRule bedRule = player.level().environmentAttributes().getDimensionValue(EnvironmentAttributes.BED_RULE);
         com.mojang.datafixers.util.Pair<PlayerBedFailEnterEvent.FailReason, io.papermc.paper.block.bed.BedEnterAction> actionPair = asFailReason(player, bedRule, bedSleepingProblem);
-        final var event = new PlayerBedFailEnterEvent(
+        final PlayerBedFailEnterEvent event = new PaperPlayerBedFailEnterEvent(
             (org.bukkit.entity.Player) player.getBukkitEntity(),
             actionPair.getFirst(),
             org.bukkit.craftbukkit.block.CraftBlock.at(player.level(), bed),
             bedSleepingProblem == net.minecraft.world.entity.player.Player.BedSleepingProblem.EXPLOSION,
-            actionPair.getSecond().errorMessage(),
-            actionPair.getSecond());
+            actionPair.getSecond()
+        );
         event.callEvent();
         return event;
     }
