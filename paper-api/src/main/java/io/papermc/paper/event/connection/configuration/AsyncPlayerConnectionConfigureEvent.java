@@ -2,6 +2,7 @@ package io.papermc.paper.event.connection.configuration;
 
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * <p>
  * This occurs after configuration, but before the player has entered the world.
  */
-public class AsyncPlayerConnectionConfigureEvent extends Event {
+public class AsyncPlayerConnectionConfigureEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

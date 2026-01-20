@@ -2,13 +2,14 @@ package org.bukkit.event.hanging;
 
 import org.bukkit.entity.Hanging;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a hanging entity-related event.
  */
-public abstract class HangingEvent extends Event {
+public abstract class HangingEvent extends EventTmp {
 
     protected Hanging hanging;
 

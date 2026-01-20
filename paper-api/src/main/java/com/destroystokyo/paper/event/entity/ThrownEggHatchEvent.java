@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
  * This event fires for all thrown eggs that may hatch, players, dispensers, etc.
  */
 @NullMarked
-public class ThrownEggHatchEvent extends Event {
+public class ThrownEggHatchEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

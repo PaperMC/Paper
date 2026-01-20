@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -21,7 +22,7 @@ import org.jspecify.annotations.Nullable;
  * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
  */
 @NullMarked
-public class PlayerHandshakeEvent extends Event implements Cancellable {
+public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

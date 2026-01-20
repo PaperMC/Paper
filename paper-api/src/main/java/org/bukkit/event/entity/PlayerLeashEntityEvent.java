@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called immediately prior to a creature being leashed by a player.
  */
-public class PlayerLeashEntityEvent extends Event implements Cancellable {
+public class PlayerLeashEntityEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

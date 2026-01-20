@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.jetbrains.annotations.ApiStatus;
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
  * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
  */
-public class TabCompleteEvent extends Event implements Cancellable {
+public class TabCompleteEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

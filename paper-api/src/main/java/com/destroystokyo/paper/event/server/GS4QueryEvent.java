@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import org.bukkit.Server;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.ApiStatus;
@@ -22,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
  * @author Mark Vainomaa
  */
 @NullMarked
-public final class GS4QueryEvent extends Event {
+public final class GS4QueryEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

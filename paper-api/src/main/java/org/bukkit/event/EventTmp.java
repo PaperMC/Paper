@@ -1,18 +1,56 @@
 package org.bukkit.event;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an event.
  * <br>
  * All events require a static method named getHandlerList() which returns the same {@link HandlerList} as {@link #getHandlers()}.
  *
+ * @see PluginManager#callEvent(Event)
  * @see PluginManager#registerEvents(Listener,Plugin)
  */
-public interface Event {
+@Deprecated(forRemoval = true)
+public abstract class EventTmp implements Event {
 
-    boolean callEvent();
+    private String name;
+    private final boolean isAsync;
+
+    /**
+     * The default constructor is defined for cleaner code. This constructor
+     * assumes the event is synchronous.
+     */
+    public EventTmp() {
+        this(false);
+    }
+
+    /**
+     * This constructor is used to explicitly declare an event as synchronous
+     * or asynchronous.
+     *
+     * @param isAsync {@code true} indicates the event will fire asynchronously, {@code false}
+     *     by default from default constructor
+     */
+    public EventTmp(boolean isAsync) {
+        this.isAsync = isAsync;
+    }
+
+    /**
+     * Calls the event and tests if cancelled.
+     *
+     * @return {@code false} if event was cancelled, if cancellable. otherwise {@code true}.
+     */
+    public boolean callEvent() {
+        Bukkit.getPluginManager().callEvent(this);
+        if (this instanceof Cancellable) {
+            return !((Cancellable) this).isCancelled();
+        } else {
+            return true;
+        }
+    }
 
     /**
      * Convenience method for providing a user-friendly identifier. By
@@ -21,9 +59,16 @@ public interface Event {
      *
      * @return name of this event
      */
-    String getEventName();
+    @NotNull
+    public String getEventName() {
+        if (this.name == null) {
+            this.name = this.getClass().getSimpleName();
+        }
+        return this.name;
+    }
 
-    HandlerList getHandlers();
+    @NotNull
+    public abstract HandlerList getHandlers();
 
     /**
      * Any custom event that should not be synchronized with other events must
@@ -47,26 +92,7 @@ public interface Event {
      *
      * @return {@code false} by default, {@code true} if the event fires asynchronously
      */
-    boolean isAsynchronous();
-
-    enum Result {
-
-        /**
-         * Deny the event. Depending on the event, the action indicated by the
-         * event will either not take place or will be reverted. Some actions
-         * may not be denied.
-         */
-        DENY,
-        /**
-         * Neither deny nor allow the event. The server will proceed with its
-         * normal handling.
-         */
-        DEFAULT,
-        /**
-         * Allow / Force the event. The action indicated by the event will
-         * take place if possible, even if the server would not normally allow
-         * the action. Some actions may not be allowed.
-         */
-        ALLOW
+    public final boolean isAsynchronous() {
+        return this.isAsync;
     }
 }
