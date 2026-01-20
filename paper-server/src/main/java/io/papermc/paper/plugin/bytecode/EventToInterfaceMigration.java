@@ -3,8 +3,7 @@ package io.papermc.paper.plugin.bytecode;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
-import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
-import io.papermc.paper.event.player.PlayerCustomClickEvent;
+import io.papermc.paper.event.player.*;
 import java.util.Set;
 import org.bukkit.event.Event;
 import org.objectweb.asm.ClassReader;
@@ -20,7 +19,8 @@ public final class EventToInterfaceMigration {
             final Set<Class<? extends Event>> eventClasses = Set.of(
                 //<editor-fold desc="event classes" defaultstate="collapsed">
                 PlayerClientLoadedWorldEvent.class,
-                PlayerCustomClickEvent.class
+                PlayerCustomClickEvent.class,
+                PlayerDeepSleepEvent.class
                 //</editor-fold>
             );
 
