@@ -1,15 +1,11 @@
 package io.papermc.paper.event.player;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.Lectern;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -17,30 +13,14 @@ import org.jspecify.annotations.NullMarked;
  * If this event is cancelled the player will keep the book and the lectern will remain empty.
  */
 @NullMarked
-public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Block block;
-    private ItemStack book;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerInsertLecternBookEvent(final Player player, final Block block, final ItemStack book) {
-        super(player);
-        this.block = block;
-        this.book = book;
-    }
+public interface PlayerInsertLecternBookEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the block of the lectern involved in this event.
      *
      * @return the block of the lectern
      */
-    public Block getBlock() {
-        return this.block;
-    }
+    Block getBlock();
 
     /**
      * Fetches the lectern block state that was part of this event.
@@ -49,11 +29,7 @@ public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancell
      * @return a new lectern state snapshot of the involved lectern
      * @throws IllegalStateException if the block at {@link #getBlock()} is no longer a lectern
      */
-    public Lectern getLectern() {
-        final BlockState state = this.getBlock().getState();
-        Preconditions.checkState(state instanceof Lectern, "Block state of lectern block is no longer a lectern tile state!");
-        return (Lectern) state;
-    }
+    Lectern getLectern();
 
     /**
      * Returns the itemstack the player tried to insert. This is a copy of the item,
@@ -62,9 +38,7 @@ public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancell
      *
      * @return the book that is being placed
      */
-    public ItemStack getBook() {
-        return this.book.clone();
-    }
+    ItemStack getBook();
 
     /**
      * Sets the itemstack to insert into the lectern.
@@ -72,27 +46,12 @@ public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancell
      * @param book the book to insert (non book items will leave the lectern in a locked
      *             state as the menu cannot be opened, preventing item extraction)
      */
-    public void setBook(final ItemStack book) {
-        Preconditions.checkArgument(book != null, "Cannot set book to null");
-        this.book = book.clone();
-    }
+    void setBook(final ItemStack book);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
