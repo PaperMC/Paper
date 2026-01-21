@@ -3,11 +3,9 @@ package io.papermc.paper.event.player;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -16,32 +14,14 @@ import org.jspecify.annotations.NullMarked;
  * Cancelling this event stops the sign editing menu from opening.
  */
 @NullMarked
-public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Sign sign;
-    private final Side side;
-    private final Cause cause;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerOpenSignEvent(final Player editor, final Sign sign, final Side side, final Cause cause) {
-        super(editor);
-        this.sign = sign;
-        this.side = side;
-        this.cause = cause;
-    }
+public interface PlayerOpenSignEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the sign that was clicked.
      *
      * @return {@link Sign} that was clicked
      */
-    public Sign getSign() {
-        return this.sign;
-    }
+    Sign getSign();
 
     /**
      * Gets which side of the sign was clicked.
@@ -49,42 +29,26 @@ public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {
      * @return {@link Side} that was clicked
      * @see Sign#getSide(Side)
      */
-    public Side getSide() {
-        return this.side;
-    }
+    Side getSide();
 
     /**
      * The cause of this sign open.
      *
      * @return the cause
      */
-    public Cause getCause() {
-        return this.cause;
-    }
+    Cause getCause();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * The cause of the {@link PlayerOpenSignEvent}.
      */
-    public enum Cause {
+    enum Cause {
         /**
          * The event was triggered by the placement of a sign.
          */
