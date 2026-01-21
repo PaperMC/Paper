@@ -8,5 +8,10 @@ import org.bukkit.event.Event;
  */
 public interface PlayerEventNew extends Event { // todo rename
 
+    /**
+     * Returns the player involved in this event
+     *
+     * @return player who is involved in this event
+     */
     Player getPlayer();
 }
