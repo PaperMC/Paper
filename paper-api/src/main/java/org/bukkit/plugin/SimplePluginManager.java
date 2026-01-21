@@ -750,13 +750,21 @@ public final class SimplePluginManager implements PluginManager {
             clazz.getDeclaredMethod("getHandlerList");
             return clazz;
         } catch (NoSuchMethodException e) {
-            if (clazz.getSuperclass() != null
-                    && !clazz.getSuperclass().equals(Event.class)
-                    && Event.class.isAssignableFrom(clazz.getSuperclass())) {
-                return getRegistrationClass(clazz.getSuperclass().asSubclass(Event.class));
+            if (clazz.isInterface()) { // new path
+                for (Class<?> itf : clazz.getInterfaces()) {
+                    if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
+                        return this.getRegistrationClass(itf.asSubclass(Event.class));
+                    }
+                }
             } else {
-                throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
+                Class<?> parentClass = clazz.getSuperclass();
+                if (parentClass != null
+                    && !parentClass.equals(Event.class)
+                    && Event.class.isAssignableFrom(parentClass)) { // todo remove
+                    return this.getRegistrationClass(parentClass.asSubclass(Event.class));
+                }
             }
+            throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
         }
     }
 

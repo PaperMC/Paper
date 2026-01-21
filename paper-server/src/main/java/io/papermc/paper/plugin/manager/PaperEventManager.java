@@ -116,13 +116,21 @@ class PaperEventManager {
             clazz.getDeclaredMethod("getHandlerList");
             return clazz;
         } catch (NoSuchMethodException e) {
-            if (clazz.getSuperclass() != null
-                && !clazz.getSuperclass().equals(Event.class)
-                && Event.class.isAssignableFrom(clazz.getSuperclass())) {
-                return this.getRegistrationClass(clazz.getSuperclass().asSubclass(Event.class));
+            if (clazz.isInterface()) { // new path
+                for (Class<?> itf : clazz.getInterfaces()) {
+                    if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
+                        return this.getRegistrationClass(itf.asSubclass(Event.class));
+                    }
+                }
             } else {
-                throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
+                Class<?> parentClass = clazz.getSuperclass();
+                if (parentClass != null
+                    && !parentClass.equals(Event.class)
+                    && Event.class.isAssignableFrom(parentClass)) { // todo remove
+                    return this.getRegistrationClass(parentClass.asSubclass(Event.class));
+                }
             }
+            throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
         }
     }
 
@@ -159,7 +167,7 @@ class PaperEventManager {
             method.setAccessible(true);
 
             final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
-            this.warnOnDeprecatedEvent(eventClass, plugin, method);
+            this.searchDeprecatedUsages(eventClass, plugin, method);
 
             Set<RegisteredListener> eventSet = ret.computeIfAbsent(eventClass, k -> new HashSet<>());
             EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass);
@@ -168,10 +176,10 @@ class PaperEventManager {
         return ret;
     }
 
-    private void warnOnDeprecatedEvent(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
+    private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
         if (inClass.isInterface()) { // new path
             for (Class<?> currentClass : inClass.getInterfaces()) {
-                if (!currentClass.isAssignableFrom(Event.class)) {
+                if (!Event.class.isAssignableFrom(currentClass)) {
                     continue;
                 }
 
@@ -181,7 +189,7 @@ class PaperEventManager {
                     break;
                 }
 
-                warnOnDeprecatedEvent(eventClass, plugin, method);
+                searchDeprecatedUsages(eventClass, plugin, method);
             }
         } else {
             // todo remove
