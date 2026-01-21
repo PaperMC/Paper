@@ -1,12 +1,10 @@
 package io.papermc.paper.event.player;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -19,30 +17,14 @@ import org.jspecify.annotations.NullMarked;
  * disabled in the first place.
  */
 @NullMarked
-public class PlayerShieldDisableEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Entity damager;
-    private int cooldown;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerShieldDisableEvent(final Player player, final Entity damager, final int cooldown) {
-        super(player);
-        this.damager = damager;
-        this.cooldown = cooldown;
-    }
+public interface PlayerShieldDisableEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Provides the damager that disabled the shield.
      *
      * @return the entity instance that damaged the player in a way that caused the shield to be disabled.
      */
-    public Entity getDamager() {
-        return this.damager;
-    }
+    Entity getDamager();
 
     /**
      * Gets the cooldown the disabled shield will be disabled for in ticks.
@@ -52,9 +34,7 @@ public class PlayerShieldDisableEvent extends PlayerEvent implements Cancellable
      *
      * @return cooldown in ticks
      */
-    public int getCooldown() {
-        return this.cooldown;
-    }
+    @NonNegative int getCooldown();
 
     /**
      * Sets the cooldown of the shield in ticks.
@@ -62,29 +42,14 @@ public class PlayerShieldDisableEvent extends PlayerEvent implements Cancellable
      * Notably, this value is not final as it might be changed by a {@link PlayerItemCooldownEvent} down the line,
      * as said event is called if this event is not cancelled.
      *
-     * @param cooldown cooldown in ticks, has to be a positive number
+     * @param cooldown cooldown in ticks
      */
-    public void setCooldown(final int cooldown) {
-        Preconditions.checkArgument(cooldown >= 0, "The cooldown has to be equal to or greater than 0!");
-        this.cooldown = cooldown;
-    }
+    void setCooldown(@NonNegative int cooldown);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

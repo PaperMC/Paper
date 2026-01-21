@@ -33,7 +33,8 @@ public final class EventToInterfaceMigration {
                 PlayerMapFilledEvent.class,
                 PlayerNameEntityEvent.class,
                 PlayerOpenSignEvent.class,
-                PlayerServerFullCheckEvent.class
+                PlayerServerFullCheckEvent.class,
+                PlayerShieldDisableEvent.class
                 //</editor-fold>
             );
 
