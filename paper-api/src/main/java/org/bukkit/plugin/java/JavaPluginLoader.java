@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.Warning;
-import org.bukkit.Warning.WarningState;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.event.Event;
@@ -263,7 +262,7 @@ public final class JavaPluginLoader implements PluginLoader {
             method.setAccessible(true);
 
             final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
-            warnOnDeprecatedEvent(eventClass, plugin, method);
+            searchDeprecatedUsages(eventClass, plugin, method);
 
             Set<RegisteredListener> eventSet = ret.computeIfAbsent(eventClass, k -> new HashSet<>());
             EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
@@ -286,10 +285,10 @@ public final class JavaPluginLoader implements PluginLoader {
         return ret;
     }
 
-    private void warnOnDeprecatedEvent(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
+    private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
         if (inClass.isInterface()) { // new path
             for (Class<?> currentClass : inClass.getInterfaces()) {
-                if (!currentClass.isAssignableFrom(Event.class)) {
+                if (!Event.class.isAssignableFrom(currentClass)) {
                     continue;
                 }
 
@@ -299,7 +298,7 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 }
 
-                warnOnDeprecatedEvent(eventClass, plugin, method);
+                searchDeprecatedUsages(eventClass, plugin, method);
             }
         } else {
             // todo remove
