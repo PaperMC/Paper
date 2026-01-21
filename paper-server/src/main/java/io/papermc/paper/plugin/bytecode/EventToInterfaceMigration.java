@@ -32,7 +32,8 @@ public final class EventToInterfaceMigration {
                 PlayerLoomPatternSelectEvent.class,
                 PlayerMapFilledEvent.class,
                 PlayerNameEntityEvent.class,
-                PlayerOpenSignEvent.class
+                PlayerOpenSignEvent.class,
+                PlayerServerFullCheckEvent.class
                 //</editor-fold>
             );
 
