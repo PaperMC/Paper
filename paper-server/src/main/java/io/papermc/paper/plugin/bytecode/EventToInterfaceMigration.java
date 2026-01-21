@@ -34,7 +34,8 @@ public final class EventToInterfaceMigration {
                 PlayerNameEntityEvent.class,
                 PlayerOpenSignEvent.class,
                 PlayerServerFullCheckEvent.class,
-                PlayerShieldDisableEvent.class
+                PlayerShieldDisableEvent.class,
+                PlayerStonecutterRecipeSelectEvent.class
                 //</editor-fold>
             );
 
