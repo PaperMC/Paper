@@ -30,7 +30,8 @@ public final class EventToInterfaceMigration {
                 PlayerItemFrameChangeEvent.class,
                 PlayerLecternPageChangeEvent.class,
                 PlayerLoomPatternSelectEvent.class,
-                PlayerMapFilledEvent.class
+                PlayerMapFilledEvent.class,
+                PlayerNameEntityEvent.class
                 //</editor-fold>
             );
 
