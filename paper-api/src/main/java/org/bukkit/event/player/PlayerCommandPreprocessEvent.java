@@ -1,13 +1,10 @@
 package org.bukkit.event.player;
 
-import com.google.common.base.Preconditions;
-import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is called whenever a player runs a command (by placing a slash
@@ -46,28 +43,8 @@ import org.jetbrains.annotations.NotNull;
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
  */
-public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private String message;
-    private final Set<Player> recipients;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerCommandPreprocessEvent(@NotNull final Player player, @NotNull final String message) {
-        super(player);
-        this.recipients = new HashSet<>(player.getServer().getOnlinePlayers());
-        this.message = message;
-    }
-
-    @ApiStatus.Internal
-    public PlayerCommandPreprocessEvent(@NotNull final Player player, @NotNull final String message, @NotNull final Set<Player> recipients) {
-        super(player);
-        this.recipients = recipients;
-        this.message = message;
-    }
+@NullMarked
+public interface PlayerCommandPreprocessEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the command that the player is attempting to send.
@@ -77,10 +54,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @return Message the player is attempting to send
      */
-    @NotNull
-    public String getMessage() {
-        return this.message;
-    }
+    String getMessage();
 
     /**
      * Sets the command that the player will send.
@@ -91,11 +65,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * @param command New message that the player will send
      * @throws IllegalArgumentException if command is {@code null} or empty
      */
-    public void setMessage(@NotNull String command) throws IllegalArgumentException {
-        Preconditions.checkArgument(command != null, "Command cannot be null");
-        Preconditions.checkArgument(!command.isEmpty(), "Command cannot be empty");
-        this.message = command;
-    }
+    void setMessage(String command);
 
     /**
      * Gets a set of recipients that this chat message will be displayed to.
@@ -110,43 +80,23 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * @return All Players who will see this chat message
      * @deprecated This is simply the online players. Modifications have no effect
      */
-    @NotNull
     @Deprecated(since = "1.3.1", forRemoval = true)
-    public Set<Player> getRecipients() {
-        return this.recipients;
-    }
+    Set<Player> getRecipients();
 
     /**
      * Sets the player that this command will be executed as.
      *
      * @param player New player which this event will execute as
-     * @throws IllegalArgumentException if the player provided is null
+     * @throws IllegalArgumentException if the player provided is {@code null}
      * @deprecated Only works for sign commands; use {@link Player#performCommand(String)}, including those cases
      */
     @Deprecated(forRemoval = true)
-    public void setPlayer(@NotNull final Player player) throws IllegalArgumentException {
-        Preconditions.checkArgument(player != null, "Player cannot be null");
-        this.player = player;
-    }
+    void setPlayer(Player player);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
