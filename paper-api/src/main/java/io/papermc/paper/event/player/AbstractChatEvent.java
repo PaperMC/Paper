@@ -5,37 +5,17 @@ import java.util.Set;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * An abstract implementation of a chat event, handling shared logic.
  */
-@ApiStatus.NonExtendable
 @NullMarked
-public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
-
-    private final Set<Audience> viewers;
-    private final Component originalMessage;
-    private final SignedMessage signedMessage;
-    private ChatRenderer renderer;
-    private Component message;
-
-    private boolean cancelled;
-
-    AbstractChatEvent(final boolean async, final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
-        super(player, async);
-        this.viewers = viewers;
-        this.renderer = renderer;
-        this.message = message;
-        this.originalMessage = originalMessage;
-        this.signedMessage = signedMessage;
-    }
+@ApiStatus.NonExtendable
+public interface AbstractChatEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
@@ -45,9 +25,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      *
      * @return a mutable set of {@link Audience audiences} who will receive the chat message
      */
-    public final Set<Audience> viewers() {
-        return this.viewers;
-    }
+    Set<Audience> viewers();
 
     /**
      * Sets the chat renderer.
@@ -55,18 +33,14 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      * @param renderer the chat renderer
      * @throws NullPointerException if {@code renderer} is {@code null}
      */
-    public final void renderer(final ChatRenderer renderer) {
-        this.renderer = requireNonNull(renderer, "renderer");
-    }
+    void renderer(ChatRenderer renderer);
 
     /**
      * Gets the chat renderer.
      *
      * @return the chat renderer
      */
-    public final ChatRenderer renderer() {
-        return this.renderer;
-    }
+    ChatRenderer renderer();
 
     /**
      * Gets the user-supplied message.
@@ -74,9 +48,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      *
      * @return the user-supplied message
      */
-    public final Component message() {
-        return this.message;
-    }
+    Component message();
 
     /**
      * Sets the user-supplied message.
@@ -84,9 +56,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      * @param message the user-supplied message
      * @throws NullPointerException if {@code message} is {@code null}
      */
-    public final void message(final Component message) {
-        this.message = requireNonNull(message, "message");
-    }
+    void message(Component message);
 
     /**
      * Gets the original and unmodified user-supplied message.
@@ -95,9 +65,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      *
      * @return the original user-supplied message
      */
-    public final Component originalMessage() {
-        return this.originalMessage;
-    }
+    Component originalMessage();
 
     /**
      * Gets the signed message.
@@ -106,17 +74,5 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      *
      * @return the signed message
      */
-    public final SignedMessage signedMessage() {
-        return this.signedMessage;
-    }
-
-    @Override
-    public final boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public final void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    SignedMessage signedMessage();
 }

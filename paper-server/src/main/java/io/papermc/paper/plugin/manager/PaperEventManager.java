@@ -130,7 +130,7 @@ class PaperEventManager {
                     return this.getRegistrationClass(parentClass.asSubclass(Event.class));
                 }
             }
-            throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!");
+            throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!"); // todo improve message to mention the upper event
         }
     }
 
