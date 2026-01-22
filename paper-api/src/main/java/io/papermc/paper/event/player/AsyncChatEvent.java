@@ -1,13 +1,7 @@
 package io.papermc.paper.event.player;
 
-import io.papermc.paper.chat.ChatRenderer;
-import java.util.Set;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.chat.SignedMessage;
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -24,21 +18,12 @@ import org.jspecify.annotations.NullMarked;
  * appropriately.
  */
 @NullMarked
-public final class AsyncChatEvent extends AbstractChatEvent {
+public interface AsyncChatEvent extends AbstractChatEvent {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    public AsyncChatEvent(final boolean async, final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
-        super(async, player, viewers, renderer, message, originalMessage, signedMessage);
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
