@@ -10,9 +10,6 @@ import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * An abstract implementation of a chat event, handling shared logic.
- */
 @NullMarked
 @ApiStatus.NonExtendable
 public interface AbstractChatEvent extends PlayerEventNew, Cancellable {

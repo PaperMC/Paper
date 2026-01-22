@@ -1,5 +1,6 @@
 package io.papermc.paper.plugin.bytecode;
 
+import com.destroystokyo.paper.event.player.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
@@ -53,7 +54,10 @@ public final class EventToInterfaceMigration {
                 AsyncChatEvent.class,
                 ChatEvent.class,
                 PlayerCommandPreprocessEvent.class,
-                PlayerSignCommandPreprocessEvent.class
+                PlayerSignCommandPreprocessEvent.class,
+                AbstractRespawnEvent.class,
+                PlayerRespawnEvent.class,
+                PlayerPostRespawnEvent.class
                 //</editor-fold>
             );
 
