@@ -6,6 +6,7 @@ import io.papermc.asm.rules.classes.ClassToInterfaceRule;
 import io.papermc.paper.event.player.*;
 import java.util.Set;
 import org.bukkit.event.Event;
+import org.bukkit.event.player.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -50,7 +51,9 @@ public final class EventToInterfaceMigration {
                 AsyncPlayerSpawnLocationEvent.class,
                 AbstractChatEvent.class,
                 AsyncChatEvent.class,
-                ChatEvent.class
+                ChatEvent.class,
+                PlayerCommandPreprocessEvent.class,
+                PlayerSignCommandPreprocessEvent.class
                 //</editor-fold>
             );
 

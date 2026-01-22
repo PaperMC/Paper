@@ -26,7 +26,7 @@ public abstract class PlayerEvent extends EventTmp implements PlayerEventNew {
      * @return Player who is involved in this event
      */
     @NotNull
-    public final Player getPlayer() {
+    public Player getPlayer() {
         return this.player;
     }
 }

@@ -5,6 +5,19 @@ Subject: [PATCH] Events to interfaces
 
 TODO: flatten patch
 
+diff --git a/net/minecraft/commands/Commands.java b/net/minecraft/commands/Commands.java
+index 668eb52d71d77f75c24d4840be9a6c49d96dfc34..db358c83db169b86b1c05b9eb85bfcba9427a854 100644
+--- a/net/minecraft/commands/Commands.java
++++ b/net/minecraft/commands/Commands.java
+@@ -523,7 +523,7 @@ public class Commands {
+         // Paper end - Perf: Async command map building
+         new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, true).callEvent(); // Paper - Brigadier API
+         org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
+-        event.getPlayer().getServer().getPluginManager().callEvent(event);
++        event.callEvent();
+ 
+         // Remove labels that were removed during the event
+         for (String orig : bukkit) {
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
 index ab8893163ac85971a470e4a4d6fa76bd174e2bae..4a4dbe87952820d0e0b68a53d83119d82ffb6d91 100644
 --- a/net/minecraft/server/level/ChunkMap.java
@@ -32,7 +45,7 @@ index 79c804245c7f41a5a7f062e1c5e01760adde7d84..25c8c3d837aec737f2fb272c2ba03a91
                          dataSlotIndex,
                          org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(oldStack),
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..6224feb5de34b3fbc7fc68941ad84c9e0e2a9bfa 100644
+index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..4b565d9a62bd09bca4f1d28e9d3a781092e18b74 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1077,8 +1077,8 @@ public class ServerGamePacketListenerImpl
@@ -46,6 +59,24 @@ index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..6224feb5de34b3fbc7fc68941ad84c9e
              if (!event.callEvent()) {
                  return;
              }
+@@ -2356,7 +2356,7 @@ public class ServerGamePacketListenerImpl
+             LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), prefixedCommand);
+         }
+ 
+-        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), prefixedCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
++        PlayerCommandPreprocessEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerCommandPreprocessEvent(this.getCraftPlayer(), prefixedCommand, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
+         this.cserver.getPluginManager().callEvent(event);
+ 
+         if (event.isCancelled()) {
+@@ -2398,7 +2398,7 @@ public class ServerGamePacketListenerImpl
+             LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), command);
+         } // Paper - Add missing SpigotConfig logCommands check
+ 
+-        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
++        PlayerCommandPreprocessEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(this.server));
+         this.cserver.getPluginManager().callEvent(event);
+         command = event.getMessage().substring(1);
+ 
 @@ -3719,8 +3719,7 @@ public class ServerGamePacketListenerImpl
      private void markClientLoaded() {
          // Paper start - Add PlayerLoadedWorldEvent
@@ -303,6 +334,20 @@ index 67d17a9844f6bc656c46f070eb97e743b8e2968d..007db7c3e6410bdce7a524c3fb76d474
              event.callEvent();
              itemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getCreatedMap());
              // Paper end - PlayerMapFilledEvent
+diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
+index ed06cffe8a5eba2ca4a34ade81f8185e21d7b651..18093a83fb5b784fcbfdf4505a3863533ed3a931 100644
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -631,8 +631,7 @@ public final class ItemStack implements DataComponentHolder {
+         // CraftBukkit start
+         if (i > 0 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent - limit to positive damage and run for player
+             org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i, originalDamage); // Paper - Add EntityDamageItemEvent
+-            event.getPlayer().getServer().getPluginManager().callEvent(event);
+-            if (event.isCancelled()) {
++            if (!event.callEvent()) {
+                 return;
+             }
+ 
 diff --git a/net/minecraft/world/item/NameTagItem.java b/net/minecraft/world/item/NameTagItem.java
 index 24bf4cd320c67b852d3905c50740c8006592bd68..e61866ccea03718a96b516a4404c9de5ce7ef63a 100644
 --- a/net/minecraft/world/item/NameTagItem.java
@@ -399,3 +444,16 @@ index b36b9b48da940ad7b4014c90c05eb90f5198a5fb..6ffb4619b57625dc454d061d3436cfe1
              bukkitPlayer,
              bukkitSign,
              isFrontText ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
+diff --git a/net/minecraft/world/level/block/entity/SignBlockEntity.java b/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index ce6108ea608463a28f9349010e912f23a7a1cb0c..2cbc8848ce35c7bdcb60774244308dad019a5076 100644
+--- a/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -227,7 +227,7 @@ public class SignBlockEntity extends BlockEntity {
+                     if (org.spigotmc.SpigotConfig.logCommands)  {
+                         LOGGER.info("{} issued server command: {}", player.getScoreboardName(), command);
+                     }
+-                    io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent(
++                    io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PaperPlayerSignCommandPreprocessEvent(
+                         (org.bukkit.entity.Player) player.getBukkitEntity(),
+                         command,
+                         new org.bukkit.craftbukkit.util.LazyPlayerSet(level.getServer()),
