@@ -1,9 +1,9 @@
 package io.papermc.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -11,43 +11,26 @@ import org.jspecify.annotations.NullMarked;
  * Examples of this are letting go of the interact button when holding a bow, an edible item, or a spyglass.
  */
 @NullMarked
-public class PlayerStopUsingItemEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ItemStack item;
-    private final int ticksHeldFor;
-
-    public PlayerStopUsingItemEvent(final Player player, final ItemStack item, final int ticksHeldFor) {
-        super(player);
-        this.item = item;
-        this.ticksHeldFor = ticksHeldFor;
-    }
+public interface PlayerStopUsingItemEvent extends PlayerEventNew {
 
     /**
-     * Gets the exact item the player is releasing
+     * Gets the exact item the player is releasing.
      *
-     * @return ItemStack the exact item the player released
+     * @return the exact item the player released
      */
-    public ItemStack getItem() {
-        return this.item;
-    }
+    ItemStack getItem();
 
     /**
-     * Gets the number of ticks the item was held for
+     * Gets the number of ticks the item was held for.
      *
-     * @return int the number of ticks the item was held for
+     * @return the number of ticks the item was held for
      */
-    public int getTicksHeldFor() {
-        return this.ticksHeldFor;
-    }
+    @Positive int getTicksHeldFor();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

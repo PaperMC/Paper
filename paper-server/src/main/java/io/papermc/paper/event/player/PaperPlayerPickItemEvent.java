@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.player.Inventory;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -23,7 +24,7 @@ public abstract class PaperPlayerPickItemEvent extends CraftPlayerEvent implemen
 
     @Override
     public boolean isIncludeData() {
-        return includeData;
+        return this.includeData;
     }
 
     @Override
@@ -33,7 +34,7 @@ public abstract class PaperPlayerPickItemEvent extends CraftPlayerEvent implemen
 
     @Override
     public void setTargetSlot(final int targetSlot) {
-        Preconditions.checkArgument(targetSlot >= 0 && targetSlot <= 8, "Target slot must be in range 0 - 8 (inclusive)");
+        Preconditions.checkArgument(targetSlot >= 0 && targetSlot < Inventory.SELECTION_SIZE, "Target slot must be in range 0 - %s (inclusive)", Inventory.SELECTION_SIZE - 1);
         this.targetSlot = targetSlot;
     }
 
@@ -44,7 +45,10 @@ public abstract class PaperPlayerPickItemEvent extends CraftPlayerEvent implemen
 
     @Override
     public void setSourceSlot(final int sourceSlot) {
-        Preconditions.checkArgument(sourceSlot >= -1 && sourceSlot <= 35, "Source slot must be in range of the player's inventory slot, or -1");
+        Preconditions.checkArgument(
+            sourceSlot == Inventory.NOT_FOUND_INDEX || (sourceSlot >= 0 && sourceSlot < Inventory.INVENTORY_SIZE),
+            "Source slot must be in range of the player's inventory slot: 0 - %s (inclusive), or %s", Inventory.INVENTORY_SIZE - 1, Inventory.NOT_FOUND_INDEX
+        );
         this.sourceSlot = sourceSlot;
     }
 
