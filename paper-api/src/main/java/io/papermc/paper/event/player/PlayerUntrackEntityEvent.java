@@ -3,8 +3,7 @@ package io.papermc.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -14,33 +13,19 @@ import org.jspecify.annotations.NullMarked;
  * unsupported and should be avoided.
  */
 @NullMarked
-public class PlayerUntrackEntityEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Entity entity;
-
-    @ApiStatus.Internal
-    public PlayerUntrackEntityEvent(final Player player, final Entity entity) {
-        super(player);
-        this.entity = entity;
-    }
+public interface PlayerUntrackEntityEvent extends PlayerEventNew {
 
     /**
      * Gets the entity that will be untracked
      *
      * @return the entity untracked
      */
-    public Entity getEntity() {
-        return this.entity;
-    }
+    Entity getEntity();
 
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
