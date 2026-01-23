@@ -1,43 +1,22 @@
 package org.bukkit.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
-import io.papermc.paper.block.bed.BedRuleResult;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is almost about to enter the bed.
  */
-public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Block bed;
-    private final BedEnterResult bedEnterResult;
-    private final @NotNull BedEnterAction enterAction;
-    private Result useBed = Result.DEFAULT;
-
-    @ApiStatus.Internal
-    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult, @NotNull BedEnterAction enterAction) {
-        super(player);
-        this.bed = bed;
-        this.bedEnterResult = bedEnterResult;
-        this.enterAction = enterAction;
-    }
+public interface PlayerBedEnterEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Returns the bed block involved in this event.
      *
      * @return the bed block involved in this event
      */
-    @NotNull
-    public Block getBed() {
-        return this.bed;
-    }
+    Block getBed();
 
     /**
      * This describes the default outcome of this event.
@@ -46,11 +25,8 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @deprecated This enum has been replaced with a system that better
      * represents how beds work. See {@link #enterAction}
      */
-    @NotNull
     @ApiStatus.Obsolete(since = "1.21.11")
-    public BedEnterResult getBedEnterResult() {
-        return this.bedEnterResult;
-    }
+    BedEnterResult getBedEnterResult();
 
     /**
      * This describes the default outcome of this event.
@@ -58,9 +34,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @return the action representing the default outcome of this event
      */
     @ApiStatus.Experimental
-    public @NotNull BedEnterAction enterAction() {
-        return this.enterAction;
-    }
+    BedEnterAction enterAction();
 
     /**
      * This controls the action to take with the bed that was clicked on.
@@ -71,10 +45,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @return the action to take with the interacted bed
      * @see #setUseBed(Result)
      */
-    @NotNull
-    public Result useBed() {
-        return this.useBed;
-    }
+    Result useBed();
 
     /**
      * Sets the action to take with the interacted bed.
@@ -91,13 +62,11 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @param useBed the action to take with the interacted bed
      * @see #useBed()
      */
-    public void setUseBed(@NotNull Result useBed) {
-        this.useBed = useBed;
-    }
+    void setUseBed(Result useBed);
 
     /**
-     * Gets the cancellation state of this event. Set to {@code true} if you want to
-     * prevent the player from sleeping.
+     * {@inheritDoc}
+     * Set to {@code true} if you want to prevent the player from sleeping.
      * <p>
      * Canceling the event has the same effect as setting {@link #useBed()} to
      * {@link Result#DENY}.
@@ -105,13 +74,9 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * For backwards compatibility reasons this also returns {@code true} if
      * {@link #useBed()} is {@link Result#DEFAULT} and the
      * {@link #enterAction() default action} is to prevent bed entering.
-     *
-     * @return boolean cancellation state
      */
     @Override
-    public boolean isCancelled() {
-        return this.useBed == Result.DENY || this.useBed == Result.DEFAULT && this.enterAction.canSleep() != BedRuleResult.ALLOWED;
-    }
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -119,19 +84,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * Canceling this event will prevent use of the bed.
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.setUseBed(cancel ? Result.DENY : useBed() == Result.DENY ? Result.DEFAULT : useBed());
-    }
+    void setCancelled(boolean cancel);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
@@ -141,7 +100,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * replaced with {@link BedEnterAction} that better fits the new beds
      */
     @ApiStatus.Obsolete(since = "1.21.11")
-    public enum BedEnterResult {
+    enum BedEnterResult {
         /**
          * The player will enter the bed.
          */
@@ -183,6 +142,6 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         /**
          * Entering the bed is prevented and the bed explodes.
          */
-        EXPLOSION;
+        EXPLOSION
     }
 }
