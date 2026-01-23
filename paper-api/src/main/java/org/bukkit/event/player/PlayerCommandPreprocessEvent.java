@@ -4,7 +4,6 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is called whenever a player runs a command (by placing a slash
@@ -43,7 +42,6 @@ import org.jspecify.annotations.NullMarked;
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
  */
-@NullMarked
 public interface PlayerCommandPreprocessEvent extends PlayerEventNew, Cancellable {
 
     /**
