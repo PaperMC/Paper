@@ -83,7 +83,8 @@ public final class EventToInterfaceMigration {
                 PlayerDropItemEvent.class,
                 PlayerEditBookEvent.class,
                 PlayerEggThrowEvent.class,
-                PlayerExpChangeEvent.class
+                PlayerExpChangeEvent.class,
+                PlayerExpCooldownChangeEvent.class
                 //</editor-fold>
             );
 
