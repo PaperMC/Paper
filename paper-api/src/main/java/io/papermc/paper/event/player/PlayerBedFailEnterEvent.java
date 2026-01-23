@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public interface PlayerBedFailEnterEvent extends PlayerEventNew, Cancellable {
+public interface PlayerBedFailEnterEvent extends PlayerEventNew, Cancellable { // todo javadocs?
 
     /**
      * @deprecated This enum has been replaced with a system that better

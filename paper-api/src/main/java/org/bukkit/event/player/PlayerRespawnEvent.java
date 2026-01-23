@@ -3,7 +3,6 @@ package org.bukkit.event.player;
 import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player respawns.
@@ -11,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
  */
-@NullMarked
 public interface PlayerRespawnEvent extends AbstractRespawnEvent {
 
     /**
