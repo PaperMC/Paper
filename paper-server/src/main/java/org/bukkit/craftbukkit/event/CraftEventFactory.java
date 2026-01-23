@@ -113,6 +113,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFillEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFishEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEditBookEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpChangeEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerExpCooldownChangeEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1257,7 +1258,7 @@ public class CraftEventFactory {
 
     public static PlayerExpCooldownChangeEvent callPlayerXpCooldownEvent(net.minecraft.world.entity.player.Player entity, int newCooldown, PlayerExpCooldownChangeEvent.ChangeReason changeReason) {
         Player player = (Player) entity.getBukkitEntity();
-        PlayerExpCooldownChangeEvent event = new PlayerExpCooldownChangeEvent(player, newCooldown, changeReason);
+        PlayerExpCooldownChangeEvent event = new CraftPlayerExpCooldownChangeEvent(player, newCooldown, changeReason);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
