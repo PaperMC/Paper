@@ -15,7 +15,7 @@ public class CraftPlayerGameModeChangeEvent extends CraftPlayerEvent implements 
 
     private boolean cancelled;
 
-    public CraftPlayerGameModeChangeEvent(final Player player, final GameMode newGameMode, Cause cause, @Nullable Component cancelMessage) {
+    public CraftPlayerGameModeChangeEvent(final Player player, final GameMode newGameMode, final Cause cause, final @Nullable Component cancelMessage) {
         super(player);
         this.newGameMode = newGameMode;
         this.cause = cause;
