@@ -112,6 +112,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFillEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFishEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEditBookEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerExpChangeEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1269,10 +1270,10 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PlayerExpChangeEvent callPlayerExpChangeEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb entityOrb, int expAmount) {
+    public static PlayerExpChangeEvent callPlayerExpChangeEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb entityOrb, int amount) {
         Player player = (Player) entity.getBukkitEntity();
         ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
-        PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
+        PlayerExpChangeEvent event = new CraftPlayerExpChangeEvent(player, source, amount);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
