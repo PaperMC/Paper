@@ -40,7 +40,7 @@ public interface PrePlayerAttackEntityEvent extends PlayerEventNew, Cancellable 
 
     /**
      * {@inheritDoc}
-     * <br>
+     * <p>
      * Sets if this attack should be cancelled, note if {@link PrePlayerAttackEntityEvent#willAttack()} returns {@code false}
      * this event will always be cancelled.
      */
