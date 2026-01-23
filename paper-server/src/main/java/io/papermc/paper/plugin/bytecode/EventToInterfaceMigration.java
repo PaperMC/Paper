@@ -72,7 +72,8 @@ public final class EventToInterfaceMigration {
                 PlayerBucketEmptyEvent.class,
                 PlayerBucketEntityEvent.class,
                 PlayerBucketFishEvent.class,
-                PlayerChangedMainHandEvent.class
+                PlayerChangedMainHandEvent.class,
+                PlayerChangedWorldEvent.class
                 //</editor-fold>
             );
 
