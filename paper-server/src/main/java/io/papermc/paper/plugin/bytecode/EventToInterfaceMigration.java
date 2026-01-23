@@ -78,7 +78,8 @@ public final class EventToInterfaceMigration {
                 PlayerRegisterChannelEvent.class,
                 PlayerUnregisterChannelEvent.class,
                 PlayerChatEvent.class,
-                PlayerChatTabCompleteEvent.class
+                PlayerChatTabCompleteEvent.class,
+                PlayerCommandSendEvent.class
                 //</editor-fold>
             );
 
