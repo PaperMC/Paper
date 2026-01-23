@@ -1,6 +1,9 @@
 package io.papermc.paper.plugin;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
+import java.io.File;
+import java.io.InputStream;
+import java.util.List;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,23 +15,16 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.PluginLogger;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-
 public class PaperTestPlugin extends PluginBase {
-    private final String pluginName;
     private boolean enabled = true;
     private final PluginMeta configuration;
 
     public PaperTestPlugin(String pluginName) {
-        this.pluginName = pluginName;
-        this.configuration = new TestPluginMeta(pluginName);
+        this(new TestPluginMeta(pluginName));
     }
 
     public PaperTestPlugin(PluginMeta configuration) {
         this.configuration = configuration;
-        this.pluginName = configuration.getName();
     }
 
     @Override

@@ -1,7 +1,6 @@
-package org.bukkit.plugin;
+package io.papermc.paper.plugin;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.EventPriority;
@@ -10,8 +9,15 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.plugin.EventExecutor;
+import org.bukkit.plugin.TimedRegisteredListener;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+@Normal
 public class TimedRegisteredListenerTest {
 
     @Test
@@ -21,9 +27,9 @@ public class TimedRegisteredListenerTest {
             @Override
             public void execute(Listener listener, Event event) {}
         };
-        BukkitTestPlugin plugin = new BukkitTestPlugin("Test");
+        PaperTestPlugin plugin = new PaperTestPlugin("TimedRegisteredListenerTestPlugin");
 
-        PlayerInteractEvent interactEvent = new PlayerInteractEvent(null, null, null, null, null);
+        PlayerInteractEvent interactEvent = new CraftPlayerInteractEvent(null, null, null, null, null, null, null);
         PlayerMoveEvent moveEvent = new PlayerMoveEvent(null, null, null);
         BlockBreakEvent breakEvent = new BlockBreakEvent(null, null);
 

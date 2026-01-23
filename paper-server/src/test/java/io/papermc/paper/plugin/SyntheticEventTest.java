@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,13 +15,13 @@ public class SyntheticEventTest {
 
     @Test
     public void test() {
-        PaperTestPlugin paperTestPlugin = new PaperTestPlugin("synthetictest");
+        Plugin plugin = new PaperTestPlugin("SyntheticTestPlugin");
         PaperPluginManagerImpl paperPluginManager = new PaperPluginManagerImpl(Bukkit.getServer(), null, null);
 
         TestEvent event = new TestEvent(false);
         Impl impl = new Impl();
 
-        paperPluginManager.registerEvents(impl, paperTestPlugin);
+        paperPluginManager.registerEvents(impl, plugin);
         paperPluginManager.callEvent(event);
 
         Assertions.assertEquals(1, impl.callCount);
