@@ -57,7 +57,9 @@ public final class EventToInterfaceMigration {
                 PlayerSignCommandPreprocessEvent.class,
                 AbstractRespawnEvent.class,
                 PlayerRespawnEvent.class,
-                PlayerPostRespawnEvent.class
+                PlayerPostRespawnEvent.class,
+                PlayerAnimationEvent.class,
+                PlayerArmSwingEvent.class
                 //</editor-fold>
             );
 

@@ -25,7 +25,7 @@ public class CraftPlayerCommandPreprocessEvent extends CraftPlayerEvent implemen
         return this.message;
     }
 
-    public void setMessage(final String command) throws IllegalArgumentException {
+    public void setMessage(final String command) {
         Preconditions.checkArgument(command != null, "Command cannot be null");
         Preconditions.checkArgument(!command.isEmpty(), "Command cannot be empty");
         this.message = command;
@@ -42,7 +42,7 @@ public class CraftPlayerCommandPreprocessEvent extends CraftPlayerEvent implemen
     }
 
     @Deprecated(forRemoval = true)
-    public void setPlayer(final Player player) throws IllegalArgumentException {
+    public void setPlayer(final Player player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");
         this.mutablePlayer = player;
     }
