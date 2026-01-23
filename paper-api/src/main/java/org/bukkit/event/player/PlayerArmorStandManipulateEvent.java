@@ -1,37 +1,15 @@
 package org.bukkit.event.player;
 
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player interacts with an armor stand and will either swap, retrieve or
  * place an item.
  */
-public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ItemStack playerItem;
-    private final ItemStack armorStandItem;
-    private final EquipmentSlot slot;
-
-    @ApiStatus.Internal
-    public PlayerArmorStandManipulateEvent(@NotNull final Player player, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot, @NotNull EquipmentSlot hand) {
-        super(player, clickedEntity, hand);
-        this.playerItem = playerItem;
-        this.armorStandItem = armorStandItem;
-        this.slot = slot;
-    }
-
-    @Deprecated(since = "1.19.2", forRemoval = true)
-    public PlayerArmorStandManipulateEvent(@NotNull final Player player, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
-        this(player, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
-    }
+public interface PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
 
     /**
      * Returns the item held by the player.
@@ -44,10 +22,7 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * In the case that this event is cancelled, the original items will remain the same.
      * @return the item held by the player.
      */
-    @NotNull
-    public ItemStack getPlayerItem() {
-        return this.playerItem;
-    }
+    ItemStack getPlayerItem();
 
     /**
      * Returns the item held by the armor stand.
@@ -62,20 +37,14 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * In the case that the event is cancelled the original items will remain the same.
      * @return the item held by the armor stand.
      */
-    @NotNull
-    public ItemStack getArmorStandItem() {
-        return this.armorStandItem;
-    }
+    ItemStack getArmorStandItem();
 
     /**
      * Returns the raw item slot of the armor stand in this event.
      *
      * @return the index of the item obtained or placed of the armor stand.
      */
-    @NotNull
-    public EquipmentSlot getSlot() {
-        return this.slot;
-    }
+    EquipmentSlot getSlot();
 
     /**
      * {@inheritDoc}
@@ -83,26 +52,16 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * Note that this is not the hand of the armor stand that was changed, but rather
      * the hand used by the player to swap items with the armor stand.
      */
-    @NotNull
     @Override
-    public EquipmentSlot getHand() {
-        return super.getHand();
-    }
+    EquipmentSlot getHand();
 
-    @NotNull
     @Override
-    public ArmorStand getRightClicked() {
-        return (ArmorStand) this.clickedEntity;
-    }
+    ArmorStand getRightClicked();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
