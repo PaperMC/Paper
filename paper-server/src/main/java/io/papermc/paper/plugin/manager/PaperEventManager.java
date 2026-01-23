@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -81,7 +82,7 @@ class PaperEventManager {
         }
 
         for (Map.Entry<Class<? extends Event>, Set<RegisteredListener>> entry : this.createRegisteredListeners(listener, plugin).entrySet()) {
-            this.getEventListeners(this.getRegistrationClass(entry.getKey())).registerAll(entry.getValue());
+            this.getEventListeners(getRegistrationClass(entry.getKey())).registerAll(entry.getValue());
         }
 
     }
@@ -102,7 +103,7 @@ class PaperEventManager {
     @NotNull
     private HandlerList getEventListeners(@NotNull Class<? extends Event> type) {
         try {
-            Method method = this.getRegistrationClass(type).getDeclaredMethod("getHandlerList");
+            Method method = getRegistrationClass(type).getDeclaredMethod("getHandlerList");
             method.setAccessible(true);
             return (HandlerList) method.invoke(null);
         } catch (Exception e) {
@@ -111,27 +112,32 @@ class PaperEventManager {
     }
 
     @NotNull
-    private Class<? extends Event> getRegistrationClass(@NotNull Class<? extends Event> clazz) {
+    private static Class<? extends Event> getRegistrationClass(@NotNull Class<? extends Event> eventClass) {
+        return getUpstreamRegistrationClass(eventClass).orElseThrow(() -> new IllegalPluginAccessException("Unable to find handler list for event " + eventClass.getName() + ". Static getHandlerList method required!"));
+    }
+
+    @NotNull
+    private static Optional<Class<? extends Event>> getUpstreamRegistrationClass(@NotNull Class<? extends Event> eventClass) {
         try {
-            clazz.getDeclaredMethod("getHandlerList");
-            return clazz;
+            eventClass.getDeclaredMethod("getHandlerList");
+            return Optional.of(eventClass);
         } catch (NoSuchMethodException e) {
-            if (clazz.isInterface()) { // new path
-                for (Class<?> itf : clazz.getInterfaces()) {
+            if (eventClass.isInterface()) { // new path
+                for (Class<?> itf : eventClass.getInterfaces()) {
                     if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
-                        return this.getRegistrationClass(itf.asSubclass(Event.class));
+                        return getUpstreamRegistrationClass(itf.asSubclass(Event.class));
                     }
                 }
             } else {
-                Class<?> parentClass = clazz.getSuperclass();
+                Class<?> parentClass = eventClass.getSuperclass();
                 if (parentClass != null
                     && !parentClass.equals(Event.class)
                     && Event.class.isAssignableFrom(parentClass)) { // todo remove
-                    return this.getRegistrationClass(parentClass.asSubclass(Event.class));
+                    return getUpstreamRegistrationClass(parentClass.asSubclass(Event.class));
                 }
             }
-            throw new IllegalPluginAccessException("Unable to find handler list for event " + clazz.getName() + ". Static getHandlerList method required!"); // todo improve message to mention the upper event
         }
+        return Optional.empty();
     }
 
     // JavaPluginLoader

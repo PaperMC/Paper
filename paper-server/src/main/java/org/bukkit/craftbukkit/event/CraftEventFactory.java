@@ -105,6 +105,9 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFillEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -233,10 +236,10 @@ import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent.BedEnterResult;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketEntityEvent;
+import org.bukkit.event.player.PlayerBucketEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerBucketFishEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
-import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
@@ -564,33 +567,17 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(Level world, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, InteractionHand hand) {
-        return (PlayerBucketEmptyEvent) CraftEventFactory.getPlayerBucketEvent(false, world, player, changed, clicked, clickedFace, itemInHand, Items.BUCKET, hand);
+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(Level level, net.minecraft.world.entity.player.Player player, BlockPos changedPos, BlockPos clickedPos, Direction clickedFace, ItemStack itemInHand, InteractionHand hand) {
+        return CraftEventFactory.callPlayerBucketEvent(CraftPlayerBucketEmptyEvent::new, level, player, changedPos, clickedPos, clickedFace, itemInHand, Items.BUCKET, hand);
     }
 
-    public static PlayerBucketFillEvent callPlayerBucketFillEvent(Level world, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand hand) {
-        return (PlayerBucketFillEvent) CraftEventFactory.getPlayerBucketEvent(true, world, player, clicked, changed, clickedFace, itemInHand, bucket, hand);
+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(Level level, net.minecraft.world.entity.player.Player player, BlockPos clickedPos, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand hand) {
+        return CraftEventFactory.callPlayerBucketEvent(CraftPlayerBucketFillEvent::new, level, player, clickedPos, clickedPos, clickedFace, itemInHand, bucket, hand);
     }
 
-    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, Level world, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack bucket, net.minecraft.world.item.Item item, InteractionHand hand) {
-        Player cplayer = (Player) player.getBukkitEntity();
-        CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
-        Material bucketItem = CraftItemType.minecraftToBukkit(bucket.getItem());
-
-        Block block = CraftBlock.at(world, changed);
-        Block clickedBlock = CraftBlock.at(world, clicked);
-        BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
-        EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-
-        PlayerEvent event;
-        if (isFilling) {
-            event = new PlayerBucketFillEvent(cplayer, block, clickedBlock, blockFace, bucketItem, itemInHand, handSlot);
-            ((PlayerBucketFillEvent) event).setCancelled(!CraftEventFactory.canBuild(world, cplayer, changed.getX(), changed.getZ()));
-        } else {
-            event = new PlayerBucketEmptyEvent(cplayer, block, clickedBlock, blockFace, bucketItem, itemInHand, handSlot);
-            ((PlayerBucketEmptyEvent) event).setCancelled(!CraftEventFactory.canBuild(world, cplayer, changed.getX(), changed.getZ()));
-        }
-
+    private static <EVENT extends PlayerBucketEvent> EVENT callPlayerBucketEvent(CraftPlayerBucketEvent.Factory<? extends EVENT> factory, Level level, net.minecraft.world.entity.player.Player player, BlockPos changedPos, BlockPos clickedPos, Direction clickedFace, ItemStack bucketItem, net.minecraft.world.item.Item itemInHand, InteractionHand hand) {
+        final EVENT event = CraftPlayerBucketEvent.create(factory, level, player, changedPos, clickedPos, clickedFace, bucketItem, itemInHand, hand);
+        event.setCancelled(!canBuild(level, (Player) player.getBukkitEntity(), changedPos.getX(), changedPos.getZ()));
         event.callEvent();
 
         return event;
