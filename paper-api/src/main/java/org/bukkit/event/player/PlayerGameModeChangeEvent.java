@@ -5,9 +5,7 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when the GameMode of the player is changed.
@@ -17,49 +15,21 @@ import org.jetbrains.annotations.Nullable;
  * the time this event is fired. Plugins should use {@link Player#isOnline()}
  * to check before changing player state.
  */
-public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final GameMode newGameMode;
-    private final Cause cause;
-    private Component cancelMessage;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode) {
-        this(player, newGameMode, Cause.UNKNOWN, null);
-    }
-
-    @ApiStatus.Internal
-    public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode, @NotNull Cause cause, @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component cancelMessage) {
-        super(player);
-        this.newGameMode = newGameMode;
-        this.cause = cause;
-        this.cancelMessage = cancelMessage;
-    }
+public interface PlayerGameModeChangeEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the GameMode the player is switched to.
      *
      * @return  player's new GameMode
      */
-    @NotNull
-    public GameMode getNewGameMode() {
-        return this.newGameMode;
-    }
+    GameMode getNewGameMode();
 
     /**
      * Gets the cause of this gamemode change.
      *
      * @return the cause
      */
-    @NotNull
-    public Cause getCause() {
-        return this.cause;
-    }
+    Cause getCause();
 
     /**
      * <b>Only valid if the gamemode change was caused by the {@code /gamemode} command or the gamemode switcher.</b>
@@ -68,10 +38,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      *
      * @return the error message shown to the command user, {@code null} by default
      */
-    @Nullable
-    public Component cancelMessage() {
-        return this.cancelMessage;
-    }
+    @Nullable Component cancelMessage();
 
     /**
      * Sets the message shown to the command user if the event was cancelled.
@@ -80,32 +47,16 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      *
      * @param message the error message shown to the command user, {@code null} to show no message.
      */
-    public void cancelMessage(@Nullable Component message) {
-        this.cancelMessage = message;
+    void cancelMessage(@Nullable Component message);
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum Cause {
+    enum Cause {
 
         /**
          * A plugin changed the player's gamemode with

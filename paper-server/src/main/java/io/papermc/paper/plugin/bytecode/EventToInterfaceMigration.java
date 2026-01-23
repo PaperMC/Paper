@@ -85,7 +85,8 @@ public final class EventToInterfaceMigration {
                 PlayerEggThrowEvent.class,
                 PlayerExpChangeEvent.class,
                 PlayerExpCooldownChangeEvent.class,
-                PlayerFishEvent.class
+                PlayerFishEvent.class,
+                PlayerGameModeChangeEvent.class
                 //</editor-fold>
             );
 
