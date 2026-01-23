@@ -114,6 +114,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerBucketFishEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEditBookEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpCooldownChangeEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerHarvestBlockEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -457,7 +458,7 @@ public class CraftEventFactory {
 
     public static PlayerHarvestBlockEvent callPlayerHarvestBlockEvent(Level world, BlockPos pos, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<ItemStack> itemsToHarvest) {
         List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = new ArrayList<>(itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
-        PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent((Player) player.getBukkitEntity(), CraftBlock.at(world, pos), CraftEquipmentSlot.getHand(hand), bukkitItemsToHarvest);
+        PlayerHarvestBlockEvent playerHarvestBlockEvent = new CraftPlayerHarvestBlockEvent((Player) player.getBukkitEntity(), CraftBlock.at(world, pos), CraftEquipmentSlot.getHand(hand), bukkitItemsToHarvest);
         Bukkit.getPluginManager().callEvent(playerHarvestBlockEvent);
         return playerHarvestBlockEvent;
     }
