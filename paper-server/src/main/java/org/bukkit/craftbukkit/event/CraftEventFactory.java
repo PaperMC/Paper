@@ -115,6 +115,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerEditBookEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpCooldownChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerHarvestBlockEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -633,7 +634,7 @@ public class CraftEventFactory {
             itemInHand = null;
         }
 
-        PlayerInteractEvent event = new PlayerInteractEvent(cplayer, action, itemInHand, clickedBlock, blockFace, (hand == null) ? null : ((hand == InteractionHand.OFF_HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND), clickedPos);
+        PlayerInteractEvent event = new CraftPlayerInteractEvent(cplayer, action, itemInHand, clickedBlock, blockFace, (hand == null) ? null : ((hand == InteractionHand.OFF_HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND), clickedPos);
         if (cancelledBlock) {
             event.setUseInteractedBlock(Event.Result.DENY);
         }
