@@ -81,7 +81,8 @@ public final class EventToInterfaceMigration {
                 PlayerChatTabCompleteEvent.class,
                 PlayerCommandSendEvent.class,
                 PlayerDropItemEvent.class,
-                PlayerEditBookEvent.class
+                PlayerEditBookEvent.class,
+                PlayerEggThrowEvent.class
                 //</editor-fold>
             );
 
