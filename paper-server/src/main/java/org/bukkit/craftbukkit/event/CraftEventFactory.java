@@ -116,6 +116,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerExpChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerExpCooldownChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerHarvestBlockEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerItemBreakEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1520,7 +1521,7 @@ public class CraftEventFactory {
 
     public static void callPlayerItemBreakEvent(ServerPlayer human, ItemStack brokenItem) {
         CraftItemStack item = CraftItemStack.asCraftMirror(brokenItem);
-        PlayerItemBreakEvent event = new PlayerItemBreakEvent(human.getBukkitEntity(), item);
+        PlayerItemBreakEvent event = new CraftPlayerItemBreakEvent(human.getBukkitEntity(), item);
         Bukkit.getPluginManager().callEvent(event);
     }
 

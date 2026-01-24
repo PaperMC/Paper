@@ -90,7 +90,8 @@ public final class EventToInterfaceMigration {
                 PlayerHarvestBlockEvent.class,
                 PlayerHideEntityEvent.class,
                 PlayerInputEvent.class,
-                PlayerInteractEvent.class
+                PlayerInteractEvent.class,
+                PlayerItemBreakEvent.class
                 //</editor-fold>
             );
 
