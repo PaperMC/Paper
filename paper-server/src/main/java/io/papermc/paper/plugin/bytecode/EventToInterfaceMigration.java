@@ -101,7 +101,11 @@ public final class EventToInterfaceMigration {
                 PlayerLevelChangeEvent.class,
                 PlayerLinksSendEvent.class,
                 PlayerLocaleChangeEvent.class,
-                PlayerLoginEvent.class
+                PlayerLoginEvent.class,
+                PlayerMoveEvent.class,
+                PlayerTeleportEvent.class,
+                PlayerTeleportEndGatewayEvent.class,
+                PlayerPortalEvent.class
                 //</editor-fold>
             );
 

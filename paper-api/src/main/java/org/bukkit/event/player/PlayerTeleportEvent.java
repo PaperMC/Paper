@@ -2,55 +2,22 @@ package org.bukkit.event.player;
 
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.entity.TeleportFlag;
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
-import java.util.Collections;
 import java.util.Set;
+import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Holds information for player teleport events
  */
-public class PlayerTeleportEvent extends PlayerMoveEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Set<TeleportFlag.Relative> teleportFlags;
-    private TeleportCause cause = TeleportCause.UNKNOWN;
-
-    @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
-        super(player, from, to);
-        this.teleportFlags = Collections.emptySet();
-    }
-
-    @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause) {
-        this(player, from, to);
-        this.cause = cause;
-    }
-
-    @ApiStatus.Internal
-    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, @NotNull Set<TeleportFlag.Relative> teleportFlags) {
-        super(player, from, to);
-        this.cause = cause;
-        this.teleportFlags = teleportFlags;
-    }
+public interface PlayerTeleportEvent extends PlayerMoveEvent {
 
     /**
      * Gets the cause of this teleportation event
      *
      * @return Cause of the event
      */
-    @NotNull
-    public TeleportCause getCause() {
-        return this.cause;
-    }
+    TeleportCause getCause();
 
     /**
      * Returns the relative teleportation flags used in this teleportation.
@@ -58,10 +25,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      *
      * @return an immutable set of relative teleportation flags
      */
-    @NotNull
-    public @Unmodifiable Set<TeleportFlag.Relative> getRelativeTeleportationFlags() {
-        return this.teleportFlags;
-    }
+    @Unmodifiable Set<TeleportFlag.Relative> getRelativeTeleportationFlags();
 
     /**
      * Gets if the player will be dismounted in this teleportation.
@@ -71,22 +35,18 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      */
     @Deprecated(forRemoval = true)
     @Contract("-> true")
-    public boolean willDismountPlayer() {
+    default boolean willDismountPlayer() {
         return true;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum TeleportCause {
+    enum TeleportCause {
         /**
          * Indicates the teleportation was caused by a player throwing an Ender
          * Pearl

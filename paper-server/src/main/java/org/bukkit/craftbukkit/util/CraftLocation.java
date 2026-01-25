@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
@@ -11,6 +12,12 @@ import org.bukkit.World;
 public final class CraftLocation {
 
     private CraftLocation() {
+    }
+
+    public static Location requireNonNull(Location loc) {
+        Preconditions.checkArgument(loc != null, "Cannot use null location!");
+        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
+        return loc;
     }
 
     public static Location toBukkit(Vec3 pos) {
