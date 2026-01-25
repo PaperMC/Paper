@@ -63,7 +63,7 @@ public interface UnsafeValues {
 
     void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException;
 
-    byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz);
+    byte[] processClass(PluginDescriptionFile pdf, String path, byte[] bytes);
 
     /**
      * Load an advancement represented by the specified string into the server.

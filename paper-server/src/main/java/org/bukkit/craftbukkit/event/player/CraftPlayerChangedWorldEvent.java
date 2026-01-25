@@ -5,9 +5,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 
-/**
- * Called when a player switches to another world.
- */
 public class CraftPlayerChangedWorldEvent extends CraftPlayerEvent implements PlayerChangedWorldEvent {
 
     private final World from;
