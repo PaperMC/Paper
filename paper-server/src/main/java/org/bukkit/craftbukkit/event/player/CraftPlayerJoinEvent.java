@@ -16,12 +16,6 @@ public class CraftPlayerJoinEvent extends CraftPlayerEvent implements PlayerJoin
         this.joinMessage = joinMessage;
     }
 
-    @Deprecated(forRemoval = true)
-    public CraftPlayerJoinEvent(final Player player, final @Nullable String joinMessage) {
-        super(player);
-        this.joinMessage = joinMessage != null ? LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null;
-    }
-
     @Override
     public @Nullable Component joinMessage() {
         return this.joinMessage;
