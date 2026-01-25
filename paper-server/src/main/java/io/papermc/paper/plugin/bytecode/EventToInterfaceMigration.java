@@ -107,7 +107,8 @@ public final class EventToInterfaceMigration {
                 PlayerTeleportEndGatewayEvent.class,
                 PlayerPortalEvent.class,
                 PlayerPickupItemEvent.class,
-                PlayerPickupArrowEvent.class
+                PlayerPickupArrowEvent.class,
+                PlayerPreLoginEvent.class
                 //</editor-fold>
             );
 
