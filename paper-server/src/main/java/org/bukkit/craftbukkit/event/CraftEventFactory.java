@@ -118,6 +118,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerHarvestBlockEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemBreakEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1255,7 +1256,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerLevelChangeEvent callPlayerLevelChangeEvent(Player player, int oldLevel, int newLevel) {
-        PlayerLevelChangeEvent event = new PlayerLevelChangeEvent(player, oldLevel, newLevel);
+        PlayerLevelChangeEvent event = new CraftPlayerLevelChangeEvent(player, oldLevel, newLevel);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
