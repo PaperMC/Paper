@@ -119,6 +119,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemBreakEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -2096,7 +2097,7 @@ public class CraftEventFactory {
     ) {
         Player bukkitPlayer = player.getBukkitEntity();
         Location from = bukkitPlayer.getLocation();
-        PlayerPortalEvent event = new PlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
+        PlayerPortalEvent event = new CraftPlayerPortalEvent(bukkitPlayer, from, to, cause, searchRadius, true, createRadius);
         event.callEvent();
         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !player.isAlive()) {
             return null;
