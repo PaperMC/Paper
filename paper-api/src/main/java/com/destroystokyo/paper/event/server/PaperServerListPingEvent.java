@@ -31,6 +31,16 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Extended version of {@link ServerListPingEvent} that allows full control
  * of the response sent to the client.
+ * <p>
+ * This event will sometimes fire synchronously, depending on how it was
+ * triggered.
+ * <p>
+ * If a request is done from outside the server, via the Minecraft client
+ * server menu or external tools, this event will be asynchronous.
+ * If a player joins the server, this event will be synchronous.
+ * <p>
+ * Care should be taken to check {@link #isAsynchronous()} and treat the event
+ * appropriately.
  */
 public class PaperServerListPingEvent extends ServerListPingEvent implements Cancellable {
 
@@ -56,9 +66,9 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
     private Object[] players;
 
     @ApiStatus.Internal
-    public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
-                                    @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
+    public PaperServerListPingEvent(final boolean async, @NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers,
+                                    int maxPlayers, @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
+        super(async, "", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
         this.client = client;
         this.numPlayers = numPlayers;
         this.version = version;

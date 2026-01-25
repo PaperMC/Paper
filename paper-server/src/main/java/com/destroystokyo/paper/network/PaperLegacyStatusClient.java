@@ -47,7 +47,7 @@ public final class PaperLegacyStatusClient implements StatusClient {
             InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
 
         PaperServerListPingEvent event =  new PaperServerListPingEventImpl(server,
-                new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null);
+                new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null, true);
         server.server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

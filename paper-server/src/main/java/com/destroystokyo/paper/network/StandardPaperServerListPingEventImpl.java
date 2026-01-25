@@ -20,8 +20,8 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
 
     private List<NameAndId> originalSample;
 
-    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection networkManager, ServerStatus ping) {
-        super(server, new PaperStatusClient(networkManager), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
+    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection networkManager, ServerStatus ping, boolean async) {
+        super(server, new PaperStatusClient(networkManager), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon(), async);
         this.originalSample = ping.players().map(ServerStatus.Players::sample).orElse(null); // GH-1473 - pre-tick race condition NPE
     }
 
@@ -64,13 +64,24 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
     }
 
     public static void processRequest(MinecraftServer server, Connection networkManager) {
-        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus());
+        ServerStatus ping = getEventResponse(server, networkManager, true);
+
+        if (ping == null) {
+            networkManager.disconnect((Component) null);
+            return;
+        }
+
+        // Send response
+        networkManager.send(new ClientboundStatusResponsePacket(ping));
+    }
+
+    public static ServerStatus getEventResponse(MinecraftServer server, Connection networkManager, boolean async) {
+        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus(), async);
         server.server.getPluginManager().callEvent(event);
 
         // Close connection immediately if event is cancelled
         if (event.isCancelled()) {
-            networkManager.disconnect((Component) null);
-            return;
+            return null;
         }
 
         // Setup response
@@ -96,10 +107,9 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         } else {
             favicon = Optional.empty();
         }
-        final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
 
-        // Send response
-        networkManager.send(new ClientboundStatusResponsePacket(ping));
+        // Return response
+        return new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
     }
 
 }
