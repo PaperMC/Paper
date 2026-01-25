@@ -14,6 +14,7 @@ import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.player.CraftPlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.RegisteredListener;
 import org.jspecify.annotations.NullMarked;
@@ -84,7 +85,7 @@ public class HorriblePlayerLoginEventHack {
         connection.handledLegacyLoginEvent = true;
 
         CraftPlayer horribleBukkitPlayer = player.getBukkitEntity();
-        PlayerLoginEvent event = new PlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());
+        PlayerLoginEvent event = new CraftPlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());
         event.disallow(result.result(), PaperAdventure.asAdventure(result.message()));
         event.callEvent();
 
