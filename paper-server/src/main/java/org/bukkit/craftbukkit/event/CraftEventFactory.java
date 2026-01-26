@@ -120,6 +120,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerItemBreakEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -2048,7 +2049,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerRecipeBookClickEvent callRecipeBookClickEvent(ServerPlayer player, Recipe recipe, boolean shiftClick) {
-        PlayerRecipeBookClickEvent event = new PlayerRecipeBookClickEvent(player.getBukkitEntity(), recipe, shiftClick);
+        PlayerRecipeBookClickEvent event = new CraftPlayerRecipeBookClickEvent(player.getBukkitEntity(), recipe, shiftClick);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
