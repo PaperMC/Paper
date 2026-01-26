@@ -109,7 +109,8 @@ public final class EventToInterfaceMigration {
                 PlayerPickupItemEvent.class,
                 PlayerPickupArrowEvent.class,
                 PlayerPreLoginEvent.class,
-                PlayerQuitEvent.class
+                PlayerQuitEvent.class,
+                org.bukkit.event.player.PlayerRecipeBookClickEvent.class
                 //</editor-fold>
             );
 

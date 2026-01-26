@@ -6,9 +6,7 @@ import org.bukkit.ServerLinks;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerLinksSendEvent;
-import org.jetbrains.annotations.ApiStatus;
 
-@ApiStatus.Experimental
 public class CraftPlayerLinksSendEvent extends CraftEvent implements PlayerLinksSendEvent {
 
     private final ServerLinks links;
