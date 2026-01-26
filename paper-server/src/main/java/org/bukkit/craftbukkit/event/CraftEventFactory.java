@@ -123,6 +123,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1677,7 +1678,7 @@ public class CraftEventFactory {
     }
 
     public static boolean callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
-        PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
+        PlayerRiptideEvent event = new CraftPlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
         return event.callEvent();
     }
 
