@@ -122,6 +122,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1935,7 +1936,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerRecipeDiscoverEvent callPlayerRecipeListUpdateEvent(net.minecraft.world.entity.player.Player player, RecipeHolder<?> recipeHolder) {
-        PlayerRecipeDiscoverEvent event = new PlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().identifier()), recipeHolder.value().showNotification());
+        PlayerRecipeDiscoverEvent event = new CraftPlayerRecipeDiscoverEvent((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipeHolder.id().identifier()), recipeHolder.value().showNotification());
         event.callEvent();
         return event;
     }
