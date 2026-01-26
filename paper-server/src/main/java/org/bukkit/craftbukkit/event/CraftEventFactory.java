@@ -121,6 +121,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1613,7 +1614,7 @@ public class CraftEventFactory {
 
     public static void callRecipeBookSettingsEvent(ServerPlayer player, RecipeBookType type, boolean open, boolean filter) {
         PlayerRecipeBookSettingsChangeEvent.RecipeBookType bukkitType = PlayerRecipeBookSettingsChangeEvent.RecipeBookType.values()[type.ordinal()];
-        Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
+        Bukkit.getPluginManager().callEvent(new CraftPlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
     }
 
     public static boolean handlePlayerUnleashEntityEvent(
