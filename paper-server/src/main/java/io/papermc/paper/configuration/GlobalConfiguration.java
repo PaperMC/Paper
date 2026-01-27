@@ -350,8 +350,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
         public boolean fixFarEndTerrainGeneration = true;
-        @Comment("Fix for MC-305388; restore aggression timeout for Bees.")
-        public boolean fixBeeAggressionTimeout = false;
     }
 
     public BlockUpdates blockUpdates;
