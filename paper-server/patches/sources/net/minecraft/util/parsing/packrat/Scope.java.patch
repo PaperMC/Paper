@@ -1,39 +1,34 @@
 --- a/net/minecraft/util/parsing/packrat/Scope.java
 +++ b/net/minecraft/util/parsing/packrat/Scope.java
-@@ -279,4 +_,36 @@
+@@ -279,4 +_,31 @@
  
          return true;
      }
 +
 +    // Paper start - track depth
 +    private int depth;
-+    @SuppressWarnings({"unchecked","rawtypes"})
-+    public static <S> Term<S> increaseDepth() {
-+        class IncreasingDepthTerm<W> implements Term<W> {
-+            public static final IncreasingDepthTerm INSTANCE = new IncreasingDepthTerm();
-+            @Override
-+            public boolean parse(final ParseState<W> parseState, final Scope scope, final Control control) {
-+                if (++scope.depth > 512) {
-+                    parseState.errorCollector().store(parseState.mark(), new IllegalStateException("Too deep"));
-+                    return false;
-+                }
-+                return true;
-+            }
++
++    private static final Term<?> INCREASING_DEPTH_TERM = (parseState, scope, control) -> {
++        if (++scope.depth > 512) {
++            parseState.errorCollector().store(parseState.mark(), new IllegalStateException("Too deep"));
++            return false;
 +        }
-+        return (Term<S>) IncreasingDepthTerm.INSTANCE;
++        return true;
++    };
++
++    @SuppressWarnings({"unchecked"})
++    public static <S> Term<S> increaseDepth() {
++        return (Term<S>) INCREASING_DEPTH_TERM;
 +    }
 +
-+    @SuppressWarnings({"unchecked","rawtypes"})
++    private static final Term<?> DECREASING_DEPTH_TERM = (parseState, scope, control) -> {
++        scope.depth--;
++        return true;
++    };
++
++    @SuppressWarnings({"unchecked"})
 +    public static <S> Term<S> decreaseDepth() {
-+        class DecreasingDepthTerm<W> implements Term<W> {
-+            public static final DecreasingDepthTerm INSTANCE = new DecreasingDepthTerm();
-+            @Override
-+            public boolean parse(final ParseState<W> parseState, final Scope scope, final Control control) {
-+                scope.depth--;
-+                return true;
-+            }
-+        }
-+        return (Term<S>) DecreasingDepthTerm.INSTANCE;
++        return (Term<S>) DECREASING_DEPTH_TERM;
 +    }
 +    // Paper end - track depth
  }

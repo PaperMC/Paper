@@ -381,7 +381,38 @@ public final class CraftLegacy {
             }
 
             // Handle items (and second fallback for blocks)
-            int maxData = material.getMaxDurability() == 0 ? 16 : 1;
+            // We cannot rely on Material#getMaxDurability here because it relies on materialToItem which isn't filled
+            // yet.
+            int maxData = switch (material) {
+                case LEGACY_WOOD_AXE, LEGACY_WOOD_HOE, LEGACY_WOOD_PICKAXE, LEGACY_WOOD_SPADE,
+                     LEGACY_WOOD_SWORD,
+                     LEGACY_STONE_AXE, LEGACY_STONE_HOE, LEGACY_STONE_PICKAXE, LEGACY_STONE_SPADE,
+                     LEGACY_STONE_SWORD,
+                     LEGACY_IRON_AXE, LEGACY_IRON_HOE, LEGACY_IRON_PICKAXE, LEGACY_IRON_SPADE,
+                     LEGACY_IRON_SWORD,
+                     LEGACY_GOLD_AXE, LEGACY_GOLD_HOE, LEGACY_GOLD_PICKAXE, LEGACY_GOLD_SPADE,
+                     LEGACY_GOLD_SWORD,
+                     LEGACY_DIAMOND_AXE, LEGACY_DIAMOND_HOE, LEGACY_DIAMOND_PICKAXE, LEGACY_DIAMOND_SPADE,
+                     LEGACY_DIAMOND_SWORD,
+                     LEGACY_LEATHER_HELMET, LEGACY_LEATHER_CHESTPLATE,
+                     LEGACY_LEATHER_LEGGINGS, LEGACY_LEATHER_BOOTS,
+                     LEGACY_CHAINMAIL_HELMET, LEGACY_CHAINMAIL_CHESTPLATE,
+                     LEGACY_CHAINMAIL_LEGGINGS, LEGACY_CHAINMAIL_BOOTS,
+                     LEGACY_IRON_HELMET, LEGACY_IRON_CHESTPLATE,
+                     LEGACY_IRON_LEGGINGS, LEGACY_IRON_BOOTS,
+                     LEGACY_GOLD_HELMET, LEGACY_GOLD_CHESTPLATE,
+                     LEGACY_GOLD_LEGGINGS, LEGACY_GOLD_BOOTS,
+                     LEGACY_DIAMOND_HELMET, LEGACY_DIAMOND_CHESTPLATE,
+                     LEGACY_DIAMOND_LEGGINGS, LEGACY_DIAMOND_BOOTS,
+                     LEGACY_FISHING_ROD,
+                     LEGACY_CARROT_STICK,
+                     LEGACY_BOW,
+                     LEGACY_SHEARS,
+                     LEGACY_FLINT_AND_STEEL,
+                     LEGACY_SHIELD,
+                     LEGACY_ELYTRA -> 1;
+                default -> 16;
+            };
             // Manually do oldold spawn eggs
             if (material == Material.LEGACY_MONSTER_EGG) {
                 maxData = 121; // Vilager + 1
