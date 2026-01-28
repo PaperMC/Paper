@@ -35,8 +35,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public ServerListPingEvent(final boolean async, @NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
-        super(async);
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+        super(true);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
         this.hostname = hostname;
         this.address = address;
@@ -47,8 +47,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    protected ServerListPingEvent(final boolean async, @NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
-        super(async);
+    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
+        super(true);
         this.numPlayers = MAGIC_PLAYER_COUNT;
         this.hostname = hostname;
         this.address = address;
@@ -58,13 +58,13 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public ServerListPingEvent(final boolean async, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
-        this(async, "", address, motd, numPlayers, maxPlayers);
+    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
+        this("", address, motd, numPlayers, maxPlayers);
     }
 
     @ApiStatus.Internal
-    public ServerListPingEvent(final boolean async, @NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
-        super(async);
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
+        super(true);
         this.hostname = hostname;
         this.address = address;
         this.motd = motd;
