@@ -30,6 +30,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -136,7 +137,6 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.block.Action;
@@ -1695,16 +1695,14 @@ public class CraftEventFactory {
         return event; // Paper - custom shear drops
     }
 
-    public static Cancellable handleStatisticsIncrease(final net.minecraft.world.entity.player.Player entityHuman, final Stat<?> statistic, final int current, final int newValue) {
-        final Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
-        final Statistic<?> stat = PaperStatistics.getPaperStatistic(statistic);
-        if (stat.owner() instanceof final CustomStatistic customStatistic && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic.key())) {
+    public static boolean callStatisticIncreaseEvent(final net.minecraft.world.entity.player.Player player, final Stat<?> stat, final int currentValue, final int newValue) {
+        if (stat.getValue() instanceof final Identifier key && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(key)) {
             // Do not process event for these - too spammy
-            return null;
+            return true;
         }
-        final Event event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
-        event.callEvent();
-        return (Cancellable) event;
+
+        final Statistic<?> statistic = PaperStatistics.getPaperStatistic(stat);
+        return new PlayerStatisticIncrementEvent(((ServerPlayer) player).getBukkitEntity(), statistic, currentValue, newValue).callEvent();
     }
 
     public static boolean callFireworkExplodeEvent(FireworkRocketEntity firework) {

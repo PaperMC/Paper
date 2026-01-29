@@ -22,9 +22,8 @@ import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.entity.EntityType;
-import org.jspecify.annotations.NonNull;
 
-public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableBase<StatType<M>> implements StatisticType<S> {
+public class PaperStatisticType<S extends Keyed, M> extends HolderableBase<StatType<M>> implements StatisticType<S> {
 
     private final Supplier<RegistryKey<S>> registryKey;
     private final Map<S, Statistic<S>> statCacheMap;
@@ -46,25 +45,25 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableB
     }
 
     @SuppressWarnings("unchecked")
-    public static <M> StatisticType<?> create(final Holder<StatType<?>> holder) {
-        // don't call .value() here, its unbound
+    public static <M> StatisticType<?> create(final Holder<?> holder) {
+        // don't call .value() here, it's unbound
         if (holder.is(Identifier.withDefaultNamespace("killed")) || holder.is(Identifier.withDefaultNamespace("killed_by"))) {
             return new PaperStatisticType<>(
-                (Holder<StatType<net.minecraft.world.entity.EntityType<?>>>) (Holder<?>) holder,
+                (Holder<StatType<net.minecraft.world.entity.EntityType<?>>>) holder,
                 t -> t != EntityType.UNKNOWN,
                 CraftEntityType::bukkitToMinecraft,
                 (entityType, ignored) -> CraftEntityType.minecraftToBukkit(entityType)
             );
         } else {
-            return new PaperStatisticType<>((Holder<StatType<M>>) (Holder<?>) holder);
+            return new PaperStatisticType<>((Holder<StatType<M>>) holder);
         }
     }
 
-    public static <A, M> StatisticType<A> minecraftToBukkit(final StatType<M> minecraft) {
+    public static <S extends Keyed, M> PaperStatisticType<S, M> minecraftToBukkit(final StatType<M> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.STAT_TYPE);
     }
 
-    public static <A, M> StatType<M> bukkitToMinecraft(final StatisticType<A> bukkit) {
+    public static <S, M> StatType<M> bukkitToMinecraft(final StatisticType<S> bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
@@ -79,9 +78,9 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableB
         }
         return this.statCacheMap.computeIfAbsent(
             value, newValue -> {
-                final M nmsValue = this.bukkitToMinecraft.apply(value);
+                final M nmsValue = this.bukkitToMinecraft.apply(newValue);
                 final Stat<M> nmsStat = this.getHandle().get(nmsValue);
-                return new PaperStatistic<>(nmsStat, value, nmsValue, this);
+                return new PaperStatistic<>(nmsStat, newValue, nmsValue, this);
             }
         );
     }
@@ -93,7 +92,7 @@ public class PaperStatisticType<S extends @NonNull Keyed, M> extends HolderableB
 
     @Override
     public String translationKey() {
-        Preconditions.checkArgument(this != StatisticTypes.CUSTOM, this.key() + " does not have a translation key, see CustomStatistic#translationKey()");
+        Preconditions.checkArgument(this != StatisticTypes.CUSTOM, this.getKey() + " does not have a translation key, see CustomStatistic#translationKey()");
         return "stat_type." + this.getKey().toString().replace(':', '.');
     }
 }

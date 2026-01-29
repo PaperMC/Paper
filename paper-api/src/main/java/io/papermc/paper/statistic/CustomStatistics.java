@@ -165,7 +165,7 @@ public final class CustomStatistics {
     public static final CustomStatistic WALK_UNDER_WATER_ONE_CM = get("walk_under_water_one_cm");
     // End generate - CustomStatistics
 
-    private static CustomStatistic get(@KeyPattern.Value final String key) {
+    private static CustomStatistic get(final @KeyPattern.Value String key) {
         return Registry.CUSTOM_STAT.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 

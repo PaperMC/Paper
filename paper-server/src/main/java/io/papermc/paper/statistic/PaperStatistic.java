@@ -8,7 +8,7 @@ public record PaperStatistic<S, M>(Stat<M> handle, S owner, M nmsValue, Statisti
 
     @Override
     public String getName() {
-        return Stat.buildName(this.handle.getType(),this.nmsValue);
+        return Stat.buildName(this.handle.getType(), this.nmsValue);
     }
 
     @Override

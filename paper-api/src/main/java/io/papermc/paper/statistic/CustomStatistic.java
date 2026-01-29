@@ -15,7 +15,7 @@ public interface CustomStatistic extends Keyed, Translatable {
     /**
      * Gets the statistic with the given custom stat.
      *
-     * @return the statistic for the custom stat.
+     * @return the statistic for the custom stat
      */
     default Statistic<CustomStatistic> stat() {
         return StatisticTypes.CUSTOM.forValue(this);

@@ -391,8 +391,9 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public void decrementStatistic(final Statistic<?> statistic, final int amount) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        if (this.isOnline()) {
-            this.getPlayer().decrementStatistic(statistic, amount);
+        final Player player = this.getPlayer();
+        if (player != null) {
+            player.decrementStatistic(statistic, amount);
         } else {
             final ServerStatsCounter manager = this.getStatisticManager();
             PaperStatistics.changeStatistic(manager, statistic, -amount, null);
@@ -403,20 +404,21 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        if (this.isOnline()) {
-            this.getPlayer().incrementStatistic(statistic, amount);
+        final Player player = this.getPlayer();
+        if (player != null) {
+            player.incrementStatistic(statistic, amount);
         } else {
             final ServerStatsCounter manager = this.getStatisticManager();
             PaperStatistics.changeStatistic(manager, statistic, amount, null);
             manager.save();
         }
-
     }
 
     @Override
     public void setStatistic(final Statistic<?> statistic, final int newAmount) {
-        if (this.isOnline()) {
-            this.getPlayer().setStatistic(statistic, newAmount);
+        final Player player = this.getPlayer();
+        if (player != null) {
+            player.setStatistic(statistic, newAmount);
         } else {
             final ServerStatsCounter manager = this.getStatisticManager();
             PaperStatistics.setStatistic(manager, statistic, newAmount, null);
@@ -426,8 +428,9 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public int getStatistic(final Statistic<?> statistic) {
-        if (this.isOnline()) {
-            return this.getPlayer().getStatistic(statistic);
+        final Player player = this.getPlayer();
+        if (player != null) {
+            return player.getStatistic(statistic);
         } else {
             return PaperStatistics.getStatistic(this.getStatisticManager(), statistic);
         }
@@ -435,8 +438,9 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public String getFormattedValue(final Statistic<?> statistic) {
-        if (this.isOnline()) {
-            return this.getPlayer().getFormattedValue(statistic);
+        final Player player = this.getPlayer();
+        if (player != null) {
+            return player.getFormattedValue(statistic);
         } else {
             return PaperStatistics.getFormattedValue(this.getStatisticManager(), statistic);
         }

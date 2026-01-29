@@ -14,7 +14,6 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.NonExtendable
 public interface StatisticType<S> extends Keyed, Translatable {
 
-
     /**
      * Creates or gets the statistic from this type for the specified value.
      *

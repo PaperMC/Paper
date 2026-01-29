@@ -33,7 +33,7 @@ public final class StatisticTypes {
     // End generate - StatisticTypes
 
     @SuppressWarnings("unchecked")
-    private static <S> StatisticType<S> get(@KeyPattern.Value final String key) {
+    private static <S> StatisticType<S> get(final @KeyPattern.Value String key) {
         return (StatisticType<S>) Registry.STAT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 

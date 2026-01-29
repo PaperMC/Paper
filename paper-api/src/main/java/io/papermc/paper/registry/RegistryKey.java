@@ -145,8 +145,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<StatisticType<?>> STAT_TYPE = create("stat_type");
 
-
-
     /* ********************** *
      * Data-driven Registries *
      * ********************** */

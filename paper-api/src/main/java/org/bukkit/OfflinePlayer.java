@@ -13,6 +13,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.profile.PlayerProfile;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -315,19 +317,19 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @param statistic the stat to decrement
      * @param amount the value to decrement by
-     * @throws IllegalArgumentException if amount is negative
+     * @throws IllegalArgumentException if amount is negative or 0
      * @throws IllegalArgumentException if the stat would have a negative value after decrementing it
      */
-    void decrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic, final int amount);
+    void decrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, @Positive int amount);
 
     /**
      * Increments the given stat for this player.
      *
      * @param statistic the stat to increment
      * @param amount the amount to increment by
-     * @throws IllegalArgumentException if amount is negative
+     * @throws IllegalArgumentException if amount is negative or 0
      */
-    void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount);
+    void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, @Positive int amount);
 
     /**
      * Sets the given stat for this player.
@@ -336,7 +338,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param newAmount the value to set the stat to
      * @throws IllegalArgumentException if the amount is negative
      */
-    void setStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int newAmount);
+    void setStatistic(io.papermc.paper.statistic.Statistic<?> statistic, @NonNegative int newAmount);
 
     /**
      * Gets the given stat for this player.
@@ -394,8 +396,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Deprecated(since = "1.21.11")
     default void incrementStatistic(Statistic statistic) throws IllegalArgumentException {
-        Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
-        this.incrementStatistic(statistic.toModern(null, null));
+        this.incrementStatistic(statistic, 1);
     }
 
     /**
@@ -413,8 +414,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Deprecated(since = "1.21.11")
     default void decrementStatistic(Statistic statistic) throws IllegalArgumentException {
-        Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
-        this.decrementStatistic(statistic.toModern(null, null));
+        this.decrementStatistic(statistic, 1);
     }
 
     /**
