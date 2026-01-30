@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -80,7 +81,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public ScoreHolder asNmsScoreHolder() {
-        return ScoreHolder.forNameOnly(nameAndId.name());
+        return ScoreHolder.fromGameProfile(this.getProfile());
     }
 
     @Override
@@ -88,9 +89,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.nameAndId.id();
     }
 
+    public GameProfile getProfile() {
+        return this.nameAndId.toUncompletedGameProfile();
+    }
+
     @Override
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() { // Paper
-        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.nameAndId.toUncompletedGameProfile()); // Paper
+        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.getProfile()); // Paper
     }
 
     public Server getServer() {

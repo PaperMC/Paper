@@ -259,11 +259,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public ScoreHolder asNmsScoreHolder() {
-        return this.entity;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         // Long-term, this should just use the super equals... for now, check the UUID
         if (obj == this) return true;
