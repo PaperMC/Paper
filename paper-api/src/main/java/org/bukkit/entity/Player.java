@@ -3359,6 +3359,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     java.util.Locale locale();
     // Paper end
+
     /**
      * Gets the player's estimated ping in milliseconds.
      *
@@ -3373,16 +3374,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return player ping
      */
     public int getPing();
-
-    /**
-     * Gets the player's most recent measured ping.
-     *
-     * This differs from {@link #getPing()} as it represents an average of ping over time,
-     * whereas this represents simply the most recent ping.
-     *
-     * @return player's most recent ping
-     */
-    public int getLastPing();
 
     /**
      * Gets the player's current locale.
