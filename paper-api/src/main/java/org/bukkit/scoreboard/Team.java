@@ -3,6 +3,7 @@ package org.bukkit.scoreboard;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import com.google.common.base.Preconditions;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Entity;
@@ -298,11 +299,14 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #addEntry(String)
      * @apiNote use {@link #addEntry(ScoreHolder)}
      */
     @ApiStatus.Obsolete(since = "1.21.11")
     default void addPlayer(@NotNull OfflinePlayer player) {
+        Preconditions.checkArgument(player != null, "player cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         this.addEntry(player);
     }
 
@@ -404,11 +408,14 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to remove
      * @return if the player was on this team
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #removeEntry(String)
      * @apiNote use {@link #removeEntry(ScoreHolder)}
      */
     @ApiStatus.Obsolete(since = "1.21.11")
     default boolean removePlayer(@NotNull OfflinePlayer player) {
+        Preconditions.checkArgument(player != null, "player cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         return this.removeEntry(player);
     }
 
@@ -510,11 +517,14 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to search for
      * @return true if the player is a member of this team
      * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalArgumentException if {@link OfflinePlayer#getName()} is null
      * @see #hasEntry(String)
      * @apiNote use {@link #hasEntry(ScoreHolder)}
      */
     @ApiStatus.Obsolete(since = "1.21.11")
     default boolean hasPlayer(@NotNull OfflinePlayer player) {
+        Preconditions.checkArgument(player != null, "player cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         return this.hasEntry(player);
     }
 

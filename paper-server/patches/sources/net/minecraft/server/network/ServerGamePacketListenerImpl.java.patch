@@ -374,7 +374,7 @@
                  return;
              }
  
-@@ -536,6 +_,7 @@
+@@ -536,13 +_,14 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
              this.awaitingPositionFromClient = null;
@@ -382,6 +382,14 @@
          }
      }
  
+     @Override
+     public void handleAcceptPlayerLoad(ServerboundPlayerLoadedPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        this.markClientLoaded();
++        this.markClientLoaded(false); // Paper - Add PlayerLoadedWorldEvent
+     }
+ 
+     @Override
 @@ -563,6 +_,7 @@
      @Override
      public void handleRecipeBookChangeSettingsPacket(ServerboundRecipeBookChangeSettingsPacket packet) {
@@ -1182,21 +1190,26 @@
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
-@@ -1290,9 +_,31 @@
+@@ -1290,9 +_,36 @@
          }
      }
  
-+    // Spigot start - limit place/interactions
++    // Paper start - limit place/interactions
 +    private int limitedPackets;
 +    private long lastLimitedPacket = -1;
-+    private static int getSpamThreshold() { return io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold; } // Paper - Configurable threshold
 +
 +    private boolean checkLimit(long timestamp) {
-+        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < getSpamThreshold() && this.limitedPackets++ >= 8) { // Paper - Configurable threshold; raise packet limit to 8
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold.enabled()) {
++            return true;
++        }
++
++        final int threshold = io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold.intValue();
++
++        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < threshold && this.limitedPackets++ >= 8) {
 +            return false;
 +        }
 +
-+        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= getSpamThreshold()) { // Paper - Configurable threshold
++        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= threshold) {
 +            this.lastLimitedPacket = timestamp;
 +            this.limitedPackets = 0;
 +            return true;
@@ -1204,7 +1217,7 @@
 +
 +        return true;
 +    }
-+    // Spigot end - limit place/interactions
++    // Paper end - limit place/interactions
 +
      @Override
      public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
@@ -1236,7 +1249,7 @@
                                  InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, serverLevel, itemInHand, hand, hitResult);
                                  if (interactionResult.consumesAction()) {
                                      CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, hitResult.getBlockPos(), itemInHand.copy());
-@@ -1323,10 +_,10 @@
+@@ -1323,10 +_,19 @@
                                      Component component = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                                      this.player.sendSystemMessage(component, true);
                                  } else if (interactionResult instanceof InteractionResult.Success success
@@ -1244,8 +1257,16 @@
 +                                    && success.swingSource() == InteractionResult.SwingSource.SERVER && !this.player.gameMode.interactResult) { // Paper - Call interact event
                                      this.player.swing(hand, true);
                                  }
--                            }
-+                            } else { this.player.containerMenu.forceHeldSlot(hand); } // Paper - Fix inventory desync; MC-99075
++                            // Paper start - Fix inventory desync; MC-99075
++                            // From serverLevel.mayInteract(this.player, blockPos)
++                            } else if (this.server.isUnderSpawnProtection(serverLevel, blockPos, player)) {
++                                if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, serverLevel.getBlockState(blockPos), itemInHand)) {
++                                    this.player.containerMenu.sendAllDataToRemote();
++                                } else {
++                                    this.player.containerMenu.forceHeldSlot(hand);
++                                }
+                             }
++                            // Paper end - Fix inventory desync
                          } else {
                              Component component1 = Component.translatable("build.tooHigh", maxY).withStyle(ChatFormatting.RED);
                              this.player.sendSystemMessage(component1, true);
@@ -1274,7 +1295,7 @@
          if (this.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel serverLevel = this.player.level();
-@@ -1363,6 +_,48 @@
+@@ -1363,6 +_,54 @@
                      this.player.absSnapRotationTo(f, f1);
                  }
  
@@ -1311,7 +1332,13 @@
 +
 +                if (cancelled) {
 +                    this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
-+                    this.player.containerMenu.forceHeldSlotAndArmor(hand); // SPIGOT-2524
++                    // Paper start - Fix inventory desync; SPIGOT-2524
++                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), itemInHand)) {
++                        this.player.containerMenu.sendAllDataToRemote();
++                    } else {
++                        this.player.containerMenu.forceHeldSlotAndArmor(hand);
++                    }
++                    // Paper end - Fix inventory desync
 +                    return;
 +                }
 +                itemInHand = this.player.getItemInHand(hand); // Update in case it was changed in the event
@@ -1795,7 +1822,7 @@
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
              if (target != null) {
-@@ -1751,16 +_,54 @@
+@@ -1751,16 +_,63 @@
                  }
  
                  AABB boundingBox = target.getBoundingBox();
@@ -1821,8 +1848,17 @@
 +                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
 +                                    if (itemType == Items.WATER_BUCKET && target instanceof net.minecraft.world.entity.animal.Bucketable && target instanceof LivingEntity && resendData) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
-+                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                    }
++
++                                    // Paper start - Fix inventory desync
++                                    if (resendData) {
++                                        if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(ServerGamePacketListenerImpl.this.player, target, itemInHand)) {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
++                                        } else {
++                                            ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand);
++                                        }
++                                    }
++                                    // Paper end - Fix inventory desync
 +
 +                                    if (triggerLeashUpdate && resendData) {
 +                                        // Refresh the current leash state
@@ -1871,7 +1907,7 @@
                                  );
                              }
  
-@@ -1786,7 +_,7 @@
+@@ -1786,16 +_,22 @@
                              public void onAttack() {
                                  if (!(target instanceof ItemEntity)
                                      && !(target instanceof ExperienceOrb)
@@ -1880,7 +1916,14 @@
                                      && !(target instanceof AbstractArrow abstractArrow && !abstractArrow.isAttackable())) {
                                      ItemStack itemInHand = ServerGamePacketListenerImpl.this.player.getItemInHand(InteractionHand.MAIN_HAND);
                                      if (itemInHand.isItemEnabled(serverLevel.enabledFeatures())) {
-@@ -1795,7 +_,7 @@
+                                         if (!ServerGamePacketListenerImpl.this.player.cannotAttackWithItem(itemInHand, 5)) {
++                                            // Paper start - redirect attacks with piercing weapon
++                                            PiercingWeapon piercingWeapon = itemInHand.get(DataComponents.PIERCING_WEAPON);
++                                            if (piercingWeapon != null) {
++                                                piercingWeapon.attack(ServerGamePacketListenerImpl.this.player, EquipmentSlot.MAINHAND);
++                                            } else
++                                            // Paper end - redirect attacks with piercing weapon
+                                             ServerGamePacketListenerImpl.this.player.attack(target);
                                          }
                                      }
                                  } else {
@@ -2568,7 +2611,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2134,12 +_,18 @@
+@@ -2134,12 +_,23 @@
      }
  
      public void tickClientLoadTimeout() {
@@ -2576,13 +2619,18 @@
 +        if (this.clientLoadedTimeoutTimer > 1) { // Paper - Add PlayerLoadedWorldEvent - only reduce till 1, let the below else-if call #markClientLoaded to trigger event and reduce to 0
              this.clientLoadedTimeoutTimer--;
 -        }
-+        } else if (this.clientLoadedTimeoutTimer == 1) markClientLoaded(); // Paper - Add PlayerLoadedWorldEvent - decrement by calling #markClientLoaded which will set the value to 0 *and* call the event.
++        } else if (this.clientLoadedTimeoutTimer == 1) this.markClientLoaded(true); // Paper - Add PlayerLoadedWorldEvent - decrement by calling #markClientLoaded which will set the value to 0 *and* call the event.
      }
  
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add PlayerLoadedWorldEvent
      private void markClientLoaded() {
 +        // Paper start - Add PlayerLoadedWorldEvent
++        this.markClientLoaded(false);
++    }
++
++    private void markClientLoaded(boolean timeout) {
 +        if (!hasClientLoaded()) {
-+            final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), true);
++            final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), timeout);
 +            event.callEvent();
 +        }
 +        // Paper end - Add PlayerLoadedWorldEvent

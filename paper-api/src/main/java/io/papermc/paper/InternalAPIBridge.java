@@ -5,6 +5,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
@@ -14,6 +15,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Pose;
 import org.bukkit.scoreboard.ScoreHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -101,6 +103,8 @@ public interface InternalAPIBridge {
     Component defaultMannequinDescription();
 
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
+
+    Set<Pose> validMannequinPoses();
 
     /**
      * Creates a wrapping score holder
