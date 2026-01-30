@@ -19,7 +19,7 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
-import io.papermc.paper.statistic.PaperStatistics;
+import io.papermc.paper.statistic.PaperTrackableStats;
 import io.papermc.paper.statistic.Statistic;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
@@ -115,6 +115,7 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -136,6 +137,7 @@ import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -220,7 +222,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
-public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessageBridgeImpl {
+public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessageBridgeImpl, PaperTrackableStats {
     private static final org.slf4j.Logger LOGGER = LogUtils.getClassLogger();
     private static final PointersSupplier<Player> POINTERS_SUPPLIER = PointersSupplier.<Player>builder()
         .parent(CraftEntity.POINTERS_SUPPLIER)
@@ -1435,30 +1437,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public ServerStatsCounter getStatCounter() {
+        return this.getHandle().getStats();
+    }
+
+    @Override
+    public ScoreHolder getScoreHolder() {
+        return this.getHandle();
+    }
+
+    @Override
     public void decrementStatistic(final Statistic<?> statistic, final int amount) {
-        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, -amount, this.getHandle());
+        PaperTrackableStats.super.decrementStatistic(statistic, amount);
     }
 
     @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
-        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        PaperStatistics.changeStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
+        PaperTrackableStats.super.incrementStatistic(statistic, amount);
     }
 
     @Override
     public void setStatistic(final Statistic<?> statistic, final int newAmount) {
-        PaperStatistics.setStatistic(this.getHandle().getStats(), statistic, newAmount, this.getHandle());
+        PaperTrackableStats.super.setStatistic(statistic, newAmount);
     }
 
     @Override
     public int getStatistic(final Statistic<?> statistic) {
-        return PaperStatistics.getStatistic(this.getHandle().getStats(), statistic);
+        return PaperTrackableStats.super.getStatistic(statistic);
     }
 
     @Override
     public String getFormattedValue(final Statistic<?> statistic) {
-        return PaperStatistics.getFormattedValue(this.getHandle().getStats(), statistic);
+        return PaperTrackableStats.super.getFormattedValue(statistic);
     }
 
     @Override

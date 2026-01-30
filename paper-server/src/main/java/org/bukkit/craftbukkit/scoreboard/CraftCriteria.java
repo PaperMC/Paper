@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.collect.ImmutableMap;
-import io.papermc.paper.statistic.PaperStatistics;
+import io.papermc.paper.statistic.PaperStatistic;
 import java.util.Map;
 import java.util.Objects;
 import net.minecraft.stats.Stat;
@@ -61,7 +61,7 @@ public final class CraftCriteria implements Criteria {
     }
 
     static Criteria convertFromNms(ObjectiveCriteria criteria) {
-        return criteria instanceof Stat<?> stat ? PaperStatistics.getPaperStatistic(stat) : new CraftCriteria(criteria);
+        return criteria instanceof Stat<?> stat ? PaperStatistic.getPaperStatistic(stat) : new CraftCriteria(criteria);
     }
 
     public static Criteria getFromNMS(Objective objective) {

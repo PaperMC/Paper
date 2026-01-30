@@ -4,11 +4,11 @@ import net.minecraft.stats.Stat;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
 import org.bukkit.scoreboard.RenderType;
 
-public record PaperStatistic<S, M>(Stat<M> handle, S owner, M nmsValue, StatisticType<S> type) implements Statistic<S> {
+public record PaperStatistic<S, M>(Stat<M> handle, S owner, StatisticType<S> type) implements Statistic<S> {
 
     @Override
     public String getName() {
-        return Stat.buildName(this.handle.getType(), this.nmsValue);
+        return this.handle.getName();
     }
 
     @Override
@@ -19,5 +19,13 @@ public record PaperStatistic<S, M>(Stat<M> handle, S owner, M nmsValue, Statisti
     @Override
     public RenderType getDefaultRenderType() {
         return CraftScoreboardTranslations.toBukkitRender(this.handle.getDefaultRenderType());
+    }
+
+    public static <M> Statistic<?> getPaperStatistic(final Stat<M> stat) {
+        return PaperStatisticType.minecraftToBukkit(stat.getType()).convertStat(stat);
+    }
+
+    public static Stat<?> getNMSStatistic(final Statistic<?> statistic) {
+        return ((PaperStatistic<?, ?>) statistic).handle();
     }
 }

@@ -12,6 +12,7 @@ import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -241,10 +242,10 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     static ScoreHolder getScoreHolder(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
 
-        if (player instanceof CraftPlayer craft) {
-            return craft.getHandle();
-        } else {
-            return CraftScoreboard.getScoreHolder(player.getName());
-        }
+        return switch (player) {
+            case CraftPlayer craft -> craft.getHandle();
+            case CraftOfflinePlayer craft -> ScoreHolder.fromGameProfile((craft.getProfile()));
+            default -> throw new UnsupportedOperationException("Cannot convert to a score holder");
+        };
     }
 }

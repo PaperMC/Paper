@@ -14,12 +14,11 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
-import io.papermc.paper.statistic.CustomStatistic;
-import io.papermc.paper.statistic.PaperStatistics;
-import io.papermc.paper.statistic.Statistic;
+import io.papermc.paper.statistic.PaperStatistic;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -36,8 +36,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.stats.Stat;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
+import net.minecraft.util.Util;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.LockCode;
@@ -1695,14 +1697,27 @@ public class CraftEventFactory {
         return event; // Paper - custom shear drops
     }
 
-    public static boolean callStatisticIncreaseEvent(final net.minecraft.world.entity.player.Player player, final Stat<?> stat, final int currentValue, final int newValue) {
-        if (stat.getValue() instanceof final Identifier key && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(key)) {
+    private static final Set<Identifier> IGNORED_STATS_FOR_EVENT = Util.make(new HashSet<>(), set -> {
+        set.add(Stats.TIME_SINCE_DEATH);
+        set.add(Stats.TIME_SINCE_REST);
+        set.add(Stats.CROUCH_TIME);
+        set.add(Stats.TOTAL_WORLD_TIME);
+        set.add(Stats.PLAY_TIME);
+
+        BuiltInRegistries.CUSTOM_STAT.stream().forEach(key -> {
+            if (key.getPath().endsWith("_one_cm")) {
+                set.add(key);
+            }
+        });
+    });
+
+    public static boolean callStatisticIncrementEvent(final net.minecraft.world.entity.player.Player player, final Stat<?> stat, final int currentValue, final int newValue) {
+        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final Identifier key && IGNORED_STATS_FOR_EVENT.contains(key)) {
             // Do not process event for these - too spammy
             return true;
         }
 
-        final Statistic<?> statistic = PaperStatistics.getPaperStatistic(stat);
-        return new PlayerStatisticIncrementEvent(((ServerPlayer) player).getBukkitEntity(), statistic, currentValue, newValue).callEvent();
+        return new PlayerStatisticIncrementEvent(((ServerPlayer) player).getBukkitEntity(), PaperStatistic.getPaperStatistic(stat), currentValue, newValue).callEvent();
     }
 
     public static boolean callFireworkExplodeEvent(FireworkRocketEntity firework) {

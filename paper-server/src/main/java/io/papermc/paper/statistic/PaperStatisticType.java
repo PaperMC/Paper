@@ -32,7 +32,7 @@ public class PaperStatisticType<S extends Keyed, M> extends HolderableBase<StatT
     private final BiFunction<M, ResourceKey<? extends Registry<M>>, S> minecraftToBukkit;
 
     private PaperStatisticType(final Holder<StatType<M>> holder) {
-        this(holder, s -> true, CraftRegistry::bukkitToMinecraft, CraftRegistry::minecraftToBukkit);
+        this(holder, $ -> true, CraftRegistry::bukkitToMinecraft, CraftRegistry::minecraftToBukkit);
     }
 
     private PaperStatisticType(final Holder<StatType<M>> holder, final Predicate<S> typeCheck, final Function<S, M> bukkitToMinecraft, final BiFunction<M, ResourceKey<? extends Registry<M>>, S> minecraftToBukkit) {
@@ -52,7 +52,7 @@ public class PaperStatisticType<S extends Keyed, M> extends HolderableBase<StatT
                 (Holder<StatType<net.minecraft.world.entity.EntityType<?>>>) holder,
                 t -> t != EntityType.UNKNOWN,
                 CraftEntityType::bukkitToMinecraft,
-                (entityType, ignored) -> CraftEntityType.minecraftToBukkit(entityType)
+                (entityType, $) -> CraftEntityType.minecraftToBukkit(entityType)
             );
         } else {
             return new PaperStatisticType<>((Holder<StatType<M>>) holder);
@@ -67,8 +67,8 @@ public class PaperStatisticType<S extends Keyed, M> extends HolderableBase<StatT
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public Statistic<S> convertStat(final Stat<? extends M> nmsStat) {
-        return this.forValue(this.minecraftToBukkit.apply(nmsStat.getValue(), this.getHandle().getRegistry().key()));
+    public Statistic<S> convertStat(final Stat<M> stat) {
+        return this.forValue(this.minecraftToBukkit.apply(stat.getValue(), this.getHandle().getRegistry().key()));
     }
 
     @Override
@@ -76,13 +76,11 @@ public class PaperStatisticType<S extends Keyed, M> extends HolderableBase<StatT
         if (!this.typeCheck.test(value)) {
             throw new IllegalArgumentException(value + " is not valid for stat type " + this.getKey());
         }
-        return this.statCacheMap.computeIfAbsent(
-            value, newValue -> {
-                final M nmsValue = this.bukkitToMinecraft.apply(newValue);
-                final Stat<M> nmsStat = this.getHandle().get(nmsValue);
-                return new PaperStatistic<>(nmsStat, newValue, nmsValue, this);
-            }
-        );
+        return this.statCacheMap.computeIfAbsent(value, newValue -> {
+            final M nmsValue = this.bukkitToMinecraft.apply(newValue);
+            final Stat<M> stat = this.getHandle().get(nmsValue);
+            return new PaperStatistic<>(stat, newValue, this);
+        });
     }
 
     @Override

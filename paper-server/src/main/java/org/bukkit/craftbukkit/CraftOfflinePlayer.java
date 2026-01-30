@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.base.Preconditions;
-import io.papermc.paper.statistic.PaperStatistics;
+import com.mojang.authlib.GameProfile;
+import io.papermc.paper.statistic.PaperTrackableStats;
 import io.papermc.paper.statistic.Statistic;
 import java.io.File;
 import java.time.Duration;
@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
@@ -20,6 +21,7 @@ import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -32,9 +34,10 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 @SerializableAs("Player")
-public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
+public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable, PaperTrackableStats {
     private final NameAndId nameAndId;
     private final CraftServer server;
     private final PlayerDataStorage storage;
@@ -81,9 +84,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.nameAndId.id();
     }
 
+    public GameProfile getProfile() {
+        return this.nameAndId.toUncompletedGameProfile();
+    }
+
     @Override
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() { // Paper
-        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.nameAndId.toUncompletedGameProfile()); // Paper
+        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.getProfile()); // Paper
     }
 
     public Server getServer() {
@@ -384,65 +391,47 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             .orElse(null);
     }
 
-    private ServerStatsCounter getStatisticManager() {
-        return this.server.getHandle().getPlayerStats(this.nameAndId.toUncompletedGameProfile());
+    @Override
+    public ServerStatsCounter getStatCounter() {
+        return this.server.getHandle().getPlayerStats(this.getProfile());
+    }
+
+    @Override
+    public @Nullable ScoreHolder getScoreHolder() {
+        ServerPlayer onlinePlayer = MinecraftServer.getServer().getPlayerList().getPlayer(this.getUniqueId());
+        if (onlinePlayer != null) {
+            return onlinePlayer;
+        }
+
+        if (this.nameAndId.name().isEmpty()) {
+            return null;
+        }
+
+        return ScoreHolder.fromGameProfile(this.getProfile());
     }
 
     @Override
     public void decrementStatistic(final Statistic<?> statistic, final int amount) {
-        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        final Player player = this.getPlayer();
-        if (player != null) {
-            player.decrementStatistic(statistic, amount);
-        } else {
-            final ServerStatsCounter manager = this.getStatisticManager();
-            PaperStatistics.changeStatistic(manager, statistic, -amount, null);
-            manager.save();
-        }
+        PaperTrackableStats.super.decrementStatistic(statistic, amount);
     }
 
     @Override
     public void incrementStatistic(final Statistic<?> statistic, final int amount) {
-        Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
-        final Player player = this.getPlayer();
-        if (player != null) {
-            player.incrementStatistic(statistic, amount);
-        } else {
-            final ServerStatsCounter manager = this.getStatisticManager();
-            PaperStatistics.changeStatistic(manager, statistic, amount, null);
-            manager.save();
-        }
+        PaperTrackableStats.super.incrementStatistic(statistic, amount);
     }
 
     @Override
     public void setStatistic(final Statistic<?> statistic, final int newAmount) {
-        final Player player = this.getPlayer();
-        if (player != null) {
-            player.setStatistic(statistic, newAmount);
-        } else {
-            final ServerStatsCounter manager = this.getStatisticManager();
-            PaperStatistics.setStatistic(manager, statistic, newAmount, null);
-            manager.save();
-        }
+        PaperTrackableStats.super.setStatistic(statistic, newAmount);
     }
 
     @Override
     public int getStatistic(final Statistic<?> statistic) {
-        final Player player = this.getPlayer();
-        if (player != null) {
-            return player.getStatistic(statistic);
-        } else {
-            return PaperStatistics.getStatistic(this.getStatisticManager(), statistic);
-        }
+        return PaperTrackableStats.super.getStatistic(statistic);
     }
 
     @Override
     public String getFormattedValue(final Statistic<?> statistic) {
-        final Player player = this.getPlayer();
-        if (player != null) {
-            return player.getFormattedValue(statistic);
-        } else {
-            return PaperStatistics.getFormattedValue(this.getStatisticManager(), statistic);
-        }
+        return PaperTrackableStats.super.getFormattedValue(statistic);
     }
 }
