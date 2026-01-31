@@ -22,17 +22,17 @@ public class BlockReceiveGameEvent extends BlockEvent implements ReceiveGameEven
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final GameEvent event;
-    private final @Nullable Entity entity;
-    private final @Nullable BlockData blockData;
+    private final @Nullable Entity triggerEntity;
+    private final @Nullable BlockData triggerBlockData;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public BlockReceiveGameEvent(final GameEvent event, final Block block, final @Nullable Entity entity, final @Nullable BlockData blockData) {
+    public BlockReceiveGameEvent(final GameEvent event, final Block block, final @Nullable Entity triggerEntity, final @Nullable BlockData triggerBlockData) {
         super(block);
         this.event = event;
-        this.entity = entity;
-        this.blockData = blockData;
+        this.triggerEntity = triggerEntity;
+        this.triggerBlockData = triggerBlockData;
     }
 
     @Override
@@ -46,19 +46,19 @@ public class BlockReceiveGameEvent extends BlockEvent implements ReceiveGameEven
      * @return triggering entity or {@code null}
      * @deprecated use {@link #getTriggerEntity()}
      */
-    @Deprecated(since = "1.21.10")
+    @Deprecated(since = "1.21.11")
     public @Nullable Entity getEntity() {
         return this.getTriggerEntity();
     }
 
     @Override
     public @Nullable Entity getTriggerEntity() {
-        return this.entity;
+        return this.triggerEntity;
     }
 
     @Override
     public @Nullable BlockData getTriggerBlockData() {
-        return this.blockData == null ? null : this.blockData.clone();
+        return this.triggerBlockData == null ? null : this.triggerBlockData.clone();
     }
 
     @Override

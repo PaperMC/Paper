@@ -57,7 +57,7 @@ public class EntityReceiveGameEvent extends EntityEvent implements ReceiveGameEv
 
     @Override
     public @Nullable BlockData getTriggerBlockData() {
-        return this.triggerBlockData;
+        return this.triggerBlockData == null ? null : this.triggerBlockData.clone();
     }
 
     @Override

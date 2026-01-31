@@ -14,13 +14,13 @@
                  } else {
                      Vec3 vec3 = position.get();
 -                    if (!vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context)) {
-+                    // Paper start - game event events
++                    // Paper start - improve GameEvent events
 +                    boolean defaultCancel = !vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context);
 +                    // TODO add special sub vibration events to control LOS check (GameEvent != Vibration)
 +                    io.papermc.paper.event.ReceiveGameEvent event = vibrationUser.createReceiveGameEvent(level, gameEvent, context, vec3);
 +                    event.setCancelled(defaultCancel);
 +                    if (!event.callEvent()) {
-+                        // Paper end - game event events
++                        // Paper end - improve GameEvent events
                          return false;
                      } else if (isOccluded(level, pos, vec3)) {
                          return false;
@@ -29,15 +29,15 @@
          default void onDataChanged() {
          }
 +
-+        // Paper start - add game event events
-+        default io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(final ServerLevel world, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
-+            return createBlockEvent(world, event, context, position);
++        // Paper start - improve GameEvent events
++        default io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(final ServerLevel level, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
++            return createBlockEvent(level, event, context, position);
 +        }
 +
-+        static io.papermc.paper.event.ReceiveGameEvent createBlockEvent(final ServerLevel world, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
++        static io.papermc.paper.event.ReceiveGameEvent createBlockEvent(final ServerLevel level, final Holder<GameEvent> event, final GameEvent.Context context, final Vec3 position) {
 +            return new org.bukkit.event.block.BlockReceiveGameEvent(
 +                org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(event),
-+                org.bukkit.craftbukkit.block.CraftBlock.at(world, BlockPos.containing(position)),
++                org.bukkit.craftbukkit.block.CraftBlock.at(level, BlockPos.containing(position)),
 +                net.minecraft.Optionull.map(context.sourceEntity(), Entity::getBukkitEntity),
 +                net.minecraft.Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData)
 +            );
@@ -51,6 +51,6 @@
 +                net.minecraft.Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData)
 +            );
 +        }
-+        // Paper end - add game event events
++        // Paper end - improve GameEvent events
      }
  }

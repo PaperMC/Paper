@@ -17,21 +17,21 @@ import org.jspecify.annotations.Nullable;
 public interface ReceiveGameEvent extends Cancellable {
 
     /**
-     * Get the underlying event.
+     * Get the underlying game event.
      *
-     * @return the event
+     * @return the game event
      */
     GameEvent getEvent();
 
     /**
-     * Get the entity which triggered this event, if present.
+     * Get the entity which triggered this game event, if present.
      *
      * @return triggering entity or {@code null}
      */
     @Nullable Entity getTriggerEntity();
 
     /**
-     * Get the block data change which triggered this event, if present.
+     * Get the block data change which triggered this game event, if present.
      *
      * @return triggering block data or {@code null}
      */
