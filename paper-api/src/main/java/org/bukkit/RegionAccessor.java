@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import io.papermc.paper.world.attribute.EnvironmentalAttribute;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -560,4 +562,6 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
     // Paper end
+
+    <T> @NotNull EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
 }

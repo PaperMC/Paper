@@ -13,10 +13,6 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.world.attribute.EnvironmentalAttribute;
-import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
-import io.papermc.paper.world.attribute.PaperEnvironmentalAttribute;
-import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -2042,9 +2038,4 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return POINTERS_SUPPLIER.view(this);
     }
     // Paper end
-
-    @Override
-    public <T> PaperEnvironmentalAttribute<T, ?> getEnvironmentalAttribute(final EnvironmentalAttributeType<T> type) {
-        return new PaperEnvironmentalAttribute<>(this.getHandle().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
-    }
 }
