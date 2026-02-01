@@ -67,10 +67,9 @@ public class PaperPluginsCommand {
     private static final Type JAVA_PLUGIN_PROVIDER_TYPE = new TypeToken<PluginProvider<JavaPlugin>>() {}.getType();
 
     public static LiteralCommandNode<CommandSourceStack> create() {
-        final PaperPluginsCommand command = new PaperPluginsCommand();
         return Commands.literal("plugins")
             .requires(source -> source.getSender().hasPermission("bukkit.command.plugins"))
-            .executes(command::execute)
+            .executes(PaperPluginsCommand::execute)
             .build();
     }
 
@@ -170,7 +169,7 @@ public class PaperPluginsCommand {
         }
     }
 
-    private int execute(CommandContext<CommandSourceStack> context) {
+    private static int execute(CommandContext<CommandSourceStack> context) {
         final CommandSender sender = context.getSource().getSender();
         final TreeMap<String, PluginProvider<JavaPlugin>> paperPlugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         final TreeMap<String, PluginProvider<JavaPlugin>> spigotPlugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

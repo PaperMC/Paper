@@ -3,34 +3,34 @@ package io.papermc.paper.command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.minecraft.server.MinecraftServer;
-import org.bukkit.command.Command;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Util;
+import org.bukkit.command.Command;
+import org.jspecify.annotations.NullMarked;
 
-@DefaultQualifier(NonNull.class)
+@NullMarked
 public final class PaperCommands {
 
     private PaperCommands() {
     }
 
-    private static final Map<String, Command> COMMANDS = new HashMap<>();
+    private static final Map<String, Command> COMMANDS = Util.make(new HashMap<>(), map -> {
+        map.put("mspt", new MSPTCommand("mspt"));
+    });
 
-    public static void registerCommands(final MinecraftServer server) {
-        COMMANDS.put("mspt", new MSPTCommand("mspt"));
-
+    public static void registerLegacyCommands(final MinecraftServer server) {
         COMMANDS.forEach((s, command) -> {
             server.server.getCommandMap().register(s, "Paper", command);
         });
     }
 
     public static void registerCommands() {
-        // Paper commands go here
+        // brigadier commands go here
+        registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
         registerInternalCommand(PaperPluginsCommand.create(), "bukkit", PaperPluginsCommand.DESCRIPTION, List.of("pl"), Set.of());
     }

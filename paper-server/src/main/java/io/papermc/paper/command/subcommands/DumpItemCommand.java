@@ -18,25 +18,24 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
-import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
+import static java.util.Objects.requireNonNull;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
@@ -54,29 +53,31 @@ public final class DumpItemCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumpitem")
-            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpitem"))
-
+            .requires(source -> {
+                return source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpitem");
+            })
             .then(Commands.literal("all")
-                .executes(ctx -> {
-                    doDumpItem(ctx.getSource().getSender(), true);
+                .executes(context -> {
+                    if (!(context.getSource().getExecutor() instanceof Player player)) {
+                        throw EntityArgument.NO_PLAYERS_FOUND.create();
+                    }
+                    doDumpItem(player, true);
                     return Command.SINGLE_SUCCESS;
                 })
             )
-
-            .executes(ctx -> {
-                doDumpItem(ctx.getSource().getSender(), false);
+            .executes(context -> {
+                if (!(context.getSource().getExecutor() instanceof Player player)) {
+                    throw EntityArgument.NO_PLAYERS_FOUND.create();
+                }
+                doDumpItem(player, false);
                 return Command.SINGLE_SUCCESS;
             });
     }
 
     @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
-    private static void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
-        if (!(sender instanceof final Player player)) {
-            sender.sendMessage("Only players can use this command");
-            return;
-        }
+    private static void doDumpItem(final Player player, final boolean includeAllComponents) {
         final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
-        final TextComponent.Builder visualOutput = Component.text();
+        final TextComponent.Builder visualOutput = text();
         final StringBuilder itemCommandBuilder = new StringBuilder();
         final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().identifier().toString();
         itemCommandBuilder.append(itemName);
@@ -89,13 +90,11 @@ public final class DumpItemCommand {
             referencedComponentTypes.addAll(prototype.keySet());
         }
 
-        final RegistryAccess.Frozen access = ((CraftServer) sender.getServer()).getServer().registryAccess();
-        final RegistryOps<Tag> ops = access.createSerializationContext(NbtOps.INSTANCE);
-        final Registry<DataComponentType<?>> registry = access.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
+        final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
         final List<ComponentLike> componentComponents = new ArrayList<>();
         final List<String> commandComponents = new ArrayList<>();
         for (final DataComponentType<?> type : referencedComponentTypes) {
-            final String path = registry.getResourceKey(type).orElseThrow().identifier().getPath();
+            final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
             final Optional<?> patchedValue = patch.get(type);
             final TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
             if (patchedValue != null) {
@@ -124,7 +123,7 @@ public final class DumpItemCommand {
         }
         player.sendMessage(visualOutput.build().compact());
         final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
-        sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
+        player.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
     }
 
     private static void writeComponentValue(final Consumer<Component> visualOutput, final Consumer<String> commandOutput, final String path, final Tag serialized) {

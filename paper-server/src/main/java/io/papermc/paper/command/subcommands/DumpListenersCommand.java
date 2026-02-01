@@ -17,12 +17,11 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -31,29 +30,25 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jspecify.annotations.NullMarked;
 
-import static net.kyori.adventure.text.Component.newline;
-import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
-import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 
 @NullMarked
 public final class DumpListenersCommand {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
     private static final String COMMAND_ARGUMENT_TO_FILE = "tofile";
-    private static final MethodHandle EVENT_TYPES_HANDLE;
-
     private static final Component HELP_MESSAGE = text("Usage: /paper dumplisteners " + COMMAND_ARGUMENT_TO_FILE + "|<className>", RED);
-    private static final SuggestionProvider<CommandSourceStack> EVENT_SUGGESTIONS = (ctx, builder) -> CompletableFuture.supplyAsync(() -> {
+
+    private static final SuggestionProvider<CommandSourceStack> EVENT_SUGGESTIONS = (context, builder) -> CompletableFuture.supplyAsync(() -> {
         eventClassNames().stream()
-            .filter(name -> name.toLowerCase().startsWith(builder.getRemainingLowerCase()))
+            .filter(name -> name.toLowerCase(Locale.ENGLISH).startsWith(builder.getRemainingLowerCase()))
             .forEach(builder::suggest);
         return builder.build();
     });
 
+    private static final MethodHandle EVENT_TYPES_HANDLE;
     static {
         try {
             final Field eventTypesField = HandlerList.class.getDeclaredField("EVENT_TYPES");
@@ -66,44 +61,34 @@ public final class DumpListenersCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumplisteners")
-            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "dumplisteners"))
-
-            .then(Commands.literal("tofile")
-                .executes(ctx -> {
-                    dumpToFile(ctx.getSource().getSender());
-                    return Command.SINGLE_SUCCESS;
+            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumplisteners"))
+            .then(Commands.literal(COMMAND_ARGUMENT_TO_FILE)
+                .executes(context -> {
+                    return dumpToFile(context.getSource().getSender());
                 })
             )
-
             .then(Commands.argument("event", StringArgumentType.word())
                 .suggests(EVENT_SUGGESTIONS)
-                .executes(ctx -> {
-                    doDumpListeners(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "event"));
+                .executes(context -> {
+                    doDumpListeners(context.getSource().getSender(), StringArgumentType.getString(context, "event"));
                     return Command.SINGLE_SUCCESS;
                 })
             )
-
-            .executes(ctx -> {
-                ctx.getSource().getSender().sendMessage(HELP_MESSAGE);
+            .executes(context -> {
+                context.getSource().getSender().sendMessage(HELP_MESSAGE);
                 return Command.SINGLE_SUCCESS;
             });
     }
 
-    private static void dumpToFile(final CommandSender sender) {
-        Path parent = Path.of("debug");
-        Path path = parent.resolve("listeners-" + FORMATTER.format(LocalDateTime.now()) + ".txt");
+    private static int dumpToFile(final CommandSender sender) {
+        Path path = Path.of("debug", "listeners-" + PaperCommand.FILENAME_DATE_TIME_FORMATTER.format(LocalDateTime.now()) + ".txt");
         sender.sendMessage(
-            text("Writing listeners into directory", GREEN)
+            text("Writing listeners into", GREEN)
                 .appendSpace()
-                .append(
-                    text(parent.toString(), WHITE)
-                        .hoverEvent(text("Click to copy the full path of debug directory", WHITE))
-                        .clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))
-                )
+                .append(PaperCommand.asFriendlyPath(path))
         );
         try {
-            Files.createDirectories(parent);
-            Files.createFile(path);
+            Files.createDirectories(path.getParent());
             try (final PrintWriter writer = new PrintWriter(path.toFile())) {
                 for (final String eventClass : eventClassNames()) {
                     final HandlerList handlers;
@@ -120,49 +105,43 @@ public final class DumpListenersCommand {
                     }
                 }
             }
+            sender.sendMessage(text("Successfully written listeners", GREEN));
+            return Command.SINGLE_SUCCESS;
         } catch (final IOException ex) {
             sender.sendMessage(text("Failed to write dumped listener! See the console for more info.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping listeners", ex);
-            return;
+            return 0;
         }
-        sender.sendMessage(
-            text("Successfully written listeners into", GREEN)
-                .appendSpace()
-                .append(
-                    text(path.toString(), WHITE)
-                        .hoverEvent(text("Click to copy the full path of the file", WHITE))
-                        .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))
-                )
-        );
     }
 
-    private static void doDumpListeners(final CommandSender sender, final String className) {
+    private static int doDumpListeners(final CommandSender sender, final String className) {
         try {
             final HandlerList handlers = (HandlerList) findClass(className).getMethod("getHandlerList").invoke(null);
 
             if (handlers.getRegisteredListeners().length == 0) {
-                sender.sendMessage(text(className + " does not have any registered listeners."));
-                return;
+                sender.sendPlainMessage(className + " does not have any registered listeners.");
+                return 0;
             }
 
-            sender.sendMessage(text("Listeners for " + className + ":"));
+            sender.sendPlainMessage("Listeners for " + className + ":");
 
             for (final RegisteredListener listener : handlers.getRegisteredListeners()) {
-                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", WHITE)
-                    .append(newline())
+                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")")
+                    .appendNewline()
                     .append(text("Listener: " + listener.getListener()))
-                    .append(newline())
+                    .appendNewline()
                     .append(text("Executor: " + listener.getExecutor()))
-                    .append(newline())
+                    .appendNewline()
                     .append(text("Ignoring cancelled: " + listener.isIgnoringCancelled()));
 
                 sender.sendMessage(text(listener.getPlugin().getName(), GREEN)
-                    .append(space())
+                    .appendSpace()
                     .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY).hoverEvent(hoverText)));
             }
 
-            sender.sendMessage(text("Total listeners: " + handlers.getRegisteredListeners().length));
-
+            int size = handlers.getRegisteredListeners().length;
+            sender.sendPlainMessage("Total listeners: " + size);
+            return size;
         } catch (final ClassNotFoundException e) {
             sender.sendMessage(text("Unable to find a class named '" + className + "'. Make sure to use the fully qualified name.", RED));
         } catch (final NoSuchMethodException e) {
@@ -171,6 +150,7 @@ public final class DumpListenersCommand {
             sender.sendMessage(text("Something went wrong, see the console for more details.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping listeners for class {}", className, e);
         }
+        return 0;
     }
 
     @SuppressWarnings("unchecked")

@@ -1027,7 +1027,7 @@ public final class CraftServer implements Server {
         // Paper end
         this.reloadData();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
-        io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+        io.papermc.paper.command.PaperCommands.registerLegacyCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");

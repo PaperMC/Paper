@@ -1,14 +1,14 @@
 package io.papermc.paper.command.subcommands;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Maps;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.PaperCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
+import io.papermc.paper.registry.RegistryKey;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,61 +42,78 @@ public final class EntityCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("entity")
-            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "entity"))
-
+            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "entity"))
             .then(Commands.literal("list")
                 .then(Commands.literal("help")
-                    .executes(ctx -> {
-                        ctx.getSource().getSender().sendMessage(LIST_HELP_MESSAGE);
+                    .executes(context -> {
+                        context.getSource().getSender().sendMessage(LIST_HELP_MESSAGE);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
-
+                /*
                 .then(Commands.argument("filter", StringArgumentType.string())
-                    .suggests((ctx, builder) -> {
+                    .suggests((context, builder) -> {
                         BuiltInRegistries.ENTITY_TYPE.keySet().stream()
-                            .map(Functions.toStringFunction())
+                            .map(Object::toString)
                             .filter(type -> type.startsWith(builder.getRemainingLowerCase()))
                             .forEach(builder::suggest);
                         return builder.buildFuture();
                     })
-
-                    .executes(ctx -> {
-                        listEntities(
-                            ctx.getSource().getSender(),
-                            StringArgumentType.getString(ctx, "filter"),
-                            ctx.getSource().getLocation().getWorld()
+                    .executes(context -> {
+                        return listEntities(
+                            context.getSource().getSender(),
+                            StringArgumentType.getString(context, "filter"),
+                            context.getSource().getLocation().getWorld()
                         );
-                        return Command.SINGLE_SUCCESS;
                     })
-
                     .then(Commands.argument("world", ArgumentTypes.world())
-                        .executes(ctx -> {
-                            listEntities(
-                                ctx.getSource().getSender(),
-                                StringArgumentType.getString(ctx, "filter"),
-                                ctx.getArgument("world", World.class)
+                        .executes(context -> {
+                            return listEntities(
+                                context.getSource().getSender(),
+                                StringArgumentType.getString(context, "filter"),
+                                context.getArgument("world", World.class)
                             );
-                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                )*/
+                // string argument is super strict for some reason for unquoted stuff this help mitigate it (ideally should allow entity type tags too then the regex can be dropped I think)
+                .then(Commands.argument("entity-type", ArgumentTypes.resourceKey(RegistryKey.ENTITY_TYPE))
+                    .suggests((context, builder) -> {
+                        BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+                            .map(Object::toString)
+                            .filter(type -> type.startsWith(builder.getRemainingLowerCase()))
+                            .forEach(builder::suggest);
+                        return builder.buildFuture();
+                    })
+                    .executes(context -> {
+                        return listEntities(
+                            context.getSource().getSender(),
+                            RegistryArgumentExtractor.getTypedKey(context, RegistryKey.ENTITY_TYPE, "entity-type").asString(),
+                            context.getSource().getLocation().getWorld()
+                        );
+                    })
+                    .then(Commands.argument("world", ArgumentTypes.world())
+                        .executes(context -> {
+                            return listEntities(
+                                context.getSource().getSender(),
+                                RegistryArgumentExtractor.getTypedKey(context, RegistryKey.ENTITY_TYPE, "entity-type").asString(),
+                                context.getArgument("world", World.class)
+                            );
                         })
                     )
                 )
-
-                .executes(ctx -> {
-                    listEntities(ctx.getSource().getSender(), "*", ctx.getSource().getLocation().getWorld());
-                    return Command.SINGLE_SUCCESS;
+                .executes(context -> {
+                    return listEntities(context.getSource().getSender(), "*", context.getSource().getLocation().getWorld());
                 })
             )
-
             .then(Commands.literal("help")
-                .executes(ctx -> {
-                    ctx.getSource().getSender().sendMessage(HELP_MESSAGE);
+                .executes(context -> {
+                    context.getSource().getSender().sendMessage(HELP_MESSAGE);
                     return Command.SINGLE_SUCCESS;
                 })
             )
-
-            .executes(ctx -> {
-                ctx.getSource().getSender().sendMessage(HELP_MESSAGE);
+            .executes(context -> {
+                context.getSource().getSender().sendMessage(HELP_MESSAGE);
                 return Command.SINGLE_SUCCESS;
             });
     }
@@ -104,7 +121,7 @@ public final class EntityCommand {
     /*
      * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
      */
-    private static void listEntities(final CommandSender sender, final String filter, final World bukkitWorld) {
+    private static int listEntities(final CommandSender sender, final String filter, final World bukkitWorld) {
         final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
         Set<Identifier> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
             .filter(n -> n.toString().matches(cleanfilter))
@@ -112,17 +129,17 @@ public final class EntityCommand {
         if (names.isEmpty()) {
             sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
             sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
-            return;
+            return 0;
         }
 
-        Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
+        Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = new HashMap<>();
         ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
-        Map<Identifier, Integer> nonEntityTicking = Maps.newHashMap();
+        Map<Identifier, Integer> nonEntityTicking = new HashMap<>();
         ServerChunkCache chunkProviderServer = world.getChunkSource();
         world.getAllEntities().forEach(e -> {
             Identifier key = EntityType.getKey(e.getType());
 
-            MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
+            MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, new HashMap<>()));
             ChunkPos chunk = e.chunkPosition();
             info.left++;
             info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
@@ -136,19 +153,21 @@ public final class EntityCommand {
             int nonTicking = nonEntityTicking.getOrDefault(name, 0);
             if (info == null) {
                 sender.sendMessage(text("No entities found.", RED));
-                return;
+                return Command.SINGLE_SUCCESS;
             }
             sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
-            info.getRight().entrySet().stream()
+            List<Map.Entry<ChunkPos, Integer>> entitiesPerChunk = info.getRight().entrySet().stream()
                 .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-                .limit(10).forEach(e -> {
+                .limit(10).toList();
+            entitiesPerChunk.forEach(e -> {
                     final int x = (e.getKey().x << 4) + 8;
                     final int z = (e.getKey().z << 4) + 8;
                     final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
                         .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
-                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
+                        .clickEvent(ClickEvent.runCommand("/minecraft:execute in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
                     sender.sendMessage(message);
                 });
+            return entitiesPerChunk.size();
         } else {
             List<Pair<Identifier, Integer>> info = list.entrySet().stream()
                 .filter(e -> names.contains(e.getKey()))
@@ -158,7 +177,7 @@ public final class EntityCommand {
 
             if (info.isEmpty()) {
                 sender.sendMessage(text("No entities found.", RED));
-                return;
+                return Command.SINGLE_SUCCESS;
             }
 
             int count = info.stream().mapToInt(Pair::getRight).sum();
@@ -169,6 +188,7 @@ public final class EntityCommand {
                 sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
             });
             sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
+            return info.size();
         }
     }
 }

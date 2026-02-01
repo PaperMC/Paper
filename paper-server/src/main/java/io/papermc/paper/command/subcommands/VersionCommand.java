@@ -12,14 +12,14 @@ public final class VersionCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create(String permission, String name) {
         return Commands.literal(name)
-            .requires(stack -> stack.getSender().hasPermission(permission))
-            .executes(ctx -> {
+            .requires(source -> source.getSender().hasPermission(permission))
+            .executes(context -> {
                 final org.bukkit.command.Command redirect = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
-                if (redirect != null) {
-                    redirect.execute(ctx.getSource().getSender(), "paper", new String[0]);
+                if (redirect != null && redirect.execute(context.getSource().getSender(), "paper", new String[0])) {
+                    return Command.SINGLE_SUCCESS;
                 }
 
-                return Command.SINGLE_SUCCESS;
+                return 0;
             });
     }
 }

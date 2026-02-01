@@ -37,11 +37,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -50,40 +48,29 @@ import org.jspecify.annotations.NullMarked;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
-import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 
 @NullMarked
 public final class DumpPluginsCommand {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
-
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
-        DumpPluginsCommand instance = new DumpPluginsCommand();
         return Commands.literal("dumpplugins")
-            .requires(stack -> stack.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpplugins"))
-            .executes(ctx -> {
-                instance.dumpPlugins(ctx.getSource().getSender());
-                return Command.SINGLE_SUCCESS;
+            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpplugins"))
+            .executes(context -> {
+                return dumpPlugins(context.getSource().getSender());
             });
     }
 
-    private void dumpPlugins(final CommandSender sender) {
-        Path parent = Path.of("debug");
-        Path path = parent.resolve("plugin-info-" + FORMATTER.format(LocalDateTime.now()) + ".json");
+    private static int dumpPlugins(final CommandSender sender) {
+        Path path = Path.of("debug", "plugin-info-" + PaperCommand.FILENAME_DATE_TIME_FORMATTER.format(LocalDateTime.now()) + ".json");
         try {
-            Files.createDirectories(parent);
-            Files.createFile(path);
+            Files.createDirectories(path.getParent());
             sender.sendMessage(
-                text("Writing plugin information into directory", GREEN)
+                text("Writing plugin debug information into", GREEN)
                     .appendSpace()
-                    .append(
-                        text(parent.toString(), WHITE)
-                            .hoverEvent(text("Click to copy the full path of debug directory", WHITE))
-                            .clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))
-                    )
+                    .append(PaperCommand.asFriendlyPath(path))
             );
 
-            final JsonObject data = this.writeDebug();
+            final JsonObject data = writeDebug();
 
             StringWriter stringWriter = new StringWriter();
             JsonWriter jsonWriter = new JsonWriter(stringWriter);
@@ -94,36 +81,30 @@ public final class DumpPluginsCommand {
             try (PrintStream out = new PrintStream(Files.newOutputStream(path), false, StandardCharsets.UTF_8)) {
                 out.print(stringWriter);
             }
-            sender.sendMessage(
-                text("Successfully written plugin debug information into", GREEN)
-                    .appendSpace()
-                    .append(
-                        text(path.toString(), WHITE)
-                            .hoverEvent(text("Click to copy the full path of the file", WHITE))
-                            .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))
-                    )
-            );
-        } catch (Throwable e) {
+            sender.sendMessage(text("Successfully written plugin debug information", GREEN));
+            return Command.SINGLE_SUCCESS;
+        } catch (Throwable thr) {
             sender.sendMessage(text("Failed to write plugin information! See the console for more info.", RED));
-            MinecraftServer.LOGGER.warn("Error occurred while dumping plugin info", e);
+            MinecraftServer.LOGGER.warn("Error occurred while dumping plugin info", thr);
+            return 0;
         }
     }
 
-    private JsonObject writeDebug() {
+    private static JsonObject writeDebug() {
         JsonObject root = new JsonObject();
         if (ConfiguredProviderStorage.LEGACY_PLUGIN_LOADING) {
             root.addProperty("legacy-loading-strategy", true);
         }
 
-        this.writeProviders(root);
-        this.writePlugins(root);
-        this.writeClassloaders(root);
+        writeProviders(root);
+        writePlugins(root);
+        writeClassloaders(root);
 
         return root;
     }
 
     @SuppressWarnings("unchecked")
-    private void writeProviders(JsonObject root) {
+    private static void writeProviders(JsonObject root) {
         JsonObject rootProviders = new JsonObject();
         root.add("providers", rootProviders);
 
@@ -172,7 +153,7 @@ public final class DumpPluginsCommand {
         }
     }
 
-    private void writePlugins(JsonObject root) {
+    private static void writePlugins(JsonObject root) {
         JsonArray rootPlugins = new JsonArray();
         root.add("plugins", rootPlugins);
 
@@ -181,7 +162,7 @@ public final class DumpPluginsCommand {
         }
     }
 
-    private void writeClassloaders(JsonObject root) {
+    private static void writeClassloaders(JsonObject root) {
         JsonObject classLoadersRoot = new JsonObject();
         root.add("classloaders", classLoadersRoot);
 
@@ -192,11 +173,11 @@ public final class DumpPluginsCommand {
         JsonArray array = new JsonArray();
         classLoadersRoot.add("children", array);
         for (PluginClassLoaderGroup group : storage.getGroups()) {
-            array.add(this.writeClassloader(group));
+            array.add(writeClassloader(group));
         }
     }
 
-    private JsonObject writeClassloader(PluginClassLoaderGroup group) {
+    private static JsonObject writeClassloader(PluginClassLoaderGroup group) {
         JsonObject classLoadersRoot = new JsonObject();
         if (group instanceof SimpleListPluginClassLoaderGroup listGroup) {
             JsonArray array = new JsonArray();
@@ -209,12 +190,12 @@ public final class DumpPluginsCommand {
 
             classLoadersRoot.add("children", array);
             for (ConfiguredPluginClassLoader innerGroup : listGroup.getClassLoaders()) {
-                array.add(this.writeClassloader(innerGroup));
+                array.add(writeClassloader(innerGroup));
             }
 
         } else if (group instanceof LockingClassLoaderGroup locking) {
             // Unwrap
-            return this.writeClassloader(locking.getParent());
+            return writeClassloader(locking.getParent());
         } else {
             classLoadersRoot.addProperty("raw", group.toString());
         }
@@ -222,7 +203,7 @@ public final class DumpPluginsCommand {
         return classLoadersRoot;
     }
 
-    private JsonElement writeClassloader(ConfiguredPluginClassLoader innerGroup) {
+    private static JsonElement writeClassloader(ConfiguredPluginClassLoader innerGroup) {
         return new JsonPrimitive(innerGroup.toString());
     }
 }
