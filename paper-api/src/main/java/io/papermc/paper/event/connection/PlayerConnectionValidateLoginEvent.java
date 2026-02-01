@@ -1,6 +1,8 @@
 package io.papermc.paper.event.connection;
 
+import io.papermc.paper.connection.PlayerConfigurationConnection;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.connection.PlayerLoginConnection;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -10,8 +12,11 @@ import org.jspecify.annotations.Nullable;
 /**
  * Validates whether a player connection is able to log in.
  * <p>
- * Called when is attempting to log in for the first time, or is finishing up
- * being configured.
+ * Called when a player is attempting to log in for the first time,
+ * or is finishing up being configured.
+ * In those phases the {@link #getConnection()} can be cast to
+ * {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection} respectively
+ * to access phase-specific API.
  */
 public class PlayerConnectionValidateLoginEvent extends Event {
 
