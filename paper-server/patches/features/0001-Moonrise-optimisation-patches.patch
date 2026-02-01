@@ -22489,10 +22489,10 @@ index 6f9e2dd6de4ae89ef6f393882903b13c72899605..da1cec4991420a091a55270a49246d10
 \ No newline at end of file
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..76f16944f108e6b3fd9015da3b1f84e1517616a1
+index 0000000000000000000000000000000000000000..349e82ea06fcaad570e93b2155ae1f92a537b649
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,271 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import ca.spottedleaf.moonrise.common.util.JsonUtil;
@@ -22551,31 +22551,21 @@ index 0000000000000000000000000000000000000000..76f16944f108e6b3fd9015da3b1f84e1
 +                        return Command.SINGLE_SUCCESS;
 +                    })
 +                )
-+                .executes(context -> {
-+                    return debugDumpLoadedChunks(context.getSource().getSender());
-+                })
 +                .then(Commands.literal("--async")
 +                    .requires(source -> source.getSender() instanceof ConsoleCommandSender)
 +                    .executes(context -> {
 +                        context.getSource().getSender().sendPlainMessage("Scheduling async debug chunks");
-+                        Runnable run = () -> {
-+                            MinecraftServer server = MinecraftServer.getServer();
++                        Thread.ofPlatform().name("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement()).daemon(true).start(() -> {
 +                            context.getSource().getSender().sendPlainMessage("Async debug chunks executing");
-+                            ChunkTaskScheduler.dumpAllChunkLoadInfo(server, false);
-+                            File file = ChunkTaskScheduler.getChunkDebugFile();
-+                            context.getSource().getSender().sendMessage(text("Writing chunk information dump to " + file, GREEN));
-+                            try {
-+                                JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(server), file);
-+                                context.getSource().getSender().sendMessage(text("Successfully written chunk information!", GREEN));
-+                            } catch (Throwable thr) {
-+                                MinecraftServer.LOGGER.warn("Failed to dump chunk information to file {}", file.toString(), thr);
-+                                context.getSource().getSender().sendMessage(text("Failed to dump chunk information, see console", RED));
-+                            }
-+                        };
-+                        Thread.ofPlatform().name("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement()).daemon(true).start(run);
++                            ChunkTaskScheduler.dumpAllChunkLoadInfo(MinecraftServer.getServer(), false);
++                            debugDumpLoadedChunks(context.getSource().getSender());
++                        });
 +                        return Command.SINGLE_SUCCESS;
 +                    })
 +                )
++                .executes(context -> {
++                    return debugDumpLoadedChunks(context.getSource().getSender());
++                })
 +            )
 +            .executes(context -> {
 +                context.getSource().getSender().sendMessage(DEBUG_HELP);
