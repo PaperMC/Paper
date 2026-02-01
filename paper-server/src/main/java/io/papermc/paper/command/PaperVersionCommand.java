@@ -84,7 +84,7 @@ public class PaperVersionCommand {
     private CompletableFuture<Suggestions> suggestPlugins(final CommandContext<CommandSourceStack> context, final SuggestionsBuilder builder) {
         for (final Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
             final String name = plugin.getName();
-            if (StringUtil.startsWithIgnoreCase(name, builder.getRemainingLowerCase())) {
+            if (StringUtil.startsWithIgnoreCase(name, builder.getRemaining())) {
                 builder.suggest(name);
             }
         }

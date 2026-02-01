@@ -19,7 +19,7 @@ public final class ReloadCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("reload")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "reload"))
+            .requires(PaperCommand.hasPermission("reload"))
             .executes(context -> {
                 doReload(context.getSource().getSender());
                 return Command.SINGLE_SUCCESS;

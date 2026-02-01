@@ -18,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
@@ -28,6 +27,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.util.StringUtil;
 import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
@@ -43,7 +43,7 @@ public final class DumpListenersCommand {
 
     private static final SuggestionProvider<CommandSourceStack> EVENT_SUGGESTIONS = (context, builder) -> CompletableFuture.supplyAsync(() -> {
         eventClassNames().stream()
-            .filter(name -> name.toLowerCase(Locale.ENGLISH).startsWith(builder.getRemainingLowerCase()))
+            .filter(name -> StringUtil.startsWithIgnoreCase(name, builder.getRemaining()) || StringUtil.startsWithIgnoreCase(name.substring(name.lastIndexOf('.') + 1), builder.getRemaining()))
             .forEach(builder::suggest);
         return builder.build();
     });
@@ -61,7 +61,7 @@ public final class DumpListenersCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumplisteners")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumplisteners"))
+            .requires(PaperCommand.hasPermission("dumplisteners"))
             .then(Commands.literal(COMMAND_ARGUMENT_TO_FILE)
                 .executes(context -> {
                     return dumpToFile(context.getSource().getSender());

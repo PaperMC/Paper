@@ -42,7 +42,7 @@ public final class EntityCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("entity")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "entity"))
+            .requires(PaperCommand.hasPermission("entity"))
             .then(Commands.literal("list")
                 .then(Commands.literal("help")
                     .executes(context -> {
@@ -55,7 +55,7 @@ public final class EntityCommand {
                     .suggests((context, builder) -> {
                         BuiltInRegistries.ENTITY_TYPE.keySet().stream()
                             .map(Object::toString)
-                            .filter(type -> type.startsWith(builder.getRemainingLowerCase()))
+                            .filter(type -> StringUtil.startsWithIgnoreCase(type, builder.getRemaining()))
                             .forEach(builder::suggest);
                         return builder.buildFuture();
                     })
@@ -78,13 +78,6 @@ public final class EntityCommand {
                 )*/
                 // string argument is super strict for some reason for unquoted stuff this help mitigate it (ideally should allow entity type tags too then the regex can be dropped I think)
                 .then(Commands.argument("entity-type", ArgumentTypes.resourceKey(RegistryKey.ENTITY_TYPE))
-                    .suggests((context, builder) -> {
-                        BuiltInRegistries.ENTITY_TYPE.keySet().stream()
-                            .map(Object::toString)
-                            .filter(type -> type.startsWith(builder.getRemainingLowerCase()))
-                            .forEach(builder::suggest);
-                        return builder.buildFuture();
-                    })
                     .executes(context -> {
                         return listEntities(
                             context.getSource().getSender(),

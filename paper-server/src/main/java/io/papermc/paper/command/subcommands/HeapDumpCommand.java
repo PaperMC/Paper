@@ -21,7 +21,7 @@ public final class HeapDumpCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("heap")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + ".heap"))
+            .requires(PaperCommand.hasPermission("heap"))
             .executes(context -> {
                 return dumpHeap(context.getSource().getSender());
             });

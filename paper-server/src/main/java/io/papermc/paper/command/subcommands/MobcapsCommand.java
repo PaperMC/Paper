@@ -33,6 +33,8 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
+import static net.kyori.adventure.text.Component.text;
+
 @NullMarked
 public final class MobcapsCommand {
 
@@ -49,7 +51,7 @@ public final class MobcapsCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> createGlobal() {
         return Commands.literal("mobcaps")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "mobcaps"))
+            .requires(PaperCommand.hasPermission("mobcaps"))
             .then(Commands.literal("*")
                 .executes(context -> {
                     return printMobcaps(context.getSource().getSender(), Bukkit.getWorlds());
@@ -67,7 +69,7 @@ public final class MobcapsCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> createPlayer() {
         return Commands.literal("playermobcaps")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "playermobcaps"))
+            .requires(PaperCommand.hasPermission("playermobcaps"))
             .then(Commands.argument("player", ArgumentTypes.player())
                 .executes(context -> {
                     return printPlayerMobcaps(
@@ -91,9 +93,9 @@ public final class MobcapsCommand {
 
             final int chunks = state == null ? 0 : state.getSpawnableChunkCount();
             sender.sendMessage(Component.join(JoinConfiguration.noSeparators(),
-                Component.text("Mobcaps for world: "),
-                Component.text(world.key().asString(), NamedTextColor.AQUA),
-                Component.text(" (" + chunks + " spawnable chunks)")
+                text("Mobcaps for world: "),
+                text(world.key().asString(), NamedTextColor.AQUA),
+                text(" (" + chunks + " spawnable chunks)")
             ));
 
             sender.sendMessage(createMobcapsComponent(
@@ -111,11 +113,11 @@ public final class MobcapsCommand {
         final ServerLevel level = serverPlayer.level();
 
         if (!level.paperConfig().entities.spawning.perPlayerMobSpawns) {
-            sender.sendMessage(Component.text("Use '/paper mobcaps' for worlds where per-player mob spawning is disabled.", NamedTextColor.RED));
+            sender.sendMessage(text("Use '/paper mobcaps' for worlds where per-player mob spawning is disabled.", NamedTextColor.RED));
             return 0;
         }
 
-        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
+        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), text("Mobcaps for player: "), text(player.getName(), NamedTextColor.GREEN)));
         sender.sendMessage(createMobcapsComponent(
             category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
             category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
@@ -130,43 +132,43 @@ public final class MobcapsCommand {
                 final TextColor color = entry.getValue();
 
                 final Component categoryHover = Component.join(JoinConfiguration.noSeparators(),
-                    Component.text("Entity types in category ", TextColor.color(0xE0E0E0)),
-                    Component.text(category.getName(), color),
-                    Component.text(':', NamedTextColor.GRAY),
+                    text("Entity types in category ", TextColor.color(0xE0E0E0)),
+                    text(category.getName(), color),
+                    text(':', NamedTextColor.GRAY),
                     Component.newline(),
                     Component.newline(),
                     BuiltInRegistries.ENTITY_TYPE.entrySet().stream()
                         .filter(it -> it.getValue().getCategory() == category)
                         .map(it -> Component.translatable(it.getValue().getDescriptionId()))
-                        .collect(Component.toComponent(Component.text(", ", NamedTextColor.GRAY)))
+                        .collect(Component.toComponent(text(", ", NamedTextColor.GRAY)))
                 );
 
-                final Component categoryComponent = Component.text()
+                final Component categoryComponent = text()
                     .content("  " + category.getName())
                     .color(color)
                     .hoverEvent(categoryHover)
                     .build();
 
-                final TextComponent.Builder builder = Component.text()
+                final TextComponent.Builder builder = text()
                     .append(
                         categoryComponent,
-                        Component.text(": ", NamedTextColor.GRAY)
+                        text(": ", NamedTextColor.GRAY)
                     );
                 final int limit = limitGetter.applyAsInt(category);
                 if (limit != -1) {
                     builder.append(
-                        Component.text(countGetter.applyAsInt(category)),
-                        Component.text("/", NamedTextColor.GRAY),
-                        Component.text(limit)
+                        text(countGetter.applyAsInt(category)),
+                        text("/", NamedTextColor.GRAY),
+                        text(limit)
                     );
                 } else {
-                    builder.append(Component.text()
+                    builder.append(text()
                         .append(
-                            Component.text('n'),
-                            Component.text("/", NamedTextColor.GRAY),
-                            Component.text('a')
+                            text('n'),
+                            text("/", NamedTextColor.GRAY),
+                            text('a')
                         )
-                        .hoverEvent(Component.text("This category does not naturally spawn.")));
+                        .hoverEvent(text("This category does not naturally spawn.")));
                 }
                 return builder;
             })

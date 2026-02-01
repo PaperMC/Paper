@@ -54,7 +54,7 @@ public final class DumpPluginsCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumpplugins")
-            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpplugins"))
+            .requires(PaperCommand.hasPermission("dumpplugins"))
             .executes(context -> {
                 return dumpPlugins(context.getSource().getSender());
             });

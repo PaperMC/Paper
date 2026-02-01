@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.util.Util;
@@ -44,14 +46,16 @@ public final class PaperCommand {
             .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()));
     }
 
-    public static final String BASE_PERM = "bukkit.command.paper.";
+    public static final String BASE_PERM = "bukkit.command.paper";
     static final String DESCRIPTION = "Paper related commands";
 
     public static LiteralCommandNode<CommandSourceStack> create() {
         LiteralArgumentBuilder<CommandSourceStack> rootNode = Commands.literal("paper")
-            .requires(source -> source.getSender().hasPermission("bukkit.command.paper"))
+            .requires(source -> source.getSender().hasPermission(BASE_PERM) || SUBPERMISSIONS.stream().anyMatch(name -> source.getSender().hasPermission(name)))
             .executes(context -> {
-                context.getSource().getSender().sendPlainMessage("/paper [" + String.join(" | ", SUBCOMMANDS.keySet()) + "]");
+                context.getSource().getSender().sendPlainMessage("/paper [" + SUBCOMMANDS.keySet().stream().filter(
+                    name -> hasPermission(name).test(context.getSource())).collect(Collectors.joining(" | ")
+                ) + "]");
                 return Command.SINGLE_SUCCESS;
             });
 
@@ -59,10 +63,14 @@ public final class PaperCommand {
         return rootNode.build();
     }
 
+    public static Predicate<CommandSourceStack> hasPermission(String name) {
+        return source -> source.getSender().hasPermission(BASE_PERM) || source.getSender().hasPermission(BASE_PERM + '.' + name);
+    }
+
     public static void registerPermissions() {
         final List<String> permissions = new ArrayList<>();
-        permissions.add("bukkit.command.paper");
-        permissions.addAll(SUBCOMMANDS.keySet().stream().map(s -> BASE_PERM + s).toList());
+        permissions.add(BASE_PERM);
+        permissions.addAll(SUBCOMMANDS.keySet().stream().map(name -> BASE_PERM + + '.' + name).toList());
 
         final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
         for (final String permission : permissions) {
@@ -76,8 +84,8 @@ public final class PaperCommand {
         map.put("entity", List.of(EntityCommand.create()));
         map.put("reload", List.of(ReloadCommand.create()));
         map.put("version", List.of(
-            VersionCommand.create(BASE_PERM + "version", "version"),
-            VersionCommand.create(BASE_PERM + "version", "ver"))
+            VersionCommand.create("version"),
+            VersionCommand.create("ver"))
         );
         map.put("dumpplugins", List.of(DumpPluginsCommand.create()));
         map.put("syncloadinfo", List.of(SyncLoadInfoCommand.create()));
@@ -87,4 +95,5 @@ public final class PaperCommand {
         map.put("dumplisteners", List.of(DumpListenersCommand.create()));
         FeatureHooks.registerPaperCommands(map);
     });
+    private static final List<String> SUBPERMISSIONS = SUBCOMMANDS.keySet().stream().map(name -> BASE_PERM + '.' + name).toList();
 }

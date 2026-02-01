@@ -30,7 +30,7 @@ public final class SyncLoadInfoCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("syncloadinfo")
-            .requires(source -> SyncLoadFinder.ENABLED && source.getSender().hasPermission(PaperCommand.BASE_PERM + "syncloadinfo"))
+            .requires(PaperCommand.hasPermission("syncloadinfo").and($ -> SyncLoadFinder.ENABLED))
             .then(Commands.literal("clear")
                 .executes(context -> {
                     SyncLoadFinder.clear();

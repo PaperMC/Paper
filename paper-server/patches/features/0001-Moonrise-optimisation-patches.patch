@@ -22489,10 +22489,10 @@ index 6f9e2dd6de4ae89ef6f393882903b13c72899605..da1cec4991420a091a55270a49246d10
 \ No newline at end of file
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b2deab8ac
+index 0000000000000000000000000000000000000000..76f16944f108e6b3fd9015da3b1f84e1517616a1
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,281 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import ca.spottedleaf.moonrise.common.util.JsonUtil;
@@ -22507,6 +22507,7 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 +import java.io.File;
 +import java.util.List;
++import java.util.concurrent.atomic.AtomicInteger;
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
@@ -22517,6 +22518,7 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +import org.bukkit.Bukkit;
 +import org.bukkit.World;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.command.ConsoleCommandSender;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.jspecify.annotations.NullMarked;
 +
@@ -22531,10 +22533,11 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +
 +    private static final Component DEBUG_HELP = text("Use /paper debug [chunks] help for more information on a specific command", RED);
 +    private static final Component DEBUG_CHUNKS_HELP = text("Use /paper debug chunks to dump loaded chunk information to a file", RED);
++    private static final AtomicInteger ASYNC_DEBUG_CHUNKS_COUNT = new AtomicInteger();
 +
 +    public static LiteralArgumentBuilder<CommandSourceStack> createDebug() {
 +        return Commands.literal("debug")
-+            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + "debug"))
++            .requires(PaperCommand.hasPermission("debug"))
 +            .then(Commands.literal("help")
 +                .executes(context -> {
 +                    context.getSource().getSender().sendMessage(DEBUG_HELP);
@@ -22551,6 +22554,28 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +                .executes(context -> {
 +                    return debugDumpLoadedChunks(context.getSource().getSender());
 +                })
++                .then(Commands.literal("--async")
++                    .requires(source -> source.getSender() instanceof ConsoleCommandSender)
++                    .executes(context -> {
++                        context.getSource().getSender().sendPlainMessage("Scheduling async debug chunks");
++                        Runnable run = () -> {
++                            MinecraftServer server = MinecraftServer.getServer();
++                            context.getSource().getSender().sendPlainMessage("Async debug chunks executing");
++                            ChunkTaskScheduler.dumpAllChunkLoadInfo(server, false);
++                            File file = ChunkTaskScheduler.getChunkDebugFile();
++                            context.getSource().getSender().sendMessage(text("Writing chunk information dump to " + file, GREEN));
++                            try {
++                                JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(server), file);
++                                context.getSource().getSender().sendMessage(text("Successfully written chunk information!", GREEN));
++                            } catch (Throwable thr) {
++                                MinecraftServer.LOGGER.warn("Failed to dump chunk information to file {}", file.toString(), thr);
++                                context.getSource().getSender().sendMessage(text("Failed to dump chunk information, see console", RED));
++                            }
++                        };
++                        Thread.ofPlatform().name("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement()).daemon(true).start(run);
++                        return Command.SINGLE_SUCCESS;
++                    })
++                )
 +            )
 +            .executes(context -> {
 +                context.getSource().getSender().sendMessage(DEBUG_HELP);
@@ -22560,7 +22585,7 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +
 +    private static LiteralArgumentBuilder<CommandSourceStack> createWorldInfo(String name, WorldInfoLogic info) {
 +        return Commands.literal(name)
-+            .requires(source -> source.getSender().hasPermission(PaperCommand.BASE_PERM + name))
++            .requires(PaperCommand.hasPermission(name))
 +            .then(Commands.argument("world", ArgumentTypes.world())
 +                .executes(context -> {
 +                    return info.doInfo(context.getSource().getSender(), List.of(context.getArgument("world", World.class)));
@@ -22751,7 +22776,7 @@ index 0000000000000000000000000000000000000000..7ce40cacc0ba87c68e6e149f2097854b
 +}
 diff --git a/io/papermc/paper/command/subcommands/FixLightCommand.java b/io/papermc/paper/command/subcommands/FixLightCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1da6b0e57d8b4577c0e352a4158ee511dcbec880
+index 0000000000000000000000000000000000000000..5f7a2cd7eadc8ef55496dbda76683bc13d5ffb79
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/FixLightCommand.java
 @@ -0,0 +1,103 @@
@@ -22793,7 +22818,7 @@ index 0000000000000000000000000000000000000000..1da6b0e57d8b4577c0e352a4158ee511
 +
 +    public static LiteralArgumentBuilder<CommandSourceStack> create() {
 +        return Commands.literal("fixlight")
-+            .requires(source -> source.getSender() instanceof Player player && player.hasPermission(PaperCommand.BASE_PERM + "fixlight"))
++            .requires(PaperCommand.hasPermission("fixlight").and(source -> source.getSender() instanceof Player))
 +            .then(Commands.argument("radius", IntegerArgumentType.integer(0, MAX_RADIUS))
 +                .executes(context -> {
 +                    doFixLight(context.getSource().getSender(), IntegerArgumentType.getInteger(context, "radius"));
@@ -23284,44 +23309,6 @@ index cab1ab613dd081e9472de515a19e1b4738e4fba3..96f7f37c42cecea1d714f7b16276f430
  
      // CraftBukkit start
      public boolean isDebugging() {
-diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index aaa257057ddef4c370b23338512b5548263e808c..0cff8232e25e7801db22d6c47b32802dd28bd4a5 100644
---- a/net/minecraft/server/dedicated/DedicatedServer.java
-+++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -550,7 +550,33 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         this.handleConsoleInputs();
-     }
- 
-+    private static final java.util.concurrent.atomic.AtomicInteger ASYNC_DEBUG_CHUNKS_COUNT = new java.util.concurrent.atomic.AtomicInteger(); // Paper - rewrite chunk system
-+
-     public void handleConsoleInput(String msg, CommandSourceStack source) {
-+        // Paper start - rewrite chunk system
-+        if (msg.equalsIgnoreCase("paper debug chunks --async")) {
-+            LOGGER.info("Scheduling async debug chunks");
-+            Runnable run = () -> {
-+                LOGGER.info("Async debug chunks executing");
-+                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(this, false);
-+                org.bukkit.command.CommandSender sender = MinecraftServer.getServer().console;
-+                java.io.File file = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getChunkDebugFile();
-+                sender.sendMessage(net.kyori.adventure.text.Component.text("Writing chunk information dump to " + file, net.kyori.adventure.text.format.NamedTextColor.GREEN));
-+                try {
-+                    ca.spottedleaf.moonrise.common.util.JsonUtil.writeJson(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.debugAllWorlds(this), file);
-+                    sender.sendMessage(net.kyori.adventure.text.Component.text("Successfully written chunk information!", net.kyori.adventure.text.format.NamedTextColor.GREEN));
-+                } catch (Throwable thr) {
-+                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file {}", file.toString(), thr);
-+                    sender.sendMessage(net.kyori.adventure.text.Component.text("Failed to dump chunk information, see console", net.kyori.adventure.text.format.NamedTextColor.RED));
-+                }
-+            };
-+            Thread t = new Thread(run);
-+            t.setName("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement());
-+            t.setDaemon(true);
-+            t.start();
-+            return;
-+        }
-+        // Paper end - rewrite chunk system
-         this.serverCommandQueue.add(new ConsoleInput(msg, source)); // Paper - Perf: use proper queue
-     }
- 
 diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
 index e8f81fa17a0470ae9bf3f506fc7fb10fb7810cc7..22123d8b0fd8741c6df4efaec56f3c694e0529a3 100644
 --- a/net/minecraft/server/level/ChunkHolder.java

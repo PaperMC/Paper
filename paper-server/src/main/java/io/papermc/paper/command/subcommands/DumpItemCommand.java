@@ -53,9 +53,7 @@ public final class DumpItemCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumpitem")
-            .requires(source -> {
-                return source.getSender().hasPermission(PaperCommand.BASE_PERM + "dumpitem");
-            })
+            .requires(PaperCommand.hasPermission("dumpitem"))
             .then(Commands.literal("all")
                 .executes(context -> {
                     if (!(context.getSource().getExecutor() instanceof Player player)) {
