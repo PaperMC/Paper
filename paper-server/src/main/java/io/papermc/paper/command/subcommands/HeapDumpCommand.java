@@ -9,14 +9,12 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
-@NullMarked
 public final class HeapDumpCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {

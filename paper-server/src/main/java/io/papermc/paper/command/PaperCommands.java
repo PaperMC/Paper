@@ -30,9 +30,9 @@ public final class PaperCommands {
 
     public static void registerCommands() {
         // brigadier commands go here
-        registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
         registerInternalCommand(PaperPluginsCommand.create(), "bukkit", PaperPluginsCommand.DESCRIPTION, List.of("pl"), Set.of());
+        registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());
     }
 
     private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String namespace, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {

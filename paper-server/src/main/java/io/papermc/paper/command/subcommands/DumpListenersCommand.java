@@ -1,4 +1,3 @@
-
 package io.papermc.paper.command.subcommands;
 
 import com.destroystokyo.paper.util.SneakyThrow;
@@ -13,12 +12,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.MinecraftServer;
@@ -28,22 +25,26 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.util.StringUtil;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 
-@NullMarked
 public final class DumpListenersCommand {
 
     private static final String COMMAND_ARGUMENT_TO_FILE = "tofile";
     private static final Component HELP_MESSAGE = text("Usage: /paper dumplisteners " + COMMAND_ARGUMENT_TO_FILE + "|<className>", RED);
 
     private static final SuggestionProvider<CommandSourceStack> EVENT_SUGGESTIONS = (context, builder) -> CompletableFuture.supplyAsync(() -> {
-        eventClassNames().stream()
-            .filter(name -> StringUtil.startsWithIgnoreCase(name, builder.getRemaining()) || StringUtil.startsWithIgnoreCase(name.substring(name.lastIndexOf('.') + 1), builder.getRemaining()))
+        eventClassNames().entrySet().stream()
+            .filter(entry -> {
+                if (StringUtil.startsWithIgnoreCase(entry.getKey(), builder.getRemaining()) || StringUtil.startsWithIgnoreCase(entry.getKey().substring(entry.getKey().lastIndexOf('.') + 1), builder.getRemaining())) {
+                    return entry.getValue().getRegisteredListeners().length != 0;
+                }
+                return false;
+            })
+            .map(Map.Entry::getKey)
             .forEach(builder::suggest);
         return builder.build();
     });
@@ -51,9 +52,8 @@ public final class DumpListenersCommand {
     private static final MethodHandle EVENT_TYPES_HANDLE;
     static {
         try {
-            final Field eventTypesField = HandlerList.class.getDeclaredField("EVENT_TYPES");
-            eventTypesField.setAccessible(true);
-            EVENT_TYPES_HANDLE = MethodHandles.lookup().unreflectGetter(eventTypesField);
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(HandlerList.class, MethodHandles.lookup());
+            EVENT_TYPES_HANDLE = lookup.findStaticGetter(HandlerList.class, "EVENT_TYPES", Map.class);
         } catch (final ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -62,6 +62,10 @@ public final class DumpListenersCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumplisteners")
             .requires(PaperCommand.hasPermission("dumplisteners"))
+            .executes(context -> {
+                context.getSource().getSender().sendMessage(HELP_MESSAGE);
+                return Command.SINGLE_SUCCESS;
+            })
             .then(Commands.literal(COMMAND_ARGUMENT_TO_FILE)
                 .executes(context -> {
                     return dumpToFile(context.getSource().getSender());
@@ -70,14 +74,9 @@ public final class DumpListenersCommand {
             .then(Commands.argument("event", StringArgumentType.word())
                 .suggests(EVENT_SUGGESTIONS)
                 .executes(context -> {
-                    doDumpListeners(context.getSource().getSender(), StringArgumentType.getString(context, "event"));
-                    return Command.SINGLE_SUCCESS;
+                    return doDumpListeners(context.getSource().getSender(), StringArgumentType.getString(context, "event"));
                 })
-            )
-            .executes(context -> {
-                context.getSource().getSender().sendMessage(HELP_MESSAGE);
-                return Command.SINGLE_SUCCESS;
-            });
+            );
     }
 
     private static int dumpToFile(final CommandSender sender) {
@@ -90,15 +89,10 @@ public final class DumpListenersCommand {
         try {
             Files.createDirectories(path.getParent());
             try (final PrintWriter writer = new PrintWriter(path.toFile())) {
-                for (final String eventClass : eventClassNames()) {
-                    final HandlerList handlers;
-                    try {
-                        handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
-                    } catch (final ReflectiveOperationException e) {
-                        continue;
-                    }
+                for (final Map.Entry<String, HandlerList> entry : eventClassNames().entrySet()) {
+                    final HandlerList handlers = entry.getValue();
                     if (handlers.getRegisteredListeners().length != 0) {
-                        writer.println(eventClass);
+                        writer.println(entry.getKey());
                     }
                     for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
                         writer.println(" - " + registeredListener);
@@ -154,19 +148,19 @@ public final class DumpListenersCommand {
     }
 
     @SuppressWarnings("unchecked")
-    private static Set<String> eventClassNames() {
+    private static Map<String, HandlerList> eventClassNames() {
         try {
-            return (Set<String>) EVENT_TYPES_HANDLE.invokeExact();
+            return (Map<String, HandlerList>) EVENT_TYPES_HANDLE.invokeExact();
         } catch (final Throwable e) {
             SneakyThrow.sneaky(e);
-            return Collections.emptySet(); // Unreachable
+            return Map.of(); // Unreachable
         }
     }
 
     private static Class<?> findClass(final String className) throws ClassNotFoundException {
         try {
             return Class.forName(className);
-        } catch (final ClassNotFoundException ignore) {
+        } catch (final ClassNotFoundException ignored) {
             for (final Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
                 if (!plugin.isEnabled()) {
                     continue;

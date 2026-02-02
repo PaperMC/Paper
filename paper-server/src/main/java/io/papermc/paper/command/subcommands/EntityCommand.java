@@ -2,6 +2,7 @@ package io.papermc.paper.command.subcommands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.PaperCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerChunkCache;
@@ -28,22 +30,33 @@ import org.bukkit.HeightMap;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 
-@NullMarked
 public final class EntityCommand {
 
     private static final Component HELP_MESSAGE = text("Use /paper entity [list] help for more information on a specific command", RED);
-    private static final Component LIST_HELP_MESSAGE = text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", RED);
+    private static final Component LIST_HELP_MESSAGE = text("Use /paper entity list [filter] [world_key] to get entity info that matches the optional filter.", RED);
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("entity")
             .requires(PaperCommand.hasPermission("entity"))
+            .executes(context -> {
+                context.getSource().getSender().sendMessage(HELP_MESSAGE);
+                return Command.SINGLE_SUCCESS;
+            })
+            .then(Commands.literal("help")
+                .executes(context -> {
+                    context.getSource().getSender().sendMessage(HELP_MESSAGE);
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
             .then(Commands.literal("list")
+                .executes(context -> {
+                    return listEntities(context.getSource().getSender(), "*", context.getSource().getLocation().getWorld());
+                })
                 .then(Commands.literal("help")
                     .executes(context -> {
                         context.getSource().getSender().sendMessage(LIST_HELP_MESSAGE);
@@ -95,33 +108,20 @@ public final class EntityCommand {
                         })
                     )
                 )
-                .executes(context -> {
-                    return listEntities(context.getSource().getSender(), "*", context.getSource().getLocation().getWorld());
-                })
-            )
-            .then(Commands.literal("help")
-                .executes(context -> {
-                    context.getSource().getSender().sendMessage(HELP_MESSAGE);
-                    return Command.SINGLE_SUCCESS;
-                })
-            )
-            .executes(context -> {
-                context.getSource().getSender().sendMessage(HELP_MESSAGE);
-                return Command.SINGLE_SUCCESS;
-            });
+            );
     }
 
     /*
      * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
      */
-    private static int listEntities(final CommandSender sender, final String filter, final World bukkitWorld) {
+    private static int listEntities(final CommandSender sender, final String filter, final World bukkitWorld) throws CommandSyntaxException {
         final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
         Set<Identifier> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
             .filter(n -> n.toString().matches(cleanfilter))
             .collect(Collectors.toSet());
         if (names.isEmpty()) {
             sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
-            sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+            sender.sendMessage(text("Usage: /paper entity list [filter] [world_key]", RED));
             return 0;
         }
 
@@ -145,8 +145,7 @@ public final class EntityCommand {
             Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
             int nonTicking = nonEntityTicking.getOrDefault(name, 0);
             if (info == null) {
-                sender.sendMessage(text("No entities found.", RED));
-                return Command.SINGLE_SUCCESS;
+                throw EntityArgument.NO_ENTITIES_FOUND.create();
             }
             sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
             List<Map.Entry<ChunkPos, Integer>> entitiesPerChunk = info.getRight().entrySet().stream()
@@ -169,8 +168,7 @@ public final class EntityCommand {
                 .toList();
 
             if (info.isEmpty()) {
-                sender.sendMessage(text("No entities found.", RED));
-                return Command.SINGLE_SUCCESS;
+                throw EntityArgument.NO_ENTITIES_FOUND.create();
             }
 
             int count = info.stream().mapToInt(Pair::getRight).sum();

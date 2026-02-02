@@ -18,7 +18,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
@@ -33,7 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.NullMarked;
 
 import static java.util.Objects.requireNonNull;
 import static net.kyori.adventure.text.Component.join;
@@ -48,28 +46,27 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
 
-@NullMarked
 public final class DumpItemCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("dumpitem")
             .requires(PaperCommand.hasPermission("dumpitem"))
+            .executes(context -> {
+                if (!(context.getSource().getExecutor() instanceof Player player)) {
+                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
+                }
+                doDumpItem(player, false);
+                return Command.SINGLE_SUCCESS;
+            })
             .then(Commands.literal("all")
                 .executes(context -> {
                     if (!(context.getSource().getExecutor() instanceof Player player)) {
-                        throw EntityArgument.NO_PLAYERS_FOUND.create();
+                        throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
                     }
                     doDumpItem(player, true);
                     return Command.SINGLE_SUCCESS;
                 })
-            )
-            .executes(context -> {
-                if (!(context.getSource().getExecutor() instanceof Player player)) {
-                    throw EntityArgument.NO_PLAYERS_FOUND.create();
-                }
-                doDumpItem(player, false);
-                return Command.SINGLE_SUCCESS;
-            });
+            );
     }
 
     @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})

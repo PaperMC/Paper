@@ -43,13 +43,11 @@ import java.util.Map;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 
-@NullMarked
 public final class DumpPluginsCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {

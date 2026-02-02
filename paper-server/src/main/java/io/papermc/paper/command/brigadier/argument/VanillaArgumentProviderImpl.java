@@ -11,6 +11,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
@@ -35,6 +36,7 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,12 +63,13 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.commands.arguments.ResourceOrTagKeyArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -407,7 +410,19 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
         return this.wrap(
             ResourceKeyArgument.key(PaperRegistries.registryToNms(registryKey)),
-            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.identifier()))
+            nmsRegistryKey -> TypedKey.create(registryKey, PaperAdventure.asAdventure(nmsRegistryKey.identifier()))
+        );
+    }
+
+    // expose for paper entity list command instead of regex?
+    public static <T> ArgumentType<Either<TypedKey<T>, TagKey<T>>> resourceKeyOrTagKey(final RegistryKey<T> registryKey) {
+        return new NativeWrapperArgumentType<>(
+            ResourceOrTagKeyArgument.resourceOrTagKey(PaperRegistries.registryToNms(registryKey)),
+            result -> result.unwrap().mapBoth(key -> {
+                return TypedKey.create(registryKey, PaperAdventure.asAdventure(key.identifier()));
+            }, key -> {
+                return TagKey.create(registryKey, PaperAdventure.asAdventure(key.location()));
+            })
         );
     }
 

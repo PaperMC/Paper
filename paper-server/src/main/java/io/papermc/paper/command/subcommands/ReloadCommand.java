@@ -7,14 +7,12 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.CommandSender;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static org.bukkit.command.Command.broadcastCommandMessage;
 
-@NullMarked
 public final class ReloadCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {

@@ -15,13 +15,13 @@ import io.papermc.paper.command.subcommands.MobcapsCommand;
 import io.papermc.paper.command.subcommands.ReloadCommand;
 import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
 import io.papermc.paper.command.subcommands.VersionCommand;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
@@ -40,7 +40,7 @@ public final class PaperCommand {
 
     public static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT); // could use the formatter in Util too
 
-    public static Component asFriendlyPath(Path path) {
+    public static Component asFriendlyPath(final Path path) {
         return text(path.toString())
             .hoverEvent(text("Click to copy the full path of the file"))
             .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()));
@@ -50,16 +50,18 @@ public final class PaperCommand {
     static final String DESCRIPTION = "Paper related commands";
 
     public static LiteralCommandNode<CommandSourceStack> create() {
-        LiteralArgumentBuilder<CommandSourceStack> rootNode = Commands.literal("paper")
+        final LiteralArgumentBuilder<CommandSourceStack> rootNode = Commands.literal("paper")
             .requires(source -> source.getSender().hasPermission(BASE_PERM) || SUBPERMISSIONS.stream().anyMatch(name -> source.getSender().hasPermission(name)))
             .executes(context -> {
                 context.getSource().getSender().sendPlainMessage("/paper [" + SUBCOMMANDS.keySet().stream().filter(
-                    name -> hasPermission(name).test(context.getSource())).collect(Collectors.joining(" | ")
-                ) + "]");
+                    name -> hasPermission(name).test(context.getSource())
+                ).collect(Collectors.joining(" | ")) + "]");
                 return Command.SINGLE_SUCCESS;
             });
 
-        SUBCOMMANDS.values().forEach(cmd -> cmd.forEach(rootNode::then));
+        SUBCOMMANDS.values().forEach(rootNode::then);
+        rootNode.then(VersionCommand.create("ver"));
+
         return rootNode.build();
     }
 
@@ -68,32 +70,26 @@ public final class PaperCommand {
     }
 
     public static void registerPermissions() {
-        final List<String> permissions = new ArrayList<>();
-        permissions.add(BASE_PERM);
-        permissions.addAll(SUBCOMMANDS.keySet().stream().map(name -> BASE_PERM + + '.' + name).toList());
-
         final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
-        for (final String permission : permissions) {
+        pluginManager.addPermission(new Permission(BASE_PERM, PermissionDefault.OP));
+        for (final String permission : SUBPERMISSIONS) {
             pluginManager.addPermission(new Permission(permission, PermissionDefault.OP));
         }
     }
 
-    // subcommand label -> subcommand
-    private static final Map<String, List<LiteralArgumentBuilder<CommandSourceStack>>> SUBCOMMANDS = Util.make(new HashMap<>(14), map -> {
-        map.put("heap", List.of(HeapDumpCommand.create()));
-        map.put("entity", List.of(EntityCommand.create()));
-        map.put("reload", List.of(ReloadCommand.create()));
-        map.put("version", List.of(
-            VersionCommand.create("version"),
-            VersionCommand.create("ver"))
-        );
-        map.put("dumpplugins", List.of(DumpPluginsCommand.create()));
-        map.put("syncloadinfo", List.of(SyncLoadInfoCommand.create()));
-        map.put("dumpitem", List.of(DumpItemCommand.create()));
-        map.put("mobcaps", List.of(MobcapsCommand.createGlobal()));
-        map.put("playermobcaps", List.of(MobcapsCommand.createPlayer()));
-        map.put("dumplisteners", List.of(DumpListenersCommand.create()));
-        FeatureHooks.registerPaperCommands(map);
-    });
+    private static final Map<String, LiteralArgumentBuilder<CommandSourceStack>> SUBCOMMANDS = Util.make(new ObjectArrayList<LiteralArgumentBuilder<CommandSourceStack>>(), list -> {
+        list.add(HeapDumpCommand.create());
+        list.add(EntityCommand.create());
+        list.add(ReloadCommand.create());
+        list.add(VersionCommand.create("version"));
+        list.add(DumpPluginsCommand.create());
+        list.add(SyncLoadInfoCommand.create());
+        list.add(DumpItemCommand.create());
+        list.add(MobcapsCommand.createGlobal());
+        list.add(MobcapsCommand.createPlayer());
+        list.add(DumpListenersCommand.create());
+        FeatureHooks.registerPaperCommands(list);
+    }).stream().collect(Collectors.toMap(LiteralArgumentBuilder::getLiteral, Function.identity()));
+
     private static final List<String> SUBPERMISSIONS = SUBCOMMANDS.keySet().stream().map(name -> BASE_PERM + '.' + name).toList();
 }

@@ -34,8 +34,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperPluginsCommand {
-    public static final String DESCRIPTION = "Gets a list of plugins running on the server";
+public final class PaperPluginsCommand {
+    static final String DESCRIPTION = "Gets a list of plugins running on the server";
 
     private static final TextColor INFO_COLOR = TextColor.color(52, 159, 218);
 
@@ -130,9 +130,9 @@ public class PaperPluginsCommand {
     }
 
     private static Component asPlainComponents(final String strings) {
-        final net.kyori.adventure.text.TextComponent.Builder builder = Component.text();
+        final TextComponent.Builder builder = Component.text();
         for (final String string : strings.split("\n")) {
-            builder.append(Component.newline());
+            builder.appendNewline();
             builder.append(Component.text(string, NamedTextColor.WHITE));
         }
 

@@ -31,11 +31,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 
-@NullMarked
 public final class MobcapsCommand {
 
     static final Map<MobCategory, TextColor> MOB_CATEGORY_COLORS = Maps.immutableEnumMap(Util.make(new EnumMap<>(MobCategory.class), map -> {
@@ -52,6 +50,9 @@ public final class MobcapsCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> createGlobal() {
         return Commands.literal("mobcaps")
             .requires(PaperCommand.hasPermission("mobcaps"))
+            .executes(context -> {
+                return printMobcaps(context.getSource().getSender(), List.of(context.getSource().getLocation().getWorld()));
+            })
             .then(Commands.literal("*")
                 .executes(context -> {
                     return printMobcaps(context.getSource().getSender(), Bukkit.getWorlds());
@@ -61,15 +62,18 @@ public final class MobcapsCommand {
                 .executes(context -> {
                     return printMobcaps(context.getSource().getSender(), List.of(context.getArgument("world", World.class)));
                 })
-            )
-            .executes(context -> {
-                return printMobcaps(context.getSource().getSender(), List.of(context.getSource().getLocation().getWorld()));
-            });
+            );
     }
 
     public static LiteralArgumentBuilder<CommandSourceStack> createPlayer() {
         return Commands.literal("playermobcaps")
             .requires(PaperCommand.hasPermission("playermobcaps"))
+            .executes(context -> {
+                if (!(context.getSource().getExecutor() instanceof Player player)) {
+                    throw EntityArgument.NO_PLAYERS_FOUND.create();
+                }
+                return printPlayerMobcaps(context.getSource().getSender(), player);
+            })
             .then(Commands.argument("player", ArgumentTypes.player())
                 .executes(context -> {
                     return printPlayerMobcaps(
@@ -77,13 +81,7 @@ public final class MobcapsCommand {
                         context.getArgument("player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst()
                     );
                 })
-            )
-            .executes(context -> {
-                if (!(context.getSource().getExecutor() instanceof Player player)) {
-                    throw EntityArgument.NO_PLAYERS_FOUND.create();
-                }
-                return printPlayerMobcaps(context.getSource().getSender(), player);
-            });
+            );
     }
 
     private static int printMobcaps(final CommandSender sender, final List<World> worlds) {

@@ -18,29 +18,27 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.CommandSender;
-import org.jspecify.annotations.NullMarked;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 
-@NullMarked
 public final class SyncLoadInfoCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("syncloadinfo")
             .requires(PaperCommand.hasPermission("syncloadinfo").and($ -> SyncLoadFinder.ENABLED))
+            .executes(context -> {
+                return dumpSyncLoadInfo(context.getSource().getSender());
+            })
             .then(Commands.literal("clear")
                 .executes(context -> {
                     SyncLoadFinder.clear();
                     context.getSource().getSender().sendMessage(text("Sync load data cleared.", GOLD));
                     return Command.SINGLE_SUCCESS;
                 })
-            )
-            .executes(context -> {
-                return dumpSyncLoadInfo(context.getSource().getSender());
-            });
+            );
     }
 
     private static int dumpSyncLoadInfo(final CommandSender sender) {
