@@ -29,6 +29,7 @@ import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
+import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
@@ -55,7 +56,7 @@ public final class DumpItemCommand {
                 if (!(context.getSource().getExecutor() instanceof Player player)) {
                     throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
                 }
-                doDumpItem(player, false);
+                doDumpItem(player, false, context.getSource().getSender());
                 return Command.SINGLE_SUCCESS;
             })
             .then(Commands.literal("all")
@@ -63,14 +64,14 @@ public final class DumpItemCommand {
                     if (!(context.getSource().getExecutor() instanceof Player player)) {
                         throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
                     }
-                    doDumpItem(player, true);
+                    doDumpItem(player, true, context.getSource().getSender());
                     return Command.SINGLE_SUCCESS;
                 })
             );
     }
 
     @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
-    private static void doDumpItem(final Player player, final boolean includeAllComponents) {
+    private static void doDumpItem(final Player player, final boolean includeAllComponents, final CommandSender sender) {
         final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
         final TextComponent.Builder visualOutput = text();
         final StringBuilder itemCommandBuilder = new StringBuilder();
@@ -116,9 +117,9 @@ public final class DumpItemCommand {
                 .append(String.join(",", commandComponents))
                 .append("]");
         }
-        player.sendMessage(visualOutput.build().compact());
+        sender.sendMessage(visualOutput.build().compact());
         final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
-        player.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
+        sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
     }
 
     private static void writeComponentValue(final Consumer<Component> visualOutput, final Consumer<String> commandOutput, final String path, final Tag serialized) {

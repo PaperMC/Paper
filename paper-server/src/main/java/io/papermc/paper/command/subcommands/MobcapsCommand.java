@@ -18,7 +18,6 @@ import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,7 +69,7 @@ public final class MobcapsCommand {
             .requires(PaperCommand.hasPermission("playermobcaps"))
             .executes(context -> {
                 if (!(context.getSource().getExecutor() instanceof Player player)) {
-                    throw EntityArgument.NO_PLAYERS_FOUND.create();
+                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
                 }
                 return printPlayerMobcaps(context.getSource().getSender(), player);
             })
