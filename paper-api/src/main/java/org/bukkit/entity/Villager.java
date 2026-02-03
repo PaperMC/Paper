@@ -200,7 +200,9 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.VILLAGER_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Preconditions.checkArgument(key != null, "Invalid name %s", name);
+            Type type = Registry.VILLAGER_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No villager type found with the name %s", name);
             return type;
         }
@@ -323,7 +325,9 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession valueOf(@NotNull String name) {
-            Profession profession = Registry.VILLAGER_PROFESSION.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Preconditions.checkArgument(key != null, "Invalid name %s", name);
+            Profession profession = Registry.VILLAGER_PROFESSION.get(key);
             Preconditions.checkArgument(profession != null, "No villager profession found with the name %s", name);
             return profession;
         }

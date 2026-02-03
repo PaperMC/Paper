@@ -73,7 +73,9 @@ public interface Frog extends Animals {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant valueOf(@NotNull String name) {
-            Variant variant = RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Preconditions.checkArgument(key != null, "Invalid name %s", name);
+            Variant variant = RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).get(key);
             Preconditions.checkArgument(variant != null, "No frog variant found with the name %s", name);
             return variant;
         }

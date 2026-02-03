@@ -3713,9 +3713,14 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound valueOf(@NotNull String name) {
-        Sound sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
-        if (sound != null) {
-            return sound;
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Sound sound;
+
+        if (key != null) {
+            sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, key);
+            if (sound != null) {
+                return sound;
+            }
         }
 
         // Sound keys can have dots in them which where converted to _. Since converting

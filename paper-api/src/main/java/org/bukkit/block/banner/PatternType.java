@@ -174,7 +174,9 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static PatternType valueOf(@NotNull String name) {
-        PatternType type = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
+        PatternType type = Registry.BANNER_PATTERN.get(key);
         Preconditions.checkArgument(type != null, "No pattern type found with the name %s", name);
         return type;
     }

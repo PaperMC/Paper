@@ -177,7 +177,9 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
-        Attribute attribute = Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
+        Attribute attribute = Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, key);
         Preconditions.checkArgument(attribute != null, "No attribute found with the name %s", name);
         return attribute;
     }

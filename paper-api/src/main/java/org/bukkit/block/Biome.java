@@ -181,7 +181,9 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
             return Biome.CUSTOM;
         }
 
-        Biome biome = Bukkit.getUnsafe().get(RegistryKey.BIOME, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
+        Biome biome = Bukkit.getUnsafe().get(RegistryKey.BIOME, key);
         Preconditions.checkArgument(biome != null, "No biome found with the name %s", name);
         return biome;
     }

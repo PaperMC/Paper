@@ -243,7 +243,9 @@ public interface Art extends OldEnum<Art>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
-        Art art = Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
+        Art art = Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
         Preconditions.checkArgument(art != null, "No art found with the name %s", name);
         return art;
     }

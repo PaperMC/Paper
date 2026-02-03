@@ -37,7 +37,9 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid valueOf(@NotNull String name) {
-        Fluid fluid = Bukkit.getUnsafe().get(RegistryKey.FLUID, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
+        Fluid fluid = Bukkit.getUnsafe().get(RegistryKey.FLUID, key);
         Preconditions.checkArgument(fluid != null, "No fluid found with the name %s", name);
         return fluid;
     }

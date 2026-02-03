@@ -398,7 +398,9 @@ public final class MapCursor {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.MAP_DECORATION_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Preconditions.checkArgument(key != null, "Invalid name %s", name);
+            Type type = Registry.MAP_DECORATION_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No Type found with the name %s", name);
             return type;
         }
