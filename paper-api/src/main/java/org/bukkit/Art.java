@@ -231,8 +231,10 @@ public interface Art extends OldEnum<Art>, Keyed {
     @Nullable
     static Art getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Preconditions.checkArgument(key != null, "Invalid name %s", name);
 
-        return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
     }
 
     /**
@@ -243,9 +245,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
-        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-        Preconditions.checkArgument(key != null, "Invalid name %s", name);
-        Art art = Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, key);
+        Art art = Art.getByName(name);
         Preconditions.checkArgument(art != null, "No art found with the name %s", name);
         return art;
     }
