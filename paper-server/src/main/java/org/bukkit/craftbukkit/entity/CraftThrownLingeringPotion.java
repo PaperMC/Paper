@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.projectile.ThrownLingeringPotion;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;

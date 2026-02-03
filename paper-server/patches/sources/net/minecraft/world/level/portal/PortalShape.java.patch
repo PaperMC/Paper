@@ -14,7 +14,7 @@
          this.axis = axis;
          this.numPortalBlocks = numPortalBlocks;
          this.rightDir = rightDir;
-@@ -63,24 +_,25 @@
+@@ -63,23 +_,24 @@
      }
  
      public static PortalShape findAnyShape(BlockGetter level, BlockPos bottomLeft, Direction.Axis axis) {
@@ -34,20 +34,19 @@
              } else {
                  MutableInt mutableInt = new MutableInt();
 -                int i1 = calculateHeight(level, blockPos, direction, i, mutableInt);
--                return new PortalShape(axis, mutableInt.getValue(), direction, blockPos, i, i1);
+-                return new PortalShape(axis, mutableInt.intValue(), direction, blockPos, i, i1);
 +                int i1 = calculateHeight(level, blockPos, direction, i, mutableInt, blocks); // CraftBukkit
-+                return new PortalShape(axis, mutableInt.getValue(), direction, blockPos, i, i1, blocks); // CraftBukkit
++                return new PortalShape(axis, mutableInt.intValue(), direction, blockPos, i, i1, blocks); // CraftBukkit
              }
          }
      }
  
-     @Nullable
--    private static BlockPos calculateBottomLeft(BlockGetter level, Direction direction, BlockPos pos) {
-+    private static BlockPos calculateBottomLeft(BlockGetter level, Direction direction, BlockPos pos, org.bukkit.craftbukkit.util.BlockStateListPopulator blocks) { // CraftBukkit
+-    private static @Nullable BlockPos calculateBottomLeft(BlockGetter level, Direction direction, BlockPos pos) {
++    private static @Nullable BlockPos calculateBottomLeft(BlockGetter level, Direction direction, BlockPos pos, org.bukkit.craftbukkit.util.BlockStateListPopulator blocks) { // CraftBukkit
          int max = Math.max(level.getMinY(), pos.getY() - 21);
  
          while (pos.getY() > max && isEmpty(level.getBlockState(pos.below()))) {
-@@ -88,16 +_,16 @@
+@@ -87,16 +_,16 @@
          }
  
          Direction opposite = direction.getOpposite();
@@ -68,19 +67,19 @@
          BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
  
          for (int i = 0; i <= 21; i++) {
-@@ -105,6 +_,7 @@
+@@ -104,6 +_,7 @@
              BlockState blockState = level.getBlockState(mutableBlockPos);
              if (!isEmpty(blockState)) {
                  if (FRAME.test(blockState, level, mutableBlockPos)) {
-+                    blocks.setBlock(mutableBlockPos, blockState, 18); // CraftBukkit - lower left / right
++                    blocks.setBlock(mutableBlockPos, blockState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE); // CraftBukkit - lower left / right
                      return i;
                  }
                  break;
-@@ -114,32 +_,34 @@
+@@ -113,32 +_,34 @@
              if (!FRAME.test(blockState1, level, mutableBlockPos)) {
                  break;
              }
-+            blocks.setBlock(mutableBlockPos, blockState1, 18); // CraftBukkit - bottom row
++            blocks.setBlock(mutableBlockPos, blockState1, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE); // CraftBukkit - bottom row
          }
  
          return 0;
@@ -104,7 +103,7 @@
              if (!FRAME.test(level.getBlockState(mutableBlockPos), level, mutableBlockPos)) {
                  return false;
              }
-+            blocks.setBlock(mutableBlockPos, level.getBlockState(mutableBlockPos), 18); // CraftBukkit - upper row
++            blocks.setBlock(mutableBlockPos, level.getBlockState(mutableBlockPos), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE); // CraftBukkit - upper row
          }
  
          return true;
@@ -116,18 +115,18 @@
      ) {
          for (int i = 0; i < 21; i++) {
              checkPos.set(pos).move(Direction.UP, i).move(direction, -1);
-@@ -163,6 +_,10 @@
+@@ -162,6 +_,10 @@
                      portalBlocks.increment();
                  }
              }
 +            // CraftBukkit start - left and right
-+            blocks.setBlock(checkPos.set(pos).move(Direction.UP, i).move(direction, -1), level.getBlockState(checkPos), 18);
-+            blocks.setBlock(checkPos.set(pos).move(Direction.UP, i).move(direction, width), level.getBlockState(checkPos), 18); // Paper - fix block list
++            blocks.setBlock(checkPos.set(pos).move(Direction.UP, i).move(direction, -1), level.getBlockState(checkPos), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
++            blocks.setBlock(checkPos.set(pos).move(Direction.UP, i).move(direction, width), level.getBlockState(checkPos), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
 +            // CraftBukkit end
          }
  
          return 21;
-@@ -176,10 +_,23 @@
+@@ -175,10 +_,23 @@
          return this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
      }
  
@@ -138,7 +137,7 @@
 +        // Copy below for loop
          BlockState blockState = Blocks.NETHER_PORTAL.defaultBlockState().setValue(NetherPortalBlock.AXIS, this.axis);
          BlockPos.betweenClosed(this.bottomLeft, this.bottomLeft.relative(Direction.UP, this.height - 1).relative(this.rightDir, this.width - 1))
-+            .forEach(pos -> this.blocks.setBlock(pos, blockState, 18));
++            .forEach(pos -> this.blocks.setBlock(pos, blockState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE));
 +        org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getSnapshotBlocks(), bworld, (entity == null) ? null : entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.FIRE);
 +        level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event); // todo the list is not really mutable here unlike other call and the portal frame is included
 +

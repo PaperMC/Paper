@@ -4,11 +4,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ambient.AmbientCreature;
 import net.minecraft.world.entity.animal.AgeableWaterCreature;
-import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.WaterAnimal;
+import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Phantom;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.phys.AABB;
 
@@ -30,7 +31,7 @@ public enum ActivationType {
      * @return activation type
      */
     public static ActivationType activationTypeFor(final Entity entity) {
-        if (entity instanceof WaterAnimal || entity instanceof AgeableWaterCreature) {
+        if (entity instanceof WaterAnimal || entity instanceof AgeableWaterCreature || entity instanceof AbstractNautilus) {
             return ActivationType.WATER;
         } else if (entity instanceof Villager) {
             return ActivationType.VILLAGER;
