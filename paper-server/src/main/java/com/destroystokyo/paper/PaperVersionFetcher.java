@@ -69,7 +69,7 @@ public class PaperVersionFetcher implements VersionFetcher {
 
         final OptionalInt buildNumber = BUILD_INFO.buildNumber();
         if (buildNumber.isEmpty() && BUILD_INFO.gitCommit().isEmpty()) {
-            COMPONENT_LOGGER.warn(text("*** You are running a development version without access to version information ***"));
+            // Silenciado: No enviamos advertencias de versión de desarrollo en el inicio
         } else {
             final Optional<MinecraftVersionFetcher> apiResult = fetchMinecraftVersionList();
             if (buildNumber.isPresent()) {
@@ -83,7 +83,7 @@ public class PaperVersionFetcher implements VersionFetcher {
             }
 
             switch (distance) {
-                case DISTANCE_ERROR -> COMPONENT_LOGGER.error(text("*** Error obtaining version information! Cannot fetch version info ***"));
+                case DISTANCE_ERROR -> {} // Silencioso en caso de error de conexión
                 case 0 -> apiResult.ifPresent(result -> {
                     COMPONENT_LOGGER.warn(text("*************************************************************************************"));
                     COMPONENT_LOGGER.warn(text("You are running the latest build for your Minecraft version (" + BUILD_INFO.minecraftVersionId() + ")"));
@@ -92,7 +92,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                     COMPONENT_LOGGER.warn(text(DOWNLOAD_PAGE));
                     COMPONENT_LOGGER.warn(text("*************************************************************************************"));
                 });
-                case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
+                case DISTANCE_UNKNOWN -> {} // Eliminado: Ya no avisa de versión desconocida en consola
                 default -> {
                     if (apiResult.isPresent()) {
                         COMPONENT_LOGGER.warn(text("*** You are running an outdated version of Minecraft, which is " + apiResult.get().distance() + " release(s) and " + distance + " build(s) behind!"));
@@ -123,7 +123,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         return switch (distance) {
             case DISTANCE_ERROR -> text("Error obtaining version information", NamedTextColor.YELLOW);
             case 0 -> text("You are running the latest version", NamedTextColor.GREEN);
-            case DISTANCE_UNKNOWN -> text("Unknown version", NamedTextColor.YELLOW);
+            case DISTANCE_UNKNOWN -> Component.empty(); // Eliminado: Retorna componente vacío en lugar de "Unknown version"
             default -> text("You are " + distance + " version(s) behind", NamedTextColor.YELLOW)
                 .append(Component.newline())
                 .append(text("Download the new version at: ")
@@ -217,7 +217,6 @@ public class PaperVersionFetcher implements VersionFetcher {
         }
     }
 
-    // Contributed by Techcable <Techcable@outlook.com> in GH-65
     private static int fetchDistanceFromGitHub(final String branch, final String hash) {
         try {
             final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(PaperVersionFetcher.REPOSITORY, branch, hash)).toURL().openConnection();

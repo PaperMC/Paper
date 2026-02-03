@@ -122,10 +122,17 @@ public final class Bukkit {
       */
     @NotNull
     public static String getVersionMessage() {
-        final io.papermc.paper.ServerBuildInfo version = io.papermc.paper.ServerBuildInfo.buildInfo();
-        return "This server is running " + getName() + " version " + version.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL) + " (Implementing API version " + getBukkitVersion() + ")";
-        // Paper end
+        String mmText =
+            " \n <#FFFFFF> This server is running <green>Mitra\n" +
+                "<#FFFFFF>  Heavily modified custom version of Paper";
+
+        final net.kyori.adventure.text.Component comp =
+            net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(mmText);
+
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()
+            .serialize(comp);
     }
+
 
     /**
      * Gets the name of this server implementation.
@@ -135,7 +142,8 @@ public final class Bukkit {
      */
     @NotNull
     public static String getName() {
-        return server.getName();
+        // Aquí es donde definimos el "Brand" que aparece en el F3 y otros lugares
+        return "Mitra";
     }
 
     /**

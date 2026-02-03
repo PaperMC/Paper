@@ -194,7 +194,6 @@ public class VersionCommand extends BukkitCommand {
                 return;
             }
             versionWaiters.add(sender);
-            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC)); // Paper
             if (!versionTaskStarted) {
                 versionTaskStarted = true;
                 new Thread(new Runnable() {
@@ -214,7 +213,6 @@ public class VersionCommand extends BukkitCommand {
         String version = Bukkit.getVersion();
         // Paper start
         if (version.startsWith("null")) { // running from ide?
-            setVersionMessage(Component.text("Unknown version, custom build?", NamedTextColor.YELLOW));
             return;
         }
         setVersionMessage(getVersionFetcher().getVersionMessage(version));
@@ -246,7 +244,6 @@ public class VersionCommand extends BukkitCommand {
                 }
             }
         } else {
-            setVersionMessage("Unknown version, custom build?");
         }
          */
         // Paper end
