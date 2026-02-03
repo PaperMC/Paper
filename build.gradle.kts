@@ -62,7 +62,7 @@ subprojects {
 tasks.register("printMinecraftVersion") {
     val mcVersion = providers.gradleProperty("mcVersion")
     doLast {
-        println(mcVersion.get().trim())
+        mcVersion.orNull?.let { println(it.trim()) }
     }
 }
 
