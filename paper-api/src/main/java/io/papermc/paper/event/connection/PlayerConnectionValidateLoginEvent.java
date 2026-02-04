@@ -14,9 +14,11 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Called when a player is attempting to log in for the first time,
  * or is finishing up being configured.
- * In those phases the {@link #getConnection()} can be cast to
- * {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection} respectively
- * to access phase-specific API.
+ *
+ * @implNote Since 1.21.7, during these phases, the {@link #getConnection() connection}
+ * is either {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection},
+ * allowing access to phase-specific API.
+ * <br>However, these underlying connection types are not guaranteed to be stable across versions.
  */
 public class PlayerConnectionValidateLoginEvent extends Event {
 
@@ -34,9 +36,13 @@ public class PlayerConnectionValidateLoginEvent extends Event {
 
     /**
      * Gets the connection of the player in this event.
-     * Note, the type of this connection is not guaranteed to be stable across versions.
-     * Additionally, disconnecting the player through this connection / using any methods that may send packets
-     * is not supported.
+     * @apiNote Disconnecting the player through this connection
+     * or using any methods that may send packets is not supported.
+     *
+     * @implNote Since 1.21.7, this connection is either
+     * {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection}
+     * depending on which phase it is fired in, allowing access to phase-specific API.
+     * <br>However, these underlying connection types are not guaranteed to be stable across versions.
      *
      * @return connection
      */
