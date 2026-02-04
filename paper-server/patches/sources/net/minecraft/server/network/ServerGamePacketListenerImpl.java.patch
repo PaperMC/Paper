@@ -374,7 +374,7 @@
                  return;
              }
  
-@@ -536,6 +_,7 @@
+@@ -536,13 +_,14 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
              this.awaitingPositionFromClient = null;
@@ -382,6 +382,14 @@
          }
      }
  
+     @Override
+     public void handleAcceptPlayerLoad(ServerboundPlayerLoadedPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        this.markClientLoaded();
++        this.markClientLoaded(false); // Paper - Add PlayerLoadedWorldEvent
+     }
+ 
+     @Override
 @@ -563,6 +_,7 @@
      @Override
      public void handleRecipeBookChangeSettingsPacket(ServerboundRecipeBookChangeSettingsPacket packet) {
@@ -1899,7 +1907,7 @@
                                  );
                              }
  
-@@ -1786,7 +_,7 @@
+@@ -1786,16 +_,22 @@
                              public void onAttack() {
                                  if (!(target instanceof ItemEntity)
                                      && !(target instanceof ExperienceOrb)
@@ -1908,7 +1916,14 @@
                                      && !(target instanceof AbstractArrow abstractArrow && !abstractArrow.isAttackable())) {
                                      ItemStack itemInHand = ServerGamePacketListenerImpl.this.player.getItemInHand(InteractionHand.MAIN_HAND);
                                      if (itemInHand.isItemEnabled(serverLevel.enabledFeatures())) {
-@@ -1795,7 +_,7 @@
+                                         if (!ServerGamePacketListenerImpl.this.player.cannotAttackWithItem(itemInHand, 5)) {
++                                            // Paper start - redirect attacks with piercing weapon
++                                            PiercingWeapon piercingWeapon = itemInHand.get(DataComponents.PIERCING_WEAPON);
++                                            if (piercingWeapon != null) {
++                                                piercingWeapon.attack(ServerGamePacketListenerImpl.this.player, EquipmentSlot.MAINHAND);
++                                            } else
++                                            // Paper end - redirect attacks with piercing weapon
+                                             ServerGamePacketListenerImpl.this.player.attack(target);
                                          }
                                      }
                                  } else {
@@ -2596,7 +2611,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2134,12 +_,18 @@
+@@ -2134,12 +_,23 @@
      }
  
      public void tickClientLoadTimeout() {
@@ -2604,13 +2619,18 @@
 +        if (this.clientLoadedTimeoutTimer > 1) { // Paper - Add PlayerLoadedWorldEvent - only reduce till 1, let the below else-if call #markClientLoaded to trigger event and reduce to 0
              this.clientLoadedTimeoutTimer--;
 -        }
-+        } else if (this.clientLoadedTimeoutTimer == 1) markClientLoaded(); // Paper - Add PlayerLoadedWorldEvent - decrement by calling #markClientLoaded which will set the value to 0 *and* call the event.
++        } else if (this.clientLoadedTimeoutTimer == 1) this.markClientLoaded(true); // Paper - Add PlayerLoadedWorldEvent - decrement by calling #markClientLoaded which will set the value to 0 *and* call the event.
      }
  
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add PlayerLoadedWorldEvent
      private void markClientLoaded() {
 +        // Paper start - Add PlayerLoadedWorldEvent
++        this.markClientLoaded(false);
++    }
++
++    private void markClientLoaded(boolean timeout) {
 +        if (!hasClientLoaded()) {
-+            final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), true);
++            final io.papermc.paper.event.player.PlayerClientLoadedWorldEvent event = new io.papermc.paper.event.player.PlayerClientLoadedWorldEvent(this.player.getBukkitEntity(), timeout);
 +            event.callEvent();
 +        }
 +        // Paper end - Add PlayerLoadedWorldEvent
