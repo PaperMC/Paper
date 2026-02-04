@@ -8,6 +8,8 @@ import io.papermc.paper.dialog.PaperDialog;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -91,7 +93,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
             this.adventurePointers = Pointers.builder()
                 .withDynamic(Identity.NAME, () -> this.handle.getOwner().name())
                 .withDynamic(Identity.UUID, () -> this.handle.getOwner().id())
-                .withDynamic(Identity.LOCALE, () -> Translator.parseLocale(this.handle.clientInformation.language()))
+                .withDynamic(Identity.LOCALE, () -> Objects.requireNonNullElse(Translator.parseLocale(this.handle.clientInformation.language()), Locale.US))
                 .build();
         }
 
