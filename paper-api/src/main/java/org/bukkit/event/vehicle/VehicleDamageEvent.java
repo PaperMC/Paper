@@ -17,15 +17,17 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final DamageSource damageSource;
+    private final Entity attacker;
     private double damage;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public VehicleDamageEvent(@NotNull final Vehicle vehicle, final DamageSource damageSource, final double damage) {
+    public VehicleDamageEvent(@NotNull final Vehicle vehicle, final DamageSource damageSource, final Entity attacker, final double damage) {
         super(vehicle);
         this.damageSource = damageSource;
         this.damage = damage;
+        this.attacker = attacker;
     }
 
     /**
@@ -45,7 +47,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
      */
     @Nullable
     public Entity getAttacker() {
-        return this.getDamageSource().getCausingEntity();
+        return this.attacker;
     }
 
     /**
