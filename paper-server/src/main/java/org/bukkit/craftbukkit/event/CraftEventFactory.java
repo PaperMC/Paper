@@ -2164,8 +2164,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static ExplosionPrimeEvent callExplosionPrimeEvent(Entity nmsEntity, float size, boolean fire) {
-        ExplosionPrimeEvent event = new ExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire);
+    public static ExplosionPrimeEvent callExplosionPrimeEvent(Entity nmsEntity, float size, boolean fire, float velocity) {
+        ExplosionPrimeEvent event = new ExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire, velocity);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
