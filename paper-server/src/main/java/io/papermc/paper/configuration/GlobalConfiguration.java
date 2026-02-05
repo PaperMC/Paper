@@ -123,8 +123,18 @@ public class GlobalConfiguration extends ConfigurationPart {
 
             @PostProcess
             private void postProcess() {
+                final String environmentSourcedVelocityEnabled = System.getenv("PAPER_VELOCITY_ENABLED");
+                if (environmentSourcedVelocityEnabled != null && !environmentSourcedVelocityEnabled.isEmpty()) {
+                    this.enabled = Boolean.parseBoolean(environmentSourcedVelocityEnabled);
+                }
+                
                 if (!this.enabled) return;
 
+                final String environmentSourcedVelocityOnlineMode = System.getenv("PAPER_VELOCITY_ONLINE_MODE");
+                if (environmentSourcedVelocityOnlineMode != null && !environmentSourcedVelocityOnlineMode.isEmpty()) {
+                    this.onlineMode = Boolean.parseBoolean(environmentSourcedVelocityOnlineMode);
+                }
+                
                 final String environmentSourcedVelocitySecret = System.getenv("PAPER_VELOCITY_SECRET");
                 if (environmentSourcedVelocitySecret != null && !environmentSourcedVelocitySecret.isEmpty()) {
                     this.secret = environmentSourcedVelocitySecret;
