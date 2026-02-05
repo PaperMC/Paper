@@ -124,6 +124,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1693,7 +1694,7 @@ public class CraftEventFactory {
             return null; // Paper - custom shear drops
         }
 
-        PlayerShearEntityEvent event = new PlayerShearEntityEvent((Player) player.getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), (hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND), Lists.transform(drops, CraftItemStack::asCraftMirror)); // Paper - custom shear drops
+        PlayerShearEntityEvent event = new CraftPlayerShearEntityEvent((Player) player.getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), CraftEquipmentSlot.getHand(hand), Lists.transform(drops, CraftItemStack::asCraftMirror)); // Paper - custom shear drops
         Bukkit.getPluginManager().callEvent(event);
         return event; // Paper - custom shear drops
     }
