@@ -1,0 +1,91 @@
+--- a/net/minecraft/world/level/block/entity/CreakingHeartBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/CreakingHeartBlockEntity.java
+@@ -138,12 +_,40 @@
+     }
+ 
+     private static BlockState updateCreakingState(Level level, BlockState state, BlockPos pos, CreakingHeartBlockEntity creakingHeart) {
++        // Paper Start - Fire CreakingHeartTransformEvent
++        CreakingHeartState oldState = state.getValue(CreakingHeartBlock.STATE);
++        CreakingHeartState newState;
+         if (!CreakingHeartBlock.hasRequiredLogs(state, level, pos) && creakingHeart.creakingInfo == null) {
+-            return state.setValue(CreakingHeartBlock.STATE, CreakingHeartState.UPROOTED);
++            newState = CreakingHeartState.UPROOTED;
+         } else {
+             boolean isNaturalNight = CreakingHeartBlock.isNaturalNight(level);
+-            return state.setValue(CreakingHeartBlock.STATE, isNaturalNight ? CreakingHeartState.AWAKE : CreakingHeartState.DORMANT);
+-        }
++            newState = isNaturalNight ? CreakingHeartState.AWAKE : CreakingHeartState.DORMANT;
++        }
++        if (oldState != newState && level instanceof ServerLevel serverLevel) {
++
++            org.bukkit.World bukkitWorld = serverLevel.getWorld();
++            org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.BlockState bukkitOldState = bukkitBlock.getState();
++            net.minecraft.world.level.block.state.BlockState newNmsState = state.setValue(CreakingHeartBlock.STATE, newState);
++            org.bukkit.block.BlockState bukkitNewState = bukkitBlock.getState();
++            bukkitNewState.setBlockData(org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(newNmsState));
++            bukkitNewState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(state.getBlock()));
++
++            org.bukkit.block.data.type.CreakingHeart.State apiOldState = org.bukkit.block.data.type.CreakingHeart.State.valueOf(oldState.name());
++            org.bukkit.block.data.type.CreakingHeart.State apiNewState = org.bukkit.block.data.type.CreakingHeart.State.valueOf(newState.name());
++
++            org.bukkit.event.block.CreakingHeartTransformEvent event =
++                new org.bukkit.event.block.CreakingHeartTransformEvent(
++                    bukkitBlock, bukkitOldState, bukkitNewState, apiOldState, apiNewState
++                );
++            if (!event.callEvent() || event.isCancelled()) {
++                return state;
++            }
++            return state.setValue(CreakingHeartBlock.STATE, newState);
++        }
++        return state;
++        // Paper End - Fire CreakingHeartTransformEvent
++
+     }
+ 
+     private double distanceToCreaking() {
+@@ -207,6 +_,21 @@
+             return null;
+         } else {
+             Creaking creaking = optional.get();
++
++            // Paper Start - Fire CreakingHeartProtectorChangeEvent (SPAWN)
++            org.bukkit.World bukkitWorld = level.getWorld();
++            org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(blockPos.getX(), blockPos.getY(), blockPos.getZ());
++            org.bukkit.entity.LivingEntity bukkitProtector = (org.bukkit.entity.LivingEntity) creaking.getBukkitEntity();
++            org.bukkit.event.block.CreakingHeartProtectorChangeEvent event =
++                new org.bukkit.event.block.CreakingHeartProtectorChangeEvent(
++                    bukkitBlock, bukkitProtector, true
++                    );
++            if (!event.callEvent() || event.isCancelled()) {
++                creaking.discard();
++                return null;
++            }
++            // Paper End - Fire CreakingHeartProtectorChangeEvent (SPAWN)
++
+             level.gameEvent(creaking, GameEvent.ENTITY_PLACE, creaking.position());
+             level.broadcastEntityEvent(creaking, (byte)60);
+             creaking.setTransient(blockPos);
+@@ -316,6 +_,22 @@
+ 
+     public void removeProtector(@Nullable DamageSource damageSource) {
+         if (this.getCreakingProtector().orElse(null) instanceof Creaking creaking) {
++
++            // Paper Start: Fire CreakingHeartProtectorChangeEvent (REMOVE)
++            if (this.level instanceof ServerLevel serverLevel) {
++                org.bukkit.World bukkitWorld = serverLevel.getWorld();
++                org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ());
++                org.bukkit.entity.LivingEntity bukkitProtector = (org.bukkit.entity.LivingEntity) creaking.getBukkitEntity();
++                org.bukkit.event.block.CreakingHeartProtectorChangeEvent event =
++                    new org.bukkit.event.block.CreakingHeartProtectorChangeEvent(
++                        bukkitBlock, bukkitProtector, false
++                        );
++                if (!event.callEvent() || event.isCancelled()) {
++                    return;
++                }
++            }
++            // Paper End - Fire CreakingHeartProtectorChangeEvent (REMOVE)
++
+             if (damageSource == null) {
+                 creaking.tearDown();
+             } else {

@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/level/block/CreakingHeartBlock.java
++++ b/net/minecraft/world/level/block/CreakingHeartBlock.java
+@@ -106,9 +_,46 @@
+     }
+ 
+     private static BlockState updateState(BlockState state, Level level, BlockPos pos) {
++        
++        // Paper Start - Fire CreakingHeartTransformEvent
++        net.minecraft.world.level.block.state.properties.CreakingHeartState oldState = state.getValue(STATE);
++        net.minecraft.world.level.block.state.properties.CreakingHeartState newState;
++
+         boolean hasRequiredLogs = hasRequiredLogs(state, level, pos);
+-        boolean flag = state.getValue(STATE) == CreakingHeartState.UPROOTED;
+-        return hasRequiredLogs && flag ? state.setValue(STATE, isNaturalNight(level) ? CreakingHeartState.AWAKE : CreakingHeartState.DORMANT) : state;
++
++        boolean flag = oldState == net.minecraft.world.level.block.state.properties.CreakingHeartState.UPROOTED;
++        if (hasRequiredLogs && flag) {
++            newState = isNaturalNight(level)
++                ? net.minecraft.world.level.block.state.properties.CreakingHeartState.AWAKE
++                : net.minecraft.world.level.block.state.properties.CreakingHeartState.DORMANT;
++        } else {
++            newState = oldState;
++        }
++
++        if (oldState != newState && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
++
++            org.bukkit.World bukkitWorld = serverLevel.getWorld();
++            org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.BlockState bukkitOldState = bukkitBlock.getState();
++            net.minecraft.world.level.block.state.BlockState newNmsState = state.setValue(STATE, newState);
++            org.bukkit.block.BlockState bukkitNewState = bukkitBlock.getState();
++            bukkitNewState.setBlockData(org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(newNmsState));
++            bukkitNewState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(state.getBlock()));
++
++            org.bukkit.block.data.type.CreakingHeart.State apiOldState = org.bukkit.block.data.type.CreakingHeart.State.valueOf(oldState.name());
++            org.bukkit.block.data.type.CreakingHeart.State apiNewState = org.bukkit.block.data.type.CreakingHeart.State.valueOf(newState.name());
++
++            org.bukkit.event.block.CreakingHeartTransformEvent event =
++                new org.bukkit.event.block.CreakingHeartTransformEvent(
++                    bukkitBlock, bukkitOldState, bukkitNewState, apiOldState, apiNewState
++                );
++            if (!event.callEvent() || event.isCancelled()) {
++                return state;
++            }
++            return state.setValue(STATE, newState);
++        }
++        return state;
++        // Paper End - Fire CreakingHeartTransformEvent
+     }
+ 
+     public static boolean hasRequiredLogs(BlockState state, LevelReader level, BlockPos pos) {

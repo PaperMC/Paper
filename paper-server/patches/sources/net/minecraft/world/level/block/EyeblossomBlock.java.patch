@@ -1,5 +1,25 @@
 --- a/net/minecraft/world/level/block/EyeblossomBlock.java
 +++ b/net/minecraft/world/level/block/EyeblossomBlock.java
+@@ -82,6 +_,19 @@
+         } else if (CreakingHeartBlock.isNaturalNight(level) == this.type.open) {
+             return false;
+         } else {
++            
++            // Paper Start - Fire EyeblossomTransformEvent before changing block
++            org.bukkit.World bukkitWorld = level.getWorld();
++            org.bukkit.block.Block bukkitBlock = bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.BlockState newState = bukkitBlock.getState();
++            // Set the new state type to the transformed block (OPEN or CLOSED)
++            newState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this.type.transform().block()));
++            org.bukkit.event.block.EyeblossomTransformEvent event = new org.bukkit.event.block.EyeblossomTransformEvent(bukkitBlock, newState);
++            if (!event.callEvent() || event.isCancelled()) {
++                return false;
++            }
++            // Paper End - Fire EyeblossomTransformEvent before changing block
++
+             EyeblossomBlock.Type type = this.type.transform();
+             level.setBlock(pos, type.state(), 3);
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
 @@ -100,6 +_,7 @@
  
      @Override
