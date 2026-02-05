@@ -1,11 +1,12 @@
 package org.bukkit.block;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
@@ -165,8 +166,8 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     Biome CUSTOM = InternalAPIBridge.get().constructLegacyCustomBiome();
 
     @NotNull
-    private static Biome getBiome(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).getOrThrow(NamespacedKey.minecraft(key));
+    private static Biome getBiome(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -182,20 +183,19 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
         }
 
         final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-        Preconditions.checkArgument(key != null, "Invalid name %s", name);
-        Biome biome = Bukkit.getUnsafe().get(RegistryKey.BIOME, key);
+        Biome biome = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.BIOME, key);
         Preconditions.checkArgument(biome != null, "No biome found with the name %s", name);
         return biome;
     }
 
     /**
      * @return an array of all known biomes.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Biome[] values() {
-        return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).stream().toArray(Biome[]::new);
     }
 
     // Paper start

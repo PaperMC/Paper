@@ -17,10 +17,9 @@ import io.papermc.paper.datacomponent.item.MapItemColor;
 import io.papermc.paper.datacomponent.item.PotDecorations;
 import io.papermc.paper.datacomponent.item.Tool;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
-import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import io.papermc.paper.registry.set.RegistrySet;
-import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -226,7 +225,7 @@ class ItemStackDataComponentTest {
                     TriState.TRUE
                 ),
                 Tool.rule(
-                    RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK).getTag(TagKey.create(RegistryKey.BLOCK, NamespacedKey.minecraft("bamboo_blocks"))),
+                    Registry.BLOCK.getTag(BlockTypeTagKeys.create(Key.key(Key.MINECRAFT_NAMESPACE, "bamboo_blocks"))),
                     2F,
                     TriState.TRUE
                 )

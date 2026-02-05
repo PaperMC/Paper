@@ -1,9 +1,10 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,8 +26,8 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
     // End generate - Fluid
 
     @NotNull
-    private static Fluid getFluid(@NotNull String key) {
-        return Registry.FLUID.getOrThrow(NamespacedKey.minecraft(key));
+    private static Fluid getFluid(@NotNull @KeyPattern.Value String key) {
+        return Registry.FLUID.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -38,19 +39,18 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid valueOf(@NotNull String name) {
         final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-        Preconditions.checkArgument(key != null, "Invalid name %s", name);
-        Fluid fluid = Bukkit.getUnsafe().get(RegistryKey.FLUID, key);
+        Fluid fluid = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.FLUID, key);
         Preconditions.checkArgument(fluid != null, "No fluid found with the name %s", name);
         return fluid;
     }
 
     /**
      * @return an array of all known fluids.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid[] values() {
-        return Lists.newArrayList(Registry.FLUID).toArray(new Fluid[0]);
+        return Registry.FLUID.stream().toArray(Fluid[]::new);
     }
 }
