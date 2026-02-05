@@ -1,7 +1,6 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.keys.ItemTypeKeys;
@@ -34,7 +33,7 @@ final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice impleme
     @Override
     @Deprecated(since = "1.13.1")
     public ItemStack getItemStack() {
-        final ItemType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.ITEM).getOrThrow(this.itemTypes.iterator().next());
+        final ItemType type = Registry.ITEM.getOrThrow(this.itemTypes.iterator().next());
         final ItemStack item = type.createItemStack();
 
         // legacy compat
