@@ -738,26 +738,27 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
-        this.world.captureTreeGeneration = true;
-        this.world.captureBlockStates = true;
-        boolean grownTree = this.generateTree(loc, type);
-        this.world.captureBlockStates = false;
-        this.world.captureTreeGeneration = false;
-        if (grownTree) { // Copy block data to delegate
-            for (BlockState blockstate : this.world.capturedBlockStates.values()) {
-                BlockPos position = ((CraftBlockState) blockstate).getPosition();
-                net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
-                int flags = ((CraftBlockState) blockstate).getFlags();
-                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
-                net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
-                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, net.minecraft.world.level.block.Block.UPDATE_LIMIT);
-            }
-            this.world.capturedBlockStates.clear();
-            return true;
-        } else {
-            this.world.capturedBlockStates.clear();
-            return false;
-        }
+//        this.world.captureTreeGeneration = true;
+//        this.world.captureBlockStates = true;
+//        boolean grownTree = this.generateTree(loc, type);
+//        this.world.captureBlockStates = false;
+//        this.world.captureTreeGeneration = false;
+//        if (grownTree) { // Copy block data to delegate
+//            for (BlockState blockstate : this.world.capturedBlockStates.values()) {
+//                BlockPos position = ((CraftBlockState) blockstate).getPosition();
+//                net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
+//                int flags = ((CraftBlockState) blockstate).getFlags();
+//                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
+//                net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
+//                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, net.minecraft.world.level.block.Block.UPDATE_LIMIT);
+//            }
+//            this.world.capturedBlockStates.clear();
+//            return true;
+//        } else {
+//            this.world.capturedBlockStates.clear();
+//            return false;
+//        }
+        return false;
     }
 
     @Override
