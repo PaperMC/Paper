@@ -117,7 +117,8 @@ public final class EventToInterfaceMigration {
                 PlayerRiptideEvent.class,
                 PlayerShearEntityEvent.class,
                 PlayerShowEntityEvent.class,
-                PlayerSignOpenEvent.class
+                PlayerSignOpenEvent.class,
+                PlayerSpawnChangeEvent.class
                 //</editor-fold>
             );
 
