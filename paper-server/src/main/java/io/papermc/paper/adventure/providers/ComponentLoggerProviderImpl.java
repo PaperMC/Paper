@@ -17,6 +17,7 @@ public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
     }
 
     private String serialize(final Component message) {
+        // Can set component to thread context here, but don't have a hook to clear it after logging
         return PaperAdventure.ANSI_SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
     }
 }
