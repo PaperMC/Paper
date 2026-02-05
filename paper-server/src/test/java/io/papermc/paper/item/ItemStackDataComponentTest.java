@@ -225,7 +225,7 @@ class ItemStackDataComponentTest {
                     TriState.TRUE
                 ),
                 Tool.rule(
-                    Registry.BLOCK.getTag(BlockTypeTagKeys.create(Key.key(Key.MINECRAFT_NAMESPACE, "bamboo_blocks"))),
+                    Registry.BLOCK.getTag(BlockTypeTagKeys.BAMBOO_BLOCKS),
                     2F,
                     TriState.TRUE
                 )
