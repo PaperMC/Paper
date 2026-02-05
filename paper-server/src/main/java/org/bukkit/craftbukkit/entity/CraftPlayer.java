@@ -186,6 +186,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.event.player.CraftPlayerHideEntityEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerShowEntityEvent;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
@@ -1973,7 +1974,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             entry.updatePlayer(this.getHandle());
         }
 
-        this.server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
+        this.server.getPluginManager().callEvent(new CraftPlayerShowEntityEvent(this, entity));
     }
     // Paper start
     @Override
