@@ -95,7 +95,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Represents a choice of multiple matching Materials.
      * @apiNote recommended to use {@link ItemTypeChoice}
      */
-    @ApiStatus.Obsolete(since = "1.21.10")
+    @ApiStatus.Obsolete(since = "1.21.11")
     sealed class MaterialChoice implements RecipeChoice permits ItemTypeRecipeChoiceImpl {
 
         protected MaterialChoice() {
