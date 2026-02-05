@@ -6,9 +6,8 @@ import net.minecraft.server.dedicated.DedicatedServer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import xyz.jpenilla.endermux.log4j.EndermuxForwardingAppender;
-import xyz.jpenilla.endermux.protocol.LayoutConfig;
 import xyz.jpenilla.endermux.server.SocketServerManager;
-import xyz.jpenilla.endermux.server.api.ServerHooks;
+import xyz.jpenilla.endermux.server.api.ConsoleHooks;
 import xyz.jpenilla.endermux.server.log.RemoteLogForwarder;
 
 @NullMarked
@@ -19,13 +18,13 @@ public final class PaperEndermux {
     public void start(final DedicatedServer server) {
         final Path socketPath = server.getServerDirectory().toFile().toPath().resolve("console.sock");
         Objects.requireNonNull(EndermuxForwardingAppender.INSTANCE);
-        final ServerHooks hooks = new PaperServerHooks(
-            new PaperCommandCompleter(server),
-            new PaperCommandParser(server),
-            new PaperCommandExecutor(server),
-            new PaperCommandHighlighter(server),
-            new PaperServerMetadata(EndermuxForwardingAppender.INSTANCE.logLayout())
-        );
+        final ConsoleHooks hooks = ConsoleHooks.builder()
+            .completer(new PaperCommandCompleter(server))
+            .parser(new PaperCommandParser(server))
+            .executor(new PaperCommandExecutor(server))
+            .highlighter(new PaperCommandHighlighter(server))
+            .metadata(new ConsoleHooks.Metadata(EndermuxForwardingAppender.INSTANCE.logLayout()))
+            .build();
         this.socketServerManager = new SocketServerManager(hooks, socketPath, 5);
         this.socketServerManager.start();
 
@@ -39,18 +38,6 @@ public final class PaperEndermux {
         }
 
         EndermuxForwardingAppender.TARGET = null;
-    }
-
-    private record PaperServerMetadata(LayoutConfig logLayout) implements ServerHooks.ServerMetadata {
-    }
-
-    private record PaperServerHooks(
-        CommandCompleter completer,
-        CommandParser parser,
-        CommandExecutor executor,
-        CommandHighlighter highlighter,
-        ServerMetadata metadata
-    ) implements ServerHooks {
     }
 
 }
