@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.keys.ItemTypeKeys;
@@ -31,8 +32,17 @@ final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice impleme
     }
 
     @Override
+    @Deprecated(since = "1.13.1")
     public ItemStack getItemStack() {
-        throw new UnsupportedOperationException("ItemTypeChoice does not support this");
+        final ItemType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.ITEM).getOrThrow(this.itemTypes.iterator().next());
+        final ItemStack item = type.createItemStack();
+
+        // legacy compat
+        if (this.itemTypes.size() > 1) {
+            item.setDurability(Short.MAX_VALUE);
+        }
+
+        return item;
     }
 
     @Override
