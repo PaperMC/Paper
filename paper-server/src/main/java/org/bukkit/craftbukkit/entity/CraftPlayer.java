@@ -19,6 +19,8 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.statistic.PaperTrackableStats;
+import io.papermc.paper.statistic.Statistic;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
@@ -113,6 +115,7 @@ import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -134,6 +137,7 @@ import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -151,7 +155,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.ServerLinks;
 import org.bukkit.Sound;
-import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
 import org.bukkit.WorldBorder;
 import org.bukkit.ban.IpBanList;
@@ -174,7 +177,6 @@ import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftServerLinks;
 import org.bukkit.craftbukkit.CraftSound;
-import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.CraftWorldBorder;
 import org.bukkit.craftbukkit.advancement.CraftAdvancement;
@@ -198,7 +200,6 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EnderPearl;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -221,7 +222,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
-public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessageBridgeImpl {
+public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessageBridgeImpl, PaperTrackableStats {
     private static final org.slf4j.Logger LOGGER = LogUtils.getClassLogger();
     private static final PointersSupplier<Player> POINTERS_SUPPLIER = PointersSupplier.<Player>builder()
         .parent(CraftEntity.POINTERS_SUPPLIER)
@@ -1436,93 +1437,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void incrementStatistic(Statistic statistic) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, this.getHandle());
+    public ServerStatsCounter getStatCounter() {
+        return this.getHandle().getStats();
     }
 
     @Override
-    public void decrementStatistic(Statistic statistic) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, this.getHandle());
+    public ScoreHolder getScoreHolder() {
+        return this.getHandle();
     }
 
     @Override
-    public int getStatistic(Statistic statistic) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic);
+    public void decrementStatistic(final Statistic<?> statistic, final int amount) {
+        PaperTrackableStats.super.decrementStatistic(statistic, amount);
     }
 
     @Override
-    public void incrementStatistic(Statistic statistic, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
+    public void incrementStatistic(final Statistic<?> statistic, final int amount) {
+        PaperTrackableStats.super.incrementStatistic(statistic, amount);
     }
 
     @Override
-    public void decrementStatistic(Statistic statistic, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, amount, this.getHandle());
+    public void setStatistic(final Statistic<?> statistic, final int newAmount) {
+        PaperTrackableStats.super.setStatistic(statistic, newAmount);
     }
 
     @Override
-    public void setStatistic(Statistic statistic, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, newValue, this.getHandle());
+    public int getStatistic(final Statistic<?> statistic) {
+        return PaperTrackableStats.super.getStatistic(statistic);
     }
 
     @Override
-    public void incrementStatistic(Statistic statistic, Material material) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, material, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, Material material) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, material, this.getHandle());
-    }
-
-    @Override
-    public int getStatistic(Statistic statistic, Material material) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic, material);
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, Material material, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, material, amount, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, Material material, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, material, amount, this.getHandle());
-    }
-
-    @Override
-    public void setStatistic(Statistic statistic, Material material, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, material, newValue, this.getHandle());
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, EntityType entityType) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, entityType, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, EntityType entityType) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, entityType, this.getHandle());
-    }
-
-    @Override
-    public int getStatistic(Statistic statistic, EntityType entityType) {
-        return CraftStatistic.getStatistic(this.getHandle().getStats(), statistic, entityType);
-    }
-
-    @Override
-    public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) {
-        CraftStatistic.incrementStatistic(this.getHandle().getStats(), statistic, entityType, amount, this.getHandle());
-    }
-
-    @Override
-    public void decrementStatistic(Statistic statistic, EntityType entityType, int amount) {
-        CraftStatistic.decrementStatistic(this.getHandle().getStats(), statistic, entityType, amount, this.getHandle());
-    }
-
-    @Override
-    public void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
-        CraftStatistic.setStatistic(this.getHandle().getStats(), statistic, entityType, newValue, this.getHandle());
+    public String getFormattedValue(final Statistic<?> statistic) {
+        return PaperTrackableStats.super.getFormattedValue(statistic);
     }
 
     @Override

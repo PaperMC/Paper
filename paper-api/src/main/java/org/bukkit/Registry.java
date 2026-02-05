@@ -10,6 +10,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.StatisticType;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
@@ -62,7 +64,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     }
 
     @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(since = "1.21.4", forRemoval = true)
     private static <A extends Keyed> Registry<A> legacyRegistryFor(final Class<A> clazz) {
         return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), () -> "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
     }
@@ -220,7 +222,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server statistics.
      *
      * @see Statistic
+     * @deprecated use {@link #CUSTOM_STAT} and {@link #STAT_TYPE}
      */
+    @Deprecated(since = "1.21.11", forRemoval = true)
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
     /**
      * Server structures.
@@ -355,6 +359,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see GameRule
      */
     Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
+
+    /**
+     * Custom statistics
+     *
+     * @see io.papermc.paper.statistic.CustomStatistic
+     */
+    Registry<CustomStatistic> CUSTOM_STAT = registryFor(RegistryKey.CUSTOM_STAT);
+
+    /**
+     * Statistic types
+     *
+     * @see io.papermc.paper.statistic.StatisticType
+     */
+    Registry<StatisticType<?>> STAT_TYPE = registryFor(RegistryKey.STAT_TYPE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
