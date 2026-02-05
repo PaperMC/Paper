@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 4 Feb 2026 19:10:35 -0700
+Subject: [PATCH] Endermux console protocl support
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..49459cf9c201ce855cff940f6c63d5f8ab7a04c5 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1992,7 +1992,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendSystemMessage(Component message) {
+-        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        final net.kyori.adventure.text.Component adventureMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++        final var renderer = new xyz.jpenilla.endermux.server.util.LanguageRenderer(new xyz.jpenilla.endermux.server.util.LanguageRenderer.LanguageProxy() {
++            @Override
++            public boolean has(final String key) {
++                return net.minecraft.locale.Language.getInstance().has(key);
++            }
++
++            @Override
++            public String getOrDefault(final String key, final String fallback) {
++                return net.minecraft.locale.Language.getInstance().getOrDefault(key, fallback);
++            }
++        });
++        final var translated = renderer.render(adventureMessage, net.kyori.adventure.translation.Translator.parseLocale("en_us"));
++        final var serialized = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(translated);
++        org.apache.logging.log4j.ThreadContext.put(io.papermc.paper.console.endermux.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY, serialized);
++        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(adventureMessage)); // Paper - Log message with colors
++        org.apache.logging.log4j.ThreadContext.remove(io.papermc.paper.console.endermux.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY);
+     }
+ 
+     public KeyPair getKeyPair() {
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index eb06d8f012684845146429832e977e6c1ddcd62b..89ccc7426da88b6d6bc414a4ca3fb6b1fd90f9fc 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -93,6 +93,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     private final Map<String, String> codeOfConductTexts;
+     private @Nullable ManagementServer jsonRpcServer;
+     private long lastHeartbeat;
++    public io.papermc.paper.console.endermux.PaperEndermux endermux;
+ 
+     public DedicatedServer(
+         joptsimple.OptionSet options, net.minecraft.server.WorldLoader.DataLoadContext worldLoader, // CraftBukkit - Signature changed
+@@ -270,6 +271,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // Paper end - fix converting txt to json file
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
+         thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
++        this.endermux = new io.papermc.paper.console.endermux.PaperEndermux();
++        this.endermux.start(this);
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+@@ -540,6 +543,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             }
+         }
+ 
++        this.endermux.close();
++
+         this.hasFullyShutdown = true; // Paper - Improved watchdog support
+         System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support
+     }
