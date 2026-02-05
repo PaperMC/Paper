@@ -10,8 +10,6 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.Nullable;
 
 public class CraftDamageSource implements DamageSource {
 
@@ -29,11 +27,6 @@ public class CraftDamageSource implements DamageSource {
 
     public World getCausingEntityWorld() {
         return Optionull.map(this.getCausingEntity(), Entity::getWorld);
-    }
-
-    @ApiStatus.Internal
-    public org.bukkit.entity.@Nullable Entity getDamager() {
-        return Optionull.mapOrDefault(this.getHandle().eventEntityDamager(), net.minecraft.world.entity.Entity::getBukkitEntity, this.getDirectEntity());
     }
 
     @Override
@@ -63,7 +56,7 @@ public class CraftDamageSource implements DamageSource {
 
     @Override
     public boolean isIndirect() {
-        return !this.getHandle().isDirect();
+        return !this.getHandle().isDirect(); // Paper - fix DamageSource API
     }
 
     @Override

@@ -23,21 +23,21 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public VehicleDamageEvent(@NotNull final Vehicle vehicle, final DamageSource damageSource, final Entity attacker, final double damage) {
+    public VehicleDamageEvent(final @NotNull Vehicle vehicle, final @NotNull DamageSource damageSource, final @Nullable Entity attacker, final double damage) {
         super(vehicle);
         this.damageSource = damageSource;
-        this.damage = damage;
         this.attacker = attacker;
+        this.damage = damage;
     }
 
     /**
      * Gets the DamageSource that caused the damage.
      *
-     * @return the DamageSource that caused the damage.
+     * @return the DamageSource that caused the damage
      */
     @NotNull
     public DamageSource getDamageSource() {
-        return damageSource;
+        return this.damageSource;
     }
 
     /**
