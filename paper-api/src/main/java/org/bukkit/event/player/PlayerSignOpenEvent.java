@@ -3,89 +3,47 @@ package org.bukkit.event.player;
 import org.bukkit.Warning;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when a sign is opened by the player.
  *
  * @deprecated use {@link io.papermc.paper.event.player.PlayerOpenSignEvent}
  */
-@Deprecated(forRemoval = true)
 @Warning
-public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Sign sign;
-    private final Side side;
-    private final Cause cause;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerSignOpenEvent(@NotNull final Player player, @NotNull final Sign sign, @NotNull final Side side, @NotNull final Cause cause) {
-        super(player);
-        this.sign = sign;
-        this.side = side;
-        this.cause = cause;
-    }
+@Deprecated(forRemoval = true)
+public interface PlayerSignOpenEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the sign that was opened.
      *
      * @return opened sign
      */
-    @NotNull
-    public Sign getSign() {
-        return this.sign;
-    }
+    Sign getSign();
 
     /**
      * Gets side of the sign opened.
      *
      * @return side of sign opened
      */
-    @NotNull
-    public Side getSide() {
-        return this.side;
-    }
+    Side getSide();
 
     /**
      * Gets the cause of the sign open.
      *
      * @return sign open cause
      */
-    @NotNull
-    public Cause getCause() {
-        return this.cause;
+    Cause getCause();
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum Cause {
+    enum Cause {
 
         /**
          * Indicate the sign was opened because of an interaction.
