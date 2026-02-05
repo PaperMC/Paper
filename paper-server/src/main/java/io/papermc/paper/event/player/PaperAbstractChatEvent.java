@@ -21,7 +21,7 @@ public sealed abstract class PaperAbstractChatEvent extends CraftPlayerEvent imp
     private boolean cancelled;
 
     PaperAbstractChatEvent(final boolean async, final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
-        super(player, async);
+        super(async, player);
         this.viewers = viewers;
         this.renderer = renderer;
         this.message = message;
