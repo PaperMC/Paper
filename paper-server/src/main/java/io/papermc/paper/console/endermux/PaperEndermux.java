@@ -9,6 +9,7 @@ import xyz.jpenilla.endermux.log4j.EndermuxForwardingAppender;
 import xyz.jpenilla.endermux.protocol.LayoutConfig;
 import xyz.jpenilla.endermux.server.SocketServerManager;
 import xyz.jpenilla.endermux.server.api.ServerHooks;
+import xyz.jpenilla.endermux.server.log.RemoteLogForwarder;
 
 @NullMarked
 public final class PaperEndermux {
