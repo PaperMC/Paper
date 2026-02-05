@@ -122,7 +122,8 @@ public final class EventToInterfaceMigration {
                 PlayerStatisticIncrementEvent.class,
                 PlayerSwapHandItemsEvent.class,
                 PlayerTakeLecternBookEvent.class,
-                PlayerToggleFlightEvent.class
+                PlayerToggleFlightEvent.class,
+                PlayerToggleSneakEvent.class
                 //</editor-fold>
             );
 
