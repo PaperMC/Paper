@@ -125,6 +125,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEv
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerSignOpenEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -309,7 +310,7 @@ public class CraftEventFactory {
     }
 
     public static boolean callPlayerSignOpenEvent(Player player, Sign sign, Side side, PlayerSignOpenEvent.Cause cause) {
-        final PlayerSignOpenEvent event = new PlayerSignOpenEvent(player, sign, side, cause);
+        final PlayerSignOpenEvent event = new CraftPlayerSignOpenEvent(player, sign, side, cause);
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
