@@ -1,25 +1,37 @@
 --- a/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
-@@ -41,13 +_,36 @@
+@@ -41,14 +_,37 @@
              d4 = 0.0;
          }
  
-+        // CraftBukkit start
-+        ItemStack singleItemStack = item.copyWithCount(1);
-+        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
-+        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
++        // Paper start - BlockDispenseEntityEvent
+         AbstractBoat abstractBoat = this.type.create(serverLevel, EntitySpawnReason.DISPENSER);
+-        if (abstractBoat != null) {
+-            abstractBoat.setInitialPos(d1, d2 + d4, d3);
+-            EntityType.<AbstractBoat>createDefaultStackConfig(serverLevel, item, null).accept(abstractBoat);
+-            abstractBoat.setYRot(direction.toYRot());
+-            serverLevel.addFreshEntity(abstractBoat);
+-            item.shrink(1);
+-        }
++        if (abstractBoat == null) return item;
 +
-+        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
-+        serverLevel.getCraftServer().getPluginManager().callEvent(event);
++        abstractBoat.setInitialPos(d1, d2 + d4, d3);
++        abstractBoat.setYRot(direction.toYRot());
++        EntityType.<AbstractBoat>createDefaultStackConfig(serverLevel, item, null).accept(abstractBoat);
 +
-+        if (event.isCancelled()) {
++        io.papermc.paper.event.block.BlockDispenseEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseEntityEvent(blockSource, abstractBoat, item);
++        if (event == null) {
 +            return item;
 +        }
++        // Paper end
++
++        // CraftBukkit start
++        ItemStack singleItemStack = item.copyWithCount(1);
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
 +
 +        boolean shrink = true;
 +        if (!event.getItem().equals(craftItem)) {
 +            shrink = false;
-+            // Chain to handler for new item
 +            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
 +            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
@@ -27,16 +39,9 @@
 +                return item;
 +            }
 +        }
++
++        if (serverLevel.addFreshEntity(abstractBoat) && shrink) item.shrink(1);
 +        // CraftBukkit end
-         AbstractBoat abstractBoat = this.type.create(serverLevel, EntitySpawnReason.DISPENSER);
-         if (abstractBoat != null) {
--            abstractBoat.setInitialPos(d1, d2 + d4, d3);
-+            abstractBoat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
-             EntityType.<AbstractBoat>createDefaultStackConfig(serverLevel, item, null).accept(abstractBoat);
-             abstractBoat.setYRot(direction.toYRot());
--            serverLevel.addFreshEntity(abstractBoat);
--            item.shrink(1);
-+            if (serverLevel.addFreshEntity(abstractBoat) && shrink) item.shrink(1); // Paper - if entity add was successful and supposed to shrink
-         }
  
          return item;
+     }
