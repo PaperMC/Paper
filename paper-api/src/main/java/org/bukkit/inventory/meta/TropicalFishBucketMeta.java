@@ -2,85 +2,99 @@ package org.bukkit.inventory.meta;
 
 import org.bukkit.DyeColor;
 import org.bukkit.entity.TropicalFish;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a bucket of tropical fish.
  */
+@NullMarked
 public interface TropicalFishBucketMeta extends ItemMeta {
 
     /**
      * Gets the color of the fish's pattern.
      * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
+     * Plugins should check that hasPatternColor() returns {@code true} before
      * calling this method.
      *
      * @return pattern color
+     * @throws IllegalStateException if no pattern color is set
      */
-    @NotNull
     DyeColor getPatternColor();
 
     /**
      * Sets the color of the fish's pattern.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param color pattern color
      */
-    void setPatternColor(@NotNull DyeColor color);
+    void setPatternColor(DyeColor color);
 
     /**
      * Gets the color of the fish's body.
      * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
+     * Plugins should check that hasBodyColor() returns {@code true} before
      * calling this method.
      *
      * @return pattern color
+     * @throws IllegalStateException if no body color is set
      */
-    @NotNull
     DyeColor getBodyColor();
 
     /**
      * Sets the color of the fish's body.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param color body color
      */
-    void setBodyColor(@NotNull DyeColor color);
+    void setBodyColor(DyeColor color);
 
     /**
      * Gets the fish's pattern.
      * <p>
-     * Plugins should check that hasVariant() returns <code>true</code> before
+     * Plugins should check that hasPattern() returns {@code true} before
      * calling this method.
      *
      * @return pattern
+     * @throws IllegalStateException if no pattern is set
      */
-    @NotNull
     TropicalFish.Pattern getPattern();
 
     /**
      * Sets the fish's pattern.
-     * <p>
-     * Setting this when hasVariant() returns <code>false</code> will initialize
-     * all other values to unspecified defaults.
      *
      * @param pattern new pattern
      */
-    void setPattern(@NotNull TropicalFish.Pattern pattern);
+    void setPattern(TropicalFish.Pattern pattern);
 
     /**
-     * Checks for existence of a variant tag indicating a specific fish will be
+     * Checks for the existence of a pattern.
+     *
+     * @return if there is a pattern
+     */
+    boolean hasPattern();
+
+    /**
+     * Checks for the existence of a body color.
+     *
+     * @return if there is a body color
+     */
+    boolean hasBodyColor();
+
+    /**
+     * Checks for the existence of a pattern color.
+     *
+     * @return if there is a pattern color
+     */
+    boolean hasPatternColor();
+
+    /**
+     * Checks for the existence of a variant tag indicating a specific fish will be
      * spawned.
      *
      * @return if there is a variant
+     * @deprecated the variant tag is no longer used and instead split into its own set of components
      */
+    @Deprecated(forRemoval = true, since = "1.21.10")
     boolean hasVariant();
 
     @Override
-    @NotNull
     TropicalFishBucketMeta clone();
 }
