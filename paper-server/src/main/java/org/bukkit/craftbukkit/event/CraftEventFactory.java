@@ -126,6 +126,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerSignOpenEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerStatisticIncrementEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1737,13 +1738,13 @@ public class CraftEventFactory {
 
         final Event event;
         if (stat.getType() == Type.UNTYPED) {
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
+            event = new CraftPlayerStatisticIncrementEvent(player, stat, current, newValue);
         } else if (stat.getType() == Type.ENTITY) {
             EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Stat<net.minecraft.world.entity.EntityType<?>>) statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
+            event = new CraftPlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
         } else {
             Material material = CraftStatistic.getMaterialFromStatistic(statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, material);
+            event = new CraftPlayerStatisticIncrementEvent(player, stat, current, newValue, material);
         }
         event.callEvent();
         return (Cancellable) event;
