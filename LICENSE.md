@@ -67,4 +67,5 @@ granny <contact@granny.dev>
 mja00 <me@mja00.dev>
 roro1506HD <16260475+roro1506HD@users.noreply.github.com>
 Toffikk <slodkitofik@gmail.com>
+Strokkur24 <strokkur.24@gmail.com>
 ```

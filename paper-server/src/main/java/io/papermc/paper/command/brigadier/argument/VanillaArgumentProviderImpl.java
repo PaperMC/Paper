@@ -13,6 +13,8 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperation;
+import io.papermc.paper.command.brigadier.argument.operation.ScoreboardOperationImpl;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
@@ -23,8 +25,11 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ObjectiveResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ScoreHolderResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.TeamResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.position.ColumnBlockPositionImpl;
@@ -36,6 +41,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -61,14 +67,18 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
+import net.minecraft.commands.arguments.ObjectiveArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
+import net.minecraft.commands.arguments.OperationArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.commands.arguments.ScoreHolderArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
+import net.minecraft.commands.arguments.TeamArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.TimeArgument;
@@ -94,6 +104,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Objective;
 import org.bukkit.Axis;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
@@ -111,12 +122,17 @@ import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
+import org.bukkit.craftbukkit.scoreboard.CraftObjective;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
+import org.bukkit.craftbukkit.scoreboard.CraftTeam;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.ScoreHolder;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -314,6 +330,55 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
         return this.wrap(ScoreboardSlotArgument.displaySlot(), CraftScoreboardTranslations::toBukkitSlot);
+    }
+
+    @Override
+    public ArgumentType<ScoreHolderResolver> scoreHolder() {
+        return this.wrap(ScoreHolderArgument.scoreHolder(), VanillaArgumentProviderImpl::convertScoreHolders);
+    }
+
+    @Override
+    public ArgumentType<ScoreHolderResolver> scoreHolders() {
+        return this.wrap(ScoreHolderArgument.scoreHolders(), VanillaArgumentProviderImpl::convertScoreHolders);
+    }
+
+    private static ScoreHolderResolver convertScoreHolders(ScoreHolderArgument.Result result) {
+        return sourceStack -> {
+            Collection<net.minecraft.world.scores.ScoreHolder> results = result.getNames((CommandSourceStack) sourceStack, Collections::emptyList);
+            List<ScoreHolder> list = new ArrayList<>(results.size());
+
+            for (net.minecraft.world.scores.ScoreHolder scoreHolder : results) {
+                list.add(CraftScoreHolder.fromNms(scoreHolder));
+            }
+
+            return list;
+        };
+    }
+
+    @Override
+    public ArgumentType<ScoreboardOperation> operation() {
+        return this.wrap(OperationArgument.operation(), ScoreboardOperationImpl::new);
+    }
+
+    @Override
+    public ArgumentType<ObjectiveResolver> objective() {
+        return this.wrap(ObjectiveArgument.objective(), (name) -> (sourceStack, scoreboard, onlyWritable) -> {
+            final CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
+
+            final Objective objective = onlyWritable
+                ? ObjectiveArgument.getWritableObjective(craftScoreboard.getHandle(), name)
+                : ObjectiveArgument.getObjective(craftScoreboard.getHandle(), name);
+
+            return new CraftObjective(craftScoreboard, objective);
+        });
+    }
+
+    @Override
+    public ArgumentType<TeamResolver> team() {
+        return this.wrap(TeamArgument.team(), name -> (scoreboard, sourceStack) -> {
+            CraftScoreboard craftScoreboard = (CraftScoreboard) scoreboard;
+            return new CraftTeam(craftScoreboard, TeamArgument.getTeam(craftScoreboard.getHandle(), name));
+        });
     }
 
     @Override

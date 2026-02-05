@@ -1,27 +1,27 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.base.Preconditions;
+import java.util.Objects;
 import net.minecraft.world.scores.Scoreboard;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
-import java.util.Objects;
+import org.bukkit.scoreboard.ScoreHolder;
 
-final class CraftObjective extends CraftScoreboardComponent implements Objective {
+public final class CraftObjective extends CraftScoreboardComponent implements Objective {
     private final net.minecraft.world.scores.Objective objective;
     private final CraftCriteria criteria;
 
-    CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
+    public CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);
     }
 
-    net.minecraft.world.scores.Objective getHandle() {
+    public net.minecraft.world.scores.Objective getHandle() {
         return this.objective;
     }
 
@@ -131,27 +131,12 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public Score getScore(OfflinePlayer player) {
+    public Score getScore(final ScoreHolder holder) {
+        Preconditions.checkArgument(holder != null, "Entry cannot be null");
+        Preconditions.checkArgument(holder.getScoreboardName().length() <= Short.MAX_VALUE, "Score '" + holder + "' is longer than the limit of 32767 characters");
         this.checkState();
 
-        return new CraftScore(this, CraftScoreboard.getScoreHolder(player));
-    }
-
-    @Override
-    public Score getScore(String entry) {
-        Preconditions.checkArgument(entry != null, "Entry cannot be null");
-        Preconditions.checkArgument(entry.length() <= Short.MAX_VALUE, "Score '" + entry + "' is longer than the limit of 32767 characters");
-        this.checkState();
-
-        return new CraftScore(this, CraftScoreboard.getScoreHolder(entry));
-    }
-
-    @Override
-    public Score getScoreFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException {
-        Preconditions.checkArgument(entity != null, "Entity cannot be null");
-        this.checkState();
-
-        return new CraftScore(this, ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle());
+        return new CraftScore(this, ((CraftScoreHolder) holder).asNmsScoreHolder());
     }
 
     @Override
