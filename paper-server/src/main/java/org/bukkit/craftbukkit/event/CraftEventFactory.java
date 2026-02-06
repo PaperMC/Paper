@@ -2399,7 +2399,7 @@ public class CraftEventFactory {
         try (SimpleBlockCapture capture = level.fork()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldgenCapture.apply(captureTreeGeneration)) {
-                var states = captureTreeGeneration.calculateLatestBlockStates(level, serverLevel);
+                var states = captureTreeGeneration.calculateLatestBlockStates(serverLevel);
                 org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel);
 
                 java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
@@ -2422,7 +2422,7 @@ public class CraftEventFactory {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
             worldgenCapture.accept(captureTreeGeneration);
-            var states = captureTreeGeneration.calculateLatestBlockStates(captureTreeGeneration, level);
+            var states = captureTreeGeneration.calculateLatestBlockStates(level);
             org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
 
             java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());

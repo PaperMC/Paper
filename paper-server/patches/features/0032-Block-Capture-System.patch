@@ -177,7 +177,7 @@ index 2818c7ad02a861270283384ceb7ecd4d44f6d624..f2cd7765da1ee5138aba9505c5935444
      }
  }
 diff --git a/net/minecraft/world/item/BlockItem.java b/net/minecraft/world/item/BlockItem.java
-index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..ff349ef9b953bb78200909e96321204fe3acb710 100644
+index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..d58d490600f463b311235bbe965906340c16f9a2 100644
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
 @@ -1,13 +1,18 @@
@@ -286,7 +286,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..ff349ef9b953bb78200909e96321204f
 +                        blocks.add(state.getBlock().getState());
 +                    });
 +
-+                    capture.openLegacySupport();
++                    capture.overlayCaptureOnLevel();
 +
 +                    if (blocks.size() > 1) {
 +                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, clickedPos);
@@ -689,7 +689,7 @@ index 3a41cf80e347ae3b30858879fb91f719625c8bb6..334f30499b8e043bf74ebe7001ded66c
  
          return flag;
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3a72fcde9 100644
+index 579bbba4e823d4d0318e58759ca732b7c8e4d865..f9ebaf0eaa5954f40cd0aeb5d41b150f3b2c2bfb 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -143,10 +143,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -714,7 +714,7 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3
 -            if (previous != null) {
 -                return previous.getHandle();
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
-+        if (this.capturer.isCapturing() && this.capturer.getCapture().isViewingCaptureState()) {
++        if (this.capturer.isCapturing() && this.capturer.getCapture().isOverlayingCaptureOnLevel()) {
 +            BlockState guess = this.capturer.getCapture().getCaptureBlockStateIfLoaded(pos);
 +            if (guess != null) {
 +                return guess;
@@ -744,7 +744,7 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3
 -            blockstate.setFlags(flags);
 -            return true;
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
-+        if (this.capturer.isCapturing() && this.capturer.getCapture().isViewingCaptureState()) {
++        if (this.capturer.isCapturing() && this.capturer.getCapture().isOverlayingCaptureOnLevel()) {
 +            return this.capturer.getCapture().capturingWorldLevel().setBlockSilent(pos, state, flags, recursionLeft);
          }
 -        // CraftBukkit end
@@ -889,7 +889,7 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3
 -            if (previous != null) {
 -                return previous.getHandle();
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
-+        if (this.capturer.isCapturing() && this.capturer.getCapture().isViewingCaptureState()) {
++        if (this.capturer.isCapturing() && this.capturer.getCapture().isOverlayingCaptureOnLevel()) {
 +            BlockState guess = this.capturer.getCapture().getCaptureBlockState(pos);
 +            if (guess != null) {
 +                return guess;
@@ -906,7 +906,7 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3
 -        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
 -        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(pos)) != null) {
 -            return blockEntity;
-+        if (this.capturer.isCapturing() && this.capturer.getCapture().isViewingCaptureState()) {
++        if (this.capturer.isCapturing() && this.capturer.getCapture().isOverlayingCaptureOnLevel()) {
 +            var guess = this.capturer.getCapture().getCaptureBlockEntity(pos);
 +            if (guess != null) {
 +                return guess.orElse(null);
@@ -922,7 +922,7 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..0b7aacb48cf0b0f974fd24d90f0910a3
 -            if (this.captureBlockStates) {
 -                this.capturedTileEntities.put(blockPos.immutable(), blockEntity);
 +            // Paper start - Perf: Optimize capturedTileEntities lookup
-+            if (this.capturer.isCapturing() && this.capturer.getCapture().isViewingCaptureState()) {
++            if (this.capturer.isCapturing() && this.capturer.getCapture().isOverlayingCaptureOnLevel()) {
 +                this.capturer.getCapture().capturingWorldLevel().setBlockEntity(blockEntity);
                  return;
              }
@@ -1924,7 +1924,7 @@ index c57cb7b47a01e313a1be5de769c6766ac2787d95..f34731580bc880dcc5d3e96923a7f2b4
      }
  }
 diff --git a/net/minecraft/world/level/block/grower/TreeGrower.java b/net/minecraft/world/level/block/grower/TreeGrower.java
-index 5471619a0484ece08640e2b3fd26746c351dc3e0..04663ea08fd6b849622e4908edee1562550bf63c 100644
+index 5471619a0484ece08640e2b3fd26746c351dc3e0..991b565a64083068e8f5a97034131898dce9ab59 100644
 --- a/net/minecraft/world/level/block/grower/TreeGrower.java
 +++ b/net/minecraft/world/level/block/grower/TreeGrower.java
 @@ -122,7 +122,34 @@ public final class TreeGrower {
@@ -1942,7 +1942,7 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..04663ea08fd6b849622e4908edee1562
 +        try (io.papermc.paper.util.capture.SimpleBlockCapture capture = level.fork()) {
 +            io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 +            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, mealContext.treeHook)) {
-+                var states = captureTreeGeneration.calculateLatestBlockStates(captureTreeGeneration, mealContext.ogServerLevel);
++                var states = captureTreeGeneration.calculateLatestBlockStates(mealContext.ogServerLevel);
 +                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, mealContext.ogServerLevel);
 +                java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
 +                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook.get(), false, mealContext.getBukkitPlayer(), blocks);

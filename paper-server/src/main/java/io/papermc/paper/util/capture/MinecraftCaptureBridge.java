@@ -61,7 +61,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     private final BlockPlacementPredictor predictiveReadLayer;
     private SimpleBlockPlacementPredictor writeLayer;
     private final SimpleBlockPlacementPredictor legacyStorage;
-    private boolean isLegacyPredicting = false;
+    private boolean forwardingLevelCalls = false;
     private final CapturingTickAccess<Block> blocks;
     private final CapturingTickAccess<Fluid> liquids;
 
@@ -82,7 +82,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         this.writeLayer = blockPlacementStorage;
 
         this.predictiveReadLayer = new LayeredBlockPlacementPredictor(
-                new LegacyLayer(this.legacyStorage, () -> this.isLegacyPredicting),
+                // If we are currently overlaying server level, we want to show those first.
+                new LegacyLayer(this.legacyStorage, () -> this.forwardingLevelCalls),
                 blockPlacementStorage
         );
 
@@ -405,8 +406,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return placement.map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity);
     }
 
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(PaperCapturingWorldLevel predictor, ServerLevel level) {
-        return this.writeLayer.getRecordMap().calculateLatestBlockStates(predictor, level);
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(ServerLevel level) {
+        return this.writeLayer.getRecordMap().calculateLatestBlockStates(level);
     }
 
     public void applyTasks() {
@@ -432,9 +433,9 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         }
     }
 
-    public void activateLegacyCapture() {
+    public void allowWriteOnLevel() {
         this.writeLayer = this.legacyStorage;
-        this.isLegacyPredicting = true;
+        this.forwardingLevelCalls = true;
     }
 
     public static class CapturingTickAccess<T> implements LevelTickAccess<@NotNull T> {

@@ -89,7 +89,7 @@ public final class CaptureRecordMap {
     }
 
     // TODO: Clean this up
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(PaperCapturingWorldLevel predictor, ServerLevel level) {
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(ServerLevel level) {
         final Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
 
         this.recordsByPos.keySet().forEach((pos) -> {
@@ -102,8 +102,7 @@ public final class CaptureRecordMap {
     }
 
 
-
-    public class CaptureRecord {
+    public static class CaptureRecord {
 
         private final BlockPos pos;
 

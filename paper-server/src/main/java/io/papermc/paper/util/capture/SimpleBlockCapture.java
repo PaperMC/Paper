@@ -15,7 +15,7 @@ public class SimpleBlockCapture implements AutoCloseable {
     private final MinecraftCaptureBridge capturingWorldLevel;
     private final ServerLevel level;
 
-    private boolean openLegacyCapturing = false;
+    private boolean isOverlayingCaptureOnLevel = false;
 
 
     private final SimpleBlockCapture oldCapture;
@@ -36,7 +36,7 @@ public class SimpleBlockCapture implements AutoCloseable {
     }
 
     public Map<Location, BlockState> getCapturedBlockStates() {
-        return this.capturingWorldLevel.calculateLatestBlockStates(this.capturingWorldLevel, level);
+        return this.capturingWorldLevel.calculateLatestBlockStates(this.level);
     }
 
     public net.minecraft.world.level.block.state.BlockState getCaptureBlockState(final BlockPos pos) {
@@ -48,13 +48,14 @@ public class SimpleBlockCapture implements AutoCloseable {
     }
 
 
-    public void openLegacySupport() {
-        this.openLegacyCapturing = true;
-        this.capturingWorldLevel.activateLegacyCapture();
+    // This is done so that the captured blocks appear ontop of the world.
+    public void overlayCaptureOnLevel() {
+        this.isOverlayingCaptureOnLevel = true;
+        this.capturingWorldLevel.allowWriteOnLevel();
     }
 
-    public boolean isViewingCaptureState() {
-        return openLegacyCapturing;
+    public boolean isOverlayingCaptureOnLevel() {
+        return isOverlayingCaptureOnLevel;
     }
 
     public void finalizePlacement() {
