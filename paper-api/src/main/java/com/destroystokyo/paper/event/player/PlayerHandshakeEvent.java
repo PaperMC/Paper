@@ -1,15 +1,10 @@
 package com.destroystokyo.paper.event.player;
 
-import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -22,43 +17,14 @@ import org.jspecify.annotations.Nullable;
  * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
  */
 @NullMarked
-public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final String originalHandshake;
-    private final String originalSocketAddressHostname;
-    private @Nullable String serverHostname;
-    private @Nullable String socketAddressHostname;
-    private @Nullable UUID uniqueId;
-    private @Nullable String propertiesJson;
-    private boolean failed;
-    private Component failMessage = Component.text("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!", NamedTextColor.YELLOW);
-
-    private boolean cancelled;
-
-    @Deprecated
-    @ApiStatus.Internal
-    public PlayerHandshakeEvent(final String originalHandshake, final boolean cancelled) {
-        this(originalHandshake, "127.0.0.1", cancelled);
-    }
-
-    @ApiStatus.Internal
-    public PlayerHandshakeEvent(final String originalHandshake, final String originalSocketAddressHostname, final boolean cancelled) {
-        super(true);
-        this.originalHandshake = originalHandshake;
-        this.originalSocketAddressHostname = originalSocketAddressHostname;
-        this.cancelled = cancelled;
-    }
+public interface PlayerHandshakeEvent extends Event, Cancellable {
 
     /**
      * Gets the original handshake string.
      *
      * @return the original handshake string
      */
-    public String getOriginalHandshake() {
-        return this.originalHandshake;
-    }
+    String getOriginalHandshake();
 
     /**
      * Gets the original socket address hostname.
@@ -68,9 +34,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @return the original socket address hostname
      */
-    public String getOriginalSocketAddressHostname() {
-        return this.originalSocketAddressHostname;
-    }
+    String getOriginalSocketAddressHostname();
 
     /**
      * Gets the server hostname string.
@@ -79,9 +43,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @return the server hostname string
      */
-    public @Nullable String getServerHostname() {
-        return this.serverHostname;
-    }
+    @Nullable String getServerHostname();
 
     /**
      * Sets the server hostname string.
@@ -90,9 +52,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @param serverHostname the server hostname string
      */
-    public void setServerHostname(final String serverHostname) {
-        this.serverHostname = serverHostname;
-    }
+    void setServerHostname(String serverHostname);
 
     /**
      * Gets the socket address hostname string.
@@ -101,9 +61,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @return the socket address hostname string
      */
-    public @Nullable String getSocketAddressHostname() {
-        return this.socketAddressHostname;
-    }
+    @Nullable String getSocketAddressHostname();
 
     /**
      * Sets the socket address hostname string.
@@ -112,27 +70,21 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @param socketAddressHostname the socket address hostname string
      */
-    public void setSocketAddressHostname(final String socketAddressHostname) {
-        this.socketAddressHostname = socketAddressHostname;
-    }
+    void setSocketAddressHostname(String socketAddressHostname);
 
     /**
      * Gets the unique id.
      *
      * @return the unique id
      */
-    public @Nullable UUID getUniqueId() {
-        return this.uniqueId;
-    }
+    @Nullable UUID getUniqueId();
 
     /**
      * Sets the unique id.
      *
      * @param uniqueId the unique id
      */
-    public void setUniqueId(final UUID uniqueId) {
-        this.uniqueId = uniqueId;
-    }
+    void setUniqueId(UUID uniqueId);
 
     /**
      * Gets the profile properties.
@@ -141,9 +93,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @return the profile properties, as JSON
      */
-    public @Nullable String getPropertiesJson() {
-        return this.propertiesJson;
-    }
+    @Nullable String getPropertiesJson();
 
     /**
      * Determines if authentication failed.
@@ -153,9 +103,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @return {@code true} if authentication failed, {@code false} otherwise
      */
-    public boolean isFailed() {
-        return this.failed;
-    }
+    boolean isFailed();
 
     /**
      * Sets if authentication failed and the client should be disconnected.
@@ -165,9 +113,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @param failed {@code true} if authentication failed, {@code false} otherwise
      */
-    public void setFailed(final boolean failed) {
-        this.failed = failed;
-    }
+    void setFailed(boolean failed);
 
     /**
      * Sets the profile properties.
@@ -176,27 +122,21 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      *
      * @param propertiesJson the profile properties, as JSON
      */
-    public void setPropertiesJson(final String propertiesJson) {
-        this.propertiesJson = propertiesJson;
-    }
+    void setPropertiesJson(String propertiesJson);
 
     /**
      * Gets the message to display to the client when authentication fails.
      *
      * @return the message to display to the client
      */
-    public Component failMessage() {
-        return this.failMessage;
-    }
+    Component failMessage();
 
     /**
      * Sets the message to display to the client when authentication fails.
      *
      * @param failMessage the message to display to the client
      */
-    public void failMessage(final Component failMessage) {
-        this.failMessage = failMessage;
-    }
+    void failMessage(Component failMessage);
 
     /**
      * Gets the message to display to the client when authentication fails.
@@ -205,9 +145,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      * @deprecated use {@link #failMessage()}
      */
     @Deprecated
-    public String getFailMessage() {
-        return LegacyComponentSerializer.legacySection().serialize(this.failMessage());
-    }
+    String getFailMessage();
 
     /**
      * Sets the message to display to the client when authentication fails.
@@ -216,10 +154,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      * @deprecated use {@link #failMessage(Component)}
      */
     @Deprecated
-    public void setFailMessage(final String failMessage) {
-        Preconditions.checkArgument(failMessage != null && !failMessage.isEmpty(), "fail message cannot be null or empty");
-        this.failMessage(LegacyComponentSerializer.legacySection().deserialize(failMessage));
-    }
+    void setFailMessage(String failMessage);
 
     /**
      * {@inheritDoc}
@@ -228,9 +163,7 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      * be processed.
      */
     @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -239,16 +172,12 @@ public class PlayerHandshakeEvent extends EventTmp implements Cancellable {
      * be processed.
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
