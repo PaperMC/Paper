@@ -143,7 +143,8 @@ public final class EventToInterfaceMigration {
                 com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent.class,
                 PlayerSetSpawnEvent.class,
                 PlayerStartSpectatingEntityEvent.class,
-                PlayerStopSpectatingEntityEvent.class
+                PlayerStopSpectatingEntityEvent.class,
+                PlayerUseUnknownEntityEvent.class
                 //</editor-fold>
             );
 

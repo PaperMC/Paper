@@ -2217,7 +2217,7 @@ public class CraftEventFactory {
     }
 
     public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, net.minecraft.network.protocol.game.ServerboundInteractPacket packet, InteractionHand hand, net.minecraft.world.phys.@Nullable Vec3 vector) {
-        new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
+        new io.papermc.paper.event.player.PaperPlayerUseUnknownEntityEvent(
             (Player) player.getBukkitEntity(), packet.getEntityId(), packet.isAttack(),
             CraftEquipmentSlot.getHand(hand),
             vector != null ? CraftVector.toBukkit(vector) : null
