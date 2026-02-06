@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player shoots a projectile.
@@ -15,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * of a bow or crossbow. A plugin may listen to {@link EntityShootBowEvent}
  * for these actions instead.
  */
-@NullMarked
 public interface PlayerLaunchProjectileEvent extends PlayerEventNew, Cancellable {
 
     /**

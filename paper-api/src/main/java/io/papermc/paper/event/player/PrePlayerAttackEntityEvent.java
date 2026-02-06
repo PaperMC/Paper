@@ -4,7 +4,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the player tries to attack an entity.
@@ -17,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Note: there may be other factors (invulnerability, etc.) that will prevent this entity from being attacked that this event will not cover
  */
-@NullMarked
 public interface PrePlayerAttackEntityEvent extends PlayerEventNew, Cancellable {
 
     /**

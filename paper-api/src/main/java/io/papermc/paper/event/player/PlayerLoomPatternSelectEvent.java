@@ -5,12 +5,10 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.LoomInventory;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player selects a banner pattern in a loom inventory.
  */
-@NullMarked
 public interface PlayerLoomPatternSelectEvent extends PlayerEventNew, Cancellable {
 
     /**

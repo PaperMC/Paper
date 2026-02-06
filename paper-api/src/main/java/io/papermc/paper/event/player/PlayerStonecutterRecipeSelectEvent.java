@@ -5,9 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.StonecutterInventory;
 import org.bukkit.inventory.StonecuttingRecipe;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface PlayerStonecutterRecipeSelectEvent extends PlayerEventNew, Cancellable { // todo javadocs?
 
     StonecutterInventory getStonecutterInventory();

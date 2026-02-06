@@ -5,7 +5,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called whenever a players shield is disabled due to an attack from another entity that was capable of disabling the
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * It follows that, if this event is cancelled, no {@link PlayerItemCooldownEvent} is called as the shield is never
  * disabled in the first place.
  */
-@NullMarked
 public interface PlayerShieldDisableEvent extends PlayerEventNew, Cancellable {
 
     /**

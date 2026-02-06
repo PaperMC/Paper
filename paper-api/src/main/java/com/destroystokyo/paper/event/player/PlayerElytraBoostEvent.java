@@ -6,12 +6,10 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player boosts elytra flight with a firework
  */
-@NullMarked
 public interface PlayerElytraBoostEvent extends PlayerEventNew, Cancellable {
 
     /**

@@ -6,12 +6,10 @@ import com.destroystokyo.paper.SkinParts;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.MainHand;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the player changes their client settings
  */
-@NullMarked
 public interface PlayerClientOptionsChangeEvent extends PlayerEventNew { // todo javadocs?
 
     String getLocale();

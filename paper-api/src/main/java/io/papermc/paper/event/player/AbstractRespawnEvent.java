@@ -6,9 +6,7 @@ import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 @ApiStatus.NonExtendable
 public interface AbstractRespawnEvent extends PlayerEventNew {
 

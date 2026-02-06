@@ -27,12 +27,10 @@ import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player is attempting to pick up an experience orb
  */
-@NullMarked
 public interface PlayerPickupExperienceEvent extends PlayerEventNew, Cancellable {
 
     /**

@@ -4,12 +4,10 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset
  */
-@NullMarked
 public interface PlayerAttackEntityCooldownResetEvent extends PlayerEventNew, Cancellable {
 
     /**

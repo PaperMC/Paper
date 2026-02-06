@@ -4,13 +4,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.index.qual.Positive;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the server detects a player stopping using an item.
  * Examples of this are letting go of the interact button when holding a bow, an edible item, or a spyglass.
  */
-@NullMarked
 public interface PlayerStopUsingItemEvent extends PlayerEventNew {
 
     /**
