@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import io.papermc.paper.event.player.PaperLootableInventoryReplenishEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -83,7 +84,7 @@ public class PaperLootableInventoryData {
 
 
         final Player bukkitPlayer = (Player) player.getBukkitEntity();
-        final LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, holderInterface.getInventoryForEvent(lootTableHolder));
+        final LootableInventoryReplenishEvent event = new PaperLootableInventoryReplenishEvent(bukkitPlayer, holderInterface.getInventoryForEvent(lootTableHolder));
         event.setCancelled(!this.canPlayerLoot(player.getUUID(), paperConfig));
         return event.callEvent();
     }
