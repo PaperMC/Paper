@@ -155,7 +155,8 @@ public final class EventToInterfaceMigration {
                 ClientTickEndEvent.class,
                 PlayerShearBlockEvent.class,
                 PlayerNaturallySpawnCreaturesEvent.class,
-                LootableInventoryReplenishEvent.class
+                LootableInventoryReplenishEvent.class,
+                UncheckedSignChangeEvent.class
                 //</editor-fold>
             );
 
