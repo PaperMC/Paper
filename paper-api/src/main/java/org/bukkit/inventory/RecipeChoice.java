@@ -152,6 +152,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
+        @Deprecated(since = "1.13.1")
         public ItemStack getItemStack() {
             ItemStack stack = new ItemStack(choices.get(0));
 
@@ -247,6 +248,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
+        @Deprecated(since = "1.13.1")
         public ItemStack getItemStack() {
             return choices.get(0).clone();
         }
