@@ -353,15 +353,6 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         }
     }
 
-    /**
-     * Represents a player that will be displayed in the player sample of the server list.
-     *
-     * @param name name of the listed player
-     * @param id   UUID of the listed player
-     */
-    public record ListedPlayerInfo(@NotNull String name, @NotNull UUID id) {
-    }
-
     @ApiStatus.Internal
     private static final class UncheckedPlayerProfile implements PlayerProfile {
         private String name;
