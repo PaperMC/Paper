@@ -5,10 +5,10 @@ import net.minecraft.server.dedicated.DedicatedServer;
 import org.jline.reader.ParsedLine;
 import org.jspecify.annotations.NullMarked;
 import xyz.jpenilla.endermux.protocol.Payloads;
-import xyz.jpenilla.endermux.server.api.ConsoleHooks;
+import xyz.jpenilla.endermux.server.api.InteractiveConsoleHooks;
 
 @NullMarked
-public final class PaperCommandParser implements ConsoleHooks.CommandParser {
+public final class PaperCommandParser implements InteractiveConsoleHooks.CommandParser {
     private final DedicatedServer server;
 
     public PaperCommandParser(final DedicatedServer server) {

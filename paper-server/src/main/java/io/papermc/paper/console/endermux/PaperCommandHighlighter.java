@@ -6,10 +6,10 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jspecify.annotations.NullMarked;
 import xyz.jpenilla.endermux.protocol.Payloads;
-import xyz.jpenilla.endermux.server.api.ConsoleHooks;
+import xyz.jpenilla.endermux.server.api.InteractiveConsoleHooks;
 
 @NullMarked
-public final class PaperCommandHighlighter implements ConsoleHooks.CommandHighlighter {
+public final class PaperCommandHighlighter implements InteractiveConsoleHooks.CommandHighlighter {
     private final DedicatedServer server;
 
     public PaperCommandHighlighter(final DedicatedServer server) {
