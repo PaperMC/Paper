@@ -11,7 +11,7 @@ public class BoneMealContext {
 
     public ServerLevel ogServerLevel;
     public ServerPlayer player;
-    public boolean precancelStructureEvent = true;
+    public boolean precancelStructureEvent = false;
     public java.util.concurrent.atomic.AtomicReference<org.bukkit.TreeType> treeHook = new AtomicReference<>(); // just make this a field
 
 
