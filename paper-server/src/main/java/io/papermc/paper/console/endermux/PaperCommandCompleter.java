@@ -14,10 +14,10 @@ import org.jline.reader.ParsedLine;
 import org.jline.terminal.TerminalBuilder;
 import org.jspecify.annotations.NullMarked;
 import xyz.jpenilla.endermux.protocol.Payloads;
-import xyz.jpenilla.endermux.server.api.ConsoleHooks;
+import xyz.jpenilla.endermux.server.api.InteractiveConsoleHooks;
 
 @NullMarked
-public final class PaperCommandCompleter implements ConsoleHooks.CommandCompleter {
+public final class PaperCommandCompleter implements InteractiveConsoleHooks.CommandCompleter {
     private final DedicatedServer server;
     private final LineReader lineReader;
 
