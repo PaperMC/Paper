@@ -3,7 +3,7 @@ package com.destroystokyo.paper.event.brigadier;
 import com.mojang.brigadier.suggestion.Suggestions;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * otherwise called synchronously.
  */
 @NullMarked
-public interface AsyncPlayerSendSuggestionsEvent extends PlayerEventNew, Cancellable {
+public interface AsyncPlayerSendSuggestionsEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the input buffer sent to request these suggestions.

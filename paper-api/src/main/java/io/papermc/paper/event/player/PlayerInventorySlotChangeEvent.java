@@ -1,14 +1,14 @@
 package io.papermc.paper.event.player;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a slot contents change in a player's inventory.
  */
-public interface PlayerInventorySlotChangeEvent extends PlayerEventNew {
+public interface PlayerInventorySlotChangeEvent extends PlayerEvent {
 
     /**
      * The raw slot number that was changed.

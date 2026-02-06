@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * This event is not called for some high frequency statistics, e.g. movement
  * based statistics.
  */
-public interface PlayerStatisticIncrementEvent extends PlayerEventNew, Cancellable {
+public interface PlayerStatisticIncrementEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the statistic that is being incremented.

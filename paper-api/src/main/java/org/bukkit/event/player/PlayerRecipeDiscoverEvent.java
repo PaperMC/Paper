@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player discovers a new recipe in the recipe book.
  */
-public interface PlayerRecipeDiscoverEvent extends PlayerEventNew, Cancellable {
+public interface PlayerRecipeDiscoverEvent extends PlayerEvent, Cancellable {
 
     /**
      * Get the namespaced key of the discovered recipe.

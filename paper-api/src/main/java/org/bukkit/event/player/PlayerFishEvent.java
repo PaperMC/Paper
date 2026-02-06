@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>If you want to monitor a fishhooks state transition, you can use {@link FishHookStateChangeEvent}.</p>
  */
-public interface PlayerFishEvent extends PlayerEventNew, Cancellable {
+public interface PlayerFishEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity caught by the player.

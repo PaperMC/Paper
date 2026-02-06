@@ -8,7 +8,7 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.Experimental
-public interface UncheckedSignChangeEvent extends PlayerEventNew, Cancellable {
+public interface UncheckedSignChangeEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the location at which a potential sign was edited.

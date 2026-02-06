@@ -6,7 +6,7 @@ import org.bukkit.Warning;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when player is about to spawn in a world after joining the server.
@@ -18,7 +18,7 @@ import org.bukkit.event.player.PlayerEventNew;
  */
 @Warning(value = true, reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.")
 @Deprecated(since = "1.21.9", forRemoval = true)
-public interface PlayerSpawnLocationEvent extends PlayerEventNew {
+public interface PlayerSpawnLocationEvent extends PlayerEvent {
 
     /**
      * Gets player's spawn location.

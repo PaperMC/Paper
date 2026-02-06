@@ -26,12 +26,12 @@ package com.destroystokyo.paper.event.player;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Fired when a player is attempting to pick up an experience orb
  */
-public interface PlayerPickupExperienceEvent extends PlayerEventNew, Cancellable {
+public interface PlayerPickupExperienceEvent extends PlayerEvent, Cancellable {
 
     /**
      * @return the experience orb that the player is picking up

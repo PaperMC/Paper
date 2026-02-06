@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player toggles their sprinting state
  */
-public interface PlayerToggleSprintEvent extends PlayerEventNew, Cancellable {
+public interface PlayerToggleSprintEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets whether the player is now sprinting or not.

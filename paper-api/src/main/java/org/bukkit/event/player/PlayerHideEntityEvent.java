@@ -14,7 +14,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
  */
-public interface PlayerHideEntityEvent extends PlayerEventNew {
+public interface PlayerHideEntityEvent extends PlayerEvent {
 
     /**
      * Gets the entity which has been hidden from the player.

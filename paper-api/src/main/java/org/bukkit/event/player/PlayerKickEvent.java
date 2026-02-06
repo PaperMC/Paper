@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player gets kicked from the server
  */
-public interface PlayerKickEvent extends PlayerEventNew, Cancellable {
+public interface PlayerKickEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the reason why the player is getting kicked

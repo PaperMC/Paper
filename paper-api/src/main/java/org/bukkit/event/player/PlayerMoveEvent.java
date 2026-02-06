@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Holds information for player movement events
  */
-public interface PlayerMoveEvent extends PlayerEventNew, Cancellable {
+public interface PlayerMoveEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the location this player moved from

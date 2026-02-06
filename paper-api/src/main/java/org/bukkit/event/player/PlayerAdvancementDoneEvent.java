@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a player has completed all criteria in an advancement.
  */
-public interface PlayerAdvancementDoneEvent extends PlayerEventNew {
+public interface PlayerAdvancementDoneEvent extends PlayerEvent {
 
     /**
      * Get the advancement which has been completed.

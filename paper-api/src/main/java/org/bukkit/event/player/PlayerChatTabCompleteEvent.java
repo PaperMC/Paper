@@ -12,7 +12,7 @@ import org.bukkit.event.HandlerList;
  */
 @Deprecated(since = "1.13")
 @Warning(reason = "This event is no longer fired due to client changes")
-public interface PlayerChatTabCompleteEvent extends PlayerEventNew {
+public interface PlayerChatTabCompleteEvent extends PlayerEvent {
 
     /**
      * Gets the chat message being tab-completed.

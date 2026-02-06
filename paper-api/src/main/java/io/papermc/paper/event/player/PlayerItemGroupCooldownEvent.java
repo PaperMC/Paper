@@ -4,7 +4,7 @@ import io.papermc.paper.datacomponent.item.UseCooldown;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.checkerframework.checker.index.qual.NonNegative;
 
 /**
@@ -12,7 +12,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
  *
  * @see PlayerItemCooldownEvent for a more specific event when applied to a specific item.
  */
-public interface PlayerItemGroupCooldownEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemGroupCooldownEvent extends PlayerEvent, Cancellable {
 
     /**
      * Get the cooldown group as defined by an item's {@link UseCooldown#cooldownGroup()}.

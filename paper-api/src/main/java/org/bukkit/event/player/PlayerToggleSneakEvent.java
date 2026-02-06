@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player toggles their sneaking state
  */
-public interface PlayerToggleSneakEvent extends PlayerEventNew, Cancellable {
+public interface PlayerToggleSneakEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns whether the player is now sneaking or not.

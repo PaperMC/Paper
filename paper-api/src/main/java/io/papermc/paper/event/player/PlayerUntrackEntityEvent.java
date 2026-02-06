@@ -3,7 +3,7 @@ package io.papermc.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Is called when a {@link Player} untracks an {@link Entity}.
@@ -11,7 +11,7 @@ import org.bukkit.event.player.PlayerEventNew;
  * Adding or removing entities from the world at the point in time this event is called is completely
  * unsupported and should be avoided.
  */
-public interface PlayerUntrackEntityEvent extends PlayerEventNew {
+public interface PlayerUntrackEntityEvent extends PlayerEvent {
 
     /**
      * Gets the entity that will be untracked

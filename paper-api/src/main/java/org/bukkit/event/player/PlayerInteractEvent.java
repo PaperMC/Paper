@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
  * rather than when the subsequent interaction activity (e.g. placing a block in
  * an illegal position ({@link BlockCanBuildEvent}) will fail).
  */
-public interface PlayerInteractEvent extends PlayerEventNew, Cancellable {
+public interface PlayerInteractEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the action type

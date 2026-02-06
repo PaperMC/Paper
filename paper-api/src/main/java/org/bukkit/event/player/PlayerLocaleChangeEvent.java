@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player changes their locale in the client settings.
  */
-public interface PlayerLocaleChangeEvent extends PlayerEventNew {
+public interface PlayerLocaleChangeEvent extends PlayerEvent {
 
     /**
      * @return the player's new locale

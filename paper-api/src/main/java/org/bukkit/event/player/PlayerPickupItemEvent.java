@@ -12,7 +12,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
  */
 @Warning
 @Deprecated(since = "1.12")
-public interface PlayerPickupItemEvent extends PlayerEventNew, Cancellable {
+public interface PlayerPickupItemEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the Item picked up by the player.

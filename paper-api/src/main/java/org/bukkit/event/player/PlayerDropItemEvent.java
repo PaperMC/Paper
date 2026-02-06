@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when a player drops an item from their inventory
  */
-public interface PlayerDropItemEvent extends PlayerEventNew, Cancellable {
+public interface PlayerDropItemEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the item dropped by the player.

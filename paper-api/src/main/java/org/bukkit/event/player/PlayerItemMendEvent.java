@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Contract;
  * This event is fired directly before the {@link PlayerExpChangeEvent}, and the
  * results of this event directly affect the {@link PlayerExpChangeEvent}.
  */
-public interface PlayerItemMendEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemMendEvent extends PlayerEvent, Cancellable {
 
     /**
      * Get the {@link ItemStack} to be repaired.

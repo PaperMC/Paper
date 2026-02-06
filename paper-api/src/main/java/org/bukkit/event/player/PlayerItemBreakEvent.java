@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
  * After this event, the item's amount will be set to {@code item amount - 1}
  * and its durability will be reset to 0.
  */
-public interface PlayerItemBreakEvent extends PlayerEventNew {
+public interface PlayerItemBreakEvent extends PlayerEvent {
 
     /**
      * Gets the item that broke

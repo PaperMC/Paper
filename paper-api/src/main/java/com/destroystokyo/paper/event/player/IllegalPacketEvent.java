@@ -1,14 +1,14 @@
 package com.destroystokyo.paper.event.player;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
  * @deprecated not called anymore
  */
 @Deprecated(since = "1.16.4", forRemoval = true)
-public interface IllegalPacketEvent extends PlayerEventNew {
+public interface IllegalPacketEvent extends PlayerEvent {
 
     boolean isShouldKick();
 

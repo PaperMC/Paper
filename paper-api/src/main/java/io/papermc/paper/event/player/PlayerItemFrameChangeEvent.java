@@ -3,14 +3,14 @@ package io.papermc.paper.event.player;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an {@link ItemFrame} is having an item rotated, added, or removed from it.
  */
-public interface PlayerItemFrameChangeEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemFrameChangeEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the {@link ItemFrame} involved in this event.

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Range;
  * Called when a player edits or signs a book and quill item. If the event is
  * cancelled, no changes are made to the book.
  */
-public interface PlayerEditBookEvent extends PlayerEventNew, Cancellable {
+public interface PlayerEditBookEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the book meta currently on the book.
