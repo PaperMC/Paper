@@ -38,7 +38,6 @@ public final class CaptureRecordMap {
     }
 
     public void setLatestBlockEntityAt(final BlockPos pos, final boolean remove, @Nullable final BlockEntity add) {
-
         CaptureRecord oldRecord = this.recordsByPos.get(pos);
         if (oldRecord != null) {
             oldRecord.setBlockEntity(remove, add);

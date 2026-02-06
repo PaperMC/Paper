@@ -55,7 +55,7 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     }
 
     @Override
-    default SimpleBlockCapture fork() {
+    default SimpleBlockCapture forkCaptureSession() {
         return this.handle().capturer.createCaptureSession();
     }
 }

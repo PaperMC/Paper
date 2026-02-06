@@ -57,40 +57,34 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     private final ServerLevel parent;
     private final List<Runnable> queuedTasks = new ArrayList<>();
-    private final BlockPlacementPredictor activeReadLayer;
-    private final BlockPlacementPredictor predictiveReadLayer;
+    // Effective represents plugin set blocks -> predicted blocks -> actual server level
+    private final BlockPlacementPredictor effectiveReadLayer;
+
+
     private SimpleBlockPlacementPredictor writeLayer;
-    private final SimpleBlockPlacementPredictor legacyStorage;
-    private boolean forwardingLevelCalls = false;
+
+    // This is the layer that is written to in the server level potentially.
+    // Mostly plugin set blocks
+    private final SimpleBlockPlacementPredictor serverLevelOverlayLayer;
+
     private final CapturingTickAccess<Block> blocks;
     private final CapturingTickAccess<Fluid> liquids;
 
     private Consumer<Runnable> sink = queuedTasks::add;
 
-
-    public MinecraftCaptureBridge(ServerLevel parent) {
-        this(parent, new LiveBlockPlacementLayer(parent));
-    }
-
-    public MinecraftCaptureBridge(ServerLevel parent, BlockPlacementPredictor liveBlockPlacementLayer) {
+    public MinecraftCaptureBridge(ServerLevel parent, BlockPlacementPredictor baseReadLayer) {
         this.parent = parent;
 
-        SimpleBlockPlacementPredictor blockPlacementStorage = new SimpleBlockPlacementPredictor(liveBlockPlacementLayer);
-        this.legacyStorage = new SimpleBlockPlacementPredictor(liveBlockPlacementLayer);
+        this.serverLevelOverlayLayer = new SimpleBlockPlacementPredictor(baseReadLayer);
+        SimpleBlockPlacementPredictor predictedBlocks = new SimpleBlockPlacementPredictor(baseReadLayer);
 
-
-        this.writeLayer = blockPlacementStorage;
-
-        this.predictiveReadLayer = new LayeredBlockPlacementPredictor(
-                // If we are currently overlaying server level, we want to show those first.
-                new LegacyLayer(this.legacyStorage, () -> this.forwardingLevelCalls),
-                blockPlacementStorage
+        this.effectiveReadLayer = new LayeredBlockPlacementPredictor(
+                this.serverLevelOverlayLayer, // The overlay layer represents plugin set blocks!
+                predictedBlocks, // Now predicted blocks
+                baseReadLayer
         );
 
-        this.activeReadLayer = new LayeredBlockPlacementPredictor(
-                this.predictiveReadLayer,
-                liveBlockPlacementLayer
-        );
+        this.writeLayer = predictedBlocks; // Predicting
 
         this.blocks = new CapturingTickAccess<>(parent.getBlockTicks());
         this.liquids = new CapturingTickAccess<>(parent.getFluidTicks());
@@ -147,21 +141,21 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public SimpleBlockCapture fork() {
+    public SimpleBlockCapture forkCaptureSession() {
         return this.parent.capturer.createCaptureSession(new BlockPlacementPredictor() {
             @Override
             public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
-                return MinecraftCaptureBridge.this.activeReadLayer.getLatestBlockAt(pos);
+                return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestBlockAt(pos);
             }
 
             @Override
             public Optional<LoadedBlockState> getLatestBlockAtIfLoaded(BlockPos pos) {
-                return MinecraftCaptureBridge.this.activeReadLayer.getLatestBlockAtIfLoaded(pos);
+                return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestBlockAtIfLoaded(pos);
             }
 
             @Override
             public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
-                return MinecraftCaptureBridge.this.activeReadLayer.getLatestTileAt(pos);
+                return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestTileAt(pos);
 
             }
         });
@@ -210,19 +204,19 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     @Override
     public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
-        return this.activeReadLayer.getLatestTileAt(pos)
+        return this.effectiveReadLayer.getLatestTileAt(pos)
                 .map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity)
                 .orElse(null);
     }
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        return this.activeReadLayer.getLatestBlockAt(pos).orElseThrow(); // Should not ever be null, parent should pass value
+        return this.effectiveReadLayer.getLatestBlockAt(pos).orElseThrow(); // Should not ever be null, parent should pass value
     }
 
     @Override
     public @Nullable BlockState getBlockStateIfLoaded(BlockPos pos) {
-        return this.activeReadLayer.getLatestBlockAtIfLoaded(pos).map(BlockPlacementPredictor.LoadedBlockState::state).orElse(null);
+        return this.effectiveReadLayer.getLatestBlockAtIfLoaded(pos).map(BlockPlacementPredictor.LoadedBlockState::state).orElse(null);
     }
 
     @Override
@@ -394,12 +388,12 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     public net.minecraft.world.level.block.state.BlockState getLatestBlockState(final BlockPos pos) {
-        return this.predictiveReadLayer.getLatestBlockAt(pos).orElse(null);
+        return this.effectiveReadLayer.getLatestBlockAt(pos).orElse(null);
     }
 
     public @Nullable Optional<@Nullable BlockEntity> getLatestBlockEntity(final BlockPos pos) {
-        Optional<BlockPlacementPredictor.BlockEntityPlacement> placement = this.predictiveReadLayer.getLatestTileAt(pos);
-        if (placement.isEmpty()) {
+        Optional<BlockPlacementPredictor.BlockEntityPlacement> placement = this.effectiveReadLayer.getLatestTileAt(pos);
+        if (placement.isEmpty() || placement.get().blockEntity() == null && !placement.get().removed()) {
             return null;
         }
 
@@ -420,8 +414,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
         // If we have changes that the plugin applied ontop of the already existing changes, we know that we can apply them.
         // So, do that!
-        if (!this.legacyStorage.isEmpty()) {
-            this.legacyStorage.getRecordMap().applyApiPatch(this.parent);
+        if (!this.serverLevelOverlayLayer.isEmpty()) {
+            this.serverLevelOverlayLayer.getRecordMap().applyApiPatch(this.parent);
         }
 
 
@@ -434,8 +428,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     public void allowWriteOnLevel() {
-        this.writeLayer = this.legacyStorage;
-        this.forwardingLevelCalls = true;
+        this.writeLayer = this.serverLevelOverlayLayer;
     }
 
     public static class CapturingTickAccess<T> implements LevelTickAccess<@NotNull T> {
@@ -474,22 +467,4 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         }
     }
 
-    public record LegacyLayer(BlockPlacementPredictor predictor,
-                              BooleanSupplier cond) implements BlockPlacementPredictor {
-
-        @Override
-        public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
-            return cond.getAsBoolean() ? this.predictor.getLatestBlockAt(pos) : Optional.empty();
-        }
-
-        @Override
-        public Optional<LoadedBlockState> getLatestBlockAtIfLoaded(BlockPos pos) {
-            return cond.getAsBoolean() ? this.predictor.getLatestBlockAtIfLoaded(pos) : Optional.empty();
-        }
-
-        @Override
-        public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
-            return cond.getAsBoolean() ? this.predictor.getLatestTileAt(pos) : Optional.empty();
-        }
-    }
 }

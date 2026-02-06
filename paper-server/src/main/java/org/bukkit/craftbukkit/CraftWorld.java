@@ -742,7 +742,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
-       try (SimpleBlockCapture capture = this.world.fork()) {
+       try (SimpleBlockCapture capture = this.world.forkCaptureSession()) {
            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
            BlockPos pos = CraftLocation.toBlockPosition(loc);

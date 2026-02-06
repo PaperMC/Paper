@@ -34,8 +34,8 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void blockPlace(BlockFertilizeEvent event) {
-//        event.setCancelled(true);
-//
+        //event.setCancelled(true);
+
 //        Bukkit.getPlayer("Owen1212055").sendBlockChanges(event.getBlocks());
 //
 //        new BukkitRunnable(){
@@ -67,7 +67,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void blockPlace(PlayerSwapHandItemsEvent event) {
-       event.getPlayer().getTargetBlockExact(5).applyBoneMeal(BlockFace.UP);
+        event.getPlayer().getTargetBlockExact(5).applyBoneMeal(BlockFace.UP);
 
         event.getPlayer().getWorld().generateTree(event.getPlayer().getLocation(), TreeType.values()[(int) (TreeType.values().length * Math.random())]);
     }
@@ -80,6 +80,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
             Chest state = (Chest) event.getBlock().getState(false);
             state.getBlockInventory().setItem(0, new ItemStack(Material.STONE));
+            System.out.println(state);
         } else if (event.getPlayer().getInventory().contains(Material.GOLD_INGOT)) {
             event.setCancelled(true);
         }

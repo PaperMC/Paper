@@ -21,7 +21,7 @@ public class WorldCapturer {
     }
 
     public SimpleBlockCapture createCaptureSession() {
-        return this.createCaptureSession(new LiveBlockPlacementLayer(this.world));
+        return this.createCaptureSession(new LiveBlockPlacementLayer(this, world));
     }
 
     public void releaseCapture(SimpleBlockCapture oldCapture) {

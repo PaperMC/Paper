@@ -38,7 +38,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
@@ -2396,7 +2395,7 @@ public class CraftEventFactory {
     }
 
     public static boolean structureEvent(ServerLevel serverLevel, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldgenCapture, TreeType type) {
-        try (SimpleBlockCapture capture = level.fork()) {
+        try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldgenCapture.apply(captureTreeGeneration)) {
                 var states = captureTreeGeneration.calculateLatestBlockStates(serverLevel);
@@ -2418,7 +2417,7 @@ public class CraftEventFactory {
     }
 
     public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldgenCapture, boolean cancelled) {
-        try (SimpleBlockCapture capture = level.fork()) {
+        try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
             worldgenCapture.accept(captureTreeGeneration);
