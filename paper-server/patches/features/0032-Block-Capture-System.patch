@@ -1365,10 +1365,10 @@ index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..5f39cc10064c222f9009bdee5ce59bfe
      }
  }
 diff --git a/net/minecraft/world/level/block/FungusBlock.java b/net/minecraft/world/level/block/FungusBlock.java
-index 9711efb088bd0da9168e9bcd0496bd7caddd2974..6e7e4aa0e8dc9dd3dd92f29d5603255ba176b252 100644
+index 9711efb088bd0da9168e9bcd0496bd7caddd2974..a3f9d237ae3a80ef5d28105297c2898fe33c3e79 100644
 --- a/net/minecraft/world/level/block/FungusBlock.java
 +++ b/net/minecraft/world/level/block/FungusBlock.java
-@@ -71,7 +71,7 @@ public class FungusBlock extends VegetationBlock implements BonemealableBlock {
+@@ -71,14 +71,14 @@ public class FungusBlock extends VegetationBlock implements BonemealableBlock {
      }
  
      @Override
@@ -1377,6 +1377,15 @@ index 9711efb088bd0da9168e9bcd0496bd7caddd2974..6e7e4aa0e8dc9dd3dd92f29d5603255b
          this.getFeature(level)
              // CraftBukkit start
              .map((value) -> {
+                 if (this == Blocks.WARPED_FUNGUS) {
+-                    SaplingBlock.treeType = org.bukkit.TreeType.WARPED_FUNGUS;
++                    mealContext.treeHook = org.bukkit.TreeType.WARPED_FUNGUS;
+                 } else if (this == Blocks.CRIMSON_FUNGUS) {
+-                    SaplingBlock.treeType = org.bukkit.TreeType.CRIMSON_FUNGUS;
++                    mealContext.treeHook = org.bukkit.TreeType.CRIMSON_FUNGUS;
+                 }
+                 return value;
+             })
 diff --git a/net/minecraft/world/level/block/GlowLichenBlock.java b/net/minecraft/world/level/block/GlowLichenBlock.java
 index ba39497a6d7160cde961e339be8028ec131b8019..f38447dbc1880878d29e08a18a2db32319291992 100644
 --- a/net/minecraft/world/level/block/GlowLichenBlock.java
@@ -1633,10 +1642,18 @@ index db6b32016a1ad4264da9d8812e5ea9356d0601df..19000f09efadb6a2c616badfb837487a
      }
  
 diff --git a/net/minecraft/world/level/block/SaplingBlock.java b/net/minecraft/world/level/block/SaplingBlock.java
-index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..779b181fb8e1a65844607a85270ec1d9b732f761 100644
+index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..bde0874cf7528d4eb5eeeef76b840ab2d6ccabcd 100644
 --- a/net/minecraft/world/level/block/SaplingBlock.java
 +++ b/net/minecraft/world/level/block/SaplingBlock.java
-@@ -50,38 +50,18 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+@@ -25,7 +25,6 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+     public static final IntegerProperty STAGE = BlockStateProperties.STAGE;
+     private static final VoxelShape SHAPE = Block.column(12.0, 0.0, 12.0);
+     protected final TreeGrower treeGrower;
+-    public static @javax.annotation.Nullable org.bukkit.TreeType treeType; // CraftBukkit
+ 
+     @Override
+     public MapCodec<? extends SaplingBlock> codec() {
+@@ -50,38 +49,18 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
          }
      }
  
@@ -1684,7 +1701,7 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..779b181fb8e1a65844607a85270ec1d9
          }
      }
  
-@@ -96,8 +76,8 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+@@ -96,8 +75,8 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
      }
  
      @Override
@@ -1924,15 +1941,14 @@ index c57cb7b47a01e313a1be5de769c6766ac2787d95..f34731580bc880dcc5d3e96923a7f2b4
      }
  }
 diff --git a/net/minecraft/world/level/block/grower/TreeGrower.java b/net/minecraft/world/level/block/grower/TreeGrower.java
-index 5471619a0484ece08640e2b3fd26746c351dc3e0..780d1f9ee0c3fd4ea3e0ccf163767b73a7db7c23 100644
+index 5471619a0484ece08640e2b3fd26746c351dc3e0..05c24bb6a12dfb8d9abdb71b1e8ade9032fc4349 100644
 --- a/net/minecraft/world/level/block/grower/TreeGrower.java
 +++ b/net/minecraft/world/level/block/grower/TreeGrower.java
-@@ -122,7 +122,36 @@ public final class TreeGrower {
+@@ -122,7 +122,35 @@ public final class TreeGrower {
          return this.secondaryMegaTree.isPresent() && random.nextFloat() < this.secondaryChance ? this.secondaryMegaTree.get() : this.megaTree.orElse(null);
      }
  
 -    public boolean growTree(ServerLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random) {
-+    // TODO: SUPPORT WRAPPING
 +    // Paper start
 +    public boolean growTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random) {
 +        return this.growTree0(level, chunkGenerator, pos, state, random, null);
@@ -1941,11 +1957,11 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..780d1f9ee0c3fd4ea3e0ccf163767b73
 +    public boolean growTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
 +        try (io.papermc.paper.util.capture.SimpleBlockCapture capture = level.forkCaptureSession()) {
 +            io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
-+            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, mealContext.treeHook)) {
++            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, mealContext)) {
 +                var states = captureTreeGeneration.calculateLatestBlockStates(mealContext.ogServerLevel);
 +                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, mealContext.ogServerLevel);
 +                java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
-+                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook.get(), false, mealContext.getBukkitPlayer(), blocks);
++                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook, false, mealContext.getBukkitPlayer(), blocks);
 +
 +                if (event.callEvent()) {
 +                    captureTreeGeneration.applyTasks();
@@ -1960,30 +1976,30 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..780d1f9ee0c3fd4ea3e0ccf163767b73
 +
 +        return false;
 +    }
-+    private boolean growTree0(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, java.util.concurrent.atomic.AtomicReference<org.bukkit.TreeType> treeType) {
++    private boolean growTree0(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
 +    // Paper end
          ResourceKey<ConfiguredFeature<?, ?>> configuredMegaFeature = this.getConfiguredMegaFeature(random);
          if (configuredMegaFeature != null) {
              Holder<ConfiguredFeature<?, ?>> holder = level.registryAccess()
-@@ -130,7 +159,7 @@ public final class TreeGrower {
+@@ -130,7 +158,7 @@ public final class TreeGrower {
                  .get(configuredMegaFeature)
                  .orElse(null);
              if (holder != null) {
 -                this.setTreeType(holder); // CraftBukkit
-+                if (treeType != null) treeType.set(this.getTreeType(holder)); // Paper
++                if (mealContext != null) mealContext.treeHook = this.getTreeType(holder); // Paper
                  for (int i = 0; i >= -1; i--) {
                      for (int i1 = 0; i1 >= -1; i1--) {
                          if (isTwoByTwoSapling(state, level, pos, i, i1)) {
-@@ -163,7 +192,7 @@ public final class TreeGrower {
+@@ -163,7 +191,7 @@ public final class TreeGrower {
              if (holder1 == null) {
                  return false;
              } else {
 -                this.setTreeType(holder1); // CraftBukkit
-+                treeType.set(this.getTreeType(holder1)); // Paper
++                if (mealContext != null) mealContext.treeHook = this.getTreeType(holder1); // Paper
                  ConfiguredFeature<?, ?> configuredFeature2 = holder1.value();
                  BlockState blockState1 = level.getFluidState(pos).createLegacyBlock();
                  level.setBlock(pos, blockState1, Block.UPDATE_NONE);
-@@ -200,53 +229,53 @@ public final class TreeGrower {
+@@ -200,53 +228,53 @@ public final class TreeGrower {
      }
  
      // CraftBukkit start
