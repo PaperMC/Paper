@@ -1,67 +1,31 @@
 package com.destroystokyo.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.event.player.PlayerEventNew;
+import org.jspecify.annotations.Nullable;
 
 /**
- * @deprecated Not used
+ * @deprecated not called anymore
  */
 @Deprecated(since = "1.16.4", forRemoval = true)
-public class IllegalPacketEvent extends PlayerEvent {
+public interface IllegalPacketEvent extends PlayerEventNew {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
+    boolean isShouldKick();
 
-    @Nullable private final String type;
-    @Nullable private final String exceptionMessage;
-    @Nullable private String kickMessage;
-    private boolean shouldKick = true;
+    void setShouldKick(boolean shouldKick);
 
-    @ApiStatus.Internal
-    public IllegalPacketEvent(@NotNull Player player, @Nullable String type, @Nullable String kickMessage, @NotNull Exception e) {
-        super(player);
-        this.type = type;
-        this.kickMessage = kickMessage;
-        this.exceptionMessage = e.getMessage();
-    }
+    @Nullable String getKickMessage();
 
-    public boolean isShouldKick() {
-        return this.shouldKick;
-    }
+    void setKickMessage(@Nullable String kickMessage);
 
-    public void setShouldKick(boolean shouldKick) {
-        this.shouldKick = shouldKick;
-    }
+    @Nullable String getType();
 
-    @Nullable
-    public String getKickMessage() {
-        return this.kickMessage;
-    }
+    @Nullable String getExceptionMessage();
 
-    public void setKickMessage(@Nullable String kickMessage) {
-        this.kickMessage = kickMessage;
-    }
-
-    @Nullable
-    public String getType() {
-        return this.type;
-    }
-
-    @Nullable
-    public String getExceptionMessage() {
-        return this.exceptionMessage;
-    }
-
-    @NotNull
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
