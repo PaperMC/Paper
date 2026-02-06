@@ -40,7 +40,7 @@ public class CraftAsyncPlayerChatEvent extends CraftPlayerEvent implements Async
         Preconditions.checkArgument(format != null, "format cannot be null");
         // Oh for a better way to do this!
         try {
-            String.format(format, this.getPlayer(), this.message);
+            String.format(format, this.player, this.message);
         } catch (RuntimeException ex) {
             ex.fillInStackTrace();
             throw ex;
