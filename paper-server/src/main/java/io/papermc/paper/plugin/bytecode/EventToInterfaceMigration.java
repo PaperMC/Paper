@@ -130,7 +130,8 @@ public final class EventToInterfaceMigration {
                 AsyncPlayerChatPreviewEvent.class,
                 IllegalPacketEvent.class,
                 PlayerAdvancementCriterionGrantEvent.class,
-                PlayerArmorChangeEvent.class
+                PlayerArmorChangeEvent.class,
+                PlayerAttackEntityCooldownResetEvent.class
                 //</editor-fold>
             );
 
