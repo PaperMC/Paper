@@ -38,7 +38,11 @@ public final class CaptureRecordMap {
     }
 
     public void setLatestBlockEntityAt(final BlockPos pos, final boolean remove, @Nullable final BlockEntity add) {
-        this.add(new CaptureRecord(remove, add, pos));
+
+        CaptureRecord oldRecord = this.recordsByPos.get(pos);
+        if (oldRecord != null) {
+            oldRecord.setBlockEntity(remove, add);
+        }
     }
 
     private void add(final CaptureRecord record) {
@@ -133,6 +137,11 @@ public final class CaptureRecordMap {
             if (this.blockEntity != null) {
                 level.setBlockEntity(this.blockEntity);
             }
+        }
+
+        public void setBlockEntity(boolean remove, @Nullable BlockEntity add) {
+            this.removeBe = remove;
+            this.blockEntity = add;
         }
     }
 }

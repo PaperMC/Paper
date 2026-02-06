@@ -34,34 +34,34 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void blockPlace(BlockFertilizeEvent event) {
-        event.setCancelled(true);
-
-        Bukkit.getPlayer("Owen1212055").sendBlockChanges(event.getBlocks());
-
-        new BukkitRunnable(){
-
-            @Override
-            public void run() {
-                event.getBlocks().forEach((state) -> Bukkit.getPlayer("Owen1212055").sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
-            }
-        }.runTaskLater(this, 20 * 2);
+//        event.setCancelled(true);
+//
+//        Bukkit.getPlayer("Owen1212055").sendBlockChanges(event.getBlocks());
+//
+//        new BukkitRunnable(){
+//
+//            @Override
+//            public void run() {
+//                event.getBlocks().forEach((state) -> Bukkit.getPlayer("Owen1212055").sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
+//            }
+//        }.runTaskLater(this, 20 * 2);
 
     }
 
 
     @EventHandler
     public void blockPlace(StructureGrowEvent event) {
-        event.setCancelled(true);
-
-        event.getPlayer().sendBlockChanges(event.getBlocks());
-
-        new BukkitRunnable(){
-
-            @Override
-            public void run() {
-                event.getBlocks().forEach((state) -> event.getPlayer().sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
-            }
-        }.runTaskLater(this, 20 * 2);
+//        event.setCancelled(true);
+//
+//        event.getPlayer().sendBlockChanges(event.getBlocks());
+//
+//        new BukkitRunnable(){
+//
+//            @Override
+//            public void run() {
+//                event.getBlocks().forEach((state) -> event.getPlayer().sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
+//            }
+//        }.runTaskLater(this, 20 * 2);
     }
 
 
