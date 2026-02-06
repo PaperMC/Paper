@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player changes recipe book settings.
  */
-public interface PlayerRecipeBookSettingsChangeEvent extends PlayerEventNew {
+public interface PlayerRecipeBookSettingsChangeEvent extends PlayerEvent {
 
     /**
      * Gets the type of recipe book the player is changing the settings for.

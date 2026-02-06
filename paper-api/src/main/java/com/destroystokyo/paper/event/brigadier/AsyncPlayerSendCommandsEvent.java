@@ -3,7 +3,7 @@ package com.destroystokyo.paper.event.brigadier;
 import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -29,7 +29,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.Experimental
-public interface AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEventNew {
+public interface AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEvent {
 
     /**
      * Gets the full Root Command Node being sent to the client, which is mutable.

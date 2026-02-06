@@ -27,7 +27,7 @@ import org.bukkit.event.HandlerList;
  */
 @Warning
 @Deprecated
-public interface AsyncPlayerChatEvent extends PlayerEventNew, Cancellable {
+public interface AsyncPlayerChatEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the message that the player is attempting to send. This message

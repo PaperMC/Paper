@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player's experience cooldown changes.
  */
-public interface PlayerExpCooldownChangeEvent extends PlayerEventNew {
+public interface PlayerExpCooldownChangeEvent extends PlayerEvent {
 
     /**
      * Gets the reason for the change.

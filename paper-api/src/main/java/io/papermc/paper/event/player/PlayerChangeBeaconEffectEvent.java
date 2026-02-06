@@ -3,14 +3,14 @@ package io.papermc.paper.event.player;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a player sets the effect for a beacon
  */
-public interface PlayerChangeBeaconEffectEvent extends PlayerEventNew, Cancellable {
+public interface PlayerChangeBeaconEffectEvent extends PlayerEvent, Cancellable {
 
     /**
      * @return the primary effect

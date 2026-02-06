@@ -3,12 +3,12 @@ package com.destroystokyo.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset
  */
-public interface PlayerAttackEntityCooldownResetEvent extends PlayerEventNew, Cancellable {
+public interface PlayerAttackEntityCooldownResetEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the entity attacked by the player

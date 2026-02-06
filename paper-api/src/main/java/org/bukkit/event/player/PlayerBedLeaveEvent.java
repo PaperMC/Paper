@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
 /**
  * This event is fired when the player is leaving a bed.
  */
-public interface PlayerBedLeaveEvent extends PlayerEventNew, Cancellable {
+public interface PlayerBedLeaveEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the bed block involved in this event.

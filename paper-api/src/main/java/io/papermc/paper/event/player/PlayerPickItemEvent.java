@@ -2,7 +2,7 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.Range;
 
 /**
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Range;
  * @see PlayerPickEntityEvent
  * @see PlayerPickBlockEvent
  */
-public interface PlayerPickItemEvent extends PlayerEventNew, Cancellable {
+public interface PlayerPickItemEvent extends PlayerEvent, Cancellable {
 
     /**
      * Checks whether the player wants block/entity data included.

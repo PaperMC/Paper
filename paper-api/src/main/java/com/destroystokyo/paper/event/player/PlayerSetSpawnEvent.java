@@ -5,7 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * Cancelling this event will prevent the spawn from being set.
  */
-public interface PlayerSetSpawnEvent extends PlayerEventNew, Cancellable {
+public interface PlayerSetSpawnEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the cause of this event.

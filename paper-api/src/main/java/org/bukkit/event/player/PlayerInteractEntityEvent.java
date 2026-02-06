@@ -8,7 +8,7 @@ import org.bukkit.inventory.EquipmentSlot;
 /**
  * Represents an event that is called when a player right clicks an entity.
  */
-public interface PlayerInteractEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerInteractEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity that was right-clicked by the player.

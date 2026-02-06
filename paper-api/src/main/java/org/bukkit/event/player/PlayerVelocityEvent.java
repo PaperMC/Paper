@@ -7,7 +7,7 @@ import org.bukkit.util.Vector;
 /**
  * Called when the velocity of a player changes.
  */
-public interface PlayerVelocityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerVelocityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the velocity vector that will be sent to the player

@@ -2,13 +2,13 @@ package io.papermc.paper.event.player;
 
 import java.util.Set;
 import org.bukkit.Location;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
 @ApiStatus.NonExtendable
-public interface AbstractRespawnEvent extends PlayerEventNew {
+public interface AbstractRespawnEvent extends PlayerEvent {
 
     /**
      * Gets the current respawn location.

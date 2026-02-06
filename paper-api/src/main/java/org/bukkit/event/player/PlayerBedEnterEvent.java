@@ -9,7 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * This event is fired when the player is almost about to enter the bed.
  */
-public interface PlayerBedEnterEvent extends PlayerEventNew, Cancellable {
+public interface PlayerBedEnterEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the bed block involved in this event.

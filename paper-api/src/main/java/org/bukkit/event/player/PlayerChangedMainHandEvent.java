@@ -12,7 +12,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @apiNote Obsolete and replaced by {@link PlayerClientOptionsChangeEvent}.
  */
 @ApiStatus.Obsolete
-public interface PlayerChangedMainHandEvent extends PlayerEventNew {
+public interface PlayerChangedMainHandEvent extends PlayerEvent {
 
     /**
      * Gets the new main hand of the player. The old hand is still momentarily

@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
  * Represents a player animation event
  * @see io.papermc.paper.event.player.PlayerArmSwingEvent
  */
-public interface PlayerAnimationEvent extends PlayerEventNew, Cancellable {
+public interface PlayerAnimationEvent extends PlayerEvent, Cancellable {
 
     /**
      * Get the type of this animation event

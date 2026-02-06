@@ -4,7 +4,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
  * of a bow or crossbow. A plugin may listen to {@link EntityShootBowEvent}
  * for these actions instead.
  */
-public interface PlayerLaunchProjectileEvent extends PlayerEventNew, Cancellable {
+public interface PlayerLaunchProjectileEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the projectile which will be launched by this event
