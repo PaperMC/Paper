@@ -7,7 +7,6 @@ import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when selecting a player's spawn location (i.e. joining the server or reconfiguring).
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * the spawn location is loaded.</p>
  */
 @ApiStatus.Experimental
-@NullMarked
 public interface AsyncPlayerSpawnLocationEvent extends Event {
 
     /**

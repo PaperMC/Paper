@@ -5,7 +5,6 @@ import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,7 +14,6 @@ import org.jspecify.annotations.Nullable;
  * This event may be called multiple times per interaction with different interaction hands
  * and with or without the clicked position.
  */
-@NullMarked
 public interface PlayerUseUnknownEntityEvent extends PlayerEventNew {
 
     /**

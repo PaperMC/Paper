@@ -27,12 +27,10 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player is firing a bow and the server is choosing an arrow to use.
  */
-@NullMarked
 public interface PlayerReadyArrowEvent extends PlayerEventNew, Cancellable {
 
     /**

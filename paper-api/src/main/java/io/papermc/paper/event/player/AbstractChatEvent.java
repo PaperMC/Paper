@@ -8,9 +8,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 @ApiStatus.NonExtendable
 public interface AbstractChatEvent extends PlayerEventNew, Cancellable {
 

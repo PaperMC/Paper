@@ -4,7 +4,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event that is fired when a player uses the pick item functionality
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @see PlayerPickEntityEvent
  * @see PlayerPickBlockEvent
  */
-@NullMarked
 public interface PlayerPickItemEvent extends PlayerEventNew, Cancellable {
 
     /**

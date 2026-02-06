@@ -3,7 +3,6 @@ package io.papermc.paper.event.player;
 import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * An event fired when a {@link Player} sends a chat message to the server.
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
  */
 @Deprecated
-@NullMarked
 @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
 public interface ChatEvent extends AbstractChatEvent {
 

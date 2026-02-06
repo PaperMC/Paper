@@ -6,8 +6,7 @@ import org.bukkit.Warning;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.event.player.PlayerEventNew;
 
 /**
  * Called when player is about to spawn in a world after joining the server.
@@ -19,16 +18,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Warning(value = true, reason = "Listening to this event causes the player to be created early. Using the player from this event will result in undefined behavior. Prefer AsyncPlayerSpawnLocationEvent.")
 @Deprecated(since = "1.21.9", forRemoval = true)
-public class PlayerSpawnLocationEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private Location spawnLocation;
-
-    public PlayerSpawnLocationEvent(@NotNull final Player player, @NotNull Location spawnLocation) {
-        super(player);
-        this.spawnLocation = spawnLocation;
-    }
+public interface PlayerSpawnLocationEvent extends PlayerEventNew {
 
     /**
      * Gets player's spawn location.
@@ -38,28 +28,19 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
      *
      * @return the spawn location
      */
-    @NotNull
-    public Location getSpawnLocation() {
-        return spawnLocation;
-    }
+    Location getSpawnLocation();
 
     /**
      * Sets player's spawn location.
      *
      * @param location the spawn location
      */
-    public void setSpawnLocation(@NotNull Location location) {
-        this.spawnLocation = location.clone();
-    }
+    void setSpawnLocation(Location location);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
