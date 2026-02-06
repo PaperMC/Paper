@@ -3,15 +3,12 @@ package com.destroystokyo.paper.event.player;
 import java.net.InetAddress;
 import java.util.UUID;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * <p>
  * This event is invoked when a player has disconnected. It is guaranteed that,
  * if the server is in online-mode, that the provided uuid and username have been
  * validated.
@@ -36,49 +33,27 @@ import org.jspecify.annotations.NullMarked;
  * {@link Event#isAsynchronous()} and handle accordingly.
  */
 @NullMarked
-public class PlayerConnectionCloseEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final UUID playerUniqueId;
-    private final String playerName;
-    private final InetAddress ipAddress;
-
-    @ApiStatus.Internal
-    public PlayerConnectionCloseEvent(final UUID playerUniqueId, final String playerName, final InetAddress ipAddress, final boolean async) {
-        super(async);
-        this.playerUniqueId = playerUniqueId;
-        this.playerName = playerName;
-        this.ipAddress = ipAddress;
-    }
+public interface PlayerConnectionCloseEvent extends Event {
 
     /**
-     * Returns the {@code UUID} of the player disconnecting.
+     * Returns the {@link UUID} of the player disconnecting.
      */
-    public UUID getPlayerUniqueId() {
-        return this.playerUniqueId;
-    }
+    UUID getPlayerUniqueId();
 
     /**
      * Returns the name of the player disconnecting.
      */
-    public String getPlayerName() {
-        return this.playerName;
-    }
+    String getPlayerName();
 
     /**
      * Returns the player's IP address.
      */
-    public InetAddress getIpAddress() {
-        return this.ipAddress;
-    }
+    InetAddress getIpAddress();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
