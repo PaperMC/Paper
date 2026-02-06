@@ -14,14 +14,8 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
 
     private final CaptureRecordMap guesstimationMap = new CaptureRecordMap();
 
-    private final BlockPlacementPredictor base;
-
-    SimpleBlockPlacementPredictor(BlockPlacementPredictor base) {
-        this.base = base;
-    }
-
-    public boolean setBlockState(BlockPos pos, BlockState state, int flags) {
-        BlockState blockState = this.base.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
+    public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState state, int flags) {
+        BlockState blockState = layer.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
         // Dont do any processing if the same
         if (blockState == state) {
             return false;

@@ -76,13 +76,13 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     public void blockPlace(BlockPlaceEvent event) {
         event.getPlayer().sendActionBar("Replaced: " + event.getBlockReplacedState().getType());
         if (event.getPlayer().getInventory().contains(Material.DIAMOND)) {
-            event.getBlock().setType(Material.CHEST);
-
-            Chest state = (Chest) event.getBlock().getState(false);
-            state.getBlockInventory().setItem(0, new ItemStack(Material.STONE));
-            System.out.println(state);
+            event.getBlock().setType(Material.AIR);
         } else if (event.getPlayer().getInventory().contains(Material.GOLD_INGOT)) {
             event.setCancelled(true);
+        } else if (event.getPlayer().getInventory().contains(Material.EMERALD)) {
+            event.getBlock().setType(Material.STONE);
+        } else if (event.getPlayer().getInventory().contains(Material.GOLD_NUGGET)) {
+            event.getBlock().getRelative(BlockFace.SOUTH).setType(Material.STONE);
         }
         event.getPlayer().sendMessage(event.getBlock().getType().toString());
     }

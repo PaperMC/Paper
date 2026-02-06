@@ -75,8 +75,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     public MinecraftCaptureBridge(ServerLevel parent, BlockPlacementPredictor baseReadLayer) {
         this.parent = parent;
 
-        this.serverLevelOverlayLayer = new SimpleBlockPlacementPredictor(baseReadLayer);
-        SimpleBlockPlacementPredictor predictedBlocks = new SimpleBlockPlacementPredictor(baseReadLayer);
+        this.serverLevelOverlayLayer = new SimpleBlockPlacementPredictor();
+        SimpleBlockPlacementPredictor predictedBlocks = new SimpleBlockPlacementPredictor();
 
         this.effectiveReadLayer = new LayeredBlockPlacementPredictor(
                 this.serverLevelOverlayLayer, // The overlay layer represents plugin set blocks!
@@ -315,7 +315,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     public boolean silentSet(BlockPos pos, BlockState state, int flags) {
-        return this.writeLayer.setBlockState(pos, state, flags);
+        return this.writeLayer.setBlockState(this.effectiveReadLayer, pos, state, flags);
     }
 
     @Override
@@ -323,7 +323,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         BlockPos copy = pos.immutable();
         this.addTask((serverLevel) -> parent.setBlock(copy, state, flags, recursionLeft));
 
-        return this.writeLayer.setBlockState(copy, state, flags);
+        return this.writeLayer.setBlockState(this.effectiveReadLayer, copy, state, flags);
     }
 
     @Override

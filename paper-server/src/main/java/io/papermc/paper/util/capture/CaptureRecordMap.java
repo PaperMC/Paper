@@ -34,7 +34,7 @@ public final class CaptureRecordMap {
     private final Map<BlockPos, CaptureRecord> recordsByPos = new HashMap<>();
 
     public void setLatestBlockStateAt(final BlockPos pos, final BlockState state, final int flags) {
-        this.add(new CaptureRecord(state, pos));
+        this.add(new CaptureRecord(state, pos, flags));
     }
 
     public void setLatestBlockEntityAt(final BlockPos pos, final boolean remove, @Nullable final BlockEntity add) {
@@ -108,6 +108,7 @@ public final class CaptureRecordMap {
         private BlockState state;
         private BlockEntity blockEntity;
         private boolean removeBe;
+        private int flags;
 
         public CaptureRecord(BlockPos pos, BlockState state, BlockEntity blockEntity) {
             this.pos = pos;
@@ -115,9 +116,10 @@ public final class CaptureRecordMap {
             this.blockEntity = blockEntity;
         }
 
-        public CaptureRecord(BlockState state, BlockPos pos) {
+        public CaptureRecord(BlockState state, BlockPos pos, int flags) {
             this.pos = pos;
             this.state = state;
+            this.flags = flags;
         }
 
         public CaptureRecord(boolean remove, @Nullable BlockEntity add, BlockPos pos) {
@@ -131,7 +133,7 @@ public final class CaptureRecordMap {
                 level.removeBlockEntity(this.pos);
             }
 
-            level.setBlock(this.pos, this.state, UPDATE_NONE | net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+            level.setBlock(this.pos, this.state, this.flags);
             if (this.blockEntity != null) {
                 level.setBlockEntity(this.blockEntity);
             }
