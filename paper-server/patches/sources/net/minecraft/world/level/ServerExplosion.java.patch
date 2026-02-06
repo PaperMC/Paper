@@ -75,7 +75,7 @@
                  if (!entity.ignoreExplosion(this)) {
                      double d = Math.sqrt(entity.distanceToSqr(this.center)) / f;
                      if (!(d > 1.0)) {
-@@ -186,20 +_,56 @@
+@@ -186,20 +_,52 @@
                          Vec3 vec31 = vec3.subtract(this.center).normalize();
                          boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
                          float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
@@ -120,14 +120,10 @@
 -                        double d2 = (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1);
 +                        double d2 = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1); // Paper
                          Vec3 vec32 = vec31.scale(d2);
-+                        // CraftBukkit start - Call EntityKnockbackEvent
-+                        if (entity instanceof LivingEntity) {
-+                            // Paper start - knockback events
-+                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d2, vec32);
-+                            vec32 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
-+                            // Paper end - knockback events
-+                        }
-+                        // CraftBukkit end
++                        // Paper start - knockback events
++                        io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent(entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d2, vec32);
++                        vec32 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
++                        // Paper end - knockback events
                          entity.push(vec32);
                          if (entity.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && entity instanceof Projectile projectile) {
                              projectile.setOwner(this.damageSource.getEntity());
