@@ -139,7 +139,8 @@ public final class EventToInterfaceMigration {
                 PlayerJumpEvent.class,
                 PlayerLaunchProjectileEvent.class,
                 PlayerPickupExperienceEvent.class,
-                PlayerReadyArrowEvent.class
+                PlayerReadyArrowEvent.class,
+                com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent.class
                 //</editor-fold>
             );
 
