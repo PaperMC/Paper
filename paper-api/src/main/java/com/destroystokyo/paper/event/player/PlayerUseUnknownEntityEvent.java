@@ -1,12 +1,10 @@
 package com.destroystokyo.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -18,50 +16,28 @@ import org.jspecify.annotations.Nullable;
  * and with or without the clicked position.
  */
 @NullMarked
-public class PlayerUseUnknownEntityEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final int entityId;
-    private final boolean attack;
-    private final EquipmentSlot hand;
-    private final @Nullable Vector clickedPosition;
-
-    @ApiStatus.Internal
-    public PlayerUseUnknownEntityEvent(final Player player, final int entityId, final boolean attack, final EquipmentSlot hand, final @Nullable Vector clickedPosition) {
-        super(player);
-        this.entityId = entityId;
-        this.attack = attack;
-        this.hand = hand;
-        this.clickedPosition = clickedPosition;
-    }
+public interface PlayerUseUnknownEntityEvent extends PlayerEventNew {
 
     /**
      * Returns the entity id of the unknown entity that was interacted with.
      *
      * @return the entity id of the entity that was interacted with
      */
-    public int getEntityId() {
-        return this.entityId;
-    }
+    int getEntityId();
 
     /**
      * Returns whether the interaction was an attack.
      *
      * @return {@code true} if the player is attacking the entity, {@code false} if the player is interacting with the entity
      */
-    public boolean isAttack() {
-        return this.attack;
-    }
+    boolean isAttack();
 
     /**
      * Returns the hand used to perform this interaction.
      *
      * @return the hand used to interact
      */
-    public EquipmentSlot getHand() {
-        return this.hand;
-    }
+    EquipmentSlot getHand();
 
     /**
      * Returns the position relative to the entity that was clicked, or {@code null} if not available.
@@ -70,16 +46,12 @@ public class PlayerUseUnknownEntityEvent extends PlayerEvent {
      * @return the position relative to the entity that was clicked, or {@code null} if not available
      * @see PlayerInteractAtEntityEvent
      */
-    public @Nullable Vector getClickedRelativePosition() {
-        return this.clickedPosition != null ? this.clickedPosition.clone() : null;
-    }
+    @Nullable Vector getClickedRelativePosition();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
