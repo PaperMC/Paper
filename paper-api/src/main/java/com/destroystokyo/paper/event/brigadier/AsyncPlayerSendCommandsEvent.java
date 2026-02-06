@@ -2,10 +2,8 @@ package com.destroystokyo.paper.event.brigadier;
 
 import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -29,46 +27,28 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
  */
-@ApiStatus.Experimental
 @NullMarked
-public class AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final RootCommandNode<S> node;
-    private final boolean hasFiredAsync;
-
-    @ApiStatus.Internal
-    public AsyncPlayerSendCommandsEvent(final Player player, final RootCommandNode<S> node, final boolean hasFiredAsync) {
-        super(player, !Bukkit.isPrimaryThread());
-        this.node = node;
-        this.hasFiredAsync = hasFiredAsync;
-    }
+@ApiStatus.Experimental
+public interface AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEventNew {
 
     /**
      * Gets the full Root Command Node being sent to the client, which is mutable.
      *
      * @return the root command node
      */
-    public RootCommandNode<S> getCommandNode() {
-        return this.node;
-    }
+    RootCommandNode<S> getCommandNode();
 
     /**
      * Gets if this event has already fired asynchronously.
      *
      * @return whether this event has already fired asynchronously
      */
-    public boolean hasFiredAsync() {
-        return this.hasFiredAsync;
-    }
+    boolean hasFiredAsync();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
