@@ -53,4 +53,9 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     default ChunkGenerator getGenerator() {
         return this.handle().getGenerator();
     }
+
+    @Override
+    default SimpleBlockCapture fork() {
+        return this.handle().capturer.createCaptureSession();
+    }
 }

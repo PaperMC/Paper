@@ -58,7 +58,7 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
                 }
 
                 if (blockEntity == null) {
-                    blockEntity = ((EntityBlock)block).newBlockEntity(pos, state);
+                    blockEntity = ((EntityBlock) block).newBlockEntity(pos, state);
                     if (blockEntity != null) {
                         this.addAndRegisterBlockEntity(blockEntity);
                     }
@@ -107,7 +107,6 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
         return Optional.ofNullable(this.guesstimationMap.getLatestBlockStateAt(pos))
                 .map((state) -> new LoadedBlockState(true, state));
     }
-
 
 
     public void setLatestBlockAt(BlockPos pos, BlockState data, int flags) {

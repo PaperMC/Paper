@@ -28,5 +28,7 @@ public interface PaperCapturingWorldLevel extends WorldGenLevel {
     WorldConfiguration paperConfig();
 
     ChunkGenerator getGenerator();
+
+    SimpleBlockCapture fork();
 }
 

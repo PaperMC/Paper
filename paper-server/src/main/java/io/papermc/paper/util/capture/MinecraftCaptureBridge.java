@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.entity.EntityTypeTest;
@@ -57,28 +56,24 @@ import java.util.function.Predicate;
 public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     private final ServerLevel parent;
-
-    private BlockPlacementPredictor activeReadLayer;
-    private BlockPlacementPredictor predictiveReadLayer;
-
-    private SimpleBlockPlacementPredictor writeLayer;
-
-
-    private SimpleBlockPlacementPredictor legacyStorage;
-    private boolean isLegacyPredicting = false;
-
     private final List<Runnable> queuedTasks = new ArrayList<>();
-
-    private CapturingTickAccess<Block> blocks;
-    private CapturingTickAccess<Fluid> liquids;
+    private final BlockPlacementPredictor activeReadLayer;
+    private final BlockPlacementPredictor predictiveReadLayer;
+    private SimpleBlockPlacementPredictor writeLayer;
+    private final SimpleBlockPlacementPredictor legacyStorage;
+    private boolean isLegacyPredicting = false;
+    private final CapturingTickAccess<Block> blocks;
+    private final CapturingTickAccess<Fluid> liquids;
 
     private Consumer<Runnable> sink = queuedTasks::add;
 
 
     public MinecraftCaptureBridge(ServerLevel parent) {
-        this.parent = parent;
+        this(parent, new LiveBlockPlacementLayer(parent));
+    }
 
-        LiveBlockPlacementLayer liveBlockPlacementLayer = new LiveBlockPlacementLayer(this.parent);
+    public MinecraftCaptureBridge(ServerLevel parent, BlockPlacementPredictor liveBlockPlacementLayer) {
+        this.parent = parent;
 
         SimpleBlockPlacementPredictor blockPlacementStorage = new SimpleBlockPlacementPredictor(liveBlockPlacementLayer);
         this.legacyStorage = new SimpleBlockPlacementPredictor(liveBlockPlacementLayer);
@@ -148,6 +143,27 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     @Override
     public ChunkGenerator getGenerator() {
         return this.parent.getGenerator();
+    }
+
+    @Override
+    public SimpleBlockCapture fork() {
+        return this.parent.capturer.createCaptureSession(new BlockPlacementPredictor() {
+            @Override
+            public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
+                return MinecraftCaptureBridge.this.activeReadLayer.getLatestBlockAt(pos);
+            }
+
+            @Override
+            public Optional<LoadedBlockState> getLatestBlockAtIfLoaded(BlockPos pos) {
+                return MinecraftCaptureBridge.this.activeReadLayer.getLatestBlockAtIfLoaded(pos);
+            }
+
+            @Override
+            public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
+                return MinecraftCaptureBridge.this.activeReadLayer.getLatestTileAt(pos);
+
+            }
+        });
     }
 
     @Override
@@ -327,7 +343,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     @Override
     public boolean destroyBlock(BlockPos pos, boolean dropBlock, @Nullable Entity entity, int recursionLeft) {
         BlockPos copy = pos.immutable();
-        this.addTask((serverLevel) ->  serverLevel.destroyBlock(copy, dropBlock, entity, recursionLeft));
+        this.addTask((serverLevel) -> serverLevel.destroyBlock(copy, dropBlock, entity, recursionLeft));
 
         BlockState blockState = this.getBlockState(copy);
         if (blockState.isAir()) {
@@ -389,8 +405,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return placement.map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity);
     }
 
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(ServerLevel level) {
-        return this.writeLayer.getRecordMap().calculateLatestBlockStates(level);
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(PaperCapturingWorldLevel predictor, ServerLevel level) {
+        return this.writeLayer.getRecordMap().calculateLatestBlockStates(predictor, level);
     }
 
     public void applyTasks() {
@@ -457,7 +473,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         }
     }
 
-    public record LegacyLayer(BlockPlacementPredictor predictor, BooleanSupplier cond) implements BlockPlacementPredictor {
+    public record LegacyLayer(BlockPlacementPredictor predictor,
+                              BooleanSupplier cond) implements BlockPlacementPredictor {
 
         @Override
         public Optional<BlockState> getLatestBlockAt(BlockPos pos) {

@@ -11,9 +11,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,83 +31,42 @@ that blocks are placed in the correct order, and that the vanilla block chain ca
  */
 public final class CaptureRecordMap {
 
-    private final Map<BlockPos, ArrayDeque<BlockPlacement>> recordsByPos = new HashMap<>();
-    private final ArrayDeque<BlockPlacement> orderedRecords = new ArrayDeque<>();
-
-    interface BlockPlacement {
-        void applyApiPatch(ServerLevel serverLevel);
-
-        BlockPos pos();
-    }
-
-
-    public record BlockEntityRecord(boolean remove, @Nullable BlockEntity add, BlockPos pos) implements BlockPlacement {
-
-        // If we have a block entity that we change, apply to the server level.
-        @Override
-        public void applyApiPatch(final ServerLevel level) {
-            if (this.remove) {
-                level.removeBlockEntity(this.pos);
-                return;
-            }
-            if (this.add != null) {
-                level.setBlockEntity(this.add);
-            }
-        }
-    }
-
-    public record BlockStateRecord(BlockState blockState, int flags, BlockPos pos) implements BlockPlacement {
-
-        // If we have a block state that we change, insert in without updating anything else about the world.
-        @Override
-        public void applyApiPatch(final ServerLevel level) {
-            level.setBlock(this.pos, this.blockState, UPDATE_NONE | net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
-        }
-    }
+    private final Map<BlockPos, CaptureRecord> recordsByPos = new HashMap<>();
 
     public void setLatestBlockStateAt(final BlockPos pos, final BlockState state, final int flags) {
-        this.add(new BlockStateRecord(state, flags, pos));
+        this.add(new CaptureRecord(state, pos));
     }
 
     public void setLatestBlockEntityAt(final BlockPos pos, final boolean remove, @Nullable final BlockEntity add) {
-        this.add(new BlockEntityRecord(remove, add, pos));
+        this.add(new CaptureRecord(remove, add, pos));
     }
 
-    private void add(final BlockPlacement record) {
-        this.recordsByPos.computeIfAbsent(record.pos(), k -> new ArrayDeque<>()).addLast(record);
-        this.orderedRecords.addLast(record);
+    private void add(final CaptureRecord record) {
+        this.recordsByPos.put(record.pos, record);
     }
 
     public boolean isEmpty() {
-        return this.orderedRecords.isEmpty();
+        return this.recordsByPos.isEmpty();
     }
 
     public @Nullable BlockState getLatestBlockStateAt(final BlockPos pos) {
-        final Deque<BlockPlacement> dq = this.recordsByPos.get(pos);
-        if (dq == null) return null;
-
-        for (BlockPlacement record : this.of(dq.descendingIterator())) {
-            if (record instanceof BlockStateRecord bsr) {
-                return bsr.blockState();
-            }
+        CaptureRecord record = this.recordsByPos.get(pos);
+        if (record == null) {
+            return null;
         }
 
-        return null;
+        return record.state;
     }
 
     // Null indicates that its not present, no override
     // Optional empty indicates its being removed
     public @Nullable Optional<@Nullable BlockEntity> getLatestBlockEntityAt(final BlockPos pos) {
-        final Deque<BlockPlacement> dq = this.recordsByPos.get(pos);
-        if (dq == null) return null;
-
-        for (BlockPlacement record : this.of(dq.descendingIterator())) {
-            if (record instanceof BlockEntityRecord ber) {
-                return ber.remove() ? Optional.empty() : Optional.of(ber.add());
-            }
+        CaptureRecord record = this.recordsByPos.get(pos);
+        if (record == null) {
+            return null;
         }
 
-        return null;
+        return Optional.ofNullable(record.blockEntity);
     }
 
     public void applyBlockEntities(ServerLevel parent) {
@@ -118,57 +79,60 @@ public final class CaptureRecordMap {
     }
 
     public void applyApiPatch(final ServerLevel level) {
-        for (final BlockPlacement record : this.orderedRecords) {
-            record.applyApiPatch(level);
-        }
+        this.recordsByPos.keySet().forEach((pos) -> {
+            this.recordsByPos.get(pos).applyApiPatch(level);
+        });
     }
 
     // TODO: Clean this up
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(final ServerLevel level) {
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(PaperCapturingWorldLevel predictor, ServerLevel level) {
         final Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
 
-        for (final Map.Entry<BlockPos, ArrayDeque<BlockPlacement>> entry : this.recordsByPos.entrySet()) {
-            final BlockPos pos = entry.getKey();
-            final ArrayDeque<BlockPlacement> dq = entry.getValue();
+        this.recordsByPos.keySet().forEach((pos) -> {
 
-            BlockState latestState = null;
-            BlockEntity latestBe = null;
-            boolean beKnown = false;
-
-            final Iterator<BlockPlacement> it = dq.descendingIterator();
-            while (it.hasNext() && (latestState == null || !beKnown)) {
-                final BlockPlacement r = it.next();
-
-                if (latestState == null && r instanceof BlockStateRecord bsr) {
-                    latestState = bsr.blockState();
-                }
-
-                if (!beKnown && r instanceof BlockEntityRecord ber) {
-                    beKnown = true;
-                    latestBe = ber.remove() ? null : ber.add();
-                }
-            }
-
-            if (latestState == null) {
-                continue;
-            }
-
-            if (!beKnown) {
-                latestBe = level.getBlockEntity(pos);
-            }
-
-            out.put(CraftLocation.toBukkit(pos), CraftBlockStates.getBlockState(level.getWorld(), CraftLocation.toBlockPosition(CraftLocation.toBukkit(pos)), latestState, latestBe));
-        }
+            CaptureRecord captureRecord = this.recordsByPos.get(pos);
+            out.put(CraftLocation.toBukkit(pos), CraftBlockStates.getBlockState(level.getWorld(), CraftLocation.toBlockPosition(CraftLocation.toBukkit(pos)), captureRecord.state, captureRecord.blockEntity));
+        });
 
         return out;
     }
 
-    private Iterable<BlockPlacement> of(Iterator<BlockPlacement> of) {
-        return new Iterable<>() {
-            @Override
-            public @NotNull Iterator<BlockPlacement> iterator() {
-                return of;
+
+
+    public class CaptureRecord {
+
+        private final BlockPos pos;
+
+        private BlockState state;
+        private BlockEntity blockEntity;
+        private boolean removeBe;
+
+        public CaptureRecord(BlockPos pos, BlockState state, BlockEntity blockEntity) {
+            this.pos = pos;
+            this.state = state;
+            this.blockEntity = blockEntity;
+        }
+
+        public CaptureRecord(BlockState state, BlockPos pos) {
+            this.pos = pos;
+            this.state = state;
+        }
+
+        public CaptureRecord(boolean remove, @Nullable BlockEntity add, BlockPos pos) {
+            this.removeBe = remove;
+            this.blockEntity = add;
+            this.pos = pos;
+        }
+
+        public void applyApiPatch(ServerLevel level) {
+            if (this.removeBe) {
+                level.removeBlockEntity(this.pos);
             }
-        };
+
+            level.setBlock(this.pos, this.state, UPDATE_NONE | net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+            if (this.blockEntity != null) {
+                level.setBlockEntity(this.blockEntity);
+            }
+        }
     }
 }

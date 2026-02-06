@@ -25,7 +25,9 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.util.capture.MinecraftCaptureBridge;
 import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
+import io.papermc.paper.util.capture.SimpleBlockCapture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -2393,42 +2395,45 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static boolean structureEvent(ServerLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldgenCapture, TreeType type) {
-        io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = new io.papermc.paper.util.capture.MinecraftCaptureBridge(level);
-        if (worldgenCapture.apply(captureTreeGeneration)) {
-            var states = captureTreeGeneration.calculateLatestBlockStates(level);
-            org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
+    public static boolean structureEvent(ServerLevel serverLevel, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldgenCapture, TreeType type) {
+        try (SimpleBlockCapture capture = level.fork()) {
+            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+            if (worldgenCapture.apply(captureTreeGeneration)) {
+                var states = captureTreeGeneration.calculateLatestBlockStates(level, serverLevel);
+                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel);
 
-            java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
-            StructureGrowEvent structureEvent = new StructureGrowEvent(location, type, false, player, blocks);
+                java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
+                StructureGrowEvent structureEvent = new StructureGrowEvent(location, type, false, player, blocks);
 
-            if (structureEvent.callEvent()) {
-                captureTreeGeneration.applyTasks();
-                return true;
+                if (structureEvent.callEvent()) {
+                    capture.finalizePlacement();
+                    return true;
+                }
             }
         }
+
 
 
         return false;
     }
 
-    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldgenCapture) {
-        io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = new io.papermc.paper.util.capture.MinecraftCaptureBridge(level);
-        worldgenCapture.accept(captureTreeGeneration);
-        if (true) {
-            var states = captureTreeGeneration.calculateLatestBlockStates(level);
+    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldgenCapture, boolean cancelled) {
+        try (SimpleBlockCapture capture = level.fork()) {
+            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+
+            worldgenCapture.accept(captureTreeGeneration);
+            var states = captureTreeGeneration.calculateLatestBlockStates(captureTreeGeneration, level);
             org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
 
             java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
             BlockFertilizeEvent structureEvent = new BlockFertilizeEvent(location.getBlock(), player, blocks);
+            structureEvent.setCancelled(cancelled);
 
             if (structureEvent.callEvent()) {
-                captureTreeGeneration.applyTasks();
+                capture.finalizePlacement();
                 return true;
             }
         }
-
-
 
         return false;
     }

@@ -10,19 +10,24 @@ import org.jspecify.annotations.Nullable;
 import java.util.Map;
 import java.util.Optional;
 
-public class SimpleBlockCapture implements AutoCloseable  {
+public class SimpleBlockCapture implements AutoCloseable {
 
     private final MinecraftCaptureBridge capturingWorldLevel;
     private final ServerLevel level;
 
     private boolean openLegacyCapturing = false;
 
-    public SimpleBlockCapture(WorldCapturer blockCapturer, ServerLevel world) {
-        this.capturingWorldLevel = new MinecraftCaptureBridge(world);
+
+    private final SimpleBlockCapture oldCapture;
+
+
+    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel world, SimpleBlockCapture oldCapture) {
+        this.capturingWorldLevel = new MinecraftCaptureBridge(world, base);
         this.level = world;
+        this.oldCapture = oldCapture;
     }
 
-    public PaperCapturingWorldLevel capturingWorldLevel() {
+    public MinecraftCaptureBridge capturingWorldLevel() {
         return this.capturingWorldLevel;
     }
 
@@ -31,7 +36,7 @@ public class SimpleBlockCapture implements AutoCloseable  {
     }
 
     public Map<Location, BlockState> getCapturedBlockStates() {
-        return this.capturingWorldLevel.calculateLatestBlockStates(level);
+        return this.capturingWorldLevel.calculateLatestBlockStates(this.capturingWorldLevel, level);
     }
 
     public net.minecraft.world.level.block.state.BlockState getCaptureBlockState(final BlockPos pos) {
@@ -46,7 +51,6 @@ public class SimpleBlockCapture implements AutoCloseable  {
     public void openLegacySupport() {
         this.openLegacyCapturing = true;
         this.capturingWorldLevel.activateLegacyCapture();
-
     }
 
     public boolean isViewingCaptureState() {
@@ -54,13 +58,13 @@ public class SimpleBlockCapture implements AutoCloseable  {
     }
 
     public void finalizePlacement() {
-        this.level.capturer.releaseCapture();
+        this.level.capturer.releaseCapture(this.oldCapture);
         this.capturingWorldLevel.applyTasks();
     }
 
     @Override
     public void close() {
-        this.level.capturer.releaseCapture();
+        this.level.capturer.releaseCapture(this.oldCapture);
     }
 
     public net.minecraft.world.level.block.state.BlockState getCaptureBlockStateIfLoaded(BlockPos pos) {

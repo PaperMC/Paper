@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Optional;
 
-public record LiveBlockPlacementLayer(ServerLevel level) implements BlockPlacementPredictor{
+public record LiveBlockPlacementLayer(ServerLevel level) implements BlockPlacementPredictor {
     @Override
     public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
         return Optional.of(this.level.getBlockState(pos));

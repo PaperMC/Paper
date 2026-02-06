@@ -1,16 +1,25 @@
 package io.papermc.testplugin;
 
+import org.bukkit.BlockChangeDelegate;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.TreeType;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
@@ -25,7 +34,24 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void blockPlace(BlockFertilizeEvent event) {
-       //event.setCancelled(true);
+        event.setCancelled(true);
+
+        Bukkit.getPlayer("Owen1212055").sendBlockChanges(event.getBlocks());
+
+        new BukkitRunnable(){
+
+            @Override
+            public void run() {
+                event.getBlocks().forEach((state) -> Bukkit.getPlayer("Owen1212055").sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
+            }
+        }.runTaskLater(this, 20 * 2);
+
+    }
+
+
+    @EventHandler
+    public void blockPlace(StructureGrowEvent event) {
+        event.setCancelled(true);
 
         event.getPlayer().sendBlockChanges(event.getBlocks());
 
@@ -36,7 +62,14 @@ public final class TestPlugin extends JavaPlugin implements Listener {
                 event.getBlocks().forEach((state) -> event.getPlayer().sendBlockChange(state.getLocation(), state.getBlock().getType().createBlockData()));
             }
         }.runTaskLater(this, 20 * 2);
+    }
 
+
+    @EventHandler
+    public void blockPlace(PlayerSwapHandItemsEvent event) {
+       event.getPlayer().getTargetBlockExact(5).applyBoneMeal(BlockFace.UP);
+
+        event.getPlayer().getWorld().generateTree(event.getPlayer().getLocation(), TreeType.values()[(int) (TreeType.values().length * Math.random())]);
     }
 
     @EventHandler

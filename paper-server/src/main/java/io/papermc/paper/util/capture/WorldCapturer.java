@@ -3,8 +3,6 @@ package io.papermc.paper.util.capture;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
-import java.util.function.Consumer;
-
 // TODO: Cleanup this state, because its held on the server world. I had proper state handling but threw it away at some point
 public class WorldCapturer {
 
@@ -16,14 +14,18 @@ public class WorldCapturer {
         this.world = (ServerLevel) world;
     }
 
-    public SimpleBlockCapture createCaptureSession() {
-        this.capture = new SimpleBlockCapture(this, world);
+    public SimpleBlockCapture createCaptureSession(BlockPlacementPredictor blockPlacementPredictor) {
+        this.capture = new SimpleBlockCapture(blockPlacementPredictor, world, this.capture);
 
         return this.capture;
     }
 
-    public void releaseCapture() {
-        this.capture = null;
+    public SimpleBlockCapture createCaptureSession() {
+        return this.createCaptureSession(new LiveBlockPlacementLayer(this.world));
+    }
+
+    public void releaseCapture(SimpleBlockCapture oldCapture) {
+        this.capture = oldCapture;
     }
 
     public SimpleBlockCapture getCapture() {
