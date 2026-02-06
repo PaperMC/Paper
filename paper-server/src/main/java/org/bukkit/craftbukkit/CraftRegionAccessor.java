@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttribute;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -500,5 +503,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().enabledFeatures());
+    }
+
+    @Override
+    public <T> PaperEnvironmentalAttribute<T, ?> getEnvironmentalAttribute(final EnvironmentalAttributeType<T> type) {
+        // todo should probably restrict the position lookup for LimitedRegion
+        return new PaperEnvironmentalAttribute<>(this.getHandle().getLevel().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
     }
 }

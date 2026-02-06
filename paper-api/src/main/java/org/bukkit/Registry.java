@@ -10,6 +10,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
@@ -355,6 +356,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see GameRule
      */
     Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
+    /**
+     * Environmental attribute types.
+     *
+     * @see io.papermc.paper.world.attribute.EnvironmentalAttribute
+     */
+    @ApiStatus.Experimental
+    Registry<EnvironmentalAttributeType<?>> ENVIRONMENT_ATTRIBUTE = registryFor(RegistryKey.ENVIRONMENT_ATTRIBUTE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
