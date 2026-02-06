@@ -85,6 +85,8 @@ public final class TestPlugin extends JavaPlugin implements Listener {
             event.getBlock().getRelative(BlockFace.SOUTH).setType(Material.STONE);
         }
         event.getPlayer().sendMessage(event.getBlock().getType().toString());
+
+        event.getBlockAgainst().setType(Material.DIAMOND_BLOCK);
     }
 
     @EventHandler

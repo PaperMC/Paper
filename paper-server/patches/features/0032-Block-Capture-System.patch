@@ -177,7 +177,7 @@ index 2818c7ad02a861270283384ceb7ecd4d44f6d624..f2cd7765da1ee5138aba9505c5935444
      }
  }
 diff --git a/net/minecraft/world/item/BlockItem.java b/net/minecraft/world/item/BlockItem.java
-index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecbab675ddc 100644
+index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a7254db42f001a4bd3b952563307600867a1c6f0 100644
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
 @@ -1,13 +1,18 @@
@@ -270,7 +270,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
                      level.playSound(
                          player,
                          clickedPos,
-@@ -119,8 +96,41 @@ public class BlockItem extends Item {
+@@ -119,8 +96,42 @@ public class BlockItem extends Item {
                          soundType.getPitch() * 0.8F
                      );
                      level.gameEvent(GameEvent.BLOCK_PLACE, clickedPos, GameEvent.Context.of(player, blockState));
@@ -288,10 +288,11 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
 +
 +                    capture.overlayCaptureOnLevel();
 +
++                    BlockPos relative = context.getHitResult().getBlockPos();
 +                    if (blocks.size() > 1) {
-+                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, clickedPos);
++                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, relative);
 +                    } else if (blocks.size() == 1) {
-+                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, hand, blocks.getFirst(), clickedPos);
++                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, hand, blocks.getFirst(), relative);
 +                    }
 +
 +                    if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
@@ -313,7 +314,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
                  }
              }
          }
-@@ -134,7 +144,7 @@ public class BlockItem extends Item {
+@@ -134,7 +145,7 @@ public class BlockItem extends Item {
          return context;
      }
  
@@ -322,7 +323,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
          BlockEntity blockEntity = level.getBlockEntity(pos);
          if (blockEntity != null) {
              blockEntity.applyComponentsFromItemStack(stack);
-@@ -142,7 +152,7 @@ public class BlockItem extends Item {
+@@ -142,7 +153,7 @@ public class BlockItem extends Item {
          }
      }
  
@@ -331,7 +332,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
          return updateCustomBlockEntityTag(level, player, pos, stack);
      }
  
-@@ -151,7 +161,7 @@ public class BlockItem extends Item {
+@@ -151,7 +162,7 @@ public class BlockItem extends Item {
          return stateForPlacement != null && this.canPlace(context, stateForPlacement) ? stateForPlacement : null;
      }
  
@@ -340,7 +341,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..a2e923e9ac2a10d928bfbeb8fdf62ecb
          BlockItemStateProperties blockItemStateProperties = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY);
          if (blockItemStateProperties.isEmpty()) {
              return state;
-@@ -186,11 +196,11 @@ public class BlockItem extends Item {
+@@ -186,11 +197,11 @@ public class BlockItem extends Item {
          return true;
      }
  
@@ -688,6 +689,19 @@ index 3a41cf80e347ae3b30858879fb91f719625c8bb6..334f30499b8e043bf74ebe7001ded66c
          }
  
          return flag;
+diff --git a/net/minecraft/world/item/context/UseOnContext.java b/net/minecraft/world/item/context/UseOnContext.java
+index fc841780fe6e0ca2aca119ce3ba78da8e1c10d77..cd5137fdd17a1403c4dbc5b91a22002478a859e4 100644
+--- a/net/minecraft/world/item/context/UseOnContext.java
++++ b/net/minecraft/world/item/context/UseOnContext.java
+@@ -29,7 +29,7 @@ public class UseOnContext {
+         this.level = level;
+     }
+ 
+-    protected final BlockHitResult getHitResult() {
++    public final BlockHitResult getHitResult() { // PAPER: TODO AT
+         return this.hitResult;
+     }
+ 
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
 index 579bbba4e823d4d0318e58759ca732b7c8e4d865..d9a116d9c15dab1396a51d86cc661d925500a657 100644
 --- a/net/minecraft/world/level/Level.java
