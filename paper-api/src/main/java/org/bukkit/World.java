@@ -2766,10 +2766,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Gets if this world is natural.
      * <p>
-     * When false, the moon is not visible and eyeblossoms do not open/close
+     * When true, eyeblossoms cycle open/close, nether portals can spawn
+     * zombified piglins and creaking heart works
      *
      * @return true if world is natural
-     * @deprecated replaced by the gameplay/eyeblossom_open and gameplay/creaking_active environment attributes
+     * @deprecated replaced by the gameplay/nether_portal_spawns_piglin, gameplay/eyeblossom_open and gameplay/creaking_active environmental attributes
      */
     @Deprecated(since = "1.21.11")
     public boolean isNatural();
@@ -2781,7 +2782,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * not always be the case.
      *
      * @return true if beds work in this world
-     * @deprecated Due to 1.21.11 beds changes, a boolean no longer
+     * @deprecated due to 1.21.11 beds changes, a boolean no longer
      * represents if they work. There is no replacement API yet
      */
     @ApiStatus.Obsolete(since = "1.21.11")
@@ -2806,6 +2807,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * transforming to zombified piglins.
      *
      * @return true if piglins will not transform to zombified piglins
+     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
      */
     public boolean isPiglinSafe();
 
@@ -2813,6 +2815,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets if this world allows players to charge and use respawn anchors.
      *
      * @return true if players can charge and use respawn anchors
+     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
      */
     public boolean isRespawnAnchorWorks();
 
@@ -2821,6 +2824,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * raid.
      *
      * @return true if raids will be triggered
+     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
      */
     public boolean hasRaids();
 
@@ -2834,7 +2838,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * </ul>
      *
      * @return true if this world has the above mechanics
-     * @deprecated as of 1.21.11, ultra warm is replaced by the WATER_EVAPORATES, FAST_LAVA, and DEFAULT_DRIPSTONE_PARTICLE environment attributes.
+     * @deprecated replaced by the gameplay/water_evaporates and gameplay/fast_lava environmental attributes
      */
     @Deprecated(since = "1.21.11")
     public boolean isUltraWarm();
