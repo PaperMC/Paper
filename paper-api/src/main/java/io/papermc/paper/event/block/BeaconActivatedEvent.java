@@ -1,10 +1,8 @@
 package io.papermc.paper.event.block;
 
 import org.bukkit.block.Beacon;
-import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.block.BlockEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -12,30 +10,19 @@ import org.jspecify.annotations.NullMarked;
  * Activation occurs when the beacon beam becomes visible.
  */
 @NullMarked
-public class BeaconActivatedEvent extends BlockEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    public BeaconActivatedEvent(final Block beacon) {
-        super(beacon);
-    }
+public interface BeaconActivatedEvent extends BlockEventNew {
 
     /**
      * Returns the beacon that was activated.
      *
      * @return the beacon that was activated.
      */
-    public Beacon getBeacon() {
-        return (Beacon) this.block.getState();
-    }
+    Beacon getBeacon();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

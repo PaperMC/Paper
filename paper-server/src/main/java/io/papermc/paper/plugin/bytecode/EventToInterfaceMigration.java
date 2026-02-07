@@ -7,7 +7,7 @@ import com.destroystokyo.paper.loottable.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
-import io.papermc.paper.event.block.PlayerShearBlockEvent;
+import io.papermc.paper.event.block.*;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
 import java.util.Set;
@@ -159,7 +159,8 @@ public final class EventToInterfaceMigration {
                 LootableInventoryReplenishEvent.class,
                 UncheckedSignChangeEvent.class,
                 PlayerSpawnLocationEvent.class,
-                PlayerEvent.class
+                PlayerEvent.class,
+                BeaconActivatedEvent.class
                 //</editor-fold>
             );
 
