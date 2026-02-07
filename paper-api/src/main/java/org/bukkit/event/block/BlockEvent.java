@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a block related event.
  */
-public abstract class BlockEvent extends EventTmp {
+public abstract class BlockEvent extends EventTmp implements BlockEventNew {
 
     protected Block block;
 
