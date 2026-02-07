@@ -2358,7 +2358,7 @@ public class CraftEventFactory {
             final org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos());
             net.kyori.adventure.text.Component lockedMessage = net.kyori.adventure.text.Component.translatable("container.isLocked", io.papermc.paper.adventure.PaperAdventure.asAdventure(displayName));
             net.kyori.adventure.sound.Sound lockedSound = net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.BLOCK_CHEST_LOCKED, net.kyori.adventure.sound.Sound.Source.BLOCK, 1.0F, 1.0F);
-            final io.papermc.paper.event.block.BlockLockCheckEvent event = new io.papermc.paper.event.block.BlockLockCheckEvent(block, player.getBukkitEntity(), lockedMessage, lockedSound);
+            final io.papermc.paper.event.block.BlockLockCheckEvent event = new io.papermc.paper.event.block.PaperBlockLockCheckEvent(block, player.getBukkitEntity(), lockedMessage, lockedSound);
             event.callEvent();
             if (event.getResult() == org.bukkit.event.Event.Result.ALLOW) {
                 return true;
