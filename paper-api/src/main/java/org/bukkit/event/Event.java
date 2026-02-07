@@ -2,6 +2,7 @@ package org.bukkit.event;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents an event.
@@ -18,6 +19,7 @@ public interface Event {
      *
      * @return {@code false} if event was cancelled, if cancellable. otherwise {@code true}.
      */
+    @ApiStatus.Internal
     boolean callEvent();
 
     /**
@@ -27,6 +29,7 @@ public interface Event {
      *
      * @return name of this event
      */
+    @ApiStatus.Internal
     String getEventName();
 
     HandlerList getHandlers();

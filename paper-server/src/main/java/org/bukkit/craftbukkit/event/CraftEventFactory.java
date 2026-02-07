@@ -2234,8 +2234,8 @@ public class CraftEventFactory {
 
     public static boolean handleBlockFailedDispenseEvent(ServerLevel serverLevel, BlockPos pos) {
         org.bukkit.block.Block block = CraftBlock.at(serverLevel, pos);
-        io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.BlockFailedDispenseEvent(block);
-        return event.callEvent();
+        io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.PaperBlockFailedDispenseEvent(block);
+        return event.callEvent() && event.shouldPlayEffect();
     }
 
     public static boolean handleBlockPreDispenseEvent(ServerLevel serverLevel, BlockPos pos, ItemStack itemStack, int slot) {
