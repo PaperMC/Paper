@@ -167,7 +167,8 @@ public final class EventToInterfaceMigration {
                 org.bukkit.event.block.BellRingEvent.class,
                 BlockBreakProgressUpdateEvent.class,
                 BlockFailedDispenseEvent.class,
-                BlockLockCheckEvent.class
+                BlockLockCheckEvent.class,
+                BlockPreDispenseEvent.class
                 //</editor-fold>
             );
 
