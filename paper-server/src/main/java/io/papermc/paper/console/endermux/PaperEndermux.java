@@ -24,8 +24,8 @@ public final class PaperEndermux {
             socketPath,
             5
         );
-        this.endermuxServer.start();
         EndermuxForwardingAppender.TARGET = new RemoteLogForwarder(this.endermuxServer);
+        this.endermuxServer.start();
     }
 
     public void enableInteractivity(final DedicatedServer server) {
