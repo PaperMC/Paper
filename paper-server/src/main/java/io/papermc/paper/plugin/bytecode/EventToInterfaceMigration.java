@@ -185,7 +185,8 @@ public final class EventToInterfaceMigration {
                 BlockFormEvent.class,
                 DragonEggFormEvent.class,
                 EntityBlockFormEvent.class,
-                BlockSpreadEvent.class
+                BlockSpreadEvent.class,
+                BellResonateEvent.class
                 //</editor-fold>
             );
 
