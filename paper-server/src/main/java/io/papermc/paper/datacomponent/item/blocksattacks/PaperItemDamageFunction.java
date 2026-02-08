@@ -1,8 +1,9 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
-import com.google.common.base.Preconditions;
 import net.minecraft.world.item.component.BlocksAttacks;
 import org.checkerframework.checker.index.qual.NonNegative;
+
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
 
 public record PaperItemDamageFunction(
     net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction internal
@@ -36,8 +37,7 @@ public record PaperItemDamageFunction(
 
         @Override
         public Builder threshold(final @NonNegative float threshold) {
-            Preconditions.checkArgument(threshold >= 0, "threshold must be non-negative, was %s", threshold);
-            this.threshold = threshold;
+            this.threshold = requireArgumentNonNegative(threshold, "threshold");
             return this;
         }
 

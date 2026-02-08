@@ -7,6 +7,8 @@ import net.minecraft.resources.Identifier;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
+
 public record PaperUseCooldown(
     net.minecraft.world.item.component.UseCooldown impl
 ) implements UseCooldown, Handleable<net.minecraft.world.item.component.UseCooldown> {
@@ -34,7 +36,7 @@ public record PaperUseCooldown(
         private Optional<Identifier> cooldownGroup = Optional.empty();
 
         BuilderImpl(final float seconds) {
-            this.seconds = seconds;
+            this.seconds = requireArgumentPositive(seconds, "seconds");
         }
 
         @Override
