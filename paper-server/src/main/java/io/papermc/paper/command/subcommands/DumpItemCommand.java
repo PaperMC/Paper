@@ -1,8 +1,11 @@
 package io.papermc.paper.command.subcommands;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.command.CommandUtil;
-import io.papermc.paper.command.PaperSubcommand;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -15,13 +18,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
-import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
@@ -29,13 +30,11 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
 
+import static java.util.Objects.requireNonNull;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
@@ -48,22 +47,33 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
 
-@DefaultQualifier(NonNull.class)
-public final class DumpItemCommand implements PaperSubcommand {
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        this.doDumpItem(sender, args.length > 0 && "all".equals(args[0]));
-        return true;
+public final class DumpItemCommand {
+
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        return Commands.literal("dumpitem")
+            .requires(PaperCommand.hasPermission("dumpitem"))
+            .executes(context -> {
+                if (!(context.getSource().getExecutor() instanceof Player player)) {
+                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
+                }
+                doDumpItem(player, false, context.getSource().getSender());
+                return Command.SINGLE_SUCCESS;
+            })
+            .then(Commands.literal("all")
+                .executes(context -> {
+                    if (!(context.getSource().getExecutor() instanceof Player player)) {
+                        throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
+                    }
+                    doDumpItem(player, true, context.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                })
+            );
     }
 
     @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
-    private void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
-        if (!(sender instanceof final Player player)) {
-            sender.sendMessage("Only players can use this command");
-            return;
-        }
+    private static void doDumpItem(final Player player, final boolean includeAllComponents, final CommandSender sender) {
         final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
-        final TextComponent.Builder visualOutput = Component.text();
+        final TextComponent.Builder visualOutput = text();
         final StringBuilder itemCommandBuilder = new StringBuilder();
         final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().identifier().toString();
         itemCommandBuilder.append(itemName);
@@ -76,15 +86,13 @@ public final class DumpItemCommand implements PaperSubcommand {
             referencedComponentTypes.addAll(prototype.keySet());
         }
 
-        final RegistryAccess.Frozen access = ((CraftServer) sender.getServer()).getServer().registryAccess();
-        final RegistryOps<Tag> ops = access.createSerializationContext(NbtOps.INSTANCE);
-        final Registry<DataComponentType<?>> registry = access.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
+        final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
         final List<ComponentLike> componentComponents = new ArrayList<>();
         final List<String> commandComponents = new ArrayList<>();
         for (final DataComponentType<?> type : referencedComponentTypes) {
-            final String path = registry.getResourceKey(type).orElseThrow().identifier().getPath();
-            final @Nullable Optional<?> patchedValue = patch.get(type);
-            final @Nullable TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
+            final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
+            final Optional<?> patchedValue = patch.get(type);
+            final TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
             if (patchedValue != null) {
                 if (patchedValue.isEmpty()) {
                     componentComponents.add(text().append(text('!', RED), text(path, AQUA)));
@@ -109,7 +117,7 @@ public final class DumpItemCommand implements PaperSubcommand {
                 .append(String.join(",", commandComponents))
                 .append("]");
         }
-        player.sendMessage(visualOutput.build().compact());
+        sender.sendMessage(visualOutput.build().compact());
         final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
         sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
     }
@@ -121,13 +129,5 @@ public final class DumpItemCommand implements PaperSubcommand {
             PaperAdventure.asAdventure(NbtUtils.toPrettyComponent(serialized))
         ));
         commandOutput.accept(path + "=" + new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(serialized));
-    }
-
-    @Override
-    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-        if (args.length == 1) {
-            return CommandUtil.getListMatchingLast(sender, args, "all");
-        }
-        return Collections.emptyList();
     }
 }
