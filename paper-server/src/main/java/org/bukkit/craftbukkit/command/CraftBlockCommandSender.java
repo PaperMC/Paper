@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.command;
 
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.chat.SignedMessage;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -62,8 +64,21 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
     }
 
     @Override
-    public void sendMessage(net.kyori.adventure.identity.Identity identity, net.kyori.adventure.text.Component message, net.kyori.adventure.audience.MessageType type) {
+    public void sendMessage(final net.kyori.adventure.text.Component message) {
         this.block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
+    }
+
+    @Override
+    public void sendMessage(final net.kyori.adventure.text.Component message, final ChatType.Bound boundChatType) {
+        this.block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
+    }
+
+    @Override
+    public void sendMessage(final SignedMessage signedMessage, final ChatType.Bound boundChatType) {
+        final net.kyori.adventure.text.Component component = signedMessage.unsignedContent();
+        if (component != null) {
+            this.block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
+        }
     }
 
     @Override
