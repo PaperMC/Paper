@@ -5,14 +5,12 @@ import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockExpEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a block forces another block to break and drop items.
  * <p>
  * Currently called for piston's and liquid flows.
  */
-@NullMarked
 public interface BlockBreakBlockEvent extends BlockExpEvent {
 
     /**

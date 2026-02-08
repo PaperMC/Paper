@@ -2,12 +2,10 @@ package io.papermc.paper.event.block;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a block tries to dispense an item, but its inventory is empty.
  */
-@NullMarked
 public interface BlockFailedDispenseEvent extends BlockEventNew {
 
     /**

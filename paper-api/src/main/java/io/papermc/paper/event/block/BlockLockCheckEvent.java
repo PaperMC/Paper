@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,7 +14,6 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * See {@link #setResult(Result)} to change behavior
  */
-@NullMarked
 public interface BlockLockCheckEvent extends BlockEventNew {
 
     /**
