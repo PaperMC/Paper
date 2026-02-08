@@ -9,13 +9,12 @@
      private final boolean transferred;
      private long keepAliveTime;
      private boolean keepAlivePending;
-@@ -46,6 +_,17 @@
+@@ -46,6 +_,16 @@
      private boolean closed = false;
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
 +    // CraftBukkit start
 +    public final org.bukkit.craftbukkit.CraftServer cserver;
-+    public boolean processedDisconnect;
 +    // CraftBukkit end
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
@@ -210,7 +209,7 @@
  
      public void send(Packet<?> packet, @Nullable ChannelFutureListener sendListener) {
 +        // CraftBukkit start
-+        if (packet == null || this.processedDisconnect) { // Spigot
++        if (packet == null) {
 +            return;
 +        } else if (packet instanceof net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket defaultSpawnPositionPacket && this instanceof ServerGamePacketListenerImpl serverGamePacketListener) {
 +            serverGamePacketListener.player.compassTarget = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(defaultSpawnPositionPacket.respawnData().pos(), serverGamePacketListener.getPlayer().level());
@@ -241,7 +240,7 @@
 -                new ClientboundDisconnectPacket(disconnectionDetails.reason()),
 -                PacketSendListener.thenRun(() -> this.connection.disconnect(disconnectionDetails))
 +        // CraftBukkit start - fire PlayerKickEvent
-+        if (this.processedDisconnect) {
++        if (!this.connection.isConnected()) {
 +            return;
 +        }
 +        if (!this.cserver.isPrimaryThread()) {
