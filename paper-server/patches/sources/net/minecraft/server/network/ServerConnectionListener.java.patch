@@ -100,7 +100,7 @@
      public SocketAddress startMemoryChannel() {
          ChannelFuture channelFuture;
          synchronized (this.channels) {
-@@ -141,6 +_,13 @@
+@@ -141,12 +_,26 @@
  
      public void tick() {
          synchronized (this.connections) {
@@ -114,6 +114,19 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
+                 Connection connection = iterator.next();
+                 if (!connection.isConnecting()) {
+                     if (connection.isConnected()) {
++                        // Paper start - Force kill connection ticking
++                        // also call this multiple times, doesnt matter
++                        if (connection.killConnectionOnNextTick) {
++                            connection.handleDisconnection();
++                            return;
++                        }
++                        // Paper end - Force kill connection ticking
+                         try {
+                             connection.tick();
+                         } catch (Exception var7) {
 @@ -160,6 +_,7 @@
                              connection.setReadOnly();
                          }
