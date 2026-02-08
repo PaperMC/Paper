@@ -4,9 +4,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public interface BlockPreDispenseEvent extends BlockEventNew, Cancellable {
 
     /**

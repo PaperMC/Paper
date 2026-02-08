@@ -7,7 +7,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player uses shears on a block.
@@ -17,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Examples include shearing a pumpkin to turn it into a carved pumpkin or shearing a beehive to get honeycomb.
  */
-@NullMarked
 public interface PlayerShearBlockEvent extends PlayerEvent, Cancellable {
 
     /**

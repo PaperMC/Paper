@@ -4,13 +4,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an item is about to be composted by a hopper.
  * To prevent hoppers from moving items into composters, cancel the {@link InventoryMoveItemEvent}.
  */
-@NullMarked
 public interface CompostItemEvent extends BlockEventNew {
 
     /**

@@ -3,13 +3,11 @@ package io.papermc.paper.event.block;
 import org.bukkit.block.Beacon;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a beacon is activated.
  * Activation occurs when the beacon beam becomes visible.
  */
-@NullMarked
 public interface BeaconActivatedEvent extends BlockEventNew {
 
     /**
