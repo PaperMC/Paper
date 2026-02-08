@@ -5,18 +5,19 @@ import java.util.Objects;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import xyz.jpenilla.endermux.log4j.EndermuxForwardingAppender;
 import xyz.jpenilla.endermux.server.EndermuxServer;
 import xyz.jpenilla.endermux.server.api.InteractiveConsoleHooks;
-import xyz.jpenilla.endermux.server.log.RemoteLogForwarder;
+import xyz.jpenilla.endermux.server.log4j.EndermuxForwardingAppender;
+import xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder;
 
 @NullMarked
 public final class PaperEndermux {
 
+    public static @Nullable PaperEndermux earlyInstance;
+
     private @Nullable EndermuxServer endermuxServer;
 
-    public void start(final DedicatedServer server) {
-        final Path socketPath = server.getServerDirectory().toFile().toPath().resolve("console.sock");
+    public void start(final Path socketPath) {
         Objects.requireNonNull(EndermuxForwardingAppender.INSTANCE);
         this.endermuxServer = new EndermuxServer(
             EndermuxForwardingAppender.INSTANCE.logLayout(),

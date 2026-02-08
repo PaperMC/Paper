@@ -134,7 +134,6 @@ dependencies {
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
     implementation("xyz.jpenilla:endermux-server:0.0.1-SNAPSHOT")
-    implementation("xyz.jpenilla:endermux-log4j-plugins:0.0.1-SNAPSHOT")
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core

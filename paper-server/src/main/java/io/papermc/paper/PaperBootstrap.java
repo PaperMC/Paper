@@ -1,6 +1,8 @@
 package io.papermc.paper;
 
+import java.nio.file.Paths;
 import java.util.List;
+import io.papermc.paper.console.endermux.PaperEndermux;
 import joptsimple.OptionSet;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Main;
@@ -15,6 +17,9 @@ public final class PaperBootstrap {
 
     public static void boot(final OptionSet options) {
         SharedConstants.tryDetectVersion();
+
+        PaperEndermux.earlyInstance = new PaperEndermux();
+        PaperEndermux.earlyInstance.start(Paths.get("console.sock"));
 
         getStartupVersionMessages().forEach(LOGGER::info);
 

@@ -5,7 +5,7 @@ Subject: [PATCH] Endermux console protocl support
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..0d5a274c10ccff3fbe1fcdbccdcdfe5b20206e9d 100644
+index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..1d696294bdbe77663d85a3203e0aba8fb24e77c1 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -306,6 +306,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -43,26 +43,31 @@ index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..0d5a274c10ccff3fbe1fcdbccdcdfe5b
 +        });
 +        final var translated = renderer.render(adventureMessage, net.kyori.adventure.translation.Translator.parseLocale("en_us"));
 +        final var serialized = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(translated);
-+        org.apache.logging.log4j.ThreadContext.put(xyz.jpenilla.endermux.server.log.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY, serialized);
++        org.apache.logging.log4j.ThreadContext.put(xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY, serialized);
 +        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(adventureMessage)); // Paper - Log message with colors
-+        org.apache.logging.log4j.ThreadContext.remove(xyz.jpenilla.endermux.server.log.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY);
++        org.apache.logging.log4j.ThreadContext.remove(xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY);
      }
  
      public KeyPair getKeyPair() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index eb06d8f012684845146429832e977e6c1ddcd62b..a593483571af475ade1acbd385219c5bcfa28913 100644
+index eb06d8f012684845146429832e977e6c1ddcd62b..e7d1cda55fac1985a90e1f307a18b8caecdf5751 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -166,6 +166,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -166,6 +166,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
  
      @Override
      public boolean initServer() throws IOException {
-+        this.endermux = new io.papermc.paper.console.endermux.PaperEndermux(); // TODO config
-+        if (this.endermux != null) this.endermux.start(this);
++        if (io.papermc.paper.console.endermux.PaperEndermux.earlyInstance == null) {
++            this.endermux = new io.papermc.paper.console.endermux.PaperEndermux(); // TODO config
++            if (this.endermux != null) this.endermux.start(java.nio.file.Paths.get("console.sock"));
++        } else {
++            this.endermux = io.papermc.paper.console.endermux.PaperEndermux.earlyInstance;
++            io.papermc.paper.console.endermux.PaperEndermux.earlyInstance = null;
++        }
          int i = this.getProperties().managementServerPort;
          if (this.getProperties().managementServerEnabled) {
              String string = this.settings.getProperties().managementServerSecret;
-@@ -270,6 +272,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -270,6 +277,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          // Paper end - fix converting txt to json file
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
          thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
@@ -70,7 +75,7 @@ index eb06d8f012684845146429832e977e6c1ddcd62b..a593483571af475ade1acbd385219c5b
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
          this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
-@@ -540,6 +543,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -540,6 +548,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              }
          }
  
