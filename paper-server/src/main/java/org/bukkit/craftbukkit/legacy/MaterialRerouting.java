@@ -65,7 +65,7 @@ import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.scoreboard.Criteria;
 
-public class MaterialRerouting {
+public class MaterialRerouting { // todo check
 
     private static Material transformFromBlockType(Material blockType, ApiVersion version) {
         if (blockType == null) {

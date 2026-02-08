@@ -262,7 +262,7 @@ index 79c804245c7f41a5a7f062e1c5e01760adde7d84..c1e8d6b9d53fb93aa0b92980063976f9
              cause,
              dumbEvent.getNewSpawn(),
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index 84d19d79e77cec6a5d64f59fbcce703e467b2407..4cd37ce0e7c56269618dbaa443ef16e80d226519 100644
+index 84d19d79e77cec6a5d64f59fbcce703e467b2407..51c8d9233092847af195687442e53d6548f5a948 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -67,7 +67,7 @@ public class ServerPlayerGameMode {
@@ -274,6 +274,15 @@ index 84d19d79e77cec6a5d64f59fbcce703e467b2407..4cd37ce0e7c56269618dbaa443ef16e8
                  this.player.getBukkitEntity(),
                  org.bukkit.GameMode.getByValue(gameModeForPlayer.getId()),
                  playerGameModeChangeCause, // Paper
+@@ -333,7 +333,7 @@ public class ServerPlayerGameMode {
+         if (this.player instanceof ServerPlayer) {
+             // Sword + Creative mode pre-cancel
+             boolean canAttackBlock = !this.player.getMainHandItem().canDestroyBlock(blockState, this.level, pos, this.player);
+-            event = new org.bukkit.event.block.BlockBreakEvent(bblock, this.player.getBukkitEntity());
++            event = new org.bukkit.craftbukkit.event.block.CraftBlockBreakEvent(bblock, this.player.getBukkitEntity());
+ 
+             // Sword + Creative mode pre-cancel
+             event.setCancelled(canAttackBlock);
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index b8a4b4cc02a2fc6b70f4b840796eed501aad6239..607d2e7c5412056940c49c2b7ba58c35f61da62a 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
@@ -962,6 +971,19 @@ index 406595212f2327778d777640bfa9f70e43648214..2645cc5d77c86b270ad45b219f0d980f
              if (event.callEvent()) {
                  // Paper end - Add PlayerChangeBeaconEffectEvent
                  this.beaconData.set(1, BeaconMenu.encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getPrimary())));// CraftBukkit - decompile error
+diff --git a/net/minecraft/world/inventory/GrindstoneMenu.java b/net/minecraft/world/inventory/GrindstoneMenu.java
+index ad70a0f7debee27d9f3b2ff39cb0429b39485190..c6ecf441b843cdf9db5fc4970b972be1c3ae2644 100644
+--- a/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -94,7 +94,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+                 access.execute((level, blockPos) -> {
+                     if (level instanceof ServerLevel) {
+                         // Paper start - Fire BlockExpEvent on grindstone use
+-                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos), this.getExperienceAmount(level));
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.craftbukkit.event.block.CraftBlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos), this.getExperienceAmount(level));
+                         event.callEvent();
+                         ExperienceOrb.awardWithDirection((ServerLevel) level, Vec3.atCenterOf(blockPos), Vec3.ZERO, event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player, null);
+                         // Paper end - Fire BlockExpEvent on grindstone use
 diff --git a/net/minecraft/world/inventory/LecternMenu.java b/net/minecraft/world/inventory/LecternMenu.java
 index 8f0bfdc634548164e4327f39e2193072a55b9fb6..3e8ed82938edef08778ad995c939101ef331f047 100644
 --- a/net/minecraft/world/inventory/LecternMenu.java
@@ -1260,6 +1282,19 @@ index 8e9db734d19b2082437eaa424f33df2b3321c2cf..1ece773f4943760af95f609b8a99f8bb
                  if (!shieldDisableEvent.callEvent()) return;
                  player.getCooldowns().addCooldown(stack, shieldDisableEvent.getCooldown());
                  // Paper end
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 579bbba4e823d4d0318e58759ca732b7c8e4d865..89c4b83d6e1065bc625e1b5694ef1181058dc96b 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -1204,7 +1204,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+             BlockState effectType = blockState;
+             int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
+             if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
+-                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, dropBlock);
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new io.papermc.paper.event.block.PaperBlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, dropBlock);
+                 if (!event.callEvent()) {
+                     return false;
+                 }
 diff --git a/net/minecraft/world/level/block/BeehiveBlock.java b/net/minecraft/world/level/block/BeehiveBlock.java
 index 7b24213eb30f60d49c37fc7d1242b52db578e634..4824bc5185eed26407c3a43d3b083e6430e8619c 100644
 --- a/net/minecraft/world/level/block/BeehiveBlock.java
@@ -1273,6 +1308,19 @@ index 7b24213eb30f60d49c37fc7d1242b52db578e634..4824bc5185eed26407c3a43d3b083e64
                  if (!event.callEvent()) {
                      return InteractionResult.PASS;
                  }
+diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
+index 94b4143449c99ee35db44ab8e2a766d924aa6410..42c8b17f130968e6f8c9272f5f1a30b6f44bf1b6 100644
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -391,7 +391,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+                 items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
+             }
+             Block block = state.getBlock(); // Paper - Properly handle xp dropping
+-            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.PaperBlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
+             event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
+             event.callEvent();
+             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
 diff --git a/net/minecraft/world/level/block/ComposterBlock.java b/net/minecraft/world/level/block/ComposterBlock.java
 index 429e833ffe7c89d7b0ca7515dbd82ffc1ce8d60d..f565154a6705430bb4b33a56cedb30e7add57598 100644
 --- a/net/minecraft/world/level/block/ComposterBlock.java
@@ -1350,6 +1398,28 @@ index b36b9b48da940ad7b4014c90c05eb90f5198a5fb..6ffb4619b57625dc454d061d3436cfe1
              bukkitPlayer,
              bukkitSign,
              isFrontText ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
+diff --git a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index c8bfa1eeb847d6d9972d2f6625cc1f60063713d4..1019619b45553eb16ca562584cb962e12bbc7015 100644
+--- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -487,7 +487,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         // CraftBukkit start - fire FurnaceExtractEvent / BlockExpEvent
+         org.bukkit.event.block.BlockExpEvent event;
+         if (amount != 0) {
+-            event = new org.bukkit.event.inventory.FurnaceExtractEvent(
++            event = new org.bukkit.craftbukkit.event.block.CraftFurnaceExtractEvent(
+                 serverPlayer.getBukkitEntity(),
+                 org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos),
+                 org.bukkit.craftbukkit.inventory.CraftItemType.minecraftToBukkit(itemStack.getItem()),
+@@ -495,7 +495,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+                 floor
+             );
+         } else {
+-            event = new org.bukkit.event.block.BlockExpEvent(
++            event = new org.bukkit.craftbukkit.event.block.CraftBlockExpEvent(
+                 org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos),
+                 floor
+             );
 diff --git a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 index 0db33d7e1227e914326e9eb3b50338b001872938..be9ee79447817e16cd0897b4c2faa8183c26810d 100644
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java

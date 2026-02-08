@@ -1,5 +1,6 @@
 package io.papermc.paper.plugin;
 
+import org.bukkit.craftbukkit.event.block.CraftBlockBreakEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerMoveEvent;
 import org.bukkit.event.Event;
@@ -32,7 +33,7 @@ public class TimedRegisteredListenerTest {
 
         PlayerInteractEvent interactEvent = new CraftPlayerInteractEvent(null, null, null, null, null, null, null);
         PlayerMoveEvent moveEvent = new CraftPlayerMoveEvent(null, null, null);
-        BlockBreakEvent breakEvent = new BlockBreakEvent(null, null);
+        BlockBreakEvent breakEvent = new CraftBlockBreakEvent(null, null);
 
         TimedRegisteredListener trl = new TimedRegisteredListener(listener, executor, EventPriority.NORMAL, plugin, false);
 
