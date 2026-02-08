@@ -105,6 +105,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
+import org.bukkit.craftbukkit.event.block.CraftBellResonateEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -510,7 +511,7 @@ public class CraftEventFactory {
 
     public static Stream<net.minecraft.world.entity.LivingEntity> handleBellResonateEvent(Level world, BlockPos position, List<LivingEntity> bukkitEntities) {
         Block block = CraftBlock.at(world, position);
-        BellResonateEvent event = new BellResonateEvent(block, bukkitEntities);
+        BellResonateEvent event = new CraftBellResonateEvent(block, bukkitEntities);
         Bukkit.getPluginManager().callEvent(event);
         return event.getResonatedEntities().stream().map((bukkitEntity) -> ((CraftLivingEntity) bukkitEntity).getHandle());
     }
