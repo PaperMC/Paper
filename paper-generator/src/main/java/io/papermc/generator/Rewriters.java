@@ -66,6 +66,7 @@ import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
+import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
@@ -142,6 +143,7 @@ public final class Rewriters {
             .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
             .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
+            .register("CopperGolemState", CopperGolem.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.golem.CopperGolemState.class))
             .register(ClientOption.class, composite(
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
