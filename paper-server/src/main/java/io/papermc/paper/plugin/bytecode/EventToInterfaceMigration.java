@@ -187,7 +187,8 @@ public final class EventToInterfaceMigration {
                 EntityBlockFormEvent.class,
                 BlockSpreadEvent.class,
                 BellResonateEvent.class,
-                BlockBurnEvent.class
+                BlockBurnEvent.class,
+                BlockCanBuildEvent.class
                 //</editor-fold>
             );
 

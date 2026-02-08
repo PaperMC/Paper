@@ -1,13 +1,11 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.inventory.EquipmentSlot;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when we try to place a block, to see if we can build it here or not.
@@ -20,35 +18,7 @@ import org.jetbrains.annotations.Nullable;
  *     #getMaterial()} instead.
  * </ul>
  */
-public class BlockCanBuildEvent extends BlockEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Player player;
-    private final org.bukkit.inventory.EquipmentSlot hand;
-    protected BlockData blockData;
-    protected boolean buildable;
-
-    @Deprecated(since = "1.13.2", forRemoval = true)
-    @ApiStatus.Internal
-    public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
-        this(block, null, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper - expose hand
-    }
-
-    @Deprecated(forRemoval = true)
-    @ApiStatus.Internal
-    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
-        this(block, player, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper start - expose hand
-    }
-
-    @ApiStatus.Internal
-    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild, @NotNull final org.bukkit.inventory.EquipmentSlot hand) { // Paper end - expose hand
-        super(block);
-        this.player = player;
-        this.buildable = canBuild;
-        this.blockData = type;
-        this.hand = hand;
-    }
+public interface BlockCanBuildEvent extends BlockEventNew {
 
     /**
      * Gets the player who placed the block involved in this event.
@@ -57,40 +27,28 @@ public class BlockCanBuildEvent extends BlockEvent {
      *
      * @return The Player who placed the block involved in this event
      */
-    @Nullable
-    public Player getPlayer() {
-        return this.player;
-    }
+    @Nullable Player getPlayer();
 
     /**
      * Gets the Material that we are trying to place.
      *
      * @return The Material that we are trying to place
      */
-    @NotNull
-    public Material getMaterial() {
-        return this.blockData.getMaterial();
-    }
+    Material getMaterial();
 
     /**
      * Gets the BlockData that we are trying to place.
      *
      * @return The BlockData that we are trying to place
      */
-    @NotNull
-    public BlockData getBlockData() {
-        return this.blockData.clone();
-    }
+    BlockData getBlockData();
 
     /**
      * Gets the hand the player will use to place the block
      *
-     * @return the EquipmentSlot representing the players hand.
+     * @return the {@link EquipmentSlot} representing the players hand.
      */
-    @NotNull
-    public org.bukkit.inventory.EquipmentSlot getHand() {
-        return this.hand;
-    }
+    EquipmentSlot getHand();
 
     /**
      * Gets whether the block can be built here.
@@ -100,28 +58,20 @@ public class BlockCanBuildEvent extends BlockEvent {
      *
      * @return boolean whether the block can be built
      */
-    public boolean isBuildable() {
-        return this.buildable;
-    }
+    boolean isBuildable();
 
     /**
      * Sets whether the block can be built here or not.
      *
-     * @param cancel {@code true} if you want to allow the block to be built here
+     * @param buildable {@code true} if you want to allow the block to be built here
      *     despite Minecraft's default behaviour
      */
-    public void setBuildable(boolean cancel) {
-        this.buildable = cancel;
-    }
+    void setBuildable(boolean buildable);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
