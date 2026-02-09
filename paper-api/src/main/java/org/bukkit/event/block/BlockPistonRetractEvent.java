@@ -3,27 +3,13 @@ package org.bukkit.event.block;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Called when a piston retracts
  */
-public class BlockPistonRetractEvent extends BlockPistonEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final List<Block> blocks;
-
-    @ApiStatus.Internal
-    public BlockPistonRetractEvent(@NotNull final Block block, @NotNull final List<Block> blocks, @NotNull final BlockFace direction) {
-        super(block, direction);
-
-        this.blocks = blocks;
-    }
+public interface BlockPistonRetractEvent extends BlockPistonEvent {
 
     /**
      * Gets the location where the possible moving block might be if the
@@ -32,8 +18,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
      * @return The possible location of the possibly moving block.
      */
     @Deprecated(since = "1.8")
-    @NotNull
-    public Location getRetractLocation() {
+    default Location getRetractLocation() {
         return this.getBlock().getRelative(getDirection(), 2).getLocation();
     }
 
@@ -43,20 +28,12 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
      *
      * @return Immutable list of the moved blocks.
      */
-    @NotNull
-    @Unmodifiable
-    public List<Block> getBlocks() {
-        return this.blocks;
-    }
+    @Unmodifiable List<Block> getBlocks();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
