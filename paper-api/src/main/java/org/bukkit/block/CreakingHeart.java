@@ -14,10 +14,9 @@ public interface CreakingHeart extends TileState {
     /**
      * Gets the creaking protecting this creaking heart.
      *
-     * @return the creaking or null if this creaking heart don't have protector.
+     * @return the creaking or null if this creaking heart doesn't have a protector.
      */
-    @Nullable
-    Creaking getCreaking();
+    @Nullable Creaking getCreaking();
 
     /**
      * Sets the creaking protecting this creaking heart.
@@ -29,28 +28,12 @@ public interface CreakingHeart extends TileState {
     void setCreaking(@Nullable Creaking creaking);
 
     /**
-     * Gets the max distance between the Creaking Heart and the Creaking before to remove.
-     *
-     * @return the max distance
-     */
-    int getCreakingRemovalDistance();
-
-    /**
-     * Sets the max distance between the Creaking Heart and the Creaking before to remove.
-     *
-     * @param distance the max distance
-     * @throws IllegalArgumentException if the distance is negative
-     */
-    void setCreakingRemovalDistance(int distance);
-
-    /**
-     * Attempts to spawn a creaking for protect this creaking heart.
+     * Attempts to spawn a creaking to protect this creaking heart.
      *
      * @return the {@link Creaking} for protect the creaking heart or null if fails
      * @throws IllegalStateException if this block state is not placed
      */
-    @Nullable
-    Creaking spawnCreaking();
+    @Nullable Creaking spawnCreaking();
 
     /**
      * Attempts to spread resin to adjacent blocks.
@@ -59,6 +42,5 @@ public interface CreakingHeart extends TileState {
      * @return the location of spread resin or null if it cannot spread
      * @throws IllegalStateException if this block state is not placed
      */
-    @Nullable
-    Location spreadResin();
+    @Nullable Location spreadResin();
 }
