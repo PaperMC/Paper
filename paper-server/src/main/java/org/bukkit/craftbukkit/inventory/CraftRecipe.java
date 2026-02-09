@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.set.PaperRegistrySets;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +13,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.recipe.CookingBookCategory;
@@ -32,6 +37,8 @@ public interface CraftRecipe extends Recipe {
 
         if (bukkit == null) {
             stack = Ingredient.of();
+        } else if (bukkit instanceof final RecipeChoice.ItemTypeChoice itemTypeChoice) {
+            stack = Ingredient.of(PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), itemTypeChoice.itemTypes()));
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
@@ -71,9 +78,8 @@ public interface CraftRecipe extends Recipe {
 
             return new RecipeChoice.ExactChoice(choices);
         } else {
-            List<org.bukkit.Material> choices = list.items().map((i) -> CraftItemType.minecraftToBukkit(i.value())).toList();
-
-            return new RecipeChoice.MaterialChoice(choices);
+            final RegistryKeySet<ItemType> itemTypes = PaperRegistrySets.convertToApi(RegistryKey.ITEM, list.values);
+            return RecipeChoice.itemType(itemTypes);
         }
     }
 

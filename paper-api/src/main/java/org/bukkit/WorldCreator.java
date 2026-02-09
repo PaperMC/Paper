@@ -208,15 +208,15 @@ public class WorldCreator {
 
     /**
      * Sets the directory that this world's data will be stored in.
+     * <p>
+     * The provided file represents the <strong>parent folder</strong> used for
+     * storing all world data (region files, player data, level data, etc.).
      *
-     * <p>The provided file represents the <strong>parent folder</strong> used for
-     * storing all world data (region files, player data, level data, etc.).</p>
-     *
-     * @param override the parent directory to store this world's data in
+     * @param parentDirectory the parent directory to store this world's data in
      * @return this object, for chaining
      */
-    public WorldCreator parentDirectory(Path override) {
-        this.parentDirectory = override;
+    public WorldCreator parentDirectory(Path parentDirectory) {
+        this.parentDirectory = parentDirectory;
         return this;
     }
 
@@ -259,7 +259,7 @@ public class WorldCreator {
      * @param position the spawn position
      * @param yaw      the yaw rotation at spawn
      * @param pitch    the pitch rotation at spawn
-     * @return this creator for chaining
+     * @return this object, for chaining
      */
     public WorldCreator forcedSpawnPosition(Position position, float yaw, float pitch) {
         this.spawnPositionOverride = position;
@@ -273,7 +273,7 @@ public class WorldCreator {
      * <p>
      * After calling this, vanilla spawn selection behavior is used.
      *
-     * @return this creator for chaining
+     * @return this object, for chaining
      */
     public WorldCreator clearForcedSpawnPosition() {
         this.spawnPositionOverride = null;
@@ -284,11 +284,11 @@ public class WorldCreator {
 
     /**
      * Gets the forced spawn position that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, vanilla or custom generator behavior will be used
+     * to determine the spawn position.
      *
-     * <p>If this returns {@code null}, vanilla or custom generator behavior will be used
-     * to determine the spawn position.</p>
-     *
-     * @return the forced spawn position, or {@code null} to use vanilla behavior
+     * @return the forced spawn position, or {@code null} for the vanilla behavior
      */
     public @Nullable Position forcedSpawnPosition() {
         return this.spawnPositionOverride;
@@ -296,13 +296,13 @@ public class WorldCreator {
 
     /**
      * Gets the forced spawn yaw that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
      *
-     * <p>If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
-     * or the world generator.</p>
-     *
-     * <p>This value is only meaningful if a forced spawn position is present.</p>
-     *
-     * @return the forced spawn yaw, or {@code null} to use vanilla behavior
+     * @return the forced spawn yaw, or {@code null} for the vanilla behavior
      */
     public @Nullable Float forcedSpawnYaw() {
         return this.spawnYawOverride;
@@ -310,13 +310,13 @@ public class WorldCreator {
 
     /**
      * Gets the forced spawn pitch that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
      *
-     * <p>If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
-     * or the world generator.</p>
-     *
-     * <p>This value is only meaningful if a forced spawn position is present.</p>
-     *
-     * @return the forced spawn pitch, or {@code null} to use vanilla behavior
+     * @return the forced spawn pitch, or {@code null} for the vanilla behavior
      */
     public @Nullable Float forcedSpawnPitch() {
         return this.spawnPitchOverride;
