@@ -204,7 +204,10 @@ public final class EventToInterfaceMigration {
                 BlockIgniteEvent.class,
                 BlockPlaceEvent.class,
                 BlockMultiPlaceEvent.class,
-                BlockPhysicsEvent.class
+                BlockPhysicsEvent.class,
+                BlockPistonEvent.class,
+                BlockPistonExtendEvent.class,
+                BlockPistonRetractEvent.class
                 //</editor-fold>
             );
 
