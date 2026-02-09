@@ -201,6 +201,7 @@ public final class EventToInterfaceMigration {
                 BlockFadeEvent.class,
                 BlockFertilizeEvent.class,
                 BlockFromToEvent.class,
+                BlockIgniteEvent.class,
                 BlockPlaceEvent.class,
                 BlockMultiPlaceEvent.class
                 //</editor-fold>

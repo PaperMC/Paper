@@ -114,6 +114,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockExplodeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFadeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockIgniteEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockMultiPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -1563,7 +1564,7 @@ public class CraftEventFactory {
                 cause = IgniteCause.SPREAD;
         }
 
-        BlockIgniteEvent event = new BlockIgniteEvent(CraftBlock.at(world, pos), cause, igniter);
+        BlockIgniteEvent event = new CraftBlockIgniteEvent(CraftBlock.at(world, pos), cause, igniter);
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1585,7 +1586,7 @@ public class CraftEventFactory {
             }
         }
 
-        BlockIgniteEvent event = new BlockIgniteEvent(CraftBlock.at(world, pos), cause, bukkitIgniter);
+        BlockIgniteEvent event = new CraftBlockIgniteEvent(CraftBlock.at(world, pos), cause, bukkitIgniter);
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1593,13 +1594,13 @@ public class CraftEventFactory {
     public static BlockIgniteEvent callBlockIgniteEvent(Level world, BlockPos pos, Explosion explosion) {
         org.bukkit.entity.Entity igniter = explosion.getDirectSourceEntity() == null ? null : explosion.getDirectSourceEntity().getBukkitEntity();
 
-        BlockIgniteEvent event = new BlockIgniteEvent(CraftBlock.at(world, pos), IgniteCause.EXPLOSION, igniter);
+        BlockIgniteEvent event = new CraftBlockIgniteEvent(CraftBlock.at(world, pos), IgniteCause.EXPLOSION, igniter);
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
 
     public static BlockIgniteEvent callBlockIgniteEvent(Level world, BlockPos pos, IgniteCause cause, Entity igniter) {
-        BlockIgniteEvent event = new BlockIgniteEvent(CraftBlock.at(world, pos), cause, igniter.getBukkitEntity());
+        BlockIgniteEvent event = new CraftBlockIgniteEvent(CraftBlock.at(world, pos), cause, igniter.getBukkitEntity());
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
