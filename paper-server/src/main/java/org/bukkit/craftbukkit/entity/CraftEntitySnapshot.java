@@ -5,6 +5,7 @@ import java.util.function.Function;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -58,7 +59,7 @@ public class CraftEntitySnapshot implements EntitySnapshot {
 
     private net.minecraft.world.entity.Entity createInternal(World world) {
         net.minecraft.world.level.Level level = ((CraftWorld) world).getHandle();
-        net.minecraft.world.entity.Entity internal = net.minecraft.world.entity.EntityType.loadEntityRecursive(this.data, level, EntitySpawnReason.LOAD, Function.identity());
+        net.minecraft.world.entity.Entity internal = net.minecraft.world.entity.EntityType.loadEntityRecursive(this.data, level, EntitySpawnReason.LOAD, EntityProcessor.NOP);
         if (internal == null) { // Try creating by type
             internal = CraftEntityType.bukkitToMinecraft(this.type).create(level, EntitySpawnReason.LOAD);
         }

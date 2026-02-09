@@ -1,7 +1,7 @@
 --- a/net/minecraft/stats/ServerStatsCounter.java
 +++ b/net/minecraft/stats/ServerStatsCounter.java
-@@ -68,9 +_,21 @@
-                 LOGGER.error("Couldn't parse statistics file {}", file, var5);
+@@ -75,9 +_,21 @@
+                 LOGGER.error("Couldn't parse statistics file {}", file, var9);
              }
          }
 +        // Paper start - Moved after stat fetching for player state file
@@ -9,8 +9,8 @@
 +        // Disables saving any forced stats, so it stays at the same value (without enabling disableStatSaving)
 +        // Fixes stat initialization to not cause a NullPointerException
 +        // Spigot start
-+        for (Map.Entry<net.minecraft.resources.ResourceLocation, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet()) {
-+            Stat<net.minecraft.resources.ResourceLocation> wrapper = Stats.CUSTOM.get(java.util.Objects.requireNonNull(BuiltInRegistries.CUSTOM_STAT.getValue(entry.getKey()))); // Paper - ensured by SpigotConfig#stats
++        for (Map.Entry<net.minecraft.resources.Identifier, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet()) {
++            Stat<net.minecraft.resources.Identifier> wrapper = Stats.CUSTOM.get(java.util.Objects.requireNonNull(BuiltInRegistries.CUSTOM_STAT.getValue(entry.getKey()))); // Paper - ensured by SpigotConfig#stats
 +            this.stats.put(wrapper, entry.getValue().intValue());
 +        }
 +        // Spigot end
@@ -20,14 +20,14 @@
      public void save() {
 +        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
          try {
-             FileUtils.writeStringToFile(this.file, this.toJson());
-         } catch (IOException var2) {
-@@ -80,6 +_,8 @@
+             FileUtil.createDirectoriesSafe(this.file.getParent());
+ 
+@@ -91,6 +_,8 @@
  
      @Override
      public void setValue(Player player, Stat<?> stat, int value) {
 +        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
-+        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.ResourceLocation key && org.spigotmc.SpigotConfig.forcedStats.get(key) != null) return; // Paper - disable saving forced stats
++        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.Identifier key && org.spigotmc.SpigotConfig.forcedStats.get(key) != null) return; // Paper - disable saving forced stats
          super.setValue(player, stat, value);
          this.dirty.add(stat);
      }

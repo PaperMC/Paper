@@ -5,7 +5,7 @@ import org.bukkit.entity.Husk;
 
 public class CraftHusk extends CraftZombie implements Husk {
 
-    public CraftHusk(CraftServer server, net.minecraft.world.entity.monster.Husk entity) {
+    public CraftHusk(CraftServer server, net.minecraft.world.entity.monster.zombie.Husk entity) {
         super(server, entity);
     }
 }

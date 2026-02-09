@@ -48,10 +48,10 @@ index 2a86ca1de6920017be6cd4a3a5251e892067f07c..f571ff64ae1007f8f0632febd2dcca70
              serverEntity.getLastSentYRot(),
              entity.getType(),
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 032d164284ebc8fd4cfbc96f1381e8627edd1605..30c26d1f79621ac89d5dfd4652e627062af57956 100644
+index 93845d083dc7fce80069bc279207ef439cbde3f5..d3929074fb2ae60b0b7491901598dfdfa251fe55 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -1326,6 +1326,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1359,6 +1359,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
                          ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
                          }
                          // Paper end - entity tracking events
@@ -60,10 +60,10 @@ index 032d164284ebc8fd4cfbc96f1381e8627edd1605..30c26d1f79621ac89d5dfd4652e62706
                  } else {
                      this.removePlayer(player);
 diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
-index f019f1330f9f1e6aa98ef3f914833769cbadea16..638432a2e6506d3db6a25c068a33eeafb13cf0d6 100644
+index b7915685026e9a944f42440e4a95215f927f385e..3a817c92147bb78c60238f3ddc1644b721aed7a2 100644
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
-@@ -88,6 +88,13 @@ public class ServerEntity {
+@@ -87,6 +87,13 @@ public class ServerEntity {
          this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
      }
  
@@ -81,8 +81,8 @@ index f019f1330f9f1e6aa98ef3f914833769cbadea16..638432a2e6506d3db6a25c068a33eeaf
              this.sendDirtyEntityData();
          }
  
--        if (this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) {
-+        if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
+-        if (this.tickCount % this.updateInterval == 0 || this.entity.needsSync || this.entity.getEntityData().isDirty()) {
++        if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.needsSync || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
              byte b = Mth.packDegrees(this.entity.getYRot());
              byte b1 = Mth.packDegrees(this.entity.getXRot());
              boolean flag = Math.abs(b - this.lastSentYRot) >= 1 || Math.abs(b1 - this.lastSentXRot) >= 1;
@@ -98,7 +98,7 @@ index f019f1330f9f1e6aa98ef3f914833769cbadea16..638432a2e6506d3db6a25c068a33eeaf
 @@ -233,6 +240,7 @@ public class ServerEntity {
              }
  
-             this.entity.hasImpulse = false;
+             this.entity.needsSync = false;
 +            this.forceStateResync = false; // Paper - fix desync when a player is added to the tracker
          }
  

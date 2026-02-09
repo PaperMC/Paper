@@ -10,7 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -47,14 +47,14 @@ public final class ConfigSerializationUtil {
     public static void setHolderSet(Map<String, Object> result, String key, HolderSet<?> holders) {
         holders.unwrap()
             .ifLeft(tag -> result.put(key, "#" + tag.location().toString())) // Tag
-            .ifRight(list -> result.put(key, list.stream().map((entry) -> entry.unwrapKey().orElseThrow().location().toString()).toList())); // List
+            .ifRight(list -> result.put(key, list.stream().map((entry) -> entry.unwrapKey().orElseThrow().identifier().toString()).toList())); // List
     }
 
     public static <T> HolderSet<T> getHolderSet(Object from, ResourceKey<Registry<T>> registryKey) {
         Registry<T> registry = CraftRegistry.getMinecraftRegistry(registryKey);
         if (from instanceof String parseString && parseString.startsWith("#")) { // Tag
             parseString = parseString.substring(1);
-            ResourceLocation key = ResourceLocation.tryParse(parseString);
+            Identifier key = Identifier.tryParse(parseString);
             if (key != null) {
                 Optional<HolderSet.Named<T>> tag = registry.get(TagKey.create(registryKey, key));
                 if (tag.isPresent()) {
@@ -65,7 +65,7 @@ public final class ConfigSerializationUtil {
             List<Holder.Reference<T>> holderList = new ArrayList<>(parseList.size());
 
             for (Object entry : parseList) {
-                ResourceLocation key = ResourceLocation.tryParse(entry.toString());
+                Identifier key = Identifier.tryParse(entry.toString());
                 if (key == null) {
                     continue;
                 }

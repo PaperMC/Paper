@@ -8,6 +8,8 @@ import io.papermc.paper.dialog.PaperDialog;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -18,6 +20,7 @@ import net.kyori.adventure.pointer.Pointers;
 import net.kyori.adventure.resource.ResourcePackCallback;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
+import net.kyori.adventure.translation.Translator;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -26,7 +29,7 @@ import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
@@ -90,6 +93,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
             this.adventurePointers = Pointers.builder()
                 .withDynamic(Identity.NAME, () -> this.handle.getOwner().name())
                 .withDynamic(Identity.UUID, () -> this.handle.getOwner().id())
+                .withDynamic(Identity.LOCALE, () -> Objects.requireNonNullElse(Translator.parseLocale(this.handle.clientInformation.language()), Locale.US))
                 .build();
         }
 
@@ -134,7 +138,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
         if (this.channels().contains(channel)) {
             @SuppressWarnings("deprecation") // "not an API method" does not apply to us
-            ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
+            Identifier id = Identifier.parse(StandardMessenger.validateAndCorrectChannel(channel));
             ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
             this.handle.send(packet);
         }
