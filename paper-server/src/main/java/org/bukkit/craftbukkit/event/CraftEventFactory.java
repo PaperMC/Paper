@@ -108,6 +108,7 @@ import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.craftbukkit.event.block.CraftBellResonateEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDamageAbortEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDamageEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockDispenseLootEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -1833,7 +1834,7 @@ public class CraftEventFactory {
     public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel level, BlockPos pos, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot, LootTable lootTable) {
         List<org.bukkit.inventory.ItemStack> craftItemStacks = rewardLoot.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
 
-        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks, lootTable.craftLootTable);
+        BlockDispenseLootEvent event = new CraftBlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks, lootTable.craftLootTable);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
