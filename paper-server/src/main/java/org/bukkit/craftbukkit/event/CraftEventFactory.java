@@ -114,6 +114,8 @@ import org.bukkit.craftbukkit.event.block.CraftBlockExplodeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFadeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockMultiPlaceEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
@@ -535,7 +537,7 @@ public class CraftEventFactory {
         }
 
         EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
+        BlockMultiPlaceEvent event = new CraftBlockMultiPlaceEvent(blockStates, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
         event.callEvent();
 
         return event;
@@ -550,7 +552,7 @@ public class CraftEventFactory {
         boolean canBuild = CraftEventFactory.canBuild(level, cplayer, placedBlock.getX(), placedBlock.getZ());
 
         EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedSnapshot, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
+        BlockPlaceEvent event = new CraftBlockPlaceEvent(placedBlock, replacedSnapshot, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
         event.callEvent();
 
         return event;
