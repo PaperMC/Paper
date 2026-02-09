@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.CreakingHeartBlockEntity;
@@ -53,17 +54,6 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
         }
     }
 
-    @Override
-    public int getCreakingRemovalDistance() {
-        return this.getSnapshot().distanceCreakingTooFar;
-    }
-
-    @Override
-    public void setCreakingRemovalDistance(final int distance) {
-        Preconditions.checkArgument(distance >= 0, "the distance must be >= 0");
-        this.getSnapshot().distanceCreakingTooFar = distance;
-    }
-
     @Nullable
     @Override
     public Creaking spawnCreaking() {
@@ -84,6 +74,9 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Override
     public Location spreadResin() {
         this.requirePlaced();
-        return this.getBlockEntity().spreadResin().map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
+        if (!this.getBlockEntity().hasLevel()) {
+            return null;
+        }
+        return this.getBlockEntity().spreadResin(((ServerLevel) this.getBlockEntity().getLevel())).map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
     }
 }
