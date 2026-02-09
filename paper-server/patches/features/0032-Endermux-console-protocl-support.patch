@@ -5,18 +5,10 @@ Subject: [PATCH] Endermux console protocl support
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..be81ec43794001f7908c27bdad239b1f760c0913 100644
+index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..4b677c2b0f2334e6c36ddd1891605e122f068e8a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -306,6 +306,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
-     private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
-     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
-+    public io.papermc.paper.console.endermux.PaperEndermux endermux;
-     // Paper start - improve tick loop
-     public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
-     public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
-@@ -1086,11 +1087,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1086,11 +1086,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end - rewrite chunk system
          // Paper start - Improved watchdog support - move final shutdown items here
          Util.shutdownExecutors();
@@ -28,15 +20,15 @@ index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..be81ec43794001f7908c27bdad239b1f
          this.onServerExit();
          // Paper end - Improved watchdog support - move final shutdown items here
      }
-@@ -1115,6 +1111,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1115,6 +1110,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.isRestarting = isRestarting;
          this.hasLoggedStop = true; // Paper - Debugging
          if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
-+        if (this.endermux != null) this.endermux.disableInteractivity();
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.disableInteractivity();
          // Paper end
          this.running = false;
          if (waitForShutdown) {
-@@ -1992,7 +1989,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1992,7 +1988,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -62,36 +54,22 @@ index c2227d57ea2e2da537a313d4bfd2f8c7f776be64..be81ec43794001f7908c27bdad239b1f
  
      public KeyPair getKeyPair() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index eb06d8f012684845146429832e977e6c1ddcd62b..e7d1cda55fac1985a90e1f307a18b8caecdf5751 100644
+index eb06d8f012684845146429832e977e6c1ddcd62b..15db6bb08ec3b0ca5b2d417d97b670e80c6f77b8 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -166,6 +166,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
- 
-     @Override
-     public boolean initServer() throws IOException {
-+        if (io.papermc.paper.console.endermux.PaperEndermux.earlyInstance == null) {
-+            this.endermux = new io.papermc.paper.console.endermux.PaperEndermux(); // TODO config
-+            if (this.endermux != null) this.endermux.start(java.nio.file.Paths.get("console.sock"));
-+        } else {
-+            this.endermux = io.papermc.paper.console.endermux.PaperEndermux.earlyInstance;
-+            io.papermc.paper.console.endermux.PaperEndermux.earlyInstance = null;
-+        }
-         int i = this.getProperties().managementServerPort;
-         if (this.getProperties().managementServerEnabled) {
-             String string = this.settings.getProperties().managementServerSecret;
-@@ -270,6 +277,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -270,6 +270,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          // Paper end - fix converting txt to json file
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
          thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
-+        if (this.endermux != null) this.endermux.enableInteractivity(this);
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.enableInteractivity(this);
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
          this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
-@@ -540,6 +548,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -540,6 +541,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              }
          }
  
-+        if (this.endermux != null) this.endermux.close();
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.close();
 +
          this.hasFullyShutdown = true; // Paper - Improved watchdog support
          System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support

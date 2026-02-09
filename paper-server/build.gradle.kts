@@ -297,6 +297,7 @@ fun TaskContainer.registerRunTask(
         "-XX:+AllowEnhancedClassRedefinition",
         "--enable-native-access=ALL-UNNAMED",
     )
+    systemProperty("paper.endermux.enabled", true)
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
