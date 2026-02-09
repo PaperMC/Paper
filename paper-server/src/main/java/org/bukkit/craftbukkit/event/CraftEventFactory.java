@@ -111,6 +111,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockDamageEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDispenseLootEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDropItemEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockExplodeEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockFadeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -931,7 +932,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 
-        BlockFadeEvent event = new BlockFadeEvent(snapshot.getBlock(), snapshot);
+        BlockFadeEvent event = new CraftBlockFadeEvent(snapshot.getBlock(), snapshot);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
