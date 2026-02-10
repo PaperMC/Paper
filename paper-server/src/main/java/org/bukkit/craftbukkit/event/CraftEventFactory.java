@@ -127,6 +127,7 @@ import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
+import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -1854,7 +1855,7 @@ public class CraftEventFactory {
     }
 
     public static VaultDisplayItemEvent callVaultDisplayItemEvent(ServerLevel level, BlockPos pos, ItemStack displayitemStack) {
-        VaultDisplayItemEvent event = new VaultDisplayItemEvent(CraftBlock.at(level, pos), CraftItemStack.asBukkitCopy(displayitemStack));
+        VaultDisplayItemEvent event = new CraftVaultDisplayItemEvent(CraftBlock.at(level, pos), CraftItemStack.asBukkitCopy(displayitemStack));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
