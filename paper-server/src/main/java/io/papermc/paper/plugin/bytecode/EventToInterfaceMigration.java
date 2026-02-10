@@ -210,7 +210,11 @@ public final class EventToInterfaceMigration {
                 BlockPistonRetractEvent.class,
                 BlockReceiveGameEvent.class,
                 BlockRedstoneEvent.class,
-                BlockShearEntityEvent.class
+                BlockShearEntityEvent.class,
+                InventoryBlockStartEvent.class,
+                BrewingStartEvent.class,
+                CampfireStartEvent.class,
+                FurnaceStartSmeltEvent.class
                 //</editor-fold>
             );
 
