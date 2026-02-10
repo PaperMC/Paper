@@ -123,6 +123,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockShearEntityEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftCrafterCraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
+import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -1324,7 +1325,7 @@ public class CraftEventFactory {
     }
 
     public static FluidLevelChangeEvent callFluidLevelChangeEvent(Level world, BlockPos block, net.minecraft.world.level.block.state.BlockState newData) {
-        FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(world, block), CraftBlockData.fromData(newData));
+        FluidLevelChangeEvent event = new CraftFluidLevelChangeEvent(CraftBlock.at(world, block), CraftBlockData.fromData(newData));
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
