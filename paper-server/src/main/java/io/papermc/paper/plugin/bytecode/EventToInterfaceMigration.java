@@ -224,7 +224,8 @@ public final class EventToInterfaceMigration {
                 SculkBloomEvent.class,
                 SignChangeEvent.class,
                 SpongeAbsorbEvent.class,
-                org.bukkit.event.block.TNTPrimeEvent.class
+                org.bukkit.event.block.TNTPrimeEvent.class,
+                VaultDisplayItemEvent.class
                 //</editor-fold>
             );
 
