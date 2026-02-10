@@ -1,17 +1,14 @@
 package com.destroystokyo.paper.event.block;
 
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.event.block.BlockEventNew;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when TNT block is about to turn into {@link TNTPrimed}
@@ -23,31 +20,14 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated use {@link org.bukkit.event.block.TNTPrimeEvent}
  */
 @Deprecated(forRemoval = true, since = "1.19.4")
-public class TNTPrimeEvent extends BlockEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @NotNull private final PrimeReason reason;
-    @Nullable private final Entity primerEntity;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public TNTPrimeEvent(@NotNull Block block, @NotNull PrimeReason reason, @Nullable Entity primerEntity) {
-        super(block);
-        this.reason = reason;
-        this.primerEntity = primerEntity;
-    }
+public interface TNTPrimeEvent extends BlockEventNew, Cancellable {
 
     /**
      * Gets the TNT prime reason
      *
      * @return Prime reason
      */
-    @NotNull
-    public PrimeReason getReason() {
-        return this.reason;
-    }
+    PrimeReason getReason();
 
     /**
      * Gets the TNT primer {@link Entity}.
@@ -58,10 +38,7 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
      *
      * @return The {@link Entity} who primed the TNT
      */
-    @Nullable
-    public Entity getPrimerEntity() {
-        return this.primerEntity;
-    }
+    @Nullable Entity getPrimerEntity();
 
     /**
      * Gets whether spawning {@link TNTPrimed} should be cancelled or not
@@ -69,9 +46,7 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
      * @return Whether spawning {@link TNTPrimed} should be cancelled or not
      */
     @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * Sets whether to cancel spawning {@link TNTPrimed} or not
@@ -79,22 +54,16 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
      * @param cancel whether spawning {@link TNTPrimed} should be cancelled or not
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
+    void setCancelled(boolean cancel);
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum PrimeReason {
+    enum PrimeReason {
         /**
          * When TNT prime was caused by other explosion (chain reaction)
          */

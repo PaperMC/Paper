@@ -229,7 +229,8 @@ public final class EventToInterfaceMigration {
                 BrewEvent.class,
                 BrewingStandFuelEvent.class,
                 FurnaceBurnEvent.class,
-                BeaconEffectEvent.class
+                BeaconEffectEvent.class,
+                com.destroystokyo.paper.event.block.TNTPrimeEvent.class
                 //</editor-fold>
             );
 
