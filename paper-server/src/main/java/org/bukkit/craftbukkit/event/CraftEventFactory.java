@@ -126,6 +126,7 @@ import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
+import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -2069,7 +2070,7 @@ public class CraftEventFactory {
         org.bukkit.entity.Entity bukkitEntity = (causingEntity == null) ? null : causingEntity.getBukkitEntity();
         org.bukkit.block.Block bukkitBlock = (causePosition == null) ? null : CraftBlock.at(world, causePosition);
 
-        TNTPrimeEvent event = new TNTPrimeEvent(CraftBlock.at(world, pos), cause, bukkitEntity, bukkitBlock);
+        TNTPrimeEvent event = new CraftTNTPrimeEvent(CraftBlock.at(world, pos), cause, bukkitEntity, bukkitBlock);
         Bukkit.getPluginManager().callEvent(event);
 
         return !event.isCancelled();
