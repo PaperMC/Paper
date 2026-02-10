@@ -1,6 +1,4 @@
-package io.papermc.paper.util;
-
-import org.apache.logging.log4j.LogManager;
+package io.papermc.paper.log;
 
 public final class LogManagerShutdownThread extends Thread {
 
@@ -24,11 +22,6 @@ public final class LogManagerShutdownThread extends Thread {
 
     @Override
     public void run() {
-        io.papermc.paper.log.CustomLogManager.forceReset(); // Reset loggers after shutdown
-        LogManager.shutdown(); // Flushes the async appender
-        try {
-            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Use TerminalConsoleAppender
-        } catch (final Exception ignored) {
-        }
+        LoggerShutdown.shutdownLogging();
     }
 }
