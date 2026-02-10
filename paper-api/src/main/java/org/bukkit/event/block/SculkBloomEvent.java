@@ -1,13 +1,11 @@
 package org.bukkit.event.block;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
 import org.bukkit.block.SculkCatalyst;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Represents an event triggered when a new cursor is created by a {@link SculkCatalyst}.
@@ -26,27 +24,14 @@ import org.jetbrains.annotations.NotNull;
  *
  * The result of {@link #getBlock()} is the location that the cursor is spawning at.
  */
-public class SculkBloomEvent extends BlockEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private int charge;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public SculkBloomEvent(@NotNull Block block, int charge) {
-        super(block);
-        this.charge = charge;
-    }
+public interface SculkBloomEvent extends BlockEventNew, Cancellable {
 
     /**
      * Returns the charge of the cursor, &lt; 1000 by default.
      *
      * @return the charge of the cursor
      */
-    public int getCharge() {
-        return this.charge;
-    }
+    @IntRange(from = 0, to = 1000) int getCharge();
 
     /**
      * Sets the charge of the cursor.
@@ -62,29 +47,12 @@ public class SculkBloomEvent extends BlockEvent implements Cancellable {
      *
      * @param charge the charge of the cursor.
      */
-    public void setCharge(int charge) {
-        Preconditions.checkArgument(charge >= 0 && charge <= 1000, charge + " is not in range [0, 1000]");
-        this.charge = charge;
-    }
+    void setCharge(@IntRange(from = 0, to = 1000) int charge);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
