@@ -2,12 +2,9 @@ package org.bukkit.event.block;
 
 import java.util.List;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a sponge absorbs water from the world.
@@ -18,18 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * As this is a physics based event it may be called multiple times for "the
  * same" changes.
  */
-public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final List<BlockState> blocks;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public SpongeAbsorbEvent(@NotNull Block block, @NotNull List<BlockState> waterblocks) {
-        super(block);
-        this.blocks = waterblocks;
-    }
+public interface SpongeAbsorbEvent extends BlockEventNew, Cancellable {
 
     /**
      * Get a list of all blocks to be cleared by the sponge.
@@ -39,29 +25,12 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
      *
      * @return list of the cleared blocks.
      */
-    @NotNull
-    public List<BlockState> getBlocks() {
-        return this.blocks;
-    }
+    List<BlockState> getBlocks();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
