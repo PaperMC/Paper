@@ -33,7 +33,7 @@ index f84870712345cd688a90ea53ad47eb33fe658863..126a5d1bc4239ba83565600a060877c2
       * Returns the name of the appender that any errors are logged to or {@code null}.
       *
 diff --git a/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java b/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
-index ed962f5952c0861809d2558e709e8dd683751383..8e9cc2548e4bb9765686c7828eb5bd83df77a8e0 100644
+index ed962f5952c0861809d2558e709e8dd683751383..a12872c42a26d469e5b7004f7fe7ae535071a633 100644
 --- a/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
 +++ b/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
 @@ -33,6 +33,25 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
@@ -115,7 +115,7 @@ index ed962f5952c0861809d2558e709e8dd683751383..8e9cc2548e4bb9765686c7828eb5bd83
      /**
       * Dispatches the given {@code event} to the registered appenders <b>in the
       * current thread</b>.
-@@ -178,4 +229,45 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+@@ -178,4 +229,44 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
          // Wait for the completion.
          join(timeoutMillis);
      }
@@ -127,11 +127,10 @@ index ed962f5952c0861809d2558e709e8dd683751383..8e9cc2548e4bb9765686c7828eb5bd83
 +            return true;
 +        }
 +
-+        // There is a slight chance that the thread is not started yet, wait for
-+        // it to run. Otherwise, waiting on the flush event can block forever.
-+        // noinspection StatementWithEmptyBody
-+        while (Thread.State.NEW.equals(getState()))
-+            ;
++        // If the dispatcher thread has not started yet, fail fast
++        if (Thread.State.NEW.equals(getState())) {
++            return false;
++        }
 +
 +        final FlushEvent flushEvent = new FlushEvent();
 +
