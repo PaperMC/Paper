@@ -27,7 +27,7 @@ import org.bukkit.event.HandlerList;
  * AIR in most cases. Use {@link #getBlockState()} for more Information about the broken
  * block.
  */
-public interface BlockDropItemEvent extends BlockEventNew, Cancellable {
+public interface BlockDropItemEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the BlockState of the block involved in this event before it was

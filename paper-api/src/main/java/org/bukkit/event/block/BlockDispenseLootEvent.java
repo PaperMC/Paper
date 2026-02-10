@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
  * Example: A player unlocks a trial chamber vault and the vault block dispenses
  * its loot.
  */
-public interface BlockDispenseLootEvent extends BlockEventNew, Cancellable {
+public interface BlockDispenseLootEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the player associated with this event.

@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * block with bonemeal. Will be called after the applicable
  * {@link StructureGrowEvent}.
  */
-public interface BlockFertilizeEvent extends BlockEventNew, Cancellable {
+public interface BlockFertilizeEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the player that triggered the fertilization.

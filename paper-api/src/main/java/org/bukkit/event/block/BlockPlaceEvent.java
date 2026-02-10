@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
  * <p>
  * If this event is cancelled, the block will not be placed.
  */
-public interface BlockPlaceEvent extends BlockEventNew, Cancellable {
+public interface BlockPlaceEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the block that this block was placed against

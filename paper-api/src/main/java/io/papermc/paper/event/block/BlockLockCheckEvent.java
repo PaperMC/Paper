@@ -5,7 +5,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * See {@link #setResult(Result)} to change behavior
  */
-public interface BlockLockCheckEvent extends BlockEventNew {
+public interface BlockLockCheckEvent extends BlockEvent {
 
     /**
      * Gets the snapshot {@link LockableTileState} of the block entity

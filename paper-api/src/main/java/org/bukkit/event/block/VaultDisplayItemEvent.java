@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a vault in a trial chamber is about to display an item.
  */
-public interface VaultDisplayItemEvent extends BlockEventNew, Cancellable {
+public interface VaultDisplayItemEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the item that will be displayed inside the vault.

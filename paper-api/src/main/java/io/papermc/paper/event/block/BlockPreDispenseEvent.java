@@ -2,10 +2,10 @@ package io.papermc.paper.event.block;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 
-public interface BlockPreDispenseEvent extends BlockEventNew, Cancellable {
+public interface BlockPreDispenseEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the {@link ItemStack} to be dispensed.

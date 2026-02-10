@@ -17,7 +17,7 @@ import org.bukkit.event.HandlerList;
  * The event isn't called if the {@link org.bukkit.GameRules#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
  */
-public interface BlockExplodeEvent extends BlockEventNew, Cancellable {
+public interface BlockExplodeEvent extends BlockEvent, Cancellable {
 
     /**
      * Returns the result of the explosion if it is not cancelled.

@@ -2,7 +2,7 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Range;
 
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Range;
  * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
  * {@link org.bukkit.block.BlastFurnace}.
  */
-public interface FurnaceBurnEvent extends BlockEventNew, Cancellable {
+public interface FurnaceBurnEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the fuel ItemStack for this event

@@ -25,7 +25,7 @@ import org.bukkit.event.HandlerList;
  * event for each of those blocks (usually adjacent). If you are concerned about
  * monitoring these changes then you should check adjacent blocks yourself.
  */
-public interface BlockPhysicsEvent extends BlockEventNew, Cancellable {
+public interface BlockPhysicsEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the source block that triggered this event.

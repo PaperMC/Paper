@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If this event is cancelled, the sign will not be changed.
  */
-public interface SignChangeEvent extends BlockEventNew, Cancellable {
+public interface SignChangeEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the player changing the sign involved in this event.

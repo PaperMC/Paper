@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Event called when a Crafter is about to craft an item.
  */
-public interface CrafterCraftEvent extends BlockEventNew, Cancellable {
+public interface CrafterCraftEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the result for the craft.

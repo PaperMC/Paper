@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
  *
  * @see BlockDamageEvent
  */
-public interface BlockDamageAbortEvent extends BlockEventNew {
+public interface BlockDamageAbortEvent extends BlockEvent {
 
     /**
      * Gets the player that stopped damaging the block involved in this event.

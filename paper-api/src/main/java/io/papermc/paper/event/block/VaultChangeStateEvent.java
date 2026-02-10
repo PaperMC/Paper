@@ -4,13 +4,13 @@ import org.bukkit.block.data.type.Vault;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a vault block changes state.
  */
-public interface VaultChangeStateEvent extends BlockEventNew, Cancellable {
+public interface VaultChangeStateEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the player associated with this state change, if applicable.
