@@ -118,6 +118,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockIgniteEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockMultiPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPhysicsEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockRedstoneEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
@@ -1533,7 +1534,7 @@ public class CraftEventFactory {
     }
 
     public static BlockRedstoneEvent callRedstoneChange(LevelAccessor level, BlockPos pos, int oldCurrent, int newCurrent) {
-        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), oldCurrent, newCurrent); // todo normalize newCurrent change outcome
+        BlockRedstoneEvent event = new CraftBlockRedstoneEvent(CraftBlock.at(level, pos), oldCurrent, newCurrent); // todo normalize newCurrent change outcome
         event.callEvent();
         return event;
     }
