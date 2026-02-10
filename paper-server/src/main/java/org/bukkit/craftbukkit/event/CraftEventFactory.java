@@ -124,6 +124,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftCrafterCraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
+import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -949,7 +950,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 
-        MoistureChangeEvent event = new MoistureChangeEvent(snapshot.getBlock(), snapshot);
+        MoistureChangeEvent event = new CraftMoistureChangeEvent(snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
             snapshot.place(flags);
             return true;
