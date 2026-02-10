@@ -415,10 +415,10 @@ index 7656665352632fc718bea91dcfd3dd41fc436e1f..bdbc15bfbbfeae2bc5b884e300b86cb2
          }
      }
 diff --git a/net/minecraft/world/entity/AgeableMob.java b/net/minecraft/world/entity/AgeableMob.java
-index 1cd4f112cf97bce414a73fa49c210534578eeba8..ffe7b73dafa81ab96c24198d83474fd9af542476 100644
+index d4452e28a7c65c464c97d5553985c82e59672108..4b918f07a13e7b99c25f92ae377742cf0a7e2ead 100644
 --- a/net/minecraft/world/entity/AgeableMob.java
 +++ b/net/minecraft/world/entity/AgeableMob.java
-@@ -129,6 +129,23 @@ public abstract class AgeableMob extends PathfinderMob {
+@@ -129,6 +129,21 @@ public abstract class AgeableMob extends PathfinderMob {
          super.onSyncedDataUpdated(key);
      }
  
@@ -426,9 +426,7 @@ index 1cd4f112cf97bce414a73fa49c210534578eeba8..ffe7b73dafa81ab96c24198d83474fd9
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (this.level().isClientSide() || this.ageLocked) { // CraftBukkit
-+            this.refreshDimensions();
-+        } else {
++        if (!this.ageLocked && this.isAlive()) {
 +            int age = this.getAge();
 +            if (age < 0) {
 +                this.setAge(++age);
@@ -443,7 +441,7 @@ index 1cd4f112cf97bce414a73fa49c210534578eeba8..ffe7b73dafa81ab96c24198d83474fd9
      public void aiStep() {
          super.aiStep();
 diff --git a/net/minecraft/world/entity/AreaEffectCloud.java b/net/minecraft/world/entity/AreaEffectCloud.java
-index 5461bd9a39bb20ad29d3bc110c38860cf35a770a..75f80787966cdda6f51f55a8f6cb22183fbf91ea 100644
+index 5461bd9a39bb20ad29d3bc110c38860cf35a770a..b10762fd050ca03c1d31dc57e42739a1f114ca2f 100644
 --- a/net/minecraft/world/entity/AreaEffectCloud.java
 +++ b/net/minecraft/world/entity/AreaEffectCloud.java
 @@ -140,6 +140,16 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
@@ -454,7 +452,7 @@ index 5461bd9a39bb20ad29d3bc110c38860cf35a770a..75f80787966cdda6f51f55a8f6cb2218
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
-+        if (this.tickCount >= this.waitTime + this.duration) {
++        if (this.duration != INFINITE_DURATION && this.tickCount - this.waitTime >= this.duration) {
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +        }
 +    }
@@ -464,7 +462,7 @@ index 5461bd9a39bb20ad29d3bc110c38860cf35a770a..75f80787966cdda6f51f55a8f6cb2218
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 57cff20212f6d5f83d4b0169bf6aa185a403e1d3..1b554121a550f0a2c7e5d6b041450b4bcba781c5 100644
+index 34ef15867759ebc7296256a6d5ec286eb3a5f895..d3d97b0b6ff6312f1deb0bb8b1beef8b3578bc53 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -368,6 +368,15 @@ public abstract class Entity implements SyncedDataHolder, DebugValueSource, Name
@@ -542,7 +540,7 @@ index 5b6020de0848458f5576113e690b5a6435f35d05..6f49b5e5888a6296b929e465a5ef87dc
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 43c3d5a7cb4303d4f4a0de9209ebe4e6c22e1a65..a6ed274cb0cf86a1ca93588f946ed52a58354546 100644
+index 95c99f266f259042d5946e891f9bab04d2fdba2a..92175cc019750e829fcad7691a937024c2649882 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
 @@ -217,6 +217,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
