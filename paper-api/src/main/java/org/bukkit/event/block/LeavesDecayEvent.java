@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * <p>
  * If this event is cancelled, the leaves will not decay.
  */
-public interface LeavesDecayEvent extends BlockEventNew, Cancellable {
+public interface LeavesDecayEvent extends BlockEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {

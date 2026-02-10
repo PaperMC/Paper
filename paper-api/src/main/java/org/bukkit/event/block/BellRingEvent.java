@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a bell is being rung.
  */
-public interface BellRingEvent extends BlockEventNew, Cancellable {
+public interface BellRingEvent extends BlockEvent, Cancellable {
 
     /**
      * Get the direction in which the bell was rung.

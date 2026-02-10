@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If this event is cancelled, the block of TNT will not become primed.
  */
-public interface TNTPrimeEvent extends BlockEventNew, Cancellable {
+public interface TNTPrimeEvent extends BlockEvent, Cancellable {
 
     /**
      * Get the cause of the TNT becoming primed.

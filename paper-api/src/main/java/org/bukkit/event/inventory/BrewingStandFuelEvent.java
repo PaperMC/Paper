@@ -2,14 +2,14 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when an item is about to increase the fuel level of a brewing
  * stand.
  */
-public interface BrewingStandFuelEvent extends BlockEventNew, Cancellable {
+public interface BrewingStandFuelEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the item of the fuel before the amount was subtracted.

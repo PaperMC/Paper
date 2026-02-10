@@ -2,12 +2,12 @@ package io.papermc.paper.event.block;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * Called when the progress of a block break is updated.
  */
-public interface BlockBreakProgressUpdateEvent extends BlockEventNew {
+public interface BlockBreakProgressUpdateEvent extends BlockEvent {
 
     /**
      * The progress of the block break

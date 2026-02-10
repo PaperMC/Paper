@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
  * <li>A Campfire starts cooking {@link CampfireStartEvent}</li>
  * </ul>
  */
-public interface InventoryBlockStartEvent extends BlockEventNew {
+public interface InventoryBlockStartEvent extends BlockEvent {
 
     /**
      * Gets the source ItemStack for this event.

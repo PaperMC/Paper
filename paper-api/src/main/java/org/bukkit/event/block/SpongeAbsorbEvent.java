@@ -15,7 +15,7 @@ import org.bukkit.event.HandlerList;
  * As this is a physics based event it may be called multiple times for "the
  * same" changes.
  */
-public interface SpongeAbsorbEvent extends BlockEventNew, Cancellable {
+public interface SpongeAbsorbEvent extends BlockEvent, Cancellable {
 
     /**
      * Get a list of all blocks to be cleared by the sponge.

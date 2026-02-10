@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jspecify.annotations.Nullable;
 
-public interface CauldronLevelChangeEvent extends BlockEventNew, Cancellable {
+public interface CauldronLevelChangeEvent extends BlockEvent, Cancellable {
 
     /**
      * Get entity which did this. May be {@code null}.

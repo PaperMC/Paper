@@ -11,7 +11,7 @@ import org.bukkit.util.Vector;
  * If this event is cancelled, the block will not dispense the
  * item.
  */
-public interface BlockDispenseEvent extends BlockEventNew, Cancellable {
+public interface BlockDispenseEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the item that is being dispensed. Modifying the returned item will

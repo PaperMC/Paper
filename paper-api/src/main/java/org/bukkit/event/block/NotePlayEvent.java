@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  * Called when a note block is being played through player interaction or a
  * redstone current.
  */
-public interface NotePlayEvent extends BlockEventNew, Cancellable {
+public interface NotePlayEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the {@link Instrument} to be used.

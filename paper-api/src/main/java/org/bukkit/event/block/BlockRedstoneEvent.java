@@ -6,7 +6,7 @@ import org.checkerframework.common.value.qual.IntRange;
 /**
  * Called when a redstone current changes
  */
-public interface BlockRedstoneEvent extends BlockEventNew {
+public interface BlockRedstoneEvent extends BlockEvent {
 
     /**
      * Gets the old current of this block
