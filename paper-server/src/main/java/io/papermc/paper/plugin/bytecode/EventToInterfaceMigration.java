@@ -228,7 +228,8 @@ public final class EventToInterfaceMigration {
                 VaultDisplayItemEvent.class,
                 BrewEvent.class,
                 BrewingStandFuelEvent.class,
-                FurnaceBurnEvent.class
+                FurnaceBurnEvent.class,
+                BeaconEffectEvent.class
                 //</editor-fold>
             );
 
