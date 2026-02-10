@@ -246,7 +246,7 @@ class PaperPluginInstanceManager {
 
             // Flush async appender before unloading, avoids issues when a log message with class context
             // tries to print after it's source has unloaded (i.e., Guice enhanced errors)
-            flushAsyncAppenders();
+            this.flushAsyncAppenders();
 
             ClassLoader classLoader = plugin.getClass().getClassLoader();
             if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
@@ -336,14 +336,17 @@ class PaperPluginInstanceManager {
         this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
     }
 
-    private static void flushAsyncAppenders() {
+    private void flushAsyncAppenders() {
         if (!(LogManager.getContext(false) instanceof LoggerContext context)) {
             return;
         }
 
         for (final Appender appender : context.getConfiguration().getAppenders().values()) {
             if (appender instanceof AsyncAppender asyncAppender) {
-                asyncAppender.flush(100, TimeUnit.MILLISECONDS);
+                final boolean flushed = asyncAppender.flush(100, TimeUnit.MILLISECONDS);
+                if (!flushed) {
+                    this.server.getLogger().log(Level.WARNING, "Failed to flush log messages before plugin unload.");
+                }
             }
         }
     }
