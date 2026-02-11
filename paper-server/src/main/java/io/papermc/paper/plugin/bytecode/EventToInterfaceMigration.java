@@ -250,7 +250,8 @@ public final class EventToInterfaceMigration {
                 com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.class,
                 EntityMoveEvent.class,
                 EntityPortalReadyEvent.class,
-                EntityToggleSitEvent.class
+                EntityToggleSitEvent.class,
+                FishHookStateChangeEvent.class
                 //</editor-fold>
             );
 
