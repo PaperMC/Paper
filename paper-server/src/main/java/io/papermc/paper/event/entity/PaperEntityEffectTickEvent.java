@@ -19,7 +19,7 @@ public class PaperEntityEffectTickEvent extends CraftEntityEvent implements Enti
 
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) super.getEntity();
+        return (LivingEntity) this.entity;
     }
 
     @Override
