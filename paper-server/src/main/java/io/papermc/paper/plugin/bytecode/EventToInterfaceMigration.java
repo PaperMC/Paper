@@ -233,7 +233,8 @@ public final class EventToInterfaceMigration {
                 com.destroystokyo.paper.event.block.TNTPrimeEvent.class,
                 HopperInventorySearchEvent.class,
                 BlockEvent.class,
-                ElderGuardianAppearanceEvent.class
+                ElderGuardianAppearanceEvent.class,
+                EntityAttemptSmashAttackEvent.class
                 //</editor-fold>
             );
 
