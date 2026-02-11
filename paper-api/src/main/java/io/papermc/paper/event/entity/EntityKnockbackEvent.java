@@ -1,43 +1,24 @@
 package io.papermc.paper.event.entity;
 
-import com.google.common.base.Preconditions;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntityEventNew;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an entity receives knockback.
+ *
  * @see EntityPushedByEntityAttackEvent
  * @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
  */
-@NullMarked
-public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Cause cause;
-    protected Vector knockback;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityKnockbackEvent(final Entity entity, final EntityKnockbackEvent.Cause cause, final Vector knockback) {
-        super(entity);
-        this.cause = cause;
-        this.knockback = knockback;
-    }
+public interface EntityKnockbackEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the cause of the knockback.
      *
      * @return the cause of the knockback
      */
-    public EntityKnockbackEvent.Cause getCause() {
-        return this.cause;
-    }
+    Cause getCause();
 
     /**
      * Gets the knockback force that will be applied to the entity. <br>
@@ -47,43 +28,26 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
      *
      * @return the knockback
      */
-    public Vector getKnockback() {
-        return this.knockback.clone();
-    }
+    Vector getKnockback();
 
     /**
      * Sets the knockback force that will be applied to the entity.
      *
      * @param knockback the knockback
      */
-    public void setKnockback(final Vector knockback) {
-        Preconditions.checkArgument(knockback != null, "knockback");
-        this.knockback = knockback.clone();
-    }
+    void setKnockback(Vector knockback);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * An enum to specify the cause of the knockback.
      */
-    public enum Cause {
+    enum Cause {
 
         /**
          * Knockback caused by non-entity damage.
