@@ -807,6 +807,45 @@ index 989ac565c47a70c7947cb7315d0f5c2cfecd0363..a86ab5f2abfbeaeccbe0c54fa70d03d6
          );
  
          fullCheckEvent.callEvent();
+diff --git a/net/minecraft/world/effect/HealOrHarmMobEffect.java b/net/minecraft/world/effect/HealOrHarmMobEffect.java
+index a97e9d142306ebe6c80e449a86cdc85b38c7e387..05923f2d662defbe8e26c5682c15f011b5a7c6d8 100644
+--- a/net/minecraft/world/effect/HealOrHarmMobEffect.java
++++ b/net/minecraft/world/effect/HealOrHarmMobEffect.java
+@@ -28,7 +28,7 @@ class HealOrHarmMobEffect extends InstantenousMobEffect {
+     public void applyInstantenousEffect(
+         ServerLevel level, @Nullable Entity source, @Nullable Entity indirectSource, LivingEntity entity, int amplifier, double health
+     ) {
+-        if (!new io.papermc.paper.event.entity.EntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(this), amplifier).callEvent()) { return; } // Paper - Add EntityEffectTickEvent
++        if (!new io.papermc.paper.event.entity.PaperEntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(this), amplifier).callEvent()) { return; } // Paper - Add EntityEffectTickEvent
+         if (this.isHarm == entity.isInvertedHealAndHarm()) {
+             int i = (int)(health * (4 << amplifier) + 0.5);
+             entity.heal(i, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.MAGIC); // CraftBukkit
+diff --git a/net/minecraft/world/effect/MobEffect.java b/net/minecraft/world/effect/MobEffect.java
+index 0685501ce48bbfcc8d782e9033c35ba82ef6c2e8..83c5c490a561e55a982d279dfc7b24e7ae3409d2 100644
+--- a/net/minecraft/world/effect/MobEffect.java
++++ b/net/minecraft/world/effect/MobEffect.java
+@@ -85,7 +85,7 @@ public class MobEffect implements FeatureElement {
+     public void applyInstantenousEffect(
+         ServerLevel level, @Nullable Entity source, @Nullable Entity indirectSource, LivingEntity entity, int amplifier, double health
+     ) {
+-        if (!new io.papermc.paper.event.entity.EntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(this), amplifier).callEvent()) { return; } // Paper - Add EntityEffectTickEvent
++        if (!new io.papermc.paper.event.entity.PaperEntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftToBukkit(this), amplifier).callEvent()) { return; } // Paper - Add EntityEffectTickEvent
+         this.applyEffectTick(level, entity, amplifier);
+     }
+ 
+diff --git a/net/minecraft/world/effect/MobEffectInstance.java b/net/minecraft/world/effect/MobEffectInstance.java
+index 5888dcb3ce9b988a6ba1ff4f810f41522bc25161..f078809a5d4252ef83d5cdb9f778ef429c328d1d 100644
+--- a/net/minecraft/world/effect/MobEffectInstance.java
++++ b/net/minecraft/world/effect/MobEffectInstance.java
+@@ -218,7 +218,7 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+             return false;
+         } else {
+             int i = this.isInfiniteDuration() ? entity.tickCount : this.duration;
+-            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && new io.papermc.paper.event.entity.EntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(this.effect), this.amplifier).callEvent() && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) { // Paper - Add EntityEffectTickEvent
++            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && new io.papermc.paper.event.entity.PaperEntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(this.effect), this.amplifier).callEvent() && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) { // Paper - Add EntityEffectTickEvent
+                 return false;
+             } else {
+                 this.tickDownDuration();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
 index 3bf618f1d756bad7755a87803132bd731e7c41be..18e41d1506c783587b253201343cba44a08dae53 100644
 --- a/net/minecraft/world/entity/Entity.java
