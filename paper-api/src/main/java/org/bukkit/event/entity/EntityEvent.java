@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an Entity-related event
  */
-public abstract class EntityEvent extends EventTmp {
+public abstract class EntityEvent extends EventTmp implements EntityEventNew {
 
     protected Entity entity;
 
