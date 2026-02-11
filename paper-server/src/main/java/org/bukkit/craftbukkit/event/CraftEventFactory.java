@@ -2302,7 +2302,7 @@ public class CraftEventFactory {
         if (serverPlayer == null) serverPlayer = partner.getLoveCause();
         final int experience = breeding.getRandom().nextInt(7) + 1; // From Animal#spawnChildFromBreeding(ServerLevel, Animal)
 
-        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) partner.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
+        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.PaperEntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) partner.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
         if (!event.callEvent()) {
             breeding.resetLove();
             partner.resetLove(); // stop the pathfinding to avoid infinite loop
