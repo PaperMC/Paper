@@ -255,7 +255,8 @@ public final class EventToInterfaceMigration {
                 ItemTransportingEntityValidateTargetEvent.class,
                 PufferFishStateChangeEvent.class,
                 ShulkerDuplicateEvent.class,
-                TameableDeathMessageEvent.class
+                TameableDeathMessageEvent.class,
+                WardenAngerChangeEvent.class
                 //</editor-fold>
             );
 
