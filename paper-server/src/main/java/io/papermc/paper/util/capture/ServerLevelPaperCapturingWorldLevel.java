@@ -1,14 +1,14 @@
 package io.papermc.paper.util.capture;
 
 import io.papermc.paper.configuration.WorldConfiguration;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.gamerules.GameRules;
-
-import java.util.function.Consumer;
 
 public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorldLevel {
 
@@ -20,13 +20,13 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     }
 
     @Override
-    default void addTask(Consumer<ServerLevel> levelConsumer) {
-        levelConsumer.accept(this.handle());
+    default void addTask(Consumer<ServerLevel> level) {
+        level.accept(this.handle());
     }
 
     @Override
-    default void sendBlockUpdated(BlockPos pos, BlockState state, BlockState blockState1, int updateClients) {
-        this.handle().sendBlockUpdated(pos, state, blockState1, updateClients);
+    default void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags) {
+        this.handle().sendBlockUpdated(pos, oldState, newState, flags);
     }
 
     @Override
@@ -35,13 +35,13 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     }
 
     @Override
-    default boolean setBlockSilent(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    default boolean setBlockSilent(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         return this.handle().setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override
-    default boolean setBlockAndUpdate(BlockPos blockPos, BlockState blockState) {
-        return this.handle().setBlockAndUpdate(blockPos, blockState);
+    default boolean setBlockAndUpdate(BlockPos pos, BlockState state) {
+        return this.handle().setBlockAndUpdate(pos, state);
     }
 
     @Override

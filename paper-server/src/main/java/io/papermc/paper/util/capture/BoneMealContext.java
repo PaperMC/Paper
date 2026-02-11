@@ -6,19 +6,14 @@ import org.bukkit.TreeType;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.Nullable;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class BoneMealContext {
 
     public ServerLevel ogServerLevel;
-    public ServerPlayer player;
+    public @Nullable ServerPlayer player;
     public boolean precancelStructureEvent = false;
     public TreeType treeHook; // just make this a field
 
-
-    @Nullable
-    public Player getBukkitPlayer() {
+    public @Nullable Player getBukkitPlayer() {
         return this.player == null ? null : this.player.getBukkitEntity();
     }
-
 }

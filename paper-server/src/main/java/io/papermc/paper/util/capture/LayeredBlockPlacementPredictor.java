@@ -1,14 +1,13 @@
 package io.papermc.paper.util.capture;
 
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jspecify.annotations.Nullable;
-
-import java.util.Optional;
 
 public record LayeredBlockPlacementPredictor(
-        BlockPlacementPredictor... predictors
+    BlockPlacementPredictor... predictors
 ) implements BlockPlacementPredictor {
+
     @Override
     public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
         for (BlockPlacementPredictor predictor : this.predictors) {
@@ -17,7 +16,6 @@ public record LayeredBlockPlacementPredictor(
                 return state;
             }
         }
-
 
         return Optional.empty();
     }
@@ -31,19 +29,17 @@ public record LayeredBlockPlacementPredictor(
             }
         }
 
-
         return Optional.empty();
     }
 
     @Override
-    public Optional<@Nullable BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
+    public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
         for (BlockPlacementPredictor predictor : this.predictors) {
-            Optional<BlockEntityPlacement> state = predictor.getLatestTileAt(pos);
+            Optional<BlockEntityPlacement> state = predictor.getLatestBlockEntityAt(pos);
             if (state.isPresent()) {
                 return state;
             }
         }
-
 
         return Optional.empty();
     }

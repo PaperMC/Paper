@@ -1,13 +1,15 @@
 package io.papermc.paper.util.capture;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-
 import java.util.Optional;
 import java.util.function.Supplier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
 
-public record LiveBlockPlacementLayer(WorldCapturer level, net.minecraft.server.level.ServerLevel serverLevel) implements BlockPlacementPredictor {
+public record LiveBlockPlacementLayer(WorldCapturer level, ServerLevel serverLevel) implements BlockPlacementPredictor {
+
     @Override
     public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
         return Optional.of(provideLive(() -> this.serverLevel.getBlockState(pos)));
@@ -24,7 +26,7 @@ public record LiveBlockPlacementLayer(WorldCapturer level, net.minecraft.server.
     }
 
     @Override
-    public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
+    public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
         BlockEntity blockEntity = provideLive(() -> this.serverLevel.getBlockEntity(pos));
         if (blockEntity == null) {
             return BlockEntityPlacement.ABSENT;
@@ -33,8 +35,7 @@ public record LiveBlockPlacementLayer(WorldCapturer level, net.minecraft.server.
         return Optional.of(new BlockEntityPlacement(false, blockEntity));
     }
 
-
-    public <T> T provideLive(Supplier<T> valueProvider) {
+    public <T> @Nullable T provideLive(Supplier<@Nullable T> valueProvider) {
         SimpleBlockCapture blockCapture = this.level.getCapture();
         this.level.releaseCapture(null);
         T value = valueProvider.get();

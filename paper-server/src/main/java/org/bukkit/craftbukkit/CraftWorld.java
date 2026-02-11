@@ -106,7 +106,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
@@ -142,7 +141,6 @@ import org.bukkit.entity.Trident;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -748,9 +746,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
            BlockPos pos = CraftLocation.toBlockPosition(loc);
            boolean res = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
            if (res) {
-               var states = captureTreeGeneration.calculateLatestBlockStates(this.world);
+               Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(this.world);
 
-               java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
+               List<BlockState> blocks = new ArrayList<>(snapshots.values());
                for (BlockState state : blocks) {
                    delegate.setBlockData(state.getX(), state.getY(), state.getZ(), state.getBlockData());
                }

@@ -6,17 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
@@ -28,6 +17,15 @@ import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.util.capture.MinecraftCaptureBridge;
 import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
 import io.papermc.paper.util.capture.SimpleBlockCapture;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -50,14 +48,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.animal.fish.AbstractFish;
-import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.fish.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ghast;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.raid.Raid;
@@ -77,7 +70,6 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -121,6 +113,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -1301,8 +1294,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockGrowEvent(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
-        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+    public static boolean handleBlockGrowEvent(LevelAccessor level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setData(state);
 
         BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
@@ -2394,14 +2387,14 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static boolean structureEvent(ServerLevel serverLevel, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldgenCapture, TreeType type) {
+    public static boolean structureEvent(ServerLevel serverLevel, PaperCapturingWorldLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldGenCapture, TreeType type) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
-            if (worldgenCapture.apply(captureTreeGeneration)) {
-                var states = captureTreeGeneration.calculateLatestBlockStates(serverLevel);
-                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel);
+            if (worldGenCapture.apply(captureTreeGeneration)) {
+                Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(serverLevel);
+                Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel);
 
-                java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
+                List<BlockState> blocks = new ArrayList<>(snapshots.values());
                 StructureGrowEvent structureEvent = new StructureGrowEvent(location, type, false, player, blocks);
 
                 if (structureEvent.callEvent()) {
@@ -2411,20 +2404,18 @@ public class CraftEventFactory {
             }
         }
 
-
-
         return false;
     }
 
-    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldgenCapture, boolean cancelled) {
+    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, boolean cancelled) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
-            worldgenCapture.accept(captureTreeGeneration);
-            var states = captureTreeGeneration.calculateLatestBlockStates(level);
-            org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
+            worldGenCapture.accept(captureTreeGeneration);
+            Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(level);
+            Location location = CraftLocation.toBukkit(pos, level);
 
-            java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(states.values());
+            List<BlockState> blocks = new ArrayList<>(snapshots.values());
             BlockFertilizeEvent structureEvent = new BlockFertilizeEvent(location.getBlock(), player, blocks);
             structureEvent.setCancelled(cancelled);
 

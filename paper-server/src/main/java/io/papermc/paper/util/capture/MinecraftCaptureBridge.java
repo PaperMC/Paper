@@ -1,6 +1,14 @@
 package io.papermc.paper.util.capture;
 
 import io.papermc.paper.configuration.WorldConfiguration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -40,27 +48,15 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.ScheduledTick;
 import org.bukkit.Location;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     private final ServerLevel parent;
     private final List<Runnable> queuedTasks = new ArrayList<>();
+
     // Effective represents plugin set blocks -> predicted blocks -> actual server level
     private final BlockPlacementPredictor effectiveReadLayer;
-
-
     private SimpleBlockPlacementPredictor writeLayer;
 
     // This is the layer that is written to in the server level potentially.
@@ -70,7 +66,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     private final CapturingTickAccess<Block> blocks;
     private final CapturingTickAccess<Fluid> liquids;
 
-    private Consumer<Runnable> sink = queuedTasks::add;
+    private Consumer<Runnable> sink = this.queuedTasks::add;
 
     public MinecraftCaptureBridge(ServerLevel parent, BlockPlacementPredictor baseReadLayer) {
         this.parent = parent;
@@ -126,8 +122,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean setBlockAndUpdate(BlockPos blockPos, BlockState blockState) {
-        return this.setBlock(blockPos, blockState, Block.UPDATE_ALL);
+    public boolean setBlockAndUpdate(BlockPos pos, BlockState state) {
+        return this.setBlock(pos, state, Block.UPDATE_ALL);
     }
 
     @Override
@@ -154,8 +150,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
             }
 
             @Override
-            public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
-                return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestTileAt(pos);
+            public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
+                return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestBlockEntityAt(pos);
 
             }
         });
@@ -169,17 +165,17 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     @Override
     public void playSound(@Nullable Entity entity, BlockPos pos, SoundEvent sound, SoundSource source, float volume, float pitch) {
-        this.addTask((serverLevel) -> serverLevel.playSound(entity, pos, sound, source, volume, pitch));
+        this.addTask((level) -> level.playSound(entity, pos, sound, source, volume, pitch));
     }
 
     @Override
     public void addParticle(ParticleOptions options, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-        this.addTask((serverLevel) -> serverLevel.addParticle(options, x, y, z, xSpeed, ySpeed, zSpeed));
+        this.addTask((level) -> level.addParticle(options, x, y, z, xSpeed, ySpeed, zSpeed));
     }
 
     @Override
     public void levelEvent(@Nullable Entity entity, int type, BlockPos pos, int data) {
-        this.addTask((serverLevel) -> serverLevel.levelEvent(entity, type, pos, data));
+        this.addTask((level) -> level.levelEvent(entity, type, pos, data));
     }
 
     @Override
@@ -204,7 +200,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     @Override
     public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
-        return this.effectiveReadLayer.getLatestTileAt(pos)
+        return this.effectiveReadLayer.getLatestBlockEntityAt(pos)
                 .map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity)
                 .orElse(null);
     }
@@ -314,14 +310,14 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return predicate.test(this.getFluidState(pos));
     }
 
-    public boolean silentSet(BlockPos pos, BlockState state, int flags) {
+    public boolean silentSet(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         return this.writeLayer.setBlockState(this.effectiveReadLayer, pos, state, flags);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         BlockPos copy = pos.immutable();
-        this.addTask((serverLevel) -> parent.setBlock(copy, state, flags, recursionLeft));
+        this.addTask((level) -> parent.setBlock(copy, state, flags, recursionLeft));
 
         return this.writeLayer.setBlockState(this.effectiveReadLayer, copy, state, flags);
     }
@@ -329,7 +325,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     @Override
     public boolean removeBlock(BlockPos pos, boolean movedByPiston) {
         BlockPos copy = pos.immutable();
-        this.addTask((serverLevel) -> serverLevel.removeBlock(copy, movedByPiston));
+        this.addTask((level) -> level.removeBlock(copy, movedByPiston));
 
         FluidState fluidState = this.getFluidState(copy);
         return this.silentSet(copy, fluidState.createLegacyBlock(), Block.UPDATE_ALL | (movedByPiston ? Block.UPDATE_MOVE_BY_PISTON : 0));
@@ -338,7 +334,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     @Override
     public boolean destroyBlock(BlockPos pos, boolean dropBlock, @Nullable Entity entity, int recursionLeft) {
         BlockPos copy = pos.immutable();
-        this.addTask((serverLevel) -> serverLevel.destroyBlock(copy, dropBlock, entity, recursionLeft));
+        this.addTask((level) -> level.destroyBlock(copy, dropBlock, entity, recursionLeft));
 
         BlockState blockState = this.getBlockState(copy);
         if (blockState.isAir()) {
@@ -351,9 +347,9 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public void sendBlockUpdated(BlockPos pos, BlockState state, BlockState blockState1, int updateClients) {
+    public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags) {
         BlockPos copy = pos.immutable();
-        this.addTask((serverLevel) -> serverLevel.sendBlockUpdated(copy, state, blockState1, updateClients));
+        this.addTask((level) -> level.sendBlockUpdated(copy, oldState, newState, flags));
     }
 
     @Override
@@ -362,7 +358,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean setBlockSilent(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+    public boolean setBlockSilent(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         BlockPos copy = pos.immutable();
         return this.silentSet(copy, state, flags);
     }
@@ -383,16 +379,16 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public void addTask(Consumer<ServerLevel> levelConsumer) {
-        this.sink.accept(() -> levelConsumer.accept(parent));
+    public void addTask(Consumer<ServerLevel> level) {
+        this.sink.accept(() -> level.accept(this.parent));
     }
 
-    public net.minecraft.world.level.block.state.BlockState getLatestBlockState(final BlockPos pos) {
+    public net.minecraft.world.level.block.state.@Nullable BlockState getLatestBlockState(BlockPos pos) {
         return this.effectiveReadLayer.getLatestBlockAt(pos).orElse(null);
     }
 
-    public @Nullable Optional<@Nullable BlockEntity> getLatestBlockEntity(final BlockPos pos) {
-        Optional<BlockPlacementPredictor.BlockEntityPlacement> placement = this.effectiveReadLayer.getLatestTileAt(pos);
+    public @Nullable Optional<BlockEntity> getLatestBlockEntity(BlockPos pos) {
+        Optional<BlockPlacementPredictor.BlockEntityPlacement> placement = this.effectiveReadLayer.getLatestBlockEntityAt(pos);
         if (placement.isEmpty() || placement.get().blockEntity() == null && !placement.get().removed()) {
             return null;
         }
@@ -400,8 +396,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return placement.map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity);
     }
 
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(ServerLevel level) {
-        return this.writeLayer.getRecordMap().calculateLatestBlockStates(level);
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
+        return this.writeLayer.getRecordMap().calculateLatestSnapshots(level);
     }
 
     public void applyTasks() {
@@ -412,7 +408,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         this.blocks.apply();
         this.liquids.apply();
 
-        // If we have changes that the plugin applied ontop of the already existing changes, we know that we can apply them.
+        // If we have changes that the plugin applied on top of the already existing changes, we know that we can apply them.
         // So, do that!
         if (!this.serverLevelOverlayLayer.isEmpty()) {
             this.serverLevelOverlayLayer.getRecordMap().applyApiPatch(this.parent);
@@ -431,29 +427,29 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         this.writeLayer = this.serverLevelOverlayLayer;
     }
 
-    public static class CapturingTickAccess<T> implements LevelTickAccess<@NotNull T> {
+    public static class CapturingTickAccess<T> implements LevelTickAccess<T> {
 
-        private final LevelTickAccess<@NotNull T> wrapped;
+        private final LevelTickAccess<T> wrapped;
         private final Set<BlockPos> scheduled = new HashSet<>();
-        private final List<ScheduledTick<@NotNull T>> ticks = new ArrayList<>();
+        private final List<ScheduledTick<T>> ticks = new ArrayList<>();
 
-        public CapturingTickAccess(LevelTickAccess<@NotNull T> wrapped) {
+        public CapturingTickAccess(LevelTickAccess<T> wrapped) {
             this.wrapped = wrapped;
         }
 
         @Override
-        public boolean willTickThisTick(@NotNull BlockPos pos, T type) {
+        public boolean willTickThisTick(BlockPos pos, T type) {
             return this.wrapped.willTickThisTick(pos, type);
         }
 
         @Override
-        public void schedule(ScheduledTick<@NotNull T> tick) {
+        public void schedule(ScheduledTick<T> tick) {
             this.scheduled.add(tick.pos());
             this.ticks.add(tick);
         }
 
         @Override
-        public boolean hasScheduledTick(@NotNull BlockPos pos, T type) {
+        public boolean hasScheduledTick(BlockPos pos, T type) {
             return this.wrapped.hasScheduledTick(pos, type) || this.scheduled.contains(pos);
         }
 
@@ -466,5 +462,4 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
             this.ticks.forEach(this.wrapped::schedule);
         }
     }
-
 }

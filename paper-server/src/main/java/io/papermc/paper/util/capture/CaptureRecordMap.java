@@ -1,25 +1,17 @@
 package io.papermc.paper.util.capture;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
-
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static net.minecraft.world.level.block.Block.UPDATE_NONE;
 
 /*
 The premise of this storage is to essentially "mock" block placement in the game.
@@ -33,18 +25,18 @@ public final class CaptureRecordMap {
 
     private final Map<BlockPos, CaptureRecord> recordsByPos = new HashMap<>();
 
-    public void setLatestBlockStateAt(final BlockPos pos, final BlockState state, final int flags) {
+    public void setLatestBlockStateAt(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         this.add(new CaptureRecord(state, pos, flags));
     }
 
-    public void setLatestBlockEntityAt(final BlockPos pos, final boolean remove, @Nullable final BlockEntity add) {
+    public void setLatestBlockEntityAt(BlockPos pos, boolean remove, @Nullable BlockEntity add) {
         CaptureRecord oldRecord = this.recordsByPos.get(pos);
         if (oldRecord != null) {
             oldRecord.setBlockEntity(remove, add);
         }
     }
 
-    private void add(final CaptureRecord record) {
+    private void add(CaptureRecord record) {
         this.recordsByPos.put(record.pos, record);
     }
 
@@ -52,7 +44,7 @@ public final class CaptureRecordMap {
         return this.recordsByPos.isEmpty();
     }
 
-    public @Nullable BlockState getLatestBlockStateAt(final BlockPos pos) {
+    public @Nullable BlockState getLatestBlockStateAt(BlockPos pos) {
         CaptureRecord record = this.recordsByPos.get(pos);
         if (record == null) {
             return null;
@@ -61,9 +53,9 @@ public final class CaptureRecordMap {
         return record.state;
     }
 
-    // Null indicates that its not present, no override
+    // Null indicates that it's not present, no override
     // Optional empty indicates its being removed
-    public @Nullable Optional<@Nullable BlockEntity> getLatestBlockEntityAt(final BlockPos pos) {
+    public @Nullable Optional<BlockEntity> getLatestBlockEntityAt(BlockPos pos) {
         CaptureRecord record = this.recordsByPos.get(pos);
         if (record == null) {
             return null;
@@ -74,22 +66,22 @@ public final class CaptureRecordMap {
 
     public void applyBlockEntities(ServerLevel parent) {
         this.recordsByPos.keySet().forEach((pos) -> {
-            var res = getLatestBlockEntityAt(pos);
+            Optional<BlockEntity> res = this.getLatestBlockEntityAt(pos);
             if (res != null && res.isPresent()) {
                 parent.setBlockEntity(res.get());
             }
         });
     }
 
-    public void applyApiPatch(final ServerLevel level) {
+    public void applyApiPatch(ServerLevel level) {
         this.recordsByPos.keySet().forEach((pos) -> {
             this.recordsByPos.get(pos).applyApiPatch(level);
         });
     }
 
     // TODO: Clean this up
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestBlockStates(ServerLevel level) {
-        final Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
+    public Map<Location, org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
+        Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
 
         this.recordsByPos.keySet().forEach((pos) -> {
 
@@ -100,7 +92,6 @@ public final class CaptureRecordMap {
         return out;
     }
 
-
     public static class CaptureRecord {
 
         private final BlockPos pos;
@@ -108,7 +99,7 @@ public final class CaptureRecordMap {
         private BlockState state;
         private BlockEntity blockEntity;
         private boolean removeBe;
-        private int flags;
+        private @Block.UpdateFlags int flags;
 
         public CaptureRecord(BlockPos pos, BlockState state, BlockEntity blockEntity) {
             this.pos = pos;
@@ -116,7 +107,7 @@ public final class CaptureRecordMap {
             this.blockEntity = blockEntity;
         }
 
-        public CaptureRecord(BlockState state, BlockPos pos, int flags) {
+        public CaptureRecord(BlockState state, BlockPos pos, @Block.UpdateFlags int flags) {
             this.pos = pos;
             this.state = state;
             this.flags = flags;

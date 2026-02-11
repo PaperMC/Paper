@@ -1,5 +1,6 @@
 package io.papermc.paper.util.capture;
 
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -7,14 +8,12 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.Optional;
-
 // Block state
 class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
 
     private final CaptureRecordMap guesstimationMap = new CaptureRecordMap();
 
-    public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState state, int flags) {
+    public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         BlockState blockState = layer.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
         // Dont do any processing if the same
         if (blockState == state) {
@@ -40,13 +39,13 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
 
 //            if ((differentState || block instanceof BaseRailBlock) && ((flags & Block.UPDATE_NEIGHBORS) != 0 || updateMoveByPiston)) {
 //                BlockState finalBlockState = blockState;
-//                this.capturingWorldLevel.addTask((serverLevel) -> {
-//                    finalBlockState.affectNeighborsAfterRemoval(serverLevel, pos, updateMoveByPiston);
+//                this.capturingWorldLevel.addTask((level) -> {
+//                    finalBlockState.affectNeighborsAfterRemoval(level, pos, updateMoveByPiston);
 //                });
 //            }
 
             if (state.hasBlockEntity()) {
-                BlockEntity blockEntity = this.getLatestTileAt(pos).map(BlockEntityPlacement::blockEntity).orElse(null);
+                BlockEntity blockEntity = this.getLatestBlockEntityAt(pos).map(BlockEntityPlacement::blockEntity).orElse(null);
                 if (blockEntity != null && !blockEntity.isValidBlockState(state)) {
                     blockEntity = null;
                 }
@@ -80,8 +79,8 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
     }
 
     @Override
-    public Optional<BlockEntityPlacement> getLatestTileAt(BlockPos pos) {
-        var value = this.guesstimationMap.getLatestBlockEntityAt(pos);
+    public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
+        Optional<BlockEntity> value = this.guesstimationMap.getLatestBlockEntityAt(pos);
         if (value == null) {
             return Optional.empty();
         } else {
@@ -102,13 +101,11 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
                 .map((state) -> new LoadedBlockState(true, state));
     }
 
-
-    public void setLatestBlockAt(BlockPos pos, BlockState data, int flags) {
-        this.guesstimationMap.setLatestBlockStateAt(pos, data, flags);
+    public void setLatestBlockAt(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
+        this.guesstimationMap.setLatestBlockStateAt(pos, state, flags);
     }
 
     public CaptureRecordMap getRecordMap() {
-        return guesstimationMap;
+        return this.guesstimationMap;
     }
-
 }

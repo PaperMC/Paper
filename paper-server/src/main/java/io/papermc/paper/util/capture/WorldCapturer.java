@@ -2,34 +2,34 @@ package io.papermc.paper.util.capture;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 
 // TODO: Cleanup this state, because its held on the server world. I had proper state handling but threw it away at some point
 public class WorldCapturer {
 
-    public final ServerLevel world;
+    public final ServerLevel level;
 
-    private SimpleBlockCapture capture;
+    private @Nullable SimpleBlockCapture capture;
 
-    public WorldCapturer(Level world) {
-        this.world = (ServerLevel) world;
+    public WorldCapturer(Level level) {
+        this.level = (ServerLevel) level;
     }
 
     public SimpleBlockCapture createCaptureSession(BlockPlacementPredictor blockPlacementPredictor) {
-        this.capture = new SimpleBlockCapture(blockPlacementPredictor, world, this.capture);
-
+        this.capture = new SimpleBlockCapture(blockPlacementPredictor, this.level, this.capture);
         return this.capture;
     }
 
     public SimpleBlockCapture createCaptureSession() {
-        return this.createCaptureSession(new LiveBlockPlacementLayer(this, world));
+        return this.createCaptureSession(new LiveBlockPlacementLayer(this, this.level));
     }
 
-    public void releaseCapture(SimpleBlockCapture oldCapture) {
+    public void releaseCapture(@Nullable SimpleBlockCapture oldCapture) {
         this.capture = oldCapture;
     }
 
-    public SimpleBlockCapture getCapture() {
-        return capture;
+    public @Nullable SimpleBlockCapture getCapture() {
+        return this.capture;
     }
 
     public boolean isCapturing() {

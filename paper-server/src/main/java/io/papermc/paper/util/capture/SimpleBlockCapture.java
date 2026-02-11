@@ -1,14 +1,13 @@
 package io.papermc.paper.util.capture;
 
+import java.util.Map;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.bukkit.Location;
 import org.bukkit.block.BlockState;
 import org.jspecify.annotations.Nullable;
-
-import java.util.Map;
-import java.util.Optional;
 
 public class SimpleBlockCapture implements AutoCloseable {
 
@@ -17,13 +16,11 @@ public class SimpleBlockCapture implements AutoCloseable {
 
     private boolean isOverlayingCaptureOnLevel = false;
 
-
     private final SimpleBlockCapture oldCapture;
 
-
-    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel world, SimpleBlockCapture oldCapture) {
-        this.capturingWorldLevel = new MinecraftCaptureBridge(world, base);
-        this.level = world;
+    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel level, SimpleBlockCapture oldCapture) {
+        this.capturingWorldLevel = new MinecraftCaptureBridge(level, base);
+        this.level = level;
         this.oldCapture = oldCapture;
     }
 
@@ -35,15 +32,15 @@ public class SimpleBlockCapture implements AutoCloseable {
         return true;
     }
 
-    public Map<Location, BlockState> getCapturedBlockStates() {
-        return this.capturingWorldLevel.calculateLatestBlockStates(this.level);
+    public Map<Location, BlockState> getCapturedSnapshots() {
+        return this.capturingWorldLevel.calculateLatestSnapshots(this.level);
     }
 
-    public net.minecraft.world.level.block.state.BlockState getOverlayBlockState(final BlockPos pos) {
+    public net.minecraft.world.level.block.state.@Nullable BlockState getOverlayBlockState(BlockPos pos) {
         return this.capturingWorldLevel.getLatestBlockState(pos);
     }
 
-    public @Nullable Optional<@Nullable BlockEntity> getOverlayBlockEntity(final BlockPos pos) {
+    public @Nullable Optional<BlockEntity> getOverlayBlockEntity(BlockPos pos) {
         return this.capturingWorldLevel.getLatestBlockEntity(pos);
     }
 
@@ -68,7 +65,7 @@ public class SimpleBlockCapture implements AutoCloseable {
         this.level.capturer.releaseCapture(this.oldCapture);
     }
 
-    public net.minecraft.world.level.block.state.BlockState getCaptureBlockStateIfLoaded(BlockPos pos) {
+    public net.minecraft.world.level.block.state.@Nullable BlockState getCaptureBlockStateIfLoaded(BlockPos pos) {
         return this.capturingWorldLevel.getBlockStateIfLoaded(pos);
     }
 }
