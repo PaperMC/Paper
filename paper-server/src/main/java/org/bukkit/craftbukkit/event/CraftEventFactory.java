@@ -13,6 +13,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import java.util.ArrayList;
@@ -2338,7 +2339,7 @@ public class CraftEventFactory {
         if (ItemTransportingEntityValidateTargetEvent.getHandlerList().getRegisteredListeners().length == 0) {
             return true; // No listeners, skip event creation
         }
-        final ItemTransportingEntityValidateTargetEvent event = new ItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
+        final ItemTransportingEntityValidateTargetEvent event = new PaperItemTransportingEntityValidateTargetEvent(mob.getBukkitEntity(), CraftBlock.at(level, transportItemTarget));
         event.callEvent();
         return event.isAllowed();
     }
