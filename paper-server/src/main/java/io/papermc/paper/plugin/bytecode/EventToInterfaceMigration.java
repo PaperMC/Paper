@@ -251,7 +251,8 @@ public final class EventToInterfaceMigration {
                 EntityMoveEvent.class,
                 EntityPortalReadyEvent.class,
                 EntityToggleSitEvent.class,
-                FishHookStateChangeEvent.class
+                FishHookStateChangeEvent.class,
+                ItemTransportingEntityValidateTargetEvent.class
                 //</editor-fold>
             );
 
