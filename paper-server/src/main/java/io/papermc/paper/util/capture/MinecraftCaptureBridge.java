@@ -152,7 +152,6 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
             @Override
             public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
                 return MinecraftCaptureBridge.this.effectiveReadLayer.getLatestBlockEntityAt(pos);
-
             }
         });
     }
@@ -317,7 +316,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     @Override
     public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         BlockPos copy = pos.immutable();
-        this.addTask((level) -> parent.setBlock(copy, state, flags, recursionLeft));
+        this.addTask((level) -> level.setBlock(copy, state, flags, recursionLeft));
 
         return this.writeLayer.setBlockState(this.effectiveReadLayer, copy, state, flags);
     }
@@ -416,7 +415,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
 
         // Apply block entities, those may have been written in our estimation. So just apply them.
-        // I dont really like this, as I in general dont really want to apply things from the prediction layer.
+        // I don't really like this, as I in general don't really want to apply things from the prediction layer.
         // But, these may be mutated by anything.
         if (!this.writeLayer.getRecordMap().isEmpty()) {
             this.writeLayer.getRecordMap().applyBlockEntities(this.parent);

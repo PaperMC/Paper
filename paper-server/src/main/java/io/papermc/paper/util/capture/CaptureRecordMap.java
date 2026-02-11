@@ -83,12 +83,10 @@ public final class CaptureRecordMap {
     public Map<Location, org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
         Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
 
-        this.recordsByPos.keySet().forEach((pos) -> {
-
-            CaptureRecord captureRecord = this.recordsByPos.get(pos);
-            out.put(CraftLocation.toBukkit(pos), CraftBlockStates.getBlockState(level.getWorld(), CraftLocation.toBlockPosition(CraftLocation.toBukkit(pos)), captureRecord.state, captureRecord.blockEntity));
-        });
-
+        for (Map.Entry<BlockPos, CaptureRecord> entry : this.recordsByPos.entrySet()) {
+            CaptureRecord captureRecord = entry.getValue();
+            out.put(CraftLocation.toBukkit(entry.getKey()), CraftBlockStates.getBlockState(level.getWorld(), entry.getKey(), captureRecord.state, captureRecord.blockEntity));
+        }
         return out;
     }
 
@@ -97,7 +95,7 @@ public final class CaptureRecordMap {
         private final BlockPos pos;
 
         private BlockState state;
-        private BlockEntity blockEntity;
+        private @Nullable BlockEntity blockEntity;
         private boolean removeBe;
         private @Block.UpdateFlags int flags;
 

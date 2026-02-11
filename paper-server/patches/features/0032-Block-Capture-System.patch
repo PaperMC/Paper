@@ -3,21 +3,6 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Thu, 5 Feb 2026 16:31:13 -0500
 Subject: [PATCH] Block Capture System
 
-ATM Fixes:
-this one: https://github.com/PaperMC/Paper/issues/11728
-https://github.com/PaperMC/Paper/issues/6458 (better fix)
-bee hive issue
-https://github.com/PaperMC/Paper/issues/12114 (tripwire hook duping)
-https://github.com/PaperMC/Paper/issues/13586 (working towards)
-end portal counting towards block place event
-any block modification in item interaction counting as block place event
-fixes edge cases required by random block types
-https://github.com/PaperMC/Paper/issues/13536 root dupe
-fixes edge cases with physics being fired on structure placement despite being canceled
-
-big todos:
-- Dispenser related stuff
-- Bone meal related stuff, we need to pass more context in order to get the tree event properly working
 
 diff --git a/net/minecraft/core/dispenser/DispenseItemBehavior.java b/net/minecraft/core/dispenser/DispenseItemBehavior.java
 index bfefb5031544caa59230f0073e8880c2b39ebf4d..40810b410c92f8fd2edaec7443450c403171ee11 100644
@@ -330,7 +315,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..3707f24b93a24f2d6622d86e05626707
              return false;
          } else {
 diff --git a/net/minecraft/world/item/BoneMealItem.java b/net/minecraft/world/item/BoneMealItem.java
-index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..664a6a6a8a44233d7c2d13f432789fe6031dd746 100644
+index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..d4b0defd9236003ee739fe8ceee37b0a913fd340 100644
 --- a/net/minecraft/world/item/BoneMealItem.java
 +++ b/net/minecraft/world/item/BoneMealItem.java
 @@ -44,7 +44,12 @@ public class BoneMealItem extends Item {
@@ -388,15 +373,18 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..664a6a6a8a44233d7c2d13f432789fe6
                  }
  
                  stack.shrink(1);
-@@ -84,7 +106,7 @@ public class BoneMealItem extends Item {
+@@ -84,9 +106,9 @@ public class BoneMealItem extends Item {
          }
      }
  
 -    public static boolean growWaterPlant(ItemStack stack, Level level, BlockPos pos, @Nullable Direction clickedSide) {
 +    public static boolean growWaterPlant(ItemStack stack, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, @Nullable Direction clickedSide, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
          if (level.getBlockState(pos).is(Blocks.WATER) && level.getFluidState(pos).getAmount() == 8) {
-             if (!(level instanceof ServerLevel)) {
+-            if (!(level instanceof ServerLevel)) {
++            if (false) { // Paper
                  return true;
+             } else {
+                 RandomSource random = level.getRandom();
 @@ -107,7 +129,7 @@ public class BoneMealItem extends Item {
                      if (biome.is(BiomeTags.PRODUCES_CORALS_FROM_BONEMEAL)) {
                          if (i == 0 && clickedSide != null && clickedSide.getAxis().isHorizontal()) {
