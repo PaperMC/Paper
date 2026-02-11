@@ -235,7 +235,8 @@ public final class EventToInterfaceMigration {
                 BlockEvent.class,
                 ElderGuardianAppearanceEvent.class,
                 EntityAttemptSmashAttackEvent.class,
-                EntityAttemptSpinAttackEvent.class
+                EntityAttemptSpinAttackEvent.class,
+                EntityDamageItemEvent.class
                 //</editor-fold>
             );
 
