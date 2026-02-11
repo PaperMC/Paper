@@ -2211,9 +2211,9 @@ public class CraftEventFactory {
         final io.papermc.paper.event.entity.EntityKnockbackEvent event;
         apiKnockback = legacyEvent.getFinalKnockback().subtract(currentVelocity);
         if (attacker != null) {
-            event = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
+            event = new io.papermc.paper.event.entity.PaperEntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
         } else {
-            event = new io.papermc.paper.event.entity.EntityKnockbackEvent(entity, cause, apiKnockback);
+            event = new io.papermc.paper.event.entity.PaperEntityKnockbackEvent(entity, cause, apiKnockback);
         }
         event.setCancelled(legacyEvent.isCancelled());
         event.callEvent();
