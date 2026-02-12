@@ -291,10 +291,10 @@ fun TaskContainer.registerRunTask(
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(25))
-        vendor.set(JvmVendorSpec.JETBRAINS)
+        // vendor.set(JvmVendorSpec.JETBRAINS) // JBR 25 is bugged (spark crashes, hotswapping not working)
     })
     jvmArgs(
-        "-XX:+AllowEnhancedClassRedefinition",
+        // "-XX:+AllowEnhancedClassRedefinition", // JBR 25 is bugged (spark crashes, hotswapping not working)
         "--enable-native-access=ALL-UNNAMED",
     )
     systemProperty("paper.endermux.enabled", true)
