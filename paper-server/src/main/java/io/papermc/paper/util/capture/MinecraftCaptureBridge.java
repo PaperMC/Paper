@@ -413,7 +413,6 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
             this.serverLevelOverlayLayer.getRecordMap().applyApiPatch(this.parent);
         }
 
-
         // Apply block entities, those may have been written in our estimation. So just apply them.
         // I don't really like this, as I in general don't really want to apply things from the prediction layer.
         // But, these may be mutated by anything.

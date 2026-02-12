@@ -13,12 +13,11 @@ public class SimpleBlockCapture implements AutoCloseable {
 
     private final MinecraftCaptureBridge capturingWorldLevel;
     private final ServerLevel level;
+    private final @Nullable SimpleBlockCapture oldCapture;
 
     private boolean isOverlayingCaptureOnLevel = false;
 
-    private final SimpleBlockCapture oldCapture;
-
-    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel level, SimpleBlockCapture oldCapture) {
+    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel level, @Nullable SimpleBlockCapture oldCapture) {
         this.capturingWorldLevel = new MinecraftCaptureBridge(level, base);
         this.level = level;
         this.oldCapture = oldCapture;
