@@ -1,25 +1,24 @@
 --- a/net/minecraft/world/item/component/CustomData.java
 +++ b/net/minecraft/world/item/component/CustomData.java
-@@ -14,7 +_,18 @@
+@@ -13,7 +_,17 @@
+ 
  public final class CustomData {
      public static final CustomData EMPTY = new CustomData(new CompoundTag());
-     public static final Codec<CompoundTag> COMPOUND_TAG_CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.FLATTENED_CODEC);
--    public static final Codec<CustomData> CODEC = COMPOUND_TAG_CODEC.xmap(CustomData::new, data -> data.tag);
+-    public static final Codec<CompoundTag> COMPOUND_TAG_CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.FLATTENED_CODEC);
 +    // Paper start - Item serialization as json
 +    public static ThreadLocal<Boolean> SERIALIZE_CUSTOM_AS_SNBT = ThreadLocal.withInitial(() -> false);
-+    public static final Codec<CustomData> CODEC = Codec.either(CompoundTag.CODEC, TagParser.FLATTENED_CODEC)
++    public static final Codec<CompoundTag> COMPOUND_TAG_CODEC = Codec.either(CompoundTag.CODEC, TagParser.FLATTENED_CODEC)
 +        .xmap(com.mojang.datafixers.util.Either::unwrap, data -> { // Both will be used for deserialization, but we decide which one to use for serialization
 +            if (!SERIALIZE_CUSTOM_AS_SNBT.get()) {
 +                return com.mojang.datafixers.util.Either.left(data); // First codec
 +            } else {
 +                return com.mojang.datafixers.util.Either.right(data); // Second codec
 +            }
-+        })
-+        .xmap(CustomData::new, customData -> customData.tag);
++        });
 +    // Paper end - Item serialization as json
+     public static final Codec<CustomData> CODEC = COMPOUND_TAG_CODEC.xmap(CustomData::new, data -> data.tag);
      @Deprecated
      public static final StreamCodec<ByteBuf, CustomData> STREAM_CODEC = ByteBufCodecs.COMPOUND_TAG.map(CustomData::new, data -> data.tag);
-     private final CompoundTag tag;
 @@ -61,6 +_,17 @@
      public CompoundTag copyTag() {
          return this.tag.copy();
