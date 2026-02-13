@@ -1,11 +1,12 @@
 package io.papermc.paper.util.capture;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.jspecify.annotations.Nullable;
 
@@ -31,8 +32,12 @@ public class SimpleBlockCapture implements AutoCloseable {
         return true;
     }
 
-    public Map<Location, BlockState> getCapturedSnapshots() {
+    public List<BlockState> getCapturedSnapshots() {
         return this.capturingWorldLevel.calculateLatestSnapshots(this.level);
+    }
+
+    public Stream<Block> getAffectedBlocks() {
+        return this.capturingWorldLevel.getAffectedBlocks(this.level);
     }
 
     public net.minecraft.world.level.block.state.@Nullable BlockState getOverlayBlockState(BlockPos pos) {
@@ -51,7 +56,7 @@ public class SimpleBlockCapture implements AutoCloseable {
     }
 
     public boolean isOverlayingCaptureOnLevel() {
-        return isOverlayingCaptureOnLevel;
+        return this.isOverlayingCaptureOnLevel;
     }
 
     public void finalizePlacement() {

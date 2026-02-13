@@ -5,10 +5,10 @@ Subject: [PATCH] Block Capture System
 
 
 diff --git a/net/minecraft/core/dispenser/DispenseItemBehavior.java b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index bfefb5031544caa59230f0073e8880c2b39ebf4d..40810b410c92f8fd2edaec7443450c403171ee11 100644
+index bfefb5031544caa59230f0073e8880c2b39ebf4d..bab79efd6357c389fbde8425e7073abcd172e2f3 100644
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -400,46 +400,22 @@ public interface DispenseItemBehavior {
+@@ -400,46 +400,21 @@ public interface DispenseItemBehavior {
                  this.setSuccess(true);
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -22,15 +22,14 @@ index bfefb5031544caa59230f0073e8880c2b39ebf4d..40810b410c92f8fd2edaec7443450c40
 -                level.captureTreeGeneration = true; // CraftBukkit
 -                if (!BoneMealItem.growCrop(item, level, blockPos) && !BoneMealItem.growWaterPlant(item, level, blockPos, null)) {
 +                // Paper start
-+                io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext();
-+                boneMealContext.ogServerLevel = level.getMinecraftWorld();
-+
++                io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext(level.getMinecraftWorld());
++                boneMealContext.usedBoneMeal = true;
 +                if (!BoneMealItem.growCrop(item, level, blockPos, boneMealContext) && !org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
-+                        (ServerLevel) level,
-+                        boneMealContext.getBukkitPlayer(),
-+                        blockPos,
-+                        (res) -> BoneMealItem.growWaterPlant(item, res, blockPos, null, boneMealContext),
-+                        boneMealContext.precancelStructureEvent
++                    (ServerLevel) level,
++                    boneMealContext.getBukkitPlayer(),
++                    blockPos,
++                    world -> BoneMealItem.growWaterPlant(item, world, blockPos, null, boneMealContext),
++                    boneMealContext
 +                )) {
 +                    // Paper end
                      this.setSuccess(false);
@@ -154,10 +153,10 @@ index 2818c7ad02a861270283384ceb7ecd4d44f6d624..56823e158da5e852d914b06ed2428903
      }
  }
 diff --git a/net/minecraft/world/item/BlockItem.java b/net/minecraft/world/item/BlockItem.java
-index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739bfebafce 100644
+index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..58ee47c73c4f6a21852cf459de90f53205c0dace 100644
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -57,59 +57,31 @@ public class BlockItem extends Item {
+@@ -57,59 +57,30 @@ public class BlockItem extends Item {
                  return InteractionResult.FAIL;
              } else {
                  BlockState placementState = this.getPlacementState(blockPlaceContext);
@@ -177,8 +176,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
 +                }
 +                // Paper start
 +                try (io.papermc.paper.util.capture.SimpleBlockCapture capture = ((net.minecraft.server.level.ServerLevel) context.getLevel()).forkCaptureSession()) {
-+                    boolean placeRes = this.placeBlock(blockPlaceContext, placementState, capture.capturingWorldLevel());
-+                    if (!placeRes) {
++                    if (!this.placeBlock(blockPlaceContext, placementState, capture.capturingWorldLevel())) {
 +                        return InteractionResult.FAIL;
 +                    }
 +                    // Paper end
@@ -228,44 +226,39 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
                      level.playSound(
                          player,
                          clickedPos,
-@@ -119,8 +91,45 @@ public class BlockItem extends Item {
+@@ -119,8 +90,40 @@ public class BlockItem extends Item {
                          soundType.getPitch() * 0.8F
                      );
                      level.gameEvent(GameEvent.BLOCK_PLACE, clickedPos, GameEvent.Context.of(player, blockState));
 +                    // Paper start
-+                    net.minecraft.world.InteractionHand hand = blockPlaceContext.getHand();
-+                    net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) blockPlaceContext.getLevel();
-+                    org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
++                    if (player != null) { // todo dispensed shulker
++                        net.minecraft.world.InteractionHand hand = blockPlaceContext.getHand();
++                        net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) blockPlaceContext.getLevel();
 +
-+                    Map<org.bukkit.Location, org.bukkit.block.BlockState> snapshots = capture.getCapturedSnapshots();
++                        java.util.List<org.bukkit.block.BlockState> blocks = capture.getAffectedBlocks().map(org.bukkit.block.Block::getState).toList();
++                        BlockPos relativePos = context.getHitResult().getBlockPos();
++                        if (this instanceof PlaceOnWaterBlockItem) { // see PlaceOnWaterBlockItem#use
++                            relativePos = relativePos.below();
++                        }
++                        capture.overlayCaptureOnLevel();
 +
-+                    java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(snapshots.size());
-+                    snapshots.values().forEach((state) -> {
-+                        blocks.add(state.getBlock().getState());
-+                    });
++                        final org.bukkit.event.block.BlockPlaceEvent placeEvent;
++                        if (blocks.size() > 1) {
++                            placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, relativePos);
++                        } else {
++                            placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, hand, blocks.getFirst(), relativePos);
++                        }
 +
-+                    capture.overlayCaptureOnLevel();
-+
-+                    BlockPos relativePos = context.getHitResult().getBlockPos();
-+                    if (this instanceof PlaceOnWaterBlockItem) { // see PlaceOnWaterBlockItem#use
-+                        relativePos = relativePos.below();
-+                    }
-+                    if (blocks.size() > 1) {
-+                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, relativePos);
-+                    } else if (blocks.size() == 1) {
-+                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, hand, blocks.getFirst(), relativePos);
-+                    }
-+
-+                    if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
-+                        // PAIL: Remove this when MC-99075 fixed
-+                        player.containerMenu.forceHeldSlot(hand);
-+                        return InteractionResult.FAIL;
-+                    } else {
++                        if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
++                            // PAIL: Remove this when MC-99075 fixed
++                            player.containerMenu.forceHeldSlot(hand);
++                            return InteractionResult.FAIL;
++                        }
 +                        // We are good!
 +                        capture.finalizePlacement();
-+                        if (player instanceof ServerPlayer) {
-+                            CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, clickedPos, itemInHand);
-+                        }
++                    }
++                    if (player instanceof ServerPlayer) {
++                        CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, clickedPos, itemInHand);
 +                    }
 +                    // Paper end
 +
@@ -275,7 +268,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
                  }
              }
          }
-@@ -134,7 +143,7 @@ public class BlockItem extends Item {
+@@ -134,7 +137,7 @@ public class BlockItem extends Item {
          return context;
      }
  
@@ -284,7 +277,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
          BlockEntity blockEntity = level.getBlockEntity(pos);
          if (blockEntity != null) {
              blockEntity.applyComponentsFromItemStack(stack);
-@@ -142,7 +151,7 @@ public class BlockItem extends Item {
+@@ -142,7 +145,7 @@ public class BlockItem extends Item {
          }
      }
  
@@ -293,7 +286,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
          return updateCustomBlockEntityTag(level, player, pos, stack);
      }
  
-@@ -151,7 +160,7 @@ public class BlockItem extends Item {
+@@ -151,7 +154,7 @@ public class BlockItem extends Item {
          return stateForPlacement != null && this.canPlace(context, stateForPlacement) ? stateForPlacement : null;
      }
  
@@ -302,7 +295,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
          BlockItemStateProperties blockItemStateProperties = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY);
          if (blockItemStateProperties.isEmpty()) {
              return state;
-@@ -186,11 +195,11 @@ public class BlockItem extends Item {
+@@ -186,11 +189,11 @@ public class BlockItem extends Item {
          return true;
      }
  
@@ -318,7 +311,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..9fd5fe79576ac75e9b7a0c690006d739
              return false;
          } else {
 diff --git a/net/minecraft/world/item/BoneMealItem.java b/net/minecraft/world/item/BoneMealItem.java
-index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..d4b0defd9236003ee739fe8ceee37b0a913fd340 100644
+index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8f4c7cd2d 100644
 --- a/net/minecraft/world/item/BoneMealItem.java
 +++ b/net/minecraft/world/item/BoneMealItem.java
 @@ -44,7 +44,12 @@ public class BoneMealItem extends Item {
@@ -327,9 +320,9 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..d4b0defd9236003ee739fe8ceee37b0a
          ItemStack itemInHand = context.getItemInHand();
 -        if (growCrop(itemInHand, level, clickedPos)) {
 +        // Paper start
-+        io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext();
-+        boneMealContext.player = (net.minecraft.server.level.ServerPlayer) context.getPlayer();
-+        boneMealContext.ogServerLevel = level.getMinecraftWorld();
++        io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext(level.getMinecraftWorld());
++        boneMealContext.player = context.getPlayer();
++        boneMealContext.usedBoneMeal = true;
 +        // Paper end
 +        if (growCrop(itemInHand, level, clickedPos, boneMealContext)) { // Paper
              if (!level.isClientSide()) {
@@ -342,11 +335,11 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..d4b0defd9236003ee739fe8ceee37b0a
 -            if (isFaceSturdy && growWaterPlant(itemInHand, level, blockPos, context.getClickedFace())) {
 +            // Paper start
 +            boolean result = org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
-+                    (ServerLevel) level,
-+                    boneMealContext.getBukkitPlayer(),
-+                    blockPos,
-+                    (res) -> growWaterPlant(itemInHand, res, blockPos, context.getClickedFace(), boneMealContext),
-+                    boneMealContext.precancelStructureEvent
++                (ServerLevel) level,
++                boneMealContext.getBukkitPlayer(),
++                blockPos,
++                world -> growWaterPlant(itemInHand, world, blockPos, context.getClickedFace(), boneMealContext),
++                boneMealContext
 +            );
 +            if (isFaceSturdy && result) {
 +                // Paper end
@@ -365,12 +358,12 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..d4b0defd9236003ee739fe8ceee37b0a
                  if (bonemealableBlock.isBonemealSuccess(level, level.random, pos, blockState)) {
 -                    bonemealableBlock.performBonemeal((ServerLevel)level, level.random, pos, blockState);
 +                    // Paper start
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
-+                            (ServerLevel) level,
-+                            mealContext.getBukkitPlayer(),
-+                            pos,
-+                            (res) -> bonemealableBlock.performBonemeal(res, level.random, pos, blockState, mealContext),
-+                            mealContext.precancelStructureEvent
++                    org.bukkit.craftbukkit.event.CraftEventFactory.fertilizedBlock(
++                        (ServerLevel) level,
++                        mealContext.getBukkitPlayer(),
++                        pos,
++                        world -> bonemealableBlock.performBonemeal(world, level.random, pos, blockState, mealContext),
++                        mealContext
 +                    );
 +                    // Paper end
                  }
@@ -936,7 +929,7 @@ index 88c204ad9d4ead792eb618dbb8611cca863e798c..baf1f1b9e445c5caf2784f73db49ae83
      }
  }
 diff --git a/net/minecraft/world/level/block/BambooStalkBlock.java b/net/minecraft/world/level/block/BambooStalkBlock.java
-index 81e2a279d4c29f5fe52387875489239515a8c82b..af797be959d91e30b444459f2ccc99c29b680fc7 100644
+index 81e2a279d4c29f5fe52387875489239515a8c82b..6955c72fd5d1af64769a13b69216ef016d349f03 100644
 --- a/net/minecraft/world/level/block/BambooStalkBlock.java
 +++ b/net/minecraft/world/level/block/BambooStalkBlock.java
 @@ -166,7 +166,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
@@ -957,6 +950,15 @@ index 81e2a279d4c29f5fe52387875489239515a8c82b..af797be959d91e30b444459f2ccc99c2
          BlockState blockState = level.getBlockState(pos.below());
          BlockPos blockPos = pos.below(2);
          BlockState blockState1 = level.getBlockState(blockPos);
+@@ -221,7 +221,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+     protected int getHeightAboveUpToMax(BlockGetter level, BlockPos pos) {
+         int i = 0;
+ 
+-        while (i < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
++        while (i < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height // todo ClassCastException when bonemealing a bamboo
+             i++;
+         }
+ 
 diff --git a/net/minecraft/world/level/block/BedBlock.java b/net/minecraft/world/level/block/BedBlock.java
 index 7bfc62120cae4c5e83cb0d86b759b7ffb2336a95..3d5ed3d705c80772ac8cb7fff7b213bb3e92c41c 100644
 --- a/net/minecraft/world/level/block/BedBlock.java
@@ -1312,27 +1314,37 @@ index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..5f39cc10064c222f9009bdee5ce59bfe
      }
  }
 diff --git a/net/minecraft/world/level/block/FungusBlock.java b/net/minecraft/world/level/block/FungusBlock.java
-index 9711efb088bd0da9168e9bcd0496bd7caddd2974..a3f9d237ae3a80ef5d28105297c2898fe33c3e79 100644
+index 9711efb088bd0da9168e9bcd0496bd7caddd2974..8dbaabce9509b7daec8bbdff5e37cf963f2ae04b 100644
 --- a/net/minecraft/world/level/block/FungusBlock.java
 +++ b/net/minecraft/world/level/block/FungusBlock.java
-@@ -71,14 +71,14 @@ public class FungusBlock extends VegetationBlock implements BonemealableBlock {
+@@ -71,18 +71,14 @@ public class FungusBlock extends VegetationBlock implements BonemealableBlock {
      }
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
-         this.getFeature(level)
-             // CraftBukkit start
-             .map((value) -> {
-                 if (this == Blocks.WARPED_FUNGUS) {
+-        this.getFeature(level)
+-            // CraftBukkit start
+-            .map((value) -> {
+-                if (this == Blocks.WARPED_FUNGUS) {
 -                    SaplingBlock.treeType = org.bukkit.TreeType.WARPED_FUNGUS;
-+                    mealContext.treeHook = org.bukkit.TreeType.WARPED_FUNGUS;
-                 } else if (this == Blocks.CRIMSON_FUNGUS) {
+-                } else if (this == Blocks.CRIMSON_FUNGUS) {
 -                    SaplingBlock.treeType = org.bukkit.TreeType.CRIMSON_FUNGUS;
-+                    mealContext.treeHook = org.bukkit.TreeType.CRIMSON_FUNGUS;
-                 }
-                 return value;
-             })
+-                }
+-                return value;
+-            })
+-            .ifPresent(holder -> holder.value().place(level, level.getChunkSource().getGenerator(), random, pos));
+-        // CraftBukkit end
++    // Paper start
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) {
++        this.getFeature(level).ifPresent(holder -> {
++            mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder);
++            org.bukkit.craftbukkit.event.CraftEventFactory.structureEvent(level, pos, $ -> {
++                return holder.value().place(level, level.getChunkSource().getGenerator(), random, pos);
++            }, mealContext);
++        });
++        // Paper end
+     }
+ }
 diff --git a/net/minecraft/world/level/block/GlowLichenBlock.java b/net/minecraft/world/level/block/GlowLichenBlock.java
 index ba39497a6d7160cde961e339be8028ec131b8019..f38447dbc1880878d29e08a18a2db32319291992 100644
 --- a/net/minecraft/world/level/block/GlowLichenBlock.java
@@ -1369,10 +1381,10 @@ index 368f60ecce691ea161120743150e87b32efc3ca4..8a74e7b53ec7d3c3ad7b71856ef01abe
              }
  
 diff --git a/net/minecraft/world/level/block/GrowingPlantBodyBlock.java b/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
-index 314d198617e34f91f72a2952a2a62ce0a3b9147d..a043d0956de69914736346241071cd59d8514d66 100644
+index 314d198617e34f91f72a2952a2a62ce0a3b9147d..3ccaf85f148ce738fb122842b2aef5e94aa49cdc 100644
 --- a/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
 +++ b/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
-@@ -74,7 +74,7 @@ public abstract class GrowingPlantBodyBlock extends GrowingPlantBlock implements
+@@ -74,11 +74,11 @@ public abstract class GrowingPlantBodyBlock extends GrowingPlantBlock implements
      }
  
      @Override
@@ -1381,6 +1393,11 @@ index 314d198617e34f91f72a2952a2a62ce0a3b9147d..a043d0956de69914736346241071cd59
          Optional<BlockPos> headPos = this.getHeadPos(level, pos, state.getBlock());
          if (headPos.isPresent()) {
              BlockState blockState = level.getBlockState(headPos.get());
+-            ((GrowingPlantHeadBlock)blockState.getBlock()).performBonemeal(level, random, headPos.get(), blockState);
++            ((GrowingPlantHeadBlock)blockState.getBlock()).performBonemeal(level, random, headPos.get(), blockState, mealContext); // Paper
+         }
+     }
+ 
 diff --git a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 index bac7f990282fd7c676c2f8c40d7fd87badb1e284..1a1dcfe8abff794663f3aaeefff693686cc54bce 100644
 --- a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
@@ -1474,10 +1491,10 @@ index 3762d833f17d596e04845a3f391423f9c14a878b..f5d03f2a3a3866857ddaece77ac4e127
          if (!blockState.isAir()) {
              level.setBlock(pos.above(), blockState, Block.UPDATE_ALL);
 diff --git a/net/minecraft/world/level/block/MushroomBlock.java b/net/minecraft/world/level/block/MushroomBlock.java
-index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..0033bbcf49da014a0b12a17b47833af6dddafc50 100644
+index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..b2c8c755af383aa5e15cde5207282f7481a60012 100644
 --- a/net/minecraft/world/level/block/MushroomBlock.java
 +++ b/net/minecraft/world/level/block/MushroomBlock.java
-@@ -87,16 +87,20 @@ public class MushroomBlock extends VegetationBlock implements BonemealableBlock
+@@ -87,14 +87,18 @@ public class MushroomBlock extends VegetationBlock implements BonemealableBlock
          return blockState.is(BlockTags.MUSHROOM_GROW_BLOCK) || level.getRawBrightness(pos, 0) < 13 && this.mayPlaceOn(blockState, level, blockPos);
      }
  
@@ -1491,16 +1508,14 @@ index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..0033bbcf49da014a0b12a17b47833af6
 -            SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? org.bukkit.TreeType.BROWN_MUSHROOM : org.bukkit.TreeType.RED_MUSHROOM; // CraftBukkit
 -            if (optional.get().value().place(level, level.getChunkSource().getGenerator(), random, pos)) {
 +            // Paper start
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.structureEvent(mealContext.ogServerLevel, level, mealContext.getBukkitPlayer(), pos, (gen) -> {
++            mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(optional.get());
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.structureEvent(level, pos, $ -> {
 +                return optional.get().value().place(level, level.getChunkSource().getGenerator(), random, pos);
-+            },  (this == Blocks.BROWN_MUSHROOM) ? org.bukkit.TreeType.BROWN_MUSHROOM : org.bukkit.TreeType.RED_MUSHROOM)) {
++            }, mealContext)) {
 +                // Paper end
                  return true;
              } else {
-+                mealContext.precancelStructureEvent = true; // Paper
                  level.setBlock(pos, state, Block.UPDATE_ALL);
-                 return false;
-             }
 @@ -114,7 +118,7 @@ public class MushroomBlock extends VegetationBlock implements BonemealableBlock
      }
  
@@ -1591,7 +1606,7 @@ index db6b32016a1ad4264da9d8812e5ea9356d0601df..19000f09efadb6a2c616badfb837487a
      }
  
 diff --git a/net/minecraft/world/level/block/SaplingBlock.java b/net/minecraft/world/level/block/SaplingBlock.java
-index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..12d17a4cc61e35d199ba3f0d39435e8bfb1112d7 100644
+index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..0c20853ebcad4b0d55577ef361c551eeee4c93d3 100644
 --- a/net/minecraft/world/level/block/SaplingBlock.java
 +++ b/net/minecraft/world/level/block/SaplingBlock.java
 @@ -25,7 +25,6 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
@@ -1602,16 +1617,14 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..12d17a4cc61e35d199ba3f0d39435e8b
  
      @Override
      public MapCodec<? extends SaplingBlock> codec() {
-@@ -50,38 +49,19 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+@@ -50,38 +49,17 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
          }
      }
  
 -    public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
 +    // Paper start
 +    public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) { // Paper
-+        io.papermc.paper.util.capture.BoneMealContext mealContext = new io.papermc.paper.util.capture.BoneMealContext();
-+        mealContext.ogServerLevel = level;
-+        this.advanceTree(level, pos, state, random, mealContext);
++        this.advanceTree(level, pos, state, random, new io.papermc.paper.util.capture.BoneMealContext(level));
 +    }
 +
 +    public void advanceTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
@@ -1651,7 +1664,7 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..12d17a4cc61e35d199ba3f0d39435e8b
          }
      }
  
-@@ -96,8 +76,8 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
+@@ -96,8 +74,8 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
      }
  
      @Override
@@ -1702,7 +1715,7 @@ index 1df47e0ea401267027721342aaf26639b2622e13..a0188c77806f4fe21cffcb43aa83cde6
      }
  }
 diff --git a/net/minecraft/world/level/block/SmallDripleafBlock.java b/net/minecraft/world/level/block/SmallDripleafBlock.java
-index d5821239d33aad9213b9a87d225e942934623857..18316ed939130115890c5ce4cd9da502a98cf057 100644
+index d5821239d33aad9213b9a87d225e942934623857..a3c8baf014ae2e26f022bff78d4e0e7d6808fa80 100644
 --- a/net/minecraft/world/level/block/SmallDripleafBlock.java
 +++ b/net/minecraft/world/level/block/SmallDripleafBlock.java
 @@ -64,7 +64,7 @@ public class SmallDripleafBlock extends DoublePlantBlock implements Bonemealable
@@ -1710,7 +1723,7 @@ index d5821239d33aad9213b9a87d225e942934623857..18316ed939130115890c5ce4cd9da502
  
      @Override
 -    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-+    public void setPlacedBy(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) { // Paper
++    public void setPlacedBy(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) { // Paper - block placement capturing
          if (!level.isClientSide()) {
              BlockPos blockPos = pos.above();
              BlockState blockState = DoublePlantBlock.copyWaterloggedFrom(
@@ -1897,10 +1910,10 @@ index c57cb7b47a01e313a1be5de769c6766ac2787d95..f34731580bc880dcc5d3e96923a7f2b4
      }
  }
 diff --git a/net/minecraft/world/level/block/grower/TreeGrower.java b/net/minecraft/world/level/block/grower/TreeGrower.java
-index 5471619a0484ece08640e2b3fd26746c351dc3e0..166120e22e7caaae708e5e447a30496b772ed91f 100644
+index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e968b8fa876 100644
 --- a/net/minecraft/world/level/block/grower/TreeGrower.java
 +++ b/net/minecraft/world/level/block/grower/TreeGrower.java
-@@ -122,7 +122,35 @@ public final class TreeGrower {
+@@ -122,7 +122,34 @@ public final class TreeGrower {
          return this.secondaryMegaTree.isPresent() && random.nextFloat() < this.secondaryChance ? this.secondaryMegaTree.get() : this.megaTree.orElse(null);
      }
  
@@ -1915,13 +1928,12 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..166120e22e7caaae708e5e447a30496b
 +        try (io.papermc.paper.util.capture.SimpleBlockCapture capture = level.forkCaptureSession()) {
 +            io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 +            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, mealContext)) {
-+                Map<org.bukkit.Location, org.bukkit.block.BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(mealContext.ogServerLevel);
-+                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, mealContext.ogServerLevel);
-+                java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(snapshots.values());
-+                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook, false, mealContext.getBukkitPlayer(), blocks);
++                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, mealContext.originalLevel);
++                java.util.List<org.bukkit.block.BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(mealContext.originalLevel);
++                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook, mealContext.usedBoneMeal, mealContext.getBukkitPlayer(), blocks);
 +
 +                if (event.callEvent()) {
-+                    captureTreeGeneration.applyTasks();
++                    captureTreeGeneration.applyTasks(); // todo block list is mutable
 +                    return true;
 +                } else {
 +                    mealContext.precancelStructureEvent = true;
@@ -1937,102 +1949,83 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..166120e22e7caaae708e5e447a30496b
          ResourceKey<ConfiguredFeature<?, ?>> configuredMegaFeature = this.getConfiguredMegaFeature(random);
          if (configuredMegaFeature != null) {
              Holder<ConfiguredFeature<?, ?>> holder = level.registryAccess()
-@@ -130,7 +158,7 @@ public final class TreeGrower {
+@@ -130,7 +157,7 @@ public final class TreeGrower {
                  .get(configuredMegaFeature)
                  .orElse(null);
              if (holder != null) {
 -                this.setTreeType(holder); // CraftBukkit
-+                if (mealContext != null) mealContext.treeHook = this.getTreeType(holder); // Paper
++                mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder); // Paper
                  for (int i = 0; i >= -1; i--) {
                      for (int i1 = 0; i1 >= -1; i1--) {
                          if (isTwoByTwoSapling(state, level, pos, i, i1)) {
-@@ -163,7 +191,7 @@ public final class TreeGrower {
+@@ -163,7 +190,7 @@ public final class TreeGrower {
              if (holder1 == null) {
                  return false;
              } else {
 -                this.setTreeType(holder1); // CraftBukkit
-+                if (mealContext != null) mealContext.treeHook = this.getTreeType(holder1); // Paper
++                mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder1); // Paper
                  ConfiguredFeature<?, ?> configuredFeature2 = holder1.value();
                  BlockState blockState1 = level.getFluidState(pos).createLegacyBlock();
                  level.setBlock(pos, blockState1, Block.UPDATE_NONE);
-@@ -200,53 +228,53 @@ public final class TreeGrower {
-     }
+@@ -198,58 +225,4 @@ public final class TreeGrower {
  
-     // CraftBukkit start
+         return false;
+     }
+-
+-    // CraftBukkit start
 -    private void setTreeType(Holder<ConfiguredFeature<?, ?>> feature) {
-+    public org.bukkit.TreeType getTreeType(Holder<ConfiguredFeature<?, ?>> feature) {
-         if (feature.is(TreeFeatures.OAK) || feature.is(TreeFeatures.OAK_BEES_005)) {
+-        if (feature.is(TreeFeatures.OAK) || feature.is(TreeFeatures.OAK_BEES_005)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.TREE;
-+            return org.bukkit.TreeType.TREE;
-         } else if (feature.is(TreeFeatures.HUGE_RED_MUSHROOM)) {
+-        } else if (feature.is(TreeFeatures.HUGE_RED_MUSHROOM)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.RED_MUSHROOM;
-+            return org.bukkit.TreeType.RED_MUSHROOM;
-         } else if (feature.is(TreeFeatures.HUGE_BROWN_MUSHROOM)) {
+-        } else if (feature.is(TreeFeatures.HUGE_BROWN_MUSHROOM)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.BROWN_MUSHROOM;
-+            return org.bukkit.TreeType.BROWN_MUSHROOM;
-         } else if (feature.is(TreeFeatures.JUNGLE_TREE)) {
+-        } else if (feature.is(TreeFeatures.JUNGLE_TREE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.COCOA_TREE;
-+            return org.bukkit.TreeType.COCOA_TREE;
-         } else if (feature.is(TreeFeatures.JUNGLE_TREE_NO_VINE)) {
+-        } else if (feature.is(TreeFeatures.JUNGLE_TREE_NO_VINE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.SMALL_JUNGLE;
-+            return org.bukkit.TreeType.SMALL_JUNGLE;
-         } else if (feature.is(TreeFeatures.PINE)) {
+-        } else if (feature.is(TreeFeatures.PINE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.TALL_REDWOOD;
-+            return org.bukkit.TreeType.TALL_REDWOOD;
-         } else if (feature.is(TreeFeatures.SPRUCE)) {
+-        } else if (feature.is(TreeFeatures.SPRUCE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.REDWOOD;
-+            return org.bukkit.TreeType.REDWOOD;
-         } else if (feature.is(TreeFeatures.ACACIA)) {
+-        } else if (feature.is(TreeFeatures.ACACIA)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.ACACIA;
-+            return org.bukkit.TreeType.ACACIA;
-         } else if (feature.is(TreeFeatures.BIRCH) || feature.is(TreeFeatures.BIRCH_BEES_005)) {
+-        } else if (feature.is(TreeFeatures.BIRCH) || feature.is(TreeFeatures.BIRCH_BEES_005)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.BIRCH;
-+            return org.bukkit.TreeType.BIRCH;
-         } else if (feature.is(TreeFeatures.SUPER_BIRCH_BEES_0002)) {
+-        } else if (feature.is(TreeFeatures.SUPER_BIRCH_BEES_0002)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.TALL_BIRCH;
-+            return org.bukkit.TreeType.TALL_BIRCH;
-         } else if (feature.is(TreeFeatures.SWAMP_OAK)) {
+-        } else if (feature.is(TreeFeatures.SWAMP_OAK)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.SWAMP;
-+            return org.bukkit.TreeType.SWAMP;
-         } else if (feature.is(TreeFeatures.FANCY_OAK) || feature.is(TreeFeatures.FANCY_OAK_BEES_005)) {
+-        } else if (feature.is(TreeFeatures.FANCY_OAK) || feature.is(TreeFeatures.FANCY_OAK_BEES_005)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.BIG_TREE;
-+            return org.bukkit.TreeType.BIG_TREE;
-         } else if (feature.is(TreeFeatures.JUNGLE_BUSH)) {
+-        } else if (feature.is(TreeFeatures.JUNGLE_BUSH)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.JUNGLE_BUSH;
-+            return org.bukkit.TreeType.JUNGLE_BUSH;
-         } else if (feature.is(TreeFeatures.DARK_OAK)) {
+-        } else if (feature.is(TreeFeatures.DARK_OAK)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.DARK_OAK;
-+            return org.bukkit.TreeType.DARK_OAK;
-         } else if (feature.is(TreeFeatures.MEGA_SPRUCE)) {
+-        } else if (feature.is(TreeFeatures.MEGA_SPRUCE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.MEGA_REDWOOD;
-+            return org.bukkit.TreeType.MEGA_REDWOOD;
-         } else if (feature.is(TreeFeatures.MEGA_PINE)) {
+-        } else if (feature.is(TreeFeatures.MEGA_PINE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.MEGA_PINE;
-+            return org.bukkit.TreeType.MEGA_PINE;
-         } else if (feature.is(TreeFeatures.MEGA_JUNGLE_TREE)) {
+-        } else if (feature.is(TreeFeatures.MEGA_JUNGLE_TREE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.JUNGLE;
-+            return org.bukkit.TreeType.JUNGLE;
-         } else if (feature.is(TreeFeatures.AZALEA_TREE)) {
+-        } else if (feature.is(TreeFeatures.AZALEA_TREE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.AZALEA;
-+            return org.bukkit.TreeType.AZALEA;
-         } else if (feature.is(TreeFeatures.MANGROVE)) {
+-        } else if (feature.is(TreeFeatures.MANGROVE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.MANGROVE;
-+            return org.bukkit.TreeType.MANGROVE;
-         } else if (feature.is(TreeFeatures.TALL_MANGROVE)) {
+-        } else if (feature.is(TreeFeatures.TALL_MANGROVE)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.TALL_MANGROVE;
-+            return org.bukkit.TreeType.TALL_MANGROVE;
-         } else if (feature.is(TreeFeatures.CHERRY) || feature.is(TreeFeatures.CHERRY_BEES_005)) {
+-        } else if (feature.is(TreeFeatures.CHERRY) || feature.is(TreeFeatures.CHERRY_BEES_005)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.CHERRY;
-+            return org.bukkit.TreeType.CHERRY;
-         } else if (feature.is(TreeFeatures.PALE_OAK) || feature.is(TreeFeatures.PALE_OAK_BONEMEAL)) {
+-        } else if (feature.is(TreeFeatures.PALE_OAK) || feature.is(TreeFeatures.PALE_OAK_BONEMEAL)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.PALE_OAK;
-+            return org.bukkit.TreeType.PALE_OAK;
-         } else if (feature.is(TreeFeatures.PALE_OAK_CREAKING)) {
+-        } else if (feature.is(TreeFeatures.PALE_OAK_CREAKING)) {
 -            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.PALE_OAK_CREAKING;
-+            return org.bukkit.TreeType.PALE_OAK_CREAKING;
-         } else {
-             throw new IllegalArgumentException("Unknown tree generator " + feature);
-         }
+-        } else {
+-            throw new IllegalArgumentException("Unknown tree generator " + feature);
+-        }
+-    }
+-    // CraftBukkit end
+ }
 diff --git a/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 index 3bbfa079a2a2da3de361352738b6101894acf82c..c743c9fb8a829f57758a0c68139bfdf06e4a299f 100644
 --- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java

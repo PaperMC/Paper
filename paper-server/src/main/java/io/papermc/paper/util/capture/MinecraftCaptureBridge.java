@@ -4,11 +4,11 @@ import io.papermc.paper.configuration.WorldConfiguration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -47,7 +47,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.ScheduledTick;
-import org.bukkit.Location;
 import org.jspecify.annotations.Nullable;
 
 public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
@@ -395,8 +394,12 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return placement.map(BlockPlacementPredictor.BlockEntityPlacement::blockEntity);
     }
 
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
+    public List<org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
         return this.writeLayer.getRecordMap().calculateLatestSnapshots(level);
+    }
+
+    public Stream<org.bukkit.block.Block> getAffectedBlocks(ServerLevel level) {
+        return this.writeLayer.getRecordMap().getAffectedBlocks(level);
     }
 
     public void applyTasks() {

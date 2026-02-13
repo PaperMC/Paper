@@ -1,16 +1,18 @@
 package io.papermc.paper.util.capture;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bukkit.Location;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
-import org.bukkit.craftbukkit.util.CraftLocation;
 import org.jspecify.annotations.Nullable;
 
 /*
@@ -80,14 +82,18 @@ public final class CaptureRecordMap {
     }
 
     // TODO: Clean this up
-    public Map<Location, org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
-        Map<Location, org.bukkit.block.BlockState> out = new HashMap<>();
+    public List<org.bukkit.block.BlockState> calculateLatestSnapshots(ServerLevel level) {
+        List<org.bukkit.block.BlockState> out = new ArrayList<>();
 
         for (Map.Entry<BlockPos, CaptureRecord> entry : this.recordsByPos.entrySet()) {
             CaptureRecord captureRecord = entry.getValue();
-            out.put(CraftLocation.toBukkit(entry.getKey()), CraftBlockStates.getBlockState(level.getWorld(), entry.getKey(), captureRecord.state, captureRecord.blockEntity));
+            out.add(CraftBlockStates.getBlockState(level.getWorld(), entry.getKey(), captureRecord.state, captureRecord.blockEntity));
         }
         return out;
+    }
+
+    public Stream<org.bukkit.block.Block> getAffectedBlocks(ServerLevel level) {
+        return this.recordsByPos.keySet().stream().map(pos -> CraftBlock.at(level, pos));
     }
 
     public static class CaptureRecord {

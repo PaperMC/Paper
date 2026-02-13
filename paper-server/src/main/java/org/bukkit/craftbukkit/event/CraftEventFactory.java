@@ -14,6 +14,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.util.capture.BoneMealContext;
 import io.papermc.paper.util.capture.MinecraftCaptureBridge;
 import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
 import io.papermc.paper.util.capture.SimpleBlockCapture;
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import it.unimi.dsi.fastutil.objects.Object2BooleanFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -497,20 +499,20 @@ public class CraftEventFactory {
         return event.getResonatedEntities().stream().map((bukkitEntity) -> ((CraftLivingEntity) bukkitEntity).getHandle());
     }
 
-    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<BlockState> blockStates, BlockPos clickedPos) {
+    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<BlockState> replacedSnapshots, BlockPos clickedPos) {
         Player cplayer = (Player) player.getBukkitEntity();
         Block clickedBlock = CraftBlock.at(level, clickedPos);
 
         boolean canBuild = true;
-        for (BlockState blockState : blockStates) {
-            if (!CraftEventFactory.canBuild(level, cplayer, blockState.getX(), blockState.getZ())) {
+        for (BlockState snapshot : replacedSnapshots) {
+            if (!CraftEventFactory.canBuild(level, cplayer, snapshot.getX(), snapshot.getZ())) {
                 canBuild = false;
                 break;
             }
         }
 
         EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
+        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(replacedSnapshots, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
         event.callEvent();
 
         return event;
@@ -2387,41 +2389,50 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static boolean structureEvent(ServerLevel serverLevel, PaperCapturingWorldLevel level, Player player, BlockPos pos, Function<WorldGenLevel, Boolean> worldGenCapture, TreeType type) {
+    public static boolean structureEvent(PaperCapturingWorldLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, BoneMealContext context) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldGenCapture.apply(captureTreeGeneration)) {
-                Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(serverLevel);
-                Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, serverLevel);
-
-                List<BlockState> blocks = new ArrayList<>(snapshots.values());
-                StructureGrowEvent structureEvent = new StructureGrowEvent(location, type, false, player, blocks);
+                Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, context.originalLevel);
+                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(context.originalLevel);
+                StructureGrowEvent structureEvent = new StructureGrowEvent(location, context.treeHook, context.usedBoneMeal, context.getBukkitPlayer(), blocks);
 
                 if (structureEvent.callEvent()) {
-                    capture.finalizePlacement();
+                    capture.finalizePlacement(); // todo block list is mutable
                     return true;
+                } else {
+                    context.precancelStructureEvent = true;
                 }
+            } else {
+                capture.finalizePlacement();
             }
         }
 
         return false;
     }
 
-    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, boolean cancelled) {
+    // todo block list is sometimes empty for trees in both events
+    public static boolean fertilizedBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, BoneMealContext context) {
+        return fertilizeBlock(level, player, pos, capture -> {
+            worldGenCapture.accept(capture);
+            return true;
+        }, context);
+    }
+
+    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, BoneMealContext context) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+            if (worldGenCapture.apply(captureTreeGeneration)) {
+                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(level);
+                BlockFertilizeEvent structureEvent = new BlockFertilizeEvent(CraftBlock.at(level, pos), player, blocks);
+                structureEvent.setCancelled(context.precancelStructureEvent);
 
-            worldGenCapture.accept(captureTreeGeneration);
-            Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(level);
-            Location location = CraftLocation.toBukkit(pos, level);
-
-            List<BlockState> blocks = new ArrayList<>(snapshots.values());
-            BlockFertilizeEvent structureEvent = new BlockFertilizeEvent(location.getBlock(), player, blocks);
-            structureEvent.setCancelled(cancelled);
-
-            if (structureEvent.callEvent()) {
+                if (structureEvent.callEvent()) {
+                    capture.finalizePlacement(); // todo block list is mutable
+                    return true;
+                }
+            } else {
                 capture.finalizePlacement();
-                return true;
             }
         }
 

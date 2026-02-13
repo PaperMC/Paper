@@ -51,7 +51,7 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
 
     @Override
     default ChunkGenerator getGenerator() {
-        return this.handle().getGenerator();
+        return this.handle().getGenerator(); // todo StackOverflowError when bonemealing a moss block
     }
 
     @Override

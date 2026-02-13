@@ -746,9 +746,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
            BlockPos pos = CraftLocation.toBlockPosition(loc);
            boolean res = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
            if (res) {
-               Map<Location, BlockState> snapshots = captureTreeGeneration.calculateLatestSnapshots(this.world);
-
-               List<BlockState> blocks = new ArrayList<>(snapshots.values());
+               List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(this.world);
                for (BlockState state : blocks) {
                    delegate.setBlockData(state.getX(), state.getY(), state.getZ(), state.getBlockData());
                }
