@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import org.bukkit.Art;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +23,7 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
     protected OptionalInt height = OptionalInt.empty();
     protected @Nullable Component title;
     protected @Nullable Component author;
-    protected @Nullable ResourceLocation assetId;
+    protected @Nullable Identifier assetId;
 
     protected final Conversions conversions;
 

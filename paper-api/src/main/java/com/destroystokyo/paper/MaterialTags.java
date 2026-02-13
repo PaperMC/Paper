@@ -202,7 +202,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag HORSE_ARMORS = new MaterialSetTag(keyFor("horse_armors"))
         .endsWith("_HORSE_ARMOR")
-        .ensureSize("HORSE_ARMORS", 4).lock();
+        .ensureSize("HORSE_ARMORS", 6).lock();
 
     /**
      * Covers the variants of infested blocks.
@@ -340,7 +340,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
         .endsWith("_SPAWN_EGG")
-        .ensureSize("SPAWN_EGGS", 82).lock();
+        .ensureSize("SPAWN_EGGS", 87).lock();
 
     /**
      * Covers all colors of stained glass.
@@ -433,18 +433,26 @@ public class MaterialTags {
         .ensureSize("SOUL_TORCH", 2).lock();
 
     /**
+     * Covers the variants of a copper torch.
+     */
+    public static final MaterialSetTag COPPER_TORCH = new MaterialSetTag(keyFor("copper_torch"))
+        .add(Material.COPPER_TORCH, Material.COPPER_WALL_TORCH)
+        .ensureSize("COPPER_TORCH", 2).lock();
+
+    /**
      * Covers the variants of torches.
      */
     public static final MaterialSetTag TORCHES = new MaterialSetTag(keyFor("torches"))
-        .add(TORCH, REDSTONE_TORCH, SOUL_TORCH)
-        .ensureSize("TORCHES", 6).lock();
+        .add(TORCH, REDSTONE_TORCH, SOUL_TORCH, COPPER_TORCH)
+        .ensureSize("TORCHES", 8).lock();
 
     /**
      * Covers the variants of lanterns.
+     *
+     * @deprecated in favour of {@link Tag#LANTERNS}
      */
-    public static final MaterialSetTag LANTERNS = new MaterialSetTag(keyFor("lanterns"))
-        .add(Material.LANTERN, Material.SOUL_LANTERN)
-        .ensureSize("LANTERNS", 2).lock();
+    @Deprecated(since = "1.21.9")
+    public static final MaterialSetTag LANTERNS = replacedBy(Tag.LANTERNS);
 
     /**
      * Covers the variants of rails.
@@ -644,19 +652,19 @@ public class MaterialTags {
      * Covers all oxidized copper blocks.
      */
     public static final MaterialSetTag OXIDIZED_COPPER_BLOCKS = new MaterialSetTag(keyFor("oxidized_copper_blocks"))
-        .startsWith("OXIDIZED_").startsWith("WAXED_OXIDIZED_").ensureSize("OXIDIZED_COPPER_BLOCKS", 18).lock();
+        .startsWith("OXIDIZED_").startsWith("WAXED_OXIDIZED_").ensureSize("OXIDIZED_COPPER_BLOCKS", 30).lock();
 
     /**
      * Covers all weathered copper blocks.
      */
     public static final MaterialSetTag WEATHERED_COPPER_BLOCKS = new MaterialSetTag(keyFor("weathered_copper_blocks"))
-        .startsWith("WEATHERED_").startsWith("WAXED_WEATHERED_").ensureSize("WEATHERED_COPPER_BLOCKS", 18).lock();
+        .startsWith("WEATHERED_").startsWith("WAXED_WEATHERED_").ensureSize("WEATHERED_COPPER_BLOCKS", 30).lock();
 
     /**
      * Covers all exposed copper blocks.
      */
     public static final MaterialSetTag EXPOSED_COPPER_BLOCKS = new MaterialSetTag(keyFor("exposed_copper_blocks"))
-        .startsWith("EXPOSED_").startsWith("WAXED_EXPOSED_").ensureSize("EXPOSED_COPPER_BLOCKS", 18).lock();
+        .startsWith("EXPOSED_").startsWith("WAXED_EXPOSED_").ensureSize("EXPOSED_COPPER_BLOCKS", 30).lock();
 
     /**
      * Covers all un-weathered copper blocks.
@@ -665,8 +673,12 @@ public class MaterialTags {
         .startsWith("CUT_COPPER").startsWith("WAXED_CUT_COPPER")
         .startsWith("WAXED_COPPER_").startsWith("COPPER_")
         .add(Material.CHISELED_COPPER, Material.WAXED_CHISELED_COPPER)
-        .not(Material.COPPER_INGOT, Material.COPPER_ORE)
-        .ensureSize("UNAFFECTED_COPPER_BLOCKS", 18).lock();
+        .not(Material.COPPER_INGOT, Material.COPPER_ORE, Material.COPPER_NUGGET)
+        .not(Material.COPPER_HORSE_ARMOR, Material.COPPER_GOLEM_SPAWN_EGG)
+        .not(Material.COPPER_HELMET, Material.COPPER_CHESTPLATE, Material.COPPER_LEGGINGS, Material.COPPER_BOOTS)
+        .not(Material.COPPER_AXE, Material.COPPER_HOE, Material.COPPER_PICKAXE, Material.COPPER_SHOVEL, Material.COPPER_SWORD)
+        .not(Material.COPPER_NAUTILUS_ARMOR, Material.COPPER_SPEAR)
+        .ensureSize("UNAFFECTED_COPPER_BLOCKS", 30).lock();
 
     /**
      * Covers all waxed copper blocks.
@@ -674,7 +686,7 @@ public class MaterialTags {
      * Combine with other copper-related tags to filter is-waxed or not.
      */
     public static final MaterialSetTag WAXED_COPPER_BLOCKS = new MaterialSetTag(keyFor("waxed_copper_blocks"))
-        .add(m -> m.name().startsWith("WAXED_") && m.name().contains("COPPER")).ensureSize("WAXED_COPPER_BLOCKS", 36).lock();
+        .add(m -> m.name().startsWith("WAXED_") && m.name().contains("COPPER")).ensureSize("WAXED_COPPER_BLOCKS", 56).lock();
 
     /**
      * Covers all un-waxed copper blocks.
@@ -685,13 +697,14 @@ public class MaterialTags {
         .startsWith("EXPOSED_").startsWith("WEATHERED_").startsWith("OXIDIZED_")
         .startsWith("CUT_COPPER")
         .add(Material.COPPER_BLOCK, Material.CHISELED_COPPER, Material.COPPER_DOOR, Material.COPPER_TRAPDOOR, Material.COPPER_GRATE, Material.COPPER_BULB)
-        .ensureSize("UNWAXED_COPPER_BLOCKS", 36).lock();
+        .add(Material.COPPER_BARS, Material.COPPER_TORCH, Material.COPPER_CHEST, Material.COPPER_CHAIN, Material.COPPER_WALL_TORCH, Material.COPPER_LANTERN, Material.COPPER_GOLEM_STATUE)
+        .ensureSize("UNWAXED_COPPER_BLOCKS", 61).lock();
 
     /**
      * Covers all copper block variants.
      */
     public static final MaterialSetTag COPPER_BLOCKS = new MaterialSetTag(keyFor("copper_blocks"))
-        .add(WAXED_COPPER_BLOCKS).add(UNWAXED_COPPER_BLOCKS).ensureSize("COPPER_BLOCKS", 72).lock();
+        .add(WAXED_COPPER_BLOCKS).add(UNWAXED_COPPER_BLOCKS).ensureSize("COPPER_BLOCKS", 117).lock();
 
     /**
      * Covers all weathering/waxed states of the plain copper block.
@@ -726,42 +739,49 @@ public class MaterialTags {
      * Covers all Wooden Tools.
      */
     public static final MaterialSetTag WOODEN_TOOLS = new MaterialSetTag(keyFor("wooden_tools"))
-        .add(Material.WOODEN_AXE, Material.WOODEN_HOE, Material.WOODEN_PICKAXE, Material.WOODEN_SHOVEL, Material.WOODEN_SWORD)
-        .ensureSize("WOODEN_TOOLS", 5).lock();
+        .add(Material.WOODEN_AXE, Material.WOODEN_HOE, Material.WOODEN_PICKAXE, Material.WOODEN_SHOVEL, Material.WOODEN_SWORD, Material.WOODEN_SPEAR)
+        .lock();
 
     /**
      * Covers all Stone Tools.
      */
     public static final MaterialSetTag STONE_TOOLS = new MaterialSetTag(keyFor("stone_tools"))
-        .add(Material.STONE_AXE, Material.STONE_HOE, Material.STONE_PICKAXE, Material.STONE_SHOVEL, Material.STONE_SWORD)
-        .ensureSize("STONE_TOOLS", 5).lock();
+        .add(Material.STONE_AXE, Material.STONE_HOE, Material.STONE_PICKAXE, Material.STONE_SHOVEL, Material.STONE_SWORD, Material.STONE_SPEAR)
+        .lock();
+
+    /**
+     * Covers all copper Tools.
+     */
+    public static final MaterialSetTag COPPER_TOOLS = new MaterialSetTag(keyFor("copper_tools"))
+        .add(Material.COPPER_AXE, Material.COPPER_HOE, Material.COPPER_PICKAXE, Material.COPPER_SHOVEL, Material.COPPER_SWORD, Material.COPPER_SPEAR)
+        .lock();
 
     /**
      * Covers all Iron Tools.
      */
     public static final MaterialSetTag IRON_TOOLS = new MaterialSetTag(keyFor("iron_tools"))
-        .add(Material.IRON_AXE, Material.IRON_HOE, Material.IRON_PICKAXE, Material.IRON_SHOVEL, Material.IRON_SWORD)
-        .ensureSize("IRON_TOOLS", 5).lock();
+        .add(Material.IRON_AXE, Material.IRON_HOE, Material.IRON_PICKAXE, Material.IRON_SHOVEL, Material.IRON_SWORD, Material.IRON_SPEAR)
+        .lock();
 
     /**
      * Covers all Gold Tools.
      */
     public static final MaterialSetTag GOLDEN_TOOLS = new MaterialSetTag(keyFor("golden_tools"))
-        .add(Material.GOLDEN_AXE, Material.GOLDEN_HOE, Material.GOLDEN_PICKAXE, Material.GOLDEN_SHOVEL, Material.GOLDEN_SWORD)
-        .ensureSize("GOLDEN_TOOLS", 5).lock();
+        .add(Material.GOLDEN_AXE, Material.GOLDEN_HOE, Material.GOLDEN_PICKAXE, Material.GOLDEN_SHOVEL, Material.GOLDEN_SWORD, Material.GOLDEN_SPEAR)
+        .lock();
 
     /**
      * Covers all Diamond Tools.
      */
     public static final MaterialSetTag DIAMOND_TOOLS = new MaterialSetTag(keyFor("diamond_tools"))
-        .add(Material.DIAMOND_AXE, Material.DIAMOND_HOE, Material.DIAMOND_PICKAXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_SWORD)
-        .ensureSize("DIAMOND_TOOLS", 5).lock();
+        .add(Material.DIAMOND_AXE, Material.DIAMOND_HOE, Material.DIAMOND_PICKAXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_SWORD, Material.DIAMOND_SPEAR)
+        .lock();
 
     /**
      * Covers all Netherite Tools.
      */
     public static final MaterialSetTag NETHERITE_TOOLS = new MaterialSetTag(keyFor("netherite_tools"))
-        .add(Material.NETHERITE_AXE, Material.NETHERITE_HOE, Material.NETHERITE_PICKAXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_SWORD)
-        .ensureSize("NETHERITE_TOOLS", 5).lock();
+        .add(Material.NETHERITE_AXE, Material.NETHERITE_HOE, Material.NETHERITE_PICKAXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_SWORD, Material.NETHERITE_SPEAR)
+        .lock();
 
 }

@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 public interface DamageType extends Keyed, Translatable {
 
     // Start generate - DamageType
-    // @GeneratedFrom 1.21.8
     DamageType ARROW = getDamageType("arrow");
 
     DamageType BAD_RESPAWN_POINT = getDamageType("bad_respawn_point");
@@ -93,6 +92,8 @@ public interface DamageType extends Keyed, Translatable {
     DamageType PLAYER_EXPLOSION = getDamageType("player_explosion");
 
     DamageType SONIC_BOOM = getDamageType("sonic_boom");
+
+    DamageType SPEAR = getDamageType("spear");
 
     DamageType SPIT = getDamageType("spit");
 

@@ -3,7 +3,6 @@ package org.bukkit.damage;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
 import org.bukkit.Sound;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**

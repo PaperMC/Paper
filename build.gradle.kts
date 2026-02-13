@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-beta.18" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.19" apply false
 }
 
 subprojects {
@@ -13,11 +13,6 @@ subprojects {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
-    }
-
-    tasks.withType<AbstractArchiveTask>().configureEach {
-        isPreserveFileTimestamps = false
-        isReproducibleFileOrder = true
     }
 }
 
@@ -51,7 +46,7 @@ subprojects {
 
     extensions.configure<PublishingExtension> {
         repositories {
-            maven("https://repo.papermc.io/repository/maven-snapshots/") {
+            maven("https://artifactory.papermc.io/artifactory/snapshots/") {
                 name = "paperSnapshots"
                 credentials(PasswordCredentials::class)
             }

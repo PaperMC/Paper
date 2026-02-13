@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
-@@ -29,14 +_,14 @@
-     public final IdMap<T> registry;
+@@ -26,14 +_,14 @@
+     private static final int MIN_PALETTE_BITS = 0;
      private volatile PalettedContainer.Data<T> data;
-     private final PalettedContainer.Strategy strategy;
+     private final Strategy<T> strategy;
 -    private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
 +    //private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
  
@@ -17,18 +17,18 @@
 +        // this.threadingDetector.checkAndUnlock(); // Paper - disable this - use proper synchronization
      }
  
-     public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> registry, Codec<T> codec, PalettedContainer.Strategy strategy, T value) {
-@@ -98,7 +_,7 @@
+     public static <T> Codec<PalettedContainer<T>> codecRW(Codec<T> valueCodec, Strategy<T> strategy, T defaultValue) {
+@@ -93,7 +_,7 @@
      }
  
      @Override
--    public int onResize(int bits, T objectAdded) {
-+    public synchronized int onResize(int bits, T objectAdded) { // Paper - synchronize
+-    public int onResize(int bits, T addedValue) {
++    public synchronized int onResize(int bits, T addedValue) { // Paper - synchronize
          PalettedContainer.Data<T> data = this.data;
          PalettedContainer.Data<T> data1 = this.createOrReuseData(data, bits);
          data1.copyFrom(data.palette, data.storage);
-@@ -106,7 +_,7 @@
-         return data1.palette.idFor(objectAdded);
+@@ -101,7 +_,7 @@
+         return data1.palette.idFor(addedValue, PaletteResize.noResizeExpected());
      }
  
 -    public T getAndSet(int x, int y, int z, T state) {
@@ -36,7 +36,7 @@
          this.acquire();
  
          Object var5;
-@@ -129,7 +_,7 @@
+@@ -124,7 +_,7 @@
          return this.data.palette.valueFor(andSet);
      }
  
@@ -45,7 +45,7 @@
          this.acquire();
  
          try {
-@@ -162,7 +_,7 @@
+@@ -157,7 +_,7 @@
          set.forEach(id -> consumer.accept(palette.valueFor(id)));
      }
  
@@ -54,7 +54,7 @@
          this.acquire();
  
          try {
-@@ -177,7 +_,7 @@
+@@ -172,7 +_,7 @@
      }
  
      @Override
@@ -63,12 +63,12 @@
          this.acquire();
  
          try {
-@@ -225,7 +_,7 @@
+@@ -226,7 +_,7 @@
      }
  
      @Override
--    public PalettedContainerRO.PackedData<T> pack(IdMap<T> registry, PalettedContainer.Strategy strategy) {
-+    public synchronized PalettedContainerRO.PackedData<T> pack(IdMap<T> registry, PalettedContainer.Strategy strategy) { // Paper - synchronize
+-    public PalettedContainerRO.PackedData<T> pack(Strategy<T> strategy) {
++    public synchronized PalettedContainerRO.PackedData<T> pack(Strategy<T> strategy) { // Paper - synchronize
          this.acquire();
  
-         PalettedContainerRO.PackedData var12;
+         PalettedContainerRO.PackedData var14;

@@ -82,12 +82,12 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
 
     @Override
     public SocketAddress getAddress() {
-        return this.handle.connection.getRemoteAddress();
+        return this.handle.connection.channel.remoteAddress();
     }
 
     @Override
     public InetSocketAddress getClientAddress() {
-        return (InetSocketAddress) this.handle.connection.channel.remoteAddress();
+        return (InetSocketAddress) this.handle.connection.getRemoteAddress();
     }
 
     @Override

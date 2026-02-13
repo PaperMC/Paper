@@ -1,32 +1,23 @@
 --- a/net/minecraft/world/item/component/ResolvableProfile.java
 +++ b/net/minecraft/world/item/component/ResolvableProfile.java
-@@ -21,9 +_,10 @@
-         instance -> instance.group(
-                 ExtraCodecs.PLAYER_NAME.optionalFieldOf("name").forGetter(ResolvableProfile::name),
-                 UUIDUtil.CODEC.optionalFieldOf("id").forGetter(ResolvableProfile::id),
-+                UUIDUtil.STRING_CODEC.lenientOptionalFieldOf("Id").forGetter($ -> Optional.empty()), // Paper
-                 ExtraCodecs.PROPERTY_MAP.optionalFieldOf("properties", new PropertyMap()).forGetter(ResolvableProfile::properties)
-             )
--            .apply(instance, ResolvableProfile::new)
-+            .apply(instance, (name, uuid, uuid2, propertyMap) -> new ResolvableProfile(name, uuid2.or(() -> uuid), propertyMap)) // Paper
-     );
-     public static final Codec<ResolvableProfile> CODEC = Codec.withAlternative(
-         FULL_CODEC, ExtraCodecs.PLAYER_NAME, name -> new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap())
-@@ -53,7 +_,7 @@
-         } else {
-             Optional<GameProfile> optional;
-             if (this.id.isPresent()) {
--                optional = SkullBlockEntity.fetchGameProfile(this.id.get()).getNow(null);
-+                optional = SkullBlockEntity.fetchGameProfile(this.id.get(), this.name.orElse(null)).getNow(null); // Paper - player profile events - pass name
-             } else {
-                 optional = SkullBlockEntity.fetchGameProfile(this.name.orElseThrow()).getNow(null);
-             }
-@@ -67,7 +_,7 @@
-             return CompletableFuture.completedFuture(this);
-         } else {
-             return this.id.isPresent()
--                ? SkullBlockEntity.fetchGameProfile(this.id.get()).thenApply(this::createProfile)
-+                ? SkullBlockEntity.fetchGameProfile(this.id.get(), this.name.orElse(null)).thenApply(this::createProfile)  // Paper - player profile events - pass name
-                 : SkullBlockEntity.fetchGameProfile(this.name.orElseThrow()).thenApply(this::createProfile);
-         }
-     }
+@@ -46,7 +_,7 @@
+     private static ResolvableProfile create(Either<GameProfile, ResolvableProfile.Partial> contents, PlayerSkin.Patch skinPatch) {
+         return contents.map(
+             gameProfile -> new ResolvableProfile.Static(Either.left(gameProfile), skinPatch),
+-            partial -> (ResolvableProfile)(partial.properties.isEmpty() && partial.id.isPresent() != partial.name.isPresent()
++            partial -> (ResolvableProfile)(partial.properties.isEmpty() && partial.id.isPresent() != partial.name.isPresent() // Paper - diff on change - heuristic for dynamic vs static resolvable profile - used in CraftPlayerProfile#buildResolvable
+                 ? partial.name
+                     .<ResolvableProfile>map(string -> new ResolvableProfile.Dynamic(Either.left(string), skinPatch))
+                     .orElseGet(() -> new ResolvableProfile.Dynamic(Either.right(partial.id.get()), skinPatch))
+@@ -139,9 +_,10 @@
+             instance -> instance.group(
+                     ExtraCodecs.PLAYER_NAME.optionalFieldOf("name").forGetter(ResolvableProfile.Partial::name),
+                     UUIDUtil.CODEC.optionalFieldOf("id").forGetter(ResolvableProfile.Partial::id),
++                    UUIDUtil.STRING_CODEC.lenientOptionalFieldOf("Id").forGetter($ -> Optional.empty()), // Paper
+                     ExtraCodecs.PROPERTY_MAP.optionalFieldOf("properties", PropertyMap.EMPTY).forGetter(ResolvableProfile.Partial::properties)
+                 )
+-                .apply(instance, ResolvableProfile.Partial::new)
++                .apply(instance, (name, uuid, uuid2, propertyMap) -> new ResolvableProfile.Partial(name, uuid2.or(() -> uuid), propertyMap)) // Paper
+         );
+         public static final StreamCodec<ByteBuf, ResolvableProfile.Partial> STREAM_CODEC = StreamCodec.composite(
+             ByteBufCodecs.PLAYER_NAME.apply(ByteBufCodecs::optional),

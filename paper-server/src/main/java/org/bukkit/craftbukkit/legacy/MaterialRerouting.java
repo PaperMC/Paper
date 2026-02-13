@@ -63,7 +63,6 @@ import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.material.MaterialData;
-import org.bukkit.packs.DataPackManager;
 import org.bukkit.scoreboard.Criteria;
 
 public class MaterialRerouting {
@@ -422,10 +421,6 @@ public class MaterialRerouting {
         return stonecuttingRecipe.setInput(MaterialRerouting.transformToItemType(material));
     }
 
-    public static boolean isEnabledByFeature(DataPackManager dataPackManager, Material material, World world) {
-        return dataPackManager.isEnabledByFeature(MaterialRerouting.transformToItemType(material), world);
-    }
-
     @RerouteStatic("org/bukkit/scoreboard/Criteria")
     public static Criteria statistic(Statistic statistic, Material material) {
         if (statistic.getType() == Statistic.Type.BLOCK) {
@@ -643,7 +638,7 @@ public class MaterialRerouting {
         @InjectPluginVersion final ApiVersion apiVersion
     ) {
         if (apiVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING)) return slotType.getTypes();
-        else return mapSet(slotType.getTypes(), MaterialRerouting::transformToItemType); // Needed as pre-flattening is hanled by transformToItemType
+        else return mapSet(slotType.getTypes(), MaterialRerouting::transformToItemType); // Needed as pre-flattening is handled by transformToItemType
     }
 
     // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)

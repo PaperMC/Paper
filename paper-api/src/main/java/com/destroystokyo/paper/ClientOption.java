@@ -1,5 +1,6 @@
 package com.destroystokyo.paper;
 
+import java.util.Locale;
 import net.kyori.adventure.translation.Translatable;
 import net.kyori.adventure.util.Index;
 import org.bukkit.inventory.MainHand;
@@ -29,9 +30,11 @@ public final class ClientOption<T> {
     }
 
     public enum ChatVisibility implements Translatable {
-        FULL("full"),
-        SYSTEM("system"),
-        HIDDEN("hidden"),
+        // Start generate - ChatVisibility
+        FULL("options.chat.visibility.full"),
+        SYSTEM("options.chat.visibility.system"),
+        HIDDEN("options.chat.visibility.hidden"),
+        // End generate - ChatVisibility
         /**
          * @deprecated no longer used anymore since 1.15.2, the value fallback
          * to the default value of the setting when unknown on the server.
@@ -40,37 +43,39 @@ public final class ClientOption<T> {
         @Deprecated(since = "1.15.2", forRemoval = true)
         UNKNOWN("unknown");
 
-        public static final Index<String, ChatVisibility> NAMES = Index.create(ChatVisibility.class, chatVisibility -> chatVisibility.name);
-        private final String name;
+        public static final Index<String, ChatVisibility> NAMES = Index.create(ChatVisibility.class, chatVisibility -> chatVisibility.name().toLowerCase(Locale.ENGLISH));
+        private final String translationKey;
 
-        ChatVisibility(final String name) {
-            this.name = name;
+        ChatVisibility(final String translationKey) {
+            this.translationKey = translationKey;
         }
 
         @Override
         public String translationKey() {
             if (this == UNKNOWN) {
-                throw new UnsupportedOperationException(this.name + " doesn't have a translation key");
+                throw new UnsupportedOperationException(this.name() + " doesn't have a translation key");
             }
-            return "options.chat.visibility." + this.name;
+            return this.translationKey;
         }
     }
 
     public enum ParticleVisibility implements Translatable {
-        ALL("all"),
-        DECREASED("decreased"),
-        MINIMAL("minimal");
+        // Start generate - ParticleVisibility
+        ALL("options.particles.all"),
+        DECREASED("options.particles.decreased"),
+        MINIMAL("options.particles.minimal");
+        // End generate - ParticleVisibility
 
-        public static final Index<String, ParticleVisibility> NAMES = Index.create(ParticleVisibility.class, particleVisibility -> particleVisibility.name);
-        private final String name;
+        public static final Index<String, ParticleVisibility> NAMES = Index.create(ParticleVisibility.class, particleVisibility -> particleVisibility.name().toLowerCase(Locale.ENGLISH));
+        private final String translationKey;
 
-        ParticleVisibility(final String name) {
-            this.name = name;
+        ParticleVisibility(final String translationKey) {
+            this.translationKey = translationKey;
         }
 
         @Override
         public String translationKey() {
-            return "options.particles." + this.name;
+            return this.translationKey;
         }
     }
 }

@@ -1,17 +1,38 @@
 --- a/net/minecraft/server/level/TicketType.java
 +++ b/net/minecraft/server/level/TicketType.java
-@@ -13,11 +_,24 @@
-     public static final TicketType PORTAL = register("portal", 300L, true, TicketType.TicketUse.LOADING_AND_SIMULATION);
-     public static final TicketType ENDER_PEARL = register("ender_pearl", 40L, false, TicketType.TicketUse.LOADING_AND_SIMULATION);
-     public static final TicketType UNKNOWN = register("unknown", 1L, false, TicketType.TicketUse.LOADING);
-+    public static final TicketType PLUGIN = register("plugin", 0L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // CraftBukkit
-+    public static final TicketType POST_TELEPORT = register("post_teleport", 5L, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType PLUGIN_TICKET = register("plugin_ticket", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType FUTURE_AWAIT = register("future_await", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING_AND_SIMULATION); // Paper
-+    public static final TicketType CHUNK_LOAD = register("chunk_load", TicketType.NO_TIMEOUT, false, TicketType.TicketUse.LOADING); // Paper - moonrise
+@@ -9,11 +_,13 @@
  
-     public static TicketType register(String name, long timeout, boolean persist, TicketType.TicketUse use) {
-         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, persist, use));
+ public record TicketType(long timeout, @TicketType.Flags int flags) {
+     public static final long NO_TIMEOUT = 0L;
+-    public static final int FLAG_PERSIST = 1;
+-    public static final int FLAG_LOADING = 2;
+-    public static final int FLAG_SIMULATION = 4;
+-    public static final int FLAG_KEEP_DIMENSION_ACTIVE = 8;
+-    public static final int FLAG_CAN_EXPIRE_IF_UNLOADED = 16;
++    // Paper start - diff on change - all listed in Flags annotation
++    public static final int FLAG_PERSIST = 1; // Paper - diff on change - all listed in Flags annotation
++    public static final int FLAG_LOADING = 2; // Paper - diff on change - all listed in Flags annotation
++    public static final int FLAG_SIMULATION = 4; // Paper - diff on change - all listed in Flags annotation
++    public static final int FLAG_KEEP_DIMENSION_ACTIVE = 8; // Paper - diff on change - all listed in Flags annotation
++    public static final int FLAG_CAN_EXPIRE_IF_UNLOADED = 16; // Paper - diff on change - all listed in Flags annotation
++    // Paper end - diff on change - all listed in Flags annotation
+     public static final TicketType PLAYER_SPAWN = register("player_spawn", 20L, FLAG_LOADING);
+     public static final TicketType SPAWN_SEARCH = register("spawn_search", 1L, FLAG_LOADING);
+     public static final TicketType DRAGON = register("dragon", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION);
+@@ -23,6 +_,11 @@
+     public static final TicketType PORTAL = register("portal", 300L, FLAG_PERSIST | FLAG_LOADING | FLAG_SIMULATION | FLAG_KEEP_DIMENSION_ACTIVE);
+     public static final TicketType ENDER_PEARL = register("ender_pearl", 40L, FLAG_LOADING | FLAG_SIMULATION | FLAG_KEEP_DIMENSION_ACTIVE);
+     public static final TicketType UNKNOWN = register("unknown", 1L, FLAG_CAN_EXPIRE_IF_UNLOADED | FLAG_LOADING);
++    public static final TicketType PLUGIN = register("plugin", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // CraftBukkit
++    public static final TicketType POST_TELEPORT = register("post_teleport", 5L, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType PLUGIN_TICKET = register("plugin_ticket", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType FUTURE_AWAIT = register("future_await", NO_TIMEOUT, FLAG_LOADING | FLAG_SIMULATION); // Paper
++    public static final TicketType CHUNK_LOAD = register("chunk_load", NO_TIMEOUT, FLAG_LOADING); // Paper - moonrise
+ 
+     private static TicketType register(String name, long timeout, @TicketType.Flags int flags) {
+         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, flags));
+@@ -48,12 +_,20 @@
+         return (this.flags & FLAG_CAN_EXPIRE_IF_UNLOADED) != 0;
      }
  
 +    // Paper start - chunk-gc config
@@ -20,17 +41,15 @@
 +    public long timeout() {
 +        return this == PLUGIN ? PLUGIN_TYPE_TIMEOUT : this.timeout;
 +    }
-+    // Paper end - chunk-gc config
-+
-     public boolean doesLoad() {
-         return this.use == TicketType.TicketUse.LOADING || this.use == TicketType.TicketUse.LOADING_AND_SIMULATION;
-     }
-@@ -27,7 +_,7 @@
-     }
- 
      public boolean hasTimeout() {
 -        return this.timeout != 0L;
-+        return this.timeout() != 0L; // Paper - chunk-gc config
++        return this.timeout() != 0L;
++        // Paper end - chunk-gc config
      }
  
-     public static enum TicketUse {
+     @Retention(RetentionPolicy.CLASS)
+     @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE, ElementType.METHOD, ElementType.TYPE_USE})
++    @org.intellij.lang.annotations.MagicConstant(flags = {FLAG_PERSIST, FLAG_LOADING, FLAG_SIMULATION, FLAG_KEEP_DIMENSION_ACTIVE, FLAG_CAN_EXPIRE_IF_UNLOADED}) // Paper - add back source-retention annotation for IDE
+     public @interface Flags {
+     }
+ }

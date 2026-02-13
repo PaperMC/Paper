@@ -13,7 +13,7 @@ import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.ServerboundPacketClassSerializer;
-import io.papermc.paper.configuration.serializer.ResourceLocationSerializer;
+import io.papermc.paper.configuration.serializer.IdentifierSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collection.TableSerializer;
 import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSerializer;
@@ -24,11 +24,11 @@ import io.papermc.paper.configuration.transformation.Transformations;
 import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
+import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
-import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
 import io.papermc.paper.configuration.type.Duration;
@@ -50,19 +50,18 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -192,7 +191,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .register(Duration.SERIALIZER)
             .register(DurationOrDisabled.SERIALIZER)
             .register(NbtPathSerializer.SERIALIZER)
-            .register(ResourceLocationSerializer.INSTANCE)
+            .register(IdentifierSerializer.INSTANCE)
         );
     }
 
@@ -282,7 +281,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_ZeroWorldHeight.apply(versionedBuilder);
         V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
-        V31_SpawnLoadedRangeToGameRule.apply(versionedBuilder, contextMap, defaultsNode);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
@@ -298,6 +296,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_LogIPs.apply(versionedBuilder);
         V30_PacketIds.apply(versionedBuilder);
+        V31_AllowNetherPropertiesToConfig.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
@@ -348,10 +347,10 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
-        return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+        return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().identifier(), level.spigotConfig, level.registryAccess(), level.getGameRules());
     }
 
-    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final ResourceLocation worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
+    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final Identifier worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
         return ContextMap.builder()
             .put(WORLD_DIRECTORY, dir)
             .put(WORLD_NAME, levelName)

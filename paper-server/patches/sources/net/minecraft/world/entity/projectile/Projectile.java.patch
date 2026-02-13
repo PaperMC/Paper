@@ -1,21 +1,24 @@
 --- a/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/net/minecraft/world/entity/projectile/Projectile.java
 @@ -44,6 +_,7 @@
+     private boolean leftOwnerChecked;
      public boolean hasBeenShot = false;
-     @Nullable
-     private Entity lastDeflectedBy;
+     private @Nullable Entity lastDeflectedBy;
 +    protected boolean hitCancelled = false; // CraftBukkit
  
-     Projectile(EntityType<? extends Projectile> entityType, Level level) {
-         super(entityType, level);
-@@ -55,7 +_,20 @@
+     protected Projectile(EntityType<? extends Projectile> type, Level level) {
+         super(type, level);
+@@ -51,12 +_,25 @@
+ 
+     protected void setOwner(@Nullable EntityReference<Entity> owner) {
+         this.owner = owner;
++        this.refreshProjectileSource(false); // Paper
+     }
  
      public void setOwner(@Nullable Entity owner) {
-         this.setOwner(owner != null ? new EntityReference<>(owner) : null);
--    }
-+        this.refreshProjectileSource(false); // Paper
-+    }
-+
+         this.setOwner(EntityReference.of(owner));
+     }
+ 
 +    // Paper start - Refresh ProjectileSource for projectiles
 +    public void refreshProjectileSource(boolean fillCache) {
 +        if (fillCache) {
@@ -27,31 +30,32 @@
 +        }
 +    }
 +    // Paper end - Refresh ProjectileSource for projectiles
- 
-     @Nullable
++
      @Override
-@@ -84,6 +_,7 @@
+     public @Nullable Entity getOwner() {
+         return EntityReference.getEntity(this.owner, this.level());
+@@ -83,6 +_,7 @@
      @Override
      protected void readAdditionalSaveData(ValueInput input) {
          this.setOwner(EntityReference.read(input, "Owner"));
-+        if (this instanceof ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.owner = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
++        if (this instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.owner = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
          this.leftOwner = input.getBooleanOr("LeftOwner", false);
          this.hasBeenShot = input.getBooleanOr("HasBeenShot", false);
      }
-@@ -135,6 +_,12 @@
+@@ -128,6 +_,12 @@
      }
  
-     public void shoot(double x, double y, double z, float velocity, float inaccuracy) {
+     public Vec3 getMovementToShoot(double x, double y, double z, float velocity, float inaccuracy) {
 +        // Paper start - allow disabling projectile inaccuracy
 +        if (this.level().paperConfig().misc.disableProjectileInaccuracy) {
 +            inaccuracy = 0;
 +        }
-+        // Paper end
++        // Paper end - allow disabling projectile inaccuracy
 +
-         Vec3 movementToShoot = this.getMovementToShoot(x, y, z, velocity, inaccuracy);
-         this.setDeltaMovement(movementToShoot);
-         this.hasImpulse = true;
-@@ -151,7 +_,14 @@
+         return new Vec3(x, y, z)
+             .normalize()
+             .add(
+@@ -155,7 +_,14 @@
          float f2 = Mth.cos(y * (float) (Math.PI / 180.0)) * Mth.cos(x * (float) (Math.PI / 180.0));
          this.shoot(f, f1, f2, velocity, inaccuracy);
          Vec3 knownMovement = shooter.getKnownMovement();
@@ -66,21 +70,21 @@
      }
  
      @Override
-@@ -171,7 +_,12 @@
+@@ -175,7 +_,12 @@
      public static <T extends Projectile> T spawnProjectileFromRotation(
-         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy
+         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy
      ) {
 -        return spawnProjectile(
 +        // Paper start - PlayerLaunchProjectileEvent
-+        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, innaccuracy).spawn();
++        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, inaccuracy).spawn();
 +    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy) {
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy) {
 +        return spawnProjectileDelayed(
 +        // Paper end - PlayerLaunchProjectileEvent
              factory.create(level, owner, spawnedFrom),
              level,
              spawnedFrom,
-@@ -196,7 +_,13 @@
+@@ -200,7 +_,13 @@
      public static <T extends Projectile> T spawnProjectileUsingShoot(
          T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy
      ) {
@@ -95,7 +99,7 @@
      }
  
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack spawnedFrom) {
-@@ -204,11 +_,46 @@
+@@ -208,11 +_,46 @@
      }
  
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
@@ -146,7 +150,7 @@
  
      public void applyOnProjectileSpawned(ServerLevel level, ItemStack spawnedFrom) {
          EnchantmentHelper.onProjectileSpawned(level, spawnedFrom, this, item -> {});
-@@ -220,6 +_,17 @@
+@@ -224,6 +_,17 @@
          }
      }
  
@@ -164,22 +168,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-@@ -251,7 +_,13 @@
-     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity entity, @Nullable Entity owner, boolean deflectedByPlayer) {
-         deflection.deflect(this, entity, this.random);
-         if (!this.level().isClientSide) {
--            this.setOwner(owner);
-+            // Paper start - Fix PickupStatus getting reset
-+            if (this instanceof AbstractArrow arrow) {
-+                arrow.setOwner(owner, false);
-+            } else {
-+                this.setOwner(owner);
-+            }
-+            // Paper end - Fix PickupStatus getting reset
-             this.onDeflection(entity, deflectedByPlayer);
-         }
- 
-@@ -287,15 +_,35 @@
+@@ -291,15 +_,35 @@
      }
  
      protected void onHitBlock(BlockHitResult result) {
@@ -215,7 +204,7 @@
              return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(target);
          }
      }
-@@ -308,13 +_,7 @@
+@@ -312,13 +_,7 @@
      }
  
      protected static float lerpRotation(float currentRotation, float targetRotation) {
