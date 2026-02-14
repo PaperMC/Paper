@@ -245,7 +245,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -391,31 +_,127 @@
+@@ -391,31 +_,137 @@
          }
      }
  
@@ -366,9 +366,9 @@
 +            );
 +        }
 +        this.addLevel(serverLevel);
-+        this.initWorld(serverLevel, serverLevelData, worldOptions);
++        this.initWorld(serverLevel, serverLevelData, worldOptions, null);
 +    }
-+    public void initWorld(ServerLevel serverLevel, net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, WorldOptions worldOptions) {
++    public void initWorld(ServerLevel serverLevel, net.minecraft.world.level.storage.PrimaryLevelData serverLevelData, WorldOptions worldOptions, org.bukkit.@Nullable WorldCreator worldCreator) {
 +        final boolean isDebugWorld = this.worldData.isDebugWorld();
 +        if (serverLevel.generator != null) {
 +            serverLevel.getWorld().getPopulators().addAll(serverLevel.generator.getDefaultPopulators(serverLevel.getWorld()));
@@ -379,7 +379,17 @@
          if (!serverLevelData.isInitialized()) {
              try {
 -                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, this.levelLoadListener);
-+                setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, serverLevel.levelLoadListener); // Paper - per world level load listener
++                // Paper start - Allow zeroing spawn location
++                if (worldCreator != null && worldCreator.forcedSpawnPosition() != null) {
++                    serverLevelData.setSpawn(LevelData.RespawnData.of(serverLevel.dimension(),
++                        io.papermc.paper.util.MCUtil.toBlockPos(worldCreator.forcedSpawnPosition()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnYaw(), LevelData.RespawnData.DEFAULT.yaw()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnPitch(), LevelData.RespawnData.DEFAULT.pitch())
++                    ));
++                } else {
++                    setInitialSpawn(serverLevel, serverLevelData, worldOptions.generateBonusChest(), isDebugWorld, serverLevel.levelLoadListener); // Paper - per world level load listener
++                }
++                // Paper end - Allow zeroing spawn location
                  serverLevelData.setInitialized(true);
                  if (isDebugWorld) {
                      this.setupDebugLevel(this.worldData);
