@@ -48,7 +48,6 @@ public class SimpleBlockCapture implements AutoCloseable {
         return this.capturingWorldLevel.getLatestBlockEntity(pos);
     }
 
-
     // This is done so that the captured blocks appear ontop of the world.
     public void overlayCaptureOnLevel() {
         this.isOverlayingCaptureOnLevel = true;

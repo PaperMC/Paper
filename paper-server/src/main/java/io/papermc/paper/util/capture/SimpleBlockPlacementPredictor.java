@@ -15,7 +15,7 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
 
     public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
         BlockState blockState = layer.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
-        // Dont do any processing if the same
+        // Don't do any processing if the same
         if (blockState == state) {
             return false;
         } else {
@@ -35,7 +35,6 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
             if (differentState && blockState.hasBlockEntity() && !state.shouldChangedStateKeepBlockEntity(blockState)) {
                 this.removeBlockEntity(pos);
             }
-
 
 //            if ((differentState || block instanceof BaseRailBlock) && ((flags & Block.UPDATE_NEIGHBORS) != 0 || updateMoveByPiston)) {
 //                BlockState finalBlockState = blockState;

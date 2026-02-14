@@ -14,7 +14,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
-import io.papermc.paper.util.capture.BoneMealContext;
+import io.papermc.paper.util.capture.GrowthContext;
 import io.papermc.paper.util.capture.MinecraftCaptureBridge;
 import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
 import io.papermc.paper.util.capture.SimpleBlockCapture;
@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import it.unimi.dsi.fastutil.objects.Object2BooleanFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -68,7 +67,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -86,7 +84,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.PortalType;
 import org.bukkit.Statistic.Type;
-import org.bukkit.TreeType;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -2389,19 +2386,19 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static boolean structureEvent(PaperCapturingWorldLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, BoneMealContext context) {
+    public static boolean structureEvent(PaperCapturingWorldLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldGenCapture.apply(captureTreeGeneration)) {
-                Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, context.originalLevel);
+                Location location = CraftLocation.toBukkit(pos, context.originalLevel);
                 List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(context.originalLevel);
-                StructureGrowEvent structureEvent = new StructureGrowEvent(location, context.treeHook, context.usedBoneMeal, context.getBukkitPlayer(), blocks);
+                StructureGrowEvent event = new StructureGrowEvent(location, context.getTreeSpecies(), context.usedBoneMeal, context.getBukkitPlayer(), blocks);
 
-                if (structureEvent.callEvent()) {
+                if (event.callEvent()) {
                     capture.finalizePlacement(); // todo block list is mutable
                     return true;
                 } else {
-                    context.precancelStructureEvent = true;
+                    context.cancelledStructureEvent = true;
                 }
             } else {
                 capture.finalizePlacement();
@@ -2412,22 +2409,22 @@ public class CraftEventFactory {
     }
 
     // todo block list is sometimes empty for trees in both events
-    public static boolean fertilizedBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, BoneMealContext context) {
+    public static boolean fertilizedBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, GrowthContext context) {
         return fertilizeBlock(level, player, pos, capture -> {
             worldGenCapture.accept(capture);
             return true;
         }, context);
     }
 
-    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, BoneMealContext context) {
+    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldGenCapture.apply(captureTreeGeneration)) {
                 List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(level);
-                BlockFertilizeEvent structureEvent = new BlockFertilizeEvent(CraftBlock.at(level, pos), player, blocks);
-                structureEvent.setCancelled(context.precancelStructureEvent);
+                BlockFertilizeEvent event = new BlockFertilizeEvent(CraftBlock.at(level, pos), player, blocks);
+                event.setCancelled(context.cancelledStructureEvent);
 
-                if (structureEvent.callEvent()) {
+                if (event.callEvent()) {
                     capture.finalizePlacement(); // todo block list is mutable
                     return true;
                 }

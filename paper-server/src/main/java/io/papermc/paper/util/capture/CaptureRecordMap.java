@@ -28,13 +28,13 @@ public final class CaptureRecordMap {
     private final Map<BlockPos, CaptureRecord> recordsByPos = new HashMap<>();
 
     public void setLatestBlockStateAt(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        this.add(new CaptureRecord(state, pos, flags));
+        this.add(new CaptureRecord(pos, state, flags));
     }
 
-    public void setLatestBlockEntityAt(BlockPos pos, boolean remove, @Nullable BlockEntity add) {
+    public void setLatestBlockEntityAt(BlockPos pos, boolean clearPreviousBlockEntity, @Nullable BlockEntity add) {
         CaptureRecord oldRecord = this.recordsByPos.get(pos);
         if (oldRecord != null) {
-            oldRecord.setBlockEntity(remove, add);
+            oldRecord.setBlockEntity(clearPreviousBlockEntity, add);
         }
     }
 
@@ -102,7 +102,7 @@ public final class CaptureRecordMap {
 
         private BlockState state;
         private @Nullable BlockEntity blockEntity;
-        private boolean removeBe;
+        private boolean clearPreviousBlockEntity;
         private @Block.UpdateFlags int flags;
 
         public CaptureRecord(BlockPos pos, BlockState state, BlockEntity blockEntity) {
@@ -111,20 +111,20 @@ public final class CaptureRecordMap {
             this.blockEntity = blockEntity;
         }
 
-        public CaptureRecord(BlockState state, BlockPos pos, @Block.UpdateFlags int flags) {
+        public CaptureRecord(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
             this.pos = pos;
             this.state = state;
             this.flags = flags;
         }
 
         public CaptureRecord(boolean remove, @Nullable BlockEntity add, BlockPos pos) {
-            this.removeBe = remove;
+            this.clearPreviousBlockEntity = remove;
             this.blockEntity = add;
             this.pos = pos;
         }
 
         public void applyApiPatch(ServerLevel level) {
-            if (this.removeBe) {
+            if (this.clearPreviousBlockEntity) {
                 level.removeBlockEntity(this.pos);
             }
 
@@ -134,8 +134,8 @@ public final class CaptureRecordMap {
             }
         }
 
-        public void setBlockEntity(boolean remove, @Nullable BlockEntity add) {
-            this.removeBe = remove;
+        public void setBlockEntity(boolean clearPreviousBlockEntity, @Nullable BlockEntity add) {
+            this.clearPreviousBlockEntity = clearPreviousBlockEntity;
             this.blockEntity = add;
         }
     }

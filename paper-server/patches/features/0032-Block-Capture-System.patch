@@ -5,7 +5,7 @@ Subject: [PATCH] Block Capture System
 
 
 diff --git a/net/minecraft/core/dispenser/DispenseItemBehavior.java b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index bfefb5031544caa59230f0073e8880c2b39ebf4d..bab79efd6357c389fbde8425e7073abcd172e2f3 100644
+index bfefb5031544caa59230f0073e8880c2b39ebf4d..244d20e5080051a1e7ac64f4a584454124b06054 100644
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
 @@ -400,46 +400,21 @@ public interface DispenseItemBehavior {
@@ -22,14 +22,14 @@ index bfefb5031544caa59230f0073e8880c2b39ebf4d..bab79efd6357c389fbde8425e7073abc
 -                level.captureTreeGeneration = true; // CraftBukkit
 -                if (!BoneMealItem.growCrop(item, level, blockPos) && !BoneMealItem.growWaterPlant(item, level, blockPos, null)) {
 +                // Paper start
-+                io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext(level.getMinecraftWorld());
-+                boneMealContext.usedBoneMeal = true;
-+                if (!BoneMealItem.growCrop(item, level, blockPos, boneMealContext) && !org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
++                io.papermc.paper.util.capture.GrowthContext growthContext = new io.papermc.paper.util.capture.GrowthContext(level.getMinecraftWorld());
++                growthContext.usedBoneMeal = true;
++                if (!BoneMealItem.growCrop(item, level, blockPos, growthContext) && !org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
 +                    (ServerLevel) level,
-+                    boneMealContext.getBukkitPlayer(),
++                    growthContext.getBukkitPlayer(),
 +                    blockPos,
-+                    world -> BoneMealItem.growWaterPlant(item, world, blockPos, null, boneMealContext),
-+                    boneMealContext
++                    world -> BoneMealItem.growWaterPlant(item, world, blockPos, null, growthContext),
++                    growthContext
 +                )) {
 +                    // Paper end
                      this.setSuccess(false);
@@ -67,7 +67,7 @@ index bfefb5031544caa59230f0073e8880c2b39ebf4d..bab79efd6357c389fbde8425e7073abc
                  return item;
              }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index dc65503a2d785d64d37b76b0303f51cf66d9769a..1b4ccfbbbebe36656d65facaf87dd7530c415bd6 100644
+index dc65503a2d785d64d37b76b0303f51cf66d9769a..6035304ef0be21d297acc6ca21e3e14c9f61e3ed 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -181,7 +181,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -93,21 +93,7 @@ index dc65503a2d785d64d37b76b0303f51cf66d9769a..1b4ccfbbbebe36656d65facaf87dd753
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation);
      }
  
-@@ -2669,6 +2667,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         return this.randomSequences;
-     }
- 
-+    // Paper start - block placement capturing
-+    @Override
-+    public ServerLevel handle() {
-+        return this;
-+    }
-+    // Paper end - block placement capturing
-+
-     public GameRules getGameRules() {
-         return this.serverLevelData.getGameRules();
-     }
-@@ -2683,17 +2688,6 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2683,17 +2681,6 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
      }
      // Paper end - respect global sound events gamerule
@@ -311,7 +297,7 @@ index 73ce7c82c0bd28c2e43ca40ba35c4603b21375ad..58ee47c73c4f6a21852cf459de90f532
              return false;
          } else {
 diff --git a/net/minecraft/world/item/BoneMealItem.java b/net/minecraft/world/item/BoneMealItem.java
-index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8f4c7cd2d 100644
+index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..5ec98c831ffa71cf2704be317902a09351233720 100644
 --- a/net/minecraft/world/item/BoneMealItem.java
 +++ b/net/minecraft/world/item/BoneMealItem.java
 @@ -44,7 +44,12 @@ public class BoneMealItem extends Item {
@@ -320,11 +306,11 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
          ItemStack itemInHand = context.getItemInHand();
 -        if (growCrop(itemInHand, level, clickedPos)) {
 +        // Paper start
-+        io.papermc.paper.util.capture.BoneMealContext boneMealContext = new io.papermc.paper.util.capture.BoneMealContext(level.getMinecraftWorld());
-+        boneMealContext.player = context.getPlayer();
-+        boneMealContext.usedBoneMeal = true;
-+        // Paper end
-+        if (growCrop(itemInHand, level, clickedPos, boneMealContext)) { // Paper
++        io.papermc.paper.util.capture.GrowthContext growthContext = new io.papermc.paper.util.capture.GrowthContext(level.getMinecraftWorld());
++        growthContext.player = context.getPlayer();
++        growthContext.usedBoneMeal = true;
++        if (growCrop(itemInHand, level, clickedPos, growthContext)) {
++            // Paper end
              if (!level.isClientSide()) {
                  if (context.getPlayer() != null) itemInHand.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
                  level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, clickedPos, 15);
@@ -336,10 +322,10 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
 +            // Paper start
 +            boolean result = org.bukkit.craftbukkit.event.CraftEventFactory.fertilizeBlock(
 +                (ServerLevel) level,
-+                boneMealContext.getBukkitPlayer(),
++                growthContext.getBukkitPlayer(),
 +                blockPos,
-+                world -> growWaterPlant(itemInHand, world, blockPos, context.getClickedFace(), boneMealContext),
-+                boneMealContext
++                world -> growWaterPlant(itemInHand, world, blockPos, context.getClickedFace(), growthContext),
++                growthContext
 +            );
 +            if (isFaceSturdy && result) {
 +                // Paper end
@@ -351,7 +337,7 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
      }
  
 -    public static boolean growCrop(ItemStack stack, Level level, BlockPos pos) {
-+    public static boolean growCrop(ItemStack stack, Level level, BlockPos pos, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public static boolean growCrop(ItemStack stack, Level level, BlockPos pos, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockState blockState = level.getBlockState(pos);
          if (blockState.getBlock() instanceof BonemealableBlock bonemealableBlock && bonemealableBlock.isValidBonemealTarget(level, pos, blockState)) {
              if (level instanceof ServerLevel) {
@@ -360,10 +346,10 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
 +                    // Paper start
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.fertilizedBlock(
 +                        (ServerLevel) level,
-+                        mealContext.getBukkitPlayer(),
++                        growthContext.getBukkitPlayer(),
 +                        pos,
-+                        world -> bonemealableBlock.performBonemeal(world, level.random, pos, blockState, mealContext),
-+                        mealContext
++                        world -> bonemealableBlock.performBonemeal(world, level.random, pos, blockState, growthContext),
++                        growthContext
 +                    );
 +                    // Paper end
                  }
@@ -374,7 +360,7 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
      }
  
 -    public static boolean growWaterPlant(ItemStack stack, Level level, BlockPos pos, @Nullable Direction clickedSide) {
-+    public static boolean growWaterPlant(ItemStack stack, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, @Nullable Direction clickedSide, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public static boolean growWaterPlant(ItemStack stack, io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, @Nullable Direction clickedSide, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          if (level.getBlockState(pos).is(Blocks.WATER) && level.getFluidState(pos).getAmount() == 8) {
 -            if (!(level instanceof ServerLevel)) {
 +            if (false) { // Paper
@@ -404,7 +390,7 @@ index 4490e50f02d2c7383e86951cb98a113d5d4f36c2..168db7a6c623ccb2562eaea699dd21f8
                              && ((BonemealableBlock)Blocks.SEAGRASS).isValidBonemealTarget(level, blockPos, blockState1)
                              && random.nextInt(10) == 0) {
 -                            ((BonemealableBlock)Blocks.SEAGRASS).performBonemeal((ServerLevel)level, random, blockPos, blockState1);
-+                            ((BonemealableBlock)Blocks.SEAGRASS).performBonemeal(level, random, blockPos, blockState1, mealContext); // Paper
++                            ((BonemealableBlock)Blocks.SEAGRASS).performBonemeal(level, random, blockPos, blockState1, growthContext); // Paper
                          }
                      }
                  }
@@ -885,6 +871,28 @@ index 579bbba4e823d4d0318e58759ca732b7c8e4d865..cdebff0efb78b98b941a8aac2cd1115b
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
+diff --git a/net/minecraft/world/level/LevelAccessor.java b/net/minecraft/world/level/LevelAccessor.java
+index 21d5042282a4eeaadfbb1057f5995e90acc7388e..bb5fa7b510efe46adfc5b7ffe55c446aaabff11a 100644
+--- a/net/minecraft/world/level/LevelAccessor.java
++++ b/net/minecraft/world/level/LevelAccessor.java
+@@ -97,6 +97,4 @@ public interface LevelAccessor extends CommonLevelAccessor, LevelReader, Schedul
+     default void gameEvent(ResourceKey<GameEvent> gameEvent, BlockPos pos, GameEvent.Context context) {
+         this.gameEvent(this.registryAccess().lookupOrThrow(Registries.GAME_EVENT).getOrThrow(gameEvent), pos, context);
+     }
+-
+-    net.minecraft.server.level.ServerLevel getMinecraftWorld(); // CraftBukkit
+ }
+diff --git a/net/minecraft/world/level/LevelReader.java b/net/minecraft/world/level/LevelReader.java
+index fd5a38a9f24c26f8eca738f78180446d354ff3ac..c21dbae3acabfe541711ea5451c8487c511b0f40 100644
+--- a/net/minecraft/world/level/LevelReader.java
++++ b/net/minecraft/world/level/LevelReader.java
+@@ -233,4 +233,6 @@ public interface LevelReader extends ca.spottedleaf.moonrise.patches.chunk_syste
+     }
+ 
+     EnvironmentAttributeReader environmentAttributes();
++
++    net.minecraft.server.level.ServerLevel getMinecraftWorld(); // CraftBukkit
+ }
 diff --git a/net/minecraft/world/level/WorldGenLevel.java b/net/minecraft/world/level/WorldGenLevel.java
 index d8f3ed6f5e5cbc045399e38664cd062737481f7b..83336865ad6ab30c3494361c5fa6088607126b6b 100644
 --- a/net/minecraft/world/level/WorldGenLevel.java
@@ -896,7 +904,7 @@ index d8f3ed6f5e5cbc045399e38664cd062737481f7b..83336865ad6ab30c3494361c5fa60886
 +
  }
 diff --git a/net/minecraft/world/level/block/AzaleaBlock.java b/net/minecraft/world/level/block/AzaleaBlock.java
-index 435a455ad2ec3dfb142d570a51a720bc6c49dac3..10363f11fb1b113ba6e6d48ca4d432dfc01f9bff 100644
+index 435a455ad2ec3dfb142d570a51a720bc6c49dac3..b10c72f649a3ba63102afd789d774d5448268f65 100644
 --- a/net/minecraft/world/level/block/AzaleaBlock.java
 +++ b/net/minecraft/world/level/block/AzaleaBlock.java
 @@ -49,8 +49,8 @@ public class AzaleaBlock extends VegetationBlock implements BonemealableBlock {
@@ -905,13 +913,13 @@ index 435a455ad2ec3dfb142d570a51a720bc6c49dac3..10363f11fb1b113ba6e6d48ca4d432df
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 -        TreeGrower.AZALEA.growTree(level, level.getChunkSource().getGenerator(), pos, state, random);
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
-+        TreeGrower.AZALEA.growTree(level, level.getChunkSource().getGenerator(), pos, state, random, mealContext); // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
++        TreeGrower.AZALEA.growTree(level, level.getChunkSource().getGenerator(), pos, state, random, growthContext); // Paper
      }
  
      @Override
 diff --git a/net/minecraft/world/level/block/BambooSaplingBlock.java b/net/minecraft/world/level/block/BambooSaplingBlock.java
-index 88c204ad9d4ead792eb618dbb8611cca863e798c..baf1f1b9e445c5caf2784f73db49ae83cdc7156b 100644
+index 88c204ad9d4ead792eb618dbb8611cca863e798c..c0ce6404a8d31669b0e279eafbe5e434b36b824b 100644
 --- a/net/minecraft/world/level/block/BambooSaplingBlock.java
 +++ b/net/minecraft/world/level/block/BambooSaplingBlock.java
 @@ -84,11 +84,11 @@ public class BambooSaplingBlock extends Block implements BonemealableBlock {
@@ -919,7 +927,7 @@ index 88c204ad9d4ead792eb618dbb8611cca863e798c..baf1f1b9e445c5caf2784f73db49ae83
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          this.growBamboo(level, pos);
      }
  
@@ -929,18 +937,36 @@ index 88c204ad9d4ead792eb618dbb8611cca863e798c..baf1f1b9e445c5caf2784f73db49ae83
      }
  }
 diff --git a/net/minecraft/world/level/block/BambooStalkBlock.java b/net/minecraft/world/level/block/BambooStalkBlock.java
-index 81e2a279d4c29f5fe52387875489239515a8c82b..6955c72fd5d1af64769a13b69216ef016d349f03 100644
+index 81e2a279d4c29f5fe52387875489239515a8c82b..469f464fe4668e6b65be73a6762a042709e78018 100644
 --- a/net/minecraft/world/level/block/BambooStalkBlock.java
 +++ b/net/minecraft/world/level/block/BambooStalkBlock.java
+@@ -157,7 +157,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+     public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state) {
+         int heightAboveUpToMax = this.getHeightAboveUpToMax(level, pos);
+         int heightBelowUpToMax = this.getHeightBelowUpToMax(level, pos);
+-        return heightAboveUpToMax + heightBelowUpToMax + 1 < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(heightAboveUpToMax)).getValue(STAGE) != 1; // Paper - Configurable cactus/bamboo/reed growth height
++        return heightAboveUpToMax + heightBelowUpToMax + 1 < level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(heightAboveUpToMax)).getValue(STAGE) != 1; // Paper - Configurable cactus/bamboo/reed growth height
+     }
+ 
+     @Override
 @@ -166,7 +166,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
      }
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          int heightAboveUpToMax = this.getHeightAboveUpToMax(level, pos);
          int heightBelowUpToMax = this.getHeightBelowUpToMax(level, pos);
          int i = heightAboveUpToMax + heightBelowUpToMax + 1;
+@@ -175,7 +175,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+         for (int i2 = 0; i2 < i1; i2++) {
+             BlockPos blockPos = pos.above(heightAboveUpToMax);
+             BlockState blockState = level.getBlockState(blockPos);
+-            if (i >= level.paperConfig().maxGrowthHeight.bamboo.max || !blockState.is(Blocks.BAMBOO) || blockState.getValue(BambooStalkBlock.STAGE) == 1 || !level.isEmptyBlock(blockPos.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus/bamboo/reed growth height
++            if (i >= level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.max || !blockState.is(Blocks.BAMBOO) || blockState.getValue(BambooStalkBlock.STAGE) == 1 || !level.isEmptyBlock(blockPos.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus/bamboo/reed growth height
+                 return;
+             }
+ 
 @@ -185,7 +185,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
          }
      }
@@ -950,12 +976,37 @@ index 81e2a279d4c29f5fe52387875489239515a8c82b..6955c72fd5d1af64769a13b69216ef01
          BlockState blockState = level.getBlockState(pos.below());
          BlockPos blockPos = pos.below(2);
          BlockState blockState1 = level.getBlockState(blockPos);
-@@ -221,7 +221,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
-     protected int getHeightAboveUpToMax(BlockGetter level, BlockPos pos) {
+@@ -207,7 +207,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+         }
+ 
+         int i = state.getValue(AGE) != 1 && !blockState1.is(Blocks.BAMBOO) ? 0 : 1;
+-        int i1 = (age < level.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && age != (level.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper - Configurable cactus/bamboo/reed growth height
++        int i1 = (age < level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && age != (level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper - Configurable cactus/bamboo/reed growth height
+         // CraftBukkit start
+         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, pos.above(), this.defaultBlockState().setValue(AGE, i).setValue(LEAVES, bambooLeaves).setValue(STAGE, i1), Block.UPDATE_ALL)) {
+             if (shouldUpdateOthers) {
+@@ -218,20 +218,20 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+         // CraftBukkit end
+     }
+ 
+-    protected int getHeightAboveUpToMax(BlockGetter level, BlockPos pos) {
++    protected int getHeightAboveUpToMax(LevelReader level, BlockPos pos) { // Paper
          int i = 0;
  
 -        while (i < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
-+        while (i < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height // todo ClassCastException when bonemealing a bamboo
++        while (i < level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
+             i++;
+         }
+ 
+         return i;
+     }
+ 
+-    protected int getHeightBelowUpToMax(BlockGetter level, BlockPos pos) {
++    protected int getHeightBelowUpToMax(LevelReader level, BlockPos pos) { // Paper
+         int i = 0;
+ 
+-        while (i < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
++        while (i < level.getMinecraftWorld().paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
              i++;
          }
  
@@ -996,7 +1047,7 @@ index dbc912d514120a33f22959d6dc36ccf6ebc6be80..f27840bd23d51b86f00cac7eede270cc
      }
  
 diff --git a/net/minecraft/world/level/block/BigDripleafBlock.java b/net/minecraft/world/level/block/BigDripleafBlock.java
-index c2ef71dd9ee070f80d32b8829b80240ff22f0f7f..70d4c9359c9e3c7c28ad8ae6f2f4a6a180a70299 100644
+index c2ef71dd9ee070f80d32b8829b80240ff22f0f7f..d2324808a9db1ca701becc9a27577ab6f111f987 100644
 --- a/net/minecraft/world/level/block/BigDripleafBlock.java
 +++ b/net/minecraft/world/level/block/BigDripleafBlock.java
 @@ -177,7 +177,7 @@ public class BigDripleafBlock extends HorizontalDirectionalBlock implements Bone
@@ -1004,12 +1055,12 @@ index c2ef71dd9ee070f80d32b8829b80240ff22f0f7f..70d4c9359c9e3c7c28ad8ae6f2f4a6a1
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockPos blockPos = pos.above();
          BlockState blockState = level.getBlockState(blockPos);
          if (canPlaceAt(level, blockPos, blockState)) {
 diff --git a/net/minecraft/world/level/block/BigDripleafStemBlock.java b/net/minecraft/world/level/block/BigDripleafStemBlock.java
-index 0ce3e60a94dff03874cad51a936f247d5c3d65ce..40c56db22734c0caf51d53666163b8625368f341 100644
+index 0ce3e60a94dff03874cad51a936f247d5c3d65ce..d5777bfb65d999cb2706c14a26c57f7dfe66a565 100644
 --- a/net/minecraft/world/level/block/BigDripleafStemBlock.java
 +++ b/net/minecraft/world/level/block/BigDripleafStemBlock.java
 @@ -119,7 +119,7 @@ public class BigDripleafStemBlock extends HorizontalDirectionalBlock implements
@@ -1017,7 +1068,7 @@ index 0ce3e60a94dff03874cad51a936f247d5c3d65ce..40c56db22734c0caf51d53666163b862
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          Optional<BlockPos> topConnectedBlock = BlockUtil.getTopConnectedBlock(level, pos, state.getBlock(), Direction.UP, Blocks.BIG_DRIPLEAF);
          if (!topConnectedBlock.isEmpty()) {
              BlockPos blockPos = topConnectedBlock.get();
@@ -1035,7 +1086,7 @@ index 94b4143449c99ee35db44ab8e2a766d924aa6410..9b9cc245b1fc42d9747de68049189935
  
      public boolean isPossibleToRespawnInThis(BlockState state) {
 diff --git a/net/minecraft/world/level/block/BonemealableBlock.java b/net/minecraft/world/level/block/BonemealableBlock.java
-index 676cc6cb2ea0ac25c4e4bd6a32856f07784c7b49..5eba300c458f2b897b89409eb7d2873efd5974d2 100644
+index 676cc6cb2ea0ac25c4e4bd6a32856f07784c7b49..965e966e44c8091df61b703f4887963181ea2882 100644
 --- a/net/minecraft/world/level/block/BonemealableBlock.java
 +++ b/net/minecraft/world/level/block/BonemealableBlock.java
 @@ -15,14 +15,20 @@ public interface BonemealableBlock {
@@ -1048,7 +1099,7 @@ index 676cc6cb2ea0ac25c4e4bd6a32856f07784c7b49..5eba300c458f2b897b89409eb7d2873e
 +        performBonemeal(level, random, pos, state, null);
 +    }
 +
-+    void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext);
++    void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext);
 +    // Paper end
  
      static boolean hasSpreadableNeighbourPos(LevelReader level, BlockPos pos, BlockState state) {
@@ -1063,25 +1114,20 @@ index 676cc6cb2ea0ac25c4e4bd6a32856f07784c7b49..5eba300c458f2b897b89409eb7d2873e
  
      private static Optional<BlockPos> getSpreadableNeighbourPos(List<Direction> directions, LevelReader level, BlockPos pos, BlockState state) {
 diff --git a/net/minecraft/world/level/block/BonemealableFeaturePlacerBlock.java b/net/minecraft/world/level/block/BonemealableFeaturePlacerBlock.java
-index ee701a4c5042aec359271533680d292a6169d4db..a272f5d9f5fe36909e97d7ad10636c6ef98f43bf 100644
+index ee701a4c5042aec359271533680d292a6169d4db..d856dfbd89df890eeabce86618ab2586900206ae 100644
 --- a/net/minecraft/world/level/block/BonemealableFeaturePlacerBlock.java
 +++ b/net/minecraft/world/level/block/BonemealableFeaturePlacerBlock.java
-@@ -41,11 +41,11 @@ public class BonemealableFeaturePlacerBlock extends Block implements Bonemealabl
+@@ -41,7 +41,7 @@ public class BonemealableFeaturePlacerBlock extends Block implements Bonemealabl
      }
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          level.registryAccess()
              .lookup(Registries.CONFIGURED_FEATURE)
              .flatMap(registry -> registry.get(this.feature))
--            .ifPresent(reference -> reference.value().place(level, level.getChunkSource().getGenerator(), random, pos.above()));
-+            .ifPresent(reference -> reference.value().place(level, level.getGenerator(), random, pos.above())); // Paper
-     }
- 
-     @Override
 diff --git a/net/minecraft/world/level/block/BushBlock.java b/net/minecraft/world/level/block/BushBlock.java
-index 532d2982b520f6f9f7021ec85ef3bcf9bd31e141..52663da1b1413a104c40b44b341fd5e4f1b2a4eb 100644
+index 532d2982b520f6f9f7021ec85ef3bcf9bd31e141..4691a3a75935f1109fca36a85f6d62f3b4a05cab 100644
 --- a/net/minecraft/world/level/block/BushBlock.java
 +++ b/net/minecraft/world/level/block/BushBlock.java
 @@ -41,7 +41,7 @@ public class BushBlock extends VegetationBlock implements BonemealableBlock {
@@ -1089,12 +1135,12 @@ index 532d2982b520f6f9f7021ec85ef3bcf9bd31e141..52663da1b1413a104c40b44b341fd5e4
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BonemealableBlock.findSpreadableNeighbourPos(level, pos, state).ifPresent(blockPos -> level.setBlockAndUpdate(blockPos, this.defaultBlockState()));
      }
  }
 diff --git a/net/minecraft/world/level/block/CaveVinesBlock.java b/net/minecraft/world/level/block/CaveVinesBlock.java
-index f4a4dc14012c110e58b1c9272d80d4b89394d090..053090bcec4a53b707238e634db4683002f10c93 100644
+index f4a4dc14012c110e58b1c9272d80d4b89394d090..84c5e9195e3d1e026691ecf0b0e2dd6fae3a9e91 100644
 --- a/net/minecraft/world/level/block/CaveVinesBlock.java
 +++ b/net/minecraft/world/level/block/CaveVinesBlock.java
 @@ -89,7 +89,7 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements CaveVines {
@@ -1102,12 +1148,12 @@ index f4a4dc14012c110e58b1c9272d80d4b89394d090..053090bcec4a53b707238e634db46830
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          level.setBlock(pos, state.setValue(BERRIES, true), Block.UPDATE_CLIENTS);
      }
  }
 diff --git a/net/minecraft/world/level/block/CaveVinesPlantBlock.java b/net/minecraft/world/level/block/CaveVinesPlantBlock.java
-index aba65098fb3202e31b07aa2cee52acc5b671fa95..f2d6f31e007f49d50052fb24efa7fc2eaa92a799 100644
+index aba65098fb3202e31b07aa2cee52acc5b671fa95..9e3620313456a1ef62c5ce922d4ca21b34f880aa 100644
 --- a/net/minecraft/world/level/block/CaveVinesPlantBlock.java
 +++ b/net/minecraft/world/level/block/CaveVinesPlantBlock.java
 @@ -65,7 +65,7 @@ public class CaveVinesPlantBlock extends GrowingPlantBodyBlock implements CaveVi
@@ -1115,12 +1161,12 @@ index aba65098fb3202e31b07aa2cee52acc5b671fa95..f2d6f31e007f49d50052fb24efa7fc2e
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          level.setBlock(pos, state.setValue(BERRIES, true), Block.UPDATE_CLIENTS);
      }
  }
 diff --git a/net/minecraft/world/level/block/CocoaBlock.java b/net/minecraft/world/level/block/CocoaBlock.java
-index d4f82e39bb688e43decfb5c8e72fd6db2bfeb571..0b7e4732bc65c8c75ec876eebb238eafed1bb597 100644
+index d4f82e39bb688e43decfb5c8e72fd6db2bfeb571..8f11658f55980ea9f7f15d4892a027b7db1e03f1 100644
 --- a/net/minecraft/world/level/block/CocoaBlock.java
 +++ b/net/minecraft/world/level/block/CocoaBlock.java
 @@ -114,7 +114,7 @@ public class CocoaBlock extends HorizontalDirectionalBlock implements Bonemealab
@@ -1128,7 +1174,7 @@ index d4f82e39bb688e43decfb5c8e72fd6db2bfeb571..0b7e4732bc65c8c75ec876eebb238eaf
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(AGE, state.getValue(AGE) + 1), Block.UPDATE_CLIENTS); // CraftBukkit
      }
  
@@ -1190,7 +1236,7 @@ index c5fe15844d405a27cdae18c903dd481c25b437de..abb7d98c6608ec1bbed169327114245d
              level.scheduleTick(pos, this, 4);
          }
 diff --git a/net/minecraft/world/level/block/CropBlock.java b/net/minecraft/world/level/block/CropBlock.java
-index 1cf40fafd822d976ef4822335c60d8017659916f..171b7f79244bae8aab49cf8b2db6f03662b3d990 100644
+index 1cf40fafd822d976ef4822335c60d8017659916f..f502b8b5d9fd9e0404f1b5d37e0e3ea74de6900a 100644
 --- a/net/minecraft/world/level/block/CropBlock.java
 +++ b/net/minecraft/world/level/block/CropBlock.java
 @@ -104,13 +104,13 @@ public class CropBlock extends VegetationBlock implements BonemealableBlock {
@@ -1215,7 +1261,7 @@ index 1cf40fafd822d976ef4822335c60d8017659916f..171b7f79244bae8aab49cf8b2db6f036
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          this.growCrops(level, pos, state);
      }
  
@@ -1282,7 +1328,7 @@ index e7dbc14cce1d0ec3f410ae7ebbb4dc47301b5176..449083791b18eb4df10a3117f9802594
          level.playSound(
              null, pos, state.getValue(WATERLOGGED) ? SoundEvents.DRIED_GHAST_PLACE_IN_WATER : SoundEvents.DRIED_GHAST_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F
 diff --git a/net/minecraft/world/level/block/FireflyBushBlock.java b/net/minecraft/world/level/block/FireflyBushBlock.java
-index 635ce3fb2583f6b14355f6137fb6f79dfd959400..c1927d4655d91d556ec9fb734c197a3a33a8ff56 100644
+index 635ce3fb2583f6b14355f6137fb6f79dfd959400..138ae70e1dc348f5b804d90ecb10d04febc5ee10 100644
 --- a/net/minecraft/world/level/block/FireflyBushBlock.java
 +++ b/net/minecraft/world/level/block/FireflyBushBlock.java
 @@ -58,7 +58,7 @@ public class FireflyBushBlock extends VegetationBlock implements BonemealableBlo
@@ -1290,12 +1336,12 @@ index 635ce3fb2583f6b14355f6137fb6f79dfd959400..c1927d4655d91d556ec9fb734c197a3a
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BonemealableBlock.findSpreadableNeighbourPos(level, pos, state).ifPresent(blockPos -> level.setBlockAndUpdate(blockPos, this.defaultBlockState()));
      }
  }
 diff --git a/net/minecraft/world/level/block/FlowerBedBlock.java b/net/minecraft/world/level/block/FlowerBedBlock.java
-index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..5f39cc10064c222f9009bdee5ce59bfe3bbae704 100644
+index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..291a8a5ceb8f907db6fffa038e02f3959719a66d 100644
 --- a/net/minecraft/world/level/block/FlowerBedBlock.java
 +++ b/net/minecraft/world/level/block/FlowerBedBlock.java
 @@ -92,12 +92,12 @@ public class FlowerBedBlock extends VegetationBlock implements BonemealableBlock
@@ -1303,7 +1349,7 @@ index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..5f39cc10064c222f9009bdee5ce59bfe
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          int amountValue = state.getValue(AMOUNT);
          if (amountValue < 4) {
              level.setBlock(pos, state.setValue(AMOUNT, amountValue + 1), Block.UPDATE_CLIENTS);
@@ -1314,7 +1360,7 @@ index 2a24e71d2b598792ebaa867a2f74fd79e97cc6a2..5f39cc10064c222f9009bdee5ce59bfe
      }
  }
 diff --git a/net/minecraft/world/level/block/FungusBlock.java b/net/minecraft/world/level/block/FungusBlock.java
-index 9711efb088bd0da9168e9bcd0496bd7caddd2974..8dbaabce9509b7daec8bbdff5e37cf963f2ae04b 100644
+index 9711efb088bd0da9168e9bcd0496bd7caddd2974..4d09148cdbd81a0a83d0bfcc874c7957fa701329 100644
 --- a/net/minecraft/world/level/block/FungusBlock.java
 +++ b/net/minecraft/world/level/block/FungusBlock.java
 @@ -71,18 +71,14 @@ public class FungusBlock extends VegetationBlock implements BonemealableBlock {
@@ -1335,18 +1381,18 @@ index 9711efb088bd0da9168e9bcd0496bd7caddd2974..8dbaabce9509b7daec8bbdff5e37cf96
 -            .ifPresent(holder -> holder.value().place(level, level.getChunkSource().getGenerator(), random, pos));
 -        // CraftBukkit end
 +    // Paper start
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) {
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) {
 +        this.getFeature(level).ifPresent(holder -> {
-+            mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder);
++            growthContext.feature = holder;
 +            org.bukkit.craftbukkit.event.CraftEventFactory.structureEvent(level, pos, $ -> {
 +                return holder.value().place(level, level.getChunkSource().getGenerator(), random, pos);
-+            }, mealContext);
++            }, growthContext);
 +        });
 +        // Paper end
      }
  }
 diff --git a/net/minecraft/world/level/block/GlowLichenBlock.java b/net/minecraft/world/level/block/GlowLichenBlock.java
-index ba39497a6d7160cde961e339be8028ec131b8019..f38447dbc1880878d29e08a18a2db32319291992 100644
+index ba39497a6d7160cde961e339be8028ec131b8019..f6d0940d22f52ff4f465bd9a0978f4626ca2fb4c 100644
 --- a/net/minecraft/world/level/block/GlowLichenBlock.java
 +++ b/net/minecraft/world/level/block/GlowLichenBlock.java
 @@ -39,7 +39,7 @@ public class GlowLichenBlock extends MultifaceSpreadeableBlock implements Boneme
@@ -1354,12 +1400,12 @@ index ba39497a6d7160cde961e339be8028ec131b8019..f38447dbc1880878d29e08a18a2db323
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          this.spreader.spreadFromRandomFaceTowardRandomDirection(state, level, pos, random);
      }
  
 diff --git a/net/minecraft/world/level/block/GrassBlock.java b/net/minecraft/world/level/block/GrassBlock.java
-index 368f60ecce691ea161120743150e87b32efc3ca4..8a74e7b53ec7d3c3ad7b71856ef01abef9b98dd7 100644
+index 368f60ecce691ea161120743150e87b32efc3ca4..bfd07348e6f93c6d7acad44b708900628f9471cf 100644
 --- a/net/minecraft/world/level/block/GrassBlock.java
 +++ b/net/minecraft/world/level/block/GrassBlock.java
 @@ -40,7 +40,7 @@ public class GrassBlock extends SpreadingSnowyDirtBlock implements BonemealableB
@@ -1367,7 +1413,7 @@ index 368f60ecce691ea161120743150e87b32efc3ca4..8a74e7b53ec7d3c3ad7b71856ef01abe
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockPos blockPos = pos.above();
          BlockState blockState = Blocks.SHORT_GRASS.defaultBlockState();
          Optional<Holder.Reference<PlacedFeature>> optional = level.registryAccess()
@@ -1376,12 +1422,12 @@ index 368f60ecce691ea161120743150e87b32efc3ca4..8a74e7b53ec7d3c3ad7b71856ef01abe
                  BonemealableBlock bonemealableBlock = (BonemealableBlock)blockState.getBlock();
                  if (bonemealableBlock.isValidBonemealTarget(level, blockPos1, blockState1)) {
 -                    bonemealableBlock.performBonemeal(level, random, blockPos1, blockState1);
-+                    bonemealableBlock.performBonemeal(level, random, blockPos1, blockState1, mealContext); // Paper
++                    bonemealableBlock.performBonemeal(level, random, blockPos1, blockState1, growthContext); // Paper
                  }
              }
  
 diff --git a/net/minecraft/world/level/block/GrowingPlantBodyBlock.java b/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
-index 314d198617e34f91f72a2952a2a62ce0a3b9147d..3ccaf85f148ce738fb122842b2aef5e94aa49cdc 100644
+index 314d198617e34f91f72a2952a2a62ce0a3b9147d..817bd9dafb17817174af118fafae57962e915ac3 100644
 --- a/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
 +++ b/net/minecraft/world/level/block/GrowingPlantBodyBlock.java
 @@ -74,11 +74,11 @@ public abstract class GrowingPlantBodyBlock extends GrowingPlantBlock implements
@@ -1389,17 +1435,17 @@ index 314d198617e34f91f72a2952a2a62ce0a3b9147d..3ccaf85f148ce738fb122842b2aef5e9
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          Optional<BlockPos> headPos = this.getHeadPos(level, pos, state.getBlock());
          if (headPos.isPresent()) {
              BlockState blockState = level.getBlockState(headPos.get());
 -            ((GrowingPlantHeadBlock)blockState.getBlock()).performBonemeal(level, random, headPos.get(), blockState);
-+            ((GrowingPlantHeadBlock)blockState.getBlock()).performBonemeal(level, random, headPos.get(), blockState, mealContext); // Paper
++            ((GrowingPlantHeadBlock)blockState.getBlock()).performBonemeal(level, random, headPos.get(), blockState, growthContext); // Paper
          }
      }
  
 diff --git a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-index bac7f990282fd7c676c2f8c40d7fd87badb1e284..1a1dcfe8abff794663f3aaeefff693686cc54bce 100644
+index bac7f990282fd7c676c2f8c40d7fd87badb1e284..bd30c47bab6dd4db3143fde72867721f3634fa8a 100644
 --- a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 +++ b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 @@ -135,7 +135,7 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
@@ -1407,12 +1453,12 @@ index bac7f990282fd7c676c2f8c40d7fd87badb1e284..1a1dcfe8abff794663f3aaeefff69368
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockPos blockPos = pos.relative(this.growthDirection);
          int min = Math.min(state.getValue(AGE) + 1, 25);
          int blocksToGrowWhenBonemealed = this.getBlocksToGrowWhenBonemealed(random);
 diff --git a/net/minecraft/world/level/block/HangingMossBlock.java b/net/minecraft/world/level/block/HangingMossBlock.java
-index 9675e0ad00a4a26c38a7388dc3615e0c33b4e802..a319d8e0a2737723c059a4400a3e62d81c4f0717 100644
+index 9675e0ad00a4a26c38a7388dc3615e0c33b4e802..391fef088a53a2f5433687e164f04d61f5a0b566 100644
 --- a/net/minecraft/world/level/block/HangingMossBlock.java
 +++ b/net/minecraft/world/level/block/HangingMossBlock.java
 @@ -124,7 +124,7 @@ public class HangingMossBlock extends Block implements BonemealableBlock {
@@ -1420,7 +1466,7 @@ index 9675e0ad00a4a26c38a7388dc3615e0c33b4e802..a319d8e0a2737723c059a4400a3e62d8
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockPos blockPos = this.getTip(level, pos).below();
          if (this.canGrowInto(level.getBlockState(blockPos))) {
              level.setBlockAndUpdate(blockPos, state.setValue(TIP, true));
@@ -1438,7 +1484,7 @@ index a4b824dab307705559a76b954a3e47d30dd65889..4fe64b4b445ddceedff0909c917e85d6
          TypedEntityData<BlockEntityType<?>> typedEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
          if (typedEntityData != null && typedEntityData.contains("RecordItem")) {
 diff --git a/net/minecraft/world/level/block/MangroveLeavesBlock.java b/net/minecraft/world/level/block/MangroveLeavesBlock.java
-index 6d8154821cd17f7529a44eeb16a78caa07529436..5ba0ec6900bd8c0fa9b38f83d8af6ba07d9bada6 100644
+index 6d8154821cd17f7529a44eeb16a78caa07529436..c5427b5de39340f9d3c53ce47c5bffda6d4e9731 100644
 --- a/net/minecraft/world/level/block/MangroveLeavesBlock.java
 +++ b/net/minecraft/world/level/block/MangroveLeavesBlock.java
 @@ -40,7 +40,7 @@ public class MangroveLeavesBlock extends TintedParticleLeavesBlock implements Bo
@@ -1446,12 +1492,12 @@ index 6d8154821cd17f7529a44eeb16a78caa07529436..5ba0ec6900bd8c0fa9b38f83d8af6ba0
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          level.setBlock(pos.below(), MangrovePropaguleBlock.createNewHangingPropagule(), Block.UPDATE_CLIENTS);
      }
  
 diff --git a/net/minecraft/world/level/block/MangrovePropaguleBlock.java b/net/minecraft/world/level/block/MangrovePropaguleBlock.java
-index 2fba8534a636491314c760bc338226f6506f0a9a..71320ae181ae72f0803e70190d73627972074e71 100644
+index 2fba8534a636491314c760bc338226f6506f0a9a..1652846681e9a3a906dc0ee34bc7fc85f2bfcb47 100644
 --- a/net/minecraft/world/level/block/MangrovePropaguleBlock.java
 +++ b/net/minecraft/world/level/block/MangrovePropaguleBlock.java
 @@ -123,11 +123,11 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
@@ -1459,17 +1505,17 @@ index 2fba8534a636491314c760bc338226f6506f0a9a..71320ae181ae72f0803e70190d736279
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          if (isHanging(state) && !isFullyGrown(state)) {
              level.setBlock(pos, state.cycle(AGE), Block.UPDATE_CLIENTS);
          } else {
 -            super.performBonemeal(level, random, pos, state);
-+            super.performBonemeal(level, random, pos, state, mealContext); // Paper
++            super.performBonemeal(level, random, pos, state, growthContext); // Paper
          }
      }
  
 diff --git a/net/minecraft/world/level/block/MossyCarpetBlock.java b/net/minecraft/world/level/block/MossyCarpetBlock.java
-index 3762d833f17d596e04845a3f391423f9c14a878b..f5d03f2a3a3866857ddaece77ac4e1273d71c83b 100644
+index 3762d833f17d596e04845a3f391423f9c14a878b..7a10673d12eaddca1caef25f11c0f301a0389c29 100644
 --- a/net/minecraft/world/level/block/MossyCarpetBlock.java
 +++ b/net/minecraft/world/level/block/MossyCarpetBlock.java
 @@ -176,7 +176,7 @@ public class MossyCarpetBlock extends Block implements BonemealableBlock {
@@ -1486,12 +1532,12 @@ index 3762d833f17d596e04845a3f391423f9c14a878b..f5d03f2a3a3866857ddaece77ac4e127
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockState blockState = createTopperWithSideChance(level, pos, () -> true);
          if (!blockState.isAir()) {
              level.setBlock(pos.above(), blockState, Block.UPDATE_ALL);
 diff --git a/net/minecraft/world/level/block/MushroomBlock.java b/net/minecraft/world/level/block/MushroomBlock.java
-index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..b2c8c755af383aa5e15cde5207282f7481a60012 100644
+index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..42de0f8830cdb41e94ad38564a85a1b9cd4d78ab 100644
 --- a/net/minecraft/world/level/block/MushroomBlock.java
 +++ b/net/minecraft/world/level/block/MushroomBlock.java
 @@ -87,14 +87,18 @@ public class MushroomBlock extends VegetationBlock implements BonemealableBlock
@@ -1499,7 +1545,7 @@ index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..b2c8c755af383aa5e15cde5207282f74
      }
  
 -    public boolean growMushroom(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
-+    public boolean growMushroom(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public boolean growMushroom(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          Optional<? extends Holder<ConfiguredFeature<?, ?>>> optional = level.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(this.feature);
          if (optional.isEmpty()) {
              return false;
@@ -1508,10 +1554,10 @@ index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..b2c8c755af383aa5e15cde5207282f74
 -            SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? org.bukkit.TreeType.BROWN_MUSHROOM : org.bukkit.TreeType.RED_MUSHROOM; // CraftBukkit
 -            if (optional.get().value().place(level, level.getChunkSource().getGenerator(), random, pos)) {
 +            // Paper start
-+            mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(optional.get());
++            growthContext.feature = optional.get();
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.structureEvent(level, pos, $ -> {
 +                return optional.get().value().place(level, level.getChunkSource().getGenerator(), random, pos);
-+            }, mealContext)) {
++            }, growthContext)) {
 +                // Paper end
                  return true;
              } else {
@@ -1522,12 +1568,12 @@ index b11ff87df7b75f2a3065bbed7b13cc52f7df83fc..b2c8c755af383aa5e15cde5207282f74
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 -        this.growMushroom(level, pos, state, random);
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
-+        this.growMushroom(level, pos, state, random, mealContext); // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
++        this.growMushroom(level, pos, state, random, growthContext); // Paper
      }
  }
 diff --git a/net/minecraft/world/level/block/NetherrackBlock.java b/net/minecraft/world/level/block/NetherrackBlock.java
-index 24e166e399bc542522fc832064401ebb6ba2568e..c217cc3fe5fb64c18a7a6df1b72ce7b232b2e65d 100644
+index 24e166e399bc542522fc832064401ebb6ba2568e..f1f6bad412baf259e219eef269baec76b498bb18 100644
 --- a/net/minecraft/world/level/block/NetherrackBlock.java
 +++ b/net/minecraft/world/level/block/NetherrackBlock.java
 @@ -43,7 +43,7 @@ public class NetherrackBlock extends Block implements BonemealableBlock {
@@ -1535,12 +1581,12 @@ index 24e166e399bc542522fc832064401ebb6ba2568e..c217cc3fe5fb64c18a7a6df1b72ce7b2
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          boolean flag = false;
          boolean flag1 = false;
  
 diff --git a/net/minecraft/world/level/block/NyliumBlock.java b/net/minecraft/world/level/block/NyliumBlock.java
-index 7357bf27bb0890cefd8f8188a7a326a631cd0ff6..45dd1e6c7baaf3b75340520478ec7b7fd091f604 100644
+index 7357bf27bb0890cefd8f8188a7a326a631cd0ff6..c892e251acf6c2744a4712bcc488ffc5298e2bc4 100644
 --- a/net/minecraft/world/level/block/NyliumBlock.java
 +++ b/net/minecraft/world/level/block/NyliumBlock.java
 @@ -59,7 +59,7 @@ public class NyliumBlock extends Block implements BonemealableBlock {
@@ -1548,7 +1594,7 @@ index 7357bf27bb0890cefd8f8188a7a326a631cd0ff6..45dd1e6c7baaf3b75340520478ec7b7f
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockState blockState = level.getBlockState(pos);
          BlockPos blockPos = pos.above();
          ChunkGenerator generator = level.getChunkSource().getGenerator();
@@ -1562,7 +1608,7 @@ index 7357bf27bb0890cefd8f8188a7a326a631cd0ff6..45dd1e6c7baaf3b75340520478ec7b7f
          RandomSource random,
          BlockPos pos
 diff --git a/net/minecraft/world/level/block/PitcherCropBlock.java b/net/minecraft/world/level/block/PitcherCropBlock.java
-index cbaf7ea236e8689793af65f29af3f1860644d152..0f4e092dd8ddc273234fbe87f002ab11bb868283 100644
+index cbaf7ea236e8689793af65f29af3f1860644d152..b21ffb0aaa27c7443437f3b7cdd64a44e0624f6b 100644
 --- a/net/minecraft/world/level/block/PitcherCropBlock.java
 +++ b/net/minecraft/world/level/block/PitcherCropBlock.java
 @@ -129,7 +129,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
@@ -1588,12 +1634,12 @@ index cbaf7ea236e8689793af65f29af3f1860644d152..0f4e092dd8ddc273234fbe87f002ab11
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          PitcherCropBlock.PosAndState lowerHalf = this.getLowerHalf(level, pos, state);
          if (lowerHalf != null) {
              this.grow(level, lowerHalf.state, lowerHalf.pos, 1);
 diff --git a/net/minecraft/world/level/block/RootedDirtBlock.java b/net/minecraft/world/level/block/RootedDirtBlock.java
-index db6b32016a1ad4264da9d8812e5ea9356d0601df..19000f09efadb6a2c616badfb837487a71168f14 100644
+index db6b32016a1ad4264da9d8812e5ea9356d0601df..a9a2e451e54a616ca5d3e0d47381caba523e07e2 100644
 --- a/net/minecraft/world/level/block/RootedDirtBlock.java
 +++ b/net/minecraft/world/level/block/RootedDirtBlock.java
 @@ -32,7 +32,7 @@ public class RootedDirtBlock extends Block implements BonemealableBlock {
@@ -1601,12 +1647,12 @@ index db6b32016a1ad4264da9d8812e5ea9356d0601df..19000f09efadb6a2c616badfb837487a
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, pos.below(), Blocks.HANGING_ROOTS.defaultBlockState(), Block.UPDATE_ALL); // CraftBukkit
      }
  
 diff --git a/net/minecraft/world/level/block/SaplingBlock.java b/net/minecraft/world/level/block/SaplingBlock.java
-index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..0c20853ebcad4b0d55577ef361c551eeee4c93d3 100644
+index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..3f2e275e95737eddbe116041620299a84abdd284 100644
 --- a/net/minecraft/world/level/block/SaplingBlock.java
 +++ b/net/minecraft/world/level/block/SaplingBlock.java
 @@ -25,7 +25,6 @@ public class SaplingBlock extends VegetationBlock implements BonemealableBlock {
@@ -1621,13 +1667,12 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..0c20853ebcad4b0d55577ef361c551ee
          }
      }
  
--    public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
 +    // Paper start
-+    public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) { // Paper
-+        this.advanceTree(level, pos, state, random, new io.papermc.paper.util.capture.BoneMealContext(level));
+     public void advanceTree(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
++        this.advanceTree(level, pos, state, random, new io.papermc.paper.util.capture.GrowthContext(level));
 +    }
 +
-+    public void advanceTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
++    public void advanceTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.GrowthContext growthContext) {
 +        // Paper end
          if (state.getValue(STAGE) == 0) {
              level.setBlock(pos, state.cycle(STAGE), Block.UPDATE_NONE);
@@ -1660,7 +1705,7 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..0c20853ebcad4b0d55577ef361c551ee
 -                }
 -            }
 -            // CraftBukkit end
-+            this.treeGrower.growTree(level, level.getChunkSource().getGenerator(), pos, state, random, mealContext); // Paper
++            this.treeGrower.growTree(level, level.getChunkSource().getGenerator(), pos, state, random, growthContext); // Paper
          }
      }
  
@@ -1670,13 +1715,13 @@ index 23e9e5e7ef76fe3d6e1bbc41faf69ee65ca77d80..0c20853ebcad4b0d55577ef361c551ee
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 -        this.advanceTree(level, pos, state, random);
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
-+        this.advanceTree(level, pos, state, random, mealContext); // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
++        this.advanceTree(level, pos, state, random, growthContext); // Paper
      }
  
      @Override
 diff --git a/net/minecraft/world/level/block/SeaPickleBlock.java b/net/minecraft/world/level/block/SeaPickleBlock.java
-index f59fb2923bbcdf9bc73747b6aa9199fef4c2319f..a69f21db840abd71041d6d1c32dced0c48646fa6 100644
+index f59fb2923bbcdf9bc73747b6aa9199fef4c2319f..bcad45255d3e0b117f62e11ec2f79153306be816 100644
 --- a/net/minecraft/world/level/block/SeaPickleBlock.java
 +++ b/net/minecraft/world/level/block/SeaPickleBlock.java
 @@ -130,7 +130,7 @@ public class SeaPickleBlock extends VegetationBlock implements BonemealableBlock
@@ -1684,12 +1729,12 @@ index f59fb2923bbcdf9bc73747b6aa9199fef4c2319f..a69f21db840abd71041d6d1c32dced0c
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          int i = 5;
          int i1 = 1;
          int i2 = 2;
 diff --git a/net/minecraft/world/level/block/SeagrassBlock.java b/net/minecraft/world/level/block/SeagrassBlock.java
-index a41270e041ab408dc6ac1207f7b6ec2eaff161d4..ddef3caad5ee406274734ee422c1f924627222c3 100644
+index a41270e041ab408dc6ac1207f7b6ec2eaff161d4..7694b7900996bd89fbe4ede78f25be737b4fd417 100644
 --- a/net/minecraft/world/level/block/SeagrassBlock.java
 +++ b/net/minecraft/world/level/block/SeagrassBlock.java
 @@ -87,7 +87,7 @@ public class SeagrassBlock extends VegetationBlock implements BonemealableBlock,
@@ -1697,12 +1742,12 @@ index a41270e041ab408dc6ac1207f7b6ec2eaff161d4..ddef3caad5ee406274734ee422c1f924
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BlockState blockState = Blocks.TALL_SEAGRASS.defaultBlockState();
          BlockState blockState1 = blockState.setValue(TallSeagrassBlock.HALF, DoubleBlockHalf.UPPER);
          BlockPos blockPos = pos.above();
 diff --git a/net/minecraft/world/level/block/ShortDryGrassBlock.java b/net/minecraft/world/level/block/ShortDryGrassBlock.java
-index 1df47e0ea401267027721342aaf26639b2622e13..a0188c77806f4fe21cffcb43aa83cde6c14442e3 100644
+index 1df47e0ea401267027721342aaf26639b2622e13..910e5424b8f5aa15c665d205afbd38b414d8d346 100644
 --- a/net/minecraft/world/level/block/ShortDryGrassBlock.java
 +++ b/net/minecraft/world/level/block/ShortDryGrassBlock.java
 @@ -47,7 +47,7 @@ public class ShortDryGrassBlock extends DryVegetationBlock implements Bonemealab
@@ -1710,12 +1755,12 @@ index 1df47e0ea401267027721342aaf26639b2622e13..a0188c77806f4fe21cffcb43aa83cde6
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          level.setBlockAndUpdate(pos, Blocks.TALL_DRY_GRASS.defaultBlockState());
      }
  }
 diff --git a/net/minecraft/world/level/block/SmallDripleafBlock.java b/net/minecraft/world/level/block/SmallDripleafBlock.java
-index d5821239d33aad9213b9a87d225e942934623857..a3c8baf014ae2e26f022bff78d4e0e7d6808fa80 100644
+index d5821239d33aad9213b9a87d225e942934623857..7a0ceb68960101f8fb6c2cd34e32372a6bac43af 100644
 --- a/net/minecraft/world/level/block/SmallDripleafBlock.java
 +++ b/net/minecraft/world/level/block/SmallDripleafBlock.java
 @@ -64,7 +64,7 @@ public class SmallDripleafBlock extends DoublePlantBlock implements Bonemealable
@@ -1732,7 +1777,7 @@ index d5821239d33aad9213b9a87d225e942934623857..a3c8baf014ae2e26f022bff78d4e0e7d
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          if (state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER) {
              BlockPos blockPos = pos.above();
              level.setBlock(blockPos, level.getFluidState(blockPos).createLegacyBlock(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -1740,7 +1785,7 @@ index d5821239d33aad9213b9a87d225e942934623857..a3c8baf014ae2e26f022bff78d4e0e7d
          } else {
              BlockPos blockPos = pos.below();
 -            this.performBonemeal(level, random, blockPos, level.getBlockState(blockPos));
-+            this.performBonemeal(level, random, blockPos, level.getBlockState(blockPos), mealContext); // Paper
++            this.performBonemeal(level, random, blockPos, level.getBlockState(blockPos), growthContext); // Paper
          }
      }
  
@@ -1759,7 +1804,7 @@ index 298e51da2da64fdaa860108cc34e59d214b5f9a7..86d6a41750e15b0c4c49706ffd827e4f
  
              return true;
 diff --git a/net/minecraft/world/level/block/StemBlock.java b/net/minecraft/world/level/block/StemBlock.java
-index 82ea0ce3895108d477d10e901e756a27a3a9cedc..14694eaea6d2f27401c3e656f7e9e9133f215494 100644
+index 82ea0ce3895108d477d10e901e756a27a3a9cedc..dc963acafd12db0784721b3c6545c191c9aac129 100644
 --- a/net/minecraft/world/level/block/StemBlock.java
 +++ b/net/minecraft/world/level/block/StemBlock.java
 @@ -113,12 +113,12 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
@@ -1768,7 +1813,7 @@ index 82ea0ce3895108d477d10e901e756a27a3a9cedc..14694eaea6d2f27401c3e656f7e9e913
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 -        int min = Math.min(7, state.getValue(AGE) + Mth.nextInt(level.random, 2, 5));
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
 +        int min = Math.min(7, state.getValue(AGE) + Mth.nextInt(level.getRandom(), 2, 5)); // Paper
          BlockState blockState = state.setValue(AGE, min);
          org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, blockState, Block.UPDATE_CLIENTS); // CraftBukkit
@@ -1792,7 +1837,7 @@ index 5b19c117d7935c6b0c3887083f63cc293bc495e3..9fcbe1a3d741852674ed8942e10bc0ca
              if (placer != null) {
                  BlockEntity blockEntity = level.getBlockEntity(pos);
 diff --git a/net/minecraft/world/level/block/SweetBerryBushBlock.java b/net/minecraft/world/level/block/SweetBerryBushBlock.java
-index 3d2bd187cb9f83f9369d11b21c484c21ceba0569..b6aadb943a4b5c04a39f1700a508c22df0464770 100644
+index 3d2bd187cb9f83f9369d11b21c484c21ceba0569..4712b7faac0612ee85a2c0e88a2c84ba289639c7 100644
 --- a/net/minecraft/world/level/block/SweetBerryBushBlock.java
 +++ b/net/minecraft/world/level/block/SweetBerryBushBlock.java
 @@ -160,7 +160,7 @@ public class SweetBerryBushBlock extends VegetationBlock implements Bonemealable
@@ -1800,12 +1845,12 @@ index 3d2bd187cb9f83f9369d11b21c484c21ceba0569..b6aadb943a4b5c04a39f1700a508c22d
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          int min = Math.min(3, state.getValue(AGE) + 1);
          level.setBlock(pos, state.setValue(AGE, min), Block.UPDATE_CLIENTS);
      }
 diff --git a/net/minecraft/world/level/block/TallDryGrassBlock.java b/net/minecraft/world/level/block/TallDryGrassBlock.java
-index f0514cd9df52b3a459ff92812ae5ad9b0df85763..53a8c2130037a1de75f8cc9b63f035f7a62b4bea 100644
+index f0514cd9df52b3a459ff92812ae5ad9b0df85763..7dca920d5702292b01c495a167956616b867cf7f 100644
 --- a/net/minecraft/world/level/block/TallDryGrassBlock.java
 +++ b/net/minecraft/world/level/block/TallDryGrassBlock.java
 @@ -47,7 +47,7 @@ public class TallDryGrassBlock extends DryVegetationBlock implements Bonemealabl
@@ -1813,12 +1858,12 @@ index f0514cd9df52b3a459ff92812ae5ad9b0df85763..53a8c2130037a1de75f8cc9b63f035f7
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          BonemealableBlock.findSpreadableNeighbourPos(level, pos, Blocks.SHORT_DRY_GRASS.defaultBlockState())
              .ifPresent(blockPos -> level.setBlockAndUpdate(blockPos, Blocks.SHORT_DRY_GRASS.defaultBlockState()));
      }
 diff --git a/net/minecraft/world/level/block/TallFlowerBlock.java b/net/minecraft/world/level/block/TallFlowerBlock.java
-index 4be72e53848b13eb68a2149749a88a83a4cb1e5c..6feb3bb080f51904bb119f2a69f9fe3ce511a582 100644
+index 4be72e53848b13eb68a2149749a88a83a4cb1e5c..c3ab67eb1da188b94fc1e2a4072bd08616391865 100644
 --- a/net/minecraft/world/level/block/TallFlowerBlock.java
 +++ b/net/minecraft/world/level/block/TallFlowerBlock.java
 @@ -33,7 +33,7 @@ public class TallFlowerBlock extends DoublePlantBlock implements BonemealableBlo
@@ -1827,12 +1872,12 @@ index 4be72e53848b13eb68a2149749a88a83a4cb1e5c..6feb3bb080f51904bb119f2a69f9fe3c
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 -        popResource(level, pos, new ItemStack(this));
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
 +        level.addTask((serverLevel) -> popResource(serverLevel, pos, new ItemStack(this))); // Paper
      }
  }
 diff --git a/net/minecraft/world/level/block/TallGrassBlock.java b/net/minecraft/world/level/block/TallGrassBlock.java
-index 6c5259371fb8e2e131b2c69f354521b1e902ac4e..195bf95f843f459fab58382e5ceba2077c465dd7 100644
+index 6c5259371fb8e2e131b2c69f354521b1e902ac4e..e7978ffe8702b12e3e1d0370237af76b43aeb89f 100644
 --- a/net/minecraft/world/level/block/TallGrassBlock.java
 +++ b/net/minecraft/world/level/block/TallGrassBlock.java
 @@ -41,7 +41,7 @@ public class TallGrassBlock extends VegetationBlock implements BonemealableBlock
@@ -1840,7 +1885,7 @@ index 6c5259371fb8e2e131b2c69f354521b1e902ac4e..195bf95f843f459fab58382e5ceba207
  
      @Override
 -    public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.BoneMealContext mealContext) { // Paper
++    public void performBonemeal(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, RandomSource random, BlockPos pos, BlockState state, io.papermc.paper.util.capture.GrowthContext growthContext) { // Paper
          DoublePlantBlock.placeAt(level, getGrownBlock(state).defaultBlockState(), pos, Block.UPDATE_CLIENTS);
      }
  
@@ -1910,7 +1955,7 @@ index c57cb7b47a01e313a1be5de769c6766ac2787d95..f34731580bc880dcc5d3e96923a7f2b4
      }
  }
 diff --git a/net/minecraft/world/level/block/grower/TreeGrower.java b/net/minecraft/world/level/block/grower/TreeGrower.java
-index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e968b8fa876 100644
+index 5471619a0484ece08640e2b3fd26746c351dc3e0..2ed060c44386121f18d642251d30d9a045962aee 100644
 --- a/net/minecraft/world/level/block/grower/TreeGrower.java
 +++ b/net/minecraft/world/level/block/grower/TreeGrower.java
 @@ -122,7 +122,34 @@ public final class TreeGrower {
@@ -1924,19 +1969,19 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e96
 +        return this.growTree0(level, chunkGenerator, pos, state, random, null);
 +    }
 +
-+    public boolean growTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
++    public boolean growTree(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.GrowthContext growthContext) {
 +        try (io.papermc.paper.util.capture.SimpleBlockCapture capture = level.forkCaptureSession()) {
 +            io.papermc.paper.util.capture.MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
-+            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, mealContext)) {
-+                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, mealContext.originalLevel);
-+                java.util.List<org.bukkit.block.BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(mealContext.originalLevel);
-+                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, mealContext.treeHook, mealContext.usedBoneMeal, mealContext.getBukkitPlayer(), blocks);
++            if (this.growTree0(captureTreeGeneration, chunkGenerator, pos, state, random, growthContext)) {
++                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, growthContext.originalLevel);
++                java.util.List<org.bukkit.block.BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(growthContext.originalLevel);
++                org.bukkit.event.world.StructureGrowEvent event = new org.bukkit.event.world.StructureGrowEvent(location, growthContext.getTreeSpecies(), growthContext.usedBoneMeal, growthContext.getBukkitPlayer(), blocks);
 +
 +                if (event.callEvent()) {
 +                    captureTreeGeneration.applyTasks(); // todo block list is mutable
 +                    return true;
 +                } else {
-+                    mealContext.precancelStructureEvent = true;
++                    growthContext.cancelledStructureEvent = true;
 +                }
 +            }
 +        }
@@ -1944,7 +1989,7 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e96
 +        return false;
 +    }
 +
-+    private boolean growTree0(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.BoneMealContext mealContext) {
++    private boolean growTree0(io.papermc.paper.util.capture.PaperCapturingWorldLevel level, ChunkGenerator chunkGenerator, BlockPos pos, BlockState state, RandomSource random, io.papermc.paper.util.capture.GrowthContext growthContext) {
 +        // Paper end
          ResourceKey<ConfiguredFeature<?, ?>> configuredMegaFeature = this.getConfiguredMegaFeature(random);
          if (configuredMegaFeature != null) {
@@ -1954,7 +1999,7 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e96
                  .orElse(null);
              if (holder != null) {
 -                this.setTreeType(holder); // CraftBukkit
-+                mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder); // Paper
++                growthContext.feature = holder; // Paper
                  for (int i = 0; i >= -1; i--) {
                      for (int i1 = 0; i1 >= -1; i1--) {
                          if (isTwoByTwoSapling(state, level, pos, i, i1)) {
@@ -1963,7 +2008,7 @@ index 5471619a0484ece08640e2b3fd26746c351dc3e0..6dd4619f3c5d620150f8039282fc8e96
                  return false;
              } else {
 -                this.setTreeType(holder1); // CraftBukkit
-+                mealContext.treeHook = io.papermc.paper.util.capture.BoneMealContext.getTreeType(holder1); // Paper
++                growthContext.feature = holder1; // Paper
                  ConfiguredFeature<?, ?> configuredFeature2 = holder1.value();
                  BlockState blockState1 = level.getFluidState(pos).createLegacyBlock();
                  level.setBlock(pos, blockState1, Block.UPDATE_NONE);
@@ -2082,3 +2127,16 @@ index aca28c507cb642ae10c70f8e8393db10c7bf6165..cf5e7cbc7ccb4e749ee74168946dd9fa
      }
  
      @Override
+diff --git a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index 1af585f9554278983148096c73c86e18166f5471..5852c8cc5cf68be92bcd6d9588007c0911743ce4 100644
+--- a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -432,7 +432,7 @@ public class MapItemSavedData extends SavedData {
+                 return true;
+             }
+ 
+-            if (!this.isTrackedCountOverLimit(((Level) level).paperConfig().maps.itemFrameCursorLimit)) { // Paper - Limit item frame cursors on maps
++            if (!this.isTrackedCountOverLimit(level.getMinecraftWorld().paperConfig().maps.itemFrameCursorLimit)) { // Paper - Limit item frame cursors on maps
+                 this.bannerMarkers.put(mapBanner.getId(), mapBanner);
+                 this.addDecoration(mapBanner.getDecoration(), level, mapBanner.getId(), d, d1, 180.0, mapBanner.name().orElse(null));
+                 this.setDirty();

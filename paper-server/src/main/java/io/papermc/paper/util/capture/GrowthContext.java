@@ -10,16 +10,16 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.bukkit.TreeType;
 import org.jspecify.annotations.Nullable;
 
-public class BoneMealContext {
+public class GrowthContext {
 
     public final ServerLevel originalLevel;
 
     public @Nullable Player player;
-    public boolean precancelStructureEvent = false;
-    public TreeType treeHook; // just make this a field
-    public boolean usedBoneMeal; // names are kinda messed
+    public boolean cancelledStructureEvent = false;
+    public Holder<ConfiguredFeature<?, ?>> feature; // just make this a field
+    public boolean usedBoneMeal;
 
-    public BoneMealContext(ServerLevel originalLevel) {
+    public GrowthContext(ServerLevel originalLevel) {
         this.originalLevel = originalLevel;
     }
 
@@ -27,7 +27,11 @@ public class BoneMealContext {
         return (org.bukkit.entity.Player) Optionull.map(this.player, Entity::getBukkitEntity);
     }
 
-    public static TreeType getTreeType(Holder<ConfiguredFeature<?, ?>> feature) {
+    public TreeType getTreeSpecies() {
+        return getTreeSpecies(this.feature);
+    }
+
+    private static TreeType getTreeSpecies(Holder<ConfiguredFeature<?, ?>> feature) {
         if (feature.is(TreeFeatures.HUGE_RED_MUSHROOM)) {
             return TreeType.RED_MUSHROOM;
         } else if (feature.is(TreeFeatures.HUGE_BROWN_MUSHROOM)) {

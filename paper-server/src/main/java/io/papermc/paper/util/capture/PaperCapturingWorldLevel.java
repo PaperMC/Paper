@@ -1,6 +1,5 @@
 package io.papermc.paper.util.capture;
 
-import io.papermc.paper.configuration.WorldConfiguration;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerChunkCache;
@@ -9,14 +8,11 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.gamerules.GameRules;
 
 public interface PaperCapturingWorldLevel extends WorldGenLevel {
 
     GameRules getGameRules();
-
-    void addTask(Consumer<ServerLevel> level);
 
     void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags);
 
@@ -28,9 +24,7 @@ public interface PaperCapturingWorldLevel extends WorldGenLevel {
 
     boolean setBlockAndUpdate(BlockPos pos, BlockState state);
 
-    WorldConfiguration paperConfig();
-
-    ChunkGenerator getGenerator();
+    void addTask(Consumer<ServerLevel> level);
 
     SimpleBlockCapture forkCaptureSession();
 }

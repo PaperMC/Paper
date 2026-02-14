@@ -8,16 +8,16 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public record LiveBlockPlacementLayer(WorldCapturer level, ServerLevel serverLevel) implements BlockPlacementPredictor {
+public record LiveBlockPlacementLayer(WorldCapturer capturer, ServerLevel level) implements BlockPlacementPredictor {
 
     @Override
     public Optional<BlockState> getLatestBlockAt(BlockPos pos) {
-        return Optional.of(provideLive(() -> this.serverLevel.getBlockState(pos)));
+        return Optional.of(provideLive(() -> this.level.getBlockState(pos)));
     }
 
     @Override
     public Optional<LoadedBlockState> getLatestBlockAtIfLoaded(BlockPos pos) {
-        BlockState state = provideLive(() -> this.serverLevel.getBlockStateIfLoaded(pos));
+        BlockState state = provideLive(() -> this.level.getBlockStateIfLoaded(pos));
         if (state == null) {
             return LoadedBlockState.UNLOADED;
         }
@@ -27,7 +27,7 @@ public record LiveBlockPlacementLayer(WorldCapturer level, ServerLevel serverLev
 
     @Override
     public Optional<BlockEntityPlacement> getLatestBlockEntityAt(BlockPos pos) {
-        BlockEntity blockEntity = provideLive(() -> this.serverLevel.getBlockEntity(pos));
+        BlockEntity blockEntity = provideLive(() -> this.level.getBlockEntity(pos));
         if (blockEntity == null) {
             return BlockEntityPlacement.ABSENT;
         }
@@ -36,10 +36,10 @@ public record LiveBlockPlacementLayer(WorldCapturer level, ServerLevel serverLev
     }
 
     public <T> @Nullable T provideLive(Supplier<@Nullable T> valueProvider) {
-        SimpleBlockCapture blockCapture = this.level.getCapture();
-        this.level.releaseCapture(null);
+        SimpleBlockCapture blockCapture = this.capturer.getCapture();
+        this.capturer.releaseCapture(null);
         T value = valueProvider.get();
-        this.level.releaseCapture(blockCapture);
+        this.capturer.releaseCapture(blockCapture);
 
         return value;
     }

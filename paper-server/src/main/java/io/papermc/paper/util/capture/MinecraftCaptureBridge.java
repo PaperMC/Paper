@@ -1,6 +1,5 @@
 package io.papermc.paper.util.capture;
 
-import io.papermc.paper.configuration.WorldConfiguration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +31,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.entity.EntityTypeTest;
@@ -126,16 +124,6 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public WorldConfiguration paperConfig() {
-        return this.parent.paperConfig();
-    }
-
-    @Override
-    public ChunkGenerator getGenerator() {
-        return this.parent.getGenerator();
-    }
-
-    @Override
     public SimpleBlockCapture forkCaptureSession() {
         return this.parent.capturer.createCaptureSession(new BlockPlacementPredictor() {
             @Override
@@ -178,7 +166,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     @Override
     public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
-        this.sink.accept(() -> this.parent.gameEvent(gameEvent, pos, context));
+        this.addTask((level) -> level.gameEvent(gameEvent, pos, context));
     }
 
     @Override
@@ -387,7 +375,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
 
     public @Nullable Optional<BlockEntity> getLatestBlockEntity(BlockPos pos) {
         Optional<BlockPlacementPredictor.BlockEntityPlacement> placement = this.effectiveReadLayer.getLatestBlockEntityAt(pos);
-        if (placement.isEmpty() || placement.get().blockEntity() == null && !placement.get().removed()) {
+        if (placement.isEmpty() || (placement.get().blockEntity() == null && !placement.get().removed())) {
             return null;
         }
 
