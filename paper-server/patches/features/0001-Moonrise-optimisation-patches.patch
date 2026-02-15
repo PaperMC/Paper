@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index c50f13c735c97b0418cfe97d7d99b74bfb08b842..a91bcda9d6d8c8d75bce45373944743c55a1b4a5 100644
+index 2a5069d11f47d11726f08b597988f8a58546824b..bf051b6443edd32ecdbd177e02f40965477638de 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -325,7 +325,7 @@ index c50f13c735c97b0418cfe97d7d99b74bfb08b842..a91bcda9d6d8c8d75bce45373944743c
      }
  
      @Override
-@@ -239,7 +248,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+@@ -249,7 +258,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
      @Override
      public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
          try (final net.minecraft.util.ProblemReporter.ScopedCollector scopedCollector = new net.minecraft.util.ProblemReporter.ScopedCollector(chunk.problemPath(), LOGGER)) {
@@ -6731,10 +6731,10 @@ index 0000000000000000000000000000000000000000..7eafc5b7cba23d8dec92ecc1050afe3f
 \ No newline at end of file
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..467065e3b40df17f38716499259b46663c174fd0
+index 0000000000000000000000000000000000000000..41b4c5a87b5153f845421a7df8df04c9231253a8
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1565 @@
+@@ -0,0 +1,1568 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -7918,7 +7918,10 @@ index 0000000000000000000000000000000000000000..467065e3b40df17f38716499259b4666
 +        // We do need to process updates here so that any addTicket that is synchronised before this call does not go missed.
 +        this.processTicketUpdates();
 +
-+        final int toUnloadCount = Math.max(50, (int)(unloadCountTentative * 0.05));
++        final int toUnloadCount = Math.max(
++            PlatformHooks.get().configMinChunkUnloadCount(this.world),
++            (int)Math.round(unloadCountTentative * Math.clamp(PlatformHooks.get().configMinChunkUnloadFraction(this.world), 0.0, 1.0))
++        );
 +        int processedCount = 0;
 +
 +        for (final ChunkUnloadQueue.SectionToUnload sectionRef : unloadSectionsForRegion) {

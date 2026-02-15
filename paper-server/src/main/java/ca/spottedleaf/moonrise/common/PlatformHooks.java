@@ -31,6 +31,10 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
     public String getBrand();
 
+    public default boolean isModLoaded(final String modId) {
+        return false;
+    }
+
     public int getLightEmission(final BlockState blockState, final BlockGetter world, final BlockPos pos);
 
     public Predicate<BlockState> maybeHasLightEmission();
@@ -82,6 +86,10 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
     public int configMaxAutoSavePerTick(final ServerLevel world);
 
+    public int configMinChunkUnloadCount(final ServerLevel world);
+
+    public double configMinChunkUnloadFraction(final ServerLevel world);
+
     public boolean configFixMC159283();
 
     // support for CB chunk mustNotSave
@@ -112,7 +120,7 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
         static {
             INSTANCE = ServiceLoader.load(PlatformHooks.class, PlatformHooks.class.getClassLoader()).findFirst()
-                .orElseThrow(() -> new RuntimeException("Failed to locate PlatformHooks"));
+                    .orElseThrow(() -> new RuntimeException("Failed to locate PlatformHooks"));
         }
     }
 }
