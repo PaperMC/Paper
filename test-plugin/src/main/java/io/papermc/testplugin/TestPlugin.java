@@ -10,8 +10,6 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this, this);
 
-        this.getSLF4JLogger().error("hi", new ServerInternalException("poop"));
-        this.getSLF4JLogger().warn("hi", new RuntimeException("poop"));
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
     }
 }
