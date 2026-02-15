@@ -2,14 +2,12 @@ package io.papermc.paper.console.endermux;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import xyz.jpenilla.endermux.server.EndermuxServer;
 import xyz.jpenilla.endermux.server.api.InteractiveConsoleHooks;
 import xyz.jpenilla.endermux.server.log4j.EndermuxForwardingAppender;
-import xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder;
 
 @NullMarked
 public final class PaperEndermux {
@@ -40,12 +38,11 @@ public final class PaperEndermux {
     }
 
     public void start() {
-        Objects.requireNonNull(EndermuxForwardingAppender.INSTANCE);
         this.endermuxServer = new EndermuxServer(
             SOCKET_PATH,
             MAX_CONNECTIONS
         );
-        EndermuxForwardingAppender.TARGET = new RemoteLogForwarder(this.endermuxServer, EndermuxForwardingAppender.INSTANCE.getLayout());
+        EndermuxForwardingAppender.attach(this.endermuxServer);
         this.endermuxServer.start();
     }
 
@@ -74,7 +71,7 @@ public final class PaperEndermux {
             this.endermuxServer = null;
         }
 
-        EndermuxForwardingAppender.TARGET = null;
+        EndermuxForwardingAppender.detach();
         INSTANCE = null;
     }
 
