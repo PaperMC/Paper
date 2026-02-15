@@ -330,14 +330,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist, final boolean lenient) {
-        record LoadAdvancementEntry(Identifier id, String serializedAdvancement) {
+        record AdvancementEntry(Identifier id, String serializedAdvancement) {
         }
 
-        final List<LoadAdvancementEntry> mappedAdvancements = new ArrayList<>(advancements.size());
+        final List<AdvancementEntry> mappedAdvancements = new ArrayList<>(advancements.size());
         for (final Map.Entry<Key, String> entry : advancements.entrySet()) {
             final Identifier id = PaperAdventure.asVanilla(entry.getKey());
             Preconditions.checkArgument(MinecraftServer.getServer().getAdvancements().get(id) == null, "Advancement %s already exists", entry.getKey());
-            mappedAdvancements.add(new LoadAdvancementEntry(id, entry.getValue()));
+            mappedAdvancements.add(new AdvancementEntry(id, entry.getValue()));
         }
 
         final List<Advancement> outAdvancements = new ArrayList<>(mappedAdvancements.size());
@@ -346,7 +346,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
         final List<AdvancementHolder> advancementHolders = new ArrayList<>(mappedAdvancements.size());
-        for (final LoadAdvancementEntry entry : mappedAdvancements) {
+        for (final AdvancementEntry entry : mappedAdvancements) {
             final JsonElement json;
             try {
                 json = JsonParser.parseString(entry.serializedAdvancement());
@@ -372,7 +372,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
         tree.addAll(advancementHolders);
 
-        for (final LoadAdvancementEntry entry : mappedAdvancements) {
+        for (final AdvancementEntry entry : mappedAdvancements) {
             // recalculate advancement position
             final AdvancementNode node = tree.get(entry.id());
             if (node != null) {
