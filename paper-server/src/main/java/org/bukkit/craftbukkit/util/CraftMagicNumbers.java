@@ -12,7 +12,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
@@ -30,6 +32,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementNode;
@@ -915,5 +918,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
+    }
+
+    @Override
+    public ItemStack deserializeItemHover(final HoverEvent.ShowItem itemHover) {
+        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
+        final Object encoded = AdventureCodecs.SHOW_ITEM_CODEC.codec()
+            .encodeStart(ops, HoverEvent.showItem(itemHover)).getOrThrow(IllegalStateException::new);
+
+        return CraftItemStack.asBukkitCopy(net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.codec()
+            .parse(ops, encoded).getOrThrow(IllegalStateException::new)
+            .item());
     }
 }

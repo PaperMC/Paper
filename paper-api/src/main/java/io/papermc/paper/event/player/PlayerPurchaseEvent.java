@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -17,6 +18,7 @@ public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private final Merchant merchant;
     private boolean rewardExp;
     private boolean increaseTradeUses;
     private MerchantRecipe trade;
@@ -24,11 +26,21 @@ public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerPurchaseEvent(final Player player, final MerchantRecipe trade, final boolean rewardExp, final boolean increaseTradeUses) {
+    public PlayerPurchaseEvent(final Player player, final Merchant merchant, final MerchantRecipe trade, final boolean rewardExp, final boolean increaseTradeUses) {
         super(player);
+        this.merchant = merchant;
         this.trade = trade;
         this.rewardExp = rewardExp;
         this.increaseTradeUses = increaseTradeUses;
+    }
+
+    /**
+     * Gets the merchant that the player is trading with
+     *
+     * @return the merchant
+     */
+    public Merchant getMerchant() {
+        return merchant;
     }
 
     /**

@@ -6,6 +6,7 @@ import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.Map;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -421,4 +422,12 @@ public interface UnsafeValues {
     @NotNull Map<String, Object> serializeStack(ItemStack itemStack);
 
     @NotNull ItemStack deserializeStack(@NotNull Map<String, Object> args);
+
+    /**
+     * Deserializes a {@link HoverEvent.ShowItem} hover event value into an {@code ItemStack}.
+     *
+     * @param itemHover the hover to deserialize
+     * @return the deserialized {@code ItemStack}
+     */
+    @NotNull ItemStack deserializeItemHover(HoverEvent.@NotNull ShowItem itemHover);
 }

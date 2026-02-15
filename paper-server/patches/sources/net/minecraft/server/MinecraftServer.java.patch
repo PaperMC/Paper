@@ -217,7 +217,7 @@
 +        }
 +        */
 +        // Paper end
-+        io.papermc.paper.util.LogManagerShutdownThread.unhook(); // Paper - Improved watchdog support
++        io.papermc.paper.log.LogManagerShutdownThread.unhook(); // Paper - Improved watchdog support
 +        Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
 +        // CraftBukkit end
 +        this.paperConfigurations = services.paper().configurations(); // Paper - add paper configuration files
@@ -453,7 +453,7 @@
      }
  
      private static void setInitialSpawn(
-@@ -510,6 +_,30 @@
+@@ -510,6 +_,28 @@
              levelData.setSpawn(LevelData.RespawnData.of(level.dimension(), BlockPos.ZERO.above(80), 0.0F, 0.0F));
          } else {
              ServerChunkCache chunkSource = level.getChunkSource();
@@ -467,11 +467,9 @@
 +                        throw new IllegalStateException("Cannot set spawn point for " + levelData.getLevelName() + " to be in another world (" + spawn.getWorld().getName() + ")");
 +                    } else {
 +                        levelData.setSpawn(
-+                            new net.minecraft.world.level.storage.LevelData.RespawnData(
-+                                GlobalPos.of(
-+                                    level.dimension(),
-+                                    new BlockPos(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ())
-+                                ),
++                            net.minecraft.world.level.storage.LevelData.RespawnData.of(
++                                level.dimension(),
++                                org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(spawn),
 +                                spawn.getYaw(),
 +                                spawn.getPitch()
 +                            )
@@ -518,7 +516,7 @@
 -        this.levelLoadListener.finish(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS);
 -        this.updateMobSpawningFlags();
 +        serverLevel.levelLoadListener.finish(LevelLoadListener.Stage.LOAD_INITIAL_CHUNKS); // Paper - per world load listener
-+        serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && serverLevel.getGameRules().get(GameRules.SPAWN_MONSTERS)); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
++        serverLevel.setSpawnSettings(serverLevel.isSpawningMonsters()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
          this.updateEffectiveRespawnData();
 +        this.forceTicks = false; // CraftBukkit
 +        serverLevel.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
@@ -526,6 +524,15 @@
      }
  
      protected GlobalPos selectLevelLoadFocusPos() {
+@@ -610,7 +_,7 @@
+     public abstract boolean shouldRconBroadcast();
+ 
+     public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
+-        this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE));
++        if (this.overworld() != null) this.scoreboard.storeToSaveDataIfDirty(this.overworld().getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE)); // Paper - don't try to save if the overworld was not loaded, generally during early startup failures
+         boolean flag = false;
+ 
+         for (ServerLevel serverLevel : this.getAllLevels()) {
 @@ -622,8 +_,10 @@
              flag = true;
          }
@@ -590,7 +597,7 @@
          }
  
          LOGGER.info("Saving worlds");
-@@ -707,6 +_,25 @@
+@@ -707,6 +_,20 @@
          } catch (IOException var4) {
              LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
          }
@@ -606,11 +613,6 @@
 +        // Spigot end
 +        // Paper start - Improved watchdog support - move final shutdown items here
 +        Util.shutdownExecutors();
-+        try {
-+            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
-+        } catch (final Exception ignored) {
-+        }
-+        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
 +        this.onServerExit();
 +        // Paper end - Improved watchdog support - move final shutdown items here
      }
@@ -750,7 +752,7 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -739,26 +_,68 @@
+@@ -739,26 +_,73 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -782,6 +784,11 @@
 +                LOGGER.info("*************************************************************************************");
 +            }
 +            // Paper end - Add onboarding message for initial server start
++            // Paper start - Improve outdated version checking
++            if (System.getProperty("paper.disableStartupVersionCheck") == null && io.papermc.paper.configuration.GlobalConfiguration.get().updateChecker.enabled) {
++                CompletableFuture.runAsync(com.destroystokyo.paper.PaperVersionFetcher::getUpdateStatusStartupMessage, io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR);
++            }
++            // Paper end - Improve outdated version checking
 +
              while (this.running) {
 -                long l;
@@ -1197,7 +1204,7 @@
 +                level.getWorld(), source, org.bukkit.craftbukkit.util.CraftDifficulty.toBukkit(difficulty)
 +            ).callEvent();
 +            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
-+            level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && level.getGameRules().get(GameRules.SPAWN_MONSTERS));
++            level.setSpawnSettings(level.isSpawningMonsters());
 +            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
 +            // Paper end - per level difficulty
          }
@@ -1471,7 +1478,7 @@
 +            // }); // Paper - per-world game rules
          } else if (rule == GameRules.SPAWN_MONSTERS) {
 -            this.updateMobSpawningFlags();
-+            serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != net.minecraft.world.Difficulty.PEACEFUL && serverLevel.getGameRules().get(GameRules.SPAWN_MONSTERS)); // Paper - per-world game rules
++            serverLevel.setSpawnSettings(serverLevel.isSpawningMonsters()); // Paper - per-world game rules
          }
      }
  

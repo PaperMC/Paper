@@ -308,16 +308,31 @@
              }
          }
      }
-@@ -321,7 +_,7 @@
+@@ -299,6 +_,7 @@
+         } else {
+             int count = stack.getCount();
+             int damageValue = stack.getDamageValue();
++            final ItemStack stackBeforeUse = stack.copy(); // Paper - Store stack before use for interact prediction check
+             InteractionResult interactionResult = stack.use(level, player, hand);
+             ItemStack itemStack;
+             if (interactionResult instanceof InteractionResult.Success success) {
+@@ -321,7 +_,14 @@
                  }
  
                  if (!player.isUsingItem()) {
 -                    player.inventoryMenu.sendAllDataToRemote();
-+                    player.inventoryMenu.broadcastChanges(); // Paper - change to broadcastChanges, super old code that might not even be needed at all
++                    // Paper start - Optimize sendAllDataToRemote calls
++                    // This is a weird one where the Vanilla behavior is from an ancient version, but also isn't calling startUsingItem on certain instant-use items
++                    // TODO Check up on this proper, possibly remove all and move into more specific places
++                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), stackBeforeUse)) {
++                        player.inventoryMenu.forceHeldSlot(hand);
++                    }
++                    player.inventoryMenu.broadcastChanges();
++                    // Paper end - Optimize sendAllDataToRemote calls
                  }
  
                  return interactionResult;
-@@ -329,15 +_,47 @@
+@@ -329,15 +_,53 @@
          }
      }
  
@@ -358,7 +373,13 @@
 +            } else if (blockState.is(net.minecraft.world.level.block.Blocks.JIGSAW) || blockState.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK) || blockState.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
 +                player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
 +            }
-+            player.containerMenu.forceHeldSlot(hand); // SPIGOT-2867
++            // Paper start - Fix inventory desync; SPIGOT-2867
++            if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, blockState, stack)) {
++                this.player.containerMenu.sendAllDataToRemote();
++            } else {
++                this.player.containerMenu.forceHeldSlot(hand);
++            }
++            // Paper end - Fix inventory desync
 +            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
 +            return (event.useItemInHand() != org.bukkit.event.Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 +        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {

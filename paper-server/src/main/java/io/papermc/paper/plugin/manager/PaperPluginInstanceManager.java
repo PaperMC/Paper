@@ -41,7 +41,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AsyncAppender;
 
 @SuppressWarnings("UnstableApiUsage")
 class PaperPluginInstanceManager {
@@ -239,6 +244,10 @@ class PaperPluginInstanceManager {
                 this.server.getLogger().log(Level.SEVERE, "Error occurred while disabling " + pluginName, ex);
             }
 
+            // Flush async appender before unloading, avoids issues when a log message with class context
+            // tries to print after it's source has unloaded (i.e., Guice enhanced errors)
+            this.flushAsyncAppenders();
+
             ClassLoader classLoader = plugin.getClass().getClassLoader();
             if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
                 try {
@@ -325,6 +334,21 @@ class PaperPluginInstanceManager {
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         Bukkit.getServer().getLogger().log(Level.SEVERE, msg, ex);
         this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
+    }
+
+    private void flushAsyncAppenders() {
+        if (!(LogManager.getContext(false) instanceof LoggerContext context)) {
+            return;
+        }
+
+        for (final Appender appender : context.getConfiguration().getAppenders().values()) {
+            if (appender instanceof AsyncAppender asyncAppender) {
+                final boolean flushed = asyncAppender.flush(100, TimeUnit.MILLISECONDS);
+                if (!flushed) {
+                    this.server.getLogger().log(Level.WARNING, "Failed to flush log messages before plugin unload.");
+                }
+            }
+        }
     }
 
     public boolean isTransitiveDepend(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {
