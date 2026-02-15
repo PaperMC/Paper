@@ -5,7 +5,7 @@ Subject: [PATCH] Endermux console protocl support
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index ca2caace6aab0dfcb0ab7a0fd28e66555c62fdc5..97f163b9ff4ad92149534183a095c9e2d264fd18 100644
+index ca2caace6aab0dfcb0ab7a0fd28e66555c62fdc5..c0e84a75d395e9f302fe04592ee3203e7a104be1 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -1110,6 +1110,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -16,28 +16,15 @@ index ca2caace6aab0dfcb0ab7a0fd28e66555c62fdc5..97f163b9ff4ad92149534183a095c9e2
          // Paper end
          this.running = false;
          if (waitForShutdown) {
-@@ -1987,7 +1988,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1987,7 +1988,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public void sendSystemMessage(Component message) {
 -        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
 +        final net.kyori.adventure.text.Component adventureMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
-+        final var renderer = new xyz.jpenilla.endermux.server.util.LanguageRenderer(new xyz.jpenilla.endermux.server.util.LanguageRenderer.LanguageProxy() {
-+            @Override
-+            public boolean has(final String key) {
-+                return net.minecraft.locale.Language.getInstance().has(key);
-+            }
-+
-+            @Override
-+            public String getOrDefault(final String key, final String fallback) {
-+                return net.minecraft.locale.Language.getInstance().getOrDefault(key, fallback);
-+            }
-+        });
-+        final var translated = renderer.render(adventureMessage, net.kyori.adventure.translation.Translator.parseLocale("en_us"));
-+        final var serialized = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(translated);
-+        org.apache.logging.log4j.ThreadContext.put(xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY, serialized);
-+        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(adventureMessage)); // Paper - Log message with colors
-+        org.apache.logging.log4j.ThreadContext.remove(xyz.jpenilla.endermux.server.log4j.RemoteLogForwarder.COMPONENT_LOG_MESSAGE_KEY);
++        try (final var _ = xyz.jpenilla.endermux.log4j.RichLogContext.pushComponent(adventureMessage)) {
++            LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(adventureMessage));
++        }
      }
  
      public KeyPair getKeyPair() {

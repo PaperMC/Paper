@@ -42,11 +42,10 @@ public final class PaperEndermux {
     public void start() {
         Objects.requireNonNull(EndermuxForwardingAppender.INSTANCE);
         this.endermuxServer = new EndermuxServer(
-            EndermuxForwardingAppender.INSTANCE.logLayout(),
             SOCKET_PATH,
             MAX_CONNECTIONS
         );
-        EndermuxForwardingAppender.TARGET = new RemoteLogForwarder(this.endermuxServer);
+        EndermuxForwardingAppender.TARGET = new RemoteLogForwarder(this.endermuxServer, EndermuxForwardingAppender.INSTANCE.getLayout());
         this.endermuxServer.start();
     }
 
