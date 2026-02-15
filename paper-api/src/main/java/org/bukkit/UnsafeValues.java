@@ -68,10 +68,9 @@ public interface UnsafeValues {
 
     /**
      * Load an advancement represented by the specified string into the server.
-     * The advancement format is governed by Minecraft and has no specified
-     * layout.
+     * The advancement format is governed by Minecraft and has no specified layout.
      * <br>
-     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will be stored and persisted across server restarts
      * and reloads.
@@ -82,16 +81,15 @@ public interface UnsafeValues {
      * @param advancement representation of the advancement
      * @return the loaded advancement or null if an error occurred
      */
-    default Advancement loadAdvancement(NamespacedKey key, String advancement) {
-        return loadAdvancement(key, advancement, true);
+    default @Nullable Advancement loadAdvancement(NamespacedKey key, String advancement) {
+        return this.loadAdvancement(key, advancement, true);
     }
-    
+
     /**
      * Load an advancement represented by the specified string into the server.
-     * The advancement format is governed by Minecraft and has no specified
-     * layout.
+     * The advancement format is governed by Minecraft and has no specified layout.
      * <br>
-     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will only be stored and persisted across server restarts
      * and reloads, if the {@code persist} parameter is set to true. 
@@ -103,16 +101,13 @@ public interface UnsafeValues {
      * @param persist whether to store this advancement in the bukkit datapack for persistence
      * @return the loaded advancement or null if an error occurred
      */
-    default Advancement loadAdvancement(Key key, String advancement, boolean persist) {
-        return loadAdvancements(Map.of(key, advancement), persist).getFirst();
-    }
+    @Nullable Advancement loadAdvancement(Key key, String advancement, boolean persist);
 
     /**
      * Load multiple advancements represented by the specified strings into the server.
-     * The advancement format is governed by Minecraft and has no specified
-     * layout.
+     * The advancement format is governed by Minecraft and has no specified layout.
      * <br>
-     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancements">Minecraft wiki</a>.
+     * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will only be stored and persisted across server restarts
      * and reloads, if the {@code persist} parameter is set to true. 
