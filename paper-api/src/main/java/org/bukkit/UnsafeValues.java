@@ -75,8 +75,6 @@ public interface UnsafeValues {
      * <br>
      * Loaded advancements will be stored and persisted across server restarts
      * and reloads.
-     * <br>
-     * Callers should be prepared for {@link Exception} to be thrown.
      *
      * @param key the unique advancement key
      * @param advancement representation of the advancement
@@ -93,9 +91,7 @@ public interface UnsafeValues {
      * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will only be stored and persisted across server restarts
-     * and reloads, if the {@code persist} parameter is set to true. 
-     * <br>
-     * Callers should be prepared for {@link Exception} to be thrown.
+     * and reloads, if the {@code persist} parameter is set to true.
      *
      * @param key the unique advancement key
      * @param advancement representation of the advancement
@@ -111,7 +107,7 @@ public interface UnsafeValues {
      * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
      * <br>
      * Loaded advancements will only be stored and persisted across server restarts
-     * and reloads, if the {@code persist} parameter is set to true. 
+     * and reloads, if the {@code persist} parameter is set to true.
      * <br>
      * Callers should be prepared for {@link Exception} to be thrown.
      *
