@@ -1,24 +1,21 @@
 package io.papermc.paper.command.subcommands;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.PaperCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
-import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
-import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -26,56 +23,27 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bukkit.HeightMap;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
-import static net.kyori.adventure.text.format.NamedTextColor.RED;
 
 public final class EntityCommand {
-
-    private static final Component HELP_MESSAGE = text("Use /paper entity [list] help for more information on a specific command", RED);
-    private static final Component LIST_HELP_MESSAGE = text("Use /paper entity list [filter] [world_key] to get entity info that matches the optional filter.", RED);
 
     public static LiteralArgumentBuilder<CommandSourceStack> create() {
         return Commands.literal("entity")
             .requires(PaperCommand.hasPermission("entity"))
-            .executes(context -> {
-                context.getSource().getSender().sendMessage(HELP_MESSAGE);
-                return Command.SINGLE_SUCCESS;
-            })
-            .then(Commands.literal("help")
-                .executes(context -> {
-                    context.getSource().getSender().sendMessage(HELP_MESSAGE);
-                    return Command.SINGLE_SUCCESS;
-                })
-            )
             .then(Commands.literal("list")
                 .executes(context -> {
-                    return listEntities(context.getSource().getSender(), "*", context.getSource().getLocation().getWorld());
+                    return listEntities(context.getSource().getSender(), BuiltInRegistries.ENTITY_TYPE.listElements().toList(), context.getSource().getLocation().getWorld());
                 })
-                .then(Commands.literal("help")
-                    .executes(context -> {
-                        context.getSource().getSender().sendMessage(LIST_HELP_MESSAGE);
-                        return Command.SINGLE_SUCCESS;
-                    })
-                )
-                /*
-                .then(Commands.argument("filter", StringArgumentType.string())
-                    .suggests((context, builder) -> {
-                        BuiltInRegistries.ENTITY_TYPE.keySet().stream()
-                            .map(Object::toString)
-                            .filter(type -> StringUtil.startsWithIgnoreCase(type, builder.getRemaining()))
-                            .forEach(builder::suggest);
-                        return builder.buildFuture();
-                    })
+                .then(Commands.argument("entity-type", VanillaArgumentProviderImpl.resourceOrTag(Registries.ENTITY_TYPE))
                     .executes(context -> {
                         return listEntities(
                             context.getSource().getSender(),
-                            StringArgumentType.getString(context, "filter"),
+                            (List<Holder.Reference<EntityType<?>>>) context.getArgument("entity-type", List.class),
                             context.getSource().getLocation().getWorld()
                         );
                     })
@@ -83,26 +51,7 @@ public final class EntityCommand {
                         .executes(context -> {
                             return listEntities(
                                 context.getSource().getSender(),
-                                StringArgumentType.getString(context, "filter"),
-                                context.getArgument("world", World.class)
-                            );
-                        })
-                    )
-                )*/
-                // string argument is super strict for some reason for unquoted stuff this help mitigate it (ideally should allow entity type tags too then the regex can be dropped I think)
-                .then(Commands.argument("entity-type", ArgumentTypes.resourceKey(RegistryKey.ENTITY_TYPE))
-                    .executes(context -> {
-                        return listEntities(
-                            context.getSource().getSender(),
-                            RegistryArgumentExtractor.getTypedKey(context, RegistryKey.ENTITY_TYPE, "entity-type").asString(),
-                            context.getSource().getLocation().getWorld()
-                        );
-                    })
-                    .then(Commands.argument("world", ArgumentTypes.world())
-                        .executes(context -> {
-                            return listEntities(
-                                context.getSource().getSender(),
-                                RegistryArgumentExtractor.getTypedKey(context, RegistryKey.ENTITY_TYPE, "entity-type").asString(),
+                                (List<Holder.Reference<EntityType<?>>>) context.getArgument("entity-type", List.class),
                                 context.getArgument("world", World.class)
                             );
                         })
@@ -114,17 +63,7 @@ public final class EntityCommand {
     /*
      * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
      */
-    private static int listEntities(final CommandSender sender, final String filter, final World bukkitWorld) throws CommandSyntaxException {
-        final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
-        Set<Identifier> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
-            .filter(n -> n.toString().matches(cleanfilter))
-            .collect(Collectors.toSet());
-        if (names.isEmpty()) {
-            sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
-            sender.sendMessage(text("Usage: /paper entity list [filter] [world_key]", RED));
-            return 0;
-        }
-
+    private static int listEntities(final CommandSender sender, final List<Holder.Reference<EntityType<?>>> entities, final World bukkitWorld) throws CommandSyntaxException {
         Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = new HashMap<>();
         ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
         Map<Identifier, Integer> nonEntityTicking = new HashMap<>();
@@ -140,14 +79,14 @@ public final class EntityCommand {
                 nonEntityTicking.merge(key, 1, Integer::sum);
             }
         });
-        if (names.size() == 1) {
-            Identifier name = names.iterator().next();
+        if (entities.size() == 1) {
+            Identifier name = entities.getFirst().unwrapKey().orElseThrow().identifier();
             Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
             int nonTicking = nonEntityTicking.getOrDefault(name, 0);
             if (info == null) {
                 throw EntityArgument.NO_ENTITIES_FOUND.create();
             }
-            sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
+            sender.sendPlainMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
             List<Map.Entry<ChunkPos, Integer>> entitiesPerChunk = info.getRight().entrySet().stream()
                 .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
                 .limit(10).toList();
@@ -155,12 +94,13 @@ public final class EntityCommand {
                     final int x = (e.getKey().x << 4) + 8;
                     final int z = (e.getKey().z << 4) + 8;
                     final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
-                        .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
-                        .clickEvent(ClickEvent.runCommand("/minecraft:execute in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
+                        .hoverEvent(text("Click to teleport to chunk", GREEN))
+                        .clickEvent(ClickEvent.runCommand("/minecraft:execute in " + world.getWorld().getKey() + " run tp " + x + " ~ " + z));
                     sender.sendMessage(message);
                 });
             return entitiesPerChunk.size();
         } else {
+            List<Identifier> names = entities.stream().map(type -> type.unwrapKey().orElseThrow().identifier()).toList();
             List<Pair<Identifier, Integer>> info = list.entrySet().stream()
                 .filter(e -> names.contains(e.getKey()))
                 .map(e -> Pair.of(e.getKey(), e.getValue().left))
@@ -173,12 +113,14 @@ public final class EntityCommand {
 
             int count = info.stream().mapToInt(Pair::getRight).sum();
             int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
-            sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
+            sender.sendPlainMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
             info.forEach(e -> {
                 int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), 0);
-                sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
+                sender.sendMessage(text("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey())
+                    .hoverEvent(text("Click to inspect " + e.getKey(), GREEN))
+                    .clickEvent(ClickEvent.suggestCommand("/paper:paper entity list " + e.getKey())));
             });
-            sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
+            sender.sendPlainMessage("* First number is ticking entities, second number is non-ticking entities");
             return info.size();
         }
     }

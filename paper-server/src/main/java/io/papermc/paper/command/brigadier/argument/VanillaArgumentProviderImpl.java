@@ -11,7 +11,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import com.mojang.datafixers.util.Either;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.PaperCommands;
 import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
@@ -36,7 +35,6 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,7 +67,7 @@ import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.ResourceOrTagKeyArgument;
+import net.minecraft.commands.arguments.ResourceOrTagArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -88,6 +86,8 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -414,14 +414,12 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         );
     }
 
-    // expose for paper entity list command instead of regex?
-    public static <T> ArgumentType<Either<TypedKey<T>, TagKey<T>>> resourceKeyOrTagKey(final RegistryKey<T> registryKey) {
+    // expose to api?
+    public static <T> ArgumentType<List<Holder<T>>> resourceOrTag(final ResourceKey<? extends Registry<T>> registryKey) {
         return new NativeWrapperArgumentType<>(
-            ResourceOrTagKeyArgument.resourceOrTagKey(PaperRegistries.registryToNms(registryKey)),
-            result -> result.unwrap().mapBoth(key -> {
-                return TypedKey.create(registryKey, PaperAdventure.asAdventure(key.identifier()));
-            }, key -> {
-                return TagKey.create(registryKey, PaperAdventure.asAdventure(key.location()));
+            ResourceOrTagArgument.resourceOrTag(PaperCommands.INSTANCE.getBuildContext(), registryKey),
+            result -> result.unwrap().map(List::of, tag -> {
+                return tag.stream().toList();
             })
         );
     }
