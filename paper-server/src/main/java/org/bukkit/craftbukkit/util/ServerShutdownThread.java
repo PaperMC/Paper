@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import io.papermc.paper.log.LoggerShutdown;
 import net.minecraft.server.MinecraftServer;
 
 public class ServerShutdownThread extends Thread {
@@ -29,7 +30,7 @@ public class ServerShutdownThread extends Thread {
             e.printStackTrace();
             // Paper end
         } finally {
-            org.apache.logging.log4j.LogManager.shutdown(); // Paper
+            LoggerShutdown.shutdownLogging();
         }
     }
 }
