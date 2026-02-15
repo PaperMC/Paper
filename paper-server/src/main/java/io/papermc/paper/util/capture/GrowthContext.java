@@ -3,28 +3,39 @@ package io.papermc.paper.util.capture;
 import net.minecraft.Optionull;
 import net.minecraft.core.Holder;
 import net.minecraft.data.worldgen.features.TreeFeatures;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.bukkit.TreeType;
 import org.jspecify.annotations.Nullable;
 
-public class GrowthContext {
+public final class GrowthContext {
 
-    public final ServerLevel originalLevel;
+    public static GrowthContext empty() {
+        return new GrowthContext(null, false);
+    }
 
-    public @Nullable Player player;
-    public boolean cancelledStructureEvent = false;
+    public static GrowthContext usingBoneMeal(@Nullable Player user) {
+        return new GrowthContext(user, true);
+    }
+
+    private final @Nullable Player player;
+    private final boolean usedBoneMeal;
+
+    public boolean cancelled = false;
     public Holder<ConfiguredFeature<?, ?>> feature; // just make this a field
-    public boolean usedBoneMeal;
 
-    public GrowthContext(ServerLevel originalLevel) {
-        this.originalLevel = originalLevel;
+    private GrowthContext(@Nullable Player player, boolean usedBoneMeal) {
+        this.player = player;
+        this.usedBoneMeal = usedBoneMeal;
     }
 
     public org.bukkit.entity.@Nullable Player getBukkitPlayer() {
         return (org.bukkit.entity.Player) Optionull.map(this.player, Entity::getBukkitEntity);
+    }
+
+    public boolean usedBoneMeal() {
+        return this.usedBoneMeal;
     }
 
     public TreeType getTreeSpecies() {

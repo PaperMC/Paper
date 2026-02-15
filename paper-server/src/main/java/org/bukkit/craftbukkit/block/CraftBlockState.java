@@ -239,17 +239,6 @@ public class CraftBlockState implements BlockState {
         return this.getWorldHandle().setBlock(this.position, this.data, flags);
     }
 
-    // used to revert a block placement due to an event being cancelled for example
-    public boolean revertPlace() {
-        return this.place(
-            net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
-            net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
-            net.minecraft.world.level.block.Block.UPDATE_SUPPRESS_DROPS |
-            net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE |
-            net.minecraft.world.level.block.Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS
-        );
-    }
-
     @Override
     public byte getRawData() {
         return CraftMagicNumbers.toLegacyData(this.data);

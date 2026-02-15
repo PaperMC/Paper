@@ -2386,19 +2386,22 @@ public class CraftEventFactory {
         return false;
     }
 
+    // todo block list is sometimes empty for trees in both events
     public static boolean structureEvent(PaperCapturingWorldLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
+        ServerLevel originalLevel = level.getLevel();
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldGenCapture.apply(captureTreeGeneration)) {
-                Location location = CraftLocation.toBukkit(pos, context.originalLevel);
-                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(context.originalLevel);
-                StructureGrowEvent event = new StructureGrowEvent(location, context.getTreeSpecies(), context.usedBoneMeal, context.getBukkitPlayer(), blocks);
+                Location location = CraftLocation.toBukkit(pos, originalLevel);
+                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(originalLevel);
+                StructureGrowEvent event = new StructureGrowEvent(location, context.getTreeSpecies(), context.usedBoneMeal(), context.getBukkitPlayer(), blocks);
+                event.setCancelled(context.cancelled);
 
                 if (event.callEvent()) {
                     capture.finalizePlacement(); // todo block list is mutable
                     return true;
                 } else {
-                    context.cancelledStructureEvent = true;
+                    context.cancelled = true;
                 }
             } else {
                 capture.finalizePlacement();
@@ -2408,25 +2411,20 @@ public class CraftEventFactory {
         return false;
     }
 
-    // todo block list is sometimes empty for trees in both events
-    public static boolean fertilizedBlock(ServerLevel level, Player player, BlockPos pos, Consumer<PaperCapturingWorldLevel> worldGenCapture, GrowthContext context) {
-        return fertilizeBlock(level, player, pos, capture -> {
-            worldGenCapture.accept(capture);
-            return true;
-        }, context);
-    }
-
-    public static boolean fertilizeBlock(ServerLevel level, Player player, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
+    // todo cancelling fertilize event doesn't work for azalea
+    public static boolean fertilizeBlock(ServerLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
         try (SimpleBlockCapture capture = level.forkCaptureSession()) {
             MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
             if (worldGenCapture.apply(captureTreeGeneration)) {
                 List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(level);
-                BlockFertilizeEvent event = new BlockFertilizeEvent(CraftBlock.at(level, pos), player, blocks);
-                event.setCancelled(context.cancelledStructureEvent);
+                BlockFertilizeEvent event = new BlockFertilizeEvent(CraftBlock.at(level, pos), context.getBukkitPlayer(), blocks);
+                event.setCancelled(context.cancelled);
 
                 if (event.callEvent()) {
                     capture.finalizePlacement(); // todo block list is mutable
                     return true;
+                } else {
+                    context.cancelled = true;
                 }
             } else {
                 capture.finalizePlacement();
