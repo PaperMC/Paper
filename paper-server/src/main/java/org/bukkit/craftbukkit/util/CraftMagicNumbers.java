@@ -311,7 +311,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private static PackOutput.PathProvider getAddedAdvancements() {
         final class Holder {
-            public static final PackOutput.PathProvider PROVIDER = DynamicBuiltinPacks.BUKKIT.output().createRegistryElementsPathProvider(Registries.ADVANCEMENT);
+            public static final PackOutput.PathProvider PROVIDER = DynamicBuiltinPacks.BUKKIT.data().createRegistryElementsPathProvider(Registries.ADVANCEMENT);
         }
         return Holder.PROVIDER;
     }

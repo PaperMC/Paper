@@ -14,10 +14,10 @@ public final class DynamicBuiltinPacks {
 
     private static final List<DynamicBuiltinPack> PACKS = List.of(BUKKIT);
 
-    public static void updateAllMetadata(final LevelStorageSource.LevelStorageAccess storage) throws IOException {
+    public static void refreshAllMetadata(final LevelStorageSource.LevelStorageAccess storage) throws IOException {
         final DynamicBuiltinPack.LevelPathAccess access = DynamicBuiltinPack.LevelPathAccess.fromStorageSource(storage);
         for (final DynamicBuiltinPack pack : PACKS) {
-            pack.updateMetadata(access);
+            pack.refreshMetadata(access);
         }
     }
 }

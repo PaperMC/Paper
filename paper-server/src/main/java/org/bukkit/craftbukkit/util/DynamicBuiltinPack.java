@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonWriter;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.util.PaperCodecs;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,14 +31,16 @@ public record DynamicBuiltinPack(String name, Component description) {
         Preconditions.checkArgument(FileUtil.isValidPathSegment(name) && FileUtil.isPathPartPortable(name), "Invalid name %s", name);
     }
 
-    void updateMetadata(final LevelPathAccess access) throws IOException {
+    private static final Codec<PackMetadataSection> CODEC = PaperCodecs.packMetaCodec(PackMetadataSection.SERVER_TYPE);
+
+    void refreshMetadata(final LevelPathAccess access) throws IOException {
         final Path mcmetaFile = this.getDatapackDir(access).resolve(PackResources.PACK_META);
         if (Files.notExists(mcmetaFile)) {
             return;
         }
 
-        final PackMetadataSection packMetadataSection = PackMetadataSection.SERVER_TYPE.codec().parse(
-            JsonOps.INSTANCE, StrictJsonParser.parse(Files.readString(mcmetaFile, StandardCharsets.UTF_8)).getAsJsonObject().get(PackMetadataSection.SERVER_TYPE.name())
+        final PackMetadataSection packMetadataSection = CODEC.parse(
+            JsonOps.INSTANCE, StrictJsonParser.parse(Files.readString(mcmetaFile, StandardCharsets.UTF_8))
         ).getOrThrow(RuntimeException::new);
 
         final PackFormat currentVersion = SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA);
@@ -58,7 +62,7 @@ public record DynamicBuiltinPack(String name, Component description) {
         Path get(LevelResource resource);
     }
 
-    public PackOutput output() {
+    public PackOutput data() {
         return new PackOutput(this.getDatapackDir(LevelPathAccess.SERVER));
     }
 
@@ -76,9 +80,7 @@ public record DynamicBuiltinPack(String name, Component description) {
 
     private boolean createMetadata(final Path path, final PackFormat version, final boolean updating) { // inspired from the datapack command
         final PackMetadataSection packMetadataSection = new PackMetadataSection(this.description, version.minorRange());
-
-        final JsonObject topMcmeta = new JsonObject();
-        topMcmeta.add(PackMetadataSection.SERVER_TYPE.name(), PackMetadataSection.SERVER_TYPE.codec().encodeStart(JsonOps.INSTANCE, packMetadataSection).getOrThrow(RuntimeException::new));
+        final JsonElement topMcmeta = CODEC.encodeStart(JsonOps.INSTANCE, packMetadataSection).getOrThrow(RuntimeException::new);
 
         try {
             if (!updating) {
