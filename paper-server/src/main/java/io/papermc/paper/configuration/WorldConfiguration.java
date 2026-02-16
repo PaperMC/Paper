@@ -441,6 +441,8 @@ public class WorldConfiguration extends ConfigurationPart {
         public int waterOverLavaFlowSpeed = 5;
         public int portalSearchRadius = 128;
         public int portalCreateRadius = 16;
+        public boolean netherPortalPreloading;
+        public int netherPortalPreloadingTicksBefore = 30;
         public boolean portalSearchVanillaDimensionScaling = true;
         public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
         public int maxFluidTicks = 65536;
