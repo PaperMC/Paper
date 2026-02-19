@@ -15,11 +15,34 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private int lungePower;
+
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityLungeEvent(final LivingEntity entity) {
+    public EntityLungeEvent(final LivingEntity entity, int lungePower) {
         super(entity);
+        this.lungePower = lungePower;
+    }
+
+    /**
+     * Gets the lunge power, which when initially passed, matches the enchantment level of the item, but can be higher.
+     *
+     * @return the lunge power
+     */
+    public int getLungePower() {
+        return lungePower;
+    }
+
+    /**
+     * Sets the lunge power. This commonly matches the enchantment level of the item, and can be set higher.
+     * <p>
+     * If set higher than 3, the power of the lunge will continue to scale like normal, as if the max enchantment
+     * level is higher.
+     * @param lungePower the new lunge power
+     */
+    public void setLungePower(final int lungePower) {
+        this.lungePower = lungePower;
     }
 
     @Override
