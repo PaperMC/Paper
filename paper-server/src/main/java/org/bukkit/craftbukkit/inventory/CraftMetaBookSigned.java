@@ -452,39 +452,6 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
     public static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.builder()
         .character(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.SECTION_CHAR)
         .build();
-    private CraftMetaBookSigned(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
-        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(Material.WRITABLE_BOOK));
-        this.title = title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title);
-        this.author = author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author);
-        this.pages = io.papermc.paper.adventure.PaperAdventure.asVanilla(pages);
-    }
-
-    static final class CraftMetaBookSignedBuilder extends CraftMetaBook.CraftMetaBookBuilder {
-        private net.kyori.adventure.text.Component title;
-        private net.kyori.adventure.text.Component author;
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder title(final net.kyori.adventure.text.Component title) {
-            this.title = title;
-            return this;
-        }
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder author(final net.kyori.adventure.text.Component author) {
-            this.author = author;
-            return this;
-        }
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta build() {
-            return new CraftMetaBookSigned(this.title, this.author, this.pages);
-        }
-    }
-
-    @Override
-    public BookMetaBuilder toBuilder() {
-        return new CraftMetaBookSignedBuilder();
-    }
 
     @Override
     public net.kyori.adventure.text.Component title() {

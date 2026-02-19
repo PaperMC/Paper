@@ -1,10 +1,12 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a {@link Material#WRITTEN_BOOK} that can have a title, an author,
@@ -15,7 +17,8 @@ import org.jetbrains.annotations.Nullable;
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
  */
-public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
+@NullMarked
+public interface BookMeta extends WritableBookMeta {
 
     /**
      * Represents the generation (or level of copying) of a written book
@@ -118,7 +121,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
     void setGeneration(@Nullable Generation generation);
 
     @Override
-    @NotNull
     BookMeta clone();
 
     // Paper start - adventure
@@ -128,42 +130,42 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      */
     @Deprecated
     @Override
-    @NotNull String getPage(int page);
+    String getPage(int page);
 
     /**
      * @deprecated use {@link #page(int, net.kyori.adventure.text.Component)}
      */
     @Deprecated
     @Override
-    void setPage(int page, @NotNull String data);
+    void setPage(int page, String data);
 
     /**
      * @deprecated use {@link #pages()}
      */
     @Deprecated
     @Override
-    @NotNull List<String> getPages();
+    List<String> getPages();
 
     /**
      * @deprecated use {@link #pages(List)}
      */
     @Deprecated
     @Override
-    void setPages(@NotNull List<String> pages);
+    void setPages(List<String> pages);
 
     /**
      * @deprecated use {@link #pages(net.kyori.adventure.text.Component...)}
      */
     @Deprecated
     @Override
-    void setPages(@NotNull String... pages);
+    void setPages(String... pages);
 
     /**
      * @deprecated use {@link #addPages(net.kyori.adventure.text.Component...)}
      */
     @Deprecated
     @Override
-    void addPage(@NotNull String... pages);
+    void addPage(String... pages);
     //</editor-fold>
 
     /**
@@ -174,8 +176,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the title of the book
      */
-    @Override
-    net.kyori.adventure.text.@Nullable Component title();
+    @Nullable Component title();
 
     /**
      * Sets the title of the book.
@@ -185,9 +186,8 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param title the title to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
-    @NotNull BookMeta title(net.kyori.adventure.text.@Nullable Component title);
+    @Contract(value = "_ -> this")
+    BookMeta title(@Nullable Component title);
 
     /**
      * Gets the author of the book.
@@ -197,8 +197,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the author of the book
      */
-    @Override
-    net.kyori.adventure.text.@Nullable Component author();
+    @Nullable Component author();
 
     /**
      * Sets the author of the book. Removes author when given null.
@@ -206,10 +205,31 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param author the author to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
-    @NotNull BookMeta author(net.kyori.adventure.text.@Nullable Component author);
+    @Contract(value = "_ -> this")
+    BookMeta author(@Nullable Component author);
 
+    /**
+     * Gets the list of pages.
+     *
+     * @return the pages
+     */
+    List<Component> pages();
+
+    /**
+     * Sets the pages in this book.
+     *
+     * @param pages the pages to set
+     * @return the same {@link BookMeta} instance
+     */
+    BookMeta pages(List<Component> pages);
+
+    /**
+     * Sets the pages in this book.
+     *
+     * @param pages the pages to set
+     * @return the same {@link BookMeta} instance
+     */
+    BookMeta pages(Component... pages);
 
     /**
      * Gets the specified page in the book. The page must exist.
@@ -219,7 +239,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param page the page number to get, in range [1, getPageCount()]
      * @return the page from the book
      */
-    net.kyori.adventure.text.@NotNull Component page(int page);
+    Component page(int page);
 
     /**
      * Sets the specified page in the book. Pages of the book must be
@@ -233,7 +253,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param page the page number to set, in range [1, getPageCount()]
      * @param data the data to set for that page
      */
-    void page(int page, net.kyori.adventure.text.@NotNull Component data);
+    void page(int page, Component data);
 
     /**
      * Adds new pages to the end of the book. Up to a maximum of 100 pages with
@@ -241,31 +261,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @param pages A list of strings, each being a page
      */
-    void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-
-    interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
-
-        @Override
-        @NotNull BookMetaBuilder title(net.kyori.adventure.text.@Nullable Component title);
-
-        @Override
-        @NotNull BookMetaBuilder author(net.kyori.adventure.text.@Nullable Component author);
-
-        @Override
-        @NotNull BookMetaBuilder addPage(net.kyori.adventure.text.@NotNull Component page);
-
-        @Override
-        @NotNull BookMetaBuilder pages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-
-        @Override
-        @NotNull BookMetaBuilder pages(java.util.@NotNull Collection<net.kyori.adventure.text.Component> pages);
-
-        @Override
-        @NotNull BookMeta build();
-    }
-
-    @Override
-    @NotNull BookMetaBuilder toBuilder();
+    void addPages(Component... pages);
     // Paper end
 
     // Spigot start
@@ -278,7 +274,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
          * @return the page from the book
          * @deprecated in favour of {@link #page(int)}
          */
-        @NotNull
         @Deprecated // Paper
         public BaseComponent[] getPage(int page) {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -306,7 +301,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
          * @return list of all the pages in the book
          * @deprecated in favour of {@link #pages()}
          */
-        @NotNull
         @Deprecated // Paper
         public List<BaseComponent[]> getPages() {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -320,7 +314,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
          * @deprecated in favour of {@link #pages(java.util.List)}
          */
         @Deprecated // Paper
-        public void setPages(@NotNull List<BaseComponent[]> pages) {
+        public void setPages(List<BaseComponent[]> pages) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -332,7 +326,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
          * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
          */
         @Deprecated // Paper
-        public void setPages(@NotNull BaseComponent[]... pages) {
+        public void setPages(BaseComponent[]... pages) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -344,12 +338,11 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
          * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
          */
         @Deprecated // Paper
-        public void addPage(@NotNull BaseComponent[]... pages) {
+        public void addPage(BaseComponent[]... pages) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    @NotNull
     Spigot spigot();
     // Spigot end
 }

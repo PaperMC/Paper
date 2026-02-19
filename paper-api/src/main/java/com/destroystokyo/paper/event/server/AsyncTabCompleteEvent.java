@@ -27,12 +27,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.util.TransformingRandomAccessList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
-import net.kyori.examination.Examinable;
-import net.kyori.examination.ExaminableProperty;
-import net.kyori.examination.string.StringExaminer;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -241,7 +236,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
     /**
      * A rich tab completion, consisting of a string suggestion, and a nullable {@link Component} tooltip.
      */
-    public interface Completion extends Examinable {
+    public interface Completion {
 
         /**
          * Get the suggestion string for this {@link Completion}.
@@ -256,11 +251,6 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
          * @return tooltip component
          */
         @Nullable Component tooltip();
-
-        @Override
-        default Stream<? extends ExaminableProperty> examinableProperties() {
-            return Stream.of(ExaminableProperty.of("suggestion", this.suggestion()), ExaminableProperty.of("tooltip", this.tooltip()));
-        }
 
         /**
          * Create a new {@link Completion} from a suggestion string.
@@ -287,47 +277,6 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
     }
 
     @ApiStatus.Internal
-    static final class CompletionImpl implements Completion {
-
-        private final String suggestion;
-        private final @Nullable Component tooltip;
-
-        CompletionImpl(final String suggestion, final @Nullable Component tooltip) {
-            this.suggestion = suggestion;
-            this.tooltip = tooltip;
-        }
-
-        @Override
-        public String suggestion() {
-            return this.suggestion;
-        }
-
-        @Override
-        public @Nullable Component tooltip() {
-            return this.tooltip;
-        }
-
-        @Override
-        public boolean equals(final @Nullable Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || this.getClass() != o.getClass()) {
-                return false;
-            }
-            final CompletionImpl that = (CompletionImpl) o;
-            return this.suggestion.equals(that.suggestion)
-                && Objects.equals(this.tooltip, that.tooltip);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(this.suggestion, this.tooltip);
-        }
-
-        @Override
-        public String toString() {
-            return StringExaminer.simpleEscaping().examine(this);
-        }
+    record CompletionImpl(String suggestion, @Nullable Component tooltip) implements Completion {
     }
 }
