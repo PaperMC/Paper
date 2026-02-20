@@ -1,148 +1,141 @@
 package io.papermc.paper.command.subcommands;
 
 import com.destroystokyo.paper.util.SneakyThrow;
-import io.papermc.paper.command.PaperSubcommand;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.bukkit.util.StringUtil;
 
-import static net.kyori.adventure.text.Component.newline;
-import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
-import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 
-@DefaultQualifier(NonNull.class)
-public final class DumpListenersCommand implements PaperSubcommand {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
+public final class DumpListenersCommand {
+
     private static final String COMMAND_ARGUMENT_TO_FILE = "tofile";
-    private static final MethodHandle EVENT_TYPES_HANDLE;
+    private static final Component HELP_MESSAGE = text("Usage: /paper dumplisteners " + COMMAND_ARGUMENT_TO_FILE + "|<className>", RED);
 
+    private static final SuggestionProvider<CommandSourceStack> EVENT_SUGGESTIONS = (context, builder) -> CompletableFuture.supplyAsync(() -> {
+        eventClassNames().entrySet().stream()
+            .filter(entry -> {
+                if (StringUtil.startsWithIgnoreCase(entry.getKey(), builder.getRemaining()) || StringUtil.startsWithIgnoreCase(entry.getKey().substring(entry.getKey().lastIndexOf('.') + 1), builder.getRemaining())) {
+                    return entry.getValue().getRegisteredListeners().length != 0;
+                }
+                return false;
+            })
+            .map(Map.Entry::getKey)
+            .forEach(builder::suggest);
+        return builder.build();
+    });
+
+    private static final MethodHandle EVENT_TYPES_HANDLE;
     static {
         try {
-            final Field eventTypesField = HandlerList.class.getDeclaredField("EVENT_TYPES");
-            eventTypesField.setAccessible(true);
-            EVENT_TYPES_HANDLE = MethodHandles.lookup().unreflectGetter(eventTypesField);
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(HandlerList.class, MethodHandles.lookup());
+            EVENT_TYPES_HANDLE = lookup.findStaticGetter(HandlerList.class, "EVENT_TYPES", Map.class);
         } catch (final ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        if (args.length >= 1 && args[0].equals(COMMAND_ARGUMENT_TO_FILE)) {
-            this.dumpToFile(sender);
-            return true;
-        }
-        this.doDumpListeners(sender, args);
-        return true;
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        return Commands.literal("dumplisteners")
+            .requires(PaperCommand.hasPermission("dumplisteners"))
+            .executes(context -> {
+                context.getSource().getSender().sendMessage(HELP_MESSAGE);
+                return Command.SINGLE_SUCCESS;
+            })
+            .then(Commands.literal(COMMAND_ARGUMENT_TO_FILE)
+                .executes(context -> {
+                    return dumpToFile(context.getSource().getSender());
+                })
+            )
+            .then(Commands.argument("event", StringArgumentType.word())
+                .suggests(EVENT_SUGGESTIONS)
+                .executes(context -> {
+                    return doDumpListeners(context.getSource().getSender(), StringArgumentType.getString(context, "event"));
+                })
+            );
     }
 
-    private void dumpToFile(final CommandSender sender) {
-        Path parent = Path.of("debug");
-        Path path = parent.resolve("listeners-" + FORMATTER.format(LocalDateTime.now()) + ".txt");
+    private static int dumpToFile(final CommandSender sender) {
+        Path path = Path.of("debug", "listeners-" + PaperCommand.FILENAME_DATE_TIME_FORMATTER.format(LocalDateTime.now()) + ".txt");
         sender.sendMessage(
-            text("Writing listeners into directory", GREEN)
+            text("Writing listeners into", GREEN)
                 .appendSpace()
-                .append(
-                    text(parent.toString(), WHITE)
-                        .hoverEvent(text("Click to copy the full path of debug directory", WHITE))
-                        .clickEvent(ClickEvent.copyToClipboard(parent.toAbsolutePath().toString()))
-                )
+                .append(PaperCommand.asFriendlyPath(path))
         );
         try {
-            Files.createDirectories(parent);
-            Files.createFile(path);
-            try (final PrintWriter writer = new PrintWriter(path.toFile())){
-                for (final String eventClass : eventClassNames()) {
-                    final HandlerList handlers;
-                    try {
-                        handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
-                    } catch (final ReflectiveOperationException e) {
-                        continue;
-                    }
+            Files.createDirectories(path.getParent());
+            try (final PrintWriter writer = new PrintWriter(path.toFile())) {
+                for (final Map.Entry<String, HandlerList> entry : eventClassNames().entrySet()) {
+                    final HandlerList handlers = entry.getValue();
                     if (handlers.getRegisteredListeners().length != 0) {
-                        writer.println(eventClass);
+                        writer.println(entry.getKey());
                     }
                     for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
                         writer.println(" - " + registeredListener);
                     }
                 }
             }
+            sender.sendMessage(text("Successfully written listeners", GREEN));
+            return Command.SINGLE_SUCCESS;
         } catch (final IOException ex) {
             sender.sendMessage(text("Failed to write dumped listener! See the console for more info.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping listeners", ex);
-            return;
+            return 0;
         }
-        sender.sendMessage(
-            text("Successfully written listeners into", GREEN)
-                .appendSpace()
-                .append(
-                    text(path.toString(), WHITE)
-                        .hoverEvent(text("Click to copy the full path of the file", WHITE))
-                        .clickEvent(ClickEvent.copyToClipboard(path.toAbsolutePath().toString()))
-                )
-        );
     }
 
-    private void doDumpListeners(final CommandSender sender, final String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage(text("Usage: /paper dumplisteners " + COMMAND_ARGUMENT_TO_FILE + "|<className>", RED));
-            return;
-        }
-
-        final String className = args[0];
-
+    private static int doDumpListeners(final CommandSender sender, final String className) {
         try {
             final HandlerList handlers = (HandlerList) findClass(className).getMethod("getHandlerList").invoke(null);
 
             if (handlers.getRegisteredListeners().length == 0) {
-                sender.sendMessage(text(className + " does not have any registered listeners."));
-                return;
+                sender.sendPlainMessage(className + " does not have any registered listeners.");
+                return 0;
             }
 
-            sender.sendMessage(text("Listeners for " + className + ":"));
+            sender.sendPlainMessage("Listeners for " + className + ":");
 
             for (final RegisteredListener listener : handlers.getRegisteredListeners()) {
-                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", WHITE)
-                    .append(newline())
+                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")")
+                    .appendNewline()
                     .append(text("Listener: " + listener.getListener()))
-                    .append(newline())
+                    .appendNewline()
                     .append(text("Executor: " + listener.getExecutor()))
-                    .append(newline())
+                    .appendNewline()
                     .append(text("Ignoring cancelled: " + listener.isIgnoringCancelled()));
 
                 sender.sendMessage(text(listener.getPlugin().getName(), GREEN)
-                    .append(space())
+                    .appendSpace()
                     .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY).hoverEvent(hoverText)));
             }
 
-            sender.sendMessage(text("Total listeners: " + handlers.getRegisteredListeners().length));
-
+            int size = handlers.getRegisteredListeners().length;
+            sender.sendPlainMessage("Total listeners: " + size);
+            return size;
         } catch (final ClassNotFoundException e) {
             sender.sendMessage(text("Unable to find a class named '" + className + "'. Make sure to use the fully qualified name.", RED));
         } catch (final NoSuchMethodException e) {
@@ -151,40 +144,23 @@ public final class DumpListenersCommand implements PaperSubcommand {
             sender.sendMessage(text("Something went wrong, see the console for more details.", RED));
             MinecraftServer.LOGGER.warn("Error occurred while dumping listeners for class {}", className, e);
         }
-    }
-
-    @Override
-    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-        return switch (args.length) {
-            case 0 -> suggestions();
-            case 1 -> suggestions().stream()
-                .filter(clazz -> clazz.toLowerCase(Locale.ROOT).contains(args[0].toLowerCase(Locale.ROOT)))
-                .toList();
-            default -> Collections.emptyList();
-        };
-    }
-
-    private static List<String> suggestions() {
-        final List<String> ret = new ArrayList<>();
-        ret.add(COMMAND_ARGUMENT_TO_FILE);
-        ret.addAll(eventClassNames());
-        return ret;
+        return 0;
     }
 
     @SuppressWarnings("unchecked")
-    private static Set<String> eventClassNames() {
+    private static Map<String, HandlerList> eventClassNames() {
         try {
-            return (Set<String>) EVENT_TYPES_HANDLE.invokeExact();
+            return (Map<String, HandlerList>) EVENT_TYPES_HANDLE.invokeExact();
         } catch (final Throwable e) {
             SneakyThrow.sneaky(e);
-            return Collections.emptySet(); // Unreachable
+            return Map.of(); // Unreachable
         }
     }
 
     private static Class<?> findClass(final String className) throws ClassNotFoundException {
         try {
             return Class.forName(className);
-        } catch (final ClassNotFoundException ignore) {
+        } catch (final ClassNotFoundException ignored) {
             for (final Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
                 if (!plugin.isEnabled()) {
                     continue;
