@@ -766,23 +766,23 @@ public class CraftEventFactory {
                 final boolean mergeUnconditionally = maxValue <= 0;
                 if (mergeUnconditionally || xp.getValue() < maxValue) { // Paper - Skip iteration if unnecessary
 
-                List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
-                for (Entity e : entities) {
-                    if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
-                        // Paper start
-                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
-                            long newTotal = (long)xp.getValue() + (long)loopItem.getValue();
-                            if ((int) newTotal < 0) continue; // Overflow
-                            if (!mergeUnconditionally && newTotal > maxValue) {
-                                loopItem.setValue((int) (newTotal - maxValue));
-                                xp.setValue((int) maxValue);
-                            } else {
-                            xp.setValue(xp.getValue() + loopItem.getValue());
-                            loopItem.discard(null); // Add Bukkit remove cause
-                            } // Paper end - Maximum exp value when merging
+                    List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
+                    for (Entity e : entities) {
+                        if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
+                            // Paper start
+                            if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
+                                long newTotal = (long) xp.getValue() + (long) loopItem.getValue();
+                                if ((int) newTotal < 0) continue; // Overflow
+                                if (!mergeUnconditionally && newTotal > maxValue) {
+                                    loopItem.setValue((int) (newTotal - maxValue));
+                                    xp.setValue((int) maxValue);
+                                } else {
+                                    xp.setValue(xp.getValue() + loopItem.getValue());
+                                    loopItem.discard(null); // Add Bukkit remove cause
+                                } // Paper end - Maximum exp value when merging
+                            }
                         }
                     }
-                }
                 } // Paper end - End iteration skip check - All tweaking ends here
             }
         }
@@ -997,7 +997,7 @@ public class CraftEventFactory {
         for (Entity.DefaultDrop drop : drops) {
             if (drop == null) continue;
             final org.bukkit.inventory.ItemStack stack = drop.stack();
-        // Paper end - Restore vanilla drops behavior
+            // Paper end - Restore vanilla drops behavior
             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 
             drop.runConsumer(s -> world.dropItem(entity.getLocation(), s)); // Paper - Restore vanilla drops behavior
@@ -1031,7 +1031,7 @@ public class CraftEventFactory {
         for (Entity.DefaultDrop drop : drops) {
             if (drop == null) continue;
             final org.bukkit.inventory.ItemStack stack = drop.stack();
-        // Paper end - Restore vanilla drops behavior
+            // Paper end - Restore vanilla drops behavior
             if (stack == null || stack.getType() == Material.AIR) continue;
 
             drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false)); // Paper - Restore vanilla drops behavior
@@ -1201,11 +1201,12 @@ public class CraftEventFactory {
     private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
 
     public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double freezingModifier, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> freezing, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption) {
-    // Paper start - fix invulnerability reduction in EntityDamageEvent
+        // Paper start - fix invulnerability reduction in EntityDamageEvent
         return handleLivingEntityDamageEvent(damagee, source, rawDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption, null);
     }
+
     public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double freezingModifier, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> freezing, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption, java.util.function.BiConsumer<Map<DamageModifier, Double>, Map<DamageModifier, Function<? super Double, Double>>> callback) {
-    // Paper end - fix invulnerability reduction in EntityDamageEvent
+        // Paper end - fix invulnerability reduction in EntityDamageEvent
         Map<DamageModifier, Double> modifiers = new EnumMap<>(DamageModifier.class);
         Map<DamageModifier, Function<? super Double, Double>> modifierFunctions = new EnumMap<>(DamageModifier.class);
         modifiers.put(DamageModifier.BASE, rawDamage);
@@ -1230,7 +1231,8 @@ public class CraftEventFactory {
         modifierFunctions.put(DamageModifier.MAGIC, magic);
         modifiers.put(DamageModifier.ABSORPTION, absorptionModifier);
         modifierFunctions.put(DamageModifier.ABSORPTION, absorption);
-        if (callback != null) callback.accept(modifiers, modifierFunctions); // Paper - fix invulnerability reduction in EntityDamageEvent
+        if (callback != null)
+            callback.accept(modifiers, modifierFunctions); // Paper - fix invulnerability reduction in EntityDamageEvent
         return CraftEventFactory.handleEntityDamageEvent(damagee, source, modifiers, modifierFunctions);
     }
 
@@ -1795,7 +1797,8 @@ public class CraftEventFactory {
         }
         event.callEvent();
         event.getInventory().setItem(resultSlot, event.getResult());
-        container.broadcastChanges();;
+        container.broadcastChanges();
+        ;
     }
 
     public static SpawnerSpawnEvent callSpawnerSpawnEvent(Entity spawnee, BlockPos pos) {
@@ -2085,7 +2088,8 @@ public class CraftEventFactory {
             final PlayerTeleportEvent.TeleportCause cause = switch (type) {
                 case PortalType.ENDER -> PlayerTeleportEvent.TeleportCause.END_PORTAL;
                 case PortalType.NETHER -> PlayerTeleportEvent.TeleportCause.NETHER_PORTAL;
-                case PortalType.END_GATEWAY -> PlayerTeleportEvent.TeleportCause.END_GATEWAY; // not actually used yet, the Player/EntityTeleportEndGatewayEvent is called instead
+                case PortalType.END_GATEWAY ->
+                    PlayerTeleportEvent.TeleportCause.END_GATEWAY; // not actually used yet, the Player/EntityTeleportEndGatewayEvent is called instead
                 case PortalType.CUSTOM -> PlayerTeleportEvent.TeleportCause.PLUGIN;
             };
             result = callPlayerPortalEvent(player, to, cause, searchRadius, createRadius);
@@ -2264,6 +2268,25 @@ public class CraftEventFactory {
         }
         return null;
     }
+
+    // Paper start - BlockDispenseEntityEvent
+    @Nullable
+    public static io.papermc.paper.event.block.BlockDispenseEntityEvent callBlockDispenseEntityEvent(net.minecraft.core.dispenser.BlockSource blockSource, net.minecraft.world.entity.Entity entity, net.minecraft.world.item.ItemStack itemStack) {
+        org.bukkit.block.Block bukkitBlock = CraftBlock.at(blockSource.level(), blockSource.pos());
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack.copyWithCount(1));
+        org.bukkit.util.Vector position = new org.bukkit.util.Vector(entity.getX(), entity.getY(), entity.getZ());
+
+        io.papermc.paper.event.block.BlockDispenseEntityEvent event = new io.papermc.paper.event.block.BlockDispenseEntityEvent(bukkitBlock, craftItem.clone(), position, entity.getBukkitEntity());
+
+        if (!event.callEvent()) {
+            entity.discard();
+            return null;
+        }
+
+        entity.setPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+        return event;
+    }
+    // Paper end
 
     /**
      * Calls the {@link io.papermc.paper.event.entity.EntityFertilizeEggEvent}.

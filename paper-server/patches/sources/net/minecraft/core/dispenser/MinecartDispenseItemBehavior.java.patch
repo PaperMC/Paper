@@ -1,27 +1,68 @@
 --- a/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
-@@ -58,12 +_,35 @@
-         }
+@@ -28,17 +_,17 @@
+         Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
+         ServerLevel serverLevel = blockSource.level();
+         Vec3 vec3 = blockSource.center();
+-        double d = vec3.x() + direction.getStepX() * 1.125;
+-        double d1 = Math.floor(vec3.y()) + direction.getStepY();
+-        double d2 = vec3.z() + direction.getStepZ() * 1.125;
++        double d = vec3.x() + (double) direction.getStepX() * 1.125D;
++        double d1 = Math.floor(vec3.y()) + (double) direction.getStepY();
++        double d2 = vec3.z() + (double) direction.getStepZ() * 1.125D;
+         BlockPos blockPos = blockSource.pos().relative(direction);
+         BlockState blockState = serverLevel.getBlockState(blockPos);
+         double d3;
+         if (blockState.is(BlockTags.RAILS)) {
+             if (getRailShape(blockState).isSlope()) {
+-                d3 = 0.6;
++                d3 = 0.6D;
+             } else {
+-                d3 = 0.1;
++                d3 = 0.1D;
+             }
+         } else {
+             if (!blockState.isAir()) {
+@@ -51,20 +_,42 @@
+             }
  
-         Vec3 vec31 = new Vec3(d, d1 + d3, d2);
+             if (direction != Direction.DOWN && getRailShape(blockState1).isSlope()) {
+-                d3 = -0.4;
++                d3 = -0.4D;
+             } else {
+-                d3 = -0.9;
+-            }
+-        }
+-
+-        Vec3 vec31 = new Vec3(d, d1 + d3, d2);
 -        AbstractMinecart abstractMinecart = AbstractMinecart.createMinecart(
 -            serverLevel, vec31.x, vec31.y, vec31.z, this.entityType, EntitySpawnReason.DISPENSER, item, null
 -        );
-+        ItemStack itemstack1 = item.copyWithCount(1); // Paper - shrink below and single item in event
-+        org.bukkit.block.Block block2 = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
-+        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);
+-        if (abstractMinecart != null) {
+-            serverLevel.addFreshEntity(abstractMinecart);
+-            item.shrink(1);
+-        }
++                d3 = -0.9D;
++            }
++        }
 +
-+        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block2, craftItem.clone(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec31));
-+        serverLevel.getCraftServer().getPluginManager().callEvent(event);
++        // Paper start - BlockDispenseEntityEvent
++        AbstractMinecart abstractMinecart = AbstractMinecart.createMinecart(serverLevel, d, d1 + d3, d2, this.entityType, EntitySpawnReason.DISPENSER, item, (net.minecraft.world.entity.player.Player) null);
++        if (abstractMinecart == null) return item;
 +
-+        if (event.isCancelled()) {
++        io.papermc.paper.event.block.BlockDispenseEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseEntityEvent(blockSource, abstractMinecart, item);
++        if (event == null) {
 +            return item;
 +        }
++        // Paper end
++
++        // CraftBukkit start
++        ItemStack itemstack1 = item.copyWithCount(1);
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);
 +
 +        boolean shrink = true;
 +        if (!event.getItem().equals(craftItem)) {
 +            shrink = false;
-+            // Chain to handler for new item
 +            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior dispenseItemBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
 +            if (dispenseItemBehavior != DispenseItemBehavior.NOOP && dispenseItemBehavior != this) {
@@ -30,14 +71,11 @@
 +            }
 +        }
 +
-+        itemstack1 = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+        AbstractMinecart abstractMinecart = AbstractMinecart.createMinecart(serverLevel, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.entityType, EntitySpawnReason.DISPENSER, itemstack1, null);
-+
-         if (abstractMinecart != null) {
--            serverLevel.addFreshEntity(abstractMinecart);
--            item.shrink(1);
-+            if (serverLevel.addFreshEntity(abstractMinecart) && shrink) item.shrink(1); // Paper - if entity add was successful and supposed to shrink
-+            // CraftBukkit end
-         }
++        // Paper start - BlockDispenseEntityEvent
++        if (serverLevel.addFreshEntity(abstractMinecart)) {
++            if (shrink) item.shrink(1);
++        }
++        // Paper end
  
          return item;
+     }
