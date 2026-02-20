@@ -22,6 +22,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jline.reader.Candidate;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
+import xyz.jpenilla.endermux.ansi.ColorLevelContext;
 
 import static com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion.completion;
 
@@ -86,7 +87,7 @@ public final class BrigadierCommandCompleter {
     }
 
     private static @NonNull Candidate toCandidate(final @NonNull String suggestionText, final @Nullable Component tooltip) {
-        final String suggestionTooltip = PaperAdventure.ANSI_SERIALIZER.serializeOr(tooltip, null);
+        final String suggestionTooltip = ColorLevelContext.currentSerializer().serializeOr(tooltip, null);
         //noinspection SpellCheckingInspection
         return new PaperCandidate(
             suggestionText,
