@@ -22,26 +22,26 @@ import org.jspecify.annotations.Nullable;
 
 public abstract class PaperCommonConnection<T extends ServerCommonPacketListenerImpl> extends ReadablePlayerCookieConnectionImpl implements PlayerCommonConnection {
 
-    protected final T handle;
+    protected final T packetListener;
 
-    public PaperCommonConnection(final T serverConfigurationPacketListenerImpl) {
-        super(serverConfigurationPacketListenerImpl.connection);
-        this.handle = serverConfigurationPacketListenerImpl;
+    public PaperCommonConnection(final T packetListener) {
+        super(packetListener.connection);
+        this.packetListener = packetListener;
     }
 
     @Override
     public void sendReportDetails(final Map<String, String> details) {
-        this.handle.send(new ClientboundCustomReportDetailsPacket(details));
+        this.packetListener.send(new ClientboundCustomReportDetailsPacket(details));
     }
 
     @Override
     public void sendLinks(final ServerLinks links) {
-        this.handle.send(new ClientboundServerLinksPacket(((CraftServerLinks) links).getServerLinks().untrust()));
+        this.packetListener.send(new ClientboundServerLinksPacket(((CraftServerLinks) links).getServerLinks().untrust()));
     }
 
     @Override
     public void transfer(final String host, final int port) {
-        this.handle.send(new ClientboundTransferPacket(host, port));
+        this.packetListener.send(new ClientboundTransferPacket(host, port));
     }
 
     @Override
@@ -72,32 +72,32 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
 
     @Override
     public void disconnect(final Component component) {
-        this.handle.disconnect(PaperAdventure.asVanilla(component), DisconnectionReason.UNKNOWN);
+        this.packetListener.disconnect(PaperAdventure.asVanilla(component), DisconnectionReason.UNKNOWN);
     }
 
     @Override
     public boolean isTransferred() {
-        return this.handle.isTransferred();
+        return this.packetListener.isTransferred();
     }
 
     @Override
     public SocketAddress getAddress() {
-        return this.handle.connection.channel.remoteAddress();
+        return this.packetListener.connection.channel.remoteAddress();
     }
 
     @Override
     public InetSocketAddress getClientAddress() {
-        return (InetSocketAddress) this.handle.connection.getRemoteAddress();
+        return (InetSocketAddress) this.packetListener.connection.getRemoteAddress();
     }
 
     @Override
     public @Nullable InetSocketAddress getVirtualHost() {
-        return this.handle.connection.virtualHost;
+        return this.packetListener.connection.virtualHost;
     }
 
     @Override
     public @Nullable InetSocketAddress getHAProxyAddress() {
-        return this.handle.connection.haProxyAddress instanceof final InetSocketAddress inetSocketAddress ? inetSocketAddress : null;
+        return this.packetListener.connection.haProxyAddress instanceof final InetSocketAddress inetSocketAddress ? inetSocketAddress : null;
     }
 
     @Override
@@ -107,7 +107,17 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
         Preconditions.checkArgument(value.length <= 5120, "Cookie value too large, must be smaller than 5120 bytes");
         Preconditions.checkState(this.canStoreCookie(), "Can only store cookie in CONFIGURATION or PLAY protocol.");
 
-        this.handle.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
+        this.packetListener.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
+    }
+
+    @Override
+    public int getPing() {
+        return this.packetListener.latency();
+    }
+
+    @Override
+    public int getLastPing() {
+        return this.packetListener.lastLatency;
     }
 
     public abstract ClientInformation getClientInformation();

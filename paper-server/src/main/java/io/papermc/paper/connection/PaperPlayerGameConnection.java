@@ -8,26 +8,26 @@ import java.util.Set;
 
 public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGamePacketListenerImpl> implements PlayerGameConnection {
 
-    public PaperPlayerGameConnection(final ServerGamePacketListenerImpl serverConfigurationPacketListenerImpl) {
-        super(serverConfigurationPacketListenerImpl);
+    public PaperPlayerGameConnection(final ServerGamePacketListenerImpl packetListener) {
+        super(packetListener);
     }
 
     @Override
     public ClientInformation getClientInformation() {
-        return this.handle.player.clientInformation();
+        return this.packetListener.player.clientInformation();
     }
 
     @Override
     public void reenterConfiguration() {
-        if (HorriblePlayerLoginEventHack.warnReenterConfiguration(this.handle.connection)) {
+        if (HorriblePlayerLoginEventHack.warnReenterConfiguration(this.packetListener.connection)) {
             return;
         }
-        this.handle.switchToConfig();
+        this.packetListener.switchToConfig();
     }
 
     @Override
     public Player getPlayer() {
-        return this.handle.getCraftPlayer();
+        return this.packetListener.getCraftPlayer();
     }
 
     @Override
