@@ -17,18 +17,21 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     private float radius;
     private boolean fire;
 
+    private final float velocity;
+
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ExplosionPrimeEvent(@NotNull final Entity entity, final float radius, final boolean fire) {
+    public ExplosionPrimeEvent(@NotNull final Entity entity, final float radius, final boolean fire, final float velocity) {
         super(entity);
         this.radius = radius;
         this.fire = fire;
+        this.velocity = velocity;
     }
 
     @ApiStatus.Internal
     public ExplosionPrimeEvent(@NotNull final Explosive explosive) {
-        this(explosive, explosive.getYield(), explosive.isIncendiary());
+        this(explosive, explosive.getYield(), explosive.isIncendiary(), 0);
     }
 
     /**
@@ -65,6 +68,17 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
      */
     public void setFire(boolean fire) {
         this.fire = fire;
+    }
+
+    /**
+     * Gets the velocity used in the explosion. This is zero for all entities except a TNT minecart, in which case it
+     * represents the velocity of the minecart when it explodes, the fall distance divided by ten,
+     * or the velocity of the arrow that caused the minecart to explode.
+     *
+     * @return returns the velocity of the explosion
+     */
+    public float getVelocity() {
+        return this.velocity;
     }
 
     @Override
