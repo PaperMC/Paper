@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.world.explosion.Explosion;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -844,6 +845,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public WorldBorder createWorldBorder();
+
+    /**
+     * {@return the explosion builder}
+     */
+    @Contract(value = "-> new", pure = true)
+    @NotNull
+    Explosion.Builder createExplosion();
 
     /**
      * Gets the map from the given item ID.
