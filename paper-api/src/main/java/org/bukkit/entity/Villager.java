@@ -1,10 +1,11 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import java.util.Locale;
 import java.util.Map; // Paper
 import java.util.UUID; // Paper
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -188,8 +189,8 @@ public interface Villager extends AbstractVillager {
         // End generate - VillagerType
 
         @NotNull
-        private static Type getType(@NotNull String key) {
-            return Registry.VILLAGER_TYPE.getOrThrow(NamespacedKey.minecraft(key));
+        private static Type getType(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -200,19 +201,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.VILLAGER_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Type type = key == null ? null : Registry.VILLAGER_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No villager type found with the name %s", name);
             return type;
         }
 
         /**
          * @return an array of all known villager types.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(new Type[0]);
+            return Registry.VILLAGER_TYPE.stream().toArray(Type[]::new);
         }
     }
 
@@ -311,8 +313,8 @@ public interface Villager extends AbstractVillager {
         // End generate - VillagerProfession
 
         @NotNull
-        private static Profession getProfession(@NotNull String key) {
-            return Registry.VILLAGER_PROFESSION.getOrThrow(NamespacedKey.minecraft(key));
+        private static Profession getProfession(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_PROFESSION.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -323,19 +325,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession valueOf(@NotNull String name) {
-            Profession profession = Registry.VILLAGER_PROFESSION.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Profession profession = key == null ? null : Registry.VILLAGER_PROFESSION.get(key);
             Preconditions.checkArgument(profession != null, "No villager profession found with the name %s", name);
             return profession;
         }
 
         /**
          * @return an array of all known villager professions.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
+            return Registry.VILLAGER_PROFESSION.stream().toArray(Profession[]::new);
         }
 
         // Paper start

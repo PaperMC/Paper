@@ -14,7 +14,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
-import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.entity.EntitySerializationFlag;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
@@ -61,7 +60,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -824,7 +822,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public void setBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z, org.bukkit.NamespacedKey biomeKey) {
-        accessor.setBiome(x, y, z, org.bukkit.Registry.BIOME.getOrThrow(biomeKey));
+        accessor.setBiome(x, y, z, io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).getOrThrow(biomeKey));
     }
 
     @Override

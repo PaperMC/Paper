@@ -48,12 +48,12 @@ import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Art;
 import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.MusicInstrument;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
@@ -81,8 +81,6 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * All the different types of data that {@link org.bukkit.inventory.ItemStack ItemStacks}
@@ -392,21 +390,21 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
 
-    private static DataComponentType.NonValued unvalued(final String name) {
-        final DataComponentType dataComponentType = requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");
+    private static DataComponentType.NonValued unvalued(final @KeyPattern.Value String key) {
+        final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.NonValued) {
             return (DataComponentType.NonValued) dataComponentType;
         }
-        throw new IllegalStateException(name + " is not a valid unvalued type, it is a " + dataComponentType.getClass().getTypeName());
+        throw new IllegalStateException(key + " is not a valid unvalued type, it is a " + dataComponentType.getClass().getTypeName());
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> DataComponentType.Valued<T> valued(final String name) {
-        DataComponentType dataComponentType =  requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " valued data component type couldn't be found, this is a bug.");
+    private static <T> DataComponentType.Valued<T> valued(final @KeyPattern.Value String key) {
+        DataComponentType dataComponentType =  Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.Valued) {
             return (DataComponentType.Valued<T>) dataComponentType;
         }
-        throw new IllegalStateException(name + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
+        throw new IllegalStateException(key + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
 
     }
 

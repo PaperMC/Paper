@@ -2,8 +2,9 @@ package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -67,8 +68,8 @@ public interface Chicken extends Animals {
         Variant WARM = getVariant("warm");
         // End generate - ChickenVariant
 
-        private static Variant getVariant(String key) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+        private static Variant getVariant(@KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 }
