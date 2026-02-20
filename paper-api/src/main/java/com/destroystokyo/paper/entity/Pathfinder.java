@@ -45,6 +45,16 @@ public interface Pathfinder {
     @Nullable PathResult findPath(Location loc);
 
     /**
+     * Calculates a destination for the Entity to navigate to, but does not set it
+     * as the current target. Useful for calculating what would happen before setting it.
+     *
+     * @param loc Location to navigate to
+     * @param accuracy The accuracy of the pathfinding
+     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
+     */
+    @Nullable PathResult findPath(Location loc, int accuracy);
+
+    /**
      * Calculates a destination for the Entity to navigate to to reach the target entity,
      * but does not set it as the current target.
      * Useful for calculating what would happen before setting it.
@@ -58,6 +68,22 @@ public interface Pathfinder {
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
     @Nullable PathResult findPath(LivingEntity target);
+
+    /**
+     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * but does not set it as the current target.
+     * Useful for calculating what would happen before setting it.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the games behavior.
+     *
+     * @param target the Entity to navigate to
+     * @param accuracy The accuracy of the pathfinding
+     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
+     */
+    @Nullable PathResult findPath(LivingEntity target, int accuracy);
 
     /**
      * Calculates a destination for the Entity to navigate to, and sets it with default speed
