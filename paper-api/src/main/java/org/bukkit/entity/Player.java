@@ -3346,8 +3346,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Get the player's current client side view distance.
      * <br>
-     * Will default to the server view distance if the client has not yet
-     * communicated this information,
+     * Will default to 2 if the client has not yet communicated this information.
      *
      * @return client view distance as above
      */
