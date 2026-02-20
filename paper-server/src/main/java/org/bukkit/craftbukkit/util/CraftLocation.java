@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
@@ -71,5 +72,9 @@ public final class CraftLocation {
 
     public static Vec3 toVec3(Location loc) {
         return new Vec3(loc.getX(), loc.getY(), loc.getZ());
+    }
+
+    public static boolean isInSpawnableBounds(Location loc) {
+        return ServerLevel.isInSpawnableBounds(CraftLocation.toBlockPosition(loc));
     }
 }
