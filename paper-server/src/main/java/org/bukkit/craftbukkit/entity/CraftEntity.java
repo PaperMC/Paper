@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
@@ -462,6 +463,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void remove() {
         this.entity.pluginRemoved = true;
         this.entity.discard(this.getHandle().generation ? null : EntityRemoveEvent.Cause.PLUGIN);
+    }
+
+    @Override
+    public boolean isPluginRemoved() {
+        return this.entity.pluginRemoved;
+    }
+
+    @Override
+    public @Nullable RemovalReason getRemovalReason() {
+        final Entity.RemovalReason removalReason = this.entity.getRemovalReason();
+        if (removalReason == null) return null;
+        return RemovalReason.valueOf(removalReason.name());
     }
 
     @Override
