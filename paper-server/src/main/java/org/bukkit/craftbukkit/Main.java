@@ -137,6 +137,8 @@ public class Main {
 
                 this.accepts("demo", "Demo mode");
 
+                this.accepts("bonusChest", "Enable the bonus chest");
+
                 this.accepts("initSettings", "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
 
                 this.acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
