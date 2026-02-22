@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
