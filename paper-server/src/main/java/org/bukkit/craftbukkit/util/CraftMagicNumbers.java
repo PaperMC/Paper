@@ -17,6 +17,8 @@ import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datapack.DynamicBuiltinPack;
+import io.papermc.paper.datapack.DynamicBuiltinPacks;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.IOException;

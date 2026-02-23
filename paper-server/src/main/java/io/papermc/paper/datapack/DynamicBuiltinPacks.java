@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.util;
+package io.papermc.paper.datapack;
 
 import java.io.IOException;
 import java.util.List;
