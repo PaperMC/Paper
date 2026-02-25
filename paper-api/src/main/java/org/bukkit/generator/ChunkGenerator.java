@@ -501,7 +501,7 @@ public abstract class ChunkGenerator {
      * The Vanilla decoration are generated <b>before</b> any
      * {@link BlockPopulator} are called.
      * <p>
-     * This is method is not called (and has therefore no effect), if
+     * This method is not called (and has therefore no effect), if
      * {@link #shouldGenerateDecorations(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla decorations
