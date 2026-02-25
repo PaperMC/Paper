@@ -240,7 +240,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack stack = CraftItemStack.unwrap(item); // mutation is expected as old behavior
         try {
             StringReader reader = new StringReader(item.getType().key().asString() + components);
-            stack.applyComponents(new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader).components());
+            stack.applyComponents(new ItemParser(CraftRegistry.getRegistryAccess()).parse(reader).components());
             if (reader.canRead()) {
                 throw new IllegalArgumentException("Trailing input found when parsing components: " + reader.getRemaining());
             }
@@ -260,7 +260,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Identifier resourceKey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
-        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
+        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
         final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
         if (nms != null) {
             final com.google.common.collect.ImmutableMap.Builder<Identifier, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
@@ -367,7 +367,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
-        Potion potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
+        Potion potionRegistry = CraftRegistry.getRegistry(Registries.POTION)
                 .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
 
         return new CraftPotionType(namespacedKey, potionRegistry);
@@ -449,7 +449,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkNotNull(itemStack, "Cannot serialize empty ItemStack");
         Preconditions.checkArgument(!itemStack.isEmpty(), "Cannot serialize empty ItemStack");
 
-        net.minecraft.core.RegistryAccess registryAccess = CraftRegistry.getMinecraftRegistry();
+        net.minecraft.core.RegistryAccess registryAccess = CraftRegistry.getRegistryAccess();
         com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = registryAccess.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
         com.google.gson.JsonObject item;
         // Serialize as SNBT to preserve exact NBT types; vanilla codecs already can handle such deserialization.
@@ -470,7 +470,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final int dataVersion = data.get(SharedConstants.DATA_VERSION_TAG).getAsInt();
         final int currentVersion = this.getDataVersion();
         data = (com.google.gson.JsonObject) MinecraftServer.getServer().getFixerUpper().update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
-        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = CraftRegistry.getRegistryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
     }
 
@@ -598,7 +598,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public ItemStack deserializeItemHover(final HoverEvent.ShowItem itemHover) {
-        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
+        final RegistryOps<Object> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JavaOps.INSTANCE);
         final Object encoded = AdventureCodecs.SHOW_ITEM_CODEC.codec()
             .encodeStart(ops, HoverEvent.showItem(itemHover)).getOrThrow(IllegalStateException::new);
 

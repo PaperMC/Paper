@@ -1,6 +1,7 @@
 package io.papermc.generator;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.types.SourceGenerator;
@@ -15,16 +16,17 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
@@ -37,10 +39,12 @@ import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
+import net.minecraft.util.Util;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.storage.loot.LootDataType;
 import org.apache.commons.io.file.PathUtils;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
@@ -64,15 +68,15 @@ public class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"--side"}, required = true)
     String side;
 
-    @CommandLine.Option(names = {"--bootstrap-tags"})
-    boolean tagBootstrap;
+    @CommandLine.Option(names = {"--bootstrap-resources"})
+    boolean loadResources;
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static RegistryAccess.@MonotonicNonNull Frozen REGISTRY_ACCESS;
+    public static HolderLookup.Provider REGISTRIES;
     public static @MonotonicNonNull Map<TagKey<?>, String> EXPERIMENTAL_TAGS;
 
-    public static CompletableFuture<Void> bootStrap(boolean withTags) {
+    public static CompletableFuture<Void> bootStrap(boolean withResources) {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         Bootstrap.validate();
@@ -90,8 +94,8 @@ public class Main implements Callable<Integer> {
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(worldGenLayer.stream(), frozenWorldgenRegistries.listRegistries()).toList();
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
-        REGISTRY_ACCESS = layers.compositeAccess().freeze();
-        if (withTags) {
+        REGISTRIES = layers.compositeAccess().freeze();
+        if (withResources) {
             return ReloadableServerResources.loadResources(
                 resourceManager,
                 layers,
@@ -107,6 +111,13 @@ public class Main implements Callable<Integer> {
                 }
             }).thenAccept(resources -> {
                 resources.updateComponentsAndStaticRegistryTags();
+                Set<ResourceKey<? extends Registry<?>>> reloadableRegistries = LootDataType.values().map(LootDataType::registryKey).collect(Collectors.toSet());
+                /*REGISTRIES = HolderLookup.Provider.create(RegistryEntries.stream().map(entry -> {
+                    return (reloadableRegistries.contains(entry.registryKey()) ? resources.fullRegistries().lookup() : REGISTRIES).lookupOrThrow(entry.registryKey());
+                }));*/
+                REGISTRIES = HolderLookup.Provider.create(RegistryEntries.streamLegacy().map(key -> {
+                    return (reloadableRegistries.contains(key) ? resources.fullRegistries().lookup() : REGISTRIES).lookupOrThrow(key);
+                }));
                 EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
             });
         } else {
@@ -117,7 +128,7 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        bootStrap(this.tagBootstrap).join();
+        bootStrap(this.loadResources).join();
 
         try {
             if (this.isRewrite) {

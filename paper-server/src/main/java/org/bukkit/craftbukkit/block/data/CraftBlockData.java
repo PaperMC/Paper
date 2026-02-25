@@ -478,7 +478,7 @@ public class CraftBlockData implements BlockData {
         final BlockStateParser.BlockResult result;
         try {
             StringReader reader = new StringReader(serializedData);
-            result = BlockStateParser.parseForBlock(CraftRegistry.getMinecraftRegistry(Registries.BLOCK), reader, false);
+            result = BlockStateParser.parseForBlock(CraftRegistry.getRegistry(Registries.BLOCK), reader, false);
             if (reader.canRead()) {
                 throw new IllegalArgumentException("Spurious trailing data: " + reader.getRemaining());
             }

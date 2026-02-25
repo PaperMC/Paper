@@ -199,7 +199,7 @@ public final class CraftItemStack extends ItemStack {
         net.minecraft.world.item.ItemStack item = CraftItemStack.unwrap(key);
 
         return ItemPredicate.Builder.item()
-            .of(CraftRegistry.getMinecraftRegistry(Registries.ITEM), item.getItem())
+            .of(CraftRegistry.getRegistry(Registries.ITEM), item.getItem())
             .withComponents(DataComponentMatchers.Builder.components()
                 .exact(DataComponentExactPredicate.allOf(
                     PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, item.getComponentsPatch())
@@ -298,7 +298,7 @@ public final class CraftItemStack extends ItemStack {
 
         return MCUtil.serializeTagToBytes(
             (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
-                CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+                CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE),
                 this.handle
             ).getOrThrow()
         );
@@ -379,7 +379,7 @@ public final class CraftItemStack extends ItemStack {
             return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, Bukkit.getUnsafe().getDataVersion(), "schema_version", 1);
         }
         final CompoundTag tag = (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+            CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE),
             CraftItemStack.asNMSCopy(this)
         ).getOrThrow();
         NbtUtils.addCurrentDataVersion(tag);
@@ -596,7 +596,7 @@ public final class CraftItemStack extends ItemStack {
             flag = flag.asCreative();
         }
         final List<net.minecraft.network.chat.Component> lines = item.getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getRegistryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
         return lines.stream().map(PaperAdventure::asAdventure).toList();
     }
