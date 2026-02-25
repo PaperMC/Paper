@@ -30,7 +30,6 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
-import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
@@ -140,6 +139,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     @ApiStatus.Experimental
     RegistryKey<EnvironmentalAttributeType<?>> ENVIRONMENT_ATTRIBUTE = create("environment_attribute");
+    /**
+     * Built-in registry for memory keys.
+     * @see io.papermc.paper.registry.keys.MemoryModuleTypeKeys
+     */
+    RegistryKey<io.papermc.paper.entity.ai.MemoryKey> MEMORY_MODULE_TYPE = create("memory_module_type");
 
     /* ********************** *
      * Data-driven Registries *
@@ -247,7 +251,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<EntityType> ENTITY_TYPE = create("entity_type");
     RegistryKey<Particle> PARTICLE_TYPE = create("particle_type");
     RegistryKey<PotionType> POTION = create("potion");
-    RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
 
     /**
      * Constructs a new {@link TypedKey} for this registry given the typed key's key.

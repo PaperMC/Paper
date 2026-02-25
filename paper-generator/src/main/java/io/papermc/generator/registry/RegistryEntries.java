@@ -4,6 +4,8 @@ import io.papermc.generator.utils.ClassHelper;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.ai.MemoryKey;
+import io.papermc.paper.entity.ai.MemoryKeys;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
@@ -95,7 +97,6 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
-import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
@@ -175,7 +176,8 @@ public final class RegistryEntries {
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
         entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/, // only preload once the old names are removed
-        entry(Registries.ENVIRONMENT_ATTRIBUTE, EnvironmentAttributes.class, EnvironmentalAttributeType.class, "Paper").genericArgCount(1).preload(EnvironmentalAttributeTypes.class).apiAccessName("of")
+        entry(Registries.ENVIRONMENT_ATTRIBUTE, EnvironmentAttributes.class, EnvironmentalAttributeType.class, "Paper").genericArgCount(1).preload(EnvironmentalAttributeTypes.class).apiAccessName("of"),
+        entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class, "Paper").preload(MemoryKeys.class).apiAccessName("of")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
@@ -203,8 +205,7 @@ public final class RegistryEntries {
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
         entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityType.class, EntityType.class),
         entry(Registries.PARTICLE_TYPE, ParticleTypes.class, Particle.class),
-        entry(Registries.POTION, Potions.class, PotionType.class),
-        entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class)
+        entry(Registries.POTION, Potions.class, PotionType.class)
     );
 
     public static final Map<ResourceKey<? extends Registry<?>>, RegistryEntry<?>> BY_REGISTRY_KEY;
