@@ -5,6 +5,7 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.loot.LootTables;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
@@ -33,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -73,6 +75,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
@@ -104,6 +107,7 @@ import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -203,7 +207,8 @@ public final class RegistryEntries {
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
-        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
+        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
+        entry(Registries.LOOT_TABLE, BuiltInLootTables.class, LootTable.class).allowDirect().preload(LootTables.class)
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
@@ -228,6 +233,19 @@ public final class RegistryEntries {
     }
 
     // real registries
+    public static Stream<RegistryEntry<?>> stream() {
+        return Stream.concat(RegistryEntries.BUILT_IN.stream(), RegistryEntries.DATA_DRIVEN.stream());
+    }
+
+    @Deprecated(forRemoval = true)
+    public static Stream<ResourceKey<? extends Registry<?>>> streamLegacy() { // todo remove once all the api only registry are migrated
+        Stream<ResourceKey<? extends Registry<?>>> injectedKeys = Stream.of( // todo remove once stats is a proper registry
+            Registries.STAT_TYPE,
+            Registries.CUSTOM_STAT
+        );
+        return Stream.concat(Stream.concat(stream(), RegistryEntries.API_ONLY.stream()).map(RegistryEntry::registryKey), injectedKeys);
+    }
+
     public static void forEach(Consumer<RegistryEntry<?>> callback) {
         forEach(callback, RegistryEntries.BUILT_IN, RegistryEntries.DATA_DRIVEN);
     }

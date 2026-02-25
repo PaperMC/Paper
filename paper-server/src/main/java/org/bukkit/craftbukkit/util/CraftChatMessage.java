@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -231,7 +230,7 @@ public final class CraftChatMessage {
     public static String toJSON(Component component) {
         return GSON.toJson(
             ComponentSerialization.CODEC
-                .encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), component)
+                .encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE), component)
                 .getOrThrow(JsonParseException::new)
         );
     }
@@ -246,7 +245,7 @@ public final class CraftChatMessage {
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
         final JsonElement jsonElement = GSON.fromJson(jsonMessage, JsonElement.class);
         return jsonElement == null ? null : ComponentSerialization.CODEC.parse(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), jsonElement
+            CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE), jsonElement
         ).getOrThrow(JsonParseException::new);
     }
 

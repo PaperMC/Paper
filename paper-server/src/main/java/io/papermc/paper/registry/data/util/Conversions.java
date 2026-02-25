@@ -30,7 +30,7 @@ public class Conversions {
     private static @Nullable Conversions globalInstance;
     public static Conversions global() {
         if (globalInstance == null) {
-            final RegistryAccess globalAccess = CraftRegistry.getMinecraftRegistry();
+            final RegistryAccess globalAccess = CraftRegistry.getRegistryAccess();
             Preconditions.checkState(globalAccess != null, "Global registry access is not available");
             globalInstance = new Conversions(new RegistryOps.HolderLookupAdapter(globalAccess));
         }
