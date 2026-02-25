@@ -297,7 +297,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Memory Keys.
      *
      * @see MemoryKey
+     * @deprecated use {@link #MEMORY_KEY}
      */
+    @Deprecated(since = "26.2", forRemoval = true)
     Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
@@ -369,7 +371,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @ApiStatus.Experimental
     Registry<EnvironmentalAttributeType<?>> ENVIRONMENT_ATTRIBUTE = registryFor(RegistryKey.ENVIRONMENT_ATTRIBUTE);
-
+    /**
+     * Memory Keys.
+     *
+     * @see io.papermc.paper.entity.ai.MemoryKey
+     */
+    Registry<io.papermc.paper.entity.ai.MemoryKey> MEMORY_KEY = registryFor(RegistryKey.MEMORY_MODULE_TYPE);
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
      * @apiNote use {@link #MOB_EFFECT} instead

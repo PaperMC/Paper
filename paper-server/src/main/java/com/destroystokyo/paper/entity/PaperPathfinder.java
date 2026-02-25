@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Entity;
@@ -44,7 +45,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
     @Override
     public PathResult getCurrentPath() {
         Path path = this.entity.getNavigation().getPath();
-        return path != null && !path.isDone() ? new PaperPathResult(path) : null;
+        return path != null && !path.isDone() ? new PaperPathResult(path, this.entity.level().getWorld()) : null;
     }
 
     @Nullable
@@ -53,7 +54,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         Preconditions.checkArgument(loc != null, "Location can not be null");
         Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
         Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), reachRange);
-        return path != null ? new PaperPathResult(path) : null;
+        return path != null ? new PaperPathResult(path, this.entity.level().getWorld()) : null;
     }
 
     @Nullable
@@ -62,7 +63,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         Preconditions.checkArgument(target != null, "Target can not be null");
         Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
         Path path = this.entity.getNavigation().createPath(((CraftEntity) target).getHandle(), reachRange);
-        return path != null ? new PaperPathResult(path) : null;
+        return path != null ? new PaperPathResult(path, this.entity.level().getWorld()) : null;
     }
 
     @Override
@@ -102,19 +103,27 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         this.entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
     }
 
-    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
+    public static class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
 
         private final Path path;
+        @Nullable
+        private final World world;
 
-        PaperPathResult(Path path) {
+        // todo remove world and migrate Location to Position, in some context like memory key the world is not available
+        public PaperPathResult(Path path, @Nullable World world) {
             this.path = path;
+            this.world = world;
+        }
+
+        public Path getHandle() {
+            return this.path;
         }
 
         @Nullable
         @Override
         public Location getFinalPoint() {
             Node point = this.path.getEndNode();
-            return point != null ? CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()) : null;
+            return point != null ? CraftLocation.toBukkit(point, this.world) : null;
         }
 
         @Override
@@ -126,7 +135,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         public List<Location> getPoints() {
             List<Location> points = new ArrayList<>();
             for (Node point : this.path.nodes) {
-                points.add(CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()));
+                points.add(CraftLocation.toBukkit(point, this.world));
             }
             return points;
         }
@@ -142,7 +151,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
             if (this.path.isDone()) {
                 return null;
             }
-            return CraftLocation.toBukkit(this.path.getNode(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
+            return CraftLocation.toBukkit(this.path.getNode(this.path.getNextNodeIndex()), this.world);
         }
     }
 }
