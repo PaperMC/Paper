@@ -1,17 +1,15 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.world.damagesource.CombatTracker;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import io.papermc.paper.world.damagesource.CombatTracker;
-import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.key.Key;
 import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -30,6 +28,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a living entity, such as a monster or player
@@ -993,6 +992,99 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param <T> the type of the passed value
      */
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
+
+    /**
+     * Gets a collection of all the memories this entity can get.
+     * <p>
+     * If a {@link io.papermc.paper.entity.ai.MemoryKey} is not in this
+     * collection, the setters will have no effect.
+     *
+     * @return an unmodifiable collection of the memories
+     */
+    @Unmodifiable @NotNull Collection<io.papermc.paper.entity.ai.MemoryKey> getAvailableMemories();
+
+    /**
+     * Checks the existence of the memory specified.
+     *
+     * @param memoryKey memory to access
+     * @return the existence status
+     */
+    boolean hasMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
+
+    /**
+     * Returns the value of the memory specified.
+     * <p>
+     * Note that the value is null when the specific entity does not have that
+     * value by default.
+     * <p>
+     * Any collection that is returned will be immutable.
+     *
+     * @param memoryKey memory to access
+     * @param <T> the type of the return value
+     * @return the value or null if not present
+     */
+    @Nullable <T> T getMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey);
+
+    /**
+     * Gets the remaining time of the associated memory.
+     *
+     * @param memoryKey memory to access
+     * @return the time remaining (in ticks)
+     */
+    long getTimeRemaining(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     */
+    void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param expirationTime the expiration time: ttl (in ticks)
+     */
+    void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey, long expirationTime);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param value a typed memory value
+     * @param <T> the type of the passed value
+     */
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @NotNull T value);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param value a typed memory value
+     * @param expirationTime the expiration time: ttl (in ticks)
+     * @param <T> the type of the passed value
+     */
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @NotNull T value, long expirationTime);
+
+    /**
+     * Removes the memory specified from the entity's brain.
+     *
+     * @param memoryKey the memory to access
+     */
+    void forgetMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
 
     /**
      * Get the {@link Sound} this entity will make when damaged.
