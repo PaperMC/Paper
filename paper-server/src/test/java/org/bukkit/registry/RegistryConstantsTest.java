@@ -16,6 +16,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
@@ -69,7 +70,7 @@ public class RegistryConstantsTest {
     @ParameterizedTest
     public <B extends Keyed, M> void testConstants(Class<B> api, Class<?> apiHolder, ResourceKey<? extends Registry<M>> registryKey) throws IllegalAccessException {
         final Set<Identifier> keys = new ObjectOpenHashSet<>(
-            RegistryHelper.registryAccess().lookupOrThrow(registryKey).keySet()
+            CraftRegistry.getRegistry(registryKey).keySet()
         );
 
         for (final Field field : apiHolder.getDeclaredFields()) {

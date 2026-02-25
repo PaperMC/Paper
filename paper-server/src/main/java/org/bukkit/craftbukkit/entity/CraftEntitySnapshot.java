@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import java.util.function.Function;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
@@ -84,7 +83,7 @@ public class CraftEntitySnapshot implements EntitySnapshot {
         )) {
             final TagValueOutput output = TagValueOutput.createWithContext(
                 problemReporter,
-                CraftRegistry.getMinecraftRegistry()
+                CraftRegistry.getRegistryAccess()
             );
             if (!entity.getHandle().saveAsPassenger(output, false, false, false)) {
                 return null;

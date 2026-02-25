@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ParticleTest {
 
     public static Stream<Arguments> data() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet().stream().map(Arguments::of);
+        return CraftRegistry.getRegistry(Registries.PARTICLE_TYPE).keySet().stream().map(Arguments::of);
     }
 
     @ParameterizedTest

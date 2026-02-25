@@ -1935,7 +1935,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public Collection<GeneratedStructure> getStructures(int x, int z, Structure structure) {
         Preconditions.checkArgument(structure != null, "Structure cannot be null");
 
-        net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.Structure> registry = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
+        net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.Structure> registry = CraftRegistry.getRegistry(Registries.STRUCTURE);
         Identifier key = registry.getKey(CraftStructure.bukkitToMinecraft(structure));
 
         return this.getStructures(x, z, struct -> registry.getKey(struct).equals(key));

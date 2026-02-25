@@ -1,13 +1,17 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.registry.HolderableBase;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.util.context.ContextKeySet;
@@ -18,59 +22,53 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
+import org.jspecify.annotations.Nullable;
 
-public class CraftLootTable implements org.bukkit.loot.LootTable {
+public class CraftLootTable extends HolderableBase<LootTable> implements org.bukkit.loot.LootTable {
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(Identifier minecraft) {
-        return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
+    private static final org.bukkit.loot.LootTable EMPTY = new CraftLootTable(Holder.direct(LootTable.EMPTY)); // todo expose?
+
+    public CraftLootTable(final Holder<LootTable> holder) {
+        super(holder);
     }
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
+    public static org.bukkit.loot.LootTable minecraftKeyToBukkit(@Nullable ResourceKey<LootTable> minecraft) {
+        return (minecraft == null) ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.LOOT_TABLE).get(PaperAdventure.asAdventureKey(minecraft));
     }
 
-    public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.identifier());
+    public static ResourceKey<LootTable> bukkitToMinecraftKey(org.bukkit.loot.LootTable bukkit) {
+        return (bukkit == null || bukkit == EMPTY) ? null : PaperAdventure.asVanilla(Registries.LOOT_TABLE, bukkit.getKey());
     }
 
-    public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {
-        return (table == null) ? null : CraftLootTable.bukkitKeyToMinecraft(table.getKey());
+    public static org.bukkit.loot.LootTable minecraftToBukkit(@Nullable LootTable minecraft) {
+        if (minecraft == LootTable.EMPTY) {
+            return EMPTY;
+        }
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.LOOT_TABLE);
     }
 
-    public static ResourceKey<LootTable> bukkitKeyToMinecraft(NamespacedKey key) {
-        return (key == null) ? null : ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(key));
-    }
-
-    private final LootTable handle;
-    private final NamespacedKey key;
-
-    public CraftLootTable(NamespacedKey key, LootTable handle) {
-        this.handle = handle;
-        this.key = key;
-    }
-
-    public LootTable getHandle() {
-        return this.handle;
+    public static LootTable bukkitToMinecraft(org.bukkit.loot.LootTable bukkit) {
+        if (bukkit == EMPTY) {
+            return LootTable.EMPTY;
+        }
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         LootParams nmsContext = this.convertContext(context);
-        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
+        List<net.minecraft.world.item.ItemStack> nmsItems = this.getHandle().getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
         for (net.minecraft.world.item.ItemStack item : nmsItems) {
@@ -93,11 +91,6 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
         // TODO: When events are added, call event here w/ custom reason?
         this.getHandle().fill(handle, nmsContext, random == null ? null : new RandomSourceWrapper(random), true);
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return this.key;
     }
 
     private LootParams convertContext(LootContext context) {
@@ -169,25 +162,5 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
         contextBuilder.luck(info.getLuck());
         return contextBuilder.build();
-    }
-
-    @Override
-    public String toString() {
-        return this.key.toString();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof org.bukkit.loot.LootTable)) {
-            return false;
-        }
-
-        org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
-        return table.getKey().equals(this.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.key.hashCode();
     }
 }

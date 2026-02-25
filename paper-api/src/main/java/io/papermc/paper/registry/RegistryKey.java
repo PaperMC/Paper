@@ -36,6 +36,7 @@ import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -231,6 +232,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for loot-tables.
+     * @see io.papermc.paper.registry.keys.LootTableKeys
+     */
+    RegistryKey<LootTable> LOOT_TABLE = create("loot_table");
 
 
     /* ******************* *

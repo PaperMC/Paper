@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SequencedSet;
 import java.util.Set;
 import java.util.StringJoiner;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
@@ -762,7 +761,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(unhandled));
             try {
                 CompoundTag unhandledTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
-                DataComponentPatch unhandledPatch = DataComponentPatch.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), unhandledTag).result().get();
+                DataComponentPatch unhandledPatch = DataComponentPatch.CODEC.parse(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), unhandledTag).result().get();
 
                 CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
                     this.canPlaceOnPredicates = List.copyOf(data.predicates);
@@ -788,7 +787,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         Iterable<?> removed = SerializableMeta.getObject(Iterable.class, map, "removed", true);
         if (removed != null) {
-            RegistryAccess registryAccess = CraftRegistry.getMinecraftRegistry();
+            RegistryAccess registryAccess = CraftRegistry.getRegistryAccess();
             Registry<DataComponentType<?>> componentTypeRegistry = registryAccess.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
 
             for (Object removedObject : removed) {
@@ -1823,7 +1822,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {}; // Paper - support updating profile after resolving it
         this.applyToItem(tag);
         DataComponentPatch patch = tag.build();
-        net.minecraft.nbt.Tag nbt = DataComponentPatch.CODEC.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+        net.minecraft.nbt.Tag nbt = DataComponentPatch.CODEC.encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
         return nbt.toString();
     }
 
@@ -1833,7 +1832,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.applyToItem(tag);
         DataComponentPatch patch = tag.build();
 
-        RegistryAccess registryAccess = CraftRegistry.getMinecraftRegistry();
+        RegistryAccess registryAccess = CraftRegistry.getRegistryAccess();
         DynamicOps<net.minecraft.nbt.Tag> ops = registryAccess.createSerializationContext(NbtOps.INSTANCE);
         Registry<DataComponentType<?>> componentTypeRegistry = registryAccess.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
 
@@ -2255,7 +2254,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (!this.unhandledTags.isEmpty()) {
-            net.minecraft.nbt.Tag unhandled = DataComponentPatch.CODEC.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), this.unhandledTags.build()).getOrThrow(IllegalStateException::new);
+            net.minecraft.nbt.Tag unhandled = DataComponentPatch.CODEC.encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), this.unhandledTags.build()).getOrThrow(IllegalStateException::new);
             try {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
                 NbtIo.writeCompressed((CompoundTag) unhandled, buf);
@@ -2273,7 +2272,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (!this.removedTags.isEmpty()) {
-            RegistryAccess registryAccess = CraftRegistry.getMinecraftRegistry();
+            RegistryAccess registryAccess = CraftRegistry.getRegistryAccess();
             Registry<DataComponentType<?>> componentTypeRegistry = registryAccess.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
 
             List<String> removedTags = new ArrayList<>();
@@ -2520,7 +2519,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
-        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getRegistryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         return materials.stream().map(m -> {
             return net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
         }).toList();
@@ -2559,7 +2558,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
         final List<net.minecraft.advancements.criterion.BlockPredicate> predicates = new ArrayList<>();
-        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getRegistryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
             if (namespaced instanceof final org.bukkit.NamespacedKey key) {
                 predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());

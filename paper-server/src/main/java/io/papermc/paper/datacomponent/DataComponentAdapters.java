@@ -109,7 +109,7 @@ public final class DataComponentAdapters {
         registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE);
-        register(DataComponents.DAMAGE_TYPE, nms -> CraftDamageType.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftDamageType.bukkitToMinecraftHolder(api)));
+        register(DataComponents.DAMAGE_TYPE, nms -> CraftDamageType.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getRegistryAccess()).orElseThrow()), api -> new EitherHolder<>(CraftDamageType.bukkitToMinecraftHolder(api)));
         register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_MODEL, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.LORE, PaperItemLore::new);
@@ -152,8 +152,8 @@ public final class DataComponentAdapters {
         // entity data
         // bucket entity data
         // block entity data
-        register(DataComponents.INSTRUMENT, nms -> CraftMusicInstrument.minecraftHolderToBukkit(nms.instrument().unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new InstrumentComponent(CraftMusicInstrument.bukkitToMinecraftHolder(api)));
-        register(DataComponents.PROVIDES_TRIM_MATERIAL, nms -> CraftTrimMaterial.minecraftHolderToBukkit(nms.material().unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new ProvidesTrimMaterial(CraftTrimMaterial.bukkitToMinecraftHolder(api)));
+        register(DataComponents.INSTRUMENT, nms -> CraftMusicInstrument.minecraftHolderToBukkit(nms.instrument().unwrap(CraftRegistry.getRegistryAccess()).orElseThrow()), api -> new InstrumentComponent(CraftMusicInstrument.bukkitToMinecraftHolder(api)));
+        register(DataComponents.PROVIDES_TRIM_MATERIAL, nms -> CraftTrimMaterial.minecraftHolderToBukkit(nms.material().unwrap(CraftRegistry.getRegistryAccess()).orElseThrow()), api -> new ProvidesTrimMaterial(CraftTrimMaterial.bukkitToMinecraftHolder(api)));
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
         register(DataComponents.PROVIDES_BANNER_PATTERNS, PaperRegistries::fromNms, PaperRegistries::toNms);
@@ -197,9 +197,9 @@ public final class DataComponentAdapters {
         register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.byId(api.ordinal()));
         register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.CHICKEN_VARIANT, nms -> CraftChicken.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftChicken.CraftVariant.bukkitToMinecraftHolder(api)));
+        register(DataComponents.CHICKEN_VARIANT, nms -> CraftChicken.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getRegistryAccess()).orElseThrow()), api -> new EitherHolder<>(CraftChicken.CraftVariant.bukkitToMinecraftHolder(api)));
         register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.ZOMBIE_NAUTILUS_VARIANT, nms -> CraftZombieNautilus.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftZombieNautilus.CraftVariant.bukkitToMinecraftHolder(api)));
+        register(DataComponents.ZOMBIE_NAUTILUS_VARIANT, nms -> CraftZombieNautilus.CraftVariant.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getRegistryAccess()).orElseThrow()), api -> new EitherHolder<>(CraftZombieNautilus.CraftVariant.bukkitToMinecraftHolder(api)));
         register(DataComponents.HORSE_VARIANT, nms -> Horse.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Variant.byId(api.ordinal()));
         register(DataComponents.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
         register(DataComponents.LLAMA_VARIANT, nms -> Llama.Color.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.equine.Llama.Variant.byId(api.ordinal()));

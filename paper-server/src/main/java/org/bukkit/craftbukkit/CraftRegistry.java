@@ -8,7 +8,6 @@ import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
-import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,7 +17,9 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderOwner;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.ReloadableServerRegistries;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -32,19 +33,28 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
-    private static net.minecraft.core.RegistryAccess registry;
+    private static net.minecraft.core.RegistryAccess registries;
+    private static ReloadableServerRegistries.Holder reloadableRegistries;
 
-    public static void setMinecraftRegistry(final net.minecraft.core.RegistryAccess registry) {
-        Preconditions.checkState(CraftRegistry.registry == null, "Registry already set");
-        CraftRegistry.registry = registry;
+    public static void setRegistryAccess(final net.minecraft.core.RegistryAccess registries) {
+        Preconditions.checkState(CraftRegistry.registries == null, "Registry already set");
+        CraftRegistry.registries = registries;
     }
 
-    public static net.minecraft.core.RegistryAccess getMinecraftRegistry() {
-        return CraftRegistry.registry;
+    public static void setReloadableRegistries(final ReloadableServerRegistries.Holder registries) {
+        Preconditions.checkState(CraftRegistry.reloadableRegistries == null, "Registry already set");
+        CraftRegistry.reloadableRegistries = registries;
     }
 
-    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> key) {
-        return CraftRegistry.getMinecraftRegistry().lookupOrThrow(key);
+    public static net.minecraft.core.RegistryAccess getRegistryAccess() {
+        return CraftRegistry.registries;
+    }
+
+    public static <E> net.minecraft.core.Registry<E> getRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> registryKey) {
+        if (registryKey.equals(Registries.LOOT_TABLE)) {
+            return (net.minecraft.core.Registry<E>) CraftRegistry.reloadableRegistries.lookup().lookupOrThrow(registryKey);
+        }
+        return CraftRegistry.getRegistryAccess().lookupOrThrow(registryKey);
     }
 
     /**
@@ -58,7 +68,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<? extends net.minecraft.core.Registry<M>> registryKey) {
         Preconditions.checkArgument(minecraft != null);
 
-        net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+        net.minecraft.core.Registry<M> registry = CraftRegistry.getRegistry(registryKey);
         final Registry<B> bukkitRegistry = RegistryAccess.registryAccess().getRegistry(PaperRegistries.registryFromNms(registryKey));
         final java.util.Optional<ResourceKey<M>> resourceKey = registry.getResourceKey(minecraft);
         if (resourceKey.isEmpty() && bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {

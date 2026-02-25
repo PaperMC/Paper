@@ -35,7 +35,6 @@ dependencies {
 val gameVersion = providers.gradleProperty("mcVersion")
 
 val rewriteApi = tasks.registerGenerationTask("rewriteApi", true, "api", {
-    bootstrapTags = true
     sourceSet = rootProject.layout.projectDirectory.dir("paper-api")
 }) {
     description = "Rewrite existing API classes"
@@ -58,7 +57,6 @@ tasks.register("rewrite") {
 
 
 val generateApi = tasks.registerGenerationTask("generateApi", false, "api", {
-    bootstrapTags = true
     sourceSet = rootProject.layout.projectDirectory.dir("paper-api")
 }) {
     description = "Generate new API classes"
@@ -126,10 +124,10 @@ abstract class GenerationArgumentProvider : CommandLineArgumentProvider {
 
     @get:Input
     @get:Optional
-    abstract val bootstrapTags: Property<Boolean>
+    abstract val bootstrapResources: Property<Boolean>
 
     init {
-        bootstrapTags.convention(false)
+        bootstrapResources.convention(true)
     }
 
     override fun asArguments(): Iterable<String> {
@@ -143,8 +141,8 @@ abstract class GenerationArgumentProvider : CommandLineArgumentProvider {
             args.add("--rewrite")
         }
 
-        if (bootstrapTags.get()) {
-            args.add("--bootstrap-tags")
+        if (bootstrapResources.get()) {
+            args.add("--bootstrap-resources")
         }
         return args.toList()
     }

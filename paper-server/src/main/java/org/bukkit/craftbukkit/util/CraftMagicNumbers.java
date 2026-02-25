@@ -14,7 +14,6 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +60,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -290,7 +288,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
         try {
-            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(CraftRegistry.getMinecraftRegistry())).parse(new StringReader(arguments)).components());
+            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(CraftRegistry.getRegistryAccess())).parse(new StringReader(arguments)).components());
         } catch (CommandSyntaxException ex) {
             com.mojang.logging.LogUtils.getClassLogger().error("Exception modifying ItemStack", new Throwable(ex)); // Paper - show stack trace
         }
@@ -310,7 +308,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Identifier resourceKey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
-        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
+        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
         final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
         if (nms != null) {
             final com.google.common.collect.ImmutableMap.Builder<Identifier, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
@@ -459,7 +457,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
-        Potion potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
+        Potion potionRegistry = CraftRegistry.getRegistry(Registries.POTION)
                 .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
 
         return new CraftPotionType(namespacedKey, potionRegistry);
@@ -519,7 +517,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
         }
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
+            CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), compound
         ).getOrThrow());
     }
 
@@ -529,7 +527,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, this.getDataVersion(), "schema_version", 1);
         }
         final CompoundTag tag = (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+            CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE),
             CraftItemStack.asNMSCopy(itemStack)
         ).getOrThrow();
         NbtUtils.addCurrentDataVersion(tag);
@@ -841,7 +839,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             flag = flag.asCreative();
         }
         final List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getRegistryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
         return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
     }
@@ -869,7 +867,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public ItemStack deserializeItemHover(final HoverEvent.ShowItem itemHover) {
-        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
+        final RegistryOps<Object> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JavaOps.INSTANCE);
         final Object encoded = AdventureCodecs.SHOW_ITEM_CODEC.codec()
             .encodeStart(ops, HoverEvent.showItem(itemHover)).getOrThrow(IllegalStateException::new);
 

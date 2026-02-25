@@ -3,9 +3,7 @@ package io.papermc.paper.registry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import java.util.Optional;
 import java.util.stream.Stream;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.core.HolderLookup;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -17,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @AllFeatures
-class RegistryKeyTest {
+class RegistryKeyTest { // todo fetch from RegistriesArgumentTest once api registries are gone
 
     @BeforeAll
     static void before() throws ClassNotFoundException {
@@ -28,17 +26,21 @@ class RegistryKeyTest {
         return RegistryKeyImpl.REGISTRY_KEYS.stream();
     }
 
-    @ParameterizedTest
-    @MethodSource("data")
-    void testApiRegistryKeysExist(final RegistryKey<?> key) {
-        final Optional<Registry<Object>> registry = RegistryHelper.registryAccess().lookup(ResourceKey.createRegistryKey(Identifier.parse(key.key().asString())));
-        assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
+    private static HolderLookup.Provider registryLookup(final RegistryKey<?> registryKey) {
+        return registryKey == RegistryKey.LOOT_TABLE ? RegistryHelper.context().datapack().fullRegistries().lookup() : RegistryHelper.registryAccess();
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    void testRegistryEntryExists(final RegistryKey<?> key) {
-        final @Nullable RegistryEntry<?, ?> entry = PaperRegistries.getEntry(key);
-        assertNotNull(entry, "Missing PaperRegistries entry for " + key);
+    void testApiRegistryKeysExist(final RegistryKey<?> registryKey) {
+        final Optional<? extends HolderLookup.RegistryLookup<Object>> registry = registryLookup(registryKey).lookup(PaperRegistries.registryToNms(registryKey));
+        assertTrue(registry.isPresent(), "Missing vanilla registry for " + registryKey.key().asString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    void testRegistryEntryExists(final RegistryKey<?> registryKey) {
+        final @Nullable RegistryEntry<?, ?> entry = PaperRegistries.getEntry(registryKey);
+        assertNotNull(entry, "Missing PaperRegistries entry for " + registryKey);
     }
 }

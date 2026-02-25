@@ -209,7 +209,7 @@ public final class CraftBlockStates {
 
     @Deprecated
     public static BlockState getBlockState(BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
-        return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), pos, material, blockEntityTag);
+        return CraftBlockStates.getBlockState(CraftRegistry.getRegistryAccess(), pos, material, blockEntityTag);
     }
 
     public static BlockState getBlockState(LevelReader world, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
@@ -224,7 +224,7 @@ public final class CraftBlockStates {
 
     @Deprecated
     public static BlockState getBlockState(net.minecraft.world.level.block.state.BlockState state, @Nullable CompoundTag blockEntityTag) {
-        return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, state, blockEntityTag);
+        return CraftBlockStates.getBlockState(CraftRegistry.getRegistryAccess(), BlockPos.ZERO, state, blockEntityTag);
     }
 
     public static BlockState getBlockState(LevelReader level, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState state, @Nullable CompoundTag blockEntityTag) {

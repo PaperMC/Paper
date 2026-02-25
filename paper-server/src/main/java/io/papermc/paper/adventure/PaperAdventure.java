@@ -134,7 +134,7 @@ public final class PaperAdventure {
             return decoded.toString();
         }
     };
-    public static final ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> WRAPPER_AWARE_SERIALIZER = new WrapperAwareSerializer(() -> CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE));
+    public static final ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> WRAPPER_AWARE_SERIALIZER = new WrapperAwareSerializer(() -> CraftRegistry.getRegistryAccess().createSerializationContext(JavaOps.INSTANCE));
 
     private PaperAdventure() {
     }
@@ -423,7 +423,7 @@ public final class PaperAdventure {
 
         @Override
         public @NotNull BinaryTagHolder asBinaryTag() {
-            return BinaryTagHolder.encode(this.codec.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), this.value).getOrThrow(IllegalArgumentException::new), NBT_CODEC);
+            return BinaryTagHolder.encode(this.codec.encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), this.value).getOrThrow(IllegalArgumentException::new), NBT_CODEC);
         }
     }
 
@@ -451,7 +451,7 @@ public final class PaperAdventure {
     // Style
 
     public static net.minecraft.network.chat.Style asVanilla(final Style style) {
-        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
+        final RegistryOps<Object> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JavaOps.INSTANCE);
         final Object encoded = AdventureCodecs.STYLE_MAP_CODEC.codec()
             .encodeStart(ops, style).getOrThrow(IllegalStateException::new);
 
@@ -460,7 +460,7 @@ public final class PaperAdventure {
     }
 
     public static Style asAdventure(final net.minecraft.network.chat.Style style) {
-        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
+        final RegistryOps<Object> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JavaOps.INSTANCE);
         final Object encoded = net.minecraft.network.chat.Style.Serializer.CODEC
             .encodeStart(ops, style).getOrThrow(IllegalStateException::new);
 

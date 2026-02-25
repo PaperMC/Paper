@@ -20,7 +20,6 @@ import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -249,7 +248,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         Map<LootTable, Integer> tables = new HashMap<>();
 
         for (Weighted<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : this.lootTablesToEject.unwrap()) {
-            LootTable table = CraftLootTable.minecraftToBukkit(entry.value());
+            LootTable table = CraftLootTable.minecraftKeyToBukkit(entry.value());
             if (table != null) {
                 tables.put(table, entry.weight());
             }
@@ -265,7 +264,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
         WeightedList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = WeightedList.builder();
         this.lootTablesToEject.unwrap().forEach(entry -> builder.add(entry.value(), entry.weight()));
-        builder.add(CraftLootTable.bukkitToMinecraft(table), weight);
+        builder.add(CraftLootTable.bukkitToMinecraftKey(table), weight);
         this.lootTablesToEject = builder.build();
     }
 
@@ -273,7 +272,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     public void removePossibleReward(LootTable table) {
         Preconditions.checkArgument(table != null, "Key cannot be null");
 
-        ResourceKey<net.minecraft.world.level.storage.loot.LootTable> minecraftKey = CraftLootTable.bukkitToMinecraft(table);
+        ResourceKey<net.minecraft.world.level.storage.loot.LootTable> minecraftKey = CraftLootTable.bukkitToMinecraftKey(table);
         WeightedList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = WeightedList.builder();
 
         for (Weighted<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : this.lootTablesToEject.unwrap()) {
@@ -296,7 +295,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             Preconditions.checkArgument(table != null, "Table cannot be null");
             Preconditions.checkArgument(weight >= 1, "Weight must be at least 1");
 
-            builder.add(CraftLootTable.bukkitToMinecraft(table), weight);
+            builder.add(CraftLootTable.bukkitToMinecraftKey(table), weight);
         });
 
         this.lootTablesToEject = builder.build();

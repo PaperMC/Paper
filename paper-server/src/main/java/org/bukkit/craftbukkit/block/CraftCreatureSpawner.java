@@ -289,14 +289,14 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
         }
 
         return Optional.of(new EquipmentTable(
-                CraftLootTable.bukkitToMinecraft(bukkit.getEquipmentLootTable()),
+                CraftLootTable.bukkitToMinecraftKey(bukkit.getEquipmentLootTable()),
                 bukkit.getDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getNMS(entry.getKey()), Map.Entry::getValue)))
         );
     }
 
     public static SpawnerEntry.Equipment getEquipment(Optional<EquipmentTable> optional) {
         return optional.map((nms) -> new SpawnerEntry.Equipment(
-                CraftLootTable.minecraftToBukkit(nms.lootTable()),
+                CraftLootTable.minecraftKeyToBukkit(nms.lootTable()),
                 new HashMap<>(nms.slotDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getSlot(entry.getKey()), Map.Entry::getValue)))
         )).orElse(null);
     }
