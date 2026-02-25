@@ -252,11 +252,11 @@ public abstract class PaperDataComponentType<API, NMS> extends HolderableBase<ne
         final Holder.Reference<net.minecraft.core.component.DataComponentType<NMS>> reference = (Holder.Reference<net.minecraft.core.component.DataComponentType<NMS>>) holder;
         final PaperTypedDataAdapter<?, NMS> adapter = PaperDataComponentType.ADAPTERS.get(reference.key());
         if (adapter.isUnimplemented()) {
-            return new Unimplemented<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
+            return new Unimplemented<>(reference, adapter);
         } else if (adapter.isUntyped()) {
-            return new NonValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
+            return new NonValuedImpl<>(reference, adapter);
         } else {
-            return new ValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<NMS>>) holder, adapter);
+            return new ValuedImpl<>(reference, adapter);
         }
     }
 

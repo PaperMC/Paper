@@ -6,7 +6,6 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public enum MoonPhase {
-    // todo generate
     FULL_MOON(0L),
     WANING_GIBBOUS(1L),
     LAST_QUARTER(2L),
