@@ -4,6 +4,9 @@ import com.google.common.collect.Lists;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
+import io.papermc.paper.entity.ai.MemoryKey;
+import io.papermc.paper.entity.ai.MemoryKeys;
+import io.papermc.paper.entity.ai.PaperMemoryKey;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
@@ -20,6 +23,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.chicken.ChickenSoundVariant;
 import net.minecraft.world.entity.animal.chicken.ChickenVariant;
 import net.minecraft.world.entity.animal.cow.CowSoundVariant;
@@ -166,6 +170,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
         register(Registries.ENVIRONMENT_ATTRIBUTE, EnvironmentalAttributeType.class, EnvironmentalAttributeTypes.class, PaperEnvironmentalAttributeType.class, EnvironmentAttribute.class);
+        register(Registries.MEMORY_MODULE_TYPE, MemoryKey.class, MemoryKeys.class, PaperMemoryKey.class, MemoryModuleType.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

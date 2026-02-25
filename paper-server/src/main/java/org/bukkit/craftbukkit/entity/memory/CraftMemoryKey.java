@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity.memory;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -29,5 +30,26 @@ public final class CraftMemoryKey {
 
         return (MemoryModuleType<U>) CraftRegistry.getMinecraftRegistry(Registries.MEMORY_MODULE_TYPE)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+    }
+
+    @FunctionalInterface
+    public interface TypeVisitor extends Brain.Visitor {
+
+        <U> void visitType(MemoryModuleType<U> type);
+
+        @Override
+        default  <U> void acceptEmpty(final MemoryModuleType<U> type) {
+            this.visitType(type);
+        }
+
+        @Override
+        default <U> void accept(final MemoryModuleType<U> type, final U value) {
+            this.visitType(type);
+        }
+
+        @Override
+        default <U> void accept(final MemoryModuleType<U> type, final U value, final long timeToLive) {
+            this.visitType(type);
+        }
     }
 }

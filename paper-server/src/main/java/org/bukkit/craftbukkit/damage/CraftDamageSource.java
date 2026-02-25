@@ -7,11 +7,12 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 
-public class CraftDamageSource implements DamageSource {
+public class CraftDamageSource implements DamageSource, Handleable<net.minecraft.world.damagesource.DamageSource> {
 
     private final net.minecraft.world.damagesource.DamageSource damageSource;
     private final DamageType damageType;
@@ -21,6 +22,7 @@ public class CraftDamageSource implements DamageSource {
         this.damageType = CraftDamageType.minecraftHolderToBukkit(damageSource.typeHolder());
     }
 
+    @Override
     public net.minecraft.world.damagesource.DamageSource getHandle() {
         return this.damageSource;
     }
