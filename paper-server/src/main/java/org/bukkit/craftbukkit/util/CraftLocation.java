@@ -53,8 +53,8 @@ public final class CraftLocation {
         return toBukkit(pos, level.getWorld(), yaw, pitch);
     }
 
-    public static Location toBukkit(Node point, Level level) {
-        return new Location(level.getWorld(), point.x, point.y, point.z);
+    public static Location toBukkit(Node point, World world) {
+        return new Location(world, point.x, point.y, point.z);
     }
 
     public static BlockPos toBlockPosition(Location loc) {

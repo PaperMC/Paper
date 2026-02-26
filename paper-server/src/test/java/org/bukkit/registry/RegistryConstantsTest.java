@@ -73,7 +73,6 @@ public class RegistryConstantsTest {
             MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
             MemoryModuleType.WALK_TARGET,
             MemoryModuleType.LOOK_TARGET,
-            MemoryModuleType.PATH,
             MemoryModuleType.SPEAR_STATUS
         ));
     }

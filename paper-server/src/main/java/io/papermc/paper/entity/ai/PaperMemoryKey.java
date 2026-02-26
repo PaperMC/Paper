@@ -1,13 +1,17 @@
 package io.papermc.paper.entity.ai;
 
+import com.destroystokyo.paper.entity.PaperPathfinder;
 import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.registry.typed.PaperTypedDataAdapter;
 import io.papermc.paper.registry.typed.PaperTypedDataAdapters;
 import io.papermc.paper.util.MCUtil;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftAgeable;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -88,7 +92,10 @@ public class PaperMemoryKey<API, NMS> extends HolderableBase<MemoryModuleType<NM
                 nms -> (Entity) nms.getBukkitEntity(),
                 api -> ((CraftEntity) api).getHandle()
             );
-            //collector.register(MemoryModuleType.PATH, fromApi, toApi);
+            collector.register(MemoryModuleType.PATH,
+                nms -> new PaperPathfinder.PaperPathResult(nms, null),
+                PaperPathfinder.PaperPathResult::getHandle
+            );
             collector.register(MemoryModuleType.INTERACTABLE_DOORS,
                 nms -> transformUnmodifiable(nms, CraftLocation::fromGlobalPos),
                 api -> transformUnmodifiable(api, CraftLocation::toGlobalPos)
@@ -151,7 +158,7 @@ public class PaperMemoryKey<API, NMS> extends HolderableBase<MemoryModuleType<NM
             collector.registerUntyped(MemoryModuleType.IS_IN_WATER);
             collector.registerUntyped(MemoryModuleType.IS_PREGNANT);
             collector.registerIdentity(MemoryModuleType.IS_PANICKING);
-            collector.registerIdentity(MemoryModuleType.UNREACHABLE_TONGUE_TARGETS); // todo unmodifiable?
+            collector.register(MemoryModuleType.UNREACHABLE_TONGUE_TARGETS, Collections::unmodifiableList, Collections::unmodifiableList);
             collector.register(MemoryModuleType.VISITED_BLOCK_POSITIONS,
                 nms -> nms.stream().map(CraftLocation::fromGlobalPos).collect(Collectors.toSet()),
                 api -> api.stream().map(CraftLocation::toGlobalPos).collect(Collectors.toSet())
@@ -309,5 +316,13 @@ public class PaperMemoryKey<API, NMS> extends HolderableBase<MemoryModuleType<NM
         ) {
             super(holder, adapter);
         }
+    }
+
+    public static MemoryKey minecraftToBukkit(MemoryModuleType<?> minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MEMORY_MODULE_TYPE);
+    }
+
+    public static MemoryModuleType<?> bukkitToMinecraft(MemoryKey bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 }
