@@ -15,6 +15,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.attribute.EnvironmentAttributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.RegistryHelper;
@@ -57,6 +59,22 @@ public class RegistryConstantsTest {
             DataComponents.BUCKET_ENTITY_DATA,
             DataComponents.LOCK,
             DataComponents.CREATIVE_SLOT_LOCK
+        ));
+        ignore(Registries.ENVIRONMENT_ATTRIBUTE, Set.of(
+            EnvironmentAttributes.AMBIENT_SOUNDS,
+            EnvironmentAttributes.BACKGROUND_MUSIC,
+            EnvironmentAttributes.BABY_VILLAGER_ACTIVITY,
+            EnvironmentAttributes.BED_RULE,
+            EnvironmentAttributes.VILLAGER_ACTIVITY,
+            EnvironmentAttributes.AMBIENT_PARTICLES,
+            EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE
+        ));
+        ignore(Registries.MEMORY_MODULE_TYPE, Set.of(
+            MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
+            MemoryModuleType.WALK_TARGET,
+            MemoryModuleType.LOOK_TARGET,
+            MemoryModuleType.PATH,
+            MemoryModuleType.SPEAR_STATUS
         ));
     }
 

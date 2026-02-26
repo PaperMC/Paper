@@ -1,19 +1,23 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.ai.MemoryKeys;
+import io.papermc.paper.entity.ai.PaperMemoryKey;
+import io.papermc.paper.world.damagesource.CombatTracker;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
-import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
-import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.resources.ResourceKey;
@@ -32,12 +36,12 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
-import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
@@ -862,6 +866,58 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
         this.getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey), CraftMemoryMapper.toNms(t));
+    }
+
+    @Override
+    public boolean hasMemory(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        return this.getHandle().getBrain().hasMemoryValue(((PaperMemoryKey<?, ?>) memoryKey).getHandle());
+    }
+
+    @Override
+    public <T> T getMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey) {
+        return this.getMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey);
+    }
+
+    @Override
+    public long getTimeRemaining(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        return this.getHandle().getBrain().getTimeUntilExpiry(((PaperMemoryKey<?, ?>) memoryKey).getHandle());
+    }
+
+    public <API, NMS> API getMemory0(io.papermc.paper.entity.ai.PaperMemoryKey.ValuedImpl<API, NMS> memoryKey) {
+        final Optional<NMS> memory = this.getHandle().getBrain().getMemoryInternal(memoryKey.getHandle());
+        return memory != null ? memory.map(a -> memoryKey.getAdapter().fromVanilla(a)).orElse(null) : null;
+    }
+
+    @Override
+    public void setMemory(final io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey) {
+        this.setMemory0((PaperMemoryKey<?, ?>) memoryKey, null, OptionalLong.empty());
+    }
+
+    @Override
+    public void setMemory(final io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey, final long expirationTime) {
+        this.setMemory0((PaperMemoryKey<?, ?>) memoryKey, null, OptionalLong.of(expirationTime));
+    }
+
+    @Override
+    public <T> void setMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, final T value) {
+        this.setMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey, value, OptionalLong.empty());
+    }
+
+    @Override
+    public <T> void setMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, final T value, final long expirationTime) {
+        this.setMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey, value, OptionalLong.of(expirationTime));
+    }
+
+    public <API, NMS> void setMemory0(PaperMemoryKey<API, NMS> memoryKey, API value, final OptionalLong expirationTime) {
+        final Function<String, RuntimeException> error = message -> {
+            return new IllegalArgumentException("Failed to encode memory key %s (%s)".formatted(memoryKey.getKey().asString(), message));
+        };
+        if (expirationTime.isPresent()) {
+            this.getHandle().getBrain().setMemoryWithExpiry(memoryKey.getHandle(), memoryKey.getAdapter().toVanilla(value).getOrThrow(error), expirationTime.getAsLong());
+        } else {
+            // todo proper handling for dummy?
+            this.getHandle().getBrain().setMemory(memoryKey.getHandle(), memoryKey == MemoryKeys.DUMMY ? null : memoryKey.getAdapter().toVanilla(value).getOrThrow(error));
+        }
     }
 
     @Override

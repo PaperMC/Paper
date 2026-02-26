@@ -995,6 +995,80 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
 
     /**
+     * Checks the existence of the memory specified.
+     *
+     * @param memoryKey memory to access
+     * @return the existence status
+     */
+    boolean hasMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
+
+    /**
+     * Returns the value of the memory specified.
+     * <p>
+     * Note that the value is null when the specific entity does not have that
+     * value by default.
+     *
+     * @param memoryKey memory to access
+     * @param <T> the type of the return value
+     * @return the value or null if not present
+     */
+    @Nullable <T> T getMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey);
+
+    /**
+     * Gets the remaining time of the associated memory.
+     *
+     * @param memoryKey memory to access
+     * @return the time remaining (in ticks)
+     */
+    long getTimeRemaining(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     */
+    void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param expirationTime the expiration time: ttl (in ticks)
+     */
+    void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey, long expirationTime);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param value a typed memory value
+     * @param <T> the type of the passed value
+     */
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @Nullable T value);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param value a typed memory value
+     * @param expirationTime the expiration time: ttl (in ticks)
+     * @param <T> the type of the passed value
+     */
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @Nullable T value, long expirationTime);
+
+    /**
      * Get the {@link Sound} this entity will make when damaged.
      *
      * @return the hurt sound, or null if the entity does not make any sound

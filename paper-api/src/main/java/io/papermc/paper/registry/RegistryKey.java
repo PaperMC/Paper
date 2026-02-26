@@ -3,6 +3,7 @@ package io.papermc.paper.registry;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -29,7 +30,6 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
-import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
@@ -39,6 +39,7 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -132,6 +133,17 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.GameRuleKeys
      */
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
+    /**
+     * Built-in registry for environmental attribute types.
+     * @see io.papermc.paper.registry.keys.EnvironmentalAttributeTypeKeys
+     */
+    @ApiStatus.Experimental
+    RegistryKey<EnvironmentalAttributeType<?>> ENVIRONMENT_ATTRIBUTE = create("environment_attribute");
+    /**
+     * Built-in registry for memory keys.
+     * @see io.papermc.paper.registry.keys.MemoryModuleTypeKeys
+     */
+    RegistryKey<io.papermc.paper.entity.ai.MemoryKey> MEMORY_MODULE_TYPE = create("memory_module_type");
 
     /* ********************** *
      * Data-driven Registries *
@@ -239,7 +251,6 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<EntityType> ENTITY_TYPE = create("entity_type");
     RegistryKey<Particle> PARTICLE_TYPE = create("particle_type");
     RegistryKey<PotionType> POTION = create("potion");
-    RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
 
     /**
      * Constructs a new {@link TypedKey} for this registry given the typed key's key.
