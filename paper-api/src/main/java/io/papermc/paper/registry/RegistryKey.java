@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import io.papermc.paper.block.TrialSpawnerConfig;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
@@ -231,6 +232,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for trial spawner configs.
+     * @see io.papermc.paper.registry.keys.TrialSpawnerConfigKeys
+     */
+    RegistryKey<TrialSpawnerConfig> TRIAL_SPAWNER_CONFIG = create("trial_spawner");
 
 
     /* ******************* *
