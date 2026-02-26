@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.entity.ai.MemoryKeys;
 import io.papermc.paper.entity.ai.PaperMemoryKey;
+import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,6 +103,7 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -869,8 +871,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public @Unmodifiable Collection<io.papermc.paper.entity.ai.MemoryKey> getAvailableMemories() {
+        return MCUtil.transformUnmodifiable(this.getHandle().getBrain().getMemories().keySet(), PaperMemoryKey::minecraftToBukkit);
+    }
+
+    @Override
     public boolean hasMemory(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
-        return this.getHandle().getBrain().hasMemoryValue(((PaperMemoryKey<?, ?>) memoryKey).getHandle());
+        return this.getHandle().getBrain().hasMemoryValue(PaperMemoryKey.bukkitToMinecraft(memoryKey));
     }
 
     @Override
@@ -880,7 +887,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public long getTimeRemaining(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
-        return this.getHandle().getBrain().getTimeUntilExpiry(((PaperMemoryKey<?, ?>) memoryKey).getHandle());
+        return this.getHandle().getBrain().getTimeUntilExpiry(PaperMemoryKey.bukkitToMinecraft(memoryKey));
     }
 
     public <API, NMS> API getMemory0(io.papermc.paper.entity.ai.PaperMemoryKey.ValuedImpl<API, NMS> memoryKey) {

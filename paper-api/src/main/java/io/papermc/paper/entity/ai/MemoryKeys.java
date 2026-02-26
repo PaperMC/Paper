@@ -1,5 +1,6 @@
 package io.papermc.paper.entity.ai;
 
+import com.destroystokyo.paper.entity.Pathfinder;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.Position;
 import java.util.List;
@@ -41,7 +42,7 @@ public final class MemoryKeys {
     public static final MemoryKey.Valued<LivingEntity> INTERACTION_TARGET = valued("interaction_target");
     public static final MemoryKey.Valued<Ageable> BREED_TARGET = valued("breed_target");
     public static final MemoryKey.Valued<Entity> RIDE_TARGET = valued("ride_target");
-    //public static final MemoryKey.Valued<Path> PATH = valued("path");
+    public static final MemoryKey.Valued<Pathfinder.PathResult> PATH = valued("path");
     public static final MemoryKey.Valued<List<Location>> INTERACTABLE_DOORS = valued("interactable_doors");
     public static final MemoryKey.Valued<Set<Location>> DOORS_TO_CLOSE = valued("doors_to_close");
     public static final MemoryKey.Valued<BlockPosition> NEAREST_BED = valued("nearest_bed");
