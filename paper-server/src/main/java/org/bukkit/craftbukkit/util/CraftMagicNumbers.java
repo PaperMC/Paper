@@ -458,14 +458,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
-        Potion potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
-                .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
-
-        return new CraftPotionType(namespacedKey, potionRegistry);
-    }
-
-    @Override
     public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
         return new CraftDamageSourceBuilder(damageType);
     }

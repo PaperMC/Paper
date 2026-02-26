@@ -3,11 +3,11 @@ package org.bukkit;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Map;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -20,11 +20,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -117,16 +115,6 @@ public interface UnsafeValues {
     String getTranslationKey(Attribute attribute);
 
     // Paper - replace with better system
-
-    /**
-     * Do not use, method will get removed, and the plugin won't run
-     *
-     * @param key of the potion type
-     * @return an internal potion data
-     */
-    @ApiStatus.Internal
-    @Deprecated(since = "1.20.2", forRemoval = true)
-    PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
 
     /**
      * Create a new {@link DamageSource.Builder}.
