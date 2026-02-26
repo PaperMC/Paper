@@ -134,7 +134,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
     /**
      * Built-in registry for potions.
-     * <!--@see io.papermc.paper.registry.keys.PotionTypeKeys-->
+     * @see io.papermc.paper.registry.keys.PotionTypeKeys
      */
     RegistryKey<PotionType> POTION = create("potion");
 

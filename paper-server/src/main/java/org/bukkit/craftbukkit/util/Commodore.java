@@ -1,15 +1,14 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Predicates;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassToInterfaceRules;
+import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -228,7 +227,8 @@ public class Commodore {
 
         ClassVisitor visitor = cw;
 
-        visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
+        visitor = ReflectionRemapper.visitor(visitor);
+        visitor = ClassToInterfaceRules.visitor(visitor);
 
         Map<String, String> renames = new HashMap<>(RENAMES);
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
