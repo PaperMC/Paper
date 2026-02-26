@@ -1,4 +1,4 @@
-package io.papermc.paper.plugin.entrypoint.classloader;
+package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import net.kyori.adventure.util.Services;
