@@ -52,19 +52,10 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
         Preconditions.checkArgument(rawSlot < this.countSlots(), "Slot %s greater than inventory slot count", rawSlot);
+        return mapValidSlotToInventory(rawSlot);
+    }
 
-        // Paper start - Fix crafter slot ID conversions
-        if (this.getType() == InventoryType.CRAFTER) {
-            // Raw slot ID for crafter inventory views is 45 for result slot and 0-8 for crafting grid slots.
-            // Crafter inventory size is 10. Only check 0-8 and 45.
-            if (rawSlot < (this.getTopInventory().getSize() - 1) || rawSlot == 45) {
-                return this.getTopInventory();
-            } else {
-                return this.getBottomInventory();
-            }
-        }
-        // Paper end - Fix crafter slot ID conversions
-
+    public Inventory mapValidSlotToInventory(final int rawSlot) {
         if (rawSlot < this.getTopInventory().getSize()) {
             return this.getTopInventory();
         } else {
@@ -74,43 +65,6 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public int convertSlot(final int rawSlot) {
-        // Paper start - Fix crafter slot ID conversions
-        // Crafter inventory size is 10, but the view uses non-contiguous raw slot IDs 0-8 (grid) and 45 (result).
-        // The numInTop check and slot number shift lower in this method assume contiguous slot IDs.
-        if (this.getType() == InventoryType.CRAFTER) {
-            /*
-             * Raw Slots:
-             *
-             *       0  1  2
-             *       3  4  5     45
-             *       6  7  8
-             * 9  10 11 12 13 14 15 16 17
-             * 18 19 20 21 22 23 24 25 26
-             * 27 28 29 30 31 32 33 34 35
-             * 36 37 38 39 40 41 42 43 44
-             */
-
-            /*
-             * Converted Slots:
-             *
-             *       0  1  2
-             *       3  4  5     9
-             *       6  7  8
-             * 9  10 11 12 13 14 15 16 17
-             * 18 19 20 21 22 23 24 25 26
-             * 27 28 29 30 31 32 33 34 35
-             * 0  1  2  3  4  5  6  7  8
-             */
-            if (rawSlot == 45) {
-                return 9; // Result
-            } else if (rawSlot >= 36) {
-                return rawSlot - 36; // Quickbar
-            } else {
-                return rawSlot; // Crafting grid or player inventory
-            }
-        }
-        // Paper end - Fix crafter slot ID conversions
-
         int numInTop = this.getTopInventory().getSize();
         // Index from the top inventory as having slots from [0,size]
         if (rawSlot < numInTop) {
@@ -178,18 +132,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     @Override
     public InventoryType.SlotType getSlotType(final int slot) {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
-        // Paper start - Fix crafter slot ID conversions
-        if (this.getType() == InventoryType.CRAFTER) {
-            // Crafter inventory size is 10, but the view uses non-contiguous raw slot IDs 0-8 (grid) and 45 (result).
-            if (slot < 0) {
-                type = InventoryType.SlotType.OUTSIDE;
-            } else if (slot == 45) {
-                type = InventoryType.SlotType.RESULT;
-            } else if (slot > 35) {
-                type = InventoryType.SlotType.QUICKBAR;
-            }
-        } else if (slot >= 0 && slot < this.getTopInventory().getSize()) {
-        // Paper end - Fix crafter slot ID conversions
+        if (slot >= 0 && slot < this.getTopInventory().getSize()) {
             switch (this.getType()) {
                 case BLAST_FURNACE:
                 case FURNACE:
@@ -258,6 +201,12 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
             } else if (this.getType() == InventoryType.CRAFTING) { // Also includes creative inventory
                 if (slot < 9) {
                     type = InventoryType.SlotType.ARMOR;
+                } else if (slot > 35) {
+                    type = InventoryType.SlotType.QUICKBAR;
+                }
+            } else if (this.getType() == InventoryType.CRAFTER) {
+                if (slot == 45) {
+                    type = InventoryType.SlotType.RESULT;
                 } else if (slot > 35) {
                     type = InventoryType.SlotType.QUICKBAR;
                 }
