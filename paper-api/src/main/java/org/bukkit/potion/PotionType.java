@@ -1,94 +1,140 @@
 package org.bukkit.potion;
 
-import com.google.common.base.Suppliers;
+import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
- * This enum reflects and matches each potion state that can be obtained from
- * the Creative mode inventory
+ * This list reflects and matches each potion state that can be obtained from
+ * the creative mode inventory
  */
-public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - feature flag API
+@NullMarked
+public interface PotionType extends OldEnum<PotionType>, Keyed, FeatureDependant {
+
     // Start generate - PotionType
-    AWKWARD("awkward"),
-    FIRE_RESISTANCE("fire_resistance"),
-    HARMING("harming"),
-    HEALING("healing"),
-    INFESTED("infested"),
-    INVISIBILITY("invisibility"),
-    LEAPING("leaping"),
-    LONG_FIRE_RESISTANCE("long_fire_resistance"),
-    LONG_INVISIBILITY("long_invisibility"),
-    LONG_LEAPING("long_leaping"),
-    LONG_NIGHT_VISION("long_night_vision"),
-    LONG_POISON("long_poison"),
-    LONG_REGENERATION("long_regeneration"),
-    LONG_SLOW_FALLING("long_slow_falling"),
-    LONG_SLOWNESS("long_slowness"),
-    LONG_STRENGTH("long_strength"),
-    LONG_SWIFTNESS("long_swiftness"),
-    LONG_TURTLE_MASTER("long_turtle_master"),
-    LONG_WATER_BREATHING("long_water_breathing"),
-    LONG_WEAKNESS("long_weakness"),
-    LUCK("luck"),
-    MUNDANE("mundane"),
-    NIGHT_VISION("night_vision"),
-    OOZING("oozing"),
-    POISON("poison"),
-    REGENERATION("regeneration"),
-    SLOW_FALLING("slow_falling"),
-    SLOWNESS("slowness"),
-    STRENGTH("strength"),
-    STRONG_HARMING("strong_harming"),
-    STRONG_HEALING("strong_healing"),
-    STRONG_LEAPING("strong_leaping"),
-    STRONG_POISON("strong_poison"),
-    STRONG_REGENERATION("strong_regeneration"),
-    STRONG_SLOWNESS("strong_slowness"),
-    STRONG_STRENGTH("strong_strength"),
-    STRONG_SWIFTNESS("strong_swiftness"),
-    STRONG_TURTLE_MASTER("strong_turtle_master"),
-    SWIFTNESS("swiftness"),
-    THICK("thick"),
-    TURTLE_MASTER("turtle_master"),
-    WATER("water"),
-    WATER_BREATHING("water_breathing"),
-    WEAKNESS("weakness"),
-    WEAVING("weaving"),
-    WIND_CHARGED("wind_charged");
+    PotionType AWKWARD = getType("awkward");
+
+    PotionType FIRE_RESISTANCE = getType("fire_resistance");
+
+    PotionType HARMING = getType("harming");
+
+    PotionType HEALING = getType("healing");
+
+    PotionType INFESTED = getType("infested");
+
+    PotionType INVISIBILITY = getType("invisibility");
+
+    PotionType LEAPING = getType("leaping");
+
+    PotionType LONG_FIRE_RESISTANCE = getType("long_fire_resistance");
+
+    PotionType LONG_INVISIBILITY = getType("long_invisibility");
+
+    PotionType LONG_LEAPING = getType("long_leaping");
+
+    PotionType LONG_NIGHT_VISION = getType("long_night_vision");
+
+    PotionType LONG_POISON = getType("long_poison");
+
+    PotionType LONG_REGENERATION = getType("long_regeneration");
+
+    PotionType LONG_SLOW_FALLING = getType("long_slow_falling");
+
+    PotionType LONG_SLOWNESS = getType("long_slowness");
+
+    PotionType LONG_STRENGTH = getType("long_strength");
+
+    PotionType LONG_SWIFTNESS = getType("long_swiftness");
+
+    PotionType LONG_TURTLE_MASTER = getType("long_turtle_master");
+
+    PotionType LONG_WATER_BREATHING = getType("long_water_breathing");
+
+    PotionType LONG_WEAKNESS = getType("long_weakness");
+
+    PotionType LUCK = getType("luck");
+
+    PotionType MUNDANE = getType("mundane");
+
+    PotionType NIGHT_VISION = getType("night_vision");
+
+    PotionType OOZING = getType("oozing");
+
+    PotionType POISON = getType("poison");
+
+    PotionType REGENERATION = getType("regeneration");
+
+    PotionType SLOW_FALLING = getType("slow_falling");
+
+    PotionType SLOWNESS = getType("slowness");
+
+    PotionType STRENGTH = getType("strength");
+
+    PotionType STRONG_HARMING = getType("strong_harming");
+
+    PotionType STRONG_HEALING = getType("strong_healing");
+
+    PotionType STRONG_LEAPING = getType("strong_leaping");
+
+    PotionType STRONG_POISON = getType("strong_poison");
+
+    PotionType STRONG_REGENERATION = getType("strong_regeneration");
+
+    PotionType STRONG_SLOWNESS = getType("strong_slowness");
+
+    PotionType STRONG_STRENGTH = getType("strong_strength");
+
+    PotionType STRONG_SWIFTNESS = getType("strong_swiftness");
+
+    PotionType STRONG_TURTLE_MASTER = getType("strong_turtle_master");
+
+    PotionType SWIFTNESS = getType("swiftness");
+
+    PotionType THICK = getType("thick");
+
+    PotionType TURTLE_MASTER = getType("turtle_master");
+
+    PotionType WATER = getType("water");
+
+    PotionType WATER_BREATHING = getType("water_breathing");
+
+    PotionType WEAKNESS = getType("weakness");
+
+    PotionType WEAVING = getType("weaving");
+
+    PotionType WIND_CHARGED = getType("wind_charged");
     // End generate - PotionType
 
-    private final NamespacedKey key;
-    private final Supplier<InternalPotionData> internalPotionDataSupplier;
-
-    PotionType(String key) {
-        this.key = NamespacedKey.minecraft(key);
-        this.internalPotionDataSupplier = Suppliers.memoize(() -> Bukkit.getUnsafe().getInternalPotionData(this.key));
+    private static PotionType getType(final @KeyPattern.Value String key) {
+        return Registry.POTION.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
      * @return the potion effect type of this potion type
      * @deprecated Potions can have multiple effects use {@link #getPotionEffects()}
      */
-    @Nullable
     @Deprecated(since = "1.20.2")
-    public PotionEffectType getEffectType() {
-        return internalPotionDataSupplier.get().getEffectType();
+    default @Nullable PotionEffectType getEffectType() {
+        final List<PotionEffect> effects = this.getPotionEffects();
+        return effects.isEmpty() ? null : effects.getFirst().getType();
     }
 
     /**
      * @return a list of all effects this potion type has
      */
-    @NotNull
-    public List<PotionEffect> getPotionEffects() {
-        return internalPotionDataSupplier.get().getPotionEffects();
-    }
+    List<PotionEffect> getPotionEffects();
 
     /**
      * @return if this potion type is instant
@@ -96,9 +142,7 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
      * Use {@link PotionEffectType#isInstant()} in combination with {@link #getPotionEffects()} and {@link PotionEffect#getType()}
      */
     @Deprecated(since = "1.20.2")
-    public boolean isInstant() {
-        return internalPotionDataSupplier.get().isInstant();
-    }
+    boolean isInstant();
 
     /**
      * Checks if the potion type has an upgraded state.
@@ -107,9 +151,7 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
      *
      * @return true if the potion type can be upgraded;
      */
-    public boolean isUpgradeable() {
-        return internalPotionDataSupplier.get().isUpgradeable();
-    }
+    boolean isUpgradeable();
 
     /**
      * Checks if the potion type has an extended state.
@@ -117,13 +159,9 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
      *
      * @return true if the potion type can be extended
      */
-    public boolean isExtendable() {
-        return internalPotionDataSupplier.get().isExtendable();
-    }
+    boolean isExtendable();
 
-    public int getMaxLevel() {
-        return internalPotionDataSupplier.get().getMaxLevel();
-    }
+    int getMaxLevel();
 
     /**
      * @param effectType the effect to get by
@@ -131,40 +169,35 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
      * @deprecated Misleading
      */
     @Deprecated(since = "1.9")
-    @Nullable
-    public static PotionType getByEffect(@Nullable PotionEffectType effectType) {
-        if (effectType == null)
-            return WATER;
-        for (PotionType type : PotionType.values()) {
-            if (effectType.equals(type.getEffectType()))
+    static @Nullable PotionType getByEffect(@Nullable PotionEffectType effectType) {
+        if (effectType == null) return WATER;
+        for (PotionType type : Registry.POTION) {
+            if (effectType.equals(type.getEffectType())) {
                 return type;
+            }
         }
         return null;
     }
 
-    @NotNull
-    @Override
-    public NamespacedKey getKey() {
-        return key;
+    /**
+     * @param name of the potion type.
+     * @return the potion type with the given name.
+     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
+     */
+    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+    static PotionType valueOf(String name) {
+        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        PotionType potionType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.POTION, key);
+        Preconditions.checkArgument(potionType != null, "No potion type found with the name %s", name);
+        return potionType;
     }
 
     /**
-     * @deprecated Do not use, interface will get removed, and the plugin won't run
+     * @return an array of all known potion types.
+     * @deprecated use {@link Registry#iterator()}.
      */
-    @Deprecated(since = "1.20.2", forRemoval = true)
-    @ApiStatus.Internal
-    public interface InternalPotionData {
-
-        PotionEffectType getEffectType();
-
-        List<PotionEffect> getPotionEffects();
-
-        boolean isInstant();
-
-        boolean isUpgradeable();
-
-        boolean isExtendable();
-
-        int getMaxLevel();
+    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+    static PotionType[] values() {
+        return Registry.POTION.stream().toArray(PotionType[]::new);
     }
 }
