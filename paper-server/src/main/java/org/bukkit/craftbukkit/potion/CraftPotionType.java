@@ -16,11 +16,13 @@ import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class CraftPotionType extends OldEnumHolderable<PotionType, Potion> implements PotionType, PaperFeatureDependent<Potion> {
 
     public static PotionType minecraftHolderToBukkit(Holder<Potion> minecraft) {
-        return CraftPotionType.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POTION);
     }
 
     public static PotionType minecraftToBukkit(Potion minecraft) {
