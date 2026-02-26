@@ -3,7 +3,6 @@ package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 import com.google.common.collect.Iterators;
 import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.plugin.configuration.PluginMeta;
-import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
