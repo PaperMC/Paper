@@ -1,13 +1,15 @@
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/net/minecraft/world/level/block/BaseFireBlock.java
-@@ -129,12 +_,13 @@
+@@ -129,12 +_,14 @@
  
      @Override
      protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
++        BlockPos savedPos = pos.immutable(); // Paper - track fire contact
          effectApplier.apply(InsideBlockEffectType.CLEAR_FREEZE);
          effectApplier.apply(InsideBlockEffectType.FIRE_IGNITE);
-         effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, entity1 -> entity1.hurt(entity1.level().damageSources().inFire(), this.fireDamage));
+-        effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, entity1 -> entity1.hurt(entity1.level().damageSources().inFire(), this.fireDamage));
++        effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, entity1 -> entity1.hurt(entity1.level().damageSources().inFire().eventBlockDamager(level, savedPos), this.fireDamage)); // Paper
      }
  
 -    public static void fireIgnite(Entity entity) {
