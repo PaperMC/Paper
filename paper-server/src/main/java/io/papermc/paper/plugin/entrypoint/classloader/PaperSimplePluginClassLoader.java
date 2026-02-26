@@ -1,9 +1,8 @@
 package io.papermc.paper.plugin.entrypoint.classloader;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassloaderBytecodeModifier;
 import io.papermc.paper.plugin.util.NamespaceChecker;
-import org.jetbrains.annotations.ApiStatus;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -16,6 +15,7 @@ import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a simple classloader used for paper plugin bootstrappers.

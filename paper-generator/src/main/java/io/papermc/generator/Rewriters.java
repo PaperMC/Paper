@@ -5,7 +5,6 @@ import io.papermc.generator.registry.RegistryBootstrapper;
 import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.rewriter.types.Types;
-import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
 import io.papermc.generator.rewriter.types.registry.FeatureFlagRewriter;
 import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
@@ -115,7 +114,6 @@ public final class Rewriters {
 
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
-            .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
             .register("EntityType", EntityType.class, new EntityTypeRewriter())
             .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(net.minecraft.world.entity.Entity.RemovalReason.class) {
                 @Override
@@ -242,6 +240,7 @@ public final class Rewriters {
             .register("SulfurCubeArchetype", SulfurCube.Archetype.class, new RegistryFieldRewriter<>(Registries.SULFUR_CUBE_ARCHETYPE, "getArchetype"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
+            .register("PotionType", PotionType.class, new RegistryFieldRewriter<>(Registries.POTION, "getType"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
