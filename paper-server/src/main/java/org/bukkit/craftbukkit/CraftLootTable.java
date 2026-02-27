@@ -46,11 +46,11 @@ public class CraftLootTable extends HolderableBase<LootTable> implements org.buk
         return (minecraft == null) ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.LOOT_TABLE).get(PaperAdventure.asAdventureKey(minecraft));
     }
 
-    public static ResourceKey<LootTable> bukkitToMinecraftKey(org.bukkit.loot.LootTable bukkit) {
+    public static ResourceKey<LootTable> bukkitToMinecraftKey(org.bukkit.loot.@Nullable LootTable bukkit) {
         return (bukkit == null || bukkit == EMPTY) ? null : PaperAdventure.asVanilla(Registries.LOOT_TABLE, bukkit.getKey());
     }
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(@Nullable LootTable minecraft) {
+    public static org.bukkit.loot.LootTable minecraftToBukkit(LootTable minecraft) {
         if (minecraft == LootTable.EMPTY) {
             return EMPTY;
         }
@@ -65,7 +65,7 @@ public class CraftLootTable extends HolderableBase<LootTable> implements org.buk
     }
 
     @Override
-    public Collection<ItemStack> populateLoot(Random random, LootContext context) {
+    public Collection<ItemStack> populateLoot(@Nullable Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         LootParams nmsContext = this.convertContext(context);
         List<net.minecraft.world.item.ItemStack> nmsItems = this.getHandle().getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
@@ -82,7 +82,7 @@ public class CraftLootTable extends HolderableBase<LootTable> implements org.buk
     }
 
     @Override
-    public void fillInventory(Inventory inventory, Random random, LootContext context) {
+    public void fillInventory(Inventory inventory, @Nullable Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "Inventory cannot be null");
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         LootParams nmsContext = this.convertContext(context);
