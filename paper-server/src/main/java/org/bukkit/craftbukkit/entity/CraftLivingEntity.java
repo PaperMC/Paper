@@ -928,6 +928,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public void forgetMemory(io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        this.getHandle().getBrain().eraseMemory(PaperMemoryKey.bukkitToMinecraft(memoryKey));
+    }
+
+    @Override
     public Sound getHurtSound() {
         SoundEvent sound = this.getHandle().getHurtSound(this.getHandle().damageSources().generic());
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;

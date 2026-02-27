@@ -1064,7 +1064,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param value a typed memory value
      * @param <T> the type of the passed value
      */
-    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @Nullable T value);
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @NotNull T value);
 
     /**
      * Sets the value of the memory specified.
@@ -1077,7 +1077,14 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param expirationTime the expiration time: ttl (in ticks)
      * @param <T> the type of the passed value
      */
-    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @Nullable T value, long expirationTime);
+    <T> void setMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, @NotNull T value, long expirationTime);
+
+    /**
+     * Removes the memory specified from the entity's brain.
+     *
+     * @param memoryKey the memory to access
+     */
+    void forgetMemory(@NotNull io.papermc.paper.entity.ai.MemoryKey memoryKey);
 
     /**
      * Get the {@link Sound} this entity will make when damaged.
