@@ -1,0 +1,90 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+index 1663fca80247b042558d5c9347f526f22f4f6be8..3ba7d5bcaa76442adbd681a15175ba178297e704 100644
+--- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -48,6 +48,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+     public int life = 0;
+     public int lifetime = 0;
+     public @Nullable LivingEntity attachedToEntity;
++    public java.util.@Nullable UUID spawningEntity; // Paper
+ 
+     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level level) {
+         super(type, level);
+@@ -163,7 +164,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         }
+ 
+         if (!this.noPhysics && this.isAlive() && hitResultOnMoveVector.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(hitResultOnMoveVector);
++            this.preHitTargetOrDeflectSelf(hitResultOnMoveVector); // CraftBukkit - projectile hit event
+             this.needsSync = true;
+         }
+ 
+@@ -187,7 +188,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         }
+ 
+         if (this.life > this.lifetime && this.level() instanceof ServerLevel serverLevel) {
+-            this.explode(serverLevel);
++            // Paper start - Call FireworkExplodeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
++                this.explode(serverLevel);
++            }
++            // Paper end - Call FireworkExplodeEvent
+         }
+     }
+ 
+@@ -195,14 +200,18 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         level.broadcastEntityEvent(this, EntityEvent.FIREWORKS_EXPLODE);
+         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         this.dealExplosionDamage(level);
+-        this.discard();
++        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+     protected void onHitEntity(EntityHitResult result) {
+         super.onHitEntity(result);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            this.explode(serverLevel);
++            // Paper start - Call FireworkExplodeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
++                this.explode(serverLevel);
++            }
++            // Paper end - Call FireworkExplodeEvent
+         }
+     }
+ 
+@@ -211,7 +220,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         BlockPos blockPos = new BlockPos(result.getBlockPos());
+         this.level().getBlockState(blockPos).entityInside(this.level(), blockPos, this, InsideBlockEffectApplier.NOOP, true);
+         if (this.level() instanceof ServerLevel serverLevel && this.hasExplosion()) {
+-            this.explode(serverLevel);
++            // Paper start - Call FireworkExplodeEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
++                this.explode(serverLevel);
++            }
++            // Paper end - Call FireworkExplodeEvent
+         }
+ 
+         super.onHitBlock(result);
+@@ -283,6 +296,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         output.putInt("LifeTime", this.lifetime);
+         output.store("FireworksItem", ItemStack.CODEC, this.getItem());
+         output.putBoolean("ShotAtAngle", this.entityData.get(DATA_SHOT_AT_ANGLE));
++        output.storeNullable("SpawningEntity", net.minecraft.core.UUIDUtil.CODEC, this.spawningEntity); // Paper
+     }
+ 
+     @Override
+@@ -292,6 +306,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         this.lifetime = input.getIntOr("LifeTime", 0);
+         this.entityData.set(DATA_ID_FIREWORKS_ITEM, input.read("FireworksItem", ItemStack.CODEC).orElse(getDefaultItem()));
+         this.entityData.set(DATA_SHOT_AT_ANGLE, input.getBooleanOr("ShotAtAngle", false));
++        this.spawningEntity = input.read("SpawningEntity", net.minecraft.core.UUIDUtil.CODEC).orElse(null); // Paper
+     }
+ 
+     private List<FireworkExplosion> getExplosions() {

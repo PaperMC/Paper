@@ -10,24 +10,24 @@
 +    }
 +    // Paper end - Fix some rails connecting improperly
 +
-     public RailState(Level level, BlockPos pos, BlockState state) {
+     public RailState(final Level level, final BlockPos pos, final BlockState state) {
          this.level = level;
          this.pos = pos;
 @@ -140,6 +_,11 @@
      }
  
-     private void connectTo(RailState state) {
+     private void connectTo(final RailState rail) {
 +        // Paper start - Fix some rails connecting improperly
 +        if (!this.isValid() || !state.isValid()) {
 +            return;
 +        }
 +        // Paper end - Fix some rails connecting improperly
-         this.connections.add(state.pos);
-         BlockPos blockPos = this.pos.north();
-         BlockPos blockPos1 = this.pos.south();
+         this.connections.add(rail.pos);
+         BlockPos north = this.pos.north();
+         BlockPos south = this.pos.south();
 @@ -330,10 +_,15 @@
-         this.state = this.state.setValue(this.block.getShapeProperty(), railShape);
-         if (alwaysPlace || this.level.getBlockState(this.pos) != this.state) {
+         this.state = this.state.setValue(this.block.getShapeProperty(), shape);
+         if (first || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, Block.UPDATE_ALL);
 +            // Paper start - Fix some rails connecting improperly
 +            if (!this.isValid()) {
@@ -36,12 +36,12 @@
 +            // Paper end - Fix some rails connecting improperly
  
              for (int i = 0; i < this.connections.size(); i++) {
-                 RailState rail = this.getRail(this.connections.get(i));
--                if (rail != null) {
-+                if (rail != null && rail.isValid()) { // Paper - Fix some rails connecting improperly
-                     rail.removeSoftConnections();
-                     if (rail.canConnectTo(this)) {
-                         rail.connectTo(this);
+                 RailState neighbor = this.getRail(this.connections.get(i));
+-                if (neighbor != null) {
++                if (neighbor != null && rail.isValid()) { // Paper - Fix some rails connecting improperly
+                     neighbor.removeSoftConnections();
+                     if (neighbor.canConnectTo(this)) {
+                         neighbor.connectTo(this);
 @@ -346,6 +_,6 @@
      }
  

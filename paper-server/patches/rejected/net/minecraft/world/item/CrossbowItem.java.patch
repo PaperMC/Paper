@@ -1,0 +1,64 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/CrossbowItem.java b/net/minecraft/world/item/CrossbowItem.java
+index a7fa7b398d6687b06bb875d228bf401b720ea0e6..664e633f6d93c1569895f9cccb90e3bc8922e56d 100644
+--- a/net/minecraft/world/item/CrossbowItem.java
++++ b/net/minecraft/world/item/CrossbowItem.java
+@@ -88,8 +88,15 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         return getPowerForTime(i, stack, entity) >= 1.0F && isCharged(stack);
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add EntityLoadCrossbowEvent
+     private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack) {
+-        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter);
++        // Paper start - Add EntityLoadCrossbowEvent
++        return tryLoadProjectiles(shooter, crossbowStack, true);
++    }
++
++    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack, boolean consume) {
++        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume);
++        // Paper end - Add EntityLoadCrossbowEvent
+         if (!list.isEmpty()) {
+             crossbowStack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
+             return true;
+@@ -141,7 +148,11 @@ public class CrossbowItem extends ProjectileWeaponItem {
+     @Override
+     protected Projectile createProjectile(Level level, LivingEntity shooter, ItemStack weapon, ItemStack ammo, boolean isCrit) {
+         if (ammo.is(Items.FIREWORK_ROCKET)) {
+-            return new FireworkRocketEntity(level, ammo, shooter, shooter.getX(), shooter.getEyeY() - 0.15F, shooter.getZ(), true);
++            // Paper start
++            FireworkRocketEntity entity =  new FireworkRocketEntity(level, ammo, shooter, shooter.getX(), shooter.getEyeY() - 0.15F, shooter.getZ(), true);
++            entity.spawningEntity = shooter.getUUID(); // Paper
++            return entity;
++            // Paper end
+         } else {
+             Projectile projectile = super.createProjectile(level, shooter, weapon, ammo, isCrit);
+             if (projectile instanceof AbstractArrow abstractArrow) {
+@@ -163,7 +174,7 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         if (level instanceof ServerLevel serverLevel) {
+             ChargedProjectiles chargedProjectiles = weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+             if (chargedProjectiles != null && !chargedProjectiles.isEmpty()) {
+-                this.shoot(serverLevel, shooter, hand, weapon, chargedProjectiles.getItems(), velocity, inaccuracy, shooter instanceof Player, target);
++                this.shoot(serverLevel, shooter, hand, weapon, chargedProjectiles.getItems(), velocity, inaccuracy, shooter instanceof Player, target, 1); // Paper - Pass draw strength
+                 if (shooter instanceof ServerPlayer serverPlayer) {
+                     CriteriaTriggers.SHOT_CROSSBOW.trigger(serverPlayer, weapon);
+                     serverPlayer.awardStat(Stats.ITEM_USED.get(weapon.getItem()));
+@@ -211,7 +222,13 @@ public class CrossbowItem extends ProjectileWeaponItem {
+                     );
+             }
+ 
+-            if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(livingEntity, stack)) {
++            if (f >= 1.0F && !isCharged(stack)) {
++                // Paper start - Add EntityLoadCrossbowEvent
++                final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(livingEntity.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(livingEntity.getUsedItemHand()));
++                if (!event.callEvent() || !tryLoadProjectiles(livingEntity, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
++                    return;
++                }
++                // Paper end - Add EntityLoadCrossbowEvent
+                 chargingSounds.end()
+                     .ifPresent(
+                         sound -> level.playSound(

@@ -1,0 +1,134 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/entity/BlockEntity.java b/net/minecraft/world/level/block/entity/BlockEntity.java
+index 1c4e3b7bf6888432dbf3ad02598d0677721112cc..647ef4c1715e151711e3de70dfcbbc5037ac12ab 100644
+--- a/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -37,6 +37,10 @@ import org.jspecify.annotations.Nullable;
+ import org.slf4j.Logger;
+ 
+ public abstract class BlockEntity implements DebugValueSource {
++    // CraftBukkit start - data containers
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
++    // CraftBukkit end
+     private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final BlockEntityType<?> type;
+@@ -51,6 +55,7 @@ public abstract class BlockEntity implements DebugValueSource {
+         this.worldPosition = pos.immutable();
+         this.validateBlockState(blockState);
+         this.blockState = blockState;
++        this.persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
+     }
+ 
+     private void validateBlockState(BlockState state) {
+@@ -67,6 +72,7 @@ public abstract class BlockEntity implements DebugValueSource {
+         int intOr = tag.getIntOr("x", 0);
+         int intOr1 = tag.getIntOr("y", 0);
+         int intOr2 = tag.getIntOr("z", 0);
++        if (chunkPos != null) { // Paper - allow reading non-validated pos from tag - used to parse block entities on items
+         int sectionPosCoord = SectionPos.blockToSectionCoord(intOr);
+         int sectionPosCoord1 = SectionPos.blockToSectionCoord(intOr2);
+         if (sectionPosCoord != chunkPos.x || sectionPosCoord1 != chunkPos.z) {
+@@ -74,6 +80,7 @@ public abstract class BlockEntity implements DebugValueSource {
+             intOr = chunkPos.getBlockX(SectionPos.sectionRelative(intOr));
+             intOr2 = chunkPos.getBlockZ(SectionPos.sectionRelative(intOr2));
+         }
++        } // Paper - allow reading non-validated pos from tag - used to parse block entities on items
+ 
+         return new BlockPos(intOr, intOr1, intOr2);
+     }
+@@ -91,6 +98,12 @@ public abstract class BlockEntity implements DebugValueSource {
+     }
+ 
+     protected void loadAdditional(ValueInput input) {
++        // Paper start - read persistent data container
++        this.persistentDataContainer.clear(); // Paper - clear instead of init
++
++        input.read("PublicBukkitValues", CompoundTag.CODEC)
++            .ifPresent(this.persistentDataContainer::putAll);
++        // Paper end - read persistent data container
+     }
+ 
+     public final void loadWithComponents(ValueInput input) {
+@@ -140,6 +153,11 @@ public abstract class BlockEntity implements DebugValueSource {
+     public void saveWithoutMetadata(ValueOutput output) {
+         this.saveAdditional(output);
+         output.store("components", DataComponentMap.CODEC, this.components);
++        // CraftBukkit start - store container
++        if (!this.persistentDataContainer.isEmpty()) {
++            output.store("PublicBukkitValues", CompoundTag.CODEC, this.persistentDataContainer.toTagCompound());
++        }
++        // CraftBukkit end
+     }
+ 
+     public final CompoundTag saveCustomOnly(HolderLookup.Provider registries) {
+@@ -155,6 +173,11 @@ public abstract class BlockEntity implements DebugValueSource {
+ 
+     public void saveCustomOnly(ValueOutput output) {
+         this.saveAdditional(output);
++        // Paper start - store PDC here as well
++        if (!this.persistentDataContainer.isEmpty()) {
++            output.store("PublicBukkitValues", CompoundTag.CODEC, this.persistentDataContainer.toTagCompound());
++        }
++        // Paper end
+     }
+ 
+     public void saveId(ValueOutput output) {
+@@ -285,6 +308,12 @@ public abstract class BlockEntity implements DebugValueSource {
+     }
+ 
+     public final void applyComponents(DataComponentMap components, DataComponentPatch patch) {
++        // CraftBukkit start
++        this.applyComponentsSet(components, patch);
++    }
++
++    public final Set<DataComponentType<?>> applyComponentsSet(DataComponentMap components, DataComponentPatch patch) {
++        // CraftBukkit end
+         final Set<DataComponentType<?>> set = new HashSet<>();
+         set.add(DataComponents.BLOCK_ENTITY_DATA);
+         set.add(DataComponents.BLOCK_STATE);
+@@ -304,6 +333,10 @@ public abstract class BlockEntity implements DebugValueSource {
+         });
+         DataComponentPatch dataComponentPatch = patch.forget(set::contains);
+         this.components = dataComponentPatch.split().added();
++        // CraftBukkit start
++        set.remove(DataComponents.BLOCK_ENTITY_DATA); // Remove as never actually added by applyImplicitComponents
++        return set;
++        // CraftBukkit end
+     }
+ 
+     protected void collectImplicitComponents(DataComponentMap.Builder components) {
+@@ -340,6 +373,27 @@ public abstract class BlockEntity implements DebugValueSource {
+     public void registerDebugValues(ServerLevel level, DebugValueSource.Registration registrar) {
+     }
+ 
++    // CraftBukkit start - add method
++    public org.bukkit.inventory.@Nullable InventoryHolder getOwner() {
++        return getOwner(true);
++    }
++
++    public org.bukkit.inventory.@Nullable InventoryHolder getOwner(boolean useSnapshot) {
++        if (this.level == null) return null;
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition);
++        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
++        return state instanceof final org.bukkit.inventory.InventoryHolder inventoryHolder ? inventoryHolder : null;
++    }
++    // CraftBukkit end
++
++    // Paper start - Sanitize sent data
++    public CompoundTag sanitizeSentNbt(CompoundTag tag) {
++        tag.remove("PublicBukkitValues");
++
++        return tag;
++    }
++    // Paper end - Sanitize sent data
++
+     record BlockEntityPathElement(BlockEntity blockEntity) implements ProblemReporter.PathElement {
+         @Override
+         public String get() {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/raid/Raid.java
 +++ b/net/minecraft/world/entity/raid/Raid.java
-@@ -61,6 +_,12 @@
+@@ -63,6 +_,12 @@
  import org.jspecify.annotations.Nullable;
  
  public class Raid {
@@ -12,17 +12,17 @@
 +    // Paper end
      public static final SpawnPlacementType RAVAGER_SPAWN_PLACEMENT_TYPE = SpawnPlacements.getPlacementType(EntityType.RAVAGER);
      public static final MapCodec<Raid> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         instance -> instance.group(
-@@ -76,6 +_,8 @@
-                 Raid.RaidStatus.CODEC.fieldOf("status").forGetter(raid -> raid.status),
-                 BlockPos.CODEC.fieldOf("center").forGetter(raid -> raid.center),
-                 UUIDUtil.CODEC_SET.fieldOf("heroes_of_the_village").forGetter(raid -> raid.heroesOfTheVillage)
+         i -> i.group(
+@@ -78,6 +_,8 @@
+                 Raid.RaidStatus.CODEC.fieldOf("status").forGetter(r -> r.status),
+                 BlockPos.CODEC.fieldOf("center").forGetter(r -> r.center),
+                 UUIDUtil.CODEC_SET.fieldOf("heroes_of_the_village").forGetter(r -> r.heroesOfTheVillage)
 +                , org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer.createCodec(PDC_TYPE_REGISTRY).lenientOptionalFieldOf(PDC_NBT_KEY) // Paper - add persistent data container
 +                    .forGetter(raid -> raid.persistentDataContainer.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(raid.persistentDataContainer)) // Paper - add persistent data container
              )
-             .apply(instance, Raid::new)
+             .apply(i, Raid::new)
      );
-@@ -127,6 +_,7 @@
+@@ -131,6 +_,7 @@
          this.center = center;
          this.numGroups = this.getNumGroups(difficulty);
          this.status = Raid.RaidStatus.ONGOING;
@@ -30,15 +30,15 @@
      }
  
      private Raid(
-@@ -142,6 +_,7 @@
-         Raid.RaidStatus status,
-         BlockPos center,
-         Set<UUID> heroesOfTheVillage
+@@ -146,6 +_,7 @@
+         final Raid.RaidStatus status,
+         final BlockPos center,
+         final Set<UUID> heroesOfTheVillage
 +        , final Optional<org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer> persistentDataContainer // Paper - add persistent data container
      ) {
          this.started = started;
          this.active = active;
-@@ -155,6 +_,7 @@
+@@ -159,6 +_,7 @@
          this.numGroups = numGroups;
          this.status = status;
          this.heroesOfTheVillage.addAll(heroesOfTheVillage);
@@ -46,7 +46,7 @@
      }
  
      public boolean isOver() {
-@@ -181,6 +_,12 @@
+@@ -185,6 +_,12 @@
          return this.status == Raid.RaidStatus.LOSS;
      }
  
@@ -59,15 +59,15 @@
      public float getTotalHealth() {
          return this.totalHealth;
      }
-@@ -267,6 +_,7 @@
-                 boolean flag = this.active;
+@@ -271,6 +_,7 @@
+                 boolean oldActive = this.active;
                  this.active = level.hasChunkAt(this.center);
                  if (level.getDifficulty() == Difficulty.PEACEFUL) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(level, this, org.bukkit.event.raid.RaidStopEvent.Reason.PEACE); // CraftBukkit
                      this.stop();
                      return;
                  }
-@@ -286,13 +_,16 @@
+@@ -290,13 +_,16 @@
                  if (!level.isVillage(this.center)) {
                      if (this.groupsSpawned > 0) {
                          this.status = Raid.RaidStatus.LOSS;
@@ -84,27 +84,27 @@
                      this.stop();
                      return;
                  }
-@@ -381,6 +_,7 @@
+@@ -385,6 +_,7 @@
                      }
  
-                     if (i > 5) {
+                     if (attempt > 5) {
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(level, this, org.bukkit.event.raid.RaidStopEvent.Reason.UNSPAWNABLE); // CraftBukkit
                          this.stop();
                          break;
                      }
-@@ -392,6 +_,7 @@
+@@ -396,6 +_,7 @@
                      } else {
                          this.status = Raid.RaidStatus.VICTORY;
  
 +                        List<org.bukkit.entity.Player> winners = new java.util.ArrayList<>(); // CraftBukkit
-                         for (UUID uuid : this.heroesOfTheVillage) {
-                             Entity entity = level.getEntity(uuid);
-                             if (entity instanceof LivingEntity livingEntity && !entity.isSpectator()) {
-@@ -399,9 +_,11 @@
-                                 if (livingEntity instanceof ServerPlayer serverPlayer) {
-                                     serverPlayer.awardStat(Stats.RAID_WIN);
-                                     CriteriaTriggers.RAID_WIN.trigger(serverPlayer);
-+                                    winners.add(serverPlayer.getBukkitEntity()); // CraftBukkit
+                         for (UUID heroUUID : this.heroesOfTheVillage) {
+                             Entity entity = level.getEntity(heroUUID);
+                             if (entity instanceof LivingEntity hero && !entity.isSpectator()) {
+@@ -403,9 +_,11 @@
+                                 if (hero instanceof ServerPlayer playerHero) {
+                                     playerHero.awardStat(Stats.RAID_WIN);
+                                     CriteriaTriggers.RAID_WIN.trigger(playerHero);
++                                    winners.add(playerHero.getBukkitEntity()); // CraftBukkit
                                  }
                              }
                          }
@@ -112,7 +112,7 @@
                      }
                  }
  
-@@ -409,6 +_,7 @@
+@@ -413,6 +_,7 @@
              } else if (this.isOver()) {
                  this.celebrationTicks++;
                  if (this.celebrationTicks >= 600) {
@@ -120,35 +120,35 @@
                      this.stop();
                      return;
                  }
-@@ -513,7 +_,7 @@
+@@ -519,7 +_,7 @@
  
-     private void spawnGroup(ServerLevel level, BlockPos pos) {
-         boolean flag = false;
--        int i = this.groupsSpawned + 1;
-+        int i = this.groupsSpawned + 1; final int wave = i; // Paper - OBFHELPER
+     private void spawnGroup(final ServerLevel level, final BlockPos pos) {
+         boolean leaderSet = false;
+-        int groupNumber = this.groupsSpawned + 1;
++        int groupNumber = this.groupsSpawned + 1; final int wave = groupNumber; // Paper - OBFHELPER
          this.totalHealth = 0.0F;
-         DifficultyInstance currentDifficultyAt = level.getCurrentDifficultyAt(pos);
-         boolean shouldSpawnBonusGroup = this.shouldSpawnBonusGroup();
-@@ -562,6 +_,7 @@
+         DifficultyInstance difficulty = level.getCurrentDifficultyAt(pos);
+         boolean isBonusGroup = this.shouldSpawnBonusGroup();
+@@ -568,6 +_,7 @@
          this.groupsSpawned++;
          this.updateBossbar();
          this.setDirty(level);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidSpawnWaveEvent(level, this, java.util.Objects.requireNonNull(this.getLeader(wave)), this.groupRaiderMap.get(wave)); // CraftBukkit
      }
  
-     public void joinRaid(ServerLevel level, int wave, Raider raider, @Nullable BlockPos pos, boolean isRecruited) {
-@@ -576,7 +_,7 @@
+     public void joinRaid(final ServerLevel level, final int groupNumber, final Raider raider, final @Nullable BlockPos pos, final boolean exists) {
+@@ -582,7 +_,7 @@
                  raider.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.EVENT, null);
-                 raider.applyRaidBuffs(level, wave, false);
+                 raider.applyRaidBuffs(level, groupNumber, false);
                  raider.setOnGround(true);
 -                level.addFreshEntityWithPassengers(raider);
 +                level.addFreshEntityWithPassengers(raider, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.RAID); // CraftBukkit
              }
          }
      }
-@@ -793,6 +_,12 @@
-     public void addHeroOfTheVillage(Entity player) {
-         this.heroesOfTheVillage.add(player.getUUID());
+@@ -809,6 +_,12 @@
+     public void addHeroOfTheVillage(final Entity killer) {
+         this.heroesOfTheVillage.add(killer.getUUID());
      }
 +
 +    // CraftBukkit start - a method to get all raiders
@@ -157,5 +157,5 @@
 +    }
 +    // CraftBukkit end
  
-     static enum RaidStatus implements StringRepresentable {
+     private static enum RaidStatus implements StringRepresentable {
          ONGOING("ongoing"),

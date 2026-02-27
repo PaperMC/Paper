@@ -1,42 +1,42 @@
 --- a/net/minecraft/core/component/DataComponentPatch.java
 +++ b/net/minecraft/core/component/DataComponentPatch.java
 @@ -106,6 +_,11 @@
-                     buffer.writeVarInt(0);
-                     buffer.writeVarInt(0);
+                     output.writeVarInt(0);
+                     output.writeVarInt(0);
                  } else {
 +                    // Paper start - data sanitization for items
 +                    final io.papermc.paper.util.sanitizer.ItemObfuscationSession itemObfuscationSession = value.map.isEmpty()
 +                        ? null // Avoid thread local lookup of current session if it won't be needed anyway.
 +                        : io.papermc.paper.util.sanitizer.ItemObfuscationSession.currentSession();
 +                    // Paper end - data sanitization for items
-                     int i = 0;
-                     int i1 = 0;
+                     int positiveCount = 0;
+                     int negativeCount = 0;
  
 @@ -113,7 +_,7 @@
-                         value.map
+                         patch.map
                      )) {
                          if (entry.getValue().isPresent()) {
--                            i++;
-+                            if (!io.papermc.paper.util.sanitizer.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) i++; // Paper - data sanitization for items
+-                            positiveCount++;
++                            if (!io.papermc.paper.util.sanitizer.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) positiveCount++; // Paper - data sanitization for items
                          } else {
-                             i1++;
+                             negativeCount++;
                          }
 @@ -126,6 +_,7 @@
-                         value.map
+                         patch.map
                      )) {
-                         Optional<?> optional = entryx.getValue();
+                         Optional<?> value = entryx.getValue();
 +                        optional = io.papermc.paper.util.sanitizer.ItemComponentSanitizer.override(itemObfuscationSession, entryx.getKey(), entryx.getValue()); // Paper - data sanitization for items
-                         if (optional.isPresent()) {
-                             DataComponentType<?> dataComponentType = entryx.getKey();
-                             DataComponentType.STREAM_CODEC.encode(buffer, dataComponentType);
+                         if (value.isPresent()) {
+                             DataComponentType<?> type = entryx.getKey();
+                             DataComponentType.STREAM_CODEC.encode(output, type);
 @@ -145,7 +_,13 @@
              }
  
-             private <T> void encodeComponent(RegistryFriendlyByteBuf buffer, DataComponentType<T> component, Object value) {
--                codecGetter.apply(component).encode(buffer, (T)value);
+             private <T> void encodeComponent(final RegistryFriendlyByteBuf output, final DataComponentType<T> type, final Object value) {
+-                codecGetter.apply(type).encode(output, (T)value);
 +                // Paper start - codec errors of random anonymous classes are useless
 +                try {
-+                    codecGetter.apply(component).encode(buffer, (T)value);
++                    codecGetter.apply(type).encode(output, (T)value);
 +                } catch (final Exception e) {
 +                    throw new RuntimeException("Error encoding component " + component, e);
 +                }
@@ -44,9 +44,9 @@
              }
          };
      }
-@@ -248,6 +_,42 @@
+@@ -255,6 +_,42 @@
  
-         Builder() {
+         private Builder() {
          }
 +
 +        // CraftBukkit start
@@ -85,5 +85,5 @@
 +        }
 +        // CraftBukkit end
  
-         public <T> DataComponentPatch.Builder set(DataComponentType<T> component, T value) {
-             this.map.put(component, Optional.of(value));
+         public <T> DataComponentPatch.Builder set(final DataComponentType<T> type, final T value) {
+             this.map.put(type, Optional.of(value));

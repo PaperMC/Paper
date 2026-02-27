@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/projectile/arrow/ThrownTrident.java
 +++ b/net/minecraft/world/entity/projectile/arrow/ThrownTrident.java
 @@ -51,6 +_,12 @@
-         this.entityData.set(ID_FOIL, pickupItemStack.hasFoil());
+         this.entityData.set(ID_FOIL, tridentItem.hasFoil());
      }
  
 +    // Paper start - Allow trident custom damage
@@ -11,16 +11,16 @@
 +    // Paper end - Allow trident custom damage
 +
      @Override
-     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-         super.defineSynchedData(builder);
+     protected void defineSynchedData(final SynchedEntityData.Builder entityData) {
+         super.defineSynchedData(entityData);
 @@ -72,10 +_,10 @@
-                     this.spawnAtLocation(serverLevel, this.getPickupItem(), 0.1F);
+                     this.spawnAtLocation(level, this.getPickupItem(), 0.1F);
                  }
  
 -                this.discard();
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
              } else {
-                 if (!(owner instanceof Player) && this.position().distanceTo(owner.getEyePosition()) < owner.getBbWidth() + 1.0) {
+                 if (!(currentOwner instanceof Player) && this.position().distanceTo(currentOwner.getEyePosition()) < currentOwner.getBbWidth() + 1.0) {
 -                    this.discard();
 +                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                      return;
@@ -45,14 +45,14 @@
 +    // Paper end
 +
      @Override
-     protected @Nullable EntityHitResult findHitEntity(Vec3 startVec, Vec3 endVec) {
-         return this.dealtDamage ? null : super.findHitEntity(startVec, endVec);
+     protected @Nullable EntityHitResult findHitEntity(final Vec3 from, final Vec3 to) {
+         return this.dealtDamage ? null : super.findHitEntity(from, to);
 @@ -118,7 +_,7 @@
      @Override
-     protected void onHitEntity(EntityHitResult result) {
-         Entity entity = result.getEntity();
--        float f = 8.0F;
-+        float f = (float) this.baseDamage; // Paper - Allow trident custom damage
-         Entity owner = this.getOwner();
-         DamageSource damageSource = this.damageSources().trident(this, (Entity)(owner == null ? this : owner));
+     protected void onHitEntity(final EntityHitResult hitResult) {
+         Entity entity = hitResult.getEntity();
+-        float dmg = 8.0F;
++        float dmg = (float) this.baseDamage; // Paper - Allow trident custom damage
+         Entity currentOwner = this.getOwner();
+         DamageSource damageSource = this.damageSources().trident(this, (Entity)(currentOwner == null ? this : currentOwner));
          if (this.level() instanceof ServerLevel serverLevel) {

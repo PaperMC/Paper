@@ -1,0 +1,104 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/alchemy/PotionBrewing.java b/net/minecraft/world/item/alchemy/PotionBrewing.java
+index 3552e0abc43ddc367856510156b1a6e3ad2f945f..92d1ac668abb5a16f50567da670a870a43ce1e85 100644
+--- a/net/minecraft/world/item/alchemy/PotionBrewing.java
++++ b/net/minecraft/world/item/alchemy/PotionBrewing.java
+@@ -19,6 +19,7 @@ public class PotionBrewing {
+     private final List<Ingredient> containers;
+     private final List<PotionBrewing.Mix<Potion>> potionMixes;
+     private final List<PotionBrewing.Mix<Item>> containerMixes;
++    private final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> customMixes = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper - Custom Potion Mixes
+ 
+     PotionBrewing(List<Ingredient> containers, List<PotionBrewing.Mix<Potion>> potionMixes, List<PotionBrewing.Mix<Item>> containerMixes) {
+         this.containers = containers;
+@@ -27,7 +28,7 @@ public class PotionBrewing {
+     }
+ 
+     public boolean isIngredient(ItemStack stack) {
+-        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack);
++        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack) || this.isCustomIngredient(stack); // Paper - Custom Potion Mixes
+     }
+ 
+     private boolean isContainer(ItemStack stack) {
+@@ -71,6 +72,11 @@ public class PotionBrewing {
+     }
+ 
+     public boolean hasMix(ItemStack potion, ItemStack ingredient) {
++        // Paper start - Custom Potion Mixes
++        if (this.hasCustomMix(potion, ingredient)) {
++            return true;
++        }
++        // Paper end - Custom Potion Mixes
+         return this.isContainer(potion) && (this.hasContainerMix(potion, ingredient) || this.hasPotionMix(potion, ingredient));
+     }
+ 
+@@ -103,6 +109,13 @@ public class PotionBrewing {
+         if (potion.isEmpty()) {
+             return potion;
+         } else {
++            // Paper start - Custom Potion Mixes
++            for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++                if (mix.input().test(potion) && mix.ingredient().test(ingredient)) {
++                    return mix.result().copy();
++                }
++            }
++            // Paper end - Custom Potion Mixes
+             Optional<Holder<Potion>> optional = potion.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion();
+             if (optional.isEmpty()) {
+                 return potion;
+@@ -190,6 +203,50 @@ public class PotionBrewing {
+         builder.addMix(Potions.SLOW_FALLING, Items.REDSTONE, Potions.LONG_SLOW_FALLING);
+     }
+ 
++    // Paper start - Custom Potion Mixes
++    public boolean isCustomIngredient(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.ingredient().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public boolean isCustomInput(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    private boolean hasCustomMix(ItemStack input, ItemStack ingredient) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public void addPotionMix(io.papermc.paper.potion.PotionMix mix) {
++        if (this.customMixes.containsKey(mix.getKey())) {
++            throw new IllegalArgumentException("Duplicate recipe ignored with ID " + mix.getKey());
++        }
++        this.customMixes.putAndMoveToFirst(mix.getKey(), new io.papermc.paper.potion.PaperPotionMix(mix));
++    }
++
++    public boolean removePotionMix(org.bukkit.NamespacedKey key) {
++        return this.customMixes.remove(key) != null;
++    }
++
++    public PotionBrewing reload(FeatureFlagSet flags) {
++        return bootstrap(flags);
++    }
++    // Paper end - Custom Potion Mixes
++
+     public static class Builder {
+         private final List<Ingredient> containers = new ArrayList<>();
+         private final List<PotionBrewing.Mix<Potion>> potionMixes = new ArrayList<>();

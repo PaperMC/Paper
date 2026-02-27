@@ -19,14 +19,14 @@
 +    }
 +    // CraftBukkit end
  
-     protected abstract void onOpen(Level level, BlockPos pos, BlockState state);
+     protected abstract void onOpen(final Level level, final BlockPos pos, final BlockState blockState);
  
-@@ -26,7 +_,19 @@
-     public abstract boolean isOwnContainer(Player player);
- 
-     public void incrementOpeners(LivingEntity entity, Level level, BlockPos pos, BlockState state, double interactionRange) {
+@@ -28,7 +_,19 @@
+     public void incrementOpeners(
+         final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
+     ) {
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
-         int i = this.openCount++;
+         int previous = this.openCount++;
 +
 +        // CraftBukkit start - Call redstone event
 +        if (level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
@@ -38,16 +38,16 @@
 +        }
 +        // CraftBukkit end
 +
-         if (i == 0) {
-             this.onOpen(level, pos, state);
+         if (previous == 0) {
+             this.onOpen(level, pos, blockState);
              level.gameEvent(entity, GameEvent.CONTAINER_OPEN, pos);
-@@ -38,7 +_,20 @@
+@@ -40,7 +_,20 @@
      }
  
-     public void decrementOpeners(LivingEntity entity, Level level, BlockPos pos, BlockState state) {
+     public void decrementOpeners(final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState) {
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
 +        if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
-         int i = this.openCount--;
+         int previous = this.openCount--;
 +
 +        // CraftBukkit start - Call redstone event
 +        if (level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
@@ -60,13 +60,13 @@
 +        // CraftBukkit end
 +
          if (this.openCount == 0) {
-             this.onClose(level, pos, state);
+             this.onClose(level, pos, blockState);
              level.gameEvent(entity, GameEvent.CONTAINER_CLOSE, pos);
-@@ -70,6 +_,7 @@
+@@ -74,6 +_,7 @@
          }
  
-         int size = entitiesWithContainerOpen.size();
+         int openCount = containerUsers.size();
 +        if (this.opened) size++; // CraftBukkit - add dummy count from API
-         int i = this.openCount;
-         if (i != size) {
-             boolean flag = size != 0;
+         int prevCount = this.openCount;
+         if (prevCount != openCount) {
+             boolean isOpen = openCount != 0;

@@ -6,16 +6,16 @@
              BedRule bedRule = level.environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, pos);
 -            if (bedRule.explodes()) {
 +            if (false && bedRule.explodes()) { // CraftBukkit - moved world and biome check into Player
-                 bedRule.errorMessage().ifPresent(component -> player.displayClientMessage(component, true));
+                 bedRule.errorMessage().ifPresent(player::sendOverlayMessage);
                  level.removeBlock(pos, false);
                  BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
 @@ -103,22 +_,61 @@
-                 level.explode(null, level.damageSources().badRespawnPointExplosion(center), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 level.explode(null, level.damageSources().badRespawnPointExplosion(boomPos), null, boomPos, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                  return InteractionResult.SUCCESS_SERVER;
              } else if (state.getValue(OCCUPIED)) {
 +                if (bedRule.explodes()) return this.explodeBed(state, level, pos); // Paper - check explode first
                  if (!this.kickVillagerOutOfBed(level, pos)) {
-                     player.displayClientMessage(Component.translatable("block.minecraft.bed.occupied"), true);
+                     player.sendOverlayMessage(Component.translatable("block.minecraft.bed.occupied"));
                  }
  
                  return InteractionResult.SUCCESS_SERVER;
@@ -24,14 +24,14 @@
 +                final BlockState finalBlockState = state;
 +                final BlockPos finalBlockPos = pos;
 +                // CraftBukkit end
-                 player.startSleepInBed(pos).ifLeft(bedSleepingProblem -> {
--                    if (bedSleepingProblem.message() != null) {
+                 player.startSleepInBed(pos).ifLeft(problem -> {
+-                    if (problem.message() != null) {
 +                    // Paper start - PlayerBedFailEnterEvent
-+                    if (false && bedSleepingProblem.message() != null) { // Moved down
-                         player.displayClientMessage(bedSleepingProblem.message(), true);
++                    if (false && problem.message() != null) { // Moved down
+                         player.sendOverlayMessage(problem.message());
                      }
-+                    if (bedSleepingProblem != null) {
-+                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalBlockPos, bedSleepingProblem);
++                    if (problem != null) {
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalBlockPos, problem);
 +                        if (event.isCancelled()) {
 +                            return;
 +                        }
@@ -69,13 +69,13 @@
 +    }
 +    // CraftBukkit end
 +
-     private boolean kickVillagerOutOfBed(Level level, BlockPos pos) {
-         List<Villager> entitiesOfClass = level.getEntitiesOfClass(Villager.class, new AABB(pos), LivingEntity::isSleeping);
-         if (entitiesOfClass.isEmpty()) {
-@@ -296,6 +_,11 @@
+     private boolean kickVillagerOutOfBed(final Level level, final BlockPos pos) {
+         List<Villager> villagers = level.getEntitiesOfClass(Villager.class, new AABB(pos), LivingEntity::isSleeping);
+         if (villagers.isEmpty()) {
+@@ -298,6 +_,11 @@
          if (!level.isClientSide()) {
-             BlockPos blockPos = pos.relative(state.getValue(FACING));
-             level.setBlock(blockPos, state.setValue(PART, BedPart.HEAD), Block.UPDATE_ALL);
+             BlockPos otherPos = pos.relative(state.getValue(FACING));
+             level.setBlock(otherPos, state.setValue(PART, BedPart.HEAD), Block.UPDATE_ALL);
 +            // CraftBukkit start - SPIGOT-7315: Don't updated if we capture block states
 +            if (level.captureBlockStates) {
 +                return;

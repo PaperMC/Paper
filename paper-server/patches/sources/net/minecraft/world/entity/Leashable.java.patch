@@ -3,7 +3,7 @@
 @@ -79,6 +_,11 @@
      }
  
-     default void writeLeashData(ValueOutput output, Leashable.@Nullable LeashData leashData) {
+     default void writeLeashData(final ValueOutput output, final Leashable.@Nullable LeashData leashData) {
 +        // CraftBukkit start - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
 +        if (leashData != null && leashData.leashHolder != null && leashData.leashHolder.pluginRemoved) {
 +            return;
@@ -24,14 +24,14 @@
          }
 @@ -122,7 +_,9 @@
              entity.onLeashRemoved();
-             if (entity.level() instanceof ServerLevel serverLevel) {
-                 if (dropItem) {
+             if (entity.level() instanceof ServerLevel level) {
+                 if (dropLead) {
 +                    entity.forceDrops = true; // CraftBukkit
-                     entity.spawnAtLocation(serverLevel, Items.LEAD);
+                     entity.spawnAtLocation(level, Items.LEAD);
 +                    entity.forceDrops = false; // CraftBukkit
                  }
  
-                 if (broadcastPacket) {
+                 if (sendPacket) {
 @@ -142,7 +_,15 @@
  
          if (leashData != null && leashData.leashHolder != null) {
@@ -51,13 +51,13 @@
                      entity.removeLeash();
 @@ -153,8 +_,7 @@
              if (leashHolder != null && leashHolder.level() == entity.level()) {
-                 double d = entity.leashDistanceTo(leashHolder);
+                 double distanceTo = entity.leashDistanceTo(leashHolder);
                  entity.whenLeashedTo(leashHolder);
--                if (d > entity.leashSnapDistance()) {
+-                if (distanceTo > entity.leashSnapDistance()) {
 -                    level.playSound(null, leashHolder.getX(), leashHolder.getY(), leashHolder.getZ(), SoundEvents.LEAD_BREAK, SoundSource.NEUTRAL, 1.0F, 1.0F);
-+                if (d > entity.leashSnapDistanceOrConfig()) { // Paper - Configurable max leash distance
++                if (distanceTo > entity.leashSnapDistanceOrConfig()) { // Paper - Configurable max leash distance
                      entity.leashTooFarBehaviour();
-                 } else if (d > entity.leashElasticDistance() - leashHolder.getBbWidth() - entity.getBbWidth()
+                 } else if (distanceTo > entity.leashElasticDistance() - leashHolder.getBbWidth() - entity.getBbWidth()
                      && entity.checkElasticInteractions(leashHolder, leashData)) {
 @@ -174,6 +_,12 @@
          entity.checkFallDistanceAccumulation();
@@ -98,4 +98,4 @@
 +        // Paper end - Expand EntityUnleashEvent
      }
  
-     default void closeRangeLeashBehaviour(Entity entity) {
+     default void closeRangeLeashBehaviour(final Entity leashHolder) {

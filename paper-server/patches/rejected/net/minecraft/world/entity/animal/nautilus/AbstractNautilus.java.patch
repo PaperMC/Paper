@@ -1,0 +1,60 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java b/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
+index 0e1627e1b656c06ba9717921b7b12054f6bb102c..a5dcdd321b9d05cad5d1b40612be297ee6cb0c35 100644
+--- a/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
++++ b/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
+@@ -139,8 +139,12 @@ public abstract class AbstractNautilus extends TamableAnimal implements HasCusto
+     ) {
+         int seaLevel = level.getSeaLevel();
+         int i = seaLevel - 25;
++        // Paper start - Make water animal spawn height configurable
++        seaLevel = level.getMinecraftWorld().paperConfig().entities.spawning.wateranimalSpawnHeight.maximum.or(seaLevel - 5);
++        i = level.getMinecraftWorld().paperConfig().entities.spawning.wateranimalSpawnHeight.minimum.or(i);
++        // Paper end - Make water animal spawn height configurable
+         return pos.getY() >= i
+-            && pos.getY() <= seaLevel - 5
++            && pos.getY() <= seaLevel // Paper - Make water animal spawn height configurable
+             && level.getFluidState(pos.below()).is(FluidTags.WATER)
+             && level.getBlockState(pos.above()).is(Blocks.WATER);
+     }
+@@ -263,7 +267,7 @@ public abstract class AbstractNautilus extends TamableAnimal implements HasCusto
+             boolean hasEffect = player.hasEffect(MobEffects.BREATH_OF_THE_NAUTILUS);
+             boolean flag = level.getGameTime() % 40L == 0L;
+             if (!hasEffect || flag) {
+-                player.addEffect(new MobEffectInstance(MobEffects.BREATH_OF_THE_NAUTILUS, 60, 0, true, true, true));
++                player.addEffect(new MobEffectInstance(MobEffects.BREATH_OF_THE_NAUTILUS, 60, 0, true, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.NAUTILUS); // Paper - Add cause
+             }
+         }
+     }
+@@ -405,7 +409,7 @@ public abstract class AbstractNautilus extends TamableAnimal implements HasCusto
+ 
+                 if (this.isFood(itemInHand) && this.getHealth() < this.getMaxHealth()) {
+                     FoodProperties foodProperties = itemInHand.get(DataComponents.FOOD);
+-                    this.heal(foodProperties != null ? 2 * foodProperties.nutrition() : 1.0F);
++                    this.heal(foodProperties != null ? 2 * foodProperties.nutrition() : 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add regain reason
+                     this.usePlayerItem(player, hand, itemInHand);
+                     this.playEatingSound();
+                     return InteractionResult.SUCCESS;
+@@ -427,7 +431,7 @@ public abstract class AbstractNautilus extends TamableAnimal implements HasCusto
+     }
+ 
+     private void tryToTame(Player player) {
+-        if (this.random.nextInt(3) == 0) {
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit - added event call
+             this.tame(player);
+             this.navigation.stop();
+             this.level().broadcastEntityEvent(this, EntityEvent.TAMING_SUCCEEDED);
+@@ -482,7 +486,7 @@ public abstract class AbstractNautilus extends TamableAnimal implements HasCusto
+ 
+     protected void createInventory() {
+         SimpleContainer simpleContainer = this.inventory;
+-        this.inventory = new SimpleContainer(this.getInventorySize());
++        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractNautilus) this.getBukkitEntity()); // Paper - add owner
+         if (simpleContainer != null) {
+             int min = Math.min(simpleContainer.getContainerSize(), this.inventory.getContainerSize());
+ 

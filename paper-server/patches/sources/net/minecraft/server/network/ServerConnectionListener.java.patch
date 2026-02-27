@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -48,9 +_,31 @@
+@@ -49,9 +_,31 @@
          this.running = true;
      }
  
@@ -15,7 +15,7 @@
 +    }
 +    // Paper end - prevent blocking on adding a new connection while the server is ticking
 +
-     public void startTcpServerListener(@Nullable InetAddress address, int port) throws IOException {
+     public void startTcpServerListener(final @Nullable InetAddress address, final int port) throws IOException {
 +        // Paper start - Unix domain socket support
 +        this.startTcpServerListener(new java.net.InetSocketAddress(address, port));
 +    }
@@ -33,7 +33,7 @@
              this.channels
                  .add(
                      new ServerBootstrap()
-@@ -74,22 +_,64 @@
+@@ -79,22 +_,64 @@
                                      Connection connection = (Connection)(rateLimitPacketsPerSecond > 0
                                          ? new RateKickingConnection(rateLimitPacketsPerSecond)
                                          : new Connection(PacketFlow.SERVERBOUND));
@@ -69,7 +69,7 @@
 +                                    // Paper end - Add support for proxy protocol
 +                                    // ServerConnectionListener.this.connections.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
 +                                    ServerConnectionListener.this.pending.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
-                                     connection.configurePacketHandler(channelPipeline);
+                                     connection.configurePacketHandler(pipeline);
                                      connection.setListenerForServerboundHandshake(
                                          new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, connection)
                                      );
@@ -98,9 +98,9 @@
 +    // CraftBukkit end
 +
      public SocketAddress startMemoryChannel() {
-         ChannelFuture channelFuture;
+         ChannelFuture newChannel;
          synchronized (this.channels) {
-@@ -141,6 +_,13 @@
+@@ -150,6 +_,13 @@
  
      public void tick() {
          synchronized (this.connections) {
@@ -114,7 +114,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -160,6 +_,7 @@
+@@ -169,6 +_,7 @@
                              connection.setReadOnly();
                          }
                      } else {

@@ -3,18 +3,18 @@
 @@ -87,6 +_,7 @@
              CopperGolem copperGolem = EntityType.COPPER_GOLEM.create(level, EntitySpawnReason.TRIGGERED);
              if (copperGolem != null) {
-                 spawnGolemInWorld(level, blockPatternMatch2, copperGolem, blockPatternMatch2.getBlock(0, 0, 0).getPos());
+                 spawnGolemInWorld(level, copperGolemMatch, copperGolem, copperGolemMatch.getBlock(0, 0, 0).getPos());
 +                if (!copperGolem.valid) return; // Paper - entityspawnevent - entity was not added to the world so prevent world mutation
-                 this.replaceCopperBlockWithChest(level, blockPatternMatch2);
-                 copperGolem.spawn(this.getWeatherStateFromPattern(blockPatternMatch2));
+                 this.replaceCopperBlockWithChest(level, copperGolemMatch);
+                 copperGolem.spawn(this.getWeatherStateFromPattern(copperGolemMatch));
              }
 @@ -105,9 +_,22 @@
      }
  
-     private static void spawnGolemInWorld(Level level, BlockPattern.BlockPatternMatch patternMatch, Entity golem, BlockPos pos) {
--        clearPatternBlocks(level, patternMatch);
+     private static void spawnGolemInWorld(final Level level, final BlockPattern.BlockPatternMatch match, final Entity golem, final BlockPos spawnPos) {
+-        clearPatternBlocks(level, match);
 +        // clearPatternBlocks(level, patternMatch); // Paper - moved down
-         golem.snapTo(pos.getX() + 0.5, pos.getY() + 0.05, pos.getZ() + 0.5, 0.0F, 0.0F);
+         golem.snapTo(spawnPos.getX() + 0.5, spawnPos.getY() + 0.05, spawnPos.getZ() + 0.5, 0.0F, 0.0F);
 -        level.addFreshEntity(golem);
 +        // Paper start
 +        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason;
@@ -29,7 +29,7 @@
 +            return;
 +        }
 +        // Paper end
-+        clearPatternBlocks(level, patternMatch); // Paper - from above
++        clearPatternBlocks(level, match); // Paper - from above
  
-         for (ServerPlayer serverPlayer : level.getEntitiesOfClass(ServerPlayer.class, golem.getBoundingBox().inflate(5.0))) {
-             CriteriaTriggers.SUMMONED_ENTITY.trigger(serverPlayer, golem);
+         for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, golem.getBoundingBox().inflate(5.0))) {
+             CriteriaTriggers.SUMMONED_ENTITY.trigger(player, golem);

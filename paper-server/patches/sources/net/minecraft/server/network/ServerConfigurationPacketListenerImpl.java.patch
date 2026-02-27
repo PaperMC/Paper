@@ -6,7 +6,7 @@
      private @Nullable PrepareSpawnTask prepareSpawnTask;
 +    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
-     public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+     public ServerConfigurationPacketListenerImpl(final MinecraftServer server, final Connection connection, final CommonListenerCookie cookie) {
          super(server, connection, cookie);
          this.gameProfile = cookie.gameProfile();
          this.clientInformation = cookie.clientInformation();
@@ -31,7 +31,7 @@
 @@ -66,6 +_,11 @@
  
      @Override
-     public void onDisconnect(DisconnectionDetails details) {
+     public void onDisconnect(final DisconnectionDetails details) {
 +        // Paper start - Debugging
 +        if (this.server.isDebugging()) {
 +            ServerConfigurationPacketListenerImpl.LOGGER.info("{} ({}) lost connection: {}, while in configuration phase {}", this.gameProfile.name(), this.gameProfile.id(), details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
@@ -56,9 +56,9 @@
 +            // Paper end
          }
  
-         LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = this.server.registries();
+         LayeredRegistryAccess<RegistryLayer> registries = this.server.registries();
 @@ -97,11 +_,12 @@
-         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
+         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(knownPacks, registries);
          this.configurationTasks.add(this.synchronizeRegistriesTask);
          this.addOptionalTasks();
 +        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
@@ -71,15 +71,15 @@
          this.configurationTasks.add(this.prepareSpawnTask);
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
-@@ -132,12 +_,14 @@
+@@ -130,12 +_,14 @@
      @Override
-     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+     public void handleClientInformation(final ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
 +        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
      }
  
      @Override
-     public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+     public void handleResourcePackResponse(final ServerboundResourcePackPacket packet) {
          super.handleResourcePackResponse(packet);
 -        if (packet.action().isTerminal()) {
 +        this.connection.resourcePackStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()]; // Paper
@@ -87,16 +87,16 @@
              this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
          }
      }
-@@ -171,7 +_,7 @@
+@@ -169,7 +_,7 @@
                  return;
              }
  
--            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
-+            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
-             if (component != null) {
-                 this.disconnect(component);
+-            Component loginError = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile));
++            Component loginError = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(this.gameProfile)), this.paperConnection, this.connection, this.gameProfile, this.server, false); // Paper - Login event logic
+             if (loginError != null) {
+                 this.disconnect(loginError);
                  return;
-@@ -231,4 +_,29 @@
+@@ -229,4 +_,29 @@
              this.startNextTask();
          }
      }

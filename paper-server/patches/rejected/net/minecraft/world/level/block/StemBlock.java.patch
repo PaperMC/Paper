@@ -1,0 +1,46 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/StemBlock.java b/net/minecraft/world/level/block/StemBlock.java
+index 112bd6da6503dfcf2660802847d94ba0628da589..82ea0ce3895108d477d10e901e756a27a3a9cedc 100644
+--- a/net/minecraft/world/level/block/StemBlock.java
++++ b/net/minecraft/world/level/block/StemBlock.java
+@@ -70,11 +70,11 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
+     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         if (level.getRawBrightness(pos, 0) >= 9) {
+             float growthSpeed = CropBlock.getGrowthSpeed(this, level, pos);
+-            if (random.nextInt((int)(25.0F / growthSpeed) + 1) == 0) {
++            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? level.spigotConfig.pumpkinModifier : level.spigotConfig.melonModifier) / (100.0F * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int ageValue = state.getValue(AGE);
+                 if (ageValue < 7) {
+                     state = state.setValue(AGE, ageValue + 1);
+-                    level.setBlock(pos, state, Block.UPDATE_CLIENTS);
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state, Block.UPDATE_CLIENTS); // CraftBukkit
+                 } else {
+                     Direction randomDirection = Direction.Plane.HORIZONTAL.getRandomDirection(random);
+                     BlockPos blockPos = pos.relative(randomDirection);
+@@ -84,7 +84,11 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
+                         Optional<Block> optional = registry.getOptional(this.fruit);
+                         Optional<Block> optional1 = registry.getOptional(this.attachedStem);
+                         if (optional.isPresent() && optional1.isPresent()) {
+-                            level.setBlockAndUpdate(blockPos, optional.get().defaultBlockState());
++                            // CraftBukkit start
++                            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, blockPos, optional.get().defaultBlockState(), Block.UPDATE_ALL)) {
++                                return;
++                            }
++                            // CraftBukkit end
+                             level.setBlockAndUpdate(pos, optional1.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, randomDirection));
+                         }
+                     }
+@@ -112,7 +116,7 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
+     public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
+         int min = Math.min(7, state.getValue(AGE) + Mth.nextInt(level.random, 2, 5));
+         BlockState blockState = state.setValue(AGE, min);
+-        level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, blockState, Block.UPDATE_CLIENTS); // CraftBukkit
+         if (min == 7) {
+             blockState.randomTick(level, pos, level.random);
+         }

@@ -1,0 +1,136 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/inventory/StonecutterMenu.java b/net/minecraft/world/inventory/StonecutterMenu.java
+index 42183abbb1b15d72077822deee2a2eb6196450bb..e21d06007b6d207397e878768e243deded9486aa 100644
+--- a/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -25,7 +25,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     private static final int USE_ROW_SLOT_START = 29;
+     private static final int USE_ROW_SLOT_END = 38;
+     private final ContainerLevelAccess access;
+-    final DataSlot selectedRecipeIndex = DataSlot.standalone();
++    final DataSlot selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+     private final Level level;
+     private SelectableRecipe.SingleInputSet<StonecutterRecipe> recipesForInput = SelectableRecipe.SingleInputSet.empty();
+     private ItemStack input = ItemStack.EMPTY;
+@@ -33,15 +33,23 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     final Slot inputSlot;
+     final Slot resultSlot;
+     Runnable slotUpdateListener = () -> {};
+-    public final Container container = new SimpleContainer(1) {
+-        @Override
+-        public void setChanged() {
+-            super.setChanged();
+-            StonecutterMenu.this.slotsChanged(this);
+-            StonecutterMenu.this.slotUpdateListener.run();
++    public final Container container; // Paper - Add missing InventoryHolders - move down
++    final ResultContainer resultContainer; // Paper - Add missing InventoryHolders - move down
++    // CraftBukkit start
++    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftStonecutterView view = null;
++    private final org.bukkit.entity.Player player;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.view.CraftStonecutterView getBukkitView() {
++        if (this.view != null) {
++            return this.view;
+         }
+-    };
+-    final ResultContainer resultContainer = new ResultContainer();
++
++        org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter(this.container, this.resultContainer);
++        this.view = new org.bukkit.craftbukkit.inventory.view.CraftStonecutterView(this.player, inventory, this);
++        return this.view;
++    }
++    // CraftBukkit end
+ 
+     public StonecutterMenu(int containerId, Inventory playerInventory) {
+         this(containerId, playerInventory, ContainerLevelAccess.NULL);
+@@ -51,6 +59,23 @@ public class StonecutterMenu extends AbstractContainerMenu {
+         super(MenuType.STONECUTTER, containerId);
+         this.access = access;
+         this.level = playerInventory.player.level();
++        // Paper start
++        this.container = new SimpleContainer(this.createBlockHolder(access), 1) { // Paper - Add missing InventoryHolders
++            @Override
++            public void setChanged() {
++                super.setChanged();
++                StonecutterMenu.this.slotsChanged(this);
++                StonecutterMenu.this.slotUpdateListener.run();
++            }
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return access.getLocation();
++            }
++            // CraftBukkit end
++        };
++        this.resultContainer = new ResultContainer(this.createBlockHolder(access)); // Paper - Add missing InventoryHolders
++        // Paper end
+         this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
+         this.resultSlot = this.addSlot(new Slot(this.resultContainer, 1, 143, 33) {
+             @Override
+@@ -83,6 +108,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+         });
+         this.addStandardInventorySlots(playerInventory, 8, 84);
+         this.addDataSlot(this.selectedRecipeIndex);
++        this.player = (org.bukkit.entity.Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     public int getSelectedRecipeIndex() {
+@@ -103,6 +129,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.STONECUTTER);
+     }
+ 
+@@ -112,8 +139,34 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             return false;
+         } else {
+             if (this.isValidRecipeIndex(id)) {
+-                this.selectedRecipeIndex.set(id);
+-                this.setupResultSlot(id);
++                // Paper start - Add PlayerStonecutterRecipeSelectEvent
++                int recipeIndex = id;
++                this.selectedRecipeIndex.set(recipeIndex);
++                this.selectedRecipeIndex.checkAndClearUpdateFlag(); // mark as changed
++                paperEventBlock: if (this.isValidRecipeIndex(id)) {
++                    final Optional<RecipeHolder<StonecutterRecipe>> recipe = this.recipesForInput.entries().get(id).recipe().recipe();
++                    if (recipe.isEmpty()) break paperEventBlock; // The recipe selected does not have an actual server recipe (presumably its the empty one). Cannot call the event, just break.
++
++                    io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent event = new io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent((org.bukkit.entity.Player) player.getBukkitEntity(), getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) recipe.get().toBukkitRecipe());
++                    if (!event.callEvent()) {
++                        player.containerMenu.sendAllDataToRemote();
++                        return false;
++                    }
++
++                    net.minecraft.resources.Identifier key = org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey());
++                    if (!recipe.get().id().identifier().equals(key)) { // If the recipe did NOT stay the same
++                        for (int newRecipeIndex = 0; newRecipeIndex < this.recipesForInput.entries().size(); newRecipeIndex++) {
++                            if (this.recipesForInput.entries().get(newRecipeIndex).recipe().recipe().filter(r -> r.id().identifier().equals(key)).isPresent()) {
++                                recipeIndex = newRecipeIndex;
++                                break;
++                            }
++                        }
++                    }
++                }
++                player.containerMenu.sendAllDataToRemote();
++                this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
++                this.setupResultSlot(recipeIndex);
++                // Paper end - Add PlayerStonecutterRecipeSelectEvent
+             }
+ 
+             return true;
+@@ -131,6 +184,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             this.input = item.copy();
+             this.setupRecipeList(item);
+         }
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper - Add PrepareResultEvent
+     }
+ 
+     private void setupRecipeList(ItemStack stack) {

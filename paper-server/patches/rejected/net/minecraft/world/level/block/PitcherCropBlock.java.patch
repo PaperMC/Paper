@@ -1,0 +1,36 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/PitcherCropBlock.java b/net/minecraft/world/level/block/PitcherCropBlock.java
+index e8f89658485dd60cf02c827bdcf293c830b9d2f0..cbaf7ea236e8689793af65f29af3f1860644d152 100644
+--- a/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -117,6 +117,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+ 
+     @Override
+     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (level instanceof ServerLevel serverLevel && entity instanceof Ravager && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
+             serverLevel.destroyBlock(pos, true, entity);
+         }
+@@ -139,7 +140,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     @Override
+     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         float growthSpeed = CropBlock.getGrowthSpeed(this, level, pos);
+-        boolean flag = random.nextInt((int)(25.0F / growthSpeed) + 1) == 0;
++        boolean flag = random.nextFloat() < (level.spigotConfig.pitcherPlantModifier / (100.0F * (Math.floor(25.0F / growthSpeed) + 1))); // Paper - Fix Spigot growth modifiers
+         if (flag) {
+             this.grow(level, state, pos, 1);
+         }
+@@ -149,7 +150,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+         int min = Math.min(state.getValue(AGE) + ageIncrement, 4);
+         if (this.canGrow(level, pos, state, min)) {
+             BlockState blockState = state.setValue(AGE, min);
+-            level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, blockState, Block.UPDATE_CLIENTS)) return; // Paper
+             if (isDouble(min)) {
+                 level.setBlock(pos.above(), blockState.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
+             }

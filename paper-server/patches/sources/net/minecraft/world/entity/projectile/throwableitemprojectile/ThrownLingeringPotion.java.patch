@@ -4,20 +4,20 @@
      }
  
      @Override
--    public void onHitAsPotion(ServerLevel level, ItemStack stack, HitResult hitResult) {
-+    public boolean onHitAsPotion(ServerLevel level, ItemStack stack, HitResult hitResult) { // Paper - More projectile API
-         AreaEffectCloud areaEffectCloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
-         if (this.getOwner() instanceof LivingEntity livingEntity) {
-             areaEffectCloud.setOwner(livingEntity);
+-    public void onHitAsPotion(final ServerLevel level, final ItemStack potionItem, final HitResult hitResult) {
++    public boolean onHitAsPotion(final ServerLevel level, final ItemStack potionItem, final HitResult hitResult) { // Paper - More projectile API
+         AreaEffectCloud cloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         if (this.getOwner() instanceof LivingEntity owner) {
+             cloud.setOwner(owner);
 @@ -41,6 +_,15 @@
-         areaEffectCloud.setWaitTime(10);
-         areaEffectCloud.setRadiusPerTick(-areaEffectCloud.getRadius() / areaEffectCloud.getDuration());
-         areaEffectCloud.applyComponentsFromItemStack(stack);
+         cloud.setWaitTime(10);
+         cloud.setRadiusPerTick(-cloud.getRadius() / cloud.getDuration());
+         cloud.applyComponentsFromItemStack(potionItem);
 +        boolean noEffects = this.getItem().getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, net.minecraft.world.item.alchemy.PotionContents.EMPTY).hasEffects(); // Paper - Fix potions splash events
 +        // CraftBukkit start
 +        org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, hitResult, areaEffectCloud);
 +        if (!(event.isCancelled() || areaEffectCloud.isRemoved() || (!event.allowsEmptyCreation() && (noEffects && !areaEffectCloud.potionContents.hasEffects())))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
-         level.addFreshEntity(areaEffectCloud);
+         level.addFreshEntity(cloud);
 +        } else {
 +            areaEffectCloud.discard(null);
 +        }

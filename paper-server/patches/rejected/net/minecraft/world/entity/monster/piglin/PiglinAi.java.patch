@@ -1,0 +1,162 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 737721ef2dbf1df7946139ba806338f62b042ebe..436b17a709517766fdb9d7198f0ae457facd90a1 100644
+--- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -335,24 +335,26 @@ public class PiglinAi {
+ 
+     protected static void pickUpItem(ServerLevel level, Piglin piglin, ItemEntity itemEntity) {
+         stopWalking(piglin);
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().is(Items.GOLD_NUGGET) ? 0 : itemEntity.getItem().getCount() - 1).isCancelled()) return; // Paper
++        piglin.onItemPickup(itemEntity); // Paper - moved from Piglin#pickUpItem - call prior to item entity modification
+         ItemStack item;
+         if (itemEntity.getItem().is(Items.GOLD_NUGGET)) {
+-            piglin.take(itemEntity, itemEntity.getItem().getCount());
++            piglin.take(itemEntity, itemEntity.getItem().getCount()); // Paper - diff on change for above event
+             item = itemEntity.getItem();
+-            itemEntity.discard();
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         } else {
+-            piglin.take(itemEntity, 1);
++            piglin.take(itemEntity, 1); // Paper - diff on change for above event
+             item = removeOneItemFromItemEntity(itemEntity);
+         }
+ 
+-        if (isLovedItem(item)) {
++        if (isLovedItem(item, piglin)) { // CraftBukkit - Changes to allow for custom payment in bartering
+             piglin.getBrain().eraseMemory(MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM);
+             holdInOffhand(level, piglin, item);
+             admireGoldItem(piglin);
+         } else if (isFood(item) && !hasEatenRecently(piglin)) {
+             eat(piglin);
+         } else {
+-            boolean flag = !piglin.equipItemIfPossible(level, item).equals(ItemStack.EMPTY);
++            boolean flag = !piglin.equipItemIfPossible(level, item, null).equals(ItemStack.EMPTY); // CraftBukkit // Paper - pass null item entity to prevent duplicate pickup item event call - called above.
+             if (!flag) {
+                 putInInventory(piglin, item);
+             }
+@@ -361,7 +363,9 @@ public class PiglinAi {
+ 
+     private static void holdInOffhand(ServerLevel level, Piglin piglin, ItemStack stack) {
+         if (isHoldingItemInOffHand(piglin)) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(level, piglin.getItemInHand(InteractionHand.OFF_HAND));
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+         }
+ 
+         piglin.holdInOffHand(stack);
+@@ -371,7 +375,7 @@ public class PiglinAi {
+         ItemStack item = itemEntity.getItem();
+         ItemStack itemStack = item.split(1);
+         if (item.isEmpty()) {
+-            itemEntity.discard();
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         } else {
+             itemEntity.setItem(item);
+         }
+@@ -383,9 +387,14 @@ public class PiglinAi {
+         ItemStack itemInHand = piglin.getItemInHand(InteractionHand.OFF_HAND);
+         piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         if (piglin.isAdult()) {
+-            boolean isBarterCurrency = isBarterCurrency(itemInHand);
++            boolean isBarterCurrency = isBarterCurrency(itemInHand, piglin); // CraftBukkit - Changes to allow custom payment for bartering
+             if (barter && isBarterCurrency) {
+-                throwItems(piglin, getBarterResponseItems(piglin));
++                // CraftBukkit start
++                org.bukkit.event.entity.PiglinBarterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPiglinBarterEvent(piglin, getBarterResponseItems(piglin), itemInHand);
++                if (!event.isCancelled()) {
++                    throwItems(piglin, event.getOutcome().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(java.util.stream.Collectors.toList()));
++                }
++                // CraftBukkit end
+             } else if (!isBarterCurrency) {
+                 boolean flag = !piglin.equipItemIfPossible(level, itemInHand).isEmpty();
+                 if (!flag) {
+@@ -396,7 +405,7 @@ public class PiglinAi {
+             boolean isBarterCurrency = !piglin.equipItemIfPossible(level, itemInHand).isEmpty();
+             if (!isBarterCurrency) {
+                 ItemStack mainHandItem = piglin.getMainHandItem();
+-                if (isLovedItem(mainHandItem)) {
++                if (isLovedItem(mainHandItem, piglin)) { // CraftBukkit - Changes to allow for custom payment in bartering
+                     putInInventory(piglin, mainHandItem);
+                 } else {
+                     throwItems(piglin, Collections.singletonList(mainHandItem));
+@@ -409,7 +418,9 @@ public class PiglinAi {
+ 
+     protected static void cancelAdmiring(ServerLevel level, Piglin piglin) {
+         if (isAdmiringItem(piglin) && !piglin.getOffhandItem().isEmpty()) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(level, piglin.getOffhandItem());
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+             piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         }
+     }
+@@ -465,7 +476,7 @@ public class PiglinAi {
+             return false;
+         } else if (isAdmiringDisabled(piglin) && piglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
+             return false;
+-        } else if (isBarterCurrency(stack)) {
++        } else if (isBarterCurrency(stack, piglin)) { // CraftBukkit
+             return isNotHoldingLovedItemInOffHand(piglin);
+         } else {
+             boolean canAddToInventory = piglin.canAddToInventory(stack);
+@@ -474,11 +485,16 @@ public class PiglinAi {
+             } else if (isFood(stack)) {
+                 return !hasEatenRecently(piglin) && canAddToInventory;
+             } else {
+-                return !isLovedItem(stack) ? piglin.canReplaceCurrentItem(stack) : isNotHoldingLovedItemInOffHand(piglin) && canAddToInventory;
++                return !isLovedItem(stack, piglin) ? piglin.canReplaceCurrentItem(stack) : isNotHoldingLovedItemInOffHand(piglin) && canAddToInventory; // Paper - upstream missed isLovedItem check
+             }
+         }
+     }
+ 
++    // CraftBukkit start - Added method to allow checking for custom payment items
++    protected static boolean isLovedItem(ItemStack item, Piglin piglin) {
++        return PiglinAi.isLovedItem(item) || (piglin.interestItems.contains(item.getItem()) || piglin.allowedBarterItems.contains(item.getItem()));
++    }
++    // CraftBukkit end
+     protected static boolean isLovedItem(ItemStack item) {
+         return item.is(ItemTags.PIGLIN_LOVED);
+     }
+@@ -530,6 +546,7 @@ public class PiglinAi {
+     }
+ 
+     public static void angerNearbyPiglins(ServerLevel level, Player player, boolean requireLineOfSight) {
++        if (!player.level().paperConfig().entities.behavior.piglinsGuardChests) return; // Paper - Config option for Piglins guarding chests
+         List<Piglin> entitiesOfClass = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0));
+         entitiesOfClass.stream().filter(PiglinAi::isIdle).filter(piglin -> !requireLineOfSight || BehaviorUtils.canSee(piglin, player)).forEach(piglin -> {
+             if (level.getGameRules().get(GameRules.UNIVERSAL_ANGER)) {
+@@ -554,7 +571,7 @@ public class PiglinAi {
+     }
+ 
+     protected static boolean canAdmire(Piglin piglin, ItemStack stack) {
+-        return !isAdmiringDisabled(piglin) && !isAdmiringItem(piglin) && piglin.isAdult() && isBarterCurrency(stack);
++        return !isAdmiringDisabled(piglin) && !isAdmiringItem(piglin) && piglin.isAdult() && isBarterCurrency(stack, piglin); // CraftBukkit
+     }
+ 
+     protected static void wasHurtBy(ServerLevel level, Piglin piglin, LivingEntity entity) {
+@@ -802,6 +819,11 @@ public class PiglinAi {
+         return piglin.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
+     }
+ 
++    // CraftBukkit start - Changes to allow custom payment for bartering
++    private static boolean isBarterCurrency(ItemStack item, Piglin piglin) {
++        return PiglinAi.isBarterCurrency(item) || piglin.allowedBarterItems.contains(item.getItem());
++    }
++    // CraftBukkit end
+     private static boolean isBarterCurrency(ItemStack stack) {
+         return stack.is(BARTERING_ITEM);
+     }
+@@ -839,7 +861,7 @@ public class PiglinAi {
+     }
+ 
+     private static boolean isNotHoldingLovedItemInOffHand(Piglin piglin) {
+-        return piglin.getOffhandItem().isEmpty() || !isLovedItem(piglin.getOffhandItem());
++        return piglin.getOffhandItem().isEmpty() || !isLovedItem(piglin.getOffhandItem(), piglin); // CraftBukkit - Changes to allow custom payment for bartering
+     }
+ 
+     public static boolean isZombified(EntityType<?> entityType) {

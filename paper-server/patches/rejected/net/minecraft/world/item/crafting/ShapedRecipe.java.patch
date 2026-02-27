@@ -1,0 +1,79 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/crafting/ShapedRecipe.java b/net/minecraft/world/item/crafting/ShapedRecipe.java
+index 80bacca8a518790b20336671087938c737b726a6..8c8d70008c63f4de9339c929dafce261fc262deb 100644
+--- a/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -102,6 +102,68 @@ public class ShapedRecipe implements CraftingRecipe {
+         );
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.result);
++        org.bukkit.craftbukkit.inventory.CraftShapedRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftShapedRecipe(id, result, this);
++        recipe.setGroup(this.group);
++        recipe.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
++
++        switch (this.pattern.height()) {
++        case 1:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a");
++                break;
++            case 2:
++                recipe.shape("ab");
++                break;
++            case 3:
++                recipe.shape("abc");
++                break;
++            }
++            break;
++        case 2:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b");
++                break;
++            case 2:
++                recipe.shape("ab","cd");
++                break;
++            case 3:
++                recipe.shape("abc","def");
++                break;
++            }
++            break;
++        case 3:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b","c");
++                break;
++            case 2:
++                recipe.shape("ab","cd","ef");
++                break;
++            case 3:
++                recipe.shape("abc","def","ghi");
++                break;
++            }
++            break;
++        }
++        char c = 'a';
++        for (Optional<Ingredient> list : this.pattern.ingredients()) {
++            org.bukkit.inventory.RecipeChoice choice = org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(list);
++            if (choice != org.bukkit.inventory.RecipeChoice.empty()) { // Paper
++                recipe.setIngredient(c, choice);
++            }
++
++            c++;
++        }
++        return recipe;
++    }
++    // CraftBukkit end
++
+     public static class Serializer implements RecipeSerializer<ShapedRecipe> {
+         public static final MapCodec<ShapedRecipe> CODEC = RecordCodecBuilder.mapCodec(
+             instance -> instance.group(

@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
 @@ -33,6 +_,25 @@
-     public static final Codec<Ingredient> CODEC = ExtraCodecs.nonEmptyHolderSet(NON_AIR_HOLDER_SET_CODEC)
-         .xmap(Ingredient::new, ingredient -> ingredient.values);
+     public static final Codec<HolderSet<Item>> NON_AIR_HOLDER_SET_CODEC = HolderSetCodec.create(Registries.ITEM, Item.CODEC, false);
+     public static final Codec<Ingredient> CODEC = ExtraCodecs.nonEmptyHolderSet(NON_AIR_HOLDER_SET_CODEC).xmap(Ingredient::new, i -> i.values);
      public final HolderSet<Item> values;
 +    // CraftBukkit start
 +    @javax.annotation.Nullable
@@ -24,16 +24,16 @@
 +    }
 +    // CraftBukkit end
  
-     private Ingredient(HolderSet<Item> values) {
-         values.unwrap().ifRight(list -> {
+     private Ingredient(final HolderSet<Item> values) {
+         values.unwrap().ifRight(directValues -> {
 @@ -60,6 +_,17 @@
  
      @Override
-     public boolean test(ItemStack stack) {
+     public boolean test(final ItemStack input) {
 +        // CraftBukkit start
 +        if (this.isExact()) {
 +            for (ItemStack itemstack1 : this.itemStacks()) {
-+                if (itemstack1.getItem() == stack.getItem() && ItemStack.isSameItemSameComponents(stack, itemstack1)) {
++                if (itemstack1.getItem() == input.getItem() && ItemStack.isSameItemSameComponents(input, itemstack1)) {
 +                    return true;
 +                }
 +            }
@@ -41,15 +41,15 @@
 +            return false;
 +        }
 +        // CraftBukkit end
-         return stack.is(this.values);
+         return input.is(this.values);
      }
  
 @@ -70,7 +_,7 @@
  
      @Override
-     public boolean equals(Object other) {
--        return other instanceof Ingredient ingredient && Objects.equals(this.values, ingredient.values);
-+        return other instanceof Ingredient ingredient && Objects.equals(this.values, ingredient.values) && Objects.equals(this.itemStacks, ingredient.itemStacks); // CraftBukkit
+     public boolean equals(final Object o) {
+-        return o instanceof Ingredient other && Objects.equals(this.values, other.values);
++        return o instanceof Ingredient other && Objects.equals(this.values, other.values) && Objects.equals(this.itemStacks, other.itemStacks); // CraftBukkit
      }
  
-     public static Ingredient of(ItemLike item) {
+     public static Ingredient of(final ItemLike itemLike) {

@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/PowderSnowBlock.java
 +++ b/net/minecraft/world/level/block/PowderSnowBlock.java
-@@ -60,6 +_,14 @@
- 
-     @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
+@@ -67,6 +_,14 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
 +        // Paper start - Add EntityInsideBlockEvent
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) {
 +            if (entity instanceof net.minecraft.server.level.ServerPlayer player) {
@@ -15,18 +15,18 @@
          if (!(entity instanceof LivingEntity) || entity.getInBlockState().is(this)) {
              entity.makeStuckInBlock(state, new Vec3(0.9F, 1.5, 0.9F));
              if (level.isClientSide()) {
-@@ -85,8 +_,13 @@
-             entity1 -> {
+@@ -92,8 +_,13 @@
+             e -> {
                  if (level instanceof ServerLevel serverLevel
-                     && entity1.isOnFire()
--                    && (serverLevel.getGameRules().get(GameRules.MOB_GRIEFING) || entity1 instanceof Player)
+                     && e.isOnFire()
+-                    && (serverLevel.getGameRules().get(GameRules.MOB_GRIEFING) || e instanceof Player)
 +                        // CraftBukkit - move down
-                     && entity1.mayInteract(serverLevel, blockPos)) {
+                     && e.mayInteract(serverLevel, position)) {
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity1, pos, Blocks.AIR.defaultBlockState(), !(serverLevel.getGameRules().get(GameRules.MOB_GRIEFING) || entity1 instanceof Player))) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity1, pos, Blocks.AIR.defaultBlockState(), !(serverLevel.getGameRules().get(GameRules.MOB_GRIEFING) || e instanceof Player))) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     level.destroyBlock(blockPos, false);
+                     level.destroyBlock(position, false);
                  }
              }

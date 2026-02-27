@@ -1,0 +1,52 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/monster/Shulker.java b/net/minecraft/world/entity/monster/Shulker.java
+index 203ece1ed4dfcb4a540b62d03f5b0b03c813f079..06e8d9c6233e8aea0822d83a764c11d6d6482643 100644
+--- a/net/minecraft/world/entity/monster/Shulker.java
++++ b/net/minecraft/world/entity/monster/Shulker.java
+@@ -276,8 +276,10 @@ public class Shulker extends AbstractGolem implements Enemy {
+     }
+ 
+     @Override
+-    public void stopRiding() {
+-        super.stopRiding();
++    // Paper start - Force entity dismount during teleportation
++    public void stopRiding(boolean suppressCancellation) {
++        super.stopRiding(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+         if (this.level().isClientSide()) {
+             this.clientOldAttachPosition = this.blockPosition();
+         }
+@@ -388,6 +390,14 @@ public class Shulker extends AbstractGolem implements Enemy {
+                     && this.level().getWorldBorder().isWithinBounds(blockPos1)
+                     && this.level().noCollision(this, new AABB(blockPos1).deflate(1.0E-6))) {
+                     Direction direction = this.findAttachableSurface(blockPos1);
++                    // CraftBukkit start
++                    org.bukkit.event.entity.EntityTeleportEvent teleportEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, blockPos1.getX(), blockPos1.getY(), blockPos1.getZ());
++                    if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
++                        return false;
++                    } else {
++                        blockPos1 = org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(teleportEvent.getTo());
++                    }
++                    // CraftBukkit end
+                     if (direction != null) {
+                         this.unRide();
+                         this.setAttachFace(direction);
+@@ -452,7 +462,12 @@ public class Shulker extends AbstractGolem implements Enemy {
+                 if (shulker != null) {
+                     shulker.setVariant(this.getVariant());
+                     shulker.snapTo(vec3);
+-                    this.level().addFreshEntity(shulker);
++                    // Paper start - Call ShulkerDuplicateEvent
++                    if (!new io.papermc.paper.event.entity.ShulkerDuplicateEvent((org.bukkit.entity.Shulker) shulker.getBukkitEntity(), (org.bukkit.entity.Shulker) this.getBukkitEntity()).callEvent()) {
++                        return;
++                    }
++                    // Paper end - Call ShulkerDuplicateEvent
++                    this.level().addFreshEntity(shulker, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
+                 }
+             }
+         }

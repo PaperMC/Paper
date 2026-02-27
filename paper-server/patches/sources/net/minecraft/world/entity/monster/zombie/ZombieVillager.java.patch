@@ -1,52 +1,52 @@
 --- a/net/minecraft/world/entity/monster/zombie/ZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/zombie/ZombieVillager.java
-@@ -189,12 +_,20 @@
+@@ -200,12 +_,20 @@
      }
  
-     public void startConverting(@Nullable UUID conversionStarter, int villagerConversionTime) {
+     public void startConverting(final @Nullable UUID player, final int time) {
 +        // Paper start - missing entity behaviour api - converting without entity event
 +        this.startConverting(conversionStarter, villagerConversionTime, true);
 +    }
 +
 +    public void startConverting(@Nullable UUID conversionStarter, int villagerConversionTime, boolean broadcastEntityEvent) {
 +        // Paper end - missing entity behaviour api - converting without entity event
-         this.conversionStarter = conversionStarter;
-         this.villagerConversionTime = villagerConversionTime;
+         this.conversionStarter = player;
+         this.villagerConversionTime = time;
          this.getEntityData().set(DATA_CONVERTING_ID, true);
 -        this.removeEffect(MobEffects.WEAKNESS);
--        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)));
+-        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, time, Math.min(this.level().getDifficulty().getId() - 1, 0)));
 -        this.level().broadcastEntityEvent(this, EntityEvent.ZOMBIE_CONVERTING);
 +        // CraftBukkit start
 +        this.removeEffect(MobEffects.WEAKNESS, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
-+        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
++        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, time, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
 +        // CraftBukkit end
 +        if (broadcastEntityEvent) this.level().broadcastEntityEvent(this, EntityEvent.ZOMBIE_CONVERTING); // Paper - missing entity behaviour api - converting without entity event
      }
  
      @Override
-@@ -219,7 +_,7 @@
+@@ -235,7 +_,7 @@
      }
  
-     private void finishConversion(ServerLevel level) {
+     private void finishConversion(final ServerLevel level) {
 -        this.convertTo(
 +        Villager converted = this.convertTo( // CraftBukkit
              EntityType.VILLAGER,
              ConversionParams.single(this, false, false),
-             mob -> {
-@@ -245,19 +_,24 @@
-                 mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CONVERSION, null);
-                 mob.refreshBrain(level);
+             villager -> {
+@@ -261,19 +_,24 @@
+                 villager.finalizeSpawn(level, level.getCurrentDifficultyAt(villager.blockPosition()), EntitySpawnReason.CONVERSION, null);
+                 villager.refreshBrain(level);
                  if (this.conversionStarter != null) {
--                    Player playerByUuid = level.getPlayerByUUID(this.conversionStarter);
-+                    Player playerByUuid = level.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check global player list where appropriate
-                     if (playerByUuid instanceof ServerPlayer) {
-                         CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayer)playerByUuid, this, mob);
-                         level.onReputationEvent(ReputationEventType.ZOMBIE_VILLAGER_CURED, playerByUuid, mob);
+-                    Player player = level.getPlayerByUUID(this.conversionStarter);
++                    Player player = level.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check global player list where appropriate
+                     if (player instanceof ServerPlayer) {
+                         CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayer)player, this, villager);
+                         level.onReputationEvent(ReputationEventType.ZOMBIE_VILLAGER_CURED, player, villager);
                      }
                  }
  
--                mob.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0));
-+                mob.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
+-                villager.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0));
++                villager.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
                  if (!this.isSilent()) {
                      level.levelEvent(null, LevelEvent.SOUND_ZOMBIE_CONVERTED, this.blockPosition(), 0);
                  }

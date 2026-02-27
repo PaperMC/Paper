@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/net/minecraft/world/entity/vehicle/ContainerEntity.java
 @@ -59,12 +_,12 @@
-     default void addChestVehicleSaveData(ValueOutput output) {
+     default void addChestVehicleSaveData(final ValueOutput output) {
          if (this.getContainerLootTable() != null) {
              output.putString("LootTable", this.getContainerLootTable().identifier().toString());
 +            this.lootableData().saveNbt(output); // Paper
@@ -14,25 +14,25 @@
 +        ContainerHelper.saveAllItems(output, this.getItemStacks()); // Paper - always save the items, table may still remain
      }
  
-     default void readChestVehicleSaveData(ValueInput input) {
+     default void readChestVehicleSaveData(final ValueInput input) {
 @@ -72,7 +_,12 @@
-         ResourceKey<LootTable> resourceKey = input.read("LootTable", LootTable.KEY_CODEC).orElse(null);
-         this.setContainerLootTable(resourceKey);
+         ResourceKey<LootTable> lootTable = input.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+         this.setContainerLootTable(lootTable);
          this.setContainerLootTableSeed(input.getLongOr("LootTableSeed", 0L));
--        if (resourceKey == null) {
+-        if (lootTable == null) {
 +        // Paper start - LootTable API
 +        if (this.getContainerLootTable() != null) {
 +            this.lootableData().loadNbt(input);
 +        }
 +        // Paper end - LootTable API
-+        if (true || resourceKey == null) { // Paper - always read the items, table may still remain
++        if (true || lootTable == null) { // Paper - always read the items, table may still remain
              ContainerHelper.loadAllItems(input, this.getItemStacks());
          }
      }
-@@ -88,19 +_,27 @@
+@@ -87,19 +_,27 @@
      }
  
-     default InteractionResult interactWithContainerVehicle(Player player) {
+     default InteractionResult interactWithContainerVehicle(final Player player) {
 -        player.openMenu(this);
 +        // Paper start - Fix InventoryOpenEvent cancellation
 +        if (player.openMenu(this).isEmpty()) {
@@ -42,7 +42,7 @@
          return InteractionResult.SUCCESS;
      }
  
-     default void unpackChestVehicleLootTable(@Nullable Player player) {
+     default void unpackChestVehicleLootTable(final @Nullable Player player) {
          MinecraftServer server = this.level().getServer();
 -        if (this.getContainerLootTable() != null && server != null) {
 +        if (server != null && this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) { // Paper - LootTable API
@@ -60,8 +60,8 @@
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -170,4 +_,14 @@
-     default boolean isChestVehicleStillValid(Player player) {
+@@ -173,4 +_,14 @@
+     default boolean isChestVehicleStillValid(final Player player) {
          return !this.isRemoved() && player.isWithinEntityInteractionRange(this.getBoundingBox(), 4.0);
      }
 +

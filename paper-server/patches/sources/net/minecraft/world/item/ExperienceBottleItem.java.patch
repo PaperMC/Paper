@@ -2,8 +2,8 @@
 +++ b/net/minecraft/world/item/ExperienceBottleItem.java
 @@ -21,22 +_,37 @@
      @Override
-     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-         ItemStack itemInHand = player.getItemInHand(hand);
+     public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
+         ItemStack itemStack = player.getItemInHand(hand);
 -        level.playSound(
 -            null,
 -            player.getX(),
@@ -16,13 +16,13 @@
 -        );
 +        // Paper - PlayerLaunchProjectileEvent - moved down
          if (level instanceof ServerLevel serverLevel) {
--            Projectile.spawnProjectileFromRotation(ThrownExperienceBottle::new, serverLevel, itemInHand, player, -20.0F, 0.7F, 1.0F);
+-            Projectile.spawnProjectileFromRotation(ThrownExperienceBottle::new, serverLevel, itemStack, player, -20.0F, 0.7F, 1.0F);
 +            // Paper start - PlayerLaunchProjectileEvent
-+            final Projectile.Delayed<ThrownExperienceBottle> thrownExperienceBottle = Projectile.spawnProjectileFromRotationDelayed(ThrownExperienceBottle::new, serverLevel, itemInHand, player, -20.0F, 0.7F, 1.0F);
++            final Projectile.Delayed<ThrownExperienceBottle> thrownExperienceBottle = Projectile.spawnProjectileFromRotationDelayed(ThrownExperienceBottle::new, serverLevel, itemStack, player, -20.0F, 0.7F, 1.0F);
 +            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) thrownExperienceBottle.projectile().getBukkitEntity());
 +            if (event.callEvent() && thrownExperienceBottle.attemptSpawn()) {
 +                if (event.shouldConsume()) {
-+                    itemInHand.consume(1, player);
++                    itemStack.consume(1, player);
 +                } else {
 +                    player.containerMenu.forceHeldSlot(hand);
 +                }
@@ -46,7 +46,7 @@
          }
  
 -        player.awardStat(Stats.ITEM_USED.get(this));
--        itemInHand.consume(1, player);
+-        itemStack.consume(1, player);
 +        // Paper - PlayerLaunchProjectileEvent - moved up
          return InteractionResult.SUCCESS;
      }

@@ -6,36 +6,43 @@
      public boolean takingDamage;
 +    public final io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper paperCombatTracker; // Paper - Combat tracker API
  
-     public CombatTracker(LivingEntity mob) {
+     public CombatTracker(final LivingEntity mob) {
          this.mob = mob;
 +        this.paperCombatTracker = new io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper(this); // Paper - Combat tracker API
      }
  
-     public void recordDamage(DamageSource source, float damage) {
+     public void recordDamage(final DamageSource source, final float damage) {
          this.recheckStatus();
-         FallLocation currentFallLocation = FallLocation.getCurrentFallLocation(this.mob);
-         CombatEntry combatEntry = new CombatEntry(source, damage, currentFallLocation, (float)this.mob.fallDistance);
+         FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.mob);
+         CombatEntry entry = new CombatEntry(source, damage, fallLocation, (float)this.mob.fallDistance);
 +    // Paper start - Combat tracker API
-+        recordDamageAndCheckCombatState(combatEntry);
++        recordDamageAndCheckCombatState(entry);
 +    }
 +
-+    public void recordDamageAndCheckCombatState(final CombatEntry combatEntry) {
-+        final DamageSource source = combatEntry.source();
++    public void recordDamageAndCheckCombatState(final CombatEntry entry) {
++        final DamageSource source = entry.source();
 +    // Paper end - Combat tracker API
-         this.entries.add(combatEntry);
+         this.entries.add(entry);
          this.lastDamageTime = this.mob.tickCount;
          this.takingDamage = true;
-@@ -145,6 +_,13 @@
+@@ -147,6 +_,13 @@
      public void recheckStatus() {
-         int i = this.inCombat ? 300 : 100;
-         if (this.takingDamage && (!this.mob.isAlive() || this.mob.tickCount - this.lastDamageTime > i)) {
+         int reset = this.inCombat ? 300 : 100;
+         if (this.takingDamage && (!this.mob.isAlive() || this.mob.tickCount - this.lastDamageTime > reset)) {
 +    // Paper start - Combat tracker API
 +            resetCombatState();
 +        }
 +    }
 +
-+    public void resetCombatState() {{
++    public void resetCombatState() {
 +    // Paper end - Combat tracker API
-             boolean flag = this.inCombat;
+             boolean wasInCombat = this.inCombat;
              this.takingDamage = false;
              this.inCombat = false;
+@@ -156,6 +_,5 @@
+             }
+ 
+             this.entries.clear();
+-        }
+     }
+ }

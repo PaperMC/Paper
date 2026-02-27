@@ -1,0 +1,74 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/feline/Cat.java b/net/minecraft/world/entity/animal/feline/Cat.java
+index 6013aef4c7691b31146c9ecb0f6128f9b1c7f8eb..f17d7a4ef7061d6ede9a755b5a77324a28c3eeaa 100644
+--- a/net/minecraft/world/entity/animal/feline/Cat.java
++++ b/net/minecraft/world/entity/animal/feline/Cat.java
+@@ -372,6 +372,11 @@ public class Cat extends TamableAnimal {
+                 if (item instanceof DyeItem dyeItem) {
+                     DyeColor dyeColor = dyeItem.getDyeColor();
+                     if (dyeColor != this.getCollarColor()) {
++                        // Paper start - Add EntityDyeEvent and CollarColorable interface
++                        final io.papermc.paper.event.entity.EntityDyeEvent event = new io.papermc.paper.event.entity.EntityDyeEvent(this.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData((byte) dyeColor.getId()), ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity());
++                        if (!event.callEvent()) return InteractionResult.FAIL;
++                        dyeColor = DyeColor.byId(event.getColor().getWoolData());
++                        // Paper end - Add EntityDyeEvent and CollarColorable interface
+                         if (!this.level().isClientSide()) {
+                             this.setCollarColor(dyeColor);
+                             itemInHand.consume(1, player);
+@@ -384,7 +389,7 @@ public class Cat extends TamableAnimal {
+                     if (!this.level().isClientSide()) {
+                         this.usePlayerItem(player, hand, itemInHand);
+                         FoodProperties foodProperties = itemInHand.get(DataComponents.FOOD);
+-                        this.heal(foodProperties != null ? foodProperties.nutrition() : 1.0F);
++                        this.heal(foodProperties != null ? foodProperties.nutrition() : 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add missing regain reason
+                         this.playEatingSound();
+                     }
+ 
+@@ -446,7 +451,7 @@ public class Cat extends TamableAnimal {
+     }
+ 
+     private void tryToTame(Player player) {
+-        if (this.random.nextInt(3) == 0) {
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+             this.tame(player);
+             this.setOrderedToSit(true);
+             this.level().broadcastEntityEvent(this, EntityEvent.TAMING_SUCCEEDED);
+@@ -579,15 +584,20 @@ public class Cat extends TamableAnimal {
+                 .dropFromGiftLootTable(
+                     getServerLevel(this.cat),
+                     BuiltInLootTables.CAT_MORNING_GIFT,
+-                    (level, stack) -> level.addFreshEntity(
+-                        new ItemEntity(
++                    // CraftBukkit start
++                    (level, stack) -> {
++                        final ItemEntity item = new ItemEntity(
+                             level,
+                             (double)mutableBlockPos.getX() - Mth.sin(this.cat.yBodyRot * (float) (Math.PI / 180.0)),
+                             mutableBlockPos.getY(),
+                             (double)mutableBlockPos.getZ() + Mth.cos(this.cat.yBodyRot * (float) (Math.PI / 180.0)),
+                             stack
+-                        )
+-                    )
++                        );
++                        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.cat.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity());
++                        if (!event.callEvent()) return;
++                        level.addFreshEntity(item);
++                    }
++                    // CraftBukkit end
+                 );
+         }
+ 
+@@ -613,7 +623,7 @@ public class Cat extends TamableAnimal {
+     }
+ 
+     static class CatTemptGoal extends TemptGoal {
+-        private @Nullable Player selectedPlayer;
++        private @Nullable LivingEntity selectedPlayer; // CraftBukkit
+         private final Cat cat;
+ 
+         public CatTemptGoal(Cat cat, double speedModifier, Predicate<ItemStack> items, boolean canScare) {

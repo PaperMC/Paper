@@ -1,0 +1,29 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/DyeItem.java b/net/minecraft/world/item/DyeItem.java
+index 5045c2461c3154ea9a941355be59be49c136bba6..a739e203b32a10a2dc9e88d100411053c877efea 100644
+--- a/net/minecraft/world/item/DyeItem.java
++++ b/net/minecraft/world/item/DyeItem.java
+@@ -27,7 +27,17 @@ public class DyeItem extends Item implements SignApplicator {
+         if (target instanceof Sheep sheep && sheep.isAlive() && !sheep.isSheared() && sheep.getColor() != this.dyeColor) {
+             sheep.level().playSound(player, sheep, SoundEvents.DYE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
+             if (!player.level().isClientSide()) {
+-                sheep.setColor(this.dyeColor);
++                // CraftBukkit start
++                byte bColor = (byte) this.dyeColor.getId();
++                org.bukkit.event.entity.SheepDyeWoolEvent event = new org.bukkit.event.entity.SheepDyeWoolEvent((org.bukkit.entity.Sheep) sheep.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData(bColor), (org.bukkit.entity.Player) player.getBukkitEntity());
++                sheep.level().getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++
++                sheep.setColor(DyeColor.byId((byte) event.getColor().getWoolData()));
++                // CraftBukkit end
+                 stack.shrink(1);
+             }
+ 

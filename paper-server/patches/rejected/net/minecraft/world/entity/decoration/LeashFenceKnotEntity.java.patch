@@ -1,0 +1,59 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+index c47e3e58456fee39dd94ff6008d9b08767502c0b..9d2e036dfe874a48713f1397721912854e88f560 100644
+--- a/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
++++ b/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+@@ -82,7 +82,7 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+             boolean flag = false;
+ 
+             for (Leashable leashable : Leashable.leashableLeashedTo(player)) {
+-                if (leashable.canHaveALeashAttachedTo(this)) {
++                if (leashable.canHaveALeashAttachedTo(this) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, this, player, hand)) { // Paper - leash event
+                     leashable.setLeashedTo(this, true);
+                     flag = true;
+                 }
+@@ -91,7 +91,7 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+             boolean flag1 = false;
+             if (!flag && !player.isSecondaryUseActive()) {
+                 for (Leashable leashable1 : Leashable.leashableLeashedTo(this)) {
+-                    if (leashable1.canHaveALeashAttachedTo(player)) {
++                    if (leashable1.canHaveALeashAttachedTo(player) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable1, player, player, hand)) { // Paper - leash event
+                         leashable1.setLeashedTo(player, true);
+                         flag1 = true;
+                     }
+@@ -111,7 +111,7 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+     @Override
+     public void notifyLeasheeRemoved(Leashable leashHolder) {
+         if (Leashable.leashableLeashedTo(this).isEmpty()) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -120,7 +120,12 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+         return this.level().getBlockState(this.pos).is(BlockTags.FENCES);
+     }
+ 
++    // Paper start - Track if a knot was created
+     public static LeashFenceKnotEntity getOrCreateKnot(Level level, BlockPos pos) {
++        return getOrCreateKnot(level, pos, null);
++    }
++    public static LeashFenceKnotEntity getOrCreateKnot(Level level, BlockPos pos, org.apache.commons.lang3.mutable.@Nullable MutableBoolean created) {
++        // Paper end - Track if a knot was created
+         int x = pos.getX();
+         int y = pos.getY();
+         int z = pos.getZ();
+@@ -134,7 +139,7 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+         }
+ 
+         LeashFenceKnotEntity leashFenceKnotEntity1 = new LeashFenceKnotEntity(level, pos);
+-        level.addFreshEntity(leashFenceKnotEntity1);
++        if (level.addFreshEntity(leashFenceKnotEntity1) && created != null) { created.setTrue(); } // Paper - Track if a knot was created
+         return leashFenceKnotEntity1;
+     }
+ 

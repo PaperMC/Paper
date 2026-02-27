@@ -1,0 +1,63 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/TamableAnimal.java b/net/minecraft/world/entity/TamableAnimal.java
+index e7fabd019acef160fcb12c672602cbc9a0b4b458..c40455773ada45a560462c22f429ad82c9f9e8f0 100644
+--- a/net/minecraft/world/entity/TamableAnimal.java
++++ b/net/minecraft/world/entity/TamableAnimal.java
+@@ -75,7 +75,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         }
+ 
+         this.orderedToSit = input.getBooleanOr("Sitting", false);
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
+     }
+ 
+     @Override
+@@ -133,6 +133,13 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     }
+ 
+     public void setInSittingPose(boolean sitting) {
++        // Paper start - Add EntityToggleSitEvent
++        this.setInSittingPose(sitting, true);
++    }
++
++    public void setInSittingPose(boolean sitting, boolean callEvent) {
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++        // Paper end - Add EntityToggleSitEvent
+         byte b = this.entityData.get(DATA_FLAGS_ID);
+         if (sitting) {
+             this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
+@@ -213,7 +220,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         if (this.level() instanceof ServerLevel serverLevel
+             && serverLevel.getGameRules().get(GameRules.SHOW_DEATH_MESSAGES)
+             && this.getOwner() instanceof ServerPlayer serverPlayer) {
+-            serverPlayer.sendSystemMessage(this.getCombatTracker().getDeathMessage());
++            // Paper start - Add TameableDeathMessageEvent
++            io.papermc.paper.event.entity.TameableDeathMessageEvent event = new io.papermc.paper.event.entity.TameableDeathMessageEvent((org.bukkit.entity.Tameable) getBukkitEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getCombatTracker().getDeathMessage()));
++            if (event.callEvent()) {
++                serverPlayer.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.deathMessage()));
++            }
++            // Paper end - Add TameableDeathMessageEvent
+         }
+ 
+         super.die(damageSource);
+@@ -256,7 +268,14 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         if (!this.canTeleportTo(new BlockPos(x, y, z))) {
+             return false;
+         } else {
+-            this.snapTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, x + 0.5, y, z + 0.5);
++            if (event.isCancelled() || event.getTo() == null) {
++                return false;
++            }
++            org.bukkit.Location to = event.getTo();
++            this.snapTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
++            // CraftBukkit end
+             this.navigation.stop();
+             return true;
+         }

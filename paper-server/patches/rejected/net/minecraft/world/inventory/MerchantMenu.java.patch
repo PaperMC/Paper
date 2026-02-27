@@ -1,0 +1,99 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/inventory/MerchantMenu.java b/net/minecraft/world/inventory/MerchantMenu.java
+index d2baa9c46e82c7d1df83da95c5832191e8a7b9de..6dfee62a46a5882df7f405e59d762647289d7866 100644
+--- a/net/minecraft/world/inventory/MerchantMenu.java
++++ b/net/minecraft/world/inventory/MerchantMenu.java
+@@ -30,6 +30,18 @@ public class MerchantMenu extends AbstractContainerMenu {
+     private int merchantLevel;
+     private boolean showProgressBar;
+     private boolean canRestock;
++    // CraftBukkit start
++    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftMerchantView view = null;
++    private final Inventory inventory;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.view.CraftMerchantView getBukkitView() {
++        if (this.view == null) {
++            this.view = new org.bukkit.craftbukkit.inventory.view.CraftMerchantView(this.inventory.player.getBukkitEntity(), new org.bukkit.craftbukkit.inventory.CraftInventoryMerchant(this.trader, this.tradeContainer), this, this.trader);
++        }
++        return this.view;
++    }
++    // CraftBukkit end
+ 
+     public MerchantMenu(int containerId, Inventory playerInventory) {
+         this(containerId, playerInventory, new ClientSideMerchant(playerInventory.player));
+@@ -42,6 +54,7 @@ public class MerchantMenu extends AbstractContainerMenu {
+         this.addSlot(new Slot(this.tradeContainer, 0, 136, 37));
+         this.addSlot(new Slot(this.tradeContainer, 1, 162, 37));
+         this.addSlot(new MerchantResultSlot(playerInventory.player, trader, this.tradeContainer, 2, 220, 37));
++        this.inventory = playerInventory; // CraftBukkit
+         this.addStandardInventorySlots(playerInventory, 108, 84);
+     }
+ 
+@@ -61,6 +74,7 @@ public class MerchantMenu extends AbstractContainerMenu {
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!checkReachable) return true; // Paper - checkReachable
+         return this.trader.stillValid(player);
+     }
+ 
+@@ -105,12 +119,12 @@ public class MerchantMenu extends AbstractContainerMenu {
+             ItemStack item = slot.getItem();
+             itemStack = item.copy();
+             if (slotIndex == 2) {
+-                if (!this.moveItemStackTo(item, 3, 39, true)) {
++                if (!this.moveItemStackTo(item, 3, 39, true, true)) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+                     return ItemStack.EMPTY;
+                 }
+ 
+-                slot.onQuickCraft(item, itemStack);
+-                this.playTradeSound();
++                // slot.onQuickCraft(item, itemStack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved to after the non-check moveItemStackTo call
++                // this.playTradeSound();
+             } else if (slotIndex != 0 && slotIndex != 1) {
+                 if (slotIndex >= 3 && slotIndex < 30) {
+                     if (!this.moveItemStackTo(item, 30, 39, false)) {
+@@ -123,6 +137,7 @@ public class MerchantMenu extends AbstractContainerMenu {
+                 return ItemStack.EMPTY;
+             }
+ 
++            if (slotIndex != 2) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved down for slot 2
+             if (item.isEmpty()) {
+                 slot.setByPlayer(ItemStack.EMPTY);
+             } else {
+@@ -134,13 +149,28 @@ public class MerchantMenu extends AbstractContainerMenu {
+             }
+ 
+             slot.onTake(player, item);
++            } // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; handle slot 2
++            if (slotIndex == 2) { // is merchant result slot
++                slot.onTake(player, item);
++                if (item.isEmpty()) {
++                    slot.set(ItemStack.EMPTY);
++                    return ItemStack.EMPTY;
++                }
++
++                this.moveItemStackTo(item, 3, 39, true, false); // This should always succeed because it's checked above
++
++                slot.onQuickCraft(item, itemStack);
++                this.playTradeSound();
++                slot.set(ItemStack.EMPTY); // item should ALWAYS be empty
++            }
++            // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
+         }
+ 
+         return itemStack;
+     }
+ 
+     private void playTradeSound() {
+-        if (!this.trader.isClientSide()) {
++        if (!this.trader.isClientSide() && this.trader instanceof Entity) { // CraftBukkit - SPIGOT-5035
+             Entity entity = (Entity)this.trader;
+             entity.level()
+                 .playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.trader.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);

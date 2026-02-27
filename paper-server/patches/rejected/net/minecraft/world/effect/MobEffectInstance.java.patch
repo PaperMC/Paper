@@ -1,0 +1,59 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/effect/MobEffectInstance.java b/net/minecraft/world/effect/MobEffectInstance.java
+index 5c05f2b64ecd27799cd98237ad868d1f690ac901..3bcfe2faca53e85a20bdbf847b25aef9c61e24f6 100644
+--- a/net/minecraft/world/effect/MobEffectInstance.java
++++ b/net/minecraft/world/effect/MobEffectInstance.java
+@@ -218,7 +218,7 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+             return false;
+         } else {
+             int i = this.isInfiniteDuration() ? entity.tickCount : this.duration;
+-            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) {
++            if (this.effect.value().shouldApplyEffectTickThisTick(i, this.amplifier) && new io.papermc.paper.event.entity.EntityEffectTickEvent(entity.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(this.effect), this.amplifier).callEvent() && !this.effect.value().applyEffectTick(level, entity, this.amplifier)) { // Paper - Add EntityEffectTickEvent
+                 return false;
+             } else {
+                 this.tickDownDuration();
+@@ -253,13 +253,16 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+     }
+ 
+     private boolean downgradeToHiddenEffect() {
+-        if (this.duration == 0 && this.hiddenEffect != null) {
++        // Paper start - Fix MC-259832
++        if (this.duration != 0 || this.hiddenEffect == null) return false;
++
++        do {
+             this.setDetailsFrom(this.hiddenEffect);
+             this.hiddenEffect = this.hiddenEffect.hiddenEffect;
+-            return true;
+-        } else {
+-            return false;
+-        }
++        } while (this.duration == 0 && this.hiddenEffect != null);
++
++        return true;
++        // Paper end - Fix MC-259832
+     }
+ 
+     public void onEffectStarted(LivingEntity entity) {
+@@ -414,7 +417,7 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+                     .apply(instance, MobEffectInstance.Details::create)
+             )
+         );
+-        public static final StreamCodec<ByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive(
++        public static final StreamCodec<net.minecraft.network.FriendlyByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive( // Paper - Track codec depth
+             codec -> StreamCodec.composite(
+                 ByteBufCodecs.VAR_INT,
+                 MobEffectInstance.Details::amplifier,
+@@ -426,7 +429,7 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+                 MobEffectInstance.Details::showParticles,
+                 ByteBufCodecs.BOOL,
+                 MobEffectInstance.Details::showIcon,
+-                codec.apply(ByteBufCodecs::optional),
++                codec.apply(ByteBufCodecs::increaseDepth).apply(ByteBufCodecs::optional), // Paper - Track codec depth
+                 MobEffectInstance.Details::hiddenEffect,
+                 MobEffectInstance.Details::new
+             )

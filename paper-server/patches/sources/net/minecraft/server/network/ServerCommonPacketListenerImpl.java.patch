@@ -25,7 +25,7 @@
 +    public final java.util.Set<String> pluginMessagerChannels;
 +    // Paper end - retain certain values
  
-     public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+     public ServerCommonPacketListenerImpl(final MinecraftServer server, final Connection connection, final CommonListenerCookie cookie) {
          this.server = server;
 @@ -53,7 +_,18 @@
          this.keepAliveTime = Util.getMillis();
@@ -47,7 +47,7 @@
      private void close() {
          if (!this.closed) {
 @@ -83,7 +_,7 @@
-             this.latency = (this.latency * 3 + i) / 4;
+             this.latency = (this.latency * 3 + time) / 4;
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
 -            this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
@@ -56,7 +56,7 @@
      }
  
 @@ -91,14 +_,88 @@
-     public void handlePong(ServerboundPongPacket packet) {
+     public void handlePong(final ServerboundPongPacket serverboundPongPacket) {
      }
  
 +    // Paper start
@@ -65,7 +65,7 @@
 +    // Paper end
 +
      @Override
-     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+     public void handleCustomPayload(final ServerboundCustomPayloadPacket packet) {
 +        // Paper start
 +        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
 +            return;
@@ -132,7 +132,7 @@
      }
  
      @Override
-     public void handleCustomClickAction(ServerboundCustomClickActionPacket packet) {
+     public void handleCustomClickAction(final ServerboundCustomClickActionPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.server.packetProcessor());
          this.server.handleCustomClickAction(packet.id(), packet.payload());
 +        // Paper start - Implement click callbacks with custom click action
@@ -173,7 +173,7 @@
      }
  
      @Override
-     public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
+     public void handleCookieResponse(final ServerboundCookieResponsePacket packet) {
 -        this.disconnect(DISCONNECT_UNEXPECTED_QUERY);
 +        if (this.paperConnection().handleCookieResponse(packet)) return; // Paper
 +        this.disconnect(DISCONNECT_UNEXPECTED_QUERY, io.papermc.paper.connection.DisconnectionReason.INVALID_COOKIE); // Paper - kick event cause
@@ -181,11 +181,11 @@
  
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
-         long millis = Util.getMillis();
--        if (!this.isSingleplayerOwner() && millis - this.keepAliveTime >= 15000L) {
+         long now = Util.getMillis();
+-        if (!this.isSingleplayerOwner() && now - this.keepAliveTime >= 15000L) {
 +        // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        final long elapsedTime = millis - this.keepAliveTime;
++        final long elapsedTime = now - this.keepAliveTime;
 +        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
              if (this.keepAlivePending) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
@@ -193,13 +193,13 @@
 +                    this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - kick event cause
 +                }
 +                // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
-             } else if (this.checkIfClosed(millis)) {
+             } else if (this.checkIfClosed(now)) {
                  this.keepAlivePending = true;
-                 this.keepAliveTime = millis;
+                 this.keepAliveTime = now;
 @@ -135,7 +_,7 @@
-     private boolean checkIfClosed(long time) {
+     private boolean checkIfClosed(final long now) {
          if (this.closed) {
-             if (time - this.closedListenerTime >= 15000L) {
+             if (now - this.closedListenerTime >= 15000L) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
 +                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - kick event cause
              }
@@ -208,7 +208,7 @@
 @@ -158,6 +_,13 @@
      }
  
-     public void send(Packet<?> packet, @Nullable ChannelFutureListener sendListener) {
+     public void send(final Packet<?> packet, final @Nullable ChannelFutureListener listener) {
 +        // CraftBukkit start
 +        if (packet == null || this.processedDisconnect) { // Spigot
 +            return;
@@ -219,12 +219,12 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -174,19 +_,114 @@
+@@ -174,15 +_,114 @@
          }
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - kick event causes
-     public void disconnect(Component reason) {
+     public void disconnect(final Component reason) {
 -        this.disconnect(new DisconnectionDetails(reason));
 +        // Paper start - kick event causes
 +        this.disconnect(reason, io.papermc.paper.connection.DisconnectionReason.UNKNOWN);
@@ -235,11 +235,8 @@
 +        // Paper end - kick event causes
      }
  
-     public void disconnect(DisconnectionDetails disconnectionDetails) {
--        this.connection
--            .send(
--                new ClientboundDisconnectPacket(disconnectionDetails.reason()),
--                PacketSendListener.thenRun(() -> this.connection.disconnect(disconnectionDetails))
+     public void disconnect(final DisconnectionDetails details) {
+-        this.connection.send(new ClientboundDisconnectPacket(details.reason()), PacketSendListener.thenRun(() -> this.connection.disconnect(details)));
 +        // CraftBukkit start - fire PlayerKickEvent
 +        if (this.processedDisconnect) {
 +            return;
@@ -248,7 +245,7 @@
 +            org.bukkit.craftbukkit.util.Waitable waitable = new org.bukkit.craftbukkit.util.Waitable() {
 +                @Override
 +                protected Object evaluate() {
-+                    ServerCommonPacketListenerImpl.this.disconnect(disconnectionDetails);
++                    ServerCommonPacketListenerImpl.this.disconnect(details);
 +                    return null;
 +                }
 +            };
@@ -271,13 +268,13 @@
 +            net.kyori.adventure.text.Component rawLeaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? serverGamePacketListener.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(serverGamePacketListener.player.getScoreboardName())); // Paper - Adventure
 +
 +            net.minecraft.server.level.ServerPlayer player = serverGamePacketListener.player;
-+            org.bukkit.event.player.PlayerKickEvent.Cause cause = disconnectionDetails.disconnectionReason().orElseThrow().game().orElse(org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++            org.bukkit.event.player.PlayerKickEvent.Cause cause = details.disconnectionReason().orElseThrow().game().orElse(org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
 +            org.bukkit.event.player.PlayerKickEvent event = new org.bukkit.event.player.PlayerKickEvent(
 +                    player.getBukkitEntity(),
-+                    io.papermc.paper.adventure.PaperAdventure.asAdventure(disconnectionDetails.reason()),
++                    io.papermc.paper.adventure.PaperAdventure.asAdventure(details.reason()),
 +                    rawLeaveMessage, cause
 +
-             );
++            );
 +
 +            if (this.cserver.getServer().isRunning()) {
 +                this.cserver.getPluginManager().callEvent(event);
@@ -298,12 +295,12 @@
 +            }
 +        } else {
 +            // TODO: Add event for config event
-+            reason = disconnectionDetails.reason();
++            reason = details.reason();
 +            leaveMessage = null;
 +        }
 +
 +        // Send the possibly modified leave message
-+        this.disconnect0(new DisconnectionDetails(reason, disconnectionDetails.report(), disconnectionDetails.bugReportLink(), java.util.Optional.ofNullable(leaveMessage), disconnectionDetails.disconnectionReason()));
++        this.disconnect0(new DisconnectionDetails(reason, details.report(), details.bugReportLink(), java.util.Optional.ofNullable(leaveMessage), details.disconnectionReason()));
 +    }
 +
 +    private void disconnect0(DisconnectionDetails disconnectionDetails) {
@@ -341,10 +338,10 @@
  
      protected boolean isSingleplayerOwner() {
          return this.server.isSingleplayerOwner(new NameAndId(this.playerProfile()));
-@@ -204,6 +_,6 @@
+@@ -200,6 +_,6 @@
      }
  
-     protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
+     protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred);
 +        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
      }

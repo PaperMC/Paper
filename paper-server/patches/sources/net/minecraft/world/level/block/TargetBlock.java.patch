@@ -2,25 +2,25 @@
 +++ b/net/minecraft/world/level/block/TargetBlock.java
 @@ -42,6 +_,10 @@
      @Override
-     protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
-         int i = updateRedstoneOutput(level, state, hit, projectile);
+     protected void onProjectileHit(final Level level, final BlockState state, final BlockHitResult hitResult, final Projectile projectile) {
+         int outputStrength = updateRedstoneOutput(level, state, hitResult, projectile);
 +        // Paper start - Add TargetHitEvent
 +    }
-+    private static void awardTargetHitCriteria(Projectile projectile, BlockHitResult hit, int i) {
++    private static void awardTargetHitCriteria(Projectile projectile, BlockHitResult hitResult, int outputStrength) {
 +        // Paper end - Add TargetHitEvent
-         if (projectile.getOwner() instanceof ServerPlayer serverPlayer) {
-             serverPlayer.awardStat(Stats.TARGET_HIT);
-             CriteriaTriggers.TARGET_BLOCK_HIT.trigger(serverPlayer, projectile, hit.getLocation(), i);
+         if (projectile.getOwner() instanceof ServerPlayer playerOwner) {
+             playerOwner.awardStat(Stats.TARGET_HIT);
+             CriteriaTriggers.TARGET_BLOCK_HIT.trigger(playerOwner, projectile, hitResult.getLocation(), outputStrength);
 @@ -51,9 +_,29 @@
-     private static int updateRedstoneOutput(LevelAccessor level, BlockState state, BlockHitResult hit, Entity projectile) {
-         int redstoneStrength = getRedstoneStrength(hit, hit.getLocation());
-         int i = projectile instanceof AbstractArrow ? 20 : 8;
+     private static int updateRedstoneOutput(final LevelAccessor level, final BlockState state, final BlockHitResult hitResult, final Entity entity) {
+         int redstoneStrength = getRedstoneStrength(hitResult, hitResult.getLocation());
+         int duration = entity instanceof AbstractArrow ? 20 : 8;
 +        // Paper start - Add TargetHitEvent
 +        boolean shouldAward = false;
-+        if (projectile instanceof Projectile) {
-+            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, hit.getBlockPos());
-+            final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hit.getDirection());
-+            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, redstoneStrength);
++        if (entity instanceof Projectile) {
++            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, hitResult.getBlockPos());
++            final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hitResult.getDirection());
++            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) entity.getBukkitEntity(), craftBlock, blockFace, redstoneStrength);
 +            if (targetHitEvent.callEvent()) {
 +                redstoneStrength = targetHitEvent.getSignalStrength();
 +                shouldAward = true;
@@ -29,13 +29,13 @@
 +            }
 +        }
 +        // Paper end - Add TargetHitEvent
-         if (!level.getBlockTicks().hasScheduledTick(hit.getBlockPos(), state.getBlock())) {
-             setOutputPower(level, state, redstoneStrength, hit.getBlockPos(), i);
+         if (!level.getBlockTicks().hasScheduledTick(hitResult.getBlockPos(), state.getBlock())) {
+             setOutputPower(level, state, redstoneStrength, hitResult.getBlockPos(), duration);
          }
 +
 +        // Paper start - Award Hit Criteria after Block Update
 +        if (shouldAward) {
-+            awardTargetHitCriteria((Projectile) projectile, hit, redstoneStrength);
++            awardTargetHitCriteria((Projectile) entity, hitResult, redstoneStrength);
 +        }
 +        // Paper end - Award Hit Criteria after Block Update
  

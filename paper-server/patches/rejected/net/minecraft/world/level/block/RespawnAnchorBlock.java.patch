@@ -1,0 +1,45 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/RespawnAnchorBlock.java b/net/minecraft/world/level/block/RespawnAnchorBlock.java
+index 301025da420397d65f3c1f6df986cb8720d25c7e..e90651ae6ab072c9fa9c179ae56329e0d816c77b 100644
+--- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -106,11 +106,16 @@ public class RespawnAnchorBlock extends Block {
+                         LevelData.RespawnData.of(serverLevel.dimension(), pos, 0.0F, 0.0F), false
+                     );
+                     if (respawnConfig == null || !respawnConfig.isSamePosition(respawnConfig1)) {
+-                        serverPlayer.setRespawnPosition(respawnConfig1, true);
++                        if (serverPlayer.setRespawnPosition(respawnConfig1, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
+                         serverLevel.playSound(
+                             null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F
+                         );
+                         return InteractionResult.SUCCESS_SERVER;
++                        // Paper start - Add PlayerSetSpawnEvent
++                        } else {
++                            return InteractionResult.FAIL;
++                        }
++                        // Paper end - Add PlayerSetSpawnEvent
+                     }
+                 }
+ 
+@@ -147,6 +152,7 @@ public class RespawnAnchorBlock extends Block {
+     }
+ 
+     private void explode(BlockState state, ServerLevel level, final BlockPos pos2) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos2).getState(); // CraftBukkit - capture BlockState before remove block
+         level.removeBlock(pos2, false);
+         boolean flag = Direction.Plane.HORIZONTAL.stream().map(pos2::relative).anyMatch(blockPos -> isWaterThatWouldFlow(blockPos, level));
+         final boolean flag1 = flag || level.getFluidState(pos2.above()).is(FluidTags.WATER);
+@@ -160,7 +166,7 @@ public class RespawnAnchorBlock extends Block {
+         };
+         Vec3 center = pos2.getCenter();
+         level.explode(
+-            null, level.damageSources().badRespawnPointExplosion(center), explosionDamageCalculator, center, 5.0F, true, Level.ExplosionInteraction.BLOCK
++            null, level.damageSources().badRespawnPointExplosion(center).causingBlockSnapshot(blockState), explosionDamageCalculator, center, 5.0F, true, Level.ExplosionInteraction.BLOCK // CraftBukkit - add state
+         );
+     }
+ 

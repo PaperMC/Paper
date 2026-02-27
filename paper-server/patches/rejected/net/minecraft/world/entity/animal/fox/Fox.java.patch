@@ -1,0 +1,163 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/fox/Fox.java b/net/minecraft/world/entity/animal/fox/Fox.java
+index d43da29fea61e5d2d7c07dcbace6072712e2dfa7..6fb314b49b7a482d4092d5a63c06abab69845c85 100644
+--- a/net/minecraft/world/entity/animal/fox/Fox.java
++++ b/net/minecraft/world/entity/animal/fox/Fox.java
+@@ -440,7 +440,7 @@ public class Fox extends Animal {
+         input.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
+         this.setSleeping(input.getBooleanOr("Sleeping", false));
+         this.setVariant(input.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
+-        this.setSitting(input.getBooleanOr("Sitting", false));
++        this.setSitting(input.getBooleanOr("Sitting", false), false); // Paper - Add EntityToggleSitEvent
+         this.setIsCrouching(input.getBooleanOr("Crouching", false));
+         if (this.level() instanceof ServerLevel) {
+             this.setTargetGoals();
+@@ -457,6 +457,12 @@ public class Fox extends Animal {
+     }
+ 
+     public void setSitting(boolean sitting) {
++        // Paper start - Add EntityToggleSitEvent
++        this.setSitting(sitting, true);
++    }
++    public void setSitting(boolean sitting, boolean fireEvent) {
++        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++        // Paper end - Add EntityToggleSitEvent
+         this.setFlag(FLAG_SITTING, sitting);
+     }
+ 
+@@ -516,19 +522,20 @@ public class Fox extends Animal {
+             itemEntity.setPickUpDelay(40);
+             itemEntity.setThrower(this);
+             this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
+-            this.level().addFreshEntity(itemEntity);
++            this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), itemEntity); // Paper - Call EntityDropItemEvent
+         }
+     }
+ 
+     private void dropItemStack(ItemStack stack) {
+         ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), stack);
+-        this.level().addFreshEntity(itemEntity);
++        this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), itemEntity); // Paper - Call EntityDropItemEvent
+     }
+ 
+     @Override
+     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+         ItemStack item = entity.getItem();
+-        if (this.canHoldItem(item)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, item.getCount() - 1, !this.canHoldItem(item)).isCancelled()) { // CraftBukkit - call EntityPickupItemEvent
++            item = entity.getItem(); // CraftBukkit - update item after event
+             int count = item.getCount();
+             if (count > 1) {
+                 this.dropItemStack(item.split(count - 1));
+@@ -539,7 +546,7 @@ public class Fox extends Animal {
+             this.setItemSlot(EquipmentSlot.MAINHAND, item.split(1));
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+             this.take(entity, item.getCount());
+-            entity.discard();
++            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             this.ticksSinceEaten = 0;
+         }
+     }
+@@ -630,12 +637,12 @@ public class Fox extends Animal {
+     }
+ 
+     @Override
+-    public void setTarget(@Nullable LivingEntity target) {
++    public boolean setTarget(@Nullable LivingEntity target, org.bukkit.event.entity.EntityTargetEvent.@Nullable TargetReason reason) { // CraftBukkit
+         if (this.isDefending() && target == null) {
+             this.setDefending(false);
+         }
+ 
+-        super.setTarget(target);
++        return super.setTarget(target, reason); // CraftBukkit
+     }
+ 
+     void wakeUp() {
+@@ -696,15 +703,33 @@ public class Fox extends Animal {
+         return this.getTrustedEntities().anyMatch(entityReference -> entityReference.matches(entity));
+     }
+ 
++    // Paper start - handle the bitten item separately like vanilla
++    @Override
++    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++        return slot == EquipmentSlot.MAINHAND;
++    }
++    // Paper end
++
+     @Override
+-    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
++    // Paper start - Cancellable death event
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
+         ItemStack itemBySlot = this.getItemBySlot(EquipmentSlot.MAINHAND);
+-        if (!itemBySlot.isEmpty()) {
++        boolean releaseMouth = false;
++        if (!itemBySlot.isEmpty() && level.getGameRules().get(GameRules.MOB_DROPS)) { // Fix MC-153010
+             this.spawnAtLocation(level, itemBySlot);
++            releaseMouth = true;
++        }
++
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(level, damageSource);
++        // Below is code to drop
++        if (deathEvent == null || deathEvent.isCancelled()) return deathEvent;
++
++        if (releaseMouth) {
++            // Paper end
+             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+         }
+ 
+-        super.dropAllDeathLoot(level, damageSource);
++        return deathEvent; // Paper - Cancellable death event
+     }
+ 
+     public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
+@@ -877,6 +902,19 @@ public class Fox extends Animal {
+                     fox.addTrustedEntity(loveCause1);
+                 }
+ 
++                // CraftBukkit start - call EntityBreedEvent
++                fox.setAge(-24000);
++                fox.snapTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
++                int experience = this.animal.getRandom().nextInt(7) + 1;
++                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(fox, this.animal, this.partner, loveCause, this.animal.breedItem, experience);
++                if (entityBreedEvent.isCancelled()) {
++                    this.animal.resetLove();
++                    this.partner.resetLove();
++                    return;
++                }
++                experience = entityBreedEvent.getExperience();
++                // CraftBukkit end - call EntityBreedEvent
++
+                 if (serverPlayer != null) {
+                     serverPlayer.awardStat(Stats.ANIMALS_BRED);
+                     CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this.animal, this.partner, fox);
+@@ -886,14 +924,12 @@ public class Fox extends Animal {
+                 this.partner.setAge(6000);
+                 this.animal.resetLove();
+                 this.partner.resetLove();
+-                fox.setAge(-24000);
+-                fox.snapTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
+-                this.level.addFreshEntityWithPassengers(fox);
++                this.level.addFreshEntityWithPassengers(fox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
+                 this.level.broadcastEntityEvent(this.animal, EntityEvent.IN_LOVE_HEARTS);
+-                if (this.level.getGameRules().get(GameRules.MOB_DROPS)) {
++                if (experience > 0 && this.level.getGameRules().get(GameRules.MOB_DROPS)) { // Paper - call EntityBreedEvent
+                     this.level
+                         .addFreshEntity(
+-                            new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), this.animal.getRandom().nextInt(7) + 1)
++                            new ExperienceOrb(this.level, this.animal.position(), net.minecraft.world.phys.Vec3.ZERO, experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, loveCause, fox) // Paper - call EntityBreedEvent, add spawn context
+                         );
+                 }
+             }
+@@ -957,6 +993,7 @@ public class Fox extends Animal {
+         private void pickSweetBerries(BlockState state) {
+             int ageValue = state.getValue(SweetBerryBushBlock.AGE);
+             state.setValue(SweetBerryBushBlock.AGE, 1);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(Fox.this, this.blockPos, state.setValue(SweetBerryBushBlock.AGE, 1))) return; // CraftBukkit - call EntityChangeBlockEvent
+             int i = 1 + Fox.this.level().random.nextInt(2) + (ageValue == 3 ? 1 : 0);
+             ItemStack itemBySlot = Fox.this.getItemBySlot(EquipmentSlot.MAINHAND);
+             if (itemBySlot.isEmpty()) {

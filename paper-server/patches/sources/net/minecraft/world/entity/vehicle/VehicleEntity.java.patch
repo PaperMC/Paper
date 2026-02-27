@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/entity/vehicle/VehicleEntity.java
 +++ b/net/minecraft/world/entity/vehicle/VehicleEntity.java
 @@ -38,6 +_,14 @@
-         } else if (this.isInvulnerableToBase(damageSource)) {
+         } else if (this.isInvulnerableToBase(source)) {
              return false;
          } else {
 +            // CraftBukkit start
 +            org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
-+            org.bukkit.entity.Entity attacker = (damageSource.getEntity() == null) ? null : damageSource.getEntity().getBukkitEntity();
++            org.bukkit.entity.Entity attacker = (source.getEntity() == null) ? null : source.getEntity().getBukkitEntity();
 +
-+            org.bukkit.event.vehicle.VehicleDamageEvent event = new org.bukkit.event.vehicle.VehicleDamageEvent(vehicle, attacker, amount);
++            org.bukkit.event.vehicle.VehicleDamageEvent event = new org.bukkit.event.vehicle.VehicleDamageEvent(vehicle, attacker, damage);
 +            if (!event.callEvent()) return false;
-+            amount = (float) event.getDamage();
++            damage = (float) event.getDamage();
 +            // CraftBukkit end
              this.setHurtDir(-this.getHurtDir());
              this.setHurtTime(10);
              this.markHurt();
 @@ -46,9 +_,23 @@
-             boolean flag = damageSource.getEntity() instanceof Player player && player.getAbilities().instabuild;
-             if ((flag || !(this.getDamage() > 40.0F)) && !this.shouldSourceDestroy(damageSource)) {
-                 if (flag) {
+             boolean creativePlayer = source.getEntity() instanceof Player player && player.getAbilities().instabuild;
+             if ((creativePlayer || !(this.getDamage() > 40.0F)) && !this.shouldSourceDestroy(source)) {
+                 if (creativePlayer) {
 -                    this.discard();
 +                    // CraftBukkit start
 +                    org.bukkit.event.vehicle.VehicleDestroyEvent destroyEvent = new org.bukkit.event.vehicle.VehicleDestroyEvent(vehicle, attacker);
@@ -37,6 +37,6 @@
 +                    return true;
 +                }
 +                // CraftBukkit end
-                 this.destroy(level, damageSource);
+                 this.destroy(level, source);
              }
  

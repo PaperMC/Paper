@@ -6,7 +6,7 @@
      public float explosionSpeedFactor = 1.0F;
 +    public boolean isIncendiary = false; // CraftBukkit
  
-     public MinecartTNT(EntityType<? extends MinecartTNT> type, Level level) {
+     public MinecartTNT(final EntityType<? extends MinecartTNT> type, final Level level) {
          super(type, level);
 @@ -53,6 +_,12 @@
      public void tick() {
@@ -22,13 +22,13 @@
              this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5, this.getZ(), 0.0, 0.0, 0.0);
          } else if (this.fuse == 0) {
 @@ -104,6 +_,17 @@
-         if (this.level() instanceof ServerLevel serverLevel) {
-             if (serverLevel.getGameRules().get(GameRules.TNT_EXPLODES)) {
-                 double min = Math.min(Math.sqrt(radiusModifier), 5.0);
+         if (this.level() instanceof ServerLevel level) {
+             if (level.getGameRules().get(GameRules.TNT_EXPLODES)) {
+                 double speed = Math.min(Math.sqrt(speedSqr), 5.0);
 +                // CraftBukkit start
 +                org.bukkit.event.entity.ExplosionPrimeEvent event = new org.bukkit.event.entity.ExplosionPrimeEvent(
 +                    this.getBukkitEntity(),
-+                    (float) (this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * min),
++                    (float) (this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * speed),
 +                    this.isIncendiary
 +                );
 +                if (!event.callEvent()) {
@@ -36,14 +36,14 @@
 +                    return;
 +                }
 +                // CraftBukkit end
-                 serverLevel.explode(
+                 level.explode(
                      this,
                      damageSource,
 @@ -111,13 +_,13 @@
                      this.getX(),
                      this.getY(),
                      this.getZ(),
--                    (float)(this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * min),
+-                    (float)(this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * speed),
 -                    false,
 +                    event.getRadius(), // CraftBukkit - explosion prime event
 +                    event.getFire(), // CraftBukkit - explosion prime event

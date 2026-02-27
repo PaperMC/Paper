@@ -1,0 +1,116 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/inventory/GrindstoneMenu.java b/net/minecraft/world/inventory/GrindstoneMenu.java
+index a752230c74ddc404776ef2ba17e1c55b4a0a4a71..ad70a0f7debee27d9f3b2ff39cb0429b39485190 100644
+--- a/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -21,6 +21,21 @@ import net.minecraft.world.level.block.LevelEvent;
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class GrindstoneMenu extends AbstractContainerMenu {
++    // CraftBukkit start
++    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.CraftInventoryView view = null;
++    private final org.bukkit.entity.Player player;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
++        if (this.view != null) {
++            return this.view;
++        }
++
++        org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
++        this.view = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player, inventory, this);
++        return this.view;
++    }
++    // CraftBukkit end
+     public static final int MAX_NAME_LENGTH = 35;
+     public static final int INPUT_SLOT = 0;
+     public static final int ADDITIONAL_SLOT = 1;
+@@ -29,14 +44,8 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+     private static final int INV_SLOT_END = 30;
+     private static final int USE_ROW_SLOT_START = 30;
+     private static final int USE_ROW_SLOT_END = 39;
+-    private final Container resultSlots = new ResultContainer();
+-    final Container repairSlots = new SimpleContainer(2) {
+-        @Override
+-        public void setChanged() {
+-            super.setChanged();
+-            GrindstoneMenu.this.slotsChanged(this);
+-        }
+-    };
++    private final Container resultSlots; // Paper - Add missing InventoryHolders - move down
++    final Container repairSlots; // Paper - Add missing InventoryHolders - move down
+     private final ContainerLevelAccess access;
+ 
+     public GrindstoneMenu(int containerId, Inventory playerInventory) {
+@@ -45,6 +54,22 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+ 
+     public GrindstoneMenu(int containerId, Inventory playerInventory, final ContainerLevelAccess access) {
+         super(MenuType.GRINDSTONE, containerId);
++        // Paper start - Add missing InventoryHolders
++        this.resultSlots = new ResultContainer(this.createBlockHolder(access)); // Paper - Add missing InventoryHolders
++        this.repairSlots = new SimpleContainer(this.createBlockHolder(access), 2) { // Paper - Add missing InventoryHolders
++            @Override
++            public void setChanged() {
++                super.setChanged();
++                GrindstoneMenu.this.slotsChanged(this);
++            }
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return access.getLocation();
++            }
++            // CraftBukkit end
++        };
++        // Paper end - Add missing InventoryHolders
+         this.access = access;
+         this.addSlot(new Slot(this.repairSlots, 0, 49, 19) {
+             @Override
+@@ -68,7 +93,11 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             public void onTake(Player player, ItemStack stack) {
+                 access.execute((level, blockPos) -> {
+                     if (level instanceof ServerLevel) {
+-                        ExperienceOrb.award((ServerLevel)level, Vec3.atCenterOf(blockPos), this.getExperienceAmount(level));
++                        // Paper start - Fire BlockExpEvent on grindstone use
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos), this.getExperienceAmount(level));
++                        event.callEvent();
++                        ExperienceOrb.awardWithDirection((ServerLevel) level, Vec3.atCenterOf(blockPos), Vec3.ZERO, event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player, null);
++                        // Paper end - Fire BlockExpEvent on grindstone use
+                     }
+ 
+                     level.levelEvent(LevelEvent.SOUND_GRINDSTONE_USED, blockPos, 0);
+@@ -105,6 +134,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             }
+         });
+         this.addStandardInventorySlots(playerInventory, 8, 84);
++        this.player = (org.bukkit.entity.Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Override
+@@ -112,11 +142,13 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+         super.slotsChanged(inventory);
+         if (inventory == this.repairSlots) {
+             this.createResult();
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper - Add PrepareResultEvent
+         }
+     }
+ 
+     private void createResult() {
+-        this.resultSlots.setItem(0, this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1)));
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareGrindstoneEvent(this.getBukkitView(), this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1))); // CraftBukkit
++        this.sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
+         this.broadcastChanges();
+     }
+ 
+@@ -202,6 +234,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.GRINDSTONE);
+     }
+ 

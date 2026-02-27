@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/entity/vehicle/boat/AbstractChestBoat.java
 +++ b/net/minecraft/world/entity/vehicle/boat/AbstractChestBoat.java
-@@ -67,12 +_,12 @@
+@@ -68,12 +_,12 @@
      }
  
      @Override
--    public void remove(Entity.RemovalReason reason) {
-+    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause cause) { // CraftBukkit - add Bukkit remove cause
+-    public void remove(final Entity.RemovalReason reason) {
++    public void remove(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause cause) { // CraftBukkit - add Bukkit remove cause
          if (!this.level().isClientSide() && reason.shouldDestroy()) {
              Containers.dropContents(this.level(), this, this);
          }
@@ -15,29 +15,29 @@
      }
  
      @Override
-@@ -95,8 +_,8 @@
+@@ -96,8 +_,8 @@
  
      @Override
-     public void openCustomInventoryScreen(Player player) {
+     public void openCustomInventoryScreen(final Player player) {
 -        player.openMenu(this);
--        if (player.level() instanceof ServerLevel serverLevel) {
+-        if (player.level() instanceof ServerLevel level) {
 +        // Paper - fix inventory open cancel - moved into below if
-+        if (player.level() instanceof ServerLevel serverLevel && player.openMenu(this).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
++        if (player.level() instanceof ServerLevel level && player.openMenu(this).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
              this.gameEvent(GameEvent.CONTAINER_OPEN, player);
-             PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+             PiglinAi.angerNearbyPiglins(level, player, true);
          }
-@@ -148,7 +_,7 @@
+@@ -149,7 +_,7 @@
  
      @Override
-     public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+     public @Nullable AbstractContainerMenu createMenu(final int containerId, final Inventory inventory, final Player player) {
 -        if (this.lootTable != null && player.isSpectator()) {
 +        if (this.lootTable != null && player.isSpectator()) { // Paper - LootTable API (TODO spectators can open chests that aren't ready to be re-generated but this doesn't support that)
              return null;
          } else {
-             this.unpackLootTable(playerInventory.player);
-@@ -194,4 +_,58 @@
-     public void stopOpen(ContainerUser user) {
-         this.level().gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of(user.getLivingEntity()));
+             this.unpackLootTable(inventory.player);
+@@ -195,4 +_,58 @@
+     public void stopOpen(final ContainerUser containerUser) {
+         this.level().gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of(containerUser.getLivingEntity()));
      }
 +
 +    // Paper start - LootTable API

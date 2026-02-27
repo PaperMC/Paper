@@ -2,8 +2,8 @@
 +++ b/net/minecraft/world/entity/projectile/hurtingprojectile/SmallFireball.java
 @@ -23,6 +_,11 @@
  
-     public SmallFireball(Level level, LivingEntity owner, Vec3 movement) {
-         super(EntityType.SMALL_FIREBALL, owner, movement, level);
+     public SmallFireball(final Level level, final LivingEntity mob, final Vec3 direction) {
+         super(EntityType.SMALL_FIREBALL, mob, direction, level);
 +        // CraftBukkit start
 +        if (this.getOwner() != null && this.getOwner() instanceof Mob) {
 +            this.isIncendiary = (level instanceof ServerLevel serverLevel) && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING);
@@ -11,9 +11,9 @@
 +        // CraftBukkit end
      }
  
-     public SmallFireball(Level level, double x, double y, double z, Vec3 movement) {
+     public SmallFireball(final Level level, final double x, final double y, final double z, final Vec3 direction) {
 @@ -36,7 +_,14 @@
-             Entity var7 = result.getEntity();
+             Entity var7 = hitResult.getEntity();
              Entity owner = this.getOwner();
              int remainingFireTicks = var7.getRemainingFireTicks();
 -            var7.igniteForSeconds(5.0F);
@@ -29,20 +29,20 @@
              if (!var7.hurtServer(serverLevel, damageSource, 5.0F)) {
                  var7.setRemainingFireTicks(remainingFireTicks);
 @@ -51,9 +_,9 @@
-         super.onHitBlock(result);
+         super.onHitBlock(hitResult);
          if (this.level() instanceof ServerLevel serverLevel) {
              Entity owner = this.getOwner();
 -            if (!(owner instanceof Mob) || serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
 +            if (this.isIncendiary) { // CraftBukkit
-                 BlockPos blockPos = result.getBlockPos().relative(result.getDirection());
--                if (this.level().isEmptyBlock(blockPos)) {
-+                if (this.level().isEmptyBlock(blockPos) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos, this).isCancelled()) { // CraftBukkit
-                     this.level().setBlockAndUpdate(blockPos, BaseFireBlock.getState(this.level(), blockPos));
+                 BlockPos pos = hitResult.getBlockPos().relative(hitResult.getDirection());
+-                if (this.level().isEmptyBlock(pos)) {
++                if (this.level().isEmptyBlock(pos) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos, this).isCancelled()) { // CraftBukkit
+                     this.level().setBlockAndUpdate(pos, BaseFireBlock.getState(this.level(), pos));
                  }
              }
 @@ -64,7 +_,7 @@
-     protected void onHit(HitResult result) {
-         super.onHit(result);
+     protected void onHit(final HitResult hitResult) {
+         super.onHit(hitResult);
          if (!this.level().isClientSide()) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause

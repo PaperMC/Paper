@@ -6,14 +6,14 @@
      public int time;
 +    public boolean generatedByDragonFight = false; // Paper - Fix invulnerable end crystals
  
-     public EndCrystal(EntityType<? extends EndCrystal> type, Level level) {
+     public EndCrystal(final EntityType<? extends EndCrystal> type, final Level level) {
          super(type, level);
 @@ -57,21 +_,37 @@
          if (this.level() instanceof ServerLevel) {
-             BlockPos blockPos = this.blockPosition();
-             if (((ServerLevel)this.level()).getDragonFight() != null && this.level().getBlockState(blockPos).isAir()) {
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockPos, this).isCancelled()) { // Paper
-                 this.level().setBlockAndUpdate(blockPos, BaseFireBlock.getState(this.level(), blockPos));
+             BlockPos pos = this.blockPosition();
+             if (((ServerLevel)this.level()).getDragonFight() != null && this.level().getBlockState(pos).isAir()) {
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), pos, this).isCancelled()) { // Paper
+                 this.level().setBlockAndUpdate(pos, BaseFireBlock.getState(this.level(), pos));
 -            }
 -        }
 +                } // Paper
@@ -34,14 +34,14 @@
      }
  
      @Override
-     protected void addAdditionalSaveData(ValueOutput output) {
+     protected void addAdditionalSaveData(final ValueOutput output) {
          output.storeNullable("beam_target", BlockPos.CODEC, this.getBeamTarget());
          output.putBoolean("ShowBottom", this.showsBottom());
 +        output.putBoolean("Paper.GeneratedByDragonFight", this.generatedByDragonFight); // Paper - Fix invulnerable end crystals
      }
  
      @Override
-     protected void readAdditionalSaveData(ValueInput input) {
+     protected void readAdditionalSaveData(final ValueInput input) {
          this.setBeamTarget(input.read("beam_target", BlockPos.CODEC).orElse(null));
          this.setShowBottom(input.getBooleanOr("ShowBottom", true));
 +        this.generatedByDragonFight = input.getBooleanOr("Paper.GeneratedByDragonFight", false); // Paper - Fix invulnerable end crystals
@@ -54,13 +54,13 @@
              if (!this.isRemoved()) {
 -                this.remove(Entity.RemovalReason.KILLED);
 +                // CraftBukkit start - All non-living entities need this
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount, false)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
-                 if (!damageSource.is(DamageTypeTags.IS_EXPLOSION)) {
-                     DamageSource damageSource1 = damageSource.getEntity() != null ? this.damageSources().explosion(this, damageSource.getEntity()) : null;
--                    level.explode(this, damageSource1, null, this.getX(), this.getY(), this.getZ(), 6.0F, false, Level.ExplosionInteraction.BLOCK);
+                 if (!source.is(DamageTypeTags.IS_EXPLOSION)) {
+                     DamageSource damageSource = source.getEntity() != null ? this.damageSources().explosion(this, source.getEntity()) : null;
+-                    level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), 6.0F, false, Level.ExplosionInteraction.BLOCK);
 +                    // CraftBukkit start
 +                    org.bukkit.event.entity.ExplosionPrimeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExplosionPrimeEvent(this, 6.0F, false);
 +                    if (event.isCancelled()) {
@@ -68,10 +68,10 @@
 +                    }
 +
 +                    this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // Paper - add Bukkit remove cause
-+                    level.explode(this, damageSource1, null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.BLOCK);
++                    level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.BLOCK);
 +                } else {
 +                    this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // Paper - add Bukkit remove cause
 +                    // CraftBukkit end
                  }
  
-                 this.onDestroyedBy(level, damageSource);
+                 this.onDestroyedBy(level, source);

@@ -1,0 +1,45 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/commands/TimeCommand.java b/net/minecraft/server/commands/TimeCommand.java
+index eb1762cafd9d160a786f6ec02fd2aba7a9e3b9f8..2efd7e73985cd55c53cdfb4cd829d72b90b541c7 100644
+--- a/net/minecraft/server/commands/TimeCommand.java
++++ b/net/minecraft/server/commands/TimeCommand.java
+@@ -56,8 +56,15 @@ public class TimeCommand {
+     }
+ 
+     public static int setTime(CommandSourceStack source, int time) {
+-        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
+-            serverLevel.setDayTime(time);
++        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++            // serverLevel.setDayTime(time);
++            // CraftBukkit start
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, time - serverLevel.getDayTime());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
++            }
++            // CraftBukkit end
+         }
+ 
+         source.getServer().forceTimeSynchronization();
+@@ -66,8 +73,14 @@ public class TimeCommand {
+     }
+ 
+     public static int addTime(CommandSourceStack source, int amount) {
+-        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
+-            serverLevel.setDayTime(serverLevel.getDayTime() + amount);
++        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++            // CraftBukkit start
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, amount);
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
++            }
++            // CraftBukkit end
+         }
+ 
+         source.getServer().forceTimeSynchronization();

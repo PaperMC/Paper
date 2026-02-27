@@ -3,26 +3,26 @@
 @@ -18,7 +_,7 @@
      }
  
-     public HashMapPalette(int bits) {
+     public HashMapPalette(final int bits) {
 -        this(bits, CrudeIncrementalIntIdentityHashBiMap.create(1 << bits));
 +        this(bits, CrudeIncrementalIntIdentityHashBiMap.create((1 << bits) + 1)); // Paper - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap
      }
  
-     private HashMapPalette(int bits, CrudeIncrementalIntIdentityHashBiMap<T> values) {
+     private HashMapPalette(final int bits, final CrudeIncrementalIntIdentityHashBiMap<T> values) {
 @@ -34,10 +_,16 @@
-     public int idFor(T state, PaletteResize<T> resizeHandler) {
-         int id = this.values.getId(state);
+     public int idFor(final T value, final PaletteResize<T> resizeHandler) {
+         int id = this.values.getId(value);
          if (id == -1) {
--            id = this.values.add(state);
+-            id = this.values.add(value);
 -            if (id >= 1 << this.bits) {
 +            // Paper start - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap and optimize
 +            // We use size() instead of the result from add(K)
 +            // This avoids adding another object unnecessarily
 +            // Without this change, + 2 would be required in the constructor
 +            if (this.values.size() >= 1 << this.bits) {
-                 id = resizeHandler.onResize(this.bits + 1, state);
+                 id = resizeHandler.onResize(this.bits + 1, value);
 +            } else {
-+                id = this.values.add(state);
++                id = this.values.add(value);
              }
 +            // Paper end - Perf: Avoid unnecessary resize operation in CrudeIncrementalIntIdentityHashBiMap and optimize
          }

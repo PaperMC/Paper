@@ -1,0 +1,54 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/parrot/Parrot.java b/net/minecraft/world/entity/animal/parrot/Parrot.java
+index 15e67b7cfc3772ffb51a2827d11599a20e9eb719..62a26395ee0c3ee450ad3b1ac88bc85523dd27b4 100644
+--- a/net/minecraft/world/entity/animal/parrot/Parrot.java
++++ b/net/minecraft/world/entity/animal/parrot/Parrot.java
+@@ -269,7 +269,7 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+             }
+ 
+             if (!this.level().isClientSide()) {
+-                if (this.random.nextInt(10) == 0) {
++                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+                     this.tame(player);
+                     this.level().broadcastEntityEvent(this, EntityEvent.TAMING_SUCCEEDED);
+                 } else {
+@@ -290,7 +290,7 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+             }
+         } else {
+             this.usePlayerItem(player, hand, itemInHand);
+-            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900));
++            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
+             if (player.isCreative() || !this.isInvulnerable()) {
+                 this.hurt(this.damageSources().playerAttack(player), Float.MAX_VALUE);
+             }
+@@ -383,8 +383,8 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
+-        return true;
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
+     }
+ 
+     @Override
+@@ -399,8 +399,13 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+         if (this.isInvulnerableTo(level, damageSource)) {
+             return false;
+         } else {
++            // CraftBukkit start
++            if (!super.hurtServer(level, damageSource, amount)) {
++                return false;
++            }
+             this.setOrderedToSit(false);
+-            return super.hurtServer(level, damageSource, amount);
++            return true;
++            // CraftBukkit
+         }
+     }
+ 

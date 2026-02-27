@@ -6,20 +6,26 @@
      private boolean placingRecipe;
 +    private org.bukkit.craftbukkit.inventory.@Nullable CraftInventoryView view = null; // CraftBukkit
  
-     public CraftingMenu(int containerId, Inventory playerInventory) {
-         this(containerId, playerInventory, ContainerLevelAccess.NULL);
+     public CraftingMenu(final int containerId, final Inventory inventory) {
+         this(containerId, inventory, ContainerLevelAccess.NULL);
      }
  
-     public CraftingMenu(int containerId, Inventory playerInventory, ContainerLevelAccess access) {
+     public CraftingMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
 -        super(MenuType.CRAFTING, containerId, 3, 3);
-+        super(MenuType.CRAFTING, containerId, 3, 3, playerInventory); // CraftBukkit - pass player
++        super(MenuType.CRAFTING, containerId, 3, 3, inventory); // CraftBukkit - pass player
          this.access = access;
-         this.player = playerInventory.player;
+         this.player = inventory.player;
          this.addResultSlot(this.player, 124, 35);
-@@ -55,7 +_,32 @@
-         CraftingInput craftInput = craftSlots.asCraftInput();
+@@ -50,12 +_,37 @@
+         final Player player,
+         final CraftingContainer container,
+         final ResultContainer resultSlots,
+-        final @Nullable RecipeHolder<CraftingRecipe> recipeHint
++        @Nullable RecipeHolder<CraftingRecipe> recipeHint // Paper - Perf: Improve mass crafting; check last recipe used first
+     ) {
+         CraftingInput input = container.asCraftInput();
          ServerPlayer serverPlayer = (ServerPlayer)player;
-         ItemStack itemStack = ItemStack.EMPTY;
+         ItemStack result = ItemStack.EMPTY;
 +        // Paper start - Perf: Improve mass crafting; check last recipe used first
 +        /*
 +        When the server crafts all available items in CraftingMenu or InventoryMenu the game
@@ -40,27 +46,27 @@
 +
 +        See also: ResultSlot class
 +         */
-+        if (recipe == null) {
-+            recipe = craftSlots.getCurrentRecipe();
++        if (recipeHint == null) {
++            recipeHint = container.getCurrentRecipe();
 +        }
 +        // Paper end - Perf: Improve mass crafting; check last recipe used first
-         Optional<RecipeHolder<CraftingRecipe>> recipeFor = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftInput, level, recipe);
-+        craftSlots.setCurrentRecipe(recipeFor.orElse(null)); // CraftBukkit
-         if (recipeFor.isPresent()) {
-             RecipeHolder<CraftingRecipe> recipeHolder = recipeFor.get();
+         Optional<RecipeHolder<CraftingRecipe>> maybeRecipe = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level, recipeHint);
++        container.setCurrentRecipe(maybeRecipe.orElse(null)); // CraftBukkit
+         if (maybeRecipe.isPresent()) {
+             RecipeHolder<CraftingRecipe> recipeHolder = maybeRecipe.get();
              CraftingRecipe craftingRecipe = recipeHolder.value();
 @@ -66,6 +_,7 @@
                  }
              }
          }
-+        itemStack = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(craftSlots, resultSlots, itemStack, menu.getBukkitView(), recipeFor.map(RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe); // CraftBukkit
++        result = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(container, resultSlots, result, menu.getBukkitView(), maybeRecipe.map(RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe); // CraftBukkit
  
-         resultSlots.setItem(0, itemStack);
-         menu.setRemoteSlot(0, itemStack);
+         resultSlots.setItem(0, result);
+         menu.setRemoteSlot(0, result);
 @@ -102,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return stillValid(this.access, player, Blocks.CRAFTING_TABLE);
      }

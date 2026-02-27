@@ -1,0 +1,28 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/component/BlocksAttacks.java b/net/minecraft/world/item/component/BlocksAttacks.java
+index 454b97fdf142e1bc1c887627a6eeeba54e67bb7e..8e9db734d19b2082437eaa424f33df2b3321c2cf 100644
+--- a/net/minecraft/world/item/component/BlocksAttacks.java
++++ b/net/minecraft/world/item/component/BlocksAttacks.java
+@@ -86,11 +86,15 @@ public record BlocksAttacks(
+             );
+     }
+ 
+-    public void disable(ServerLevel level, LivingEntity entity, float duration, ItemStack stack) {
++    public void disable(ServerLevel level, LivingEntity entity, float duration, ItemStack stack, LivingEntity attacker) { // Paper
+         int i = this.disableBlockingForTicks(duration);
+         if (i > 0) {
+             if (entity instanceof Player player) {
+-                player.getCooldowns().addCooldown(stack, i);
++                // Paper start
++                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), attacker.getBukkitEntity(), i);
++                if (!shieldDisableEvent.callEvent()) return;
++                player.getCooldowns().addCooldown(stack, shieldDisableEvent.getCooldown());
++                // Paper end
+             }
+ 
+             entity.stopUsingItem();

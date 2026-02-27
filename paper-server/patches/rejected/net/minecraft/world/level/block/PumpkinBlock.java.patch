@@ -1,0 +1,52 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/PumpkinBlock.java b/net/minecraft/world/level/block/PumpkinBlock.java
+index 1e0e0489d1fe522d21555f6e5de91eca96fb2a03..cb244c822de515040ab87d9469ad1bf390337ca4 100644
+--- a/net/minecraft/world/level/block/PumpkinBlock.java
++++ b/net/minecraft/world/level/block/PumpkinBlock.java
+@@ -41,6 +41,7 @@ public class PumpkinBlock extends Block {
+         } else if (level instanceof ServerLevel serverLevel) {
+             Direction direction = hitResult.getDirection();
+             Direction direction1 = direction.getAxis() == Direction.Axis.Y ? player.getDirection().getOpposite() : direction;
++            java.util.List<org.bukkit.inventory.ItemStack> drops = new java.util.ArrayList<>(); // Paper
+             dropFromBlockInteractLootTable(
+                 serverLevel,
+                 BuiltInLootTables.CARVE_PUMPKIN,
+@@ -49,15 +50,26 @@ public class PumpkinBlock extends Block {
+                 stack,
+                 player,
+                 (serverLevel1, itemStack) -> {
+-                    ItemEntity itemEntity = new ItemEntity(
+-                        level, pos.getX() + 0.5 + direction1.getStepX() * 0.65, pos.getY() + 0.1, pos.getZ() + 0.5 + direction1.getStepZ() * 0.65, itemStack
+-                    );
+-                    itemEntity.setDeltaMovement(
+-                        0.05 * direction1.getStepX() + level.random.nextDouble() * 0.02, 0.05, 0.05 * direction1.getStepZ() + level.random.nextDouble() * 0.02
+-                    );
+-                    level.addFreshEntity(itemEntity);
++                    drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack)); // Paper - move spawn logic after event call
+                 }
+             );
++            // Paper start - Add PlayerShearBlockEvent
++            io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent(
++                (org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), drops);
++            if (!event.callEvent()) {
++                return InteractionResult.PASS;
++            }
++            for (org.bukkit.inventory.ItemStack itemStack : event.getDrops()) {
++                // moved from above
++                ItemEntity itemEntity = new ItemEntity(
++                    level, pos.getX() + 0.5 + direction1.getStepX() * 0.65, pos.getY() + 0.1, pos.getZ() + 0.5 + direction1.getStepZ() * 0.65, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack)
++                );
++                itemEntity.setDeltaMovement(
++                    0.05 * direction1.getStepX() + level.random.nextDouble() * 0.02, 0.05, 0.05 * direction1.getStepZ() + level.random.nextDouble() * 0.02
++                );
++                level.addFreshEntity(itemEntity);
++            }
++            // Paper end - Add PlayerShearBlockEvent
+             level.playSound(null, pos, SoundEvents.PUMPKIN_CARVE, SoundSource.BLOCKS, 1.0F, 1.0F);
+             level.setBlock(pos, Blocks.CARVED_PUMPKIN.defaultBlockState().setValue(CarvedPumpkinBlock.FACING, direction1), Block.UPDATE_ALL_IMMEDIATE);
+             stack.hurtAndBreak(1, player, hand.asEquipmentSlot());

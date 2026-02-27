@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/ai/behavior/Behavior.java
 +++ b/net/minecraft/world/entity/ai/behavior/Behavior.java
-@@ -14,6 +_,7 @@
+@@ -15,6 +_,7 @@
      private long endTimestamp;
      private final int minDuration;
      private final int maxDuration;
 +    private final String configKey; // Paper - configurable behavior tick rate and timings
  
-     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> entryCondition) {
+     public Behavior(final Map<MemoryModuleType<?>, MemoryStatus> entryCondition) {
          this(entryCondition, 60);
-@@ -27,6 +_,14 @@
+@@ -28,6 +_,14 @@
          this.minDuration = minDuration;
          this.maxDuration = maxDuration;
          this.entryCondition = entryCondition;
@@ -23,16 +23,16 @@
      }
  
      @Override
-@@ -36,6 +_,12 @@
+@@ -42,6 +_,12 @@
  
      @Override
-     public final boolean tryStart(ServerLevel level, E owner, long gameTime) {
+     public final boolean tryStart(final ServerLevel level, final E body, final long timestamp) {
 +        // Paper start - configurable behavior tick rate and timings
 +        int tickRate = java.util.Objects.requireNonNullElse(level.paperConfig().tickRates.behavior.get(owner.getType(), this.configKey), -1);
 +        if (tickRate > -1 && gameTime < this.endTimestamp + tickRate) {
 +            return false;
 +        }
 +        // Paper end - configurable behavior tick rate and timings
-         if (this.hasRequiredMemories(owner) && this.checkExtraStartConditions(level, owner)) {
+         if (this.hasRequiredMemories(body) && this.checkExtraStartConditions(level, body)) {
              this.status = Behavior.Status.RUNNING;
-             int i = this.minDuration + level.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
+             int duration = this.minDuration + level.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);

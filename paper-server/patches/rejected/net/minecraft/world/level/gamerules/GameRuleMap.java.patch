@@ -1,0 +1,50 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/gamerules/GameRuleMap.java b/net/minecraft/world/level/gamerules/GameRuleMap.java
+index 0164acc8c2c676493073946f68602e2de662d370..eb1080bb250b3d76e862e6e5846c7864aa781102 100644
+--- a/net/minecraft/world/level/gamerules/GameRuleMap.java
++++ b/net/minecraft/world/level/gamerules/GameRuleMap.java
+@@ -15,9 +15,16 @@ public final class GameRuleMap {
+     public static final Codec<GameRuleMap> CODEC = Codec.<GameRule<?>, Object>dispatchedMap(BuiltInRegistries.GAME_RULE.byNameCodec(), GameRule::valueCodec)
+         .xmap(GameRuleMap::ofTrusted, GameRuleMap::map);
+     private final Reference2ObjectMap<GameRule<?>, Object> map;
++    private final @Nullable Object[] idAccess; // Paper - array backed gamerule access - array storage
+ 
+     GameRuleMap(Reference2ObjectMap<GameRule<?>, Object> map) {
+         this.map = map;
++        // Paper start - array backed gamerule access - array storage
++        idAccess = new Object[GameRule.LAST_GAMERULE_INDEX];
++        for (final Map.Entry<GameRule<?>, Object> entry : map.entrySet()) {
++            idAccess[entry.getKey().gameRuleIndex] = entry.getValue();
++        }
++        // Paper end - array backed gamerule access - array storage
+     }
+ 
+     private static GameRuleMap ofTrusted(Map<GameRule<?>, Object> rules) {
+@@ -39,18 +46,20 @@ public final class GameRuleMap {
+     }
+ 
+     public boolean has(GameRule<?> rule) {
+-        return this.map.containsKey(rule);
++        return this.idAccess[rule.gameRuleIndex] != null; // Paper - array backed gamerule access - the gamerule map does not allow null values, so this suffices for a contains check (see net.minecraft.world.level.gamerules.GameRuleMap.setGameRule's non-null checks)
+     }
+ 
+     public <T> @Nullable T get(GameRule<T> rule) {
+-        return (T)this.map.get(rule);
++        return (T) this.idAccess[rule.gameRuleIndex]; // Paper - array backed gamerule access
+     }
+ 
+     public <T> void set(GameRule<T> rule, T value) {
+         this.map.put(rule, value);
++        this.idAccess[rule.gameRuleIndex] = value; // Paper - array backed gamerule access - above map is kept in sync instead of fully removing the map, which needs more diff.
+     }
+ 
+     public <T> @Nullable T remove(GameRule<T> rule) {
++        this.idAccess[rule.gameRuleIndex] = null; // Paper - array backed gamerule access
+         return (T)this.map.remove(rule);
+     }
+ 

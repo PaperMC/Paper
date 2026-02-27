@@ -10,14 +10,14 @@
      private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
 @@ -57,7 +_,7 @@
-         ChunkScanAccess storageAccess,
-         RegistryAccess registryAccess,
-         StructureTemplateManager structureTemplateManager,
--        ResourceKey<Level> dimension,
-+        ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension, // Paper - fix missing CB diff
-         ChunkGenerator chunkGenerator,
-         RandomState randomState,
-         LevelHeightAccessor heightAccessor,
+         final ChunkScanAccess storageAccess,
+         final RegistryAccess registryAccess,
+         final StructureTemplateManager structureTemplateManager,
+-        final ResourceKey<Level> dimension,
++        final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension, // Paper - fix missing CB diff
+         final ChunkGenerator chunkGenerator,
+         final RandomState randomState,
+         final LevelHeightAccessor heightAccessor,
 @@ -77,6 +_,20 @@
          this.fixerUpper = fixerUpper;
      }
@@ -36,15 +36,15 @@
 +    }
 +    // Paper end - add missing structure seed configs
 +
-     public StructureCheckResult checkStart(ChunkPos chunkPos, Structure structure, StructurePlacement placement, boolean skipKnownStructures) {
-         long packedChunkPos = chunkPos.toLong();
-         Object2IntMap<Structure> map = this.loadedChunks.get(packedChunkPos);
+     public StructureCheckResult checkStart(final ChunkPos pos, final Structure structure, final StructurePlacement placement, final boolean requireUnreferenced) {
+         long posKey = pos.pack();
+         Object2IntMap<Structure> cachedResult = this.loadedChunks.get(posKey);
 @@ -86,7 +_,7 @@
-             StructureCheckResult structureCheckResult = this.tryLoadFromStorage(chunkPos, structure, skipKnownStructures, packedChunkPos);
-             if (structureCheckResult != null) {
-                 return structureCheckResult;
--            } else if (!placement.applyAdditionalChunkRestrictions(chunkPos.x, chunkPos.z, this.seed)) {
-+            } else if (!placement.applyAdditionalChunkRestrictions(chunkPos.x, chunkPos.z, this.seed, this.getSaltOverride(structure))) { // Paper - add missing structure seed configs
+             StructureCheckResult storageCheckResult = this.tryLoadFromStorage(pos, structure, requireUnreferenced, posKey);
+             if (storageCheckResult != null) {
+                 return storageCheckResult;
+-            } else if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed)) {
++            } else if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed, this.getSaltOverride(structure))) { // Paper - add missing structure seed configs
                  return StructureCheckResult.START_NOT_PRESENT;
              } else {
-                 boolean flag = this.featureChecks
+                 boolean isFeatureChunk = this.featureChecks

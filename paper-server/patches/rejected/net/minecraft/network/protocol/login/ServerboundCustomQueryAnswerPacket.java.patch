@@ -1,0 +1,49 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java b/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
+index 11b76cf16af84b803790bea97ffe2394cbed6ac6..098523b106cbb61cfc779573c558716947219314 100644
+--- a/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
++++ b/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
+@@ -20,7 +20,17 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+     }
+ 
+     private static CustomQueryAnswerPayload readPayload(int transactionId, FriendlyByteBuf buffer) {
+-        return readUnknownPayload(buffer);
++        // Paper start - MC Utils - default query payloads
++        FriendlyByteBuf buf = buffer.readNullable((buf2) -> {
++            int readableBytes = buf2.readableBytes();
++            if (readableBytes >= 0 && readableBytes <= MAX_PAYLOAD_SIZE) {
++                return new FriendlyByteBuf(buf2.readBytes(readableBytes));
++            } else {
++                throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
++            }
++        });
++        return buf == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buf);
++        // Paper end - MC Utils - default query payloads
+     }
+ 
+     private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf buffer) {
+@@ -47,4 +57,19 @@ public record ServerboundCustomQueryAnswerPacket(int transactionId, @Nullable Cu
+     public void handle(ServerLoginPacketListener handler) {
+         handler.handleCustomQueryPacket(this);
+     }
++
++    // Paper start - MC Utils - default query payloads
++    public static final class QueryAnswerPayload implements CustomQueryAnswerPayload {
++        public final FriendlyByteBuf buffer;
++
++        public QueryAnswerPayload(final net.minecraft.network.FriendlyByteBuf buffer) {
++            this.buffer = buffer;
++        }
++
++        @Override
++        public void write(final net.minecraft.network.FriendlyByteBuf buf) {
++            buf.writeBytes(this.buffer.copy());
++        }
++    }
++    // Paper end - MC Utils - default query payloads
+ }

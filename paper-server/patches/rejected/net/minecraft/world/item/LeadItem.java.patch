@@ -1,0 +1,72 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/LeadItem.java b/net/minecraft/world/item/LeadItem.java
+index ded73beacf49aa332de7b893fafae8a776819ea8..bdd300670338006f483d9bcb79a635312ccc8be7 100644
+--- a/net/minecraft/world/item/LeadItem.java
++++ b/net/minecraft/world/item/LeadItem.java
+@@ -26,25 +26,38 @@ public class LeadItem extends Item {
+         if (blockState.is(BlockTags.FENCES)) {
+             Player player = context.getPlayer();
+             if (!level.isClientSide() && player != null) {
+-                return bindPlayerMobs(player, level, clickedPos);
++                return bindPlayerMobs(player, level, clickedPos, context.getHand()); // CraftBukkit - Pass hand
+             }
+         }
+ 
+         return InteractionResult.PASS;
+     }
+ 
+-    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos) {
++    public static InteractionResult bindPlayerMobs(Player player, Level level, BlockPos pos, net.minecraft.world.InteractionHand interactionHand) { // CraftBukkit - Add InteractionHand
+         LeashFenceKnotEntity leashFenceKnotEntity = null;
+         List<Leashable> list = Leashable.leashableInArea(level, Vec3.atCenterOf(pos), leashable1 -> leashable1.getLeashHolder() == player);
+         boolean flag = false;
+ 
+         for (Leashable leashable : list) {
+             if (leashFenceKnotEntity == null) {
+-                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos);
++                // CraftBukkit start - fire HangingPlaceEvent
++                org.apache.commons.lang3.mutable.MutableBoolean created = new org.apache.commons.lang3.mutable.MutableBoolean(false);
++                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(level, pos, created);
++                if (created.booleanValue()) {
++                    org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(interactionHand);
++                    org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) leashFenceKnotEntity.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, hand);
++                    level.getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        leashFenceKnotEntity.discard(null);
++                        return InteractionResult.PASS;
++                    }
++                }
++                // CraftBukkit end
+                 leashFenceKnotEntity.playPlacementSound();
+             }
+ 
+-            if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity)) {
++            if (leashable.canHaveALeashAttachedTo(leashFenceKnotEntity) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, leashFenceKnotEntity, player, interactionHand)) { // Paper - leash event
+                 leashable.setLeashedTo(leashFenceKnotEntity, true);
+                 flag = true;
+             }
+@@ -54,7 +67,18 @@ public class LeadItem extends Item {
+             level.gameEvent(GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of(player));
+             return InteractionResult.SUCCESS_SERVER;
+         } else {
++            // CraftBukkit start - remove leash if we do not leash any entity because of the cancelled event
++            if (leashFenceKnotEntity != null) {
++                leashFenceKnotEntity.discard(null);
++            }
++            // CraftBukkit end
+             return InteractionResult.PASS;
+         }
+     }
++
++    // CraftBukkit start
++    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
++        return LeadItem.bindPlayerMobs(player, world, pos, net.minecraft.world.InteractionHand.MAIN_HAND);
++    }
++    // CraftBukkit end
+ }

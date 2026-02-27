@@ -1,49 +1,50 @@
 --- a/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
-@@ -10,24 +_,37 @@
+@@ -11,24 +_,37 @@
  
  public class DefaultDispenseItemBehavior implements DispenseItemBehavior {
      private static final int DEFAULT_ACCURACY = 6;
 +    private Direction direction; // Paper - cache facing direction
  
      @Override
-     public final ItemStack dispense(BlockSource blockSource, ItemStack item) {
-+        this.direction = blockSource.state().getValue(DispenserBlock.FACING); // Paper - cache facing direction
-         ItemStack itemStack = this.execute(blockSource, item);
-         this.playSound(blockSource);
--        this.playAnimation(blockSource, blockSource.state().getValue(DispenserBlock.FACING));
-+        this.playAnimation(blockSource, this.direction); // Paper - cache facing direction
-         return itemStack;
+     public final ItemStack dispense(final BlockSource source, final ItemStack dispensed) {
++        this.direction = source.state().getValue(DispenserBlock.FACING); // Paper - cache facing direction
+         ItemStack result = this.execute(source, dispensed);
+         this.playSound(source);
+-        this.playAnimation(source, source.state().getValue(DispenserBlock.FACING));
++        this.playAnimation(source, this.direction); // Paper - cache facing direction
+         return result;
      }
  
-     protected ItemStack execute(BlockSource blockSource, ItemStack item) {
--        Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
+     protected ItemStack execute(final BlockSource source, final ItemStack dispensed) {
+-        Direction direction = source.state().getValue(DispenserBlock.FACING);
 +        // Paper - cache facing direction
-         Position dispensePosition = DispenserBlock.getDispensePosition(blockSource);
-         ItemStack itemStack = item.split(1);
--        spawnItem(blockSource.level(), itemStack, 6, direction, dispensePosition);
+         Position position = DispenserBlock.getDispensePosition(source);
+         ItemStack itemStack = dispensed.split(1);
+-        spawnItem(source.level(), itemStack, 6, direction, position);
 +        // CraftBukkit start
-+        if (!DefaultDispenseItemBehavior.spawnItem(blockSource.level(), itemStack, 6, this.direction, dispensePosition, blockSource)) {
-+            item.grow(1);
++        if (!DefaultDispenseItemBehavior.spawnItem(source.level(), itemStack, 6, this.direction, position, source)) {
++            dispensed.grow(1);
 +        }
 +        // CraftBukkit end
-         return item;
+         return dispensed;
      }
  
-     public static void spawnItem(Level level, ItemStack stack, int speed, Direction facing, Position position) {
+-    public static void spawnItem(final Level level, final ItemStack itemStack, final int accuracy, final Direction direction, final Position position) {
++    public static void spawnItem(Level level, ItemStack stack, int speed, Direction facing, Position position) {
 +        // CraftBukkit start
 +        ItemEntity itemEntity = prepareItem(level, stack, speed, facing, position);
 +        level.addFreshEntity(itemEntity);
 +    }
 +
-+    private static ItemEntity prepareItem(Level level, ItemStack stack, int speed, Direction facing, Position position) {
++    private static ItemEntity prepareItem(final Level level, final ItemStack itemStack, final int accuracy, final Direction direction, final Position position) {
 +        // CraftBukkit end
-         double d = position.x();
-         double d1 = position.y();
-         double d2 = position.z();
-@@ -44,7 +_,43 @@
-             level.random.triangle(0.2, 0.0172275 * speed),
-             level.random.triangle(facing.getStepZ() * d3, 0.0172275 * speed)
+         double spawnX = position.x();
+         double spawnY = position.y();
+         double spawnZ = position.z();
+@@ -46,7 +_,43 @@
+             random.triangle(0.2, 0.0172275 * accuracy),
+             random.triangle(direction.getStepZ() * pow, 0.0172275 * accuracy)
          );
 +        return itemEntity; // CraftBukkit
 +    }
@@ -84,4 +85,4 @@
 +        // CraftBukkit end
      }
  
-     protected void playSound(BlockSource blockSource) {
+     protected void playSound(final BlockSource source) {

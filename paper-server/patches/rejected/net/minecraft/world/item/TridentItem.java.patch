@@ -1,0 +1,60 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/TridentItem.java b/net/minecraft/world/item/TridentItem.java
+index e9033a97a2ae0469ec877c46ad2c63182ff8ec6b..d029fda2e8bac95fb75f75666a55b0c3aa3bb12d 100644
+--- a/net/minecraft/world/item/TridentItem.java
++++ b/net/minecraft/world/item/TridentItem.java
+@@ -79,18 +79,38 @@ public class TridentItem extends Item implements ProjectileItem {
+                         .orElse(SoundEvents.TRIDENT_THROW);
+                     player.awardStat(Stats.ITEM_USED.get(this));
+                     if (level instanceof ServerLevel serverLevel) {
+-                        stack.hurtWithoutBreaking(1, player);
++                        // stack.hurtWithoutBreaking(1, player); // CraftBukkit - moved down
+                         if (tridentSpinAttackStrength == 0.0F) {
+-                            ItemStack itemStack = stack.consumeAndReturn(1, player);
+-                            ThrownTrident thrownTrident = Projectile.spawnProjectileFromRotation(
++                            ItemStack itemStack = stack.copyWithCount(1); // Paper
++                            Projectile.Delayed<ThrownTrident> tridentDelayed = Projectile.spawnProjectileFromRotationDelayed( // Paper - PlayerLaunchProjectileEvent(
+                                 ThrownTrident::new, serverLevel, itemStack, player, 0.0F, 2.5F, 1.0F
+                             );
++                            // Paper start - PlayerLaunchProjectileEvent
++                            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), (org.bukkit.entity.Projectile) tridentDelayed.projectile().getBukkitEntity());
++                            if (!event.callEvent() || !tridentDelayed.attemptSpawn()) {
++                                // CraftBukkit start
++                                // Paper end - PlayerLaunchProjectileEvent
++                                return false;
++                            }
++                            ThrownTrident thrownTrident = tridentDelayed.projectile(); // Paper - PlayerLaunchProjectileEvent
++                            if (event.shouldConsume()) {
++                                itemStack.hurtWithoutBreaking(1, player); // Paper - PlayerLaunchProjectileEvent - use itemStack; pickup item damage
++                            }
++                            thrownTrident.pickupItemStack = itemStack.copy(); // SPIGOT-4511 update since damage call moved - use itemStack; count = 1
++                            if (event.shouldConsume()) {
++                                stack.consume(1, player);
++                            }
++                            // CraftBukkit end
+                             if (player.hasInfiniteMaterials()) {
+                                 thrownTrident.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+                             }
+ 
+                             level.playSound(null, thrownTrident, holder.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                             return true;
++                            // CraftBukkit start - SPIGOT-5458 also need in this branch :(
++                        } else {
++                            stack.hurtWithoutBreaking(1, player);
++                            // CraftBukkit end
+                         }
+                     }
+ 
+@@ -104,6 +124,7 @@ public class TridentItem extends Item implements ProjectileItem {
+                         f *= tridentSpinAttackStrength / squareRoot;
+                         f1 *= tridentSpinAttackStrength / squareRoot;
+                         f2 *= tridentSpinAttackStrength / squareRoot;
++                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(player, stack, f, f1, f2)) return false; // Paper - Add player riptide event
+                         player.push(f, f1, f2);
+                         player.startAutoSpinAttack(20, 8.0F, stack);
+                         if (player.onGround()) {

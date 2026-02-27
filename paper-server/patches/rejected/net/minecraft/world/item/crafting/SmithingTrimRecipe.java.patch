@@ -1,0 +1,66 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/crafting/SmithingTrimRecipe.java b/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
+index f6418d15df4da0604c2ed5d46071e3e4164c5db7..6582370cfa3d58a7ac08d574e26e7a93d243bdaa 100644
+--- a/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
++++ b/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
+@@ -27,8 +27,15 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+     final Ingredient addition;
+     final Holder<TrimPattern> pattern;
+     private @Nullable PlacementInfo placementInfo;
++    final boolean copyDataComponents; // Paper - Option to prevent data components copy
+ 
+     public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, Holder<TrimPattern> pattern) {
++        // Paper start - Option to prevent data components copy
++        this(template, base, addition, pattern, true);
++    }
++    public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, Holder<TrimPattern> pattern, final boolean copyDataComponents) {
++        this.copyDataComponents = copyDataComponents;
++        // Paper end - Option to prevent data components copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+@@ -37,10 +44,15 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+ 
+     @Override
+     public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
+-        return applyTrim(registries, input.base(), input.addition(), this.pattern);
++        return applyTrim(registries, input.base(), input.addition(), this.pattern, this.copyDataComponents); // Paper start - Option to prevent data components copy
+     }
+ 
+     public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, Holder<TrimPattern> pattern) {
++    // Paper start - Option to prevent data components copy
++        return applyTrim(registries, base, addition, pattern, true);
++    }
++    public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, Holder<TrimPattern> pattern, final boolean copyDataComponents) {
++    // Paper end - Option to prevent data components copy
+         Optional<Holder<TrimMaterial>> fromIngredient = TrimMaterials.getFromIngredient(registries, addition);
+         if (fromIngredient.isPresent()) {
+             ArmorTrim armorTrim = base.get(DataComponents.TRIM);
+@@ -48,7 +60,7 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+             if (Objects.equals(armorTrim, armorTrim1)) {
+                 return ItemStack.EMPTY;
+             } else {
+-                ItemStack itemStack = base.copyWithCount(1);
++                ItemStack itemStack = copyDataComponents ? base.copyWithCount(1) : new ItemStack(base.getItem(), 1); // Paper - Option to prevent data components copy
+                 itemStack.set(DataComponents.TRIM, armorTrim1);
+                 return itemStack;
+             }
+@@ -102,6 +114,13 @@ public class SmithingTrimRecipe implements SmithingRecipe {
+         );
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        return new org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe(id, org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.template), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.base), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.addition), org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern.minecraftHolderToBukkit(this.pattern), this.copyDataComponents); // Paper - Option to prevent data components copy
++    }
++    // CraftBukkit end
++
+     public static class Serializer implements RecipeSerializer<SmithingTrimRecipe> {
+         private static final MapCodec<SmithingTrimRecipe> CODEC = RecordCodecBuilder.mapCodec(
+             instance -> instance.group(

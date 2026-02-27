@@ -1,0 +1,102 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/resources/RegistryDataLoader.java b/net/minecraft/resources/RegistryDataLoader.java
+index 84298391445c91fd4d8b4114488b39ec53ca344e..2211cd81bf986e0dda97841e39bed23bedb38914 100644
+--- a/net/minecraft/resources/RegistryDataLoader.java
++++ b/net/minecraft/resources/RegistryDataLoader.java
+@@ -212,11 +212,21 @@ public class RegistryDataLoader {
+         final Map<ResourceKey<? extends Registry<?>>, RegistryOps.RegistryInfo<?>> map = new HashMap<>();
+         registryLookups.forEach(registryLookup -> map.put(registryLookup.key(), createInfoForContextRegistry((HolderLookup.RegistryLookup<?>)registryLookup)));
+         loaders.forEach(loader -> map.put(loader.registry.key(), createInfoForNewRegistry(loader.registry)));
++        // this creates a HolderLookup.Provider to be used exclusively to obtain real instances of values to pre-populate builders
++        // for the Registry Modification API. This concatenates the context registry lookups and the empty registries about to be filled.
++        final HolderLookup.Provider providerForBuilders = HolderLookup.Provider.create(java.util.stream.Stream.concat(registryLookups.stream(), loaders.stream().map(Loader::registry))); // Paper - add method to get the value for pre-filling builders in the reg mod API
+         return new RegistryOps.RegistryInfoLookup() {
+             @Override
+             public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryKey) {
+                 return Optional.ofNullable((RegistryOps.RegistryInfo<T>)map.get(registryKey));
+             }
++
++            // Paper start - add method to get the value for pre-filling builders in the reg mod API
++            @Override
++            public HolderLookup.Provider lookupForValueCopyViaBuilders() {
++                return providerForBuilders;
++            }
++            // Paper end - add method to get the value for pre-filling builders in the reg mod API
+         };
+     }
+ 
+@@ -280,13 +290,14 @@ public class RegistryDataLoader {
+         RegistryOps<JsonElement> ops,
+         ResourceKey<E> resourceKey,
+         Resource resource,
+-        RegistrationInfo registrationInfo
++        RegistrationInfo registrationInfo,
++        io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
+     ) throws IOException {
+         try (Reader reader = resource.openAsReader()) {
+             JsonElement jsonElement = StrictJsonParser.parse(reader);
+             DataResult<E> dataResult = codec.parse(ops, jsonElement);
+             E orThrow = dataResult.getOrThrow();
+-            registry.register(resourceKey, orThrow, registrationInfo);
++            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(registry, resourceKey, orThrow, registrationInfo, conversions); // Paper - register with listeners
+         }
+     }
+ 
+@@ -300,6 +311,7 @@ public class RegistryDataLoader {
+         FileToIdConverter fileToIdConverter = FileToIdConverter.registry(registry.key());
+         RegistryOps<JsonElement> registryOps = RegistryOps.create(JsonOps.INSTANCE, registryInfoLookup);
+ 
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryInfoLookup); // Paper - create conversions
+         for (Entry<Identifier, Resource> entry : fileToIdConverter.listMatchingResources(resourceManager).entrySet()) {
+             Identifier identifier = entry.getKey();
+             ResourceKey<E> resourceKey = ResourceKey.create(registry.key(), fileToIdConverter.fileToId(identifier));
+@@ -307,7 +319,7 @@ public class RegistryDataLoader {
+             RegistrationInfo registrationInfo = REGISTRATION_INFO_CACHE.apply(resource.knownPackInfo());
+ 
+             try {
+-                loadElementFromResource(registry, codec, registryOps, resourceKey, resource, registrationInfo);
++                loadElementFromResource(registry, codec, registryOps, resourceKey, resource, registrationInfo, conversions); // Paper - pass conversions
+             } catch (Exception var14) {
+                 loadingErrors.put(
+                     resourceKey,
+@@ -316,7 +328,9 @@ public class RegistryDataLoader {
+             }
+         }
+ 
+-        TagLoader.loadTagsForRegistry(resourceManager, registry);
++        io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(registry.key()); // Paper - lock reference holders
++        io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), conversions); // Paper - run pre-freeze listeners
++        TagLoader.loadTagsForRegistry(resourceManager, registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - tag lifecycle - add cause
+     }
+ 
+     static <E> void loadContentsFromNetwork(
+@@ -333,6 +347,7 @@ public class RegistryDataLoader {
+             RegistryOps<JsonElement> registryOps1 = RegistryOps.create(JsonOps.INSTANCE, registryInfoLookup);
+             FileToIdConverter fileToIdConverter = FileToIdConverter.registry(registry.key());
+ 
++            final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryInfoLookup); // Paper - create conversions
+             for (RegistrySynchronization.PackedRegistryEntry packedRegistryEntry : networkedRegistryData.elements) {
+                 ResourceKey<E> resourceKey = ResourceKey.create(registry.key(), packedRegistryEntry.id());
+                 Optional<Tag> optional = packedRegistryEntry.data();
+@@ -351,7 +366,7 @@ public class RegistryDataLoader {
+ 
+                     try {
+                         Resource resourceOrThrow = resourceProvider.getResourceOrThrow(identifier);
+-                        loadElementFromResource(registry, codec, registryOps1, resourceKey, resourceOrThrow, NETWORK_REGISTRATION_INFO);
++                        loadElementFromResource(registry, codec, registryOps1, resourceKey, resourceOrThrow, NETWORK_REGISTRATION_INFO, conversions); // Paper - pass conversions
+                     } catch (Exception var17) {
+                         loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var17));
+                     }
+@@ -393,6 +408,7 @@ public class RegistryDataLoader {
+ 
+         RegistryDataLoader.Loader<T> create(Lifecycle registryLifecycle, Map<ResourceKey<?>, Exception> loadingErrors) {
+             WritableRegistry<T> writableRegistry = new MappedRegistry<>(this.key, registryLifecycle);
++            io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(writableRegistry); // Paper - initialize API registry
+             return new RegistryDataLoader.Loader<>(this, writableRegistry, loadingErrors);
+         }
+ 

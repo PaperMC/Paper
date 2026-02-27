@@ -3,7 +3,7 @@
 @@ -54,7 +_,13 @@
  
      @Override
-     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+     public void hurtEnemy(final ItemStack itemStack, final LivingEntity mob, final LivingEntity attacker) {
 -        if (canSmashAttack(attacker)) {
 +        // Paper start - Add EntityAttemptSmashAttackEvent
 +        final boolean canSmashAttack = canSmashAttack(attacker);
@@ -12,15 +12,15 @@
 +        final org.bukkit.event.Event.Result result = event.getResult();
 +        if (result == org.bukkit.event.Event.Result.ALLOW || (canSmashAttack && result == org.bukkit.event.Event.Result.DEFAULT)) {
 +        // Paper end - Add EntityAttemptSmashAttackEvent
-             ServerLevel serverLevel = (ServerLevel)attacker.level();
+             ServerLevel level = (ServerLevel)attacker.level();
              attacker.setDeltaMovement(attacker.getDeltaMovement().with(Direction.Axis.Y, 0.01F));
-             if (attacker instanceof ServerPlayer serverPlayer) {
-@@ -129,7 +_,7 @@
-             double knockbackPower = getKnockbackPower(attacker, livingEntity, vec3);
-             Vec3 vec31 = vec3.normalize().scale(knockbackPower);
+             attacker.setIgnoreFallDamageFromCurrentImpulse(true, this.calculateImpactPosition(attacker));
+@@ -124,7 +_,7 @@
+             double knockbackPower = getKnockbackPower(attacker, nearby, direction);
+             Vec3 knockbackVector = direction.normalize().scale(knockbackPower);
              if (knockbackPower > 0.0) {
--                livingEntity.push(vec31.x, 0.7F, vec31.z);
-+                livingEntity.push(vec31.x, 0.7F, vec31.z, attacker); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
-                 if (livingEntity instanceof ServerPlayer serverPlayer) {
-                     serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
+-                nearby.push(knockbackVector.x, 0.7F, knockbackVector.z);
++                nearby.push(knockbackVector.x, 0.7F, knockbackVector.z, attacker); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                 if (nearby instanceof ServerPlayer otherPlayer) {
+                     otherPlayer.connection.send(new ClientboundSetEntityMotionPacket(otherPlayer));
                  }

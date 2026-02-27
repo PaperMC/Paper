@@ -1,0 +1,36 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/SpawnEggItem.java b/net/minecraft/world/item/SpawnEggItem.java
+index 443c411c3f0c97c09a68059d6e39a685c70e1e49..079cccadfca55cd718bf75b244901f774c818811 100644
+--- a/net/minecraft/world/item/SpawnEggItem.java
++++ b/net/minecraft/world/item/SpawnEggItem.java
+@@ -69,6 +69,7 @@ public class SpawnEggItem extends Item {
+ 
+                     return InteractionResult.FAIL;
+                 } else {
++                    if (level.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
+                     spawner.setEntityId(type, level.getRandom());
+                     level.sendBlockUpdated(clickedPos, blockState, blockState, Block.UPDATE_ALL);
+                     level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, clickedPos);
+@@ -96,7 +97,7 @@ public class SpawnEggItem extends Item {
+         EntityType<?> type = this.getType(stack);
+         if (type == null) {
+             return InteractionResult.FAIL;
+-        } else if (!type.isAllowedInPeaceful() && level.getDifficulty() == Difficulty.PEACEFUL) {
++        } else if (!type.isAllowedInPeaceful(stack.get(DataComponents.ENTITY_DATA).getUnsafe()) && level.getDifficulty() == Difficulty.PEACEFUL) { // Paper - check peaceful override
+             return InteractionResult.FAIL;
+         } else {
+             if (type.spawn((ServerLevel)level, stack, owner, pos, EntitySpawnReason.SPAWN_ITEM_USE, shouldOffsetY, shouldOffsetYMore) != null) {
+@@ -178,7 +179,7 @@ public class SpawnEggItem extends Item {
+                 } else {
+                     breedOffspring.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
+                     breedOffspring.applyComponentsFromItemStack(stack);
+-                    level.addFreshEntityWithPassengers(breedOffspring);
++                    level.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+                     stack.consume(1, player);
+                     return Optional.of(breedOffspring);
+                 }

@@ -3,14 +3,14 @@
 @@ -31,6 +_,7 @@
      }
  
-     public void save(Player player) {
+     public void save(final Player player) {
 +        if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
-         try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
-             TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, player.registryAccess());
-             player.saveWithoutId(tagValueOutput);
+         try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
+             TagValueOutput output = TagValueOutput.createWithContext(reporter, player.registryAccess());
+             player.saveWithoutId(output);
 @@ -42,7 +_,7 @@
-             Path path3 = path.resolve(player.getStringUUID() + ".dat_old");
-             Util.safeReplaceFile(path2, path1, path3);
+             Path oldFile = playerDirPath.resolve(player.getStringUUID() + ".dat_old");
+             Util.safeReplaceFile(realFile, tmpFile, oldFile);
          } catch (Exception var11) {
 -            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName());
 +            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName(), var11); // Paper - Print exception
@@ -19,8 +19,8 @@
  
 @@ -62,9 +_,25 @@
  
-     private Optional<CompoundTag> load(NameAndId nameAndId, String suffix) {
-         File file = new File(this.playerDir, nameAndId.id() + suffix);
+     private Optional<CompoundTag> load(final NameAndId nameAndId, final String suffix) {
+         File realFile = new File(this.playerDir, nameAndId.id() + suffix);
 +        // Spigot start
 +        boolean usingWrongFile = false;
 +        if (org.bukkit.Bukkit.getOnlineMode() && !file.exists()) { // Paper - Check online mode first
@@ -31,11 +31,11 @@
 +            }
 +        }
 +        // Spigot end
-         if (file.exists() && file.isFile()) {
+         if (realFile.exists() && realFile.isFile()) {
              try {
--                return Optional.of(NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap()));
+-                return Optional.of(NbtIo.readCompressed(realFile.toPath(), NbtAccounter.unlimitedHeap()));
 +                // Spigot start
-+                Optional<CompoundTag> optional = Optional.of(NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap()));
++                Optional<CompoundTag> optional = Optional.of(NbtIo.readCompressed(realFile.toPath(), NbtAccounter.unlimitedHeap()));
 +                if (usingWrongFile) {
 +                    file.renameTo(new File(file.getPath() + ".offline-read"));
 +                }
@@ -45,7 +45,7 @@
                  LOGGER.warn("Failed to load player data for {}", nameAndId.name());
              }
 @@ -84,4 +_,10 @@
-             return DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, compoundTag, dataVersion);
+             return DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, tag, version);
          });
      }
 +

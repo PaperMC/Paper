@@ -1,26 +1,26 @@
 --- a/net/minecraft/world/level/block/entity/BellBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BellBlockEntity.java
-@@ -60,6 +_,11 @@
+@@ -62,6 +_,11 @@
  
-         if (blockEntity.ticks >= 50) {
-             blockEntity.shaking = false;
+         if (entity.ticks >= 50) {
+             entity.shaking = false;
 +            // Paper start - Fix bell block entity memory leak
 +            if (!blockEntity.resonating) {
 +                blockEntity.nearbyEntities.clear();
 +            }
 +            // Paper end - Fix bell block entity memory leak
-             blockEntity.ticks = 0;
+             entity.ticks = 0;
          }
  
-@@ -73,6 +_,7 @@
-                 blockEntity.resonationTicks++;
+@@ -75,6 +_,7 @@
+                 entity.resonationTicks++;
              } else {
-                 resonationEndAction.run(level, pos, blockEntity.nearbyEntities);
+                 onResonationEnd.run(level, pos, entity.nearbyEntities);
 +                blockEntity.nearbyEntities.clear(); // Paper - Fix bell block entity memory leak
-                 blockEntity.resonating = false;
+                 entity.resonating = false;
              }
          }
-@@ -113,6 +_,8 @@
+@@ -115,6 +_,8 @@
                  }
              }
          }
@@ -28,25 +28,25 @@
 +        this.nearbyEntities.removeIf(e -> !e.isAlive()); // Paper - Fix bell block entity memory leak
      }
  
-     private static boolean areRaidersNearby(BlockPos pos, List<LivingEntity> raiders) {
-@@ -129,7 +_,10 @@
+     private static boolean areRaidersNearby(final BlockPos bellPos, final List<LivingEntity> nearbyEntities) {
+@@ -128,7 +_,10 @@
      }
  
-     private static void makeRaidersGlow(Level level, BlockPos pos, List<LivingEntity> raiders) {
--        raiders.stream().filter(raider -> isRaiderWithinRange(pos, raider)).forEach(BellBlockEntity::glow);
+     private static void makeRaidersGlow(final Level level, final BlockPos blockPos, final List<LivingEntity> nearbyEntities) {
+-        nearbyEntities.stream().filter(e -> isRaiderWithinRange(blockPos, e)).forEach(BellBlockEntity::glow);
 +        // Paper start - call bell resonate event and bell reveal raider event
-+        final List<org.bukkit.entity.LivingEntity> inRangeRaiders = raiders.stream().filter(raider -> isRaiderWithinRange(pos, raider)).map(e -> (org.bukkit.entity.LivingEntity) e.getBukkitEntity()).toList();
++        final List<org.bukkit.entity.LivingEntity> inRangeRaiders = nearbyEntities.stream().filter(e -> isRaiderWithinRange(blockPos, e)).map(e -> (org.bukkit.entity.LivingEntity) e.getBukkitEntity()).toList();
 +        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(level, pos, inRangeRaiders).forEach(e -> glow(e, pos));
 +        // Paper end - call bell resonate event and bell reveal raider event
      }
  
-     private static void showBellParticles(Level level, BlockPos pos, List<LivingEntity> raiders) {
+     private static void showBellParticles(final Level level, final BlockPos bellPos, final List<LivingEntity> nearbyEntities) {
 @@ -159,7 +_,16 @@
-         return raider.isAlive() && !raider.isRemoved() && pos.closerToCenterThan(raider.position(), 48.0) && raider.getType().is(EntityTypeTags.RAIDERS);
+         return entity.isAlive() && !entity.isRemoved() && blockPos.closerToCenterThan(entity.position(), 48.0) && entity.is(EntityTypeTags.RAIDERS);
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add BellRevealRaiderEvent
-     private static void glow(LivingEntity entity) {
+     private static void glow(final LivingEntity raider) {
 +        // Paper start - Add BellRevealRaiderEvent
 +        glow(entity, null);
 +    }
@@ -55,6 +55,6 @@
 +        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), (org.bukkit.entity.Raider) entity.getBukkitEntity()).callEvent())
 +            return;
 +        // Paper end - Add BellRevealRaiderEvent
-         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
+         raider.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
      }
  

@@ -1,0 +1,94 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/trading/MerchantOffer.java b/net/minecraft/world/item/trading/MerchantOffer.java
+index 864b9a85daf3a9050c992573ebb3747c18841cee..6afeb92c2e00ca5b945b7c7de9257bd741d53c3d 100644
+--- a/net/minecraft/world/item/trading/MerchantOffer.java
++++ b/net/minecraft/world/item/trading/MerchantOffer.java
+@@ -21,6 +21,7 @@ public class MerchantOffer {
+                 Codec.INT.lenientOptionalFieldOf("demand", 0).forGetter(merchantOffer -> merchantOffer.demand),
+                 Codec.FLOAT.lenientOptionalFieldOf("priceMultiplier", 0.0F).forGetter(merchantOffer -> merchantOffer.priceMultiplier),
+                 Codec.INT.lenientOptionalFieldOf("xp", 1).forGetter(merchantOffer -> merchantOffer.xp)
++                , Codec.BOOL.lenientOptionalFieldOf("Paper.IgnoreDiscounts", false).forGetter(merchantOffer -> merchantOffer.ignoreDiscounts) // Paper
+             )
+             .apply(instance, MerchantOffer::new)
+     );
+@@ -37,6 +38,21 @@ public class MerchantOffer {
+     public int demand;
+     public float priceMultiplier;
+     public int xp;
++    public boolean ignoreDiscounts; // Paper - Add ignore discounts API
++
++    // CraftBukkit start
++    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.CraftMerchantRecipe bukkitHandle;
++
++    public org.bukkit.craftbukkit.inventory.CraftMerchantRecipe asBukkit() {
++        return (this.bukkitHandle == null) ? this.bukkitHandle = new org.bukkit.craftbukkit.inventory.CraftMerchantRecipe(this) : this.bukkitHandle;
++    }
++
++    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, final boolean ignoreDiscounts, org.bukkit.craftbukkit.inventory.CraftMerchantRecipe bukkit) { // Paper
++        this(baseCostA, costB, result, uses, maxUses, experience, priceMultiplier, demand);
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
++        this.bukkitHandle = bukkit;
++    }
++    // CraftBukkit end
+ 
+     private MerchantOffer(
+         ItemCost baseCostA,
+@@ -49,6 +65,7 @@ public class MerchantOffer {
+         int demand,
+         float priceMultiplier,
+         int xp
++        , final boolean ignoreDiscounts // Paper
+     ) {
+         this.baseCostA = baseCostA;
+         this.costB = costB;
+@@ -60,6 +77,7 @@ public class MerchantOffer {
+         this.demand = demand;
+         this.priceMultiplier = priceMultiplier;
+         this.xp = xp;
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
+     }
+ 
+     public MerchantOffer(ItemCost baseCostA, ItemStack result, int maxUses, int xp, float priceMultiplier) {
+@@ -75,7 +93,7 @@ public class MerchantOffer {
+     }
+ 
+     public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int _uses, int maxUses, int xp, float priceMultiplier, int demand) {
+-        this(baseCostA, costB, result, _uses, maxUses, true, 0, demand, priceMultiplier, xp);
++        this(baseCostA, costB, result, _uses, maxUses, true, 0, demand, priceMultiplier, xp, false); // Paper
+     }
+ 
+     private MerchantOffer(MerchantOffer other) {
+@@ -90,6 +108,7 @@ public class MerchantOffer {
+             other.demand,
+             other.priceMultiplier,
+             other.xp
++            , other.ignoreDiscounts // Paper
+         );
+     }
+ 
+@@ -125,6 +144,7 @@ public class MerchantOffer {
+ 
+     public void updateDemand() {
+         this.demand = this.demand + this.uses - (this.maxUses - this.uses);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.preventNegativeVillagerDemand) this.demand = Math.max(0, this.demand); // Paper - Fix MC-163962
+     }
+ 
+     public ItemStack assemble() {
+@@ -205,7 +225,11 @@ public class MerchantOffer {
+         if (!this.satisfiedBy(playerOfferA, playerOfferB)) {
+             return false;
+         } else {
+-            playerOfferA.shrink(this.getCostA().getCount());
++            // CraftBukkit start
++            if (!this.getCostA().isEmpty()) {
++                playerOfferA.shrink(this.getCostA().getCount());
++            }
++            // CraftBukkit end
+             if (!this.getCostB().isEmpty()) {
+                 playerOfferB.shrink(this.getCostB().getCount());
+             }

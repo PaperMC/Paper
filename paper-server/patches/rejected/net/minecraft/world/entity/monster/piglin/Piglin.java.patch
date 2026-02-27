@@ -1,0 +1,83 @@
+From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/monster/piglin/Piglin.java b/net/minecraft/world/entity/monster/piglin/Piglin.java
+index 11000ec0b71f6ed04c1f4c1bd502bf5d78c7dec7..2497779f96e3b6c7e7aa048c2047c04f06cb7ede 100644
+--- a/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -129,6 +129,12 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+         MemoryModuleType.SPEAR_ENGAGE_TIME,
+         MemoryModuleType.SPEAR_STATUS
+     );
++    // CraftBukkit start - Custom bartering and interest list
++    public java.util.Set<Item> allowedBarterItems = new java.util.HashSet<>();
++    public java.util.Set<Item> interestItems = new java.util.HashSet<>();
++    private static final com.mojang.serialization.Codec<java.util.Set<net.minecraft.world.item.Item>> ITEM_SET_CODEC = net.minecraft.core.registries.BuiltInRegistries.ITEM
++        .byNameCodec().listOf().xmap(java.util.HashSet::new, List::copyOf);
++    // CraftBukkit end
+ 
+     public Piglin(EntityType<? extends AbstractPiglin> type, Level level) {
+         super(type, level);
+@@ -141,6 +147,10 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+         output.putBoolean("IsBaby", this.isBaby());
+         output.putBoolean("CannotHunt", this.cannotHunt);
+         this.writeInventoryToTag(output);
++        // CraftBukkit start
++        output.store("Bukkit.BarterList", ITEM_SET_CODEC, this.allowedBarterItems);
++        output.store("Bukkit.InterestList", ITEM_SET_CODEC, this.interestItems);
++        // CraftBukkit end
+     }
+ 
+     @Override
+@@ -149,6 +159,10 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+         this.setBaby(input.getBooleanOr("IsBaby", false));
+         this.setCannotHunt(input.getBooleanOr("CannotHunt", false));
+         this.readInventoryFromTag(input);
++        // CraftBukkit start
++        this.allowedBarterItems = input.read("Bukkit.BarterList", ITEM_SET_CODEC).orElseGet(java.util.HashSet::new);
++        this.interestItems = input.read("Bukkit.InterestList", ITEM_SET_CODEC).orElseGet(java.util.HashSet::new);
++        // CraftBukkit end
+     }
+ 
+     @VisibleForDebug
+@@ -314,7 +328,9 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     @Override
+     protected void finishConversion(ServerLevel level) {
+         PiglinAi.cancelAdmiring(level, this);
++        this.forceDrops = true; // Paper - Add missing forceDrop toggles
+         this.inventory.removeAllItems().forEach(itemStack -> this.spawnAtLocation(level, itemStack));
++        this.forceDrops = false; // Paper - Add missing forceDrop toggles
+         super.finishConversion(level);
+     }
+ 
+@@ -391,7 +407,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     }
+ 
+     protected void holdInOffHand(ItemStack stack) {
+-        if (stack.is(PiglinAi.BARTERING_ITEM)) {
++        if (stack.is(PiglinAi.BARTERING_ITEM) || this.allowedBarterItems.contains(stack.getItem())) { // CraftBukkit - Changes to accept custom payment items
+             this.setItemSlot(EquipmentSlot.OFFHAND, stack);
+             this.setGuaranteedDrop(EquipmentSlot.OFFHAND);
+         } else {
+@@ -416,15 +432,15 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+             return false;
+         } else {
+             TagKey<Item> preferredWeaponType = this.getPreferredWeaponType();
+-            boolean flag = PiglinAi.isLovedItem(newItem) || preferredWeaponType != null && newItem.is(preferredWeaponType);
+-            boolean flag1 = PiglinAi.isLovedItem(currentItem) || preferredWeaponType != null && currentItem.is(preferredWeaponType);
++            boolean flag = PiglinAi.isLovedItem(newItem, this) || preferredWeaponType != null && newItem.is(preferredWeaponType); // CraftBukkit
++            boolean flag1 = PiglinAi.isLovedItem(currentItem, this) || preferredWeaponType != null && currentItem.is(preferredWeaponType); // CraftBukkit
+             return flag && !flag1 || (flag || !flag1) && super.canReplaceCurrentItem(newItem, currentItem, slot);
+         }
+     }
+ 
+     @Override
+     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+-        this.onItemPickup(entity);
++        // this.onItemPickup(entity); // Paper - EntityPickupItemEvent fixes; call in PiglinAi#pickUpItem after EntityPickupItemEvent is fired
+         PiglinAi.pickUpItem(level, this, entity);
+     }
+ 

@@ -1,21 +1,21 @@
 --- a/net/minecraft/server/players/ProfileResolver.java
 +++ b/net/minecraft/server/players/ProfileResolver.java
-@@ -25,7 +_,7 @@
+@@ -26,7 +_,7 @@
          private final LoadingCache<String, Optional<GameProfile>> profileCacheByName;
-         final LoadingCache<UUID, Optional<GameProfile>> profileCacheById;
+         private final LoadingCache<UUID, Optional<GameProfile>> profileCacheById;
  
--        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver resolver) {
-+        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver resolver, final io.papermc.paper.profile.PaperFilledProfileCache paperCache) { // Paper - add paperCache
+-        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver nameToIdCache) {
++        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver nameToIdCache, final io.papermc.paper.profile.PaperFilledProfileCache paperCache) { // Paper - add paperCache
              this.profileCacheById = CacheBuilder.newBuilder()
                  .expireAfterAccess(Duration.ofMinutes(10L))
                  .maximumSize(256L)
-@@ -33,7 +_,13 @@
+@@ -38,7 +_,13 @@
                      @Override
-                     public Optional<GameProfile> load(UUID id) {
-                         ProfileResult profileResult = sessionService.fetchProfile(id, true);
--                        return Optional.ofNullable(profileResult).map(ProfileResult::profile);
+                     public Optional<GameProfile> load(final UUID profileId) {
+                         ProfileResult result = sessionService.fetchProfile(profileId, true);
+-                        return Optional.ofNullable(result).map(ProfileResult::profile);
 +                        // Paper start - update paper cache
-+                        return Optional.ofNullable(profileResult).map(ProfileResult::profile)
++                        return  Optional.ofNullable(result).map(ProfileResult::profile)
 +                            .map(profile -> {
 +                                paperCache.add(profile);
 +                                return profile;

@@ -6,21 +6,21 @@
      public int spawnRange = 4;
 +    private int tickDelay = 0; // Paper - Configurable mob spawner tick rate
  
-     public void setEntityId(EntityType<?> type, @Nullable Level level, RandomSource random, BlockPos pos) {
+     public void setEntityId(final EntityType<?> type, final @Nullable Level level, final RandomSource random, final BlockPos pos) {
          this.getOrCreateNextSpawnData(level, random, pos).getEntityToSpawn().putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
 +        this.spawnPotentials = WeightedList.of(); // CraftBukkit - SPIGOT-3496, MC-92282
      }
  
-     public boolean isNearPlayer(Level level, BlockPos pos) {
+     public boolean isNearPlayer(final Level level, final BlockPos pos) {
 -        return level.hasNearbyAlivePlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, this.requiredPlayerRange);
 +        return level.hasNearbyAlivePlayerThatAffectsSpawning(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, this.requiredPlayerRange); // Paper - Affects Spawning API
      }
  
-     public void clientTick(Level level, BlockPos pos) {
+     public void clientTick(final Level level, final BlockPos pos) {
 @@ -81,13 +_,19 @@
      }
  
-     public void serverTick(ServerLevel level, BlockPos pos) {
+     public void serverTick(final ServerLevel level, final BlockPos pos) {
 +        if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
 +        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
@@ -37,7 +37,7 @@
 -                this.spawnDelay--;
 +                this.spawnDelay -= tickDelay; // Paper - Configurable mob spawner tick rate
              } else {
-                 boolean flag = false;
+                 boolean delay = false;
                  RandomSource random = level.getRandom();
 @@ -125,6 +_,21 @@
                                  continue;
@@ -50,7 +50,7 @@
 +                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level)
 +                            );
 +                            if (!event.callEvent()) {
-+                                flag = true;
++                                delay = true;
 +                                if (event.shouldAbortSpawn()) {
 +                                    break;
 +                                }
@@ -58,10 +58,10 @@
 +                            }
 +                            // Paper end - PreCreatureSpawnEvent
 +
-                             Entity entity = EntityType.loadEntityRecursive(valueInput, level, EntitySpawnReason.SPAWNER, entity1 -> {
-                                 entity1.snapTo(vec3.x, vec3.y, vec3.z, entity1.getYRot(), entity1.getXRot());
-                                 return entity1;
-@@ -158,9 +_,22 @@
+                             Entity entity = EntityType.loadEntityRecursive(input, level, EntitySpawnReason.SPAWNER, e -> {
+                                 e.snapTo(spawnPos.x, spawnPos.y, spawnPos.z, e.getYRot(), e.getXRot());
+                                 return e;
+@@ -159,9 +_,22 @@
                                  }
  
                                  nextSpawnData.getEquipment().ifPresent(mob::equip);
@@ -85,22 +85,22 @@
                                  this.delay(level, pos);
                                  return;
                              }
-@@ -171,7 +_,7 @@
+@@ -172,7 +_,7 @@
                                  ((Mob)entity).spawnAnim();
                              }
  
--                            flag = true;
+-                            delay = true;
 +                            //flag = true; // Paper - moved up above cancellable event
                          }
                      }
                  }
-@@ -198,12 +_,14 @@
+@@ -199,12 +_,14 @@
      }
  
-     public void load(@Nullable Level level, BlockPos pos, ValueInput input) {
+     public void load(final @Nullable Level level, final BlockPos pos, final ValueInput input) {
 -        this.spawnDelay = input.getShortOr("Delay", (short)20);
 +        this.spawnDelay = input.getIntOr("Paper.Delay", input.getShortOr("Delay", (short) 20)); // Paper - use int if set
-         input.read("SpawnData", SpawnData.CODEC).ifPresent(spawnData -> this.setNextSpawnData(level, pos, spawnData));
+         input.read("SpawnData", SpawnData.CODEC).ifPresent(nextSpawnData -> this.setNextSpawnData(level, pos, nextSpawnData));
          this.spawnPotentials = input.read("SpawnPotentials", SpawnData.LIST_CODEC)
              .orElseGet(() -> WeightedList.of(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData()));
 -        this.minSpawnDelay = input.getIntOr("MinSpawnDelay", 200);
@@ -112,10 +112,10 @@
          this.spawnCount = input.getIntOr("SpawnCount", 4);
          this.maxNearbyEntities = input.getIntOr("MaxNearbyEntities", 6);
          this.requiredPlayerRange = input.getIntOr("RequiredPlayerRange", 16);
-@@ -212,9 +_,19 @@
+@@ -213,9 +_,19 @@
      }
  
-     public void save(ValueOutput output) {
+     public void save(final ValueOutput output) {
 -        output.putShort("Delay", (short)this.spawnDelay);
 -        output.putShort("MinSpawnDelay", (short)this.minSpawnDelay);
 -        output.putShort("MaxSpawnDelay", (short)this.maxSpawnDelay);
