@@ -2,9 +2,12 @@ package io.papermc.paper.command.brigadier;
 
 import com.mojang.brigadier.RedirectModifier;
 import com.mojang.brigadier.tree.CommandNode;
+import net.kyori.adventure.text.ComponentLike;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -67,4 +70,34 @@ public interface CommandSourceStack {
      * @see com.mojang.brigadier.builder.ArgumentBuilder#fork(CommandNode, RedirectModifier)
      */
     CommandSourceStack withExecutor(Entity executor);
+
+    /**
+     * Sends a system message to the {@link #getExecutor()} if it is a {@link Player},
+     * otherwise sends a system message to the {@link #getSender()}.
+     *
+     * @param message the message to send
+     */
+    void sendToTarget(ComponentLike message);
+
+    /**
+     * Sends a system message to the {@link #getSender()}, admins, and console indicating successful command execution
+     * according to vanilla semantics.
+     *
+     * <p>This currently includes checking for environments with suppressed output,
+     * {@link GameRule#SEND_COMMAND_FEEDBACK}, and {@link GameRule#LOG_ADMIN_COMMANDS}.</p>
+     *
+     * @param message the message to send
+     * @param allowInformingAdmins whether admins and console may be informed of this success
+     */
+    void sendSuccess(ComponentLike message, boolean allowInformingAdmins);
+
+    /**
+     * Sends a system message indicating a failed command execution to the {@link #getSender()}.
+     * Does not apply red styling to the message as vanilla does to allow for custom failure message styling.
+     *
+     * <p>Respects vanilla semantics for accepting failure output and suppressed output environments.</p>
+     *
+     * @param message the message to send
+     */
+    void sendFailure(ComponentLike message);
 }
