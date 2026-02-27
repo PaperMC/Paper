@@ -16,7 +16,6 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private int lungePower;
-
     private boolean cancelled;
 
     @ApiStatus.Internal
@@ -51,7 +50,7 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Set whether to cancel the lunge. If canceled, the living entity will not lunge forward
+     * Set whether to cancel the lunge. If cancelled, the living entity will not lunge forward.
      * @param cancel {@code true} if you wish to cancel this event
      */
     @Override
