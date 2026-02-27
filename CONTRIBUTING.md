@@ -500,7 +500,7 @@ If you use Maven to build your plugin:
 Quite simple: You add `[ci skip]` to the start of your pull request title.
 
 This case most often applies to changes to files like `README.md`, this very
-file (`CONTRIBUTING.md`), the `LICENSE.md` file, trivial Javadoc changes, and so forth.
+file (`CONTRIBUTING.md`), the `LICENSE.md` file, and also small updates to Javadocs or other documentation.
 
 Do *not* add [ci skip] to the start of your individual commit subjects, as your
 pull request will not be mergeable until a new commit is added due to status check requirements.
