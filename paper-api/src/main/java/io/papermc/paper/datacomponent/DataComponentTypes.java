@@ -400,12 +400,11 @@ public final class DataComponentTypes {
 
     @SuppressWarnings("unchecked")
     private static <T> DataComponentType.Valued<T> valued(final @KeyPattern.Value String key) {
-        DataComponentType dataComponentType =  Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
+        final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.Valued) {
             return (DataComponentType.Valued<T>) dataComponentType;
         }
         throw new IllegalStateException(key + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
-
     }
 
     private DataComponentTypes() {
