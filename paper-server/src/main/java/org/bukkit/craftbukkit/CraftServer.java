@@ -16,6 +16,8 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
 import io.papermc.paper.world.PaperWorldLoader;
+import io.papermc.paper.world.explosion.Explosion;
+import io.papermc.paper.world.explosion.ExplosionImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -1419,6 +1421,11 @@ public final class CraftServer implements Server {
         net.minecraft.world.level.border.WorldBorder border = new net.minecraft.world.level.border.WorldBorder();
         border.setWarningTime(net.minecraft.world.level.border.WorldBorder.Settings.DEFAULT.warningTime()); // TODO remove once MC-304061 is truly fixed
         return new CraftWorldBorder(border);
+    }
+
+    @Override
+    public @NotNull Explosion.Builder createExplosion() {
+        return ExplosionImpl.builder();
     }
 
     @Override
