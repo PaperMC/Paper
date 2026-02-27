@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.pattern.BlockPattern;
-import net.minecraft.world.level.dimension.end.DragonRespawnAnimation;
-import net.minecraft.world.level.dimension.end.EndDragonFight;
+import net.minecraft.world.level.dimension.end.DragonRespawnStage;
+import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.boss.BossBar;
@@ -22,9 +22,9 @@ import org.bukkit.entity.EnderDragon;
 
 public class CraftDragonBattle implements DragonBattle {
 
-    private final EndDragonFight handle;
+    private final EnderDragonFight handle;
 
-    public CraftDragonBattle(EndDragonFight handle) {
+    public CraftDragonBattle(EnderDragonFight handle) {
         this.handle = handle;
     }
 
@@ -41,16 +41,16 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public Location getEndPortalLocation() {
-        if (this.handle.portalLocation == null) {
+        if (this.handle.exitPortalLocation == null) {
             return null;
         }
 
-        return CraftLocation.toBukkit(this.handle.portalLocation, this.handle.level);
+        return CraftLocation.toBukkit(this.handle.exitPortalLocation, this.handle.level);
     }
 
     @Override
     public boolean generateEndPortal(boolean withPortals) {
-        if (this.handle.portalLocation != null || this.handle.findExitPortal() != null) {
+        if (this.handle.exitPortalLocation != null || this.handle.findExitPortal() != null) {
             return false;
         }
 
@@ -65,7 +65,7 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public void setPreviouslyKilled(boolean previouslyKilled) {
-        this.handle.previouslyKilled = previouslyKilled;
+        this.handle.hasPreviouslyKilledDragon = previouslyKilled;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class CraftDragonBattle implements DragonBattle {
     public boolean initiateRespawn(Collection<EnderCrystal> list) {
         if (this.hasBeenPreviouslyKilled() && this.getRespawnPhase() == RespawnPhase.NONE) {
             // Copy from EndDragonFight#tryRespawn for generate exit portal if not exists
-            if (this.handle.portalLocation == null) {
+            if (this.handle.exitPortalLocation == null) {
                 BlockPattern.BlockPatternMatch patternMatch = this.handle.findExitPortal();
                 if (patternMatch == null) {
                     this.handle.spawnExitPortal(true);
@@ -131,17 +131,17 @@ public class CraftDragonBattle implements DragonBattle {
         return obj instanceof CraftDragonBattle && ((CraftDragonBattle) obj).handle == this.handle;
     }
 
-    private RespawnPhase toBukkitRespawnPhase(DragonRespawnAnimation phase) {
+    private RespawnPhase toBukkitRespawnPhase(DragonRespawnStage phase) {
         return (phase != null) ? RespawnPhase.values()[phase.ordinal()] : RespawnPhase.NONE;
     }
 
-    private DragonRespawnAnimation toNMSRespawnPhase(RespawnPhase phase) {
-        return (phase != RespawnPhase.NONE) ? DragonRespawnAnimation.values()[phase.ordinal()] : null;
+    private DragonRespawnStage toNMSRespawnPhase(RespawnPhase phase) {
+        return (phase != RespawnPhase.NONE) ? DragonRespawnStage.values()[phase.ordinal()] : null;
     }
 
     @Override
     public int getGatewayCount() {
-        return EndDragonFight.GATEWAY_COUNT - this.handle.gateways.size();
+        return EnderDragonFight.GATEWAY_COUNT - this.handle.gateways.size();
     }
 
     @Override
@@ -161,8 +161,9 @@ public class CraftDragonBattle implements DragonBattle {
         }
 
         final List<EnderCrystal> enderCrystals = new ArrayList<>();
-        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.respawnCrystals) {
-            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
+        for (final net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.boss.enderdragon.EndCrystal> ref : this.handle.respawnCrystals) {
+            final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal = ref.getEntity(this.handle.level, net.minecraft.world.entity.boss.enderdragon.EndCrystal.class);
+            if (endCrystal != null && !endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
                 enderCrystals.add(((EnderCrystal) endCrystal.getBukkitEntity()));
             }
         }

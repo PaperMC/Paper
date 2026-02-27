@@ -6,16 +6,16 @@
      private @Nullable Entity lastDeflectedBy;
 +    protected boolean hitCancelled = false; // CraftBukkit
  
-     protected Projectile(EntityType<? extends Projectile> type, Level level) {
+     protected Projectile(final EntityType<? extends Projectile> type, final Level level) {
          super(type, level);
 @@ -51,12 +_,25 @@
  
-     protected void setOwner(@Nullable EntityReference<Entity> owner) {
+     protected void setOwner(final @Nullable EntityReference<Entity> owner) {
          this.owner = owner;
 +        this.refreshProjectileSource(false); // Paper
      }
  
-     public void setOwner(@Nullable Entity owner) {
+     public void setOwner(final @Nullable Entity owner) {
          this.setOwner(EntityReference.of(owner));
      }
  
@@ -36,71 +36,89 @@
          return EntityReference.getEntity(this.owner, this.level());
 @@ -83,6 +_,7 @@
      @Override
-     protected void readAdditionalSaveData(ValueInput input) {
+     protected void readAdditionalSaveData(final ValueInput input) {
          this.setOwner(EntityReference.read(input, "Owner"));
 +        if (this instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.owner = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
          this.leftOwner = input.getBooleanOr("LeftOwner", false);
          this.hasBeenShot = input.getBooleanOr("HasBeenShot", false);
      }
 @@ -155,7 +_,14 @@
-         float f2 = Mth.cos(y * (float) (Math.PI / 180.0)) * Mth.cos(x * (float) (Math.PI / 180.0));
-         this.shoot(f, f1, f2, velocity, inaccuracy);
-         Vec3 knownMovement = shooter.getKnownMovement();
+         float zd = Mth.cos(yRot * (float) (Math.PI / 180.0)) * Mth.cos(xRot * (float) (Math.PI / 180.0));
+         this.shoot(xd, yd, zd, pow, uncertainty);
+         Vec3 sourceMovement = source.getKnownMovement();
 +        // Paper start - allow disabling relative velocity
-+        if (Double.isNaN(knownMovement.x) || Double.isNaN(knownMovement.y) || Double.isNaN(knownMovement.z)) {
-+            knownMovement = new Vec3(0, 0, 0);
++        if (Double.isNaN(sourceMovement.x) || Double.isNaN(sourceMovement.y) || Double.isNaN(sourceMovement.z)) {
++            sourceMovement = new Vec3(0, 0, 0);
 +        }
-+        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) {
-         this.setDeltaMovement(this.getDeltaMovement().add(knownMovement.x, shooter.onGround() ? 0.0 : knownMovement.y, knownMovement.z));
++        if (!source.level().paperConfig().misc.disableRelativeProjectileVelocity) {
+         this.setDeltaMovement(this.getDeltaMovement().add(sourceMovement.x, source.onGround() ? 0.0 : sourceMovement.y, sourceMovement.z));
 +        }
 +        // Paper end - allow disabling relative velocity
      }
  
      @Override
-@@ -175,7 +_,12 @@
-     public static <T extends Projectile> T spawnProjectileFromRotation(
-         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy
+@@ -181,7 +_,20 @@
+         final float pow,
+         final float uncertainty
      ) {
 -        return spawnProjectile(
 +        // Paper start - PlayerLaunchProjectileEvent
-+        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, inaccuracy).spawn();
++        return spawnProjectileFromRotationDelayed(creator, serverLevel, itemStack, source, yOffset, pow, uncertainty).spawn();
 +    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float inaccuracy) {
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(
++        final Projectile.ProjectileFactory<T> creator,
++        final ServerLevel serverLevel,
++        final ItemStack itemStack,
++        final LivingEntity source,
++        final float yOffset,
++        final float pow,
++        final float uncertainty
++    ) {
 +        return spawnProjectileDelayed(
 +        // Paper end - PlayerLaunchProjectileEvent
-             factory.create(level, owner, spawnedFrom),
-             level,
-             spawnedFrom,
-@@ -200,7 +_,13 @@
-     public static <T extends Projectile> T spawnProjectileUsingShoot(
-         T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy
+             creator.create(serverLevel, source, itemStack),
+             serverLevel,
+             itemStack,
+@@ -215,7 +_,22 @@
+         final float pow,
+         final float uncertainty
      ) {
--        return spawnProjectile(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
+-        return spawnProjectile(projectile, serverLevel, itemStack, i -> projectile.shoot(targetX, targetY, targetZ, pow, uncertainty));
 +        // Paper start - fixes and addition to spawn reason API
-+        return spawnProjectileUsingShootDelayed(projectile, level, spawnedFrom, x, y, z, velocity, inaccuracy).spawn();
++        return spawnProjectileUsingShootDelayed(projectile, serverLevel, itemStack, targetX, targetY, targetZ, pow, uncertainty).spawn();
 +    }
 +
-+    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy) {
-+        return spawnProjectileDelayed(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(
++        final T projectile,
++        final ServerLevel serverLevel,
++        final ItemStack itemStack,
++        final double targetX,
++        final double targetY,
++        final double targetZ,
++        final float pow,
++        final float uncertainty
++    ) {
++        return spawnProjectileDelayed(projectile, serverLevel, itemStack, i -> projectile.shoot(targetX, targetY, targetZ, pow, uncertainty));
 +        // Paper end - fixes and addition to spawn reason API
      }
  
-     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack spawnedFrom) {
-@@ -208,11 +_,46 @@
-     }
- 
-     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
+     public static <T extends Projectile> T spawnProjectile(final T projectile, final ServerLevel serverLevel, final ItemStack itemStack) {
+@@ -225,11 +_,46 @@
+     public static <T extends Projectile> T spawnProjectile(
+         final T projectile, final ServerLevel serverLevel, final ItemStack itemStack, final Consumer<T> shootFunction
+     ) {
+-        shootFunction.accept(projectile);
+-        serverLevel.addFreshEntity(projectile);
+-        projectile.applyOnProjectileSpawned(serverLevel, itemStack);
+-        return projectile;
+-    }
 +        // Paper start - delayed projectile spawning
-+        return spawnProjectileDelayed(projectile, level, stack, adapter).spawn();
++        return spawnProjectileDelayed(projectile, serverLevel, itemStack, shootFunction).spawn();
 +    }
 +
 +    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
 +        // Paper end - delayed projectile spawning
-         adapter.accept(projectile);
--        level.addFreshEntity(projectile);
--        projectile.applyOnProjectileSpawned(level, stack);
--        return projectile;
--    }
++        adapter.accept(projectile);
 +        return new Delayed<>(projectile, level, stack); // Paper - delayed projectile spawning
 +    }
 +
@@ -135,9 +153,9 @@
 +    }
 +    // Paper end - delayed projectile spawning
  
-     public void applyOnProjectileSpawned(ServerLevel level, ItemStack spawnedFrom) {
-         EnchantmentHelper.onProjectileSpawned(level, spawnedFrom, this, item -> {});
-@@ -224,6 +_,17 @@
+     public void applyOnProjectileSpawned(final ServerLevel serverLevel, final ItemStack pickupItemStack) {
+         EnchantmentHelper.onProjectileSpawned(serverLevel, pickupItemStack, this, item -> {});
+@@ -241,6 +_,17 @@
          }
      }
  
@@ -152,20 +170,20 @@
 +    }
 +    // CraftBukkit end
 +
-     protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
+     protected ProjectileDeflection hitTargetOrDeflectSelf(final HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-@@ -291,15 +_,35 @@
+@@ -313,15 +_,35 @@
      }
  
-     protected void onHitBlock(BlockHitResult result) {
+     protected void onHitBlock(final BlockHitResult hitResult) {
 +        // CraftBukkit start - cancellable hit event
 +        if (this.hitCancelled) {
 +            return;
 +        }
 +        // CraftBukkit end
-         BlockState blockState = this.level().getBlockState(result.getBlockPos());
-         blockState.onProjectileHit(this.level(), blockState, result, this);
+         BlockState state = this.level().getBlockState(hitResult.getBlockPos());
+         state.onProjectileHit(this.level(), state, hitResult, this);
      }
  
 +    // Paper start
@@ -174,35 +192,35 @@
 +    }
 +    // Paper end
 +
-     protected boolean canHitEntity(Entity target) {
-         if (!target.canBeHitByProjectile()) {
+     protected boolean canHitEntity(final Entity entity) {
+         if (!entity.canBeHitByProjectile()) {
              return false;
          } else {
              Entity owner = this.getOwner();
 +            // Paper start - Cancel hit for vanished entities
 +            if (owner instanceof net.minecraft.server.level.ServerPlayer) {
-+                org.bukkit.entity.Entity collided = target.getBukkitEntity();
++                org.bukkit.entity.Entity collided = entity.getBukkitEntity();
 +                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
 +                if (!shooter.canSee(collided)) {
 +                    return false;
 +                }
 +            }
 +            // Paper end - Cancel hit for vanished entities
-             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(target);
+             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
          }
      }
-@@ -312,13 +_,7 @@
+@@ -334,13 +_,7 @@
      }
  
-     protected static float lerpRotation(float currentRotation, float targetRotation) {
--        while (targetRotation - currentRotation < -180.0F) {
--            currentRotation -= 360.0F;
+     protected static float lerpRotation(float rotO, final float rot) {
+-        while (rot - rotO < -180.0F) {
+-            rotO -= 360.0F;
 -        }
 -
--        while (targetRotation - currentRotation >= 180.0F) {
--            currentRotation += 360.0F;
+-        while (rot - rotO >= 180.0F) {
+-            rotO += 360.0F;
 -        }
-+        currentRotation += Math.round((targetRotation - currentRotation) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
++        rotO += Math.round((rot - rotO) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
  
-         return Mth.lerp(0.2F, currentRotation, targetRotation);
+         return Mth.lerp(0.2F, rotO, rot);
      }

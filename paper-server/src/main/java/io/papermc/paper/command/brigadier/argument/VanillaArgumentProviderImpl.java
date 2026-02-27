@@ -270,7 +270,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<ItemStack> itemStack() {
         return this.wrap(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            return CraftItemStack.asBukkitCopy(result.createItemStack(1, true));
+            return CraftItemStack.asBukkitCopy(result.createItemStack(1));
         });
     }
 

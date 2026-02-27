@@ -65,7 +65,7 @@ public final class DumpItemCommand implements PaperSubcommand {
         final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
         final TextComponent.Builder visualOutput = Component.text();
         final StringBuilder itemCommandBuilder = new StringBuilder();
-        final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().identifier().toString();
+        final String itemName = itemStack.typeHolder().unwrapKey().orElseThrow().identifier().toString();
         itemCommandBuilder.append(itemName);
         visualOutput.append(text(itemName, YELLOW)); // item type
         final Set<DataComponentType<?>> referencedComponentTypes = Collections.newSetFromMap(new IdentityHashMap<>());

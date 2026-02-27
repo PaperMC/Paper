@@ -1,18 +1,18 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructurePiece.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructurePiece.java
-@@ -180,6 +_,11 @@
+@@ -188,6 +_,11 @@
                  }
  
-                 level.setBlock(worldPos, state, Block.UPDATE_CLIENTS);
+                 level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 +                // CraftBukkit start - fluid handling is already done if we have a transformer generator access
 +                if (level instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess && transformerAccess.canTransformBlocks()) {
 +                    return;
 +                }
 +                // CraftBukkit end
-                 FluidState fluidState = level.getFluidState(worldPos);
+                 FluidState fluidState = level.getFluidState(pos);
                  if (!fluidState.isEmpty()) {
-                     level.scheduleTick(worldPos, fluidState.getType(), 0);
-@@ -192,6 +_,48 @@
+                     level.scheduleTick(pos, fluidState.getType(), 0);
+@@ -200,6 +_,48 @@
          }
      }
  
@@ -58,25 +58,25 @@
 +    }
 +    // CraftBukkit end
 +
-     protected boolean canBeReplaced(LevelReader level, int x, int y, int z, BoundingBox box) {
+     protected boolean canBeReplaced(final LevelReader level, final int x, final int y, final int z, final BoundingBox chunkBB) {
          return true;
      }
-@@ -420,11 +_,17 @@
-                 state = reorient(level, pos, Blocks.CHEST.defaultBlockState());
+@@ -471,11 +_,17 @@
+                 blockState = reorient(level, pos, Blocks.CHEST.defaultBlockState());
              }
  
--            level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+-            level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 -            BlockEntity blockEntity = level.getBlockEntity(pos);
 -            if (blockEntity instanceof ChestBlockEntity) {
 -                ((ChestBlockEntity)blockEntity).setLootTable(lootTable, random.nextLong());
 -            }
 +            // CraftBukkit start
-+            // level.setBlock(pos, state, Block.UPDATE_CLIENTS);
++            // level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
 +            // BlockEntity blockEntity = level.getBlockEntity(pos);
 +            // if (blockEntity instanceof ChestBlockEntity) {
 +            //     ((ChestBlockEntity)blockEntity).setLootTable(lootTable, random.nextLong());
 +            // }
-+            org.bukkit.craftbukkit.block.CraftChest chestState = (org.bukkit.craftbukkit.block.CraftChest) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos, state, null);
++            org.bukkit.craftbukkit.block.CraftChest chestState = (org.bukkit.craftbukkit.block.CraftChest) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos, blockState, null);
 +            chestState.setLootTable(org.bukkit.craftbukkit.CraftLootTable.minecraftToBukkit(lootTable));
 +            chestState.setSeed(random.nextLong());
 +            this.placeCraftBlockEntity(level, pos, chestState, Block.UPDATE_CLIENTS);
@@ -84,18 +84,18 @@
  
              return true;
          } else {
-@@ -437,11 +_,28 @@
+@@ -495,11 +_,28 @@
      ) {
-         BlockPos worldPos = this.getWorldPos(x, y, z);
-         if (box.isInside(worldPos) && !level.getBlockState(worldPos).is(Blocks.DISPENSER)) {
--            this.placeBlock(level, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, facing), x, y, z, box);
--            BlockEntity blockEntity = level.getBlockEntity(worldPos);
+         BlockPos pos = this.getWorldPos(x, y, z);
+         if (chunkBB.isInside(pos) && !level.getBlockState(pos).is(Blocks.DISPENSER)) {
+-            this.placeBlock(level, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, facing), x, y, z, chunkBB);
+-            BlockEntity blockEntity = level.getBlockEntity(pos);
 -            if (blockEntity instanceof DispenserBlockEntity) {
 -                ((DispenserBlockEntity)blockEntity).setLootTable(lootTable, random.nextLong());
 -            }
 +            // CraftBukkit start
-+            // this.placeBlock(level, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, facing), x, y, z, box);
-+            // BlockEntity blockEntity = level.getBlockEntity(worldPos);
++            // this.placeBlock(level, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, facing), x, y, z, chunkBB);
++            // BlockEntity blockEntity = level.getBlockEntity(pos);
 +            // if (blockEntity instanceof DispenserBlockEntity) {
 +            //     ((DispenserBlockEntity)blockEntity).setLootTable(lootTable, random.nextLong());
 +            // }
@@ -110,10 +110,10 @@
 +                dispenserBlockState = dispenserBlockState.rotate(this.rotation);
 +            }
 +
-+            org.bukkit.craftbukkit.block.CraftDispenser dispenserState = (org.bukkit.craftbukkit.block.CraftDispenser) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, worldPos, dispenserBlockState, null);
++            org.bukkit.craftbukkit.block.CraftDispenser dispenserState = (org.bukkit.craftbukkit.block.CraftDispenser) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos, dispenserBlockState, null);
 +            dispenserState.setLootTable(org.bukkit.craftbukkit.CraftLootTable.minecraftToBukkit(lootTable));
 +            dispenserState.setSeed(random.nextLong());
-+            this.placeCraftBlockEntity(level, worldPos, dispenserState, Block.UPDATE_CLIENTS);
++            this.placeCraftBlockEntity(level, pos, dispenserState, Block.UPDATE_CLIENTS);
 +            // CraftBukkit end
  
              return true;

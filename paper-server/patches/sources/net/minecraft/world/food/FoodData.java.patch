@@ -10,8 +10,8 @@
 +    public int starvationRate = 80;
 +    // CraftBukkit end
  
-     private void add(int nutrition, float saturationLevel) {
-         this.foodLevel = Mth.clamp(nutrition + this.foodLevel, 0, 20);
+     private void add(final int food, final float saturation) {
+         this.foodLevel = Mth.clamp(food + this.foodLevel, 0, 20);
 @@ -29,6 +_,17 @@
          this.add(foodProperties.nutrition(), foodProperties.saturation());
      }
@@ -27,9 +27,9 @@
 +    }
 +    // CraftBukkit end
 +
-     public void tick(ServerPlayer player) {
-         ServerLevel serverLevel = player.level();
-         Difficulty difficulty = serverLevel.getDifficulty();
+     public void tick(final ServerPlayer player) {
+         ServerLevel level = player.level();
+         Difficulty difficulty = level.getDifficulty();
 @@ -37,29 +_,39 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
@@ -47,20 +47,20 @@
              }
          }
  
-         boolean flag = serverLevel.getGameRules().get(GameRules.NATURAL_HEALTH_REGENERATION);
-         if (flag && this.saturationLevel > 0.0F && player.isHurt() && this.foodLevel >= 20) {
+         boolean naturalRegen = level.getGameRules().get(GameRules.NATURAL_HEALTH_REGENERATION);
+         if (naturalRegen && this.saturationLevel > 0.0F && player.isHurt() && this.foodLevel >= 20) {
              this.tickTimer++;
 -            if (this.tickTimer >= 10) {
 +            if (this.tickTimer >= this.saturatedRegenRate) { // CraftBukkit
-                 float min = Math.min(this.saturationLevel, 6.0F);
--                player.heal(min / 6.0F);
--                this.addExhaustion(min);
-+                player.heal(min / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED, true); // CraftBukkit - added RegainReason // Paper - This is fast regen
+                 float saturationSpent = Math.min(this.saturationLevel, 6.0F);
+-                player.heal(saturationSpent / 6.0F);
+-                this.addExhaustion(saturationSpent);
++                player.heal(saturationSpent / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED, true); // CraftBukkit - added RegainReason // Paper - This is fast regen
 +                // this.addExhaustion(min); CraftBukkit - EntityExhaustionEvent
-+                player.causeFoodExhaustion(min, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
++                player.causeFoodExhaustion(saturationSpent, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
                  this.tickTimer = 0;
              }
-         } else if (flag && this.foodLevel >= 18 && player.isHurt()) {
+         } else if (naturalRegen && this.foodLevel >= 18 && player.isHurt()) {
              this.tickTimer++;
 -            if (this.tickTimer >= 80) {
 -                player.heal(1.0F);
@@ -76,5 +76,5 @@
 -            if (this.tickTimer >= 80) {
 +            if (this.tickTimer >= this.starvationRate) { // CraftBukkit - add regen rate manipulation
                  if (player.getHealth() > 10.0F || difficulty == Difficulty.HARD || player.getHealth() > 1.0F && difficulty == Difficulty.NORMAL) {
-                     player.hurtServer(serverLevel, player.damageSources().starve(), 1.0F);
+                     player.hurtServer(level, player.damageSources().starve(), 1.0F);
                  }

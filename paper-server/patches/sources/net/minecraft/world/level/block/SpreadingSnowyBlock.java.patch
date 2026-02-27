@@ -1,0 +1,28 @@
+--- a/net/minecraft/world/level/block/SpreadingSnowyBlock.java
++++ b/net/minecraft/world/level/block/SpreadingSnowyBlock.java
+@@ -46,10 +_,16 @@
+ 
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
++        if (this instanceof GrassBlock && level.paperConfig().tickRates.grassSpread != 1 && (level.paperConfig().tickRates.grassSpread < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % level.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
+         Registry<Block> blocks = level.registryAccess().lookupOrThrow(Registries.BLOCK);
+         Optional<Block> baseBlock = blocks.getOptional(this.baseBlock);
+         if (!baseBlock.isEmpty()) {
+             if (!canStayAlive(state, level, pos)) {
++                // CraftBukkit start
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
+                 level.setBlockAndUpdate(pos, baseBlock.get().defaultBlockState());
+             } else {
+                 if (level.getMaxLocalRawBrightness(pos.above()) >= 9) {
+@@ -58,7 +_,7 @@
+                     for (int i = 0; i < 4; i++) {
+                         BlockPos testPos = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
+                         if (level.getBlockState(testPos).is(baseBlock.get()) && canPropagate(defaultBlockState, level, testPos)) {
+-                            level.setBlockAndUpdate(testPos, defaultBlockState.setValue(SNOWY, isSnowySetting(level.getBlockState(testPos.above()))));
++                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, testPos, defaultBlockState.setValue(SNOWY, isSnowySetting(level.getBlockState(testPos.above()))), Block.UPDATE_ALL); // CraftBukkit
+                         }
+                     }
+                 }

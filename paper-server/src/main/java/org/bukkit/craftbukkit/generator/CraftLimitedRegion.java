@@ -57,8 +57,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
     public CraftLimitedRegion(WorldGenLevel access, ChunkPos center) {
         this.weakAccess = new WeakReference<>(access);
-        this.centerChunkX = center.x;
-        this.centerChunkZ = center.z;
+        this.centerChunkX = center.x();
+        this.centerChunkZ = center.z();
 
         World world = access.getMinecraftWorld().getWorld();
         int xCenter = this.centerChunkX << 4;

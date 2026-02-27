@@ -850,8 +850,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
         final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
-        final net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
-        if (eggItem != null) {
+        final var eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
+        if (eggItem.isPresent()) {
             throw new UnsupportedOperationException();
         }
         return null;
@@ -875,6 +875,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         return CraftItemStack.asBukkitCopy(net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.codec()
             .parse(ops, encoded).getOrThrow(IllegalStateException::new)
-            .item());
+            .item().create());
     }
 }

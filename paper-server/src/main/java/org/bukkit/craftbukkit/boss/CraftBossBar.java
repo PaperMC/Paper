@@ -26,6 +26,7 @@ public class CraftBossBar implements BossBar {
 
     public CraftBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         this.handle = new ServerBossEvent(
+                net.minecraft.util.Mth.createInsecureUUID(net.minecraft.util.RandomSource.create()),
                 CraftChatMessage.fromString(title, true)[0],
                 this.convertColor(color),
                 this.convertStyle(style)

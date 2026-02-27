@@ -30,6 +30,7 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
     @Override
     public void addToCraftingManager() {
         final net.minecraft.world.item.crafting.SmithingTrimRecipe recipe = new net.minecraft.world.item.crafting.SmithingTrimRecipe(
+            new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             this.toNMS(this.getTemplate(), false),
             this.toNMS(this.getBase(), false),
             this.toNMS(this.getAddition(), false),

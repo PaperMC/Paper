@@ -1559,7 +1559,7 @@ public final class CraftServer implements Server {
             RecipeHolder<CraftingRecipe> recipeCrafting = recipe.get();
             craftingContainer.setCurrentRecipe(recipeCrafting);
             if (craftResult.setRecipeUsed(craftPlayer.getHandle(), recipeCrafting)) {
-                itemstack = recipeCrafting.value().assemble(craftingContainer.asCraftInput(), craftWorld.getHandle().registryAccess());
+                itemstack = recipeCrafting.value().assemble(craftingContainer.asCraftInput());
             }
         }
 
@@ -1584,7 +1584,7 @@ public final class CraftServer implements Server {
         net.minecraft.world.item.ItemStack itemStack = net.minecraft.world.item.ItemStack.EMPTY;
 
         if (recipe.isPresent()) {
-            itemStack = recipe.get().value().assemble(craftingContainer.asCraftInput(), craftWorld.getHandle().registryAccess());
+            itemStack = recipe.get().value().assemble(craftingContainer.asCraftInput());
         }
 
         return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(itemStack), craftingContainer);
@@ -2441,7 +2441,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(barColor != null, "BarColor key cannot be null");
         Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
 
-        CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
+        CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(net.minecraft.util.RandomSource.create(), CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
         CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
         craftKeyedBossbar.setColor(barColor);
         craftKeyedBossbar.setStyle(barStyle);

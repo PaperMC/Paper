@@ -181,7 +181,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public @Nullable ItemType getCraftingRemainingItem() {
-        net.minecraft.world.item.ItemStack expectedItem = this.getHandle().getCraftingRemainder();
+        net.minecraft.world.item.ItemStack expectedItem = this.getHandle().getCraftingRemainder().create();
         return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
     }
 

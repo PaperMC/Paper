@@ -37,7 +37,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
         getOrEmpty(tag, CraftMetaBundle.ITEMS).ifPresent((bundle) -> {
             bundle.items().forEach((item) -> {
-                ItemStack itemStack = CraftItemStack.asCraftMirror(item);
+                ItemStack itemStack = CraftItemStack.asCraftMirror(item.create());
 
                 if (!itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air
                     this.addItem(itemStack);
@@ -64,10 +64,10 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         super.applyToItem(tag);
 
         if (this.hasItems()) {
-            List<net.minecraft.world.item.ItemStack> list = new ArrayList<>();
+            List<net.minecraft.world.item.ItemStackTemplate> list = new ArrayList<>();
 
             for (ItemStack item : this.items) {
-                list.add(CraftItemStack.asNMSCopy(item));
+                list.add(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(item)));
             }
 
             tag.put(CraftMetaBundle.ITEMS, new BundleContents(list));

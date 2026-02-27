@@ -2,13 +2,13 @@
 +++ b/net/minecraft/nbt/CompoundTag.java
 @@ -54,7 +_,7 @@
  
-         private static CompoundTag loadCompound(DataInput input, NbtAccounter nbtAccounter) throws IOException {
-             nbtAccounter.accountBytes(48L);
--            Map<String, Tag> map = Maps.newHashMap();
-+            it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> map = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - Reduce memory footprint of CompoundTag
+         private static CompoundTag loadCompound(final DataInput input, final NbtAccounter accounter) throws IOException {
+             accounter.accountBytes(48L);
+-            Map<String, Tag> values = Maps.newHashMap();
++            it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> values = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - Reduce memory footprint of CompoundTag
  
-             byte b;
-             while ((b = input.readByte()) != 0) {
+             byte tagType;
+             while ((tagType = input.readByte()) != 0) {
 @@ -171,7 +_,7 @@
      }
  
@@ -22,9 +22,9 @@
  
      @Override
      public CompoundTag copy() {
--        HashMap<String, Tag> map = new HashMap<>();
--        this.tags.forEach((key, value) -> map.put(key, value.copy()));
--        return new CompoundTag(map);
+-        HashMap<String, Tag> newTags = new HashMap<>();
+-        this.tags.forEach((key, tag) -> newTags.put(key, tag.copy()));
+-        return new CompoundTag(newTags);
 +        // Paper start - Reduce memory footprint of CompoundTag
 +        it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
 +        java.util.Iterator<java.util.Map.Entry<String, Tag>> iterator = (this.tags instanceof it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap) ? ((it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
@@ -39,30 +39,30 @@
  
      @Override
 @@ -523,22 +_,47 @@
-         this.merge((CompoundTag)mapCodec.encoder().encodeStart(ops, data).getOrThrow());
+         this.merge((CompoundTag)codec.encoder().encodeStart(ops, value).getOrThrow());
      }
  
--    public <T> Optional<T> read(String key, Codec<T> codec) {
-+    public <T> Optional<T> read(String key, Codec<T> codec) { // Paper - option to read via codec without logging errors - diff on change
-         return this.read(key, codec, NbtOps.INSTANCE);
+-    public <T> Optional<T> read(final String name, final Codec<T> codec) {
++    public <T> Optional<T> read(final String name, final Codec<T> codec) {  // Paper - option to read via codec without logging errors - diff on change
+         return this.read(name, codec, NbtOps.INSTANCE);
      }
  
--    public <T> Optional<T> read(String key, Codec<T> codec, DynamicOps<Tag> ops) {
-+    public <T> Optional<T> read(String key, Codec<T> codec, DynamicOps<Tag> ops) { // Paper - option to read via codec without logging errors - diff on change
-         Tag tag = this.get(key);
+-    public <T> Optional<T> read(final String name, final Codec<T> codec, final DynamicOps<Tag> ops) {
++    public <T> Optional<T> read(final String name, final Codec<T> codec, final DynamicOps<Tag> ops) {  // Paper - option to read via codec without logging errors - diff on change
+         Tag tag = this.get(name);
          return tag == null
              ? Optional.empty()
-             : codec.parse(ops, tag).resultOrPartial(string -> LOGGER.error("Failed to read field ({}={}): {}", key, tag, string));
+             : codec.parse(ops, tag).resultOrPartial(error -> LOGGER.error("Failed to read field ({}={}): {}", name, tag, error));
      }
  
--    public <T> Optional<T> read(MapCodec<T> mapCodec) {
-+    public <T> Optional<T> read(MapCodec<T> mapCodec) { // Paper - option to read via codec without logging errors - diff on change
-         return this.read(mapCodec, NbtOps.INSTANCE);
+-    public <T> Optional<T> read(final MapCodec<T> codec) {
++    public <T> Optional<T> read(final MapCodec<T> codec) {  // Paper - option to read via codec without logging errors - diff on change
+         return this.read(codec, NbtOps.INSTANCE);
      }
  
--    public <T> Optional<T> read(MapCodec<T> mapCodec, DynamicOps<Tag> ops) {
-+    public <T> Optional<T> read(MapCodec<T> mapCodec, DynamicOps<Tag> ops) { // Paper - option to read via codec without logging errors - diff on change
-         return mapCodec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial(string -> LOGGER.error("Failed to read value ({}): {}", this, string));
+-    public <T> Optional<T> read(final MapCodec<T> codec, final DynamicOps<Tag> ops) {
++    public <T> Optional<T> read(final MapCodec<T> codec, final DynamicOps<Tag> ops) {  // Paper - option to read via codec without logging errors - diff on change
+         return codec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial(error -> LOGGER.error("Failed to read value ({}): {}", this, error));
      }
 +
 +    // Paper start - option to read via codec without logging errors
@@ -70,23 +70,23 @@
 +    // Copying was chosen over overloading the read methods as a boolean parameter to mark a method as quiet
 +    // is not intuitive and would require even more overloads.
 +    // Not a lot of diff in these methods is expected
-+    public <T> Optional<T> readQuiet(String key, Codec<T> codec) {
-+        return this.readQuiet(key, codec, NbtOps.INSTANCE);
++    public <T> Optional<T> readQuiet(String name, Codec<T> codec) {
++        return this.readQuiet(name, codec, NbtOps.INSTANCE);
 +    }
 +
-+    public <T> Optional<T> readQuiet(String key, Codec<T> codec, DynamicOps<Tag> ops) {
-+        Tag tag = this.get(key);
++    public <T> Optional<T> readQuiet(String name, Codec<T> codec, DynamicOps<Tag> ops) {
++        Tag tag = this.get(name);
 +        return tag == null
 +            ? Optional.empty()
 +            : codec.parse(ops, tag).resultOrPartial();
 +    }
 +
-+    public <T> Optional<T> readQuiet(MapCodec<T> mapCodec) {
-+        return this.readQuiet(mapCodec, NbtOps.INSTANCE);
++    public <T> Optional<T> readQuiet(MapCodec<T> codec) {
++        return this.readQuiet(codec, NbtOps.INSTANCE);
 +    }
 +
-+    public <T> Optional<T> readQuiet(MapCodec<T> mapCodec, DynamicOps<Tag> ops) {
-+        return mapCodec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial();
++    public <T> Optional<T> readQuiet(MapCodec<T> codec, DynamicOps<Tag> ops) {
++        return codec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial();
 +    }
 +    // Paper end - option to read via codec without logging errors
  }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
 +++ b/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
-@@ -216,7 +_,14 @@
+@@ -219,7 +_,14 @@
                  nextSpawnData.getEquipment().ifPresent(mob::equip);
              }
  
@@ -8,7 +8,7 @@
 +            // Paper start - TrialSpawnerSpawnEvent + SpawnReason
 +            entity.spawnedViaMobSpawner = true; // Mark entity as spawned via spawner
 +            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER; // Paper - Entity#getEntitySpawnReason
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, spawnerPos).isCancelled()) {
 +                return Optional.empty();
 +            }
 +            if (!level.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
@@ -16,33 +16,33 @@
                  return Optional.empty();
              }
  
-@@ -231,10 +_,24 @@
+@@ -234,10 +_,24 @@
      }
  
-     public void ejectReward(ServerLevel level, BlockPos pos, ResourceKey<LootTable> lootTable) {
--        LootTable lootTable1 = level.getServer().reloadableRegistries().getLootTable(lootTable);
-+        LootTable lootTable1 = level.getServer().reloadableRegistries().getLootTable(lootTable); final LootTable sourceLootTable = lootTable1; // Paper - obfhelper
-         LootParams lootParams = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
-         ObjectArrayList<ItemStack> randomItems = lootTable1.getRandomItems(lootParams);
-         if (!randomItems.isEmpty()) {
+     public void ejectReward(final ServerLevel level, final BlockPos pos, final ResourceKey<LootTable> ejectingLootTable) {
+-        LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(ejectingLootTable);
++        LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(ejectingLootTable); final LootTable sourceLootTable = lootTable; // Paper - obfhelper
+         LootParams params = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
+         ObjectArrayList<ItemStack> lootDrops = lootTable.getRandomItems(params);
+         if (!lootDrops.isEmpty()) {
 +            // CraftBukkit start
 +            org.bukkit.event.block.BlockDispenseLootEvent spawnerDispenseLootEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseLootEvent(
 +                level,
 +                pos,
 +                null,
-+                randomItems,
++                lootDrops,
 +                sourceLootTable
 +            );
 +            if (spawnerDispenseLootEvent.isCancelled()) {
 +                return;
 +            }
 +
-+            randomItems = new ObjectArrayList<>(spawnerDispenseLootEvent.getDispensedLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).toList());
++            lootDrops = new ObjectArrayList<>(spawnerDispenseLootEvent.getDispensedLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).toList());
 +            // CraftBukkit end
-             for (ItemStack itemStack : randomItems) {
-                 DefaultDispenseItemBehavior.spawnItem(level, itemStack, 2, Direction.UP, Vec3.atBottomCenterOf(pos).relative(Direction.UP, 1.2));
+             for (ItemStack item : lootDrops) {
+                 DefaultDispenseItemBehavior.spawnItem(level, item, 2, Direction.UP, Vec3.atBottomCenterOf(pos).relative(Direction.UP, 1.2));
              }
-@@ -400,6 +_,35 @@
+@@ -401,6 +_,35 @@
                  this.requiredPlayerRange
              );
          }

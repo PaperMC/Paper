@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/entity/npc/villager/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
-@@ -43,7 +_,7 @@
-     private static final int VILLAGER_INVENTORY_SIZE = 8;
+@@ -56,7 +_,7 @@
+     private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
      private @Nullable Player tradingPlayer;
      protected @Nullable MerchantOffers offers;
 -    private final SimpleContainer inventory = new SimpleContainer(8);
 +    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit - add argument
  
-     public AbstractVillager(EntityType<? extends AbstractVillager> type, Level level) {
+     public AbstractVillager(final EntityType<? extends AbstractVillager> type, final Level level) {
          super(type, level);
-@@ -95,6 +_,20 @@
+@@ -108,6 +_,20 @@
          return this.tradingPlayer != null;
      }
  
@@ -30,8 +30,8 @@
      @Override
      public MerchantOffers getOffers() {
          if (this.level() instanceof ServerLevel serverLevel) {
-@@ -117,11 +_,24 @@
-     public void overrideXp(int xp) {
+@@ -130,11 +_,24 @@
+     public void overrideXp(final int xp) {
      }
  
 +    // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
@@ -48,7 +48,7 @@
 +    // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
 +
      @Override
-     public void notifyTrade(MerchantOffer offer) {
+     public void notifyTrade(final MerchantOffer offer) {
 -        offer.increaseUses();
 +        // offer.increaseUses(); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
          this.ambientSoundTime = -this.getAmbientSoundInterval();
@@ -57,25 +57,86 @@
          if (this.tradingPlayer instanceof ServerPlayer) {
              CriteriaTriggers.TRADE.trigger((ServerPlayer)this.tradingPlayer, this, offer.getResult());
          }
-@@ -225,7 +_,20 @@
-         while (i < maxNumbers && !list.isEmpty()) {
-             MerchantOffer offer = list.remove(this.random.nextInt(list.size())).getOffer(level, this, this.random);
-             if (offer != null) {
--                givenMerchantOffers.add(offer);
-+                // CraftBukkit start
-+                org.bukkit.event.entity.VillagerAcquireTradeEvent event = new org.bukkit.event.entity.VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) this.getBukkitEntity(), offer.asBukkit());
-+                // Suppress during worldgen
-+                if (this.valid) {
-+                    event.callEvent();
-+                }
-+                if (!event.isCancelled()) {
-+                    // Paper start - Fix crash from invalid ingredient list
-+                    final org.bukkit.craftbukkit.inventory.CraftMerchantRecipe craftMerchantRecipe = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getRecipe());
-+                    if (craftMerchantRecipe.getIngredients().isEmpty()) return;
-+                    givenMerchantOffers.add(craftMerchantRecipe.toMinecraft());
-+                    // Paper end - Fix crash from invalid ingredient list
-+                }
-+                // CraftBukkit end
-                 i++;
+@@ -232,6 +_,11 @@
+     protected abstract void updateTrades(ServerLevel level);
+ 
+     protected void addOffersFromTradeSet(final ServerLevel level, final MerchantOffers offers, final ResourceKey<TradeSet> resourceKey) {
++        // Paper start - More vanilla friendly methods to update trades
++        addOffersFromTradeSet(level, offers, resourceKey, -1);
++    }
++    protected void addOffersFromTradeSet(final ServerLevel level, final MerchantOffers offers, final ResourceKey<TradeSet> resourceKey, int offerCount) {
++        // Paper end - More vanilla friendly methods to update trades
+         Optional<TradeSet> tradeSetOpt = this.registryAccess().lookupOrThrow(Registries.TRADE_SET).getOptional(resourceKey);
+         if (tradeSetOpt.isEmpty()) {
+             LOGGER.debug("Missing expected trade set {}", resourceKey);
+@@ -245,17 +_,18 @@
+                         .create(LootContextParamSets.VILLAGER_TRADE)
+                 )
+                 .create(tradeSet.randomSequence());
+-            int numberOfOffers = tradeSet.calculateNumberOfTrades(lootContext);
++            int numberOfOffers = offerCount != -1 ? offerCount : tradeSet.calculateNumberOfTrades(lootContext); // Paper - More vanilla friendly methods to update trades
+             if (tradeSet.allowDuplicates()) {
+-                addOffersFromItemListings(lootContext, offers, tradeSet.getTrades(), numberOfOffers);
++                addOffersFromItemListings(lootContext, offers, tradeSet.getTrades(), numberOfOffers, this); // Paper
+             } else {
+-                addOffersFromItemListingsWithoutDuplicates(lootContext, offers, tradeSet.getTrades(), numberOfOffers);
++                addOffersFromItemListingsWithoutDuplicates(lootContext, offers, tradeSet.getTrades(), numberOfOffers, this); // Paper
              }
          }
+     }
+ 
+     private static void addOffersFromItemListings(
+         final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers
++        , AbstractVillager villager // Paper
+     ) {
+         int offersFound = 0;
+ 
+@@ -267,7 +_,7 @@
+ 
+             MerchantOffer offer = villagerTrade.get().value().getOffer(lootContext);
+             if (offer != null) {
+-                merchantOffers.add(offer);
++                tryAcquireTrade(villager, merchantOffers, offer); // Paper
+                 offersFound++;
+             }
+         }
+@@ -275,6 +_,7 @@
+ 
+     private static void addOffersFromItemListingsWithoutDuplicates(
+         final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers
++        , final AbstractVillager villager // Paper
+     ) {
+         List<Holder<VillagerTrade>> leftoverOffers = Lists.newArrayList(potentialOffers);
+         int offersFound = 0;
+@@ -283,11 +_,30 @@
+             Holder<VillagerTrade> villagerTrade = leftoverOffers.remove(lootContext.getRandom().nextInt(leftoverOffers.size()));
+             MerchantOffer offer = villagerTrade.value().getOffer(lootContext);
+             if (offer != null) {
+-                merchantOffers.add(offer);
++                tryAcquireTrade(villager, merchantOffers, offer); // Paper
+                 offersFound++;
+             }
+         }
+     }
++
++    // Paper start
++    private static void tryAcquireTrade(final AbstractVillager villager, final MerchantOffers merchantOffers, MerchantOffer offer) {
++        // CraftBukkit start
++        org.bukkit.event.entity.VillagerAcquireTradeEvent event = new org.bukkit.event.entity.VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) villager.getBukkitEntity(), offer.asBukkit());
++        // Suppress during worldgen
++        if (villager.valid) {
++            event.callEvent();
++        }
++        if (!event.isCancelled()) {
++            // Paper start - Fix crash from invalid ingredient list
++            final org.bukkit.craftbukkit.inventory.CraftMerchantRecipe craftMerchantRecipe = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getRecipe());
++            if (craftMerchantRecipe.getIngredients().isEmpty()) return;
++            merchantOffers.add(craftMerchantRecipe.toMinecraft());
++            // Paper end - Fix crash from invalid ingredient list
++        }
++        // CraftBukkit end
++    }
++    // Paper end
+ 
+     @Override
+     public Vec3 getRopeHoldPosition(final float partialTickTime) {

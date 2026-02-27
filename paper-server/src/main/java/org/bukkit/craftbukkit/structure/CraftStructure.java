@@ -102,7 +102,7 @@ public class CraftStructure implements Structure {
 
         TransformerGeneratorAccess access = new TransformerGeneratorAccess();
         access.setDelegate(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
+        access.setStructureTransformer(new CraftStructureTransformer(handle, ChunkPos.containing(pos), blockTransformers, entityTransformers));
 
         this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS);
         access.getStructureTransformer().discard();

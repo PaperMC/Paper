@@ -61,7 +61,6 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.AdventureModePredicate;
-import net.minecraft.world.item.EitherHolder;
 import net.minecraft.world.item.JukeboxPlayable;
 import net.minecraft.world.item.JukeboxSongs;
 import net.minecraft.world.item.Rarity;
@@ -484,7 +483,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.rarity = ItemRarity.valueOf(enumItemRarity.name());
         });
         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.USE_REMAINDER).ifPresent((remainder) -> {
-            this.useRemainder = CraftItemStack.asCraftMirror(remainder.convertInto());
+            this.useRemainder = CraftItemStack.asCraftMirror(remainder.convertInto().create());
         });
         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.USE_COOLDOWN).ifPresent((cooldown) -> {
             this.useCooldown = new CraftUseCooldownComponent(cooldown);
@@ -998,7 +997,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (this.hasUseRemainder()) {
-            tag.put(CraftMetaItem.USE_REMAINDER, new UseRemainder(CraftItemStack.asNMSCopy(this.useRemainder)));
+            tag.put(CraftMetaItem.USE_REMAINDER, new UseRemainder(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(this.useRemainder))));
         }
 
         if (this.hasUseCooldown()) {
@@ -1683,7 +1682,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public JukeboxPlayableComponent getJukeboxPlayable() {
-        return (this.hasJukeboxPlayable()) ? new CraftJukeboxComponent(this.jukebox) : new CraftJukeboxComponent(new JukeboxPlayable(new EitherHolder<>(JukeboxSongs.THIRTEEN)));
+        return (this.hasJukeboxPlayable()) ? new CraftJukeboxComponent(this.jukebox) : new CraftJukeboxComponent(new JukeboxPlayable(CraftRegistry.getMinecraftRegistry(Registries.JUKEBOX_SONG).get(JukeboxSongs.THIRTEEN).orElseThrow()));
     }
 
     @Override
@@ -2478,8 +2477,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     protected static <T> Optional<? extends T> getOrEmpty(final DataComponentPatch tag, final DataComponentType<T> type) {
-        Optional<? extends T> result = tag.get(type);
-        return (result != null) ? result : Optional.empty();
+        return Optional.ofNullable(tag.get(net.minecraft.core.component.DataComponentMap.EMPTY, type));
     }
 
     private static class EnchantmentMap extends java.util.TreeMap<org.bukkit.enchantments.Enchantment, Integer> {

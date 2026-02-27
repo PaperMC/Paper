@@ -31,7 +31,7 @@
 @@ -116,6 +_,7 @@
          .findFirst()
          .orElseThrow(() -> new IllegalStateException("No jar file system provider found"));
-     private static Consumer<String> thePauser = string -> {};
+     private static Consumer<String> thePauser = msg -> {};
 +    public static final double COLLISION_EPSILON = 1.0E-7; // Paper - Check distance in entity interactions
  
      public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
@@ -49,27 +49,27 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
--    private static TracingExecutor makeExecutor(String name) {
-+    private static TracingExecutor makeExecutor(String name, final int priorityModifier) { // Paper - Perf: add priority
-         int i = maxAllowedExecutorThreads();
--        ExecutorService directExecutorService;
+-    private static TracingExecutor makeExecutor(final String name) {
++    private static TracingExecutor makeExecutor(final String name, final int priorityModifier) { // Paper - Perf: add priority
+         int threads = maxAllowedExecutorThreads();
+-        ExecutorService executor;
 +        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
-+        final ExecutorService directExecutorService;
-         if (i <= 0) {
-             directExecutorService = MoreExecutors.newDirectExecutorService();
++        final ExecutorService executor;
+         if (threads <= 0) {
+             executor = MoreExecutors.newDirectExecutorService();
          } else {
 @@ -176,16 +_,30 @@
-                         super.onTermination(throwOnTermination);
+                         super.onTermination(exception);
                      }
                  };
-+                forkJoinWorkerThread.setPriority(Thread.NORM_PRIORITY + priorityModifier); // Paper - Deprioritize over main
-                 forkJoinWorkerThread.setName(string);
-                 return forkJoinWorkerThread;
++                thread.setPriority(Thread.NORM_PRIORITY + priorityModifier); // Paper - Deprioritize over main
+                 thread.setName(threadName);
+                 return thread;
 -            }, Util::onThreadException, true);
 +            }, Util::onThreadException, true, 0, Integer.MAX_VALUE, 1, null, 365, TimeUnit.DAYS); // Paper - do not expire threads
          }
  
-         return new TracingExecutor(directExecutorService);
+         return new TracingExecutor(executor);
      }
  
      public static int maxAllowedExecutorThreads() {
@@ -111,5 +111,5 @@
 +    }
 +    // Paper end - Separate dimension data IO pool
  
-     public static void throwAsRuntime(Throwable throwable) {
+     public static void throwAsRuntime(final Throwable throwable) {
          throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);

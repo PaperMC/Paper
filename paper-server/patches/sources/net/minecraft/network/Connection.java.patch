@@ -15,7 +15,7 @@
 @@ -81,6 +_,43 @@
      private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
-     @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
+     private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
 +    public String hostname = ""; // CraftBukkit - add field
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
@@ -54,7 +54,7 @@
 +    public net.minecraft.server.level.@Nullable ServerPlayer savedPlayerForLegacyEvents; // Paper - playerloginevent & PlayerSpawnLocationEvent
 +    public org.bukkit.event.player.PlayerResourcePackStatusEvent.@Nullable Status resourcePackStatus; // Paper
  
-     public Connection(PacketFlow receiving) {
+     public Connection(final PacketFlow receiving) {
          this.receiving = receiving;
 @@ -91,6 +_,7 @@
          super.channelActive(ctx);
@@ -64,56 +64,58 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -103,14 +_,31 @@
+@@ -102,15 +_,32 @@
+     }
  
      @Override
-     public void exceptionCaught(ChannelHandlerContext ctx, Throwable exception) {
-+        // Paper start - Handle large packets disconnecting client
-+        if (exception instanceof io.netty.handler.codec.EncoderException && exception.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
+-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
++    // Paper start - Handle large packets disconnecting client
++    public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
++        if (cause instanceof io.netty.handler.codec.EncoderException && cause.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            if (packet.packetTooLarge(this)) {
 +                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else if (packet.isSkippable()) {
-+                Connection.LOGGER.debug("Skipping packet due to errors", exception.getCause());
++                Connection.LOGGER.debug("Skipping packet due to errors", cause.getCause());
 +                ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
 +                return;
 +            } else {
-+                exception = exception.getCause();
++                cause = cause.getCause();
 +            }
 +        }
 +        // Paper end - Handle large packets disconnecting client
-         if (exception instanceof SkipPacketException) {
-             LOGGER.debug("Skipping packet due to errors", exception.getCause());
+         if (cause instanceof SkipPacketException) {
+             LOGGER.debug("Skipping packet due to errors", cause.getCause());
          } else {
-             boolean flag = !this.handlingFault;
+             boolean isFirstFault = !this.handlingFault;
              this.handlingFault = true;
              if (this.channel.isOpen()) {
 +                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
-                 if (exception instanceof TimeoutException) {
-                     LOGGER.debug("Timeout", exception);
+                 if (cause instanceof TimeoutException) {
+                     LOGGER.debug("Timeout", cause);
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
-                     Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + exception);
+                     Component reason = Component.translatable("disconnect.genericReason", "Internal Exception: " + cause);
 @@ -122,9 +_,11 @@
-                         disconnectionDetails = new DisconnectionDetails(component);
+                         details = new DisconnectionDetails(reason);
                      }
  
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
-                     if (flag) {
-                         LOGGER.debug("Failed to sent packet", exception);
+                     if (isFirstFault) {
+                         LOGGER.debug("Failed to sent packet", cause);
 -                        if (this.getSending() == PacketFlow.CLIENTBOUND) {
 +                        boolean doesDisconnectExist = this.packetListener.protocol() != ConnectionProtocol.STATUS && this.packetListener.protocol() != ConnectionProtocol.HANDSHAKING; // Paper
 +                        if (this.getSending() == PacketFlow.CLIENTBOUND && doesDisconnectExist) { // Paper
                              Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
-                                 ? new ClientboundLoginDisconnectPacket(component)
-                                 : new ClientboundDisconnectPacket(component));
+                                 ? new ClientboundLoginDisconnectPacket(reason)
+                                 : new ClientboundDisconnectPacket(reason));
 @@ -141,6 +_,7 @@
                  }
              }
          }
-+        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Spigot // Paper
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(cause); // Spigot // Paper
      }
  
      @Override
@@ -178,7 +180,7 @@
                      } catch (RejectedExecutionException var6) {
                          this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException var7) {
-@@ -346,10 +_,30 @@
+@@ -344,10 +_,30 @@
          }
      }
  
@@ -193,7 +195,7 @@
 +            Connection.joinAttemptsThisTick = 0;
 +        }
 +        // Paper end - Buffer joins to world
-         if (this.packetListener instanceof TickablePacketListener tickablePacketListener) {
+         if (this.packetListener instanceof TickablePacketListener tickable) {
 +            // Paper start - Buffer joins to world
 +            if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
 +                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
@@ -201,7 +203,7 @@
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.PacketProcessor.packetProcessing.push(this.packetListener);
 +            try {
-             tickablePacketListener.tick();
+             tickable.tick();
 +            } finally {
 +                net.minecraft.network.PacketProcessor.packetProcessing.pop();
 +            } // Paper end - detailed watchdog information
@@ -209,7 +211,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -357,7 +_,7 @@
+@@ -355,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -218,22 +220,22 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -393,12 +_,13 @@
+@@ -391,12 +_,13 @@
      }
  
-     public void disconnect(DisconnectionDetails disconnectionDetails) {
+     public void disconnect(final DisconnectionDetails details) {
 +        this.preparing = false; // Spigot
          if (this.channel == null) {
-             this.delayedDisconnect = disconnectionDetails;
+             this.delayedDisconnect = details;
          }
  
          if (this.isConnected()) {
 -            this.channel.close().awaitUninterruptibly();
 +            this.channel.close(); // We can't wait as this may be called from an event loop.
-             this.disconnectionDetails = disconnectionDetails;
+             this.disconnectionDetails = details;
          }
      }
-@@ -533,6 +_,13 @@
+@@ -543,6 +_,13 @@
          }
      }
  
@@ -244,10 +246,10 @@
 +        }
 +    }
 +    // Paper end - add proper async disconnect
-     public void setupCompression(int threshold, boolean validateDecompressed) {
+     public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -546,6 +_,7 @@
+@@ -556,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
@@ -255,7 +257,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -554,6 +_,7 @@
+@@ -564,6 +_,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -263,9 +265,9 @@
          }
      }
  
-@@ -571,6 +_,26 @@
+@@ -581,6 +_,26 @@
                      );
-                     packetListener1.onDisconnect(disconnectionDetails);
+                     disconnectListener.onDisconnect(details);
                  }
 +                this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent

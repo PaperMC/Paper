@@ -2,28 +2,28 @@
 +++ b/net/minecraft/network/chat/OutgoingChatMessage.java
 @@ -7,6 +_,12 @@
  
-     void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType);
+     void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound chatType);
  
 +    // Paper start
-+    default void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType, @javax.annotation.Nullable Component unsigned) {
-+        this.sendToPlayer(player, filtered, boundChatType);
++    default void sendToPlayer(final ServerPlayer player, final boolean filtered, final ChatType.Bound chatType, @javax.annotation.Nullable final Component unsigned) {
++        this.sendToPlayer(player, filtered, chatType);
 +    }
 +    // Paper end
 +
-     static OutgoingChatMessage create(PlayerChatMessage message) {
+     static OutgoingChatMessage create(final PlayerChatMessage message) {
          return (OutgoingChatMessage)(message.isSystem()
              ? new OutgoingChatMessage.Disguised(message.decoratedContent())
 @@ -16,7 +_,13 @@
      public record Disguised(@Override Component content) implements OutgoingChatMessage {
          @Override
-         public void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType) {
--            player.connection.sendDisguisedChatMessage(this.content, boundChatType);
+         public void sendToPlayer(final ServerPlayer player, final boolean filtered, final ChatType.Bound chatType) {
+-            player.connection.sendDisguisedChatMessage(this.content, chatType);
 +            // Paper start
-+            this.sendToPlayer(player, filtered, boundChatType, null);
++            this.sendToPlayer(player, filtered, chatType, null);
 +        }
 +        @Override
-+        public void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType, @javax.annotation.Nullable Component unsigned) {
-+            player.connection.sendDisguisedChatMessage(unsigned != null ? unsigned : this.content, boundChatType);
++        public void sendToPlayer(final ServerPlayer player, final boolean filtered, final ChatType.Bound chatType, @javax.annotation.Nullable final Component unsigned) {
++            player.connection.sendDisguisedChatMessage(unsigned != null ? unsigned : this.content, chatType);
 +            // Paper end
          }
      }
@@ -31,15 +31,15 @@
 @@ -28,7 +_,14 @@
  
          @Override
-         public void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType) {
+         public void sendToPlayer(final ServerPlayer player, final boolean filtered, final ChatType.Bound chatType) {
 +            // Paper start
-+            this.sendToPlayer(player, filtered, boundChatType, null);
++            this.sendToPlayer(player, filtered, chatType, null);
 +        }
 +        @Override
-+        public void sendToPlayer(ServerPlayer player, boolean filtered, ChatType.Bound boundChatType, @javax.annotation.Nullable Component unsigned) {
++        public void sendToPlayer(final ServerPlayer player, final boolean filtered, final ChatType.Bound chatType, @javax.annotation.Nullable final Component unsigned) {
 +            // Paper end
-             PlayerChatMessage playerChatMessage = this.message.filter(filtered);
-+            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
-             if (!playerChatMessage.isFullyFiltered()) {
-                 player.connection.sendPlayerChatMessage(playerChatMessage, boundChatType);
+             PlayerChatMessage filteredMessage = this.message.filter(filtered);
++            filteredMessage = unsigned != null ? filteredMessage.withUnsignedContent(unsigned) : filteredMessage; // Paper
+             if (!filteredMessage.isFullyFiltered()) {
+                 player.connection.sendPlayerChatMessage(filteredMessage, chatType);
              }

@@ -5,79 +5,79 @@
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add missing structure set seed configs
-     public boolean isStructureChunk(ChunkGeneratorStructureState structureState, int x, int z) {
+     public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
 +        // Paper start - Add missing structure set seed configs
-+        return this.isStructureChunk(structureState, x, z, null);
++        return this.isStructureChunk(state, sourceX, sourceZ, null);
 +    }
 +
-+    public boolean isStructureChunk(ChunkGeneratorStructureState structureState, int x, int z, @javax.annotation.Nullable net.minecraft.resources.ResourceKey<StructureSet> structureSetKey) {
++    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ, @javax.annotation.Nullable final net.minecraft.resources.ResourceKey<StructureSet> structureSetKey) {
 +        Integer saltOverride = null;
 +        if (structureSetKey != null) {
 +            if (structureSetKey == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS) {
-+                saltOverride = structureState.conf.mineshaftSeed;
++                saltOverride = state.conf.mineshaftSeed;
 +            } else if (structureSetKey == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES) {
-+                saltOverride = structureState.conf.buriedTreasureSeed;
++                saltOverride = state.conf.buriedTreasureSeed;
 +            }
 +        }
 +        // Paper end - Add missing structure set seed configs
-         return this.isPlacementChunk(structureState, x, z)
--            && this.applyAdditionalChunkRestrictions(x, z, structureState.getLevelSeed())
-+            && this.applyAdditionalChunkRestrictions(x, z, structureState.getLevelSeed(), saltOverride) // Paper - Add missing structure set seed configs
-             && this.applyInteractionsWithOtherStructures(structureState, x, z);
+         return this.isPlacementChunk(state, sourceX, sourceZ)
+-            && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed())
++            && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed(), saltOverride) // Paper - Add missing structure set seed configs
+             && this.applyInteractionsWithOtherStructures(state, sourceX, sourceZ);
      }
  
--    public boolean applyAdditionalChunkRestrictions(int regionX, int regionZ, long levelSeed) {
--        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, regionX, regionZ, this.frequency);
+-    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed) {
+-        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, sourceX, sourceZ, this.frequency);
 +    // Paper start - Add missing structure set seed configs
-+    public boolean applyAdditionalChunkRestrictions(int regionX, int regionZ, long levelSeed, @javax.annotation.Nullable Integer saltOverride) {
-+        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, regionX, regionZ, this.frequency, saltOverride);
++    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed, @javax.annotation.Nullable final Integer saltOverride) {
++        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, sourceX, sourceZ, this.frequency, saltOverride);
 +        // Paper end - Add missing structure set seed configs
      }
  
-     public boolean applyInteractionsWithOtherStructures(ChunkGeneratorStructureState structureState, int x, int z) {
+     public boolean applyInteractionsWithOtherStructures(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
 @@ -101,25 +_,31 @@
  
      public abstract StructurePlacementType<?> type();
  
--    private static boolean probabilityReducer(long levelSeed, int regionX, int regionZ, int salt, float frequency) {
-+    private static boolean probabilityReducer(long levelSeed, int regionX, int regionZ, int salt, float frequency, @javax.annotation.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
-         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
-         worldgenRandom.setLargeFeatureWithSalt(levelSeed, regionX, regionZ, salt);
-         return worldgenRandom.nextFloat() < frequency;
+-    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
++    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, @javax.annotation.Nullable final Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
+         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
+         random.setLargeFeatureWithSalt(seed, salt, sourceX, sourceZ);
+         return random.nextFloat() < probability;
      }
  
--    private static boolean legacyProbabilityReducerWithDouble(long baseSeed, int salt, int chunkX, int chunkZ, float frequency) {
-+    private static boolean legacyProbabilityReducerWithDouble(long baseSeed, int salt, int chunkX, int chunkZ, float frequency, @javax.annotation.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
-         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
+-    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
++    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, @javax.annotation.Nullable final Integer saltOverride) { // Paper - Add missing structure set seed configs
+         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 +        if (saltOverride == null) { // Paper - Add missing structure set seed configs
-         worldgenRandom.setLargeFeatureSeed(baseSeed, chunkX, chunkZ);
+         random.setLargeFeatureSeed(seed, sourceX, sourceZ);
 +            // Paper start - Add missing structure set seed configs
 +        } else {
-+            worldgenRandom.setLargeFeatureWithSalt(baseSeed, chunkX, chunkZ, saltOverride);
++            random.setLargeFeatureWithSalt(seed, sourceX, sourceZ, saltOverride);
 +        }
 +        // Paper end - Add missing structure set seed configs
-         return worldgenRandom.nextDouble() < frequency;
+         return random.nextDouble() < probability;
      }
  
--    private static boolean legacyArbitrarySaltProbabilityReducer(long levelSeed, int salt, int regionX, int regionZ, float frequency) {
-+    private static boolean legacyArbitrarySaltProbabilityReducer(long levelSeed, int salt, int regionX, int regionZ, float frequency, @javax.annotation.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
-         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
--        worldgenRandom.setLargeFeatureWithSalt(levelSeed, regionX, regionZ, 10387320);
-+        worldgenRandom.setLargeFeatureWithSalt(levelSeed, regionX, regionZ, saltOverride != null ? saltOverride : HIGHLY_ARBITRARY_RANDOM_SALT); // Paper - Add missing structure set seed configs
-         return worldgenRandom.nextFloat() < frequency;
+-    private static boolean legacyArbitrarySaltProbabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
++    private static boolean legacyArbitrarySaltProbabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, @javax.annotation.Nullable final Integer saltOverride) { // Paper - Add missing structure set seed configs
+         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
+-        random.setLargeFeatureWithSalt(seed, sourceX, sourceZ, 10387320);
++        random.setLargeFeatureWithSalt(seed, sourceX, sourceZ, saltOverride != null ? saltOverride : HIGHLY_ARBITRARY_RANDOM_SALT); // Paper - Add missing structure set seed configs
+         return random.nextFloat() < probability;
      }
  
--    private static boolean legacyPillagerOutpostReducer(long levelSeed, int salt, int regionX, int regionZ, float frequency) {
-+    private static boolean legacyPillagerOutpostReducer(long levelSeed, int salt, int regionX, int regionZ, float frequency, @javax.annotation.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
-         int i = regionX >> 4;
-         int i1 = regionZ >> 4;
-         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
+-    private static boolean legacyPillagerOutpostReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
++    private static boolean legacyPillagerOutpostReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, @javax.annotation.Nullable final Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
+         int cx = sourceX >> 4;
+         int cz = sourceZ >> 4;
+         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 @@ -147,7 +_,7 @@
  
      @FunctionalInterface
      public interface FrequencyReducer {
--        boolean shouldGenerate(long levelSeed, int salt, int regionX, int regionZ, float frequency);
-+        boolean shouldGenerate(long levelSeed, int salt, int regionX, int regionZ, float frequency, @javax.annotation.Nullable Integer saltOverride); // Paper - Add missing structure set seed configs
+-        boolean shouldGenerate(long seed, final int salt, final int sourceX, final int sourceZ, float probability);
++        boolean shouldGenerate(long seed, final int salt, final int sourceX, final int sourceZ, float probability, @javax.annotation.Nullable final Integer saltOverride); // Paper - Add missing structure set seed configs
      }
  
      public static enum FrequencyReductionMethod implements StringRepresentable {
@@ -85,10 +85,10 @@
              this.reducer = reducer;
          }
  
--        public boolean shouldGenerate(long levelSeed, int salt, int regionX, int regionZ, float frequency) {
--            return this.reducer.shouldGenerate(levelSeed, salt, regionX, regionZ, frequency);
-+        public boolean shouldGenerate(long levelSeed, int salt, int regionX, int regionZ, float frequency, @javax.annotation.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
-+            return this.reducer.shouldGenerate(levelSeed, salt, regionX, regionZ, frequency, saltOverride); // Paper - Add missing structure set seed configs
+-        public boolean shouldGenerate(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+-            return this.reducer.shouldGenerate(seed, salt, sourceX, sourceZ, probability);
++        public boolean shouldGenerate(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, @javax.annotation.Nullable final Integer saltOverride) { // Paper - Add missing structure set seed configs
++            return this.reducer.shouldGenerate(seed, salt, sourceX, sourceZ, probability, saltOverride); // Paper - Add missing structure set seed configs
          }
  
          @Override

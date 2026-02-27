@@ -731,7 +731,7 @@ public class CraftBlock implements Block {
     @Override
     public void tick() {
         final ServerLevel level = this.world.getMinecraftWorld();
-        this.getNMS().tick(level, this.position, level.random);
+        this.getNMS().tick(level, this.position, level.getRandom());
     }
 
 
@@ -743,7 +743,7 @@ public class CraftBlock implements Block {
     @Override
     public void randomTick() {
         final ServerLevel level = this.world.getMinecraftWorld();
-        this.getNMS().randomTick(level, this.position, level.random);
+        this.getNMS().randomTick(level, this.position, level.getRandom());
     }
     // Paper end
 }

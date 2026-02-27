@@ -3,62 +3,65 @@
 @@ -64,6 +_,7 @@
  
      @Override
-     public BlockState getStateForPlacement(BlockPlaceContext context) {
+     public BlockState getStateForPlacement(final BlockPlaceContext context) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return this.defaultBlockState(); // Paper - place without considering instrument
          return this.setInstrument(context.getLevel(), context.getClickedPos(), this.defaultBlockState());
      }
  
 @@ -78,6 +_,7 @@
-         BlockState neighborState,
-         RandomSource random
+         final BlockState neighbourState,
+         final RandomSource random
      ) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return state; // Paper - prevent noteblock instrument from updating
-         boolean flag = direction.getAxis() == Direction.Axis.Y;
-         return flag
+         boolean neighborDirectionSetsInstrument = directionToNeighbour.getAxis() == Direction.Axis.Y;
+         return neighborDirectionSetsInstrument
              ? this.setInstrument(level, pos, state)
-@@ -86,10 +_,12 @@
+@@ -86,12 +_,14 @@
  
      @Override
-     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+     protected void neighborChanged(
+-        final BlockState state, final Level level, final BlockPos pos, final Block block, final @Nullable Orientation orientation, final boolean movedByPiston
++        BlockState state, final Level level, final BlockPos pos, final Block block, final @Nullable Orientation orientation, final boolean movedByPiston // Paper - make state non-final
+     ) {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return; // Paper - prevent noteblock powered-state from updating
-         boolean hasNeighborSignal = level.hasNeighborSignal(pos);
-         if (hasNeighborSignal != state.getValue(POWERED)) {
-             if (hasNeighborSignal) {
+         boolean signal = level.hasNeighborSignal(pos);
+         if (signal != state.getValue(POWERED)) {
+             if (signal) {
                  this.playNote(null, state, level, pos);
 +                state = level.getBlockState(pos); // CraftBukkit - SPIGOT-5617: update in case changed in event
              }
  
-             level.setBlock(pos, state.setValue(POWERED, hasNeighborSignal), Block.UPDATE_ALL);
-@@ -115,7 +_,7 @@
+             level.setBlock(pos, state.setValue(POWERED, signal), Block.UPDATE_ALL);
+@@ -123,7 +_,7 @@
      @Override
-     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+     protected InteractionResult useWithoutItem(BlockState state, final Level level, final BlockPos pos, final Player player, final BlockHitResult hitResult) {
          if (!level.isClientSide()) {
 -            state = state.cycle(NOTE);
 +            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) state = state.cycle(NoteBlock.NOTE); // Paper - prevent noteblock note from updating
              level.setBlock(pos, state, Block.UPDATE_ALL);
              this.playNote(player, state, level, pos);
              player.awardStat(Stats.TUNE_NOTEBLOCK);
-@@ -139,9 +_,13 @@
+@@ -147,9 +_,13 @@
      @Override
-     protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
-         NoteBlockInstrument noteBlockInstrument = state.getValue(INSTRUMENT);
+     protected boolean triggerEvent(final BlockState state, final Level level, final BlockPos pos, final int b0, final int b1) {
+         NoteBlockInstrument instrument = state.getValue(INSTRUMENT);
 +        // Paper start - move NotePlayEvent call to fix instrument/note changes
-+        org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(level, pos, noteBlockInstrument, state.getValue(NOTE));
++        org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(level, pos, instrument, state.getValue(NOTE));
 +        if (event.isCancelled()) return false;
 +        // Paper end - move NotePlayEvent call to fix instrument/note changes
-         float pitchFromNote;
-         if (noteBlockInstrument.isTunable()) {
--            int noteValue = state.getValue(NOTE);
-+            int noteValue = event.getNote().getId(); // Paper - move NotePlayEvent call to fix instrument/note changes
-             pitchFromNote = getPitchFromNote(noteValue);
-             level.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, noteValue / 24.0, 0.0, 0.0);
+         float pitch;
+         if (instrument.isTunable()) {
+-            int note = state.getValue(NOTE);
++            int note = event.getNote().getId(); // Paper - move NotePlayEvent call to fix instrument/note changes
+             pitch = getPitchFromNote(note);
+             level.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, note / 24.0, 0.0, 0.0);
          } else {
-@@ -157,7 +_,7 @@
+@@ -165,7 +_,7 @@
  
-             holder = Holder.direct(SoundEvent.createVariableRangeEvent(customSoundId));
+             soundEvent = Holder.direct(SoundEvent.createVariableRangeEvent(soundId));
          } else {
--            holder = noteBlockInstrument.getSoundEvent();
-+            holder = org.bukkit.craftbukkit.block.data.CraftBlockData.toNMS(event.getInstrument(), NoteBlockInstrument.class).getSoundEvent(); // Paper - move NotePlayEvent call to fix instrument/note changes
+-            soundEvent = instrument.getSoundEvent();
++            soundEvent = org.bukkit.craftbukkit.block.data.CraftBlockData.toNMS(event.getInstrument(), NoteBlockInstrument.class).getSoundEvent(); // Paper - move NotePlayEvent call to fix instrument/note changes
          }
  
          level.playSeededSound(

@@ -25,6 +25,6 @@ public class CraftStonecuttingRecipe extends StonecuttingRecipe implements Craft
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
 
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.StonecutterRecipe(this.getGroup(), this.toNMS(this.getInputChoice(), true), CraftItemStack.asNMSCopy(result))));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.StonecutterRecipe(new net.minecraft.world.item.crafting.Recipe.CommonInfo(true), this.toNMS(this.getInputChoice(), true), net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(result)))));
     }
 }

@@ -195,11 +195,6 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public float getShade(Direction direction, boolean shaded) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public LevelLightEngine getLightEngine() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

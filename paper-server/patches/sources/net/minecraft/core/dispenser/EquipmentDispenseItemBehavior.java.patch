@@ -3,35 +3,35 @@
 @@ -14,10 +_,17 @@
  
      @Override
-     protected ItemStack execute(BlockSource blockSource, ItemStack item) {
--        return dispenseEquipment(blockSource, item) ? item : super.execute(blockSource, item);
-+        return dispenseEquipment(blockSource, item, this) ? item : super.execute(blockSource, item); // Paper - fix possible StackOverflowError
+     protected ItemStack execute(final BlockSource source, final ItemStack dispensed) {
+-        return dispenseEquipment(source, dispensed) ? dispensed : super.execute(source, dispensed);
++        return dispenseEquipment(source, dispensed, this) ? dispensed : super.execute(source, dispensed); // Paper - fix possible StackOverflowError
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
-     public static boolean dispenseEquipment(BlockSource blockSource, ItemStack item) {
+     public static boolean dispenseEquipment(final BlockSource source, final ItemStack dispensed) {
 +        // Paper start
-+        return dispenseEquipment(blockSource, item, null);
++        return dispenseEquipment(source, dispensed, null);
 +    }
 +
-+    public static boolean dispenseEquipment(BlockSource blockSource, ItemStack item, @javax.annotation.Nullable DispenseItemBehavior currentBehavior) {
++    public static boolean dispenseEquipment(final BlockSource source, final ItemStack dispensed, @javax.annotation.Nullable final DispenseItemBehavior currentBehavior) {
 +        // Paper end
-         BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
-         List<LivingEntity> entitiesOfClass = blockSource.level()
-             .getEntitiesOfClass(LivingEntity.class, new AABB(blockPos), entity -> entity.canEquipWithDispenser(item));
-@@ -26,13 +_,39 @@
+         BlockPos pos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+         List<LivingEntity> entities = source.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos), entity -> entity.canEquipWithDispenser(dispensed));
+         if (entities.isEmpty()) {
+@@ -25,13 +_,39 @@
          } else {
-             LivingEntity livingEntity = entitiesOfClass.getFirst();
-             EquipmentSlot equipmentSlotForItem = livingEntity.getEquipmentSlotForItem(item);
--            ItemStack itemStack = item.split(1);
--            livingEntity.setItemSlot(equipmentSlotForItem, itemStack);
-+            ItemStack itemStack = item.copyWithCount(1); // Paper - shrink below and single item in event
+             LivingEntity target = entities.getFirst();
+             EquipmentSlot slot = target.getEquipmentSlotForItem(dispensed);
+-            ItemStack equip = dispensed.split(1);
+-            target.setItemSlot(slot, equip);
++            ItemStack equip = dispensed.copyWithCount(1); // Paper - shrink below and single item in event
 +            // CraftBukkit start
-+            net.minecraft.world.level.Level world = blockSource.level();
-+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockSource.pos());
-+            org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
++            net.minecraft.world.level.Level world = source.level();
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, source.pos());
++            org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(equip);
 +
-+            org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.entity.CraftLivingEntity) livingEntity.getBukkitEntity());
++            org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.entity.CraftLivingEntity) target.getBukkitEntity());
 +            world.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
@@ -43,21 +43,21 @@
 +                shrink = false;
 +                // Chain to handler for new item
 +                ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+                DispenseItemBehavior dispenseItemBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
++                DispenseItemBehavior dispenseItemBehavior = DispenserBlock.getDispenseBehavior(source, eventStack);
 +                if (dispenseItemBehavior != DispenseItemBehavior.NOOP && (currentBehavior == null || dispenseItemBehavior != currentBehavior)) {
-+                    dispenseItemBehavior.dispense(blockSource, eventStack);
++                    dispenseItemBehavior.dispense(source, eventStack);
 +                    return true;
 +                }
 +            }
 +
-+            livingEntity.setItemSlot(equipmentSlotForItem, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
++            target.setItemSlot(slot, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
 +            // CraftBukkit end
-             if (livingEntity instanceof Mob mob) {
-                 mob.setGuaranteedDrop(equipmentSlotForItem);
-                 mob.setPersistenceRequired();
+             if (target instanceof Mob targetMob) {
+                 targetMob.setGuaranteedDrop(slot);
+                 targetMob.setPersistenceRequired();
              }
  
-+            if (shrink) item.shrink(1); // Paper - shrink here
++            if (shrink) dispensed.shrink(1); // Paper - shrink here
              return true;
          }
      }

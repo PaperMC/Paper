@@ -4,7 +4,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.TransmuteResult;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.RecipeChoice;
@@ -31,11 +30,14 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
         final ItemStack unwrappedInternalStack = CraftItemStack.unwrap(this.getResult());
         MinecraftServer.getServer().getRecipeManager().addRecipe(
             new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()),
-                new net.minecraft.world.item.crafting.TransmuteRecipe(this.getGroup(),
-                    CraftRecipe.getCategory(this.getCategory()),
+                new net.minecraft.world.item.crafting.TransmuteRecipe(
+                    new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
+                    new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
                     this.toNMS(this.getInput(), true),
                     this.toNMS(this.getMaterial(), true),
-                    new TransmuteResult(unwrappedInternalStack.getItemHolder(), unwrappedInternalStack.getCount(), unwrappedInternalStack.getComponentsPatch())
+                    net.minecraft.world.item.crafting.TransmuteRecipe.DEFAULT_MATERIAL_COUNT,
+                    new net.minecraft.world.item.ItemStackTemplate(unwrappedInternalStack.typeHolder(), unwrappedInternalStack.getCount(), unwrappedInternalStack.getComponentsPatch())
+                    , false
                 )
             )
         );

@@ -54,8 +54,8 @@ public class CraftChunk implements Chunk {
 
     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
         this.level = chunk.level;
-        this.x = chunk.getPos().x;
-        this.z = chunk.getPos().z;
+        this.x = chunk.getPos().x();
+        this.z = chunk.getPos().z();
     }
 
     public CraftChunk(ServerLevel level, int x, int z) {
@@ -114,7 +114,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public boolean isEntitiesLoaded() {
-        return this.getCraftWorld().getHandle().areEntitiesLoaded(ChunkPos.asLong(this.x, this.z)); // Paper - chunk system
+        return this.getCraftWorld().getHandle().areEntitiesLoaded(ChunkPos.pack(this.x, this.z)); // Paper - chunk system
     }
 
     @Override

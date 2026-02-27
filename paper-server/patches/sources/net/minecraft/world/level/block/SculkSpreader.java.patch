@@ -7,28 +7,28 @@
 +    public net.minecraft.world.level.Level level; // CraftBukkit
  
      public SculkSpreader(
-         boolean isWorldGeneration, TagKey<Block> replaceableBlocks, int growthSpawnCost, int noGrowthRadius, int chargeDecayRate, int additionalDecayRate
-@@ -102,7 +_,7 @@
+         final boolean isWorldGeneration,
+@@ -107,7 +_,7 @@
  
-     public void load(ValueInput input) {
+     public void load(final ValueInput input) {
          this.cursors.clear();
 -        input.read("cursors", SculkSpreader.ChargeCursor.CODEC.sizeLimitedListOf(32)).orElse(List.of()).forEach(this::addCursor);
 +        input.read("cursors", SculkSpreader.ChargeCursor.CODEC.sizeLimitedListOf(32)).orElse(List.of()).forEach((cursor) -> this.addCursor(cursor, false));  // Paper - don't fire event for block entity loading
      }
  
-     public void save(ValueOutput output) {
-@@ -121,13 +_,24 @@
-     public void addCursors(BlockPos pos, int charge) {
+     public void save(final ValueOutput output) {
+@@ -126,13 +_,24 @@
+     public void addCursors(final BlockPos startPos, int charge) {
          while (charge > 0) {
-             int min = Math.min(charge, 1000);
--            this.addCursor(new SculkSpreader.ChargeCursor(pos, min));
-+            this.addCursor(new SculkSpreader.ChargeCursor(pos, min), true); // Paper - allow firing event for other causes
-             charge -= min;
+             int currentCharge = Math.min(charge, 1000);
+-            this.addCursor(new SculkSpreader.ChargeCursor(startPos, currentCharge));
++            this.addCursor(new SculkSpreader.ChargeCursor(startPos, currentCharge), true); // Paper - allow firing event for other causes
+             charge -= currentCharge;
          }
      }
  
--    private void addCursor(SculkSpreader.ChargeCursor cursor) {
-+    private void addCursor(SculkSpreader.ChargeCursor cursor, boolean fireEvent) { // Paper - add boolean to conditionally fire SculkBloomEvent
+-    private void addCursor(final SculkSpreader.ChargeCursor cursor) {
++    private void addCursor(final SculkSpreader.ChargeCursor cursor, boolean fireEvent) { // Paper - add boolean to conditionally fire SculkBloomEvent
          if (this.cursors.size() < 32) {
 +            // CraftBukkit start
 +            if (!this.isWorldGeneration() && fireEvent) { // CraftBukkit - SPIGOT-7475: Don't call event during world generation // Paper - add boolean to conditionally fire SculkBloomEvent

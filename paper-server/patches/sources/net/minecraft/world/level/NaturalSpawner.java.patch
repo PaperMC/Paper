@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -76,6 +_,13 @@
+@@ -77,6 +_,13 @@
              if (!(entity instanceof Mob mob && (mob.isPersistenceRequired() || mob.requiresCustomPersistence()))) {
                  MobCategory category = entity.getType().getCategory();
                  if (category != MobCategory.MISC) {
@@ -11,21 +11,21 @@
 +                        continue;
 +                    }
 +                    // Paper end - Only count natural spawns
-                     BlockPos blockPos = entity.blockPosition();
-                     chunkGetter.query(ChunkPos.asLong(blockPos), chunk -> {
-                         MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(blockPos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
-@@ -100,17 +_,34 @@
+                     BlockPos pos = entity.blockPosition();
+                     chunkGetter.query(ChunkPos.pack(pos), chunk -> {
+                         MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(pos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
+@@ -101,17 +_,34 @@
          return chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
      }
  
 +    // CraftBukkit start - add server
      public static List<MobCategory> getFilteredSpawningCategories(
--        NaturalSpawner.SpawnState spawnState, boolean spawnFriendlies, boolean spawnEnemies, boolean spawnPassives
-+        NaturalSpawner.SpawnState spawnState, boolean spawnFriendlies, boolean spawnEnemies, boolean spawnPassives, ServerLevel level
+-        final NaturalSpawner.SpawnState state, final boolean spawnFriendlies, final boolean spawnEnemies, final boolean spawnPersistent
++        final NaturalSpawner.SpawnState state, final boolean spawnFriendlies, final boolean spawnEnemies, final boolean spawnPersistent, final ServerLevel level
      ) {
 +        net.minecraft.world.level.storage.LevelData worlddata = level.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
 +        // CraftBukkit end
-         List<MobCategory> list = new ArrayList<>(SPAWNING_CATEGORIES.length);
+         List<MobCategory> spawningCategories = new ArrayList<>(SPAWNING_CATEGORIES.length);
  
          for (MobCategory mobCategory : SPAWNING_CATEGORIES) {
 +            // CraftBukkit start - Use per-world spawn limits
@@ -43,16 +43,16 @@
 +
              if ((spawnFriendlies || !mobCategory.isFriendly())
                  && (spawnEnemies || mobCategory.isFriendly())
-                 && (spawnPassives || !mobCategory.isPersistent())
--                && spawnState.canSpawnForCategoryGlobal(mobCategory)) {
-+                && spawnState.canSpawnForCategoryGlobal(mobCategory, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
-                 list.add(mobCategory);
+                 && (spawnPersistent || !mobCategory.isPersistent())
+-                && state.canSpawnForCategoryGlobal(mobCategory)) {
++                && state.canSpawnForCategoryGlobal(mobCategory, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
+                 spawningCategories.add(mobCategory);
 +                // CraftBukkit end
              }
          }
  
-@@ -130,6 +_,16 @@
-         profilerFiller.pop();
+@@ -133,6 +_,16 @@
+         profiler.pop();
      }
  
 +    // Paper start - Add mobcaps commands
@@ -66,64 +66,64 @@
 +    // Paper end - Add mobcaps commands
 +
      public static void spawnCategoryForChunk(
-         MobCategory category, ServerLevel level, LevelChunk chunk, NaturalSpawner.SpawnPredicate filter, NaturalSpawner.AfterSpawnCallback callback
-     ) {
-@@ -155,8 +_,8 @@
+         final MobCategory mobCategory,
+         final ServerLevel level,
+@@ -162,8 +_,8 @@
          StructureManager structureManager = level.structureManager();
          ChunkGenerator generator = level.getChunkSource().getGenerator();
-         int y = pos.getY();
--        BlockState blockState = chunk.getBlockState(pos);
--        if (!blockState.isRedstoneConductor(chunk, pos)) {
-+        BlockState blockState = level.getBlockStateIfLoadedAndInBounds(pos); // Paper - don't load chunks for mob spawn
-+        if (blockState != null && !blockState.isRedstoneConductor(chunk, pos)) { // Paper - don't load chunks for mob spawn
-             BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
-             int i = 0;
+         int yStart = start.getY();
+-        BlockState state = chunk.getBlockState(start);
+-        if (!state.isRedstoneConductor(chunk, start)) {
++        BlockState state = level.getBlockStateIfLoadedAndInBounds(start); // Paper - don't load chunks for mob spawn
++        if (state != null && !state.isRedstoneConductor(chunk, start)) { // Paper - don't load chunks for mob spawn
+             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+             int clusterSize = 0;
  
-@@ -178,7 +_,7 @@
-                     Player nearestPlayer = level.getNearestPlayer(d, y, d1, -1.0, false);
+@@ -185,7 +_,7 @@
+                     Player nearestPlayer = level.getNearestPlayer(xx, yStart, zz, -1.0, false);
                      if (nearestPlayer != null) {
-                         double d2 = nearestPlayer.distanceToSqr(d, y, d1);
--                        if (isRightDistanceToPlayerAndSpawnPoint(level, chunk, mutableBlockPos, d2)) {
-+                        if (level.isLoadedAndInBounds(mutableBlockPos) && isRightDistanceToPlayerAndSpawnPoint(level, chunk, mutableBlockPos, d2)) { // Paper - don't load chunks for mob spawn
-                             if (spawnerData == null) {
-                                 Optional<MobSpawnSettings.SpawnerData> randomSpawnMobAt = getRandomSpawnMobAt(
-                                     level, structureManager, generator, category, level.random, mutableBlockPos
-@@ -191,7 +_,13 @@
-                                 ceil = spawnerData.minCount() + level.random.nextInt(1 + spawnerData.maxCount() - spawnerData.minCount());
+                         double nearestPlayerDistanceSqr = nearestPlayer.distanceToSqr(xx, yStart, zz);
+-                        if (isRightDistanceToPlayerAndSpawnPoint(level, chunk, pos, nearestPlayerDistanceSqr)) {
++                        if (level.isLoadedAndInBounds(pos) && isRightDistanceToPlayerAndSpawnPoint(level, chunk, pos, nearestPlayerDistanceSqr)) { // Paper - don't load chunks for mob spawn
+                             if (currentSpawnData == null) {
+                                 Optional<MobSpawnSettings.SpawnerData> nextSpawnData = getRandomSpawnMobAt(
+                                     level, structureManager, generator, mobCategory, level.random, pos
+@@ -198,7 +_,13 @@
+                                 max = currentSpawnData.minCount() + level.random.nextInt(1 + currentSpawnData.maxCount() - currentSpawnData.minCount());
                              }
  
--                            if (isValidSpawnPostitionForType(level, category, structureManager, generator, spawnerData, mutableBlockPos, d2)
+-                            if (isValidSpawnPostitionForType(level, mobCategory, structureManager, generator, currentSpawnData, pos, nearestPlayerDistanceSqr)
 +                            // Paper start - PreCreatureSpawnEvent
-+                            PreSpawnStatus doSpawning = isValidSpawnPostitionForType(level, category, structureManager, generator, spawnerData, mutableBlockPos, d2);
++                            PreSpawnStatus doSpawning = isValidSpawnPostitionForType(level, mobCategory, structureManager, generator, currentSpawnData, pos, nearestPlayerDistanceSqr);
 +                            if (doSpawning == PreSpawnStatus.ABORT) {
 +                                return;
 +                            }
 +                            if (doSpawning == PreSpawnStatus.SUCCESS
 +                            // Paper end - PreCreatureSpawnEvent
-                                 && filter.test(spawnerData.type(), mutableBlockPos, chunk)) {
-                                 Mob mobForSpawn = getMobForSpawn(level, spawnerData.type());
-                                 if (mobForSpawn == null) {
-@@ -203,10 +_,15 @@
-                                     spawnGroupData = mobForSpawn.finalizeSpawn(
-                                         level, level.getCurrentDifficultyAt(mobForSpawn.blockPosition()), EntitySpawnReason.NATURAL, spawnGroupData
+                                 && extraTest.test(currentSpawnData.type(), pos, chunk)) {
+                                 Mob mob = getMobForSpawn(level, currentSpawnData.type());
+                                 if (mob == null) {
+@@ -210,10 +_,15 @@
+                                     groupData = mob.finalizeSpawn(
+                                         level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.NATURAL, groupData
                                      );
--                                    i++;
--                                    i3++;
--                                    level.addFreshEntityWithPassengers(mobForSpawn);
--                                    callback.run(mobForSpawn, chunk);
+-                                    clusterSize++;
+-                                    groupSize++;
+-                                    level.addFreshEntityWithPassengers(mob);
+-                                    spawnCallback.run(mob, chunk);
 +                                    // CraftBukkit start
 +                                    // SPIGOT-7045: Give ocelot babies back their special spawn reason. Note: This is the only modification required as ocelots count as monsters which means they only spawn during normal chunk ticking and do not spawn during chunk generation as starter mobs.
-+                                    level.addFreshEntityWithPassengers(mobForSpawn, (mobForSpawn instanceof net.minecraft.world.entity.animal.feline.Ocelot && !((org.bukkit.entity.Ageable) mobForSpawn.getBukkitEntity()).isAdult()) ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OCELOT_BABY : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
-+                                    if (!mobForSpawn.isRemoved()) {
-+                                        ++i;
-+                                        ++i3;
-+                                        callback.run(mobForSpawn, chunk);
++                                    level.addFreshEntityWithPassengers(mob, (mob instanceof net.minecraft.world.entity.animal.feline.Ocelot && !((org.bukkit.entity.Ageable) mob.getBukkitEntity()).isAdult()) ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OCELOT_BABY : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
++                                    if (!mob.isRemoved()) {
++                                        ++clusterSize;
++                                        ++groupSize;
++                                        spawnCallback.run(mob, chunk);
 +                                    }
 +                                    // CraftBukkit end
-                                     if (i >= mobForSpawn.getMaxSpawnClusterSize()) {
+                                     if (clusterSize >= mob.getMaxSpawnClusterSize()) {
                                          return;
                                      }
-@@ -238,7 +_,15 @@
+@@ -247,7 +_,15 @@
          }
      }
  
@@ -137,18 +137,19 @@
 +    }
 +    private static PreSpawnStatus isValidSpawnPostitionForType(
 +    // Paper end - PreCreatureSpawnEvent
-         ServerLevel level,
-         MobCategory category,
-         StructureManager structureManager,
-@@ -248,7 +_,19 @@
-         double distance
+         final ServerLevel level,
+         final MobCategory mobCategory,
+         final StructureManager structureManager,
+@@ -256,14 +_,27 @@
+         final BlockPos.MutableBlockPos pos,
+         final double nearestPlayerDistanceSqr
      ) {
-         EntityType<?> entityType = data.type();
--        return entityType.getCategory() != MobCategory.MISC
 +        // Paper start - PreCreatureSpawnEvent
+         EntityType<?> type = currentSpawnData.type();
+-        return type.getCategory() != MobCategory.MISC
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level),
-+                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entityType), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL
++                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(type), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL
 +        );
 +        if (!event.callEvent()) {
 +            if (event.shouldAbortSpawn()) {
@@ -156,28 +157,27 @@
 +            }
 +            return PreSpawnStatus.CANCELLED;
 +        }
-+        final boolean success = entityType.getCategory() != MobCategory.MISC
++        final boolean success = type.getCategory() != MobCategory.MISC
 +        // Paper end - PreCreatureSpawnEvent
-             && (
-                 entityType.canSpawnFarFromPlayer()
-                     || !(distance > entityType.getCategory().getDespawnDistance() * entityType.getCategory().getDespawnDistance())
-@@ -258,6 +_,7 @@
-             && SpawnPlacements.isSpawnPositionOk(entityType, level, pos)
-             && SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random)
-             && level.noCollision(entityType.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
+             && (type.canSpawnFarFromPlayer() || !(nearestPlayerDistanceSqr > type.getCategory().getDespawnDistance() * type.getCategory().getDespawnDistance()))
+             && type.canSummon()
+             && canSpawnMobAt(level, structureManager, generator, mobCategory, currentSpawnData, pos)
+             && SpawnPlacements.isSpawnPositionOk(type, level, pos)
+             && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.NATURAL, pos, level.random)
+             && level.noCollision(type.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
 +        return success ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL; // Paper - PreCreatureSpawnEvent
      }
  
-     private static @Nullable Mob getMobForSpawn(ServerLevel level, EntityType<?> entityType) {
-@@ -269,6 +_,7 @@
-             LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(entityType));
+     private static @Nullable Mob getMobForSpawn(final ServerLevel level, final EntityType<?> type) {
+@@ -275,6 +_,7 @@
+             LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception var4) {
              LOGGER.warn("Failed to create mob", (Throwable)var4);
 +            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(var4); // Paper - ServerExceptionEvent
          }
  
          return null;
-@@ -375,6 +_,7 @@
+@@ -402,6 +_,7 @@
                                      entity = spawnerData.type().create(level.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception var27) {
                                      LOGGER.warn("Failed to create mob", (Throwable)var27);
@@ -185,25 +185,25 @@
                                      continue;
                                  }
  
-@@ -389,7 +_,7 @@
-                                     spawnGroupData = mob.finalizeSpawn(
-                                         level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, spawnGroupData
+@@ -416,7 +_,7 @@
+                                     groupSpawnData = mob.finalizeSpawn(
+                                         level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupSpawnData
                                      );
 -                                    level.addFreshEntityWithPassengers(mob);
 +                                    level.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
-                                     flag = true;
+                                     success = true;
                                  }
                              }
-@@ -507,8 +_,10 @@
+@@ -534,8 +_,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  
--        boolean canSpawnForCategoryGlobal(MobCategory category) {
--            int i = category.getMaxInstancesPerChunk() * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
+-        private boolean canSpawnForCategoryGlobal(final MobCategory mobCategory) {
+-            int maxMobCount = mobCategory.getMaxInstancesPerChunk() * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
 +        // CraftBukkit start
-+        boolean canSpawnForCategoryGlobal(MobCategory category, int limit) {
-+            int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
++        private boolean canSpawnForCategoryGlobal(final MobCategory mobCategory, final int limit) {
++            int maxMobCount = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
 +            // CraftBukkit end
-             return this.mobCategoryCounts.getInt(category) < i;
+             return this.mobCategoryCounts.getInt(mobCategory) < maxMobCount;
          }
  

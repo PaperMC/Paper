@@ -161,7 +161,7 @@ public final class CraftItemStack extends ItemStack {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(original);
         DataComponentExactPredicate predicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, nms.getComponentsPatch()));
 
-        return new ItemPredicate(Optional.of(HolderSet.direct(nms.getItemHolder())), MinMaxBounds.Ints.ANY, new DataComponentMatchers(predicate, Collections.emptyMap()));
+        return new ItemPredicate(Optional.of(HolderSet.direct(nms.typeHolder())), MinMaxBounds.Ints.ANY, new DataComponentMatchers(predicate, Collections.emptyMap()));
     }
 
     public net.minecraft.world.item.ItemStack handle;

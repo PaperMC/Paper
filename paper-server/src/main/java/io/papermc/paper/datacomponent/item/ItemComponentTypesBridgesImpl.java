@@ -185,7 +185,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         Preconditions.checkArgument(stack != null, "Item cannot be null");
         Preconditions.checkArgument(!stack.isEmpty(), "Remaining item cannot be empty!");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(stack))
+            new net.minecraft.world.item.component.UseRemainder(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(stack)))
         );
     }
 

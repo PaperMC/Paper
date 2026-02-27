@@ -34,8 +34,8 @@
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> TRUSTED_OPTIONAL_STREAM_CODEC = TRUSTED_STREAM_CODEC.apply(
          ByteBufCodecs::optional
      );
-@@ -91,7 +_,25 @@
-         return ExtraCodecs.orCompressed(mapCodec2, mapCodec1);
+@@ -93,7 +_,25 @@
+         return ExtraCodecs.orCompressed(contentsCodec, discriminatorCodec);
      }
  
 +    // Paper start - adventure; create separate codec for each locale
@@ -50,23 +50,23 @@
 +    }
 +    // Paper end - adventure; create separate codec for each locale
 +
-     private static Codec<Component> createCodec(Codec<Component> codec) {
+     private static Codec<Component> createCodec(final Codec<Component> topSerializer) {
 +        // Paper start - adventure; create separate codec for each locale
-+        return createCodec(codec, null);
++        return createCodec(topSerializer, null);
 +    }
 +
-+    private static Codec<Component> createCodec(Codec<Component> codec, @javax.annotation.Nullable java.util.Locale locale) {
++    private static Codec<Component> createCodec(Codec<Component> topSerializer, @javax.annotation.Nullable java.util.Locale locale) {
 +        // Paper end - adventure; create separate codec for each locale
-         ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends ComponentContents>> lateBoundIdMapper = new ExtraCodecs.LateBoundIdMapper<>();
-         bootstrap(lateBoundIdMapper);
-         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(lateBoundIdMapper, ComponentContents::codec, "type");
-@@ -103,6 +_,34 @@
+         ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends ComponentContents>> contentTypes = new ExtraCodecs.LateBoundIdMapper<>();
+         bootstrap(contentTypes);
+         MapCodec<ComponentContents> compressedContentsCodec = createLegacyComponentMatcher(contentTypes, ComponentContents::codec, "type");
+@@ -105,6 +_,34 @@
                  )
-                 .apply(instance, MutableComponent::new)
+                 .apply(i, MutableComponent::new)
          );
 +        // Paper start - adventure; create separate codec for each locale
-+        final Codec<Component> origCodec = codec1;
-+        codec1 = new Codec<>() {
++        final Codec<Component> origCodec = fullCodec;
++        fullCodec = new Codec<>() {
 +            @Override
 +            public <T> DataResult<com.mojang.datafixers.util.Pair<Component, T>> decode(final DynamicOps<T> ops, final T input) {
 +                return origCodec.decode(ops, input);
@@ -92,6 +92,6 @@
 +            }
 +        };
 +        // Paper end - adventure; create separate codec for each locale
-         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(codec.listOf())), codec1)
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(topSerializer.listOf())), fullCodec)
              .xmap(
-                 either -> either.map(either1 -> either1.map(Component::literal, ComponentSerialization::createFromList), component -> (Component)component),
+                 specialOrComponent -> specialOrComponent.map(

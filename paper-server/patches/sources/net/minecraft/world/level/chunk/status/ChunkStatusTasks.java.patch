@@ -1,23 +1,23 @@
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -41,7 +_,7 @@
-         WorldGenContext worldGenContext, ChunkStep step, StaticCache2D<GenerationChunkHolder> cache, ChunkAccess chunk
+         final WorldGenContext context, final ChunkStep step, final StaticCache2D<GenerationChunkHolder> chunks, final ChunkAccess chunk
      ) {
-         ServerLevel serverLevel = worldGenContext.level();
--        if (serverLevel.getServer().getWorldData().worldGenOptions().generateStructures()) {
-+        if (serverLevel.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
-             worldGenContext.generator()
+         ServerLevel level = context.level();
+-        if (level.getServer().getWorldGenSettings().options().generateStructures()) {
++        if (level.getServer().getWorldGenSettings().options().generateStructures()) { // CraftBukkit
+             context.generator()
                  .createStructures(
-                     serverLevel.registryAccess(),
-@@ -211,7 +_,51 @@
+                     level.registryAccess(),
+@@ -210,7 +_,51 @@
  
-     public static void postLoadProtoChunk(ServerLevel level, ValueInput.ValueInputList input) {
-         if (!input.isEmpty()) {
--            level.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(input, level, EntitySpawnReason.LOAD));
+     public static void postLoadProtoChunk(final ServerLevel level, final ValueInput.ValueInputList entities) {
+         if (!entities.isEmpty()) {
+-            level.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(entities, level, EntitySpawnReason.LOAD));
 -        }
 -    }
 +            // Paper start - duplicate uuid resolving
-+            level.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(input, level, EntitySpawnReason.LOAD).filter((entity) -> {
++            level.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(entities, level, EntitySpawnReason.LOAD).filter((entity) -> {
 +                return !checkDupeUUID(level, entity);
 +            }));
 +            // Paper end - duplicate uuid resolving

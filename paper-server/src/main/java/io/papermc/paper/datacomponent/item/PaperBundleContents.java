@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -19,18 +18,18 @@ public record PaperBundleContents(
 
     @Override
     public List<ItemStack> contents() {
-        return MCUtil.transformUnmodifiable((List<net.minecraft.world.item.ItemStack>) this.impl.items(), CraftItemStack::asBukkitCopy);
+        return this.impl.itemCopyStream().map(CraftItemStack::asBukkitCopy).toList();
     }
 
     static final class BuilderImpl implements BundleContents.Builder {
 
-        private final List<net.minecraft.world.item.ItemStack> items = new ObjectArrayList<>();
+        private final List<net.minecraft.world.item.ItemStackTemplate> items = new ObjectArrayList<>();
 
         @Override
         public BundleContents.Builder add(final ItemStack stack) {
             Preconditions.checkArgument(stack != null, "stack cannot be null");
             Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
-            this.items.add(CraftItemStack.asNMSCopy(stack));
+            this.items.add(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(stack)));
             return this;
         }
 

@@ -31,7 +31,7 @@ public record PaperAdvancementDisplay(DisplayInfo handle) implements Advancement
 
     @Override
     public @NotNull ItemStack icon() {
-        return CraftItemStack.asBukkitCopy(this.handle.getIcon());
+        return CraftItemStack.asBukkitCopy(this.handle.getIcon().create());
     }
 
     @Override

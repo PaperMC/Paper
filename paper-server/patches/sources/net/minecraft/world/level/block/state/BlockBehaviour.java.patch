@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -167,13 +_,20 @@
+@@ -170,15 +_,22 @@
      }
  
-     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+     protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston) {
 +        org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
      }
  
-     protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+     protected void affectNeighborsAfterRemoval(final BlockState state, final ServerLevel level, final BlockPos pos, final boolean movedByPiston) {
      }
  
 +    // CraftBukkit start
@@ -16,35 +16,37 @@
 +    }
 +    // CraftBukkit end
 +
-     protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
+     protected void onExplosionHit(
+         final BlockState state, final ServerLevel level, final BlockPos pos, final Explosion explosion, final BiConsumer<ItemStack, BlockPos> onHit
+     ) {
 -        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
 +        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
              Block block = state.getBlock();
-             boolean flag = explosion.getIndirectSourceEntity() instanceof Player;
+             boolean doDropExperienceHack = explosion.getIndirectSourceEntity() instanceof Player;
              if (block.dropFromExplosion(explosion)) {
-@@ -183,8 +_,10 @@
+@@ -188,8 +_,10 @@
                      .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
                      .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
                      .withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
 -                if (explosion.getBlockInteraction() == Explosion.BlockInteraction.DESTROY_WITH_DECAY) {
--                    builder.withParameter(LootContextParams.EXPLOSION_RADIUS, explosion.radius());
+-                    params.withParameter(LootContextParams.EXPLOSION_RADIUS, explosion.radius());
 +                // CraftBukkit start - add yield
 +                if (explosion instanceof net.minecraft.world.level.ServerExplosion serverExplosion && serverExplosion.yield < 1.0F) {
-+                    builder.withParameter(LootContextParams.EXPLOSION_RADIUS, 1.0F / serverExplosion.yield);
++                    params.withParameter(LootContextParams.EXPLOSION_RADIUS, 1.0F / serverExplosion.yield);
 +                    // CraftBukkit end
                  }
  
-                 state.spawnAfterBreak(level, pos, ItemStack.EMPTY, flag);
-@@ -256,7 +_,7 @@
+                 state.spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack);
+@@ -269,7 +_,7 @@
      }
  
-     protected boolean canBeReplaced(BlockState state, BlockPlaceContext useContext) {
--        return state.canBeReplaced() && (useContext.getItemInHand().isEmpty() || !useContext.getItemInHand().is(this.asItem()));
-+        return state.canBeReplaced() && (useContext.getItemInHand().isEmpty() || !useContext.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (useContext.getPlayer() != null && useContext.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+     protected boolean canBeReplaced(final BlockState state, final BlockPlaceContext context) {
+-        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
      }
  
-     protected boolean canBeReplaced(BlockState state, Fluid fluid) {
-@@ -466,6 +_,15 @@
+     protected boolean canBeReplaced(final BlockState state, final Fluid fluid) {
+@@ -486,6 +_,15 @@
              this.instrument = properties.instrument;
              this.replaceable = properties.replaceable;
          }
@@ -60,7 +62,7 @@
  
          private boolean calculateSolid() {
              if (this.owner.properties.forceSolidOn) {
-@@ -485,12 +_,14 @@
+@@ -505,12 +_,14 @@
              }
          }
  
@@ -75,7 +77,7 @@
  
              this.legacySolid = this.calculateSolid();
              this.occlusionShape = this.canOcclude ? this.owner.getOcclusionShape(this.asState()) : Shapes.empty();
-@@ -529,6 +_,11 @@
+@@ -550,6 +_,11 @@
          public boolean isSolid() {
              return this.legacySolid;
          }
@@ -85,9 +87,9 @@
 +        }
 +        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
  
-         public boolean isValidSpawn(BlockGetter level, BlockPos pos, EntityType<?> entityType) {
-             return this.getBlock().properties.isValidSpawn.test(this.asState(), level, pos, entityType);
-@@ -550,19 +_,19 @@
+         public boolean isValidSpawn(final BlockGetter level, final BlockPos pos, final EntityType<?> type) {
+             return this.getBlock().properties.isValidSpawn.test(this.asState(), level, pos, type);
+@@ -571,19 +_,19 @@
              return this.occlusionShape;
          }
  
@@ -112,7 +114,7 @@
              return this.isAir;
          }
  
-@@ -632,14 +_,14 @@
+@@ -653,14 +_,14 @@
          }
  
          public PushReaction getPistonPushReaction() {
@@ -129,10 +131,10 @@
              return this.canOcclude;
          }
  
-@@ -726,7 +_,13 @@
+@@ -751,7 +_,13 @@
          }
  
-         public void onPlace(Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+         public void onPlace(final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston) {
 -            this.getBlock().onPlace(this.asState(), level, pos, oldState, movedByPiston);
 +            // CraftBukkit start
 +            this.onPlace(level, pos, oldState, movedByPiston, null);
@@ -143,17 +145,17 @@
 +            // CraftBukkit end
          }
  
-         public void affectNeighborsAfterRemoval(ServerLevel level, BlockPos pos, boolean movedByPiston) {
-@@ -751,6 +_,7 @@
+         public void affectNeighborsAfterRemoval(final ServerLevel level, final BlockPos pos, final boolean movedByPiston) {
+@@ -778,6 +_,7 @@
  
-         public void spawnAfterBreak(ServerLevel level, BlockPos pos, ItemStack stack, boolean dropExperience) {
-             this.getBlock().spawnAfterBreak(this.asState(), level, pos, stack, dropExperience);
-+            if (dropExperience) {this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, stack, true));} // Paper - Properly handle xp dropping
+         public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+             this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience);
++            if (dropExperience) {this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, tool, true));} // Paper - Properly handle xp dropping
          }
  
-         public List<ItemStack> getDrops(LootParams.Builder lootParams) {
-@@ -857,11 +_,11 @@
-             return this.getBlock().builtInRegistryHolder().is(block);
+         public List<ItemStack> getDrops(final LootParams.Builder params) {
+@@ -862,11 +_,11 @@
+             return this.getBlock() instanceof EntityBlock ? ((EntityBlock)this.getBlock()).getTicker(level, this.asState(), type) : null;
          }
  
 -        public FluidState getFluidState() {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
-@@ -41,6 +_,7 @@
+@@ -43,6 +_,7 @@
      private static final Component DEFAULT_NAME = Component.translatable("container.brewing");
      private NonNullList<ItemStack> items = NonNullList.withSize(5, ItemStack.EMPTY);
      public int brewTime;
@@ -8,15 +8,15 @@
      private boolean[] lastPotionCount;
      private Item ingredient;
      public int fuel;
-@@ -50,6 +_,7 @@
-             return switch (index) {
+@@ -56,6 +_,7 @@
+             return switch (dataId) {
                  case 0 -> BrewingStandBlockEntity.this.brewTime;
                  case 1 -> BrewingStandBlockEntity.this.fuel;
 +                case 2 -> BrewingStandBlockEntity.this.recipeBrewTime; // Paper - Add recipeBrewTime
                  default -> 0;
              };
          }
-@@ -62,14 +_,54 @@
+@@ -68,14 +_,54 @@
                      break;
                  case 1:
                      BrewingStandBlockEntity.this.fuel = value;
@@ -70,73 +70,73 @@
 +    }
 +    // CraftBukkit end
  
-     public BrewingStandBlockEntity(BlockPos pos, BlockState blockState) {
-         super(BlockEntityType.BREWING_STAND, pos, blockState);
-@@ -98,8 +_,21 @@
-     public static void serverTick(Level level, BlockPos pos, BlockState state, BrewingStandBlockEntity blockEntity) {
-         ItemStack itemStack = blockEntity.items.get(4);
-         if (blockEntity.fuel <= 0 && itemStack.is(ItemTags.BREWING_FUEL)) {
--            blockEntity.fuel = 20;
--            itemStack.shrink(1);
+     public BrewingStandBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
+         super(BlockEntityType.BREWING_STAND, worldPosition, blockState);
+@@ -104,8 +_,21 @@
+     public static void serverTick(final Level level, final BlockPos pos, final BlockState selfState, final BrewingStandBlockEntity entity) {
+         ItemStack fuel = entity.items.get(4);
+         if (entity.fuel <= 0 && fuel.is(ItemTags.BREWING_FUEL)) {
+-            entity.fuel = 20;
+-            fuel.shrink(1);
 +            // CraftBukkit start
 +            org.bukkit.event.inventory.BrewingStandFuelEvent event = new org.bukkit.event.inventory.BrewingStandFuelEvent(
 +                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
-+                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack),
++                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
 +                20
 +            );
 +            if (!event.callEvent()) {
 +                return;
 +            }
 +
-+            blockEntity.fuel = event.getFuelPower();
-+            if (blockEntity.fuel > 0 && event.isConsuming()) {
-+                itemStack.shrink(1);
++            entity.fuel = event.getFuelPower();
++            if (entity.fuel > 0 && event.isConsuming()) {
++                fuel.shrink(1);
 +            }
 +            // CraftBukkit end
-             setChanged(level, pos, state);
+             setChanged(level, pos, selfState);
          }
  
-@@ -110,7 +_,7 @@
-             blockEntity.brewTime--;
-             boolean flag1 = blockEntity.brewTime == 0;
-             if (flag1 && isBrewable) {
--                doBrew(level, pos, blockEntity.items);
-+                doBrew(level, pos, blockEntity.items, blockEntity); // CraftBukkit
-             } else if (!isBrewable || !itemStack1.is(blockEntity.ingredient)) {
-                 blockEntity.brewTime = 0;
+@@ -116,7 +_,7 @@
+             entity.brewTime--;
+             boolean isDoneBrewing = entity.brewTime == 0;
+             if (isDoneBrewing && brewable) {
+-                doBrew(level, pos, entity.items);
++                doBrew(level, pos, entity.items, entity); // CraftBukkit
+             } else if (!brewable || !ingredient.is(entity.ingredient)) {
+                 entity.brewTime = 0;
              }
-@@ -118,7 +_,14 @@
-             setChanged(level, pos, state);
-         } else if (isBrewable && blockEntity.fuel > 0) {
-             blockEntity.fuel--;
--            blockEntity.brewTime = 400;
+@@ -124,7 +_,14 @@
+             setChanged(level, pos, selfState);
+         } else if (brewable && entity.fuel > 0) {
+             entity.fuel--;
+-            entity.brewTime = 400;
 +            // CraftBukkit start
 +            org.bukkit.event.block.BrewingStartEvent event = new org.bukkit.event.block.BrewingStartEvent(
 +                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
-+                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack1), 400);
++                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(ingredient), 400);
 +            event.callEvent();
-+            blockEntity.recipeBrewTime = event.getRecipeBrewTime(); // Paper - use recipe brew time from event
-+            blockEntity.brewTime = event.getBrewingTime(); // 400 -> event.getTotalBrewTime() // Paper - use brewing time from event
++            entity.recipeBrewTime = event.getRecipeBrewTime(); // Paper - use recipe brew time from event
++            entity.brewTime = event.getBrewingTime(); // 400 -> event.getTotalBrewTime() // Paper - use brewing time from event
 +            // CraftBukkit end
-             blockEntity.ingredient = itemStack1.getItem();
-             setChanged(level, pos, state);
+             entity.ingredient = ingredient.getItem();
+             setChanged(level, pos, selfState);
          }
-@@ -169,13 +_,37 @@
+@@ -175,13 +_,37 @@
          }
      }
  
--    private static void doBrew(Level level, BlockPos pos, NonNullList<ItemStack> items) {
-+    private static void doBrew(Level level, BlockPos pos, NonNullList<ItemStack> items, BrewingStandBlockEntity brewingStandBlockEntity) { // CraftBukkit
-         ItemStack itemStack = items.get(3);
+-    private static void doBrew(final Level level, final BlockPos pos, final NonNullList<ItemStack> items) {
++    private static void doBrew(final Level level, final BlockPos pos, final NonNullList<ItemStack> items, final BrewingStandBlockEntity entity) { // CraftBukkit
+         ItemStack ingredient = items.get(3);
          PotionBrewing potionBrewing = level.potionBrewing();
  
 +        // CraftBukkit start
-+        org.bukkit.inventory.InventoryHolder owner = brewingStandBlockEntity.getOwner();
++        org.bukkit.inventory.InventoryHolder owner = entity.getOwner();
 +        java.util.List<org.bukkit.inventory.ItemStack> brewResults = new java.util.ArrayList<>(3);
-         for (int i = 0; i < 3; i++) {
--            items.set(i, potionBrewing.mix(itemStack, items.get(i)));
+         for (int dest = 0; dest < 3; dest++) {
+-            items.set(dest, potionBrewing.mix(ingredient, items.get(dest)));
 -        }
-+            brewResults.add(i, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potionBrewing.mix(itemStack, items.get(i))));
++            brewResults.add(dest, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potionBrewing.mix(ingredient, items.get(dest))));
 +        }
 +
 +        if (owner != null) {
@@ -144,7 +144,7 @@
 +                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                (org.bukkit.inventory.BrewerInventory) owner.getInventory(),
 +                brewResults,
-+                brewingStandBlockEntity.fuel
++                entity.fuel
 +            );
 +            if (!event.callEvent()) {
 +                return;
@@ -160,21 +160,21 @@
 +        }
 +        // CraftBukkit end
  
-         itemStack.shrink(1);
-         ItemStack craftingRemainder = itemStack.getItem().getCraftingRemainder();
-@@ -214,13 +_,13 @@
+         ingredient.shrink(1);
+         ItemStackTemplate remainder = ingredient.getItem().getCraftingRemainder();
+@@ -220,13 +_,13 @@
  
      @Override
-     public boolean canPlaceItem(int index, ItemStack stack) {
+     public boolean canPlaceItem(final int slot, final ItemStack itemStack) {
 +        PotionBrewing potionBrewing = this.level != null ? this.level.potionBrewing() : PotionBrewing.EMPTY; // Paper - move up
-         if (index == 3) {
+         if (slot == 3) {
 -            PotionBrewing potionBrewing = this.level != null ? this.level.potionBrewing() : PotionBrewing.EMPTY;
-             return potionBrewing.isIngredient(stack);
+             return potionBrewing.isIngredient(itemStack);
          } else {
-             return index == 4
-                 ? stack.is(ItemTags.BREWING_FUEL)
--                : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE))
-+                : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || potionBrewing.isCustomInput(stack)) // Paper - Custom Potion Mixes
-                     && this.getItem(index).isEmpty();
+             return slot == 4
+                 ? itemStack.is(ItemTags.BREWING_FUEL)
+-                : (itemStack.is(Items.POTION) || itemStack.is(Items.SPLASH_POTION) || itemStack.is(Items.LINGERING_POTION) || itemStack.is(Items.GLASS_BOTTLE))
++                : (itemStack.is(Items.POTION) || itemStack.is(Items.SPLASH_POTION) || itemStack.is(Items.LINGERING_POTION) || itemStack.is(Items.GLASS_BOTTLE) || potionBrewing.isCustomInput(itemStack)) // Paper - Custom Potion Mixes
+                     && this.getItem(slot).isEmpty();
          }
      }

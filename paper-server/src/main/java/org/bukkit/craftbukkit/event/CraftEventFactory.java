@@ -2033,13 +2033,13 @@ public class CraftEventFactory {
 
     public static void callEntitiesLoadEvent(Level world, ChunkPos coords, List<Entity> entities) {
         List<org.bukkit.entity.Entity> bukkitEntities = Collections.unmodifiableList(entities.stream().map(Entity::getBukkitEntity).collect(Collectors.toList()));
-        EntitiesLoadEvent event = new EntitiesLoadEvent(new CraftChunk((ServerLevel) world, coords.x, coords.z), bukkitEntities);
+        EntitiesLoadEvent event = new EntitiesLoadEvent(new CraftChunk((ServerLevel) world, coords.x(), coords.z()), bukkitEntities);
         Bukkit.getPluginManager().callEvent(event);
     }
 
     public static void callEntitiesUnloadEvent(Level world, ChunkPos coords, List<Entity> entities) {
         List<org.bukkit.entity.Entity> bukkitEntities = Collections.unmodifiableList(entities.stream().map(Entity::getBukkitEntity).collect(Collectors.toList()));
-        EntitiesUnloadEvent event = new EntitiesUnloadEvent(new CraftChunk((ServerLevel) world, coords.x, coords.z), bukkitEntities);
+        EntitiesUnloadEvent event = new EntitiesUnloadEvent(new CraftChunk((ServerLevel) world, coords.x(), coords.z()), bukkitEntities);
         Bukkit.getPluginManager().callEvent(event);
     }
 
@@ -2215,9 +2215,9 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
     }
 
-    public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, net.minecraft.network.protocol.game.ServerboundInteractPacket packet, InteractionHand hand, net.minecraft.world.phys.@Nullable Vec3 vector) {
+    public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, int entityId, boolean attack, InteractionHand hand, net.minecraft.world.phys.@Nullable Vec3 vector) {
         new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
-            (Player) player.getBukkitEntity(), packet.getEntityId(), packet.isAttack(),
+            (Player) player.getBukkitEntity(), entityId, attack,
             CraftEquipmentSlot.getHand(hand),
             vector != null ? CraftVector.toBukkit(vector) : null
         ).callEvent();

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import io.papermc.paper.annotation.GeneratedClass;
-import net.minecraft.world.level.block.SnowyDirtBlock;
+import net.minecraft.world.level.block.SnowyBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.data.Snowable;
@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @GeneratedClass
 public class CraftSnowyDirt extends CraftBlockData implements Snowable {
-    private static final BooleanProperty SNOWY = SnowyDirtBlock.SNOWY;
+    private static final BooleanProperty SNOWY = SnowyBlock.SNOWY;
 
     public CraftSnowyDirt(BlockState state) {
         super(state);

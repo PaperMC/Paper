@@ -8,7 +8,6 @@ import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.EnchantmentTags;
@@ -154,18 +153,9 @@ public final class CraftItemFactory implements ItemFactory {
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
             StringReader reader = new StringReader(input);
-            ItemParser.ItemResult arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
+            net.minecraft.commands.arguments.item.ItemInput arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
             Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
-
-            Item item = arg.item().value();
-            net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
-
-            DataComponentPatch nbt = arg.components();
-            if (nbt != null) {
-                nmsItemStack.applyComponents(nbt);
-            }
-
-            return CraftItemStack.asCraftMirror(nmsItemStack);
+            return CraftItemStack.asCraftMirror(arg.createItemStack(1));
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse ItemStack: " + input, ex);
         }
@@ -177,27 +167,21 @@ public final class CraftItemFactory implements ItemFactory {
             return null;
         }
         net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(type);
-        Item nmsItem = SpawnEggItem.byId(nmsType);
-
-        if (nmsItem == null) {
-            return null;
-        }
-
-        return CraftItemType.minecraftToBukkit(nmsItem);
+        return SpawnEggItem.byId(nmsType).map(net.minecraft.core.Holder::value).map(CraftItemType::minecraftToBukkit).orElse(null);
     }
 
     @Override
     public ItemStack enchantItem(Entity entity, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(entity != null, "The entity must not be null");
 
-        return CraftItemFactory.enchantItem(((CraftEntity) entity).getHandle().random, itemStack, level, allowTreasures);
+        return CraftItemFactory.enchantItem(((CraftEntity) entity).getHandle().getRandom(), itemStack, level, allowTreasures);
     }
 
     @Override
     public ItemStack enchantItem(final World world, final ItemStack itemStack, final int level, final boolean allowTreasures) {
         Preconditions.checkArgument(world != null, "The world must not be null");
 
-        return CraftItemFactory.enchantItem(((CraftWorld) world).getHandle().random, itemStack, level, allowTreasures);
+        return CraftItemFactory.enchantItem(((CraftWorld) world).getHandle().getRandom(), itemStack, level, allowTreasures);
     }
 
     @Override
@@ -304,8 +288,7 @@ public final class CraftItemFactory implements ItemFactory {
         String typeId = type.getKey().toString();
         net.minecraft.resources.Identifier typeKey = Identifier.parse(typeId);
         net.minecraft.world.entity.EntityType<?> nmsType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(typeKey);
-        net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
-        return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
+        return net.minecraft.world.item.SpawnEggItem.byId(nmsType).map(net.minecraft.world.item.ItemStack::new).map(net.minecraft.world.item.ItemStack::asBukkitMirror).orElse(null);
     }
     // Paper end - old getSpawnEgg API
     // Paper start - enchantWithLevels API

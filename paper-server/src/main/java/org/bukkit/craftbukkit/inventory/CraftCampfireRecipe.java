@@ -26,6 +26,6 @@ public class CraftCampfireRecipe extends CampfireRecipe implements CraftRecipe {
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
 
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.CampfireCookingRecipe(this.getGroup(), CraftRecipe.getCategory(this.getCategory()), this.toNMS(this.getInputChoice(), true), CraftItemStack.asNMSCopy(result), this.getExperience(), this.getCookingTime())));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.CampfireCookingRecipe(new net.minecraft.world.item.crafting.Recipe.CommonInfo(true), new net.minecraft.world.item.crafting.AbstractCookingRecipe.CookingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()), this.toNMS(this.getInputChoice(), true), net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(result)), this.getExperience(), this.getCookingTime())));
     }
 }

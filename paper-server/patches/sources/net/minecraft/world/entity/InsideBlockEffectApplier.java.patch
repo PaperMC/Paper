@@ -7,40 +7,40 @@
 -        private final Set<InsideBlockEffectType> effectsInStep = EnumSet.noneOf(InsideBlockEffectType.class);
 +        private final Map<InsideBlockEffectType, Consumer<Entity>> effectsInStep = new java.util.EnumMap<>(InsideBlockEffectType.class); // Paper - track position inside effect was triggered on
          private final Map<InsideBlockEffectType, List<Consumer<Entity>>> beforeEffectsInStep = Util.makeEnumMap(
-             InsideBlockEffectType.class, insideBlockEffectType -> new ArrayList<>()
+             InsideBlockEffectType.class, type -> new ArrayList<>()
          );
 @@ -42,7 +_,8 @@
          private final List<Consumer<Entity>> finalEffects = new ArrayList<>();
          private int lastStep = -1;
  
--        public void advanceStep(int step) {
-+        public void advanceStep(int step, net.minecraft.core.BlockPos pos) { // Paper - track position inside effect was triggered on
+-        public void advanceStep(final int step) {
++        public void advanceStep(final int step, net.minecraft.core.BlockPos pos) { // Paper - track position inside effect was triggered on
 +            this.currentBlockPos = pos; // Paper - track position inside effect was triggered on
              if (this.lastStep != step) {
                  this.lastStep = step;
                  this.flushStep();
 @@ -69,8 +_,8 @@
-                 List<Consumer<Entity>> list = this.beforeEffectsInStep.get(insideBlockEffectType);
-                 this.finalEffects.addAll(list);
-                 list.clear();
--                if (this.effectsInStep.remove(insideBlockEffectType)) {
--                    this.finalEffects.add(insideBlockEffectType.effect());
-+                if (this.effectsInStep.remove(insideBlockEffectType) instanceof final Consumer<Entity> recordedEffect) { // Paper - track position inside effect was triggered on - better than null check to avoid diff.
+                 List<Consumer<Entity>> beforeEffects = this.beforeEffectsInStep.get(type);
+                 this.finalEffects.addAll(beforeEffects);
+                 beforeEffects.clear();
+-                if (this.effectsInStep.remove(type)) {
+-                    this.finalEffects.add(type.effect());
++                if (this.effectsInStep.remove(type) instanceof final Consumer<Entity> recordedEffect) { // Paper - track position inside effect was triggered on - better than null check to avoid diff.
 +                    this.finalEffects.add(recordedEffect); // Paper - track position inside effect was triggered on
                  }
  
-                 List<Consumer<Entity>> list1 = this.afterEffectsInStep.get(insideBlockEffectType);
+                 List<Consumer<Entity>> afterEffects = this.afterEffectsInStep.get(type);
 @@ -81,7 +_,7 @@
  
          @Override
-         public void apply(InsideBlockEffectType type) {
+         public void apply(final InsideBlockEffectType type) {
 -            this.effectsInStep.add(type);
 +            this.effectsInStep.put(type, recorded(type));  // Paper - track position inside effect was triggered on
          }
  
          @Override
 @@ -93,5 +_,24 @@
-         public void runAfter(InsideBlockEffectType type, Consumer<Entity> effect) {
+         public void runAfter(final InsideBlockEffectType type, final Consumer<Entity> effect) {
              this.afterEffectsInStep.get(type).add(effect);
          }
 +
