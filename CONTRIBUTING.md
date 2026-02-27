@@ -441,12 +441,18 @@ int maxPlayers = GlobalConfiguration.get().misc.maxNumOfPlayers;
 Generally for global config values you will use the fully qualified class name,
 `io.papermc.paper.configuration.GlobalConfiguration` since it's not imported in
 most places.
----
+
 If you are adding a new world config value, you must have access to an instance
 of the `net.minecraft.world.level.Level` which you can then access the config by doing
 ```java
 int maxPlayers = level.paperConfig().misc.maxNumOfPlayers;
 ```
+
+#### Documentation
+When adding or removing a config option, you should open a pull request in our [documentation repository](https://github.com/PaperMC/docs)
+to keep it in sync and accurate. If you're unsure whether your original change will be accepted, then it's fine to wait with making the documentation
+pull request until a maintainer has reviewed your changes. Once everything is done, the documentation pull request will be merged at the same time
+that your original pull request is.
 
 ## Testing API changes
 
@@ -491,10 +497,13 @@ If you use Maven to build your plugin:
 
 ### My commit doesn't need a build, what do I do?
 
-Quite simple: You add `[ci skip]` to the start of your commit subject.
+Quite simple: You add `[ci skip]` to the start of your pull request title.
 
 This case most often applies to changes to files like `README.md`, this very
-file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
+file (`CONTRIBUTING.md`), the `LICENSE.md` file, trivial Javadoc changes, and so forth.
+
+Do *not* add [ci skip] to the start of your individual commit subjects, as your
+pull request will not be mergeable until a new commit is added due to status check requirements.
 
 ### Patching and building is *really* slow, what can I do?
 
