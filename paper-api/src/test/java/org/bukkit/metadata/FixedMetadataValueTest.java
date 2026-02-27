@@ -24,7 +24,7 @@ public class FixedMetadataValueTest {
         assertTrue(subject.asBoolean());
         assertEquals(5, subject.asByte());
         assertEquals(5.0, subject.asFloat(), 0.1e-8);
-        assertEquals(5.0D, subject.asDouble(), 0.1e-8D);
+        assertEquals(5.0, subject.asDouble(), 0.1e-8);
         assertEquals(5L, subject.asLong());
         assertEquals(5, subject.asShort());
         assertEquals("5", subject.asString());

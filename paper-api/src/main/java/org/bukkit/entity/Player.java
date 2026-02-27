@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
+import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -648,7 +649,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.6.2")
     default void playNote(Location loc, byte instrument, byte note) {
-        this.playNote(loc, Instrument.getByType(instrument), new Note(note));
+        this.playNote(loc, ArrayUtils.get(Instrument.values(), instrument), new Note(note));
     }
 
     /**
@@ -1794,15 +1795,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param time The current player's perceived time or the player's time
      *     offset from the server time.
-     * @param relative When true the player time is kept relative to its world
-     *     time.
+     * @param tickTime if true, the player time keeps ticking up relative to its world time.
      */
-    public void setPlayerTime(long time, boolean relative);
+    public void setPlayerTime(long time, boolean tickTime);
 
     /**
      * Returns the player's current timestamp.
      *
-     * @return The player's time
+     * @return The player's time, or {@code 0} if the current world does not have a world clock.
      */
     public long getPlayerTime();
 

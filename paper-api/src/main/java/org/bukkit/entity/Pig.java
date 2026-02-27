@@ -28,6 +28,20 @@ public interface Pig extends Steerable, Vehicle {
     void setVariant(Variant variant);
 
     /**
+     * Get the sound variant of this pig.
+     *
+     * @return pig sound variant
+     */
+    SoundVariant getSoundVariant();
+
+    /**
+     * Set the sound variant of this pig.
+     *
+     * @param variant pig sound variant
+     */
+    void setSoundVariant(SoundVariant variant);
+
+    /**
      * Represents the variant of a pig.
      */
     interface Variant extends Keyed {
@@ -42,6 +56,24 @@ public interface Pig extends Steerable, Vehicle {
 
         private static Variant getVariant(@KeyPattern.Value String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
+        }
+    }
+
+    /**
+     * Represents the sound variant of a pig.
+     */
+    interface SoundVariant extends Keyed {
+
+        // Start generate - PigSoundVariant
+        SoundVariant BIG = getSoundVariant("big");
+
+        SoundVariant CLASSIC = getSoundVariant("classic");
+
+        SoundVariant MINI = getSoundVariant("mini");
+        // End generate - PigSoundVariant
+
+        private static SoundVariant getSoundVariant(final @KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 }

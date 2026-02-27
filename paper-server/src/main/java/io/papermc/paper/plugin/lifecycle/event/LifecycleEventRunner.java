@@ -43,7 +43,7 @@ public class LifecycleEventRunner {
     }
 
     public <O extends LifecycleEventOwner, E extends PaperLifecycleEvent> void callEvent(final LifecycleEventType<O, ? super E, ?> eventType, final E event) {
-        this.callEvent(eventType, event, $ -> true);
+        this.callEvent(eventType, event, _ -> true);
     }
 
     public <O extends LifecycleEventOwner, E extends PaperLifecycleEvent> void callEvent(final LifecycleEventType<O, ? super E, ?> eventType, final E event, final Predicate<? super O> ownerPredicate) {

@@ -95,7 +95,6 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -104,14 +103,17 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.PatrolSpawner;
 import net.minecraft.world.level.levelgen.PhantomSpawner;
 import net.minecraft.world.level.levelgen.WorldDimensions;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.LevelDataAndDimensions;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.SavedDataStorage;
 import net.minecraft.world.level.validation.ContentValidationException;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.BanList;
@@ -780,7 +782,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean getGenerateStructures() {
-        return this.getServer().getWorldData().worldGenOptions().generateStructures();
+        return this.getServer().getWorldGenSettings().options().generateStructures();
     }
 
     @Override
@@ -1053,7 +1055,6 @@ public final class CraftServer implements Server {
         this.enablePlugins(PluginLoadOrder.STARTUP);
         this.enablePlugins(PluginLoadOrder.POSTWORLD);
         this.spark.registerCommandAfterPlugins(this); // Paper - spark
-        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
         // Paper start - brigadier command API
         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
         io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
@@ -1221,16 +1222,16 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        PrimaryLevelData primaryLevelData;
+        LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
         RegistryAccess.Frozen registryAccess = context.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
         Dynamic<?> dataTag = PaperWorldLoader.getLevelData(levelStorageAccess).dataTag();
         if (dataTag != null) {
             LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
-                dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
+                levelStorageAccess, dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
             );
-            primaryLevelData = (PrimaryLevelData) levelDataAndDimensions.worldData();
+            worldDataAndGenSettings = levelDataAndDimensions.worldDataAndGenSettings();
             registryAccess = levelDataAndDimensions.dimensions().dimensionsRegistryAccess();
         } else {
             LevelSettings levelSettings;
@@ -1241,9 +1242,8 @@ public final class CraftServer implements Server {
             levelSettings = new LevelSettings(
                 name,
                 GameType.byId(this.getDefaultGameMode().getValue()),
-                hardcore, Difficulty.EASY,
+                new LevelSettings.DifficultySettings(Difficulty.EASY, hardcore, false),
                 false,
-                new GameRules(context.dataConfiguration().enabledFeatures()),
                 context.dataConfiguration()
             );
             worldDimensions = properties.create(context.datapackWorldgen());
@@ -1251,26 +1251,26 @@ public final class CraftServer implements Server {
             WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
             Lifecycle lifecycle = complete.lifecycle().add(context.datapackWorldgen().allRegistriesLifecycle());
 
-            primaryLevelData = new PrimaryLevelData(levelSettings, worldOptions, complete.specialWorldProperty(), lifecycle);
+            worldDataAndGenSettings = new LevelDataAndDimensions.WorldDataAndGenSettings(
+                new PrimaryLevelData(levelSettings, complete.specialWorldProperty(), lifecycle),
+                new WorldGenSettings(worldOptions, worldDimensions)
+            );
             registryAccess = complete.dimensionsRegistryAccess();
         }
+        final PrimaryLevelData primaryLevelData = (PrimaryLevelData) worldDataAndGenSettings.data();
 
         contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
-        primaryLevelData.customDimensions = contextLevelStemRegistry;
         primaryLevelData.checkName(name);
         primaryLevelData.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
 
         if (this.console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(levelStorageAccess, primaryLevelData, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
+            net.minecraft.server.Main.forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
-        long i = BiomeManager.obfuscateSeed(primaryLevelData.worldGenOptions().seed());
-        List<CustomSpawner> list = ImmutableList.of(
-            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(primaryLevelData)
-        );
+        long biomeZoomSeed = BiomeManager.obfuscateSeed(worldDataAndGenSettings.genSettings().options().seed());
         LevelStem customStem = contextLevelStemRegistry.getValue(actualDimension);
 
-        WorldInfo worldInfo = new CraftWorldInfo(primaryLevelData, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
+        WorldInfo worldInfo = new CraftWorldInfo(worldDataAndGenSettings, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
@@ -1285,20 +1285,27 @@ public final class CraftServer implements Server {
             dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getLevelPath(LevelResource.DATA), this.console.getFixerUpper(), this.console.registryAccess());
+        savedDataStorage.set(WorldGenSettings.TYPE, worldDataAndGenSettings.genSettings());
+        List<CustomSpawner> list = ImmutableList.of(
+            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
+        );
+
         ServerLevel serverLevel = new ServerLevel(
             this.console,
             this.console.executor,
             levelStorageAccess,
-            primaryLevelData,
+            worldDataAndGenSettings,
             dimensionKey,
             customStem,
             primaryLevelData.isDebugWorld(),
-            i,
+            biomeZoomSeed,
             creator.environment() == Environment.NORMAL ? list : ImmutableList.of(),
             true,
-            this.console.overworld().getRandomSequences(),
             creator.environment(),
-            chunkGenerator, biomeProvider
+            chunkGenerator,
+            biomeProvider,
+            savedDataStorage
         );
 
         if (!(this.worlds.containsKey(name.toLowerCase(Locale.ROOT)))) {
@@ -1306,7 +1313,7 @@ public final class CraftServer implements Server {
         }
 
         this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
-        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions());
+        this.console.initWorld(serverLevel);
 
         serverLevel.setSpawnSettings(true);
         // Paper - Put world into worldlist before initing the world; move up
@@ -1475,7 +1482,7 @@ public final class CraftServer implements Server {
                 return false;
             }
         }
-        toAdd.addToCraftingManager();
+        toAdd.addToRecipeManager();
         // Paper start - API for updating recipes on clients
         if (true || resendRecipes) { // Always needs to be resent now... TODO
             this.playerList.reloadRecipes();
@@ -1507,7 +1514,7 @@ public final class CraftServer implements Server {
     public Recipe getRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "NamespacedKey recipeKey cannot be null");
 
-        return this.getServer().getRecipeManager().byKey(CraftRecipe.toMinecraft(recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
+        return this.getServer().getRecipeManager().byKey(CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
     }
 
     private CraftingContainer createCraftingContainer() {
@@ -1553,19 +1560,18 @@ public final class CraftServer implements Server {
         Optional<RecipeHolder<CraftingRecipe>> recipe = this.getNMSRecipe(craftingMatrix, craftingContainer, craftWorld);
 
         // Generate the resulting ItemStack from the Crafting Matrix
-        net.minecraft.world.item.ItemStack itemstack = net.minecraft.world.item.ItemStack.EMPTY;
+        net.minecraft.world.item.ItemStack result = net.minecraft.world.item.ItemStack.EMPTY;
 
         if (recipe.isPresent()) {
             RecipeHolder<CraftingRecipe> recipeCrafting = recipe.get();
             craftingContainer.setCurrentRecipe(recipeCrafting);
             if (craftResult.setRecipeUsed(craftPlayer.getHandle(), recipeCrafting)) {
-                itemstack = recipeCrafting.value().assemble(craftingContainer.asCraftInput(), craftWorld.getHandle().registryAccess());
+                result = recipeCrafting.value().assemble(craftingContainer.asCraftInput());
             }
         }
 
         // Call Bukkit event to check for matrix/result changes.
-        net.minecraft.world.item.ItemStack result = CraftEventFactory.callPreCraftEvent(craftingContainer, craftResult, itemstack, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe);
-
+        result = CraftEventFactory.callPreCraftEvent(craftingContainer, craftResult, result, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe);
         return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), craftingContainer);
     }
 
@@ -1577,43 +1583,40 @@ public final class CraftServer implements Server {
 
         // Create a players Crafting Inventory and get the recipe
         CraftingContainer craftingContainer = this.createCraftingContainer();
-
         Optional<RecipeHolder<CraftingRecipe>> recipe = this.getNMSRecipe(craftingMatrix, craftingContainer, craftWorld);
 
         // Generate the resulting ItemStack from the Crafting Matrix
-        net.minecraft.world.item.ItemStack itemStack = net.minecraft.world.item.ItemStack.EMPTY;
+        final ItemStack result = recipe.map(holder -> {
+            return CraftItemStack.asBukkitCopy(holder.value().assemble(craftingContainer.asCraftInput()));
+        }).orElseGet(ItemStack::empty);
 
-        if (recipe.isPresent()) {
-            itemStack = recipe.get().value().assemble(craftingContainer.asCraftInput(), craftWorld.getHandle().registryAccess());
-        }
-
-        return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(itemStack), craftingContainer);
+        return this.createItemCraftResult(recipe, result, craftingContainer);
     }
 
-    private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack itemStack, CraftingContainer inventoryCrafting) {
-        CraftItemCraftResult craftItemResult = new CraftItemCraftResult(itemStack);
+    private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack result, CraftingContainer craftingContainer) {
+        CraftItemCraftResult craftItemResult = new CraftItemCraftResult(result);
         // tl;dr: this is an API adopted implementation of ResultSlot#onTake
-        final CraftingInput.Positioned positionedCraftInput = inventoryCrafting.asPositionedCraftInput();
+        final CraftingInput.Positioned positionedCraftInput = craftingContainer.asPositionedCraftInput();
         final CraftingInput craftingInput = positionedCraftInput.input();
         recipe.map((holder) -> holder.value().getRemainingItems(craftingInput)).ifPresent((remainingItems) -> {
             // Set the resulting matrix items and overflow items
             for (int height = 0; height < craftingInput.height(); height++) {
                 for (int width = 0; width < craftingInput.width(); width++) {
-                    final int inventorySlot = width + positionedCraftInput.left() + (height + positionedCraftInput.top()) * inventoryCrafting.getWidth();
-                    net.minecraft.world.item.ItemStack itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                    final int inventorySlot = width + positionedCraftInput.left() + (height + positionedCraftInput.top()) * craftingContainer.getWidth();
+                    net.minecraft.world.item.ItemStack itemInMenu = craftingContainer.getItem(inventorySlot);
                     net.minecraft.world.item.ItemStack remainingItem = remainingItems.get(width + height * craftingInput.width());
 
                     if (!itemInMenu.isEmpty()) {
-                        inventoryCrafting.removeItem(inventorySlot, 1);
-                        itemInMenu = inventoryCrafting.getItem(inventorySlot);
+                        craftingContainer.removeItem(inventorySlot, 1);
+                        itemInMenu = craftingContainer.getItem(inventorySlot);
                     }
 
                     if (!remainingItem.isEmpty()) {
                         if (itemInMenu.isEmpty()) {
-                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                            craftingContainer.setItem(inventorySlot, remainingItem);
                         } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemInMenu, remainingItem)) {
                             remainingItem.grow(itemInMenu.getCount());
-                            inventoryCrafting.setItem(inventorySlot, remainingItem);
+                            craftingContainer.setItem(inventorySlot, remainingItem);
                         } else {
                             craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(remainingItem));
                         }
@@ -1622,23 +1625,23 @@ public final class CraftServer implements Server {
             }
         });
 
-        for (int i = 0; i < inventoryCrafting.getContents().size(); i++) {
-            craftItemResult.setResultMatrix(i, CraftItemStack.asBukkitCopy(inventoryCrafting.getItem(i)));
+        for (int i = 0; i < craftingContainer.getContents().size(); i++) {
+            craftItemResult.setResultMatrix(i, CraftItemStack.asBukkitCopy(craftingContainer.getItem(i)));
         }
 
         return craftItemResult;
     }
 
-    private Optional<RecipeHolder<CraftingRecipe>> getNMSRecipe(ItemStack[] craftingMatrix, CraftingContainer inventoryCrafting, CraftWorld world) {
+    private Optional<RecipeHolder<CraftingRecipe>> getNMSRecipe(ItemStack[] craftingMatrix, CraftingContainer craftingContainer, CraftWorld world) {
         Preconditions.checkArgument(craftingMatrix != null, "craftingMatrix must not be null");
         Preconditions.checkArgument(craftingMatrix.length == 9, "craftingMatrix must be an array of length 9");
         Preconditions.checkArgument(world != null, "world must not be null");
 
         for (int i = 0; i < craftingMatrix.length; i++) {
-            inventoryCrafting.setItem(i, CraftItemStack.asNMSCopy(craftingMatrix[i]));
+            craftingContainer.setItem(i, CraftItemStack.asNMSCopy(craftingMatrix[i]));
         }
 
-        return this.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, inventoryCrafting.asCraftInput(), world.getHandle());
+        return this.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingContainer.asCraftInput(), world.getHandle());
     }
 
     @Override
@@ -1661,8 +1664,8 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
         // Paper start - resend recipes on successful removal
-        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> minecraftKey = CraftRecipe.toMinecraft(recipeKey);
-        final boolean removed = this.getServer().getRecipeManager().removeRecipe(minecraftKey);
+        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+        final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
         if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
             this.playerList.reloadRecipes();
         }
@@ -1854,7 +1857,7 @@ public final class CraftServer implements Server {
         if (structureLocation == null) {
             throw new IllegalStateException("Could not find a structure for " + structureType);
         }
-        BlockPos structurePos = CraftLocation.toBlockPosition(structureLocation);
+        BlockPos structurePos = CraftLocation.toBlockPos(structureLocation);
 
         // Create map with trackingPosition = true, unlimitedTracking = true
         net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
@@ -2180,7 +2183,7 @@ public final class CraftServer implements Server {
 
     @Override
     public File getWorldContainer() {
-        return this.getServer().storageSource.getDimensionPath(net.minecraft.world.level.Level.OVERWORLD).getParent().toFile();
+        return this.getServer().storageSource.getLevelDirectory().path().getParent().toFile();
     }
 
     @Override
@@ -2441,7 +2444,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(barColor != null, "BarColor key cannot be null");
         Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
 
-        CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
+        CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(net.minecraft.util.RandomSource.create(), CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
         CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
         craftKeyedBossbar.setColor(barColor);
         craftKeyedBossbar.setStyle(barStyle);
@@ -2547,7 +2550,7 @@ public final class CraftServer implements Server {
             Preconditions.checkArgument(type != null, "Provided material must be a block");
         }
 
-        return CraftBlockData.newData(type, data);
+        return CraftBlockData.fromString(type, data);
     }
 
     @Override

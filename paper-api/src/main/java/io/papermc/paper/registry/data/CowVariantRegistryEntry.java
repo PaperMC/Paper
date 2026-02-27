@@ -41,6 +41,13 @@ public interface CowVariantRegistryEntry {
     ClientTextureAsset clientTextureAsset();
 
     /**
+     * Provides the client texture asset of the baby cow variant, which represents the texture to use.
+     *
+     * @return the baby client texture asset.
+     */
+    ClientTextureAsset babyClientTextureAsset();
+
+    /**
      * Provides the model of the cow variant.
      *
      * @return the model.
@@ -53,6 +60,7 @@ public interface CowVariantRegistryEntry {
      * The following values are required for each builder:
      * <ul>
      *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
@@ -69,6 +77,16 @@ public interface CowVariantRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the baby cow variant, which is the location of the texture to use.
+         *
+         * @param babyClientTextureAsset the baby client texture asset.
+         * @return this builder instance.
+         * @see CowVariantRegistryEntry#babyClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyClientTextureAsset(ClientTextureAsset babyClientTextureAsset);
 
         /**
          * Sets the model to use for this cow variant.

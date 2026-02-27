@@ -14,7 +14,6 @@ public class StonecuttingRecipe implements Recipe, Keyed {
     private final NamespacedKey key;
     private ItemStack output;
     private RecipeChoice ingredient;
-    private String group = "";
 
     /**
      * Create a Stonecutting recipe to craft the specified ItemStack.
@@ -109,10 +108,12 @@ public class StonecuttingRecipe implements Recipe, Keyed {
      * together when displayed in the client.
      *
      * @return recipe group. An empty string denotes no group. May not be null.
+     * @deprecated no longer used for this recipe
      */
     @NotNull
+    @Deprecated(since = "26.1")
     public String getGroup() {
-        return group;
+        return "";
     }
 
     /**
@@ -121,9 +122,10 @@ public class StonecuttingRecipe implements Recipe, Keyed {
      *
      * @param group recipe group. An empty string denotes no group. May not be
      * null.
+     * @deprecated no longer used for this recipe
      */
+    @Deprecated(since = "26.1")
     public void setGroup(@NotNull String group) {
         Preconditions.checkArgument(group != null, "group cannot be null");
-        this.group = group;
     }
 }

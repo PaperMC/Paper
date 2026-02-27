@@ -1,15 +1,17 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
+import com.mojang.logging.LogUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -39,7 +41,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final WeakReference<WorldGenLevel> weakAccess;
+    private final WeakReference<WorldGenLevel> weakLevel;
     private final int centerChunkX;
     private final int centerChunkZ;
     // Buffer is one chunk (16 blocks), can be seen in ChunkStatus#q
@@ -55,12 +57,12 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // Prevents crash for chunks which are converting from 1.17 to 1.18
     private final List<net.minecraft.world.entity.Entity> outsideEntities = new ArrayList<>();
 
-    public CraftLimitedRegion(WorldGenLevel access, ChunkPos center) {
-        this.weakAccess = new WeakReference<>(access);
-        this.centerChunkX = center.x;
-        this.centerChunkZ = center.z;
+    public CraftLimitedRegion(WorldGenLevel level, ChunkPos center) {
+        this.weakLevel = new WeakReference<>(level);
+        this.centerChunkX = center.x();
+        this.centerChunkZ = center.z();
 
-        World world = access.getMinecraftWorld().getWorld();
+        World world = level.getMinecraftWorld().getWorld();
         int xCenter = this.centerChunkX << 4;
         int zCenter = this.centerChunkZ << 4;
         int xMin = xCenter - this.getBuffer();
@@ -72,9 +74,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     public WorldGenLevel getHandle() {
-        WorldGenLevel handle = this.weakAccess.get();
-
-        Preconditions.checkState(handle != null, "GeneratorAccessSeed no longer present, are you using it in a different tick?");
+        WorldGenLevel handle = this.weakLevel.get();
+        Preconditions.checkState(handle != null, "WorldGenLevel no longer present, are you using it in a different tick?");
 
         return handle;
     }
@@ -132,7 +133,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     public void breakLink() {
-        this.weakAccess.clear();
+        this.weakLevel.clear();
     }
 
     @Override
@@ -181,10 +182,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // Paper end
 
     @Override
-    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase) {
+    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome) {
         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
-        ChunkAccess chunk = this.getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
-        chunk.setBiome(x >> 2, y >> 2, z >> 2, biomeBase);
+        ChunkAccess chunk = this.getHandle().getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z), ChunkStatus.EMPTY);
+        chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), biome);
     }
 
     @Override
@@ -274,8 +275,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     @Override
     public void setBlockState(int x, int y, int z, BlockState state) {
         BlockPos pos = new BlockPos(x, y, z);
-        if (!state.getBlockData().matches(getHandle().getBlockState(pos).createCraftBlockData())) {
-            throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).createCraftBlockData().getAsString(false));
+        if (!state.getBlockData().matches(getHandle().getBlockState(pos).asBlockData())) {
+            throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).asBlockData().getAsString(false));
         }
 
         try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(

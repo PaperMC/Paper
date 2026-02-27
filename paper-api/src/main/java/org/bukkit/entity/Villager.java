@@ -88,7 +88,6 @@ public interface Villager extends AbstractVillager {
      */
     public void setVillagerExperience(int experience);
 
-    // Paper start
     /**
      * Increases the level of this villager.
      * The villager will also unlock new recipes unlike the raw
@@ -97,13 +96,11 @@ public interface Villager extends AbstractVillager {
      * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      * <p>
-     * A master villager has a level of 5 in its profession and
-     * will unlock 10 trades (2 per level).
+     * A master villager has a level of 5 in its profession.
      *
      * @param amount The amount of level
-     * @return Whether trades are unlocked
-     * @throws IllegalArgumentException if current level plus the amount
-     * isn't between [1, 5] or the amount isn't positive
+     * @return Whether level got increased
+     * @throws IllegalArgumentException if the amount is not positive
      * @see #setVillagerLevel(int)
      */
     boolean increaseLevel(int amount);
@@ -128,7 +125,6 @@ public interface Villager extends AbstractVillager {
      * @param restocksToday new restock count
      */
     public void setRestocksToday(int restocksToday);
-    // Paper end
 
     /**
      * Attempts to make this villager sleep at the given location.
