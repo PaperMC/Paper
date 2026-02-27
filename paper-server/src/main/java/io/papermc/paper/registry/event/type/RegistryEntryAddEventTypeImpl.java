@@ -9,7 +9,7 @@ import io.papermc.paper.registry.event.RegistryEntryAddEvent;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class RegistryEntryAddEventTypeImpl<T, B extends RegistryBuilder<T>> extends PrioritizableLifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> implements RegistryEntryAddEventType<T, B> {
+public class RegistryEntryAddEventTypeImpl<T, B extends RegistryBuilder<? extends T>> extends PrioritizableLifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> implements RegistryEntryAddEventType<T, B> {
 
     public RegistryEntryAddEventTypeImpl(final RegistryKey<T> registryKey, final String eventName) {
         super(registryKey + " / " + eventName, BootstrapContext.class);

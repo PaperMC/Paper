@@ -12,7 +12,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.resources.RegistryOps;
 import org.bukkit.Keyed;
 
-public record RegistryComposeEventImpl<T, B extends RegistryBuilder<T>>(
+public record RegistryComposeEventImpl<T, B extends RegistryBuilder<? extends T>>(
     RegistryKey<T> registryKey,
     WritableRegistry<T, B> registry,
     Conversions conversions
