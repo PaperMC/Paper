@@ -419,6 +419,7 @@ public final class CraftServer implements Server {
          // Paper end
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
+        CraftRegistry.setEnabledFeatures(console.getWorldData().enabledFeatures());
 
         if (!Main.useConsole) {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
