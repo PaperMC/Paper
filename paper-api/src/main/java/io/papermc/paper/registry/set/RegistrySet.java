@@ -41,7 +41,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet 
     /**
      * Creates a {@link RegistryKeySet} from registry-backed values.
      * <p>All values provided <b>must</b> have keys in the given registry.
-     * <!--For anonymous values, use {@link #valueSet(RegistryKey, Iterable)}--></p>
+     * For anonymous values, use {@link #valueSet(RegistryKey, Iterable)}.</p>
      * <p>If references to actual objects are not available yet, use {@link #keySet(RegistryKey, Iterable)} to
      * create an equivalent {@link RegistryKeySet} using just {@link TypedKey TypedKeys}.</p>
      *

@@ -1,6 +1,7 @@
 package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Types of attributes which may be present on an {@link Attributable}.
  */
-public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+public interface Attribute extends RegistryElement<Attribute>, OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     /**
      * Maximum health of an Entity.

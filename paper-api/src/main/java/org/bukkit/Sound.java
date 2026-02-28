@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -21,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * guarantee values will not be removed from this interface. As such, you should not
  * depend on the ordinal values of this class.
  */
-public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
+public interface Sound extends RegistryElement<Sound>, OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
